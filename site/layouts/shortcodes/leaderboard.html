@@ -383,7 +383,7 @@ html.dark .lb-filters-toggle:hover .lb-toggle-icon { color: #60a5fa; }
 {{ $langs = sort $langs }}
 
 <div class="lb-card">
-  <div class="lb-card-title lb-filters-toggle" style="cursor:pointer;">Filters <span class="lb-toggle-icon">+</span></div>
+  <div class="lb-card-title lb-filters-toggle" style="cursor:pointer;">Filters <span class="lb-toggle-icon">+</span> <span class="lb-filters-hint lb-toggle-hint">(expand)</span></div>
   <div class="lb-filters-body" style="display:none;">
     <div class="lb-filters" style="margin-top:0;">
       <span class="lb-filters-label">Lang</span>
@@ -549,12 +549,15 @@ buildBestPanels();
 document.querySelector('.lb-filters-toggle').addEventListener('click', function() {
   var body = document.querySelector('.lb-filters-body');
   var icon = this.querySelector('.lb-toggle-icon');
+  var hint = this.querySelector('.lb-toggle-hint');
   if (body.style.display === 'none') {
     body.style.display = 'block';
     icon.textContent = '\u2212';
+    hint.textContent = '(minimize)';
   } else {
     body.style.display = 'none';
     icon.textContent = '+';
+    hint.textContent = '(expand)';
   }
 });
 
