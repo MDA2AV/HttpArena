@@ -2,7 +2,7 @@
   "display_name": "spring",
   "language": "Java",
   "type": "realistic",
-  "description": "Spring Boot with embedded Netty, WebFlux reactive stack, and virtual threads on JDK 21.",
+  "description": "Spring Boot with embedded Netty, WebFlux reactive stack, and virtual threads on JDK 21",
   "repo": "https://github.com/spring-projects/spring-boot",
   "enabled": true,
   "tests": ["baseline", "limited-conn", "json", "baseline-h2"]
