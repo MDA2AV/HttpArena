@@ -82,15 +82,45 @@ rebuild_site_data() {
             [ -d "$conn_dir" ] || continue
             local conns=$(basename "$conn_dir")
             local data_file="$site_data/${profile}-${conns}.json"
-            echo '[' > "$data_file"
-            local first=true
+
+            # Collect new framework names from results
+            local new_fws=""
             for f in "$conn_dir"/*.json; do
                 [ -f "$f" ] || continue
-                $first || echo ',' >> "$data_file"
-                cat "$f" >> "$data_file"
-                first=false
+                local fw_name=$(basename "$f" .json)
+                new_fws="$new_fws $fw_name"
             done
-            echo ']' >> "$data_file"
+
+            # Merge: keep existing entries for frameworks NOT in new results, then add new ones
+            python3 -c "
+import json, sys, os, glob
+
+data_file = sys.argv[1]
+conn_dir = sys.argv[2]
+new_fws = set(sys.argv[3].split())
+
+# Load existing data
+existing = []
+if os.path.exists(data_file):
+    try:
+        existing = json.load(open(data_file))
+    except:
+        existing = []
+
+# Remove entries for frameworks being updated
+merged = [e for e in existing if e.get('framework') not in new_fws]
+
+# Add new results
+for f in sorted(glob.glob(os.path.join(conn_dir, '*.json'))):
+    try:
+        merged.append(json.load(open(f)))
+    except:
+        pass
+
+with open(data_file, 'w') as out:
+    json.dump(merged, out, indent=2)
+" "$data_file" "$conn_dir" "$new_fws"
+
             echo "[updated] site/data/${profile}-${conns}.json"
         done
     done
