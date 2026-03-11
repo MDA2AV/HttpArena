@@ -1,0 +1,1 @@
+nginx: [warn] the "http2_max_requests" directive is obsolete, use the "keepalive_requests" directive instead in /usr/local/nginx/conf/nginx.conf:48
