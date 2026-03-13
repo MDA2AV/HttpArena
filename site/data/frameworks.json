@@ -1,24 +1,128 @@
 {
-  "actix": {"description": "Actix-web 4 with rustls for HTTP/2 support, compiled with -O3 and thin LTO.", "repo": "https://github.com/actix/actix-web", "type": "framework", "engine": "actix"},
-  "aspnet-minimal": {"description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.", "repo": "https://github.com/dotnet/aspnetcore", "type": "framework", "engine": "Kestrel"},
-  "bun": {"description": "Bun's built-in HTTP server using JavaScriptCore engine with multi-core clustering.", "repo": "https://github.com/oven-sh/bun", "type": "framework", "engine": "JSC"},
-  "caddy": {"description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.", "repo": "https://github.com/caddyserver/caddy", "type": "framework", "engine": "caddy"},
-  "deno": {"description": "Deno HTTP server using deno serve --parallel with zero-dependency native fetch handler.", "repo": "https://github.com/denoland/deno", "type": "framework", "engine": "V8"},
-  "drogon": {"description": "Drogon C++ framework using HttpController with async callbacks, mimalloc allocator, and -flto optimization.", "repo": "https://github.com/drogonframework/drogon", "type": "framework", "engine": "drogon"},
-  "flask": {"description": "Flask web framework on Gunicorn with sync workers, one worker per CPU core.", "repo": "https://github.com/pallets/flask", "type": "framework", "engine": "gunicorn"},
-  "genhttp": {"description": "Lightweight, embeddable and modular C# web server.", "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP", "type": "framework", "engine": "GenHTTP"},
-  "go-fasthttp": {"description": "High-performance Go HTTP server using fasthttp with zero-allocation design and buffer reuse.", "repo": "https://github.com/valyala/fasthttp", "type": "framework", "engine": "fasthttp"},
-  "h2o": {"description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.", "repo": "https://github.com/h2o/h2o", "type": "engine", "engine": "h2o"},
-  "h2o-mruby": {"description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.", "repo": "https://github.com/h2o/h2o", "type": "framework", "engine": "h2o"},
-  "hyper": {"description": "Low-level HTTP library for Rust, built on tokio with multi-threaded async runtime.", "repo": "https://github.com/hyperium/hyper", "type": "engine", "engine": "hyper"},
-  "lithium": {"description": "Lithium C++ HTTP framework with compile-time reflection, boost::context coroutines, and -O3 -march=native -flto.", "repo": "https://github.com/matt-42/lithium", "type": "framework", "engine": "li/http"},
-  "nginx": {"description": "Nginx with a custom C handler module, compiled with -O3 -march=native.", "repo": "https://github.com/nginx/nginx", "type": "engine", "engine": "nginx"},
-  "nginx-openresty": {"description": "OpenResty (Nginx + LuaJIT) with Lua content handlers for all benchmark endpoints.", "repo": "https://github.com/openresty/openresty", "type": "framework", "engine": "openresty"},
-  "node": {"description": "Bare Node.js HTTP server using the cluster module for multi-core scaling.", "repo": "https://github.com/nodejs/node", "type": "framework", "engine": "V8"},
-  "quarkus-jvm": {"description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.", "repo": "https://github.com/quarkusio/quarkus", "type": "framework", "engine": "Netty"},
-  "ringzero": {"description": "Custom C HTTP server built on io_uring with a multi-reactor architecture. No epoll, no thread-per-connection.", "repo": "https://github.com/MDA2AV/ringzero", "type": "engine", "engine": "io_uring"},
-  "salvo": {"description": "Salvo web framework with Quinn HTTP/3 support on Tokio runtime, compiled with -O3 and thin LTO.", "repo": "https://github.com/salvo-rs/salvo", "type": "framework", "engine": "Salvo"},
-  "spring-jvm": {"description": "Spring Boot with embedded Tomcat on JDK 21 (HotSpot JVM with ZGC).", "repo": "https://github.com/spring-projects/spring-boot", "type": "framework", "engine": "Tomcat"},
-  "spring-jvm-jetty": {"description": "Spring Boot with embedded Jetty 12 on JDK 21, supporting HTTP/1.1 and HTTP/2.", "repo": "https://github.com/spring-projects/spring-boot", "type": "framework", "engine": "Jetty"},
-  "ultimate-express": {"description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.", "repo": "https://github.com/dimdenGD/ultimate-express", "type": "framework", "engine": "uWebSockets"}
+  "actix": {
+    "description": "Actix-web 4 with rustls for HTTP/2 support, compiled with -O3 and thin LTO.",
+    "repo": "https://github.com/actix/actix-web",
+    "type": "framework",
+    "engine": "actix"
+  },
+  "aspnet-minimal": {
+    "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
+    "repo": "https://github.com/dotnet/aspnetcore",
+    "type": "framework",
+    "engine": "Kestrel"
+  },
+  "bun": {
+    "description": "Bun's built-in HTTP server using JavaScriptCore engine with multi-core clustering.",
+    "repo": "https://github.com/oven-sh/bun",
+    "type": "framework",
+    "engine": "JSC"
+  },
+  "caddy": {
+    "description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.",
+    "repo": "https://github.com/caddyserver/caddy",
+    "type": "framework",
+    "engine": "caddy"
+  },
+  "deno": {
+    "description": "Deno HTTP server using deno serve --parallel with zero-dependency native fetch handler.",
+    "repo": "https://github.com/denoland/deno",
+    "type": "framework",
+    "engine": "V8"
+  },
+  "drogon": {
+    "description": "Drogon C++ framework using HttpController with async callbacks, mimalloc allocator, and -flto optimization.",
+    "repo": "https://github.com/drogonframework/drogon",
+    "type": "framework",
+    "engine": "drogon"
+  },
+  "flask": {
+    "description": "Flask web framework on Gunicorn with sync workers, one worker per CPU core.",
+    "repo": "https://github.com/pallets/flask",
+    "type": "framework",
+    "engine": "gunicorn"
+  },
+  "go-fasthttp": {
+    "description": "High-performance Go HTTP server using fasthttp with zero-allocation design and buffer reuse.",
+    "repo": "https://github.com/valyala/fasthttp",
+    "type": "framework",
+    "engine": "fasthttp"
+  },
+  "h2o": {
+    "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
+    "repo": "https://github.com/h2o/h2o",
+    "type": "engine",
+    "engine": "h2o"
+  },
+  "h2o-mruby": {
+    "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
+    "repo": "https://github.com/h2o/h2o",
+    "type": "framework",
+    "engine": "h2o"
+  },
+  "hyper": {
+    "description": "Low-level HTTP library for Rust, built on tokio with multi-threaded async runtime.",
+    "repo": "https://github.com/hyperium/hyper",
+    "type": "engine",
+    "engine": "hyper"
+  },
+  "lithium": {
+    "description": "Lithium C++ HTTP framework with compile-time reflection, boost::context coroutines, and -O3 -march=native -flto.",
+    "repo": "https://github.com/matt-42/lithium",
+    "type": "framework",
+    "engine": "li/http"
+  },
+  "nginx": {
+    "description": "Nginx with a custom C handler module, compiled with -O3 -march=native.",
+    "repo": "https://github.com/nginx/nginx",
+    "type": "engine",
+    "engine": "nginx"
+  },
+  "nginx-openresty": {
+    "description": "OpenResty (Nginx + LuaJIT) with Lua content handlers for all benchmark endpoints.",
+    "repo": "https://github.com/openresty/openresty",
+    "type": "framework",
+    "engine": "openresty"
+  },
+  "node": {
+    "description": "Bare Node.js HTTP server using the cluster module for multi-core scaling.",
+    "repo": "https://github.com/nodejs/node",
+    "type": "framework",
+    "engine": "V8"
+  },
+  "quarkus-jvm": {
+    "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
+    "repo": "https://github.com/quarkusio/quarkus",
+    "type": "framework",
+    "engine": "Netty"
+  },
+  "ringzero": {
+    "description": "Custom C HTTP server built on io_uring with a multi-reactor architecture. No epoll, no thread-per-connection.",
+    "repo": "https://github.com/MDA2AV/ringzero",
+    "type": "engine",
+    "engine": "io_uring"
+  },
+  "salvo": {
+    "description": "Salvo web framework with Quinn HTTP/3 support on Tokio runtime, compiled with -O3 and thin LTO.",
+    "repo": "https://github.com/salvo-rs/salvo",
+    "type": "framework",
+    "engine": "Salvo"
+  },
+  "spring-jvm": {
+    "description": "Spring Boot with embedded Tomcat on JDK 21 (HotSpot JVM with ZGC).",
+    "repo": "https://github.com/spring-projects/spring-boot",
+    "type": "framework",
+    "engine": "Tomcat"
+  },
+  "spring-jvm-jetty": {
+    "description": "Spring Boot with embedded Jetty 12 on JDK 21, supporting HTTP/1.1 and HTTP/2.",
+    "repo": "https://github.com/spring-projects/spring-boot",
+    "type": "framework",
+    "engine": "Jetty"
+  },
+  "ultimate-express": {
+    "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
+    "repo": "https://github.com/dimdenGD/ultimate-express",
+    "type": "framework",
+    "engine": "uWebSockets"
+  }
 }
