@@ -2,6 +2,7 @@
 
 using GenHTTP.Api.Content;
 using GenHTTP.Api.Protocol;
+using GenHTTP.Modules.Webservices;
 
 namespace genhttp.Tests;
 
@@ -27,6 +28,7 @@ public class Json
         return null;
     }
     
+    [ResourceMethod]
     public ListWithCount<ProcessedItem> Compute()
     {
         if (datasetItems == null)
