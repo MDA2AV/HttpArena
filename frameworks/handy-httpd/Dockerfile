@@ -23,7 +23,5 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends libsqlite3-0 zlib1g && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/httparena-handy-httpd /server
-COPY --from=build /opt/ldc/lib/libphobos2-ldc-shared.so.2 /usr/lib/
-COPY --from=build /opt/ldc/lib/libdruntime-ldc-shared.so.2 /usr/lib/
 EXPOSE 8080
 CMD ["/server"]

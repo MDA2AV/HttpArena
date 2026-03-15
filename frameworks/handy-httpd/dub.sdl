@@ -5,5 +5,5 @@ targetName "httparena-handy-httpd"
 dependency "handy-httpd" version="~>8.7.0"
 dependency "d2sqlite3" version="~>1.0.0"
 
-dflags "-O3" "-release" "-boundscheck=off" platform="ldc"
+dflags "-O3" "-release" "-boundscheck=off" "-link-defaultlib-shared=false" platform="ldc"
 lflags "-lsqlite3" "-lz"
