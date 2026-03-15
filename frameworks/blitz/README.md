@@ -1,26 +1,33 @@
 # blitz ⚡
 
-A blazing-fast HTTP/1.1 server written in Zig, built to compete in [HttpArena](https://github.com/MDA2AV/HttpArena).
+A Zig micro web framework built for raw speed. Competes in [HttpArena](https://github.com/MDA2AV/HttpArena).
 
-## Design
+**Repo:** [github.com/BennyFranciscus/blitz](https://github.com/BennyFranciscus/blitz)
 
-- **Language:** Zig — C-level performance with better ergonomics
-- **I/O:** epoll with edge-triggered notifications
-- **Threading:** SO_REUSEPORT multi-threading (one accept socket per core, no lock contention)
-- **Parsing:** Zero-copy HTTP request parsing
-- **Responses:** Pre-computed static responses, pipeline batching
-- **Memory:** Arena-style per-connection buffers, minimal heap allocations in hot path
+## Architecture
 
-## Endpoints
+- **Epoll** — edge-triggered, per-thread event loops
+- **SO_REUSEPORT** — kernel load balancing, zero lock contention
+- **Zero-copy parsing** — request headers/body are slices into the read buffer
+- **Connection pooling** — pre-allocated ConnState objects, O(1) acquire/release
+- **Pipeline batching** — multiple requests parsed per read, coalesced writes
+- **Radix-trie router** — static, `:param`, `*wildcard` with per-route middleware
+- **Pre-computed responses** — benchmark endpoints build full HTTP at startup
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/pipeline` | GET | Returns "ok" — pipelining benchmark |
-| `/baseline11` | GET/POST | Query param sum, optional body parsing |
-| `/baseline2` | GET | Query param sum (H2 baseline) |
-| `/json` | GET | Pre-computed JSON dataset response |
-| `/upload` | POST | Returns body byte count |
-| `/static/{file}` | GET | Pre-loaded static files |
+## Framework Features
+
+- Radix-trie router with path params and wildcards
+- Global + per-route middleware (short-circuit capable)
+- Route groups with prefix concatenation
+- Comptime JSON serializer (zero-alloc)
+- Query string parser with typed access
+- Request body parsing (URL-encoded, multipart/form-data)
+- Cookie support (RFC 6265)
+- Redirect helpers
+- Static file serving with MIME detection
+- Structured error responses
+- Keep-alive timeout with idle connection sweeping
+- 155 unit tests
 
 ## Building
 
@@ -28,10 +35,4 @@ A blazing-fast HTTP/1.1 server written in Zig, built to compete in [HttpArena](h
 zig build -Doptimize=ReleaseFast
 ```
 
-## Running
-
-```bash
-./zig-out/bin/blitz
-```
-
-The server listens on port 8080 and spawns one worker thread per available CPU core.
+Listens on port 8080, one worker thread per CPU core.
