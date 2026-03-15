@@ -198,7 +198,9 @@ let gzip_compress data =
   Unix.unlink tmp;
   Bytes.to_string buf
 
-let start_worker () =
+(* --- Entry point: single-process, multi-core via run.sh shell wrapper --- *)
+
+let () =
   let dataset_path = try Sys.getenv "DATASET_PATH" with Not_found -> "/data/dataset.json" in
   let dataset = load_dataset dataset_path in
   let large_dataset = load_dataset "/data/dataset-large.json" in
@@ -213,7 +215,6 @@ let start_worker () =
     ~interface:"0.0.0.0"
     ~port:8080
     ~greeting:false
-    ~adjust_terminal:false
   @@ server_header
   @@ Dream.router [
 
@@ -310,33 +311,3 @@ let start_worker () =
       | None ->
         Dream.respond ~status:`Not_Found "Not Found");
   ]
-
-(* --- Entry point: multi-core via Unix.fork + SO_REUSEPORT --- *)
-
-let () =
-  let nproc =
-    try
-      let ic = Unix.open_process_in "nproc" in
-      let n = int_of_string (String.trim (input_line ic)) in
-      ignore (Unix.close_process_in ic);
-      max 1 n
-    with _ -> 1
-  in
-  if nproc <= 1 then
-    start_worker ()
-  else begin
-    let pids = ref [] in
-    for _ = 1 to nproc do
-      match Unix.fork () with
-      | 0 -> start_worker (); exit 0
-      | pid -> pids := pid :: !pids
-    done;
-    let cleanup _ =
-      List.iter (fun pid -> try Unix.kill pid Sys.sigterm with _ -> ()) !pids;
-      exit 0
-    in
-    Sys.set_signal Sys.sigint (Sys.Signal_handle cleanup);
-    Sys.set_signal Sys.sigterm (Sys.Signal_handle cleanup);
-    (* Wait for any child *)
-    (try while true do ignore (Unix.wait ()) done with _ -> ())
-  end
