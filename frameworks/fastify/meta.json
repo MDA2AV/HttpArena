@@ -1,0 +1,21 @@
+{
+  "display_name": "Fastify",
+  "language": "JS",
+  "type": "framework",
+  "engine": "V8",
+  "description": "Fast and low-overhead Node.js web framework built for developer experience and performance.",
+  "repo": "https://github.com/fastify/fastify",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed",
+    "noisy",
+    "baseline-h2",
+    "static-h2"
+  ]
+}

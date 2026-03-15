@@ -1,0 +1,9 @@
+{
+  "name": "httparena-fastify",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "fastify": "^5.2.0",
+    "better-sqlite3": "^11.0.0"
+  }
+}
