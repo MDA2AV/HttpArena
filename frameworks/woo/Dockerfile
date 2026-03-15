@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sbcl curl ca-certificates build-essential \
@@ -15,18 +15,25 @@ RUN curl -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
     && echo '(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))' >> /root/.sbclrc \
     && echo '  (when (probe-file quicklisp-init) (load quicklisp-init)))' >> /root/.sbclrc
 
-# Pre-fetch dependencies so layer is cached
+# Pre-fetch + compile all Quicklisp deps
 RUN sbcl --non-interactive \
     --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)'
 
 COPY src/ /app/src/
 
-# Clean up build-only packages
-RUN apt-get purge -y curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/* /tmp/quicklisp.lisp
+# Build an executable core with everything pre-loaded.
+# CFFI automatically reopens shared libraries (libev etc.) on core restore.
+RUN sbcl --non-interactive --load /app/src/build.lisp
+
+# ── Runtime stage ────────────────────────────────────────────────────
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libev4 libsqlite3-0 zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/woo-server /app/woo-server
 
 EXPOSE 8080
 
-# Run directly via SBCL instead of a saved core — CFFI foreign libs (libev)
-# don't survive save-lisp-and-die properly, causing silent startup failures.
-CMD ["sbcl", "--non-interactive", "--load", "/app/src/server.lisp", "--eval", "(httparena::main)"]
+CMD ["/app/woo-server"]
