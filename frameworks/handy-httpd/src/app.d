@@ -213,27 +213,24 @@ void baseline11Handler(ref HttpRequestContext ctx) {
         } catch (Exception e) {}
     }
 
-    // If POST, also read body (handle both regular and chunked TE)
+    // If POST, also read body (use readBodyAsBytes for chunked TE support)
     if (ctx.request.method == Method.POST) {
         try {
-            string rawBody = ctx.request.readBodyAsString().strip();
-            if (rawBody.length > 0) {
-                // Try parsing directly first (works if library already decoded chunked TE)
-                bool parsed = false;
-                try {
-                    sum += rawBody.to!long;
-                    parsed = true;
-                } catch (Exception e) {}
-                // If direct parse failed and chunked TE, try decoding chunk framing
-                if (!parsed) {
-                    string te = ctx.request.headers.getFirst("Transfer-Encoding").orElse("");
-                    import std.algorithm : canFind;
-                    if (te.canFind("chunked")) {
-                        string decoded = decodeChunkedPayload(rawBody).strip();
-                        if (decoded.length > 0)
-                            sum += decoded.to!long;
-                    }
-                }
+            ubyte[] rawBytes = ctx.request.readBodyAsBytes();
+            ubyte[] bodyBytes;
+            string te = ctx.request.headers.getFirst("Transfer-Encoding").orElse("");
+            import std.algorithm : canFind;
+            if (te.canFind("chunked") && rawBytes.length > 0) {
+                // Try chunked decode first (if library passed through raw framing)
+                bodyBytes = decodeChunkedBytes(rawBytes);
+                if (bodyBytes.length == 0) bodyBytes = rawBytes;
+            } else {
+                bodyBytes = rawBytes;
+            }
+            if (bodyBytes.length > 0) {
+                string bodyStr = (cast(string) bodyBytes).strip();
+                if (bodyStr.length > 0)
+                    sum += bodyStr.to!long;
             }
         } catch (Exception e) {}
     }
