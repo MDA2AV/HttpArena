@@ -311,7 +311,32 @@ let start_worker () =
         Dream.respond ~status:`Not_Found "Not Found");
   ]
 
-(* --- Entry point: single worker (multi-process handled by shell wrapper) --- *)
+(* --- Entry point: multi-core via Unix.fork + SO_REUSEPORT --- *)
 
 let () =
-  start_worker ()
+  let nproc =
+    try
+      let ic = Unix.open_process_in "nproc" in
+      let n = int_of_string (String.trim (input_line ic)) in
+      ignore (Unix.close_process_in ic);
+      max 1 n
+    with _ -> 1
+  in
+  if nproc <= 1 then
+    start_worker ()
+  else begin
+    let pids = ref [] in
+    for _ = 1 to nproc do
+      match Unix.fork () with
+      | 0 -> start_worker (); exit 0
+      | pid -> pids := pid :: !pids
+    done;
+    let cleanup _ =
+      List.iter (fun pid -> try Unix.kill pid Sys.sigterm with _ -> ()) !pids;
+      exit 0
+    in
+    Sys.set_signal Sys.sigint (Sys.Signal_handle cleanup);
+    Sys.set_signal Sys.sigterm (Sys.Signal_handle cleanup);
+    (* Wait for any child *)
+    (try while true do ignore (Unix.wait ()) done with _ -> ())
+  end
