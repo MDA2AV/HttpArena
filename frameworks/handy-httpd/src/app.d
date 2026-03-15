@@ -132,70 +132,6 @@ void loadStaticFiles() {
     } catch (Exception e) {}
 }
 
-// --- Chunked TE decoder ---
-
-string decodeChunkedPayload(string raw) {
-    string result;
-    size_t pos = 0;
-    while (pos < raw.length) {
-        // Find the end of the chunk size line
-        size_t lineEnd = pos;
-        while (lineEnd < raw.length && raw[lineEnd] != '\r' && raw[lineEnd] != '\n')
-            lineEnd++;
-        if (lineEnd == pos) break;
-        string sizeStr = raw[pos .. lineEnd].strip();
-        long chunkSize;
-        try {
-            chunkSize = sizeStr.to!long(16);
-        } catch (Exception e) {
-            break;
-        }
-        if (chunkSize == 0) break;
-        // Skip past \r\n
-        pos = lineEnd;
-        if (pos < raw.length && raw[pos] == '\r') pos++;
-        if (pos < raw.length && raw[pos] == '\n') pos++;
-        // Read chunk data
-        size_t end = pos + cast(size_t) chunkSize;
-        if (end > raw.length) end = raw.length;
-        result ~= raw[pos .. end];
-        pos = end;
-        // Skip trailing \r\n
-        if (pos < raw.length && raw[pos] == '\r') pos++;
-        if (pos < raw.length && raw[pos] == '\n') pos++;
-    }
-    return result;
-}
-
-ubyte[] decodeChunkedBytes(ubyte[] raw) {
-    ubyte[] result;
-    size_t pos = 0;
-    while (pos < raw.length) {
-        size_t lineEnd = pos;
-        while (lineEnd < raw.length && raw[lineEnd] != '\r' && raw[lineEnd] != '\n')
-            lineEnd++;
-        if (lineEnd == pos) break;
-        string sizeStr = (cast(string) raw[pos .. lineEnd]).strip();
-        long chunkSize;
-        try {
-            chunkSize = sizeStr.to!long(16);
-        } catch (Exception e) {
-            break;
-        }
-        if (chunkSize == 0) break;
-        pos = lineEnd;
-        if (pos < raw.length && raw[pos] == '\r') pos++;
-        if (pos < raw.length && raw[pos] == '\n') pos++;
-        size_t end = pos + cast(size_t) chunkSize;
-        if (end > raw.length) end = raw.length;
-        result ~= raw[pos .. end];
-        pos = end;
-        if (pos < raw.length && raw[pos] == '\r') pos++;
-        if (pos < raw.length && raw[pos] == '\n') pos++;
-    }
-    return result;
-}
-
 // --- Route handlers ---
 
 void pipelineHandler(ref HttpRequestContext ctx) {
@@ -213,25 +149,12 @@ void baseline11Handler(ref HttpRequestContext ctx) {
         } catch (Exception e) {}
     }
 
-    // If POST, also read body (use readBodyAsBytes for chunked TE support)
+    // If POST, read body — handy-httpd v8 decodes chunked TE internally
     if (ctx.request.method == Method.POST) {
         try {
-            ubyte[] rawBytes = ctx.request.readBodyAsBytes();
-            ubyte[] bodyBytes;
-            string te = ctx.request.headers.getFirst("Transfer-Encoding").orElse("");
-            import std.algorithm : canFind;
-            if (te.canFind("chunked") && rawBytes.length > 0) {
-                // Try chunked decode first (if library passed through raw framing)
-                bodyBytes = decodeChunkedBytes(rawBytes);
-                if (bodyBytes.length == 0) bodyBytes = rawBytes;
-            } else {
-                bodyBytes = rawBytes;
-            }
-            if (bodyBytes.length > 0) {
-                string bodyStr = (cast(string) bodyBytes).strip();
-                if (bodyStr.length > 0)
-                    sum += bodyStr.to!long;
-            }
+            string bodyStr = ctx.request.readBodyAsString().strip();
+            if (bodyStr.length > 0)
+                sum += bodyStr.to!long;
         } catch (Exception e) {}
     }
 
@@ -279,17 +202,8 @@ void compressionHandler(ref HttpRequestContext ctx) {
 }
 
 void uploadHandler(ref HttpRequestContext ctx) {
-    ubyte[] rawBody = ctx.request.readBodyAsBytes();
-    ubyte[] body;
-    string te = ctx.request.headers.getFirst("Transfer-Encoding").orElse("");
-    import std.algorithm : canFind;
-    if (te.canFind("chunked") && rawBody.length > 0) {
-        // Try chunked decode; if result is empty, library may have already decoded
-        body = decodeChunkedBytes(rawBody);
-        if (body.length == 0) body = rawBody;
-    } else {
-        body = rawBody;
-    }
+    // handy-httpd v8 decodes chunked TE internally
+    ubyte[] body = ctx.request.readBodyAsBytes();
     ctx.response.addHeader("Server", SERVER_NAME);
     ctx.response.writeBodyString(body.length.to!string, "text/plain");
 }
