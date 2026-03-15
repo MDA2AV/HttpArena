@@ -1,0 +1,19 @@
+{
+  "display_name": "dream",
+  "language": "OCaml",
+  "type": "framework",
+  "engine": "dream",
+  "description": "Dream — tidy, feature-complete OCaml web framework. Compiles to native code via OCaml 5, uses httpaf/h2 under the hood with Lwt async I/O.",
+  "repo": "https://github.com/camlworks/dream",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "noisy",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed"
+  ]
+}
