@@ -132,6 +132,70 @@ void loadStaticFiles() {
     } catch (Exception e) {}
 }
 
+// --- Chunked TE decoder ---
+
+string decodeChunkedPayload(string raw) {
+    string result;
+    size_t pos = 0;
+    while (pos < raw.length) {
+        // Find the end of the chunk size line
+        size_t lineEnd = pos;
+        while (lineEnd < raw.length && raw[lineEnd] != '\r' && raw[lineEnd] != '\n')
+            lineEnd++;
+        if (lineEnd == pos) break;
+        string sizeStr = raw[pos .. lineEnd].strip();
+        long chunkSize;
+        try {
+            chunkSize = sizeStr.to!long(16);
+        } catch (Exception e) {
+            break;
+        }
+        if (chunkSize == 0) break;
+        // Skip past \r\n
+        pos = lineEnd;
+        if (pos < raw.length && raw[pos] == '\r') pos++;
+        if (pos < raw.length && raw[pos] == '\n') pos++;
+        // Read chunk data
+        size_t end = pos + cast(size_t) chunkSize;
+        if (end > raw.length) end = raw.length;
+        result ~= raw[pos .. end];
+        pos = end;
+        // Skip trailing \r\n
+        if (pos < raw.length && raw[pos] == '\r') pos++;
+        if (pos < raw.length && raw[pos] == '\n') pos++;
+    }
+    return result;
+}
+
+ubyte[] decodeChunkedBytes(ubyte[] raw) {
+    ubyte[] result;
+    size_t pos = 0;
+    while (pos < raw.length) {
+        size_t lineEnd = pos;
+        while (lineEnd < raw.length && raw[lineEnd] != '\r' && raw[lineEnd] != '\n')
+            lineEnd++;
+        if (lineEnd == pos) break;
+        string sizeStr = (cast(string) raw[pos .. lineEnd]).strip();
+        long chunkSize;
+        try {
+            chunkSize = sizeStr.to!long(16);
+        } catch (Exception e) {
+            break;
+        }
+        if (chunkSize == 0) break;
+        pos = lineEnd;
+        if (pos < raw.length && raw[pos] == '\r') pos++;
+        if (pos < raw.length && raw[pos] == '\n') pos++;
+        size_t end = pos + cast(size_t) chunkSize;
+        if (end > raw.length) end = raw.length;
+        result ~= raw[pos .. end];
+        pos = end;
+        if (pos < raw.length && raw[pos] == '\r') pos++;
+        if (pos < raw.length && raw[pos] == '\n') pos++;
+    }
+    return result;
+}
+
 // --- Route handlers ---
 
 void pipelineHandler(ref HttpRequestContext ctx) {
@@ -140,8 +204,6 @@ void pipelineHandler(ref HttpRequestContext ctx) {
 }
 
 void baseline11Handler(ref HttpRequestContext ctx) {
-    string query = ctx.request.url.length > 0 ? "" : "";
-    // Extract query string from the raw URL
     long sum = 0;
 
     // Parse query params from the request
@@ -151,10 +213,19 @@ void baseline11Handler(ref HttpRequestContext ctx) {
         } catch (Exception e) {}
     }
 
-    // If POST, also read body
+    // If POST, also read body (handle both regular and chunked TE)
     if (ctx.request.method == Method.POST) {
         try {
-            string body = ctx.request.readBodyAsString().strip();
+            string rawBody = ctx.request.readBodyAsString();
+            // If chunked TE, body may contain chunk framing — extract payload
+            string te = ctx.request.headers.getFirst("Transfer-Encoding").orElse("");
+            import std.algorithm : canFind;
+            string body;
+            if (te.canFind("chunked") && rawBody.length > 0) {
+                body = decodeChunkedPayload(rawBody).strip();
+            } else {
+                body = rawBody.strip();
+            }
             if (body.length > 0) {
                 sum += body.to!long;
             }
@@ -205,7 +276,15 @@ void compressionHandler(ref HttpRequestContext ctx) {
 }
 
 void uploadHandler(ref HttpRequestContext ctx) {
-    ubyte[] body = ctx.request.readBodyAsBytes();
+    ubyte[] rawBody = ctx.request.readBodyAsBytes();
+    ubyte[] body;
+    string te = ctx.request.headers.getFirst("Transfer-Encoding").orElse("");
+    import std.algorithm : canFind;
+    if (te.canFind("chunked") && rawBody.length > 0) {
+        body = decodeChunkedBytes(rawBody);
+    } else {
+        body = rawBody;
+    }
     ctx.response.addHeader("Server", SERVER_NAME);
     ctx.response.writeBodyString(body.length.to!string, "text/plain");
 }
