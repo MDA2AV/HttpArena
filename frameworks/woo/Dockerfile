@@ -21,16 +21,12 @@ RUN sbcl --non-interactive \
 
 COPY src/ /app/src/
 
-# Build standalone binary
-RUN sbcl --non-interactive --load /app/src/build.lisp
-
-# Verify binary exists and is executable
-RUN ls -la /app/woo-server
-
-# Remove build tools but keep ALL shared libraries intact
-# Only purge packages that don't provide runtime .so files
+# Clean up build-only packages
 RUN apt-get purge -y curl ca-certificates && \
     rm -rf /var/lib/apt/lists/* /tmp/quicklisp.lisp
 
 EXPOSE 8080
-CMD ["/app/woo-server"]
+
+# Run directly via SBCL instead of a saved core — CFFI foreign libs (libev)
+# don't survive save-lisp-and-die properly, causing silent startup failures.
+CMD ["sbcl", "--non-interactive", "--load", "/app/src/server.lisp", "--eval", "(httparena::main)"]
