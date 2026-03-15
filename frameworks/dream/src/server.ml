@@ -77,20 +77,6 @@ let load_dataset path =
     Yojson.Basic.Util.to_list json |> List.map parse_item
   with _ -> []
 
-let item_to_json item =
-  let total = Float.round ~-.2 (item.price *. Float.of_int item.quantity) in
-  `Assoc [
-    "id", `Int item.id;
-    "name", `String item.name;
-    "category", `String item.category;
-    "price", `Float item.price;
-    "quantity", `Int item.quantity;
-    "active", `Bool item.active;
-    "tags", `List (List.map (fun s -> `String s) item.tags);
-    "rating", `Assoc ["score", `Float item.rating.score; "count", `Int item.rating.count];
-    "total", `Float total;
-  ]
-
 let round2 f =
   Float.of_int (Float.to_int (f *. 100.0 +. 0.5)) /. 100.0
 
