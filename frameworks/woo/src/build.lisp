@@ -4,5 +4,4 @@
 
 (sb-ext:save-lisp-and-die "/app/woo-server"
   :toplevel #'httparena::main
-  :executable t
-  :compression t)
+  :executable t)
