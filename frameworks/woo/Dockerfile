@@ -25,7 +25,7 @@ COPY src/ /app/src/
 RUN sbcl --non-interactive --load /app/src/build.lisp
 
 # Verify binary exists and is executable
-RUN ls -la /app/woo-server && file /app/woo-server
+RUN ls -la /app/woo-server
 
 # Remove build tools but keep ALL shared libraries intact
 # Only purge packages that don't provide runtime .so files
