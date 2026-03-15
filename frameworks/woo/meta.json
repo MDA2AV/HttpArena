@@ -1,0 +1,19 @@
+{
+  "display_name": "woo",
+  "language": "Common Lisp",
+  "type": "framework",
+  "engine": "libev",
+  "description": "Woo — a fast non-blocking Common Lisp HTTP server built on libev, using SBCL. First Lisp-family entry in HttpArena.",
+  "repo": "https://github.com/fukamachi/woo",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "noisy",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed"
+  ]
+}
