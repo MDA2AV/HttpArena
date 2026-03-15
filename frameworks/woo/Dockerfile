@@ -17,7 +17,7 @@ RUN curl -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
 
 # Pre-fetch dependencies so layer is cached
 RUN sbcl --non-interactive \
-    --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :cl-sqlite) :silent t)'
+    --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)'
 
 COPY src/ /app/src/
 

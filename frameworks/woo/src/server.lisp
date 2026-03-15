@@ -1,4 +1,4 @@
-(ql:quickload '(:woo :jonathan :cl-ppcre :babel :salza2 :cl-sqlite) :silent t)
+(ql:quickload '(:woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)
 
 (defpackage :httparena
   (:use :cl)
