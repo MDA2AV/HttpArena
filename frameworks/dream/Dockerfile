@@ -30,6 +30,8 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y libev4 libsqlite3-0 libssl3 libgmp10 zlib1g && rm -rf /var/lib/apt/lists/*
 COPY --from=build /home/opam/server /server
 COPY --from=build /tmp/libreuseport.so /usr/lib/libreuseport.so
+COPY run.sh /run.sh
+RUN chmod +x /run.sh
 EXPOSE 8080
 ENV LD_PRELOAD=/usr/lib/libreuseport.so
-CMD ["/server"]
+CMD ["/run.sh"]

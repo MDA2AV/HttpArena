@@ -198,26 +198,6 @@ let gzip_compress data =
   Unix.unlink tmp;
   Bytes.to_string buf
 
-(* --- Multi-process via fork + SO_REUSEPORT (LD_PRELOAD shim) --- *)
-
-let get_cpu_count () =
-  try
-    let v = Sys.getenv "NPROC" in
-    let n = int_of_string v in
-    if n > 0 then n else 1
-  with _ ->
-    try
-      let ic = open_in "/proc/cpuinfo" in
-      let count = ref 0 in
-      (try while true do
-        let line = input_line ic in
-        if String.length line >= 9 && String.sub line 0 9 = "processor" then
-          incr count
-      done with End_of_file -> ());
-      close_in ic;
-      max 1 !count
-    with _ -> 1
-
 let start_worker () =
   let dataset_path = try Sys.getenv "DATASET_PATH" with Not_found -> "/data/dataset.json" in
   let dataset = load_dataset dataset_path in
@@ -331,29 +311,7 @@ let start_worker () =
         Dream.respond ~status:`Not_Found "Not Found");
   ]
 
-(* --- Entry point: fork N workers --- *)
+(* --- Entry point: single worker (multi-process handled by shell wrapper) --- *)
 
 let () =
-  let worker_count = get_cpu_count () in
-  if worker_count > 1 then begin
-    let child_pids = Array.make worker_count 0 in
-    for i = 0 to worker_count - 1 do
-      let pid = Unix.fork () in
-      if pid = 0 then begin
-        start_worker ();
-        exit 0
-      end else
-        child_pids.(i) <- pid
-    done;
-    (* Parent: forward signals and wait *)
-    let kill_children _ =
-      Array.iter (fun pid ->
-        (try Unix.kill pid Sys.sigterm with _ -> ())
-      ) child_pids;
-      exit 0
-    in
-    Sys.set_signal Sys.sigint (Sys.Signal_handle kill_children);
-    Sys.set_signal Sys.sigterm (Sys.Signal_handle kill_children);
-    (try while true do ignore (Unix.wait ()) done with _ -> ())
-  end else
-    start_worker ()
+  start_worker ()
