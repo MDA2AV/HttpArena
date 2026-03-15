@@ -1,0 +1,20 @@
+{
+  "display_name": "handy-httpd",
+  "language": "D",
+  "type": "framework",
+  "engine": "handy-httpd",
+  "description": "Extremely lightweight HTTP server for the D programming language. Solo-dev passion project with routing, WebSocket support, and clean API.",
+  "repo": "https://github.com/andrewlalis/handy-httpd",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "noisy",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed",
+    "static-h2"
+  ]
+}
