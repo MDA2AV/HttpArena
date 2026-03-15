@@ -13,7 +13,7 @@ RUN git clone --depth 1 --branch v2.3.3 https://github.com/babelouest/orcania.gi
     cmake --build build -j$(nproc) && cmake --install build
 
 RUN git clone --depth 1 --branch v1.4.20 https://github.com/babelouest/yder.git && \
-    cd yder && cmake -B build -DCMAKE_BUILD_TYPE=Release -S . && \
+    cd yder && cmake -B build -DCMAKE_BUILD_TYPE=Release -DWITH_JOURNALD=OFF -S . && \
     cmake --build build -j$(nproc) && cmake --install build
 
 RUN git clone --depth 1 --branch v2.7.15 https://github.com/babelouest/ulfius.git && \
