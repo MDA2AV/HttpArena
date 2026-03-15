@@ -1,0 +1,14 @@
+name = "httparena_gleam_mist"
+version = "1.0.0"
+target = "erlang"
+
+[dependencies]
+gleam_stdlib = ">= 0.70.0 and < 1.0.0"
+gleam_http = ">= 4.3.0 and < 5.0.0"
+gleam_json = ">= 3.1.0 and < 4.0.0"
+gleam_erlang = ">= 1.0.0 and < 2.0.0"
+mist = ">= 6.0.0 and < 7.0.0"
+sqlight = ">= 1.0.3 and < 2.0.0"
+simplifile = ">= 2.0.0 and < 3.0.0"
+envoy = ">= 1.0.0 and < 2.0.0"
+logging = ">= 1.2.0 and < 2.0.0"

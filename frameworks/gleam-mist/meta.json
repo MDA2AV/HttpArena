@@ -1,0 +1,19 @@
+{
+  "display_name": "gleam-mist",
+  "language": "Gleam",
+  "type": "framework",
+  "engine": "BEAM (Erlang VM)",
+  "description": "Mist HTTP server for Gleam on the BEAM VM — first Gleam and first BEAM entry in HttpArena.",
+  "repo": "https://github.com/rawhat/mist",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "noisy",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed"
+  ]
+}
