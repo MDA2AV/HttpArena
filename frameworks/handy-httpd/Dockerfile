@@ -2,7 +2,7 @@ FROM ubuntu:24.04 AS build
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl gcc xz-utils ca-certificates \
+        curl gcc xz-utils ca-certificates pkg-config \
         libsqlite3-dev zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 

@@ -216,11 +216,11 @@ void dbHandler(ref HttpRequestContext ctx) {
 
     auto minStr = ctx.request.queryParams.getFirst("min");
     if (!minStr.isNull) {
-        try { minPrice = minStr.get.to!double; } catch (Exception e) {}
+        try { minPrice = minStr.value.to!double; } catch (Exception e) {}
     }
     auto maxStr = ctx.request.queryParams.getFirst("max");
     if (!maxStr.isNull) {
-        try { maxPrice = maxStr.get.to!double; } catch (Exception e) {}
+        try { maxPrice = maxStr.value.to!double; } catch (Exception e) {}
     }
 
     try {
