@@ -1,3 +1,4 @@
 (executable
  (name server)
- (libraries dream yojson sqlite3))
+ (libraries dream yojson sqlite3)
+ (preprocess (pps lwt_ppx)))
