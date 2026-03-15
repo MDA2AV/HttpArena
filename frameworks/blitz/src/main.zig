@@ -15,6 +15,7 @@ const METHOD_NOT_ALLOWED_RESP = "HTTP/1.1 405 Method Not Allowed\r\n" ++ SERVER_
 const PORT: u16 = 8080;
 const MAX_EVENTS: usize = 512;
 const BUF_SIZE: usize = 65536;
+const MAX_REQUEST_SIZE: usize = 4 * 1024 * 1024; // 4MB max request
 const MAX_CONNS: usize = 65536;
 
 // Linux socket constants
@@ -88,13 +89,73 @@ fn writeUsize(buf: []u8, val: usize) []const u8 {
 const ConnState = struct {
     read_buf: [BUF_SIZE]u8 = undefined,
     read_len: usize = 0,
+    // Dynamic overflow buffer for large requests (e.g. uploads)
+    overflow_buf: ?[]u8 = null,
+    overflow_len: usize = 0,
+    overflow_alloc: std.mem.Allocator = std.heap.c_allocator,
     write_list: std.ArrayList(u8),
     write_off: usize = 0,
 
     fn init(alloc: std.mem.Allocator) ConnState {
-        return .{ .write_list = std.ArrayList(u8).init(alloc) };
+        return .{ .write_list = std.ArrayList(u8).init(alloc), .overflow_alloc = alloc };
     }
-    fn deinit(self: *ConnState) void { self.write_list.deinit(); }
+    fn deinit(self: *ConnState) void {
+        if (self.overflow_buf) |buf| self.overflow_alloc.free(buf);
+        self.write_list.deinit();
+    }
+
+    /// Get readable data slice (either from fixed buf or overflow)
+    fn readableData(self: *ConnState) []const u8 {
+        if (self.overflow_buf) |buf| return buf[0..self.overflow_len];
+        return self.read_buf[0..self.read_len];
+    }
+
+    /// Total data length
+    fn dataLen(self: *ConnState) usize {
+        if (self.overflow_buf != null) return self.overflow_len;
+        return self.read_len;
+    }
+
+    /// Promote fixed buf data to overflow if we need more room
+    fn ensureOverflow(self: *ConnState, needed: usize) !void {
+        if (self.overflow_buf == null) {
+            const cap = @max(needed, BUF_SIZE * 2);
+            if (cap > MAX_REQUEST_SIZE) return error.RequestTooLarge;
+            const buf = try self.overflow_alloc.alloc(u8, cap);
+            @memcpy(buf[0..self.read_len], self.read_buf[0..self.read_len]);
+            self.overflow_buf = buf;
+            self.overflow_len = self.read_len;
+            self.read_len = 0;
+        } else if (self.overflow_len + needed > self.overflow_buf.?.len) {
+            const new_cap = @max(self.overflow_len + needed, self.overflow_buf.?.len * 2);
+            if (new_cap > MAX_REQUEST_SIZE) return error.RequestTooLarge;
+            const new_buf = try self.overflow_alloc.alloc(u8, new_cap);
+            @memcpy(new_buf[0..self.overflow_len], self.overflow_buf.?[0..self.overflow_len]);
+            self.overflow_alloc.free(self.overflow_buf.?);
+            self.overflow_buf = new_buf;
+        }
+    }
+
+    /// Consume processed bytes, shift remainder
+    fn consume(self: *ConnState, off: usize) void {
+        if (self.overflow_buf) |buf| {
+            const rem = self.overflow_len - off;
+            if (rem > 0) std.mem.copyForwards(u8, buf[0..rem], buf[off..self.overflow_len]);
+            self.overflow_len = rem;
+            // If we're back to small data, drop overflow
+            if (rem <= BUF_SIZE) {
+                @memcpy(self.read_buf[0..rem], buf[0..rem]);
+                self.read_len = rem;
+                self.overflow_alloc.free(buf);
+                self.overflow_buf = null;
+                self.overflow_len = 0;
+            }
+        } else {
+            const rem = self.read_len - off;
+            if (rem > 0) std.mem.copyForwards(u8, self.read_buf[0..rem], self.read_buf[off..self.read_len]);
+            self.read_len = rem;
+        }
+    }
 };
 
 // ── HTTP parsing ────────────────────────────────────────────────────
@@ -358,23 +419,49 @@ fn workerLoop(_: usize) void {
             if (ev.events & linux.EPOLL.IN != 0) {
                 var should_close = false;
                 // Read as much as possible (edge-triggered)
-                while (st.read_len < BUF_SIZE) {
-                    const n_read = posix.read(fd, st.read_buf[st.read_len..]) catch { should_close = true; break; };
-                    if (n_read == 0) { should_close = true; break; }
-                    st.read_len += n_read;
+                if (st.overflow_buf != null) {
+                    // Reading into overflow buffer
+                    while (true) {
+                        st.ensureOverflow(BUF_SIZE) catch { should_close = true; break; };
+                        const buf = st.overflow_buf.?;
+                        const n_read = posix.read(fd, buf[st.overflow_len..]) catch { should_close = true; break; };
+                        if (n_read == 0) { should_close = true; break; }
+                        st.overflow_len += n_read;
+                    }
+                } else {
+                    while (st.read_len < BUF_SIZE) {
+                        const n_read = posix.read(fd, st.read_buf[st.read_len..]) catch { should_close = true; break; };
+                        if (n_read == 0) { should_close = true; break; }
+                        st.read_len += n_read;
+                    }
+                    // If fixed buffer is full but request incomplete, promote to overflow
+                    if (st.read_len >= BUF_SIZE) {
+                        if (parseRequest(st.read_buf[0..st.read_len]) == null) {
+                            st.ensureOverflow(BUF_SIZE) catch { should_close = true; };
+                            // Continue reading into overflow
+                            if (!should_close) {
+                                while (true) {
+                                    st.ensureOverflow(BUF_SIZE) catch { should_close = true; break; };
+                                    const buf = st.overflow_buf.?;
+                                    const n_read = posix.read(fd, buf[st.overflow_len..]) catch { should_close = true; break; };
+                                    if (n_read == 0) { should_close = true; break; }
+                                    st.overflow_len += n_read;
+                                }
+                            }
+                        }
+                    }
                 }
 
                 // Parse & handle pipelined requests
+                const data = st.readableData();
                 var off: usize = 0;
-                while (off < st.read_len) {
-                    const req = parseRequest(st.read_buf[off..st.read_len]) orelse break;
+                while (off < data.len) {
+                    const req = parseRequest(data[off..]) orelse break;
                     handleRequest(&req, &st.write_list);
                     off += req.total_len;
                 }
                 if (off > 0) {
-                    const rem = st.read_len - off;
-                    if (rem > 0) std.mem.copyForwards(u8, st.read_buf[0..rem], st.read_buf[off..st.read_len]);
-                    st.read_len = rem;
+                    st.consume(off);
                 }
 
                 // Flush writes
