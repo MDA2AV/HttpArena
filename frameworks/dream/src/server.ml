@@ -162,7 +162,7 @@ let query_db db min_price max_price =
     let quantity = (match row.(4) with Sqlite3.Data.INT i -> Int64.to_int i | _ -> 0) in
     let active = (match row.(5) with Sqlite3.Data.INT i -> i = 1L | _ -> false) in
     let tags_str = (match row.(6) with Sqlite3.Data.TEXT s -> s | _ -> "[]") in
-    let tags = try
+    let _tags = try
       Yojson.Basic.from_string tags_str |> Yojson.Basic.Util.to_list |> List.map Yojson.Basic.Util.to_string
     with _ -> [] in
     let rating_score = (match row.(7) with Sqlite3.Data.FLOAT f -> f | _ -> 0.0) in
@@ -182,6 +182,22 @@ let query_db db min_price max_price =
   let items = List.rev !items in
   Yojson.Basic.to_string (`Assoc ["items", `List items; "count", `Int (List.length items)])
 
+(* --- Gzip compression --- *)
+
+let gzip_compress data =
+  (* Use a temp file since Gzip module requires file channels *)
+  let tmp = Filename.temp_file "gzip" ".gz" in
+  let oc = Gzip.open_out ~level:6 tmp in
+  Gzip.output_substring oc data 0 (String.length data);
+  Gzip.close_out oc;
+  let ic = open_in_bin tmp in
+  let len = in_channel_length ic in
+  let buf = Bytes.create len in
+  really_input ic buf 0 len;
+  close_in ic;
+  Unix.unlink tmp;
+  Bytes.to_string buf
+
 (* --- Main --- *)
 
 let () =
@@ -189,6 +205,7 @@ let () =
   let dataset = load_dataset dataset_path in
   let large_dataset = load_dataset "/data/dataset-large.json" in
   let json_large_cache = build_json_response large_dataset in
+  let json_large_gzipped = gzip_compress json_large_cache in
   let static_files = load_static_files () in
   let db = open_db () in
 
@@ -240,11 +257,25 @@ let () =
           ~headers:["Content-Type", "application/json"]
           body);
 
-    (* /compression — return large JSON (let middleware compress) *)
-    Dream.get "/compression" (fun _request ->
-      Dream.respond
-        ~headers:["Content-Type", "application/json"]
-        json_large_cache);
+    (* /compression — return large JSON with gzip compression *)
+    Dream.get "/compression" (fun request ->
+      let accept = match Dream.header request "Accept-Encoding" with Some v -> v | None -> "" in
+      let has_gzip =
+        let len = String.length accept in
+        let rec check i =
+          if i + 3 >= len then false
+          else if accept.[i] = 'g' && accept.[i+1] = 'z' && accept.[i+2] = 'i' && accept.[i+3] = 'p' then true
+          else check (i + 1)
+        in check 0
+      in
+      if has_gzip then
+        Dream.respond
+          ~headers:["Content-Type", "application/json"; "Content-Encoding", "gzip"]
+          json_large_gzipped
+      else
+        Dream.respond
+          ~headers:["Content-Type", "application/json"]
+          json_large_cache);
 
     (* /db — query SQLite *)
     Dream.get "/db" (fun request ->
