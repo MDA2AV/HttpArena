@@ -149,10 +149,13 @@ void baseline11Handler(ref HttpRequestContext ctx) {
         } catch (Exception e) {}
     }
 
-    // If POST, read body — handy-httpd v8 decodes chunked TE internally
+    // If POST, read body — handy-httpd v8 decodes chunked TE internally.
+    // Must pass allowInfiniteRead=true because chunked requests have no
+    // Content-Length header, and readBody() refuses to read without one
+    // unless allowInfiniteRead is set.
     if (ctx.request.method == Method.POST) {
         try {
-            string bodyStr = ctx.request.readBodyAsString().strip();
+            string bodyStr = ctx.request.readBodyAsString(true).strip();
             if (bodyStr.length > 0)
                 sum += bodyStr.to!long;
         } catch (Exception e) {}
@@ -202,8 +205,9 @@ void compressionHandler(ref HttpRequestContext ctx) {
 }
 
 void uploadHandler(ref HttpRequestContext ctx) {
-    // handy-httpd v8 decodes chunked TE internally
-    ubyte[] body = ctx.request.readBodyAsBytes();
+    // handy-httpd v8 decodes chunked TE internally.
+    // allowInfiniteRead=true needed for chunked TE (no Content-Length).
+    ubyte[] body = ctx.request.readBodyAsBytes(true);
     ctx.response.addHeader("Server", SERVER_NAME);
     ctx.response.writeBodyString(body.length.to!string, "text/plain");
 }
