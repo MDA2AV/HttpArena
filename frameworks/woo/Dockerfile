@@ -10,7 +10,10 @@ RUN curl -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
     && sbcl --non-interactive \
        --load /tmp/quicklisp.lisp \
        --eval '(quicklisp-quickstart:install)' \
-       --eval '(ql:add-to-init-file)'
+    && echo ';;; Load Quicklisp on startup' >> /root/.sbclrc \
+    && echo '#-quicklisp' >> /root/.sbclrc \
+    && echo '(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))' >> /root/.sbclrc \
+    && echo '  (when (probe-file quicklisp-init) (load quicklisp-init)))' >> /root/.sbclrc
 
 # Pre-fetch dependencies so layer is cached
 RUN sbcl --non-interactive \
