@@ -329,5 +329,6 @@
     (format t "[woo] Starting on :8080 with ~A workers~%" workers) (force-output)
     (woo:run #'route-request
              :port 8080
+             :address "0.0.0.0"
              :worker-num workers
              :debug nil)))
