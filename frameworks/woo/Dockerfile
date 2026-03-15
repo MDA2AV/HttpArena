@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS build
+FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sbcl curl ca-certificates build-essential \
@@ -24,11 +24,9 @@ COPY src/ /app/src/
 # Build standalone binary
 RUN sbcl --non-interactive --load /app/src/build.lisp
 
-# ------- runtime image -------
-FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libev4 libsqlite3-0 zlib1g \
-    && rm -rf /var/lib/apt/lists/*
-COPY --from=build /app/woo-server /woo-server
+# Clean up build tools but keep runtime libs
+RUN apt-get purge -y build-essential curl ca-certificates && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /root/quicklisp
+
 EXPOSE 8080
-CMD ["/woo-server"]
+CMD ["/app/woo-server"]
