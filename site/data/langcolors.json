@@ -10,5 +10,8 @@
   "C++":        { "accent": "#db2777", "text": "#be185d", "textDark": "#f472b6", "rgb": "219,39,119" },
   "PHP":        { "accent": "#7b7fb5", "text": "#4f5b93", "textDark": "#a0a4d9", "rgb": "123,127,181" },
   "Lua":        { "accent": "#000080", "text": "#00006a", "textDark": "#6e6eff", "rgb": "0,0,128" },
-  "Ruby":       { "accent": "#cc342d", "text": "#a82723", "textDark": "#f06b5e", "rgb": "204,52,45" }
+  "Ruby":       { "accent": "#cc342d", "text": "#a82723", "textDark": "#f06b5e", "rgb": "204,52,45" },
+  "Crystal":    { "accent": "#000100", "text": "#000100", "textDark": "#a8a8a8", "rgb": "0,1,0" },
+  "Nim":        { "accent": "#ffc200", "text": "#d4a200", "textDark": "#ffe066", "rgb": "255,194,0" },
+  "Gleam":      { "accent": "#ffaff3", "text": "#d946b8", "textDark": "#ffaff3", "rgb": "255,175,243" }
 }

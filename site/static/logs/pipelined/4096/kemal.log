@@ -1,128 +1,179 @@
-2026-03-16T15:01:42.924867Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.926175Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.927408Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.929979Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.930889Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.931505Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.932501Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.933242Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.933370Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.933565Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.933899Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.934243Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.935838Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.935895Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.936246Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.936452Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.936967Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.936986Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.937045Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.937139Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.937215Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.938005Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.938218Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.938813Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.939278Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.940036Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.940313Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.940537Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.940640Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.940755Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.940875Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.941283Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.941521Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.941613Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.942168Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.942644Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.942735Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.942970Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.942966Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.943008Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.943412Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.943469Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.943757Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.944051Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.944245Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.944254Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.945345Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.945540Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.945713Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.945948Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.945957Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.946068Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.946806Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.946999Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.947243Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.947256Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.947353Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.947915Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948103Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948251Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948294Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948524Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948521Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948562Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.948968Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.949314Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.949367Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.949541Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.949759Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.950150Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.950275Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.950439Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.950720Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951028Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951269Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951291Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951332Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951459Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951602Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.951856Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.952121Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.952233Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.952445Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.952751Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.952898Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.952998Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953071Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953092Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953101Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953161Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953211Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953809Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.953944Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954289Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954310Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954357Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954369Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954398Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954551Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954553Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.954655Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955004Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955112Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955116Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955234Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955202Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955390Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955319Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955550Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955753Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955771Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955788Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.955887Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.956052Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.956322Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.956519Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.956898Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.956935Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.957431Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.957895Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.957947Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.958166Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.958405Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.959550Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.960067Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.960756Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.961414Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
-2026-03-16T15:01:42.962699Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.480399Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.484270Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.484678Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.485999Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.486317Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.486646Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.487247Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.487292Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.487781Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.488525Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.488719Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.489159Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.489253Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.489543Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.490186Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.491205Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.491321Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.491415Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.491443Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.492965Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.493048Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.493367Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.493422Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.493524Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.494128Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.494186Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.494240Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.494934Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.495063Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.495352Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.495495Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.495579Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.495663Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.496049Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.496780Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.497197Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.497340Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.497397Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.497471Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.497538Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.497926Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.498043Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.498579Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.498785Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.499014Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.499262Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.499929Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.499941Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.500054Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.500073Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.500429Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.500554Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.501370Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.501412Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.501532Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.501836Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.501897Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.501904Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502114Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502198Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502203Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502244Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502476Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502786Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.502933Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503075Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503253Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503581Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503582Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503628Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503737Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503722Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503887Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.503916Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.504221Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.504227Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.504393Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.504736Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.505402Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.505530Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.505730Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.505751Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506022Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506464Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506470Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506520Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506780Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506790Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506868Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.506955Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507075Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507319Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507513Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507554Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507659Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507842Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507842Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.507853Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508022Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508148Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508207Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508273Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508309Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508386Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508440Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508655Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508799Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.508926Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.509196Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.509247Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.509322Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.509413Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.509744Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.510298Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.510489Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.510707Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.510967Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.511347Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.511833Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.512669Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.512692Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.512719Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.513064Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.513626Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.514089Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.514235Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.514654Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+2026-03-16T16:18:27.515263Z   INFO - kemal: [production] Kemal is ready to lead at http://0.0.0.0:8080
+Unhandled exception in spawn: Error while flushing data to the client (HTTP::Server::ClientError)
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from ???
+Caused by: Error writing to socket (#<TCPSocket:0x74ff5c805980>): Connection reset by peer (IO::Error)
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from ???
+Unhandled exception in spawn: Error while flushing data to the client (HTTP::Server::ClientError)
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from ???
+Caused by: Error writing to socket (#<TCPSocket:0x78b7d363e720>): Connection reset by peer (IO::Error)
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from ???
+Unhandled exception in spawn: Error while flushing data to the client (HTTP::Server::ClientError)
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from ???
+Caused by: Error writing to socket (#<TCPSocket:0x7e9fbc9a1720>): Connection reset by peer (IO::Error)
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from /app/server in '??'
+  from ???

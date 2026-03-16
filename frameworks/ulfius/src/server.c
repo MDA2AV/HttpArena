@@ -232,11 +232,18 @@ int cb_compression(const struct _u_request *request, struct _u_response *respons
         ulfius_set_string_body_response(response, 500, "No dataset");
         return U_CALLBACK_CONTINUE;
     }
-    /* Serve gzip if client accepts it and we have a pre-compressed version */
-    const char *accept_enc = u_map_get(request->map_header, "Accept-Encoding");
-    if (json_large_gzipped && accept_enc && strstr(accept_enc, "gzip")) {
-        ulfius_set_binary_body_response(response, 200, (const char *)json_large_gzipped, json_large_gzip_len);
-        u_map_put(response->map_header, "Content-Encoding", "gzip");
+    /* Compress per-request to measure actual compression overhead */
+    const char *accept_enc = u_map_get_case(request->map_header, "Accept-Encoding");
+    if (accept_enc && strstr(accept_enc, "gzip")) {
+        size_t gz_len;
+        unsigned char *gz = gzip_compress(json_large_response, json_large_len, &gz_len);
+        if (gz) {
+            ulfius_set_binary_body_response(response, 200, (const char *)gz, gz_len);
+            u_map_put(response->map_header, "Content-Encoding", "gzip");
+            free(gz);
+        } else {
+            ulfius_set_binary_body_response(response, 200, json_large_response, json_large_len);
+        }
     } else {
         ulfius_set_binary_body_response(response, 200, json_large_response, json_large_len);
     }

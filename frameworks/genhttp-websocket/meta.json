@@ -1,0 +1,12 @@
+{
+  "display_name": "GenHTTP-WS",
+  "language": "C#",
+  "type": "framework",
+  "engine": "GenHTTP",
+  "description": "GenHTTP WebSocket echo server using the functional API with zero-allocation frame handling.",
+  "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+  "enabled": true,
+  "tests": [
+    "echo-ws"
+  ]
+}
