@@ -220,6 +220,8 @@ pub const Response = struct {
     body: ?[]const u8 = null,
     // For pre-computed raw responses (bypass serialization)
     raw: ?[]const u8 = null,
+    // Signal that the handler performed a WebSocket upgrade
+    ws_upgraded: bool = false,
     // Scratch buffer for small response bodies — avoids dangling pointers
     // when handlers use stack-allocated buffers for writeI64/writeUsize
     scratch: [128]u8 = undefined,

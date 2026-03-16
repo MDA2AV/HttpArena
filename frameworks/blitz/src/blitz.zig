@@ -127,6 +127,7 @@ pub const logNow = log_mod.now;
 pub const logMsg = log_mod.log;
 
 // WebSocket
+pub const websocket = websocket_mod;
 pub const WebSocket = websocket_mod;
 pub const WsOpcode = websocket_mod.Opcode;
 pub const WsCloseCode = websocket_mod.CloseCode;

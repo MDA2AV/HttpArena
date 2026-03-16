@@ -26,6 +26,8 @@ pub const ConnState = struct {
     dyn_buf: ?[]u8 = null,
     dyn_len: usize = 0,
     dyn_alloc: ?std.mem.Allocator = null,
+    // WebSocket mode — after upgrade, bypass HTTP parsing
+    ws_mode: bool = false,
     // Body discard mode — count body bytes without buffering
     discard_remaining: usize = 0,
     discard_req: ?parser.HeaderResult = null,
@@ -103,6 +105,7 @@ pub const ConnState = struct {
         self.write_off = 0;
         self.fd = -1;
         self.last_active = 0;
+        self.ws_mode = false;
         self.discard_remaining = 0;
         self.discard_req = null;
     }

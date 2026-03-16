@@ -1,9 +1,9 @@
 {
   "display_name": "blitz",
   "language": "Zig",
-  "type": "framework",
+  "type": "engine",
   "engine": "epoll",
-  "description": "Zig micro web framework — epoll event loop with pipeline batching, zero-copy parsing, radix-trie router, body discard for uploads, pre-compressed gzip responses, graceful shutdown. Also supports io_uring backend (multishot accept, kernel buffer ring, send_zc) via BLITZ_URING=1. Zero allocations in the hot path.",
+  "description": "Custom Zig HTTP server built on epoll with SO_REUSEPORT multi-threading. Zero allocations in the hot path, pre-computed responses, pipeline batching.",
   "repo": "https://github.com/BennyFranciscus/blitz",
   "enabled": true,
   "tests": [
@@ -13,6 +13,6 @@
     "limited-conn",
     "json",
     "upload",
-    "compression"
+    "echo-ws"
   ]
 }

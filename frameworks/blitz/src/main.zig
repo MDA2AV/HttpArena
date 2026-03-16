@@ -4,7 +4,6 @@ const blitz = @import("blitz.zig");
 
 // ── Global pre-computed responses ───────────────────────────────────
 var dataset_json_resp: []const u8 = "";
-var dataset_comp_resp: []const u8 = "";
 var dataset_gzip_resp: []const u8 = "";
 
 const StaticFile = struct {
@@ -52,8 +51,8 @@ fn handleCompression(req: *blitz.Request, res: *blitz.Response) void {
             return;
         }
     }
-    // Fallback: uncompressed large JSON
-    _ = res.rawResponse(dataset_comp_resp);
+    // Fallback: uncompressed JSON
+    _ = res.rawResponse(dataset_json_resp);
 }
 
 fn handleUpload(req: *blitz.Request, res: *blitz.Response) void {
@@ -67,6 +66,17 @@ fn handleUpload(req: *blitz.Request, res: *blitz.Response) void {
     } else {
         _ = res.text("0");
     }
+}
+
+fn handleWsUpgrade(req: *blitz.Request, res: *blitz.Response) void {
+    if (!blitz.websocket.isUpgradeRequest(req)) {
+        // Non-WebSocket request (e.g. health check curl) — return 200
+        _ = res.text("WebSocket endpoint");
+        return;
+    }
+    // Signal the server to handle the WebSocket upgrade
+    // The server will build the 101 response using the request headers
+    res.ws_upgraded = true;
 }
 
 fn handleStatic(req: *blitz.Request, res: *blitz.Response) void {
@@ -98,7 +108,7 @@ fn parseQuerySum(query: []const u8) i64 {
 
 // ── Dataset loading ─────────────────────────────────────────────────
 
-fn buildJsonBody(path: []const u8) []const u8 {
+fn loadDataset(path: []const u8) []const u8 {
     const alloc = std.heap.c_allocator;
     const file = std.fs.openFileAbsolute(path, .{}) catch return "";
     defer file.close();
@@ -108,6 +118,7 @@ fn buildJsonBody(path: []const u8) []const u8 {
     const parsed = std.json.parseFromSlice(std.json.Value, alloc, raw, .{}) catch return "";
     const items = parsed.value.array.items;
 
+    var out = std.ArrayList(u8).init(alloc);
     var json_buf = std.ArrayList(u8).init(alloc);
     json_buf.appendSlice("{\"items\":[") catch return "";
 
@@ -151,64 +162,49 @@ fn buildJsonBody(path: []const u8) []const u8 {
     json_buf.appendSlice(blitz.writeUsize(&count_buf, items.len)) catch {};
     json_buf.append('}') catch {};
 
-    return json_buf.toOwnedSlice() catch "";
-}
-
-fn wrapHttpJson(json_body: []const u8) []const u8 {
-    const alloc = std.heap.c_allocator;
-    var out = std.ArrayList(u8).init(alloc);
     var cl_buf: [32]u8 = undefined;
     out.appendSlice("HTTP/1.1 200 OK\r\nServer: blitz\r\nContent-Type: application/json\r\nContent-Length: ") catch return "";
-    out.appendSlice(blitz.writeUsize(&cl_buf, json_body.len)) catch return "";
+    out.appendSlice(blitz.writeUsize(&cl_buf, json_buf.items.len)) catch return "";
     out.appendSlice("\r\n\r\n") catch return "";
-    out.appendSlice(json_body) catch return "";
-    return out.toOwnedSlice() catch "";
-}
+    out.appendSlice(json_buf.items) catch return "";
 
-fn buildGzipResponse(json_body: []const u8) []const u8 {
-    const alloc = std.heap.c_allocator;
-    // Allocate enough for gzip output (compressed may be larger than input for tiny data)
-    const buf_size = if (json_body.len < 1024) 4096 else json_body.len;
-    const gzip_buf = alloc.alloc(u8, buf_size) catch return "";
+    // Build gzip pre-compressed response
+    const json_body = json_buf.items;
+    const gzip_buf = alloc.alloc(u8, json_body.len) catch {
+        json_buf.deinit();
+        return out.toOwnedSlice() catch "";
+    };
     var fbs = std.io.fixedBufferStream(gzip_buf);
-    var compressor = std.compress.gzip.compressor(fbs.writer(), .{ .level = .fast }) catch {
+    var compressor = std.compress.gzip.compressor(fbs.writer(), .{}) catch {
         alloc.free(gzip_buf);
-        return "";
+        json_buf.deinit();
+        return out.toOwnedSlice() catch "";
     };
     _ = compressor.write(json_body) catch {
         alloc.free(gzip_buf);
-        return "";
+        json_buf.deinit();
+        return out.toOwnedSlice() catch "";
     };
     compressor.finish() catch {
         alloc.free(gzip_buf);
-        return "";
+        json_buf.deinit();
+        return out.toOwnedSlice() catch "";
     };
     const gzip_data = fbs.getWritten();
 
     if (gzip_data.len > 0) {
         var gzip_out = std.ArrayList(u8).init(alloc);
         var gcl_buf: [32]u8 = undefined;
-        gzip_out.appendSlice("HTTP/1.1 200 OK\r\nServer: blitz\r\nContent-Type: application/json\r\nContent-Encoding: gzip\r\nVary: Accept-Encoding\r\nContent-Length: ") catch {
-            alloc.free(gzip_buf);
-            return "";
-        };
-        gzip_out.appendSlice(blitz.writeUsize(&gcl_buf, gzip_data.len)) catch {
-            alloc.free(gzip_buf);
-            return "";
-        };
-        gzip_out.appendSlice("\r\n\r\n") catch {
-            alloc.free(gzip_buf);
-            return "";
-        };
-        gzip_out.appendSlice(gzip_data) catch {
-            alloc.free(gzip_buf);
-            return "";
-        };
-        alloc.free(gzip_buf);
-        return gzip_out.toOwnedSlice() catch "";
+        gzip_out.appendSlice("HTTP/1.1 200 OK\r\nServer: blitz\r\nContent-Type: application/json\r\nContent-Encoding: gzip\r\nVary: Accept-Encoding\r\nContent-Length: ") catch {};
+        gzip_out.appendSlice(blitz.writeUsize(&gcl_buf, gzip_data.len)) catch {};
+        gzip_out.appendSlice("\r\n\r\n") catch {};
+        gzip_out.appendSlice(gzip_data) catch {};
+        dataset_gzip_resp = gzip_out.toOwnedSlice() catch "";
     }
     alloc.free(gzip_buf);
-    return "";
+
+    json_buf.deinit();
+    return out.toOwnedSlice() catch "";
 }
 
 fn writeJsonValue(out: *std.ArrayList(u8), val: std.json.Value) void {
@@ -326,14 +322,8 @@ fn getContentType(name: []const u8) []const u8 {
 // ── Main ────────────────────────────────────────────────────────────
 
 pub fn main() !void {
-    // Load data — small dataset for /json, large dataset for /compression
-    const json_body = buildJsonBody("/data/dataset.json");
-    dataset_json_resp = wrapHttpJson(json_body);
-
-    const comp_body = buildJsonBody("/data/dataset-large.json");
-    dataset_comp_resp = wrapHttpJson(comp_body);
-    dataset_gzip_resp = buildGzipResponse(comp_body);
-
+    // Load data
+    dataset_json_resp = loadDataset("/data/dataset.json");
     loadStaticFiles();
 
     // Set up router
@@ -348,6 +338,7 @@ pub fn main() !void {
     router.get("/json", handleJson);
     router.get("/compression", handleCompression);
     router.post("/upload", handleUpload);
+    router.get("/ws", handleWsUpgrade);
     router.get("/static/*filepath", handleStatic);
 
     // Check if io_uring backend is requested

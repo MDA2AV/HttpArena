@@ -9,7 +9,7 @@ const Request = types.Request;
 const Response = types.Response;
 
 // ── WebSocket Constants ─────────────────────────────────────────────
-const WS_MAGIC = "258EAFA5-E914-47DA-95CA-5AB5DC525D65";
+const WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 // Opcodes (RFC 6455 §5.2)
 pub const Opcode = enum(u4) {
@@ -157,11 +157,11 @@ pub fn buildCloseFrame(buf: []u8, code: CloseCode, reason: []const u8) ?[]const 
 
 /// Check if a request is a WebSocket upgrade request.
 pub fn isUpgradeRequest(req: *const Request) bool {
-    const upgrade = req.header("Upgrade") orelse return false;
+    const upgrade = req.headers.get("Upgrade") orelse return false;
     if (!containsIgnoreCase(upgrade, "websocket")) return false;
-    const conn = req.header("Connection") orelse return false;
+    const conn = req.headers.get("Connection") orelse return false;
     if (!containsIgnoreCase(conn, "upgrade")) return false;
-    const key = req.header("Sec-WebSocket-Key") orelse return false;
+    const key = req.headers.get("Sec-WebSocket-Key") orelse return false;
     if (key.len == 0) return false;
     return true;
 }

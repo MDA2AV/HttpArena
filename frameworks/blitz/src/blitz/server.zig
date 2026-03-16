@@ -14,6 +14,7 @@ const compress_mod = @import("compress.zig");
 const log_mod = @import("log.zig");
 const Request = types.Request;
 const Response = types.Response;
+const websocket = @import("websocket.zig");
 
 // ── Constants ───────────────────────────────────────────────────────
 const MAX_EVENTS: usize = 512;
@@ -287,6 +288,71 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
             if (ev.events & linux.EPOLL.IN != 0) {
                 var should_close = false;
 
+                // WebSocket mode — echo frames instead of HTTP parsing
+                if (st.ws_mode) {
+                    // Read data into the static read buffer
+                    while (true) {
+                        const ws_rem = if (st.read_len >= BUF_SIZE) null else st.read_buf[st.read_len..];
+                        const ws_buf_slice = ws_rem orelse break;
+                        if (ws_buf_slice.len == 0) break;
+                        const ws_n = posix.read(fd, ws_buf_slice) catch |err| {
+                            if (err == error.WouldBlock) break;
+                            should_close = true;
+                            break;
+                        };
+                        if (ws_n == 0) {
+                            should_close = true;
+                            break;
+                        }
+                        st.read_len += ws_n;
+                    }
+
+                    // Parse and echo WebSocket frames
+                    var ws_off: usize = 0;
+                    while (ws_off < st.read_len) {
+                        const parse_result = websocket.parseFrame(st.read_buf[ws_off..st.read_len]) orelse break;
+                        const frame = parse_result.frame;
+                        switch (frame.opcode) {
+                            .text, .binary => {
+                                // Echo: build unmasked frame and append to write list
+                                var ws_frame_buf: [65536 + 14]u8 = undefined;
+                                if (websocket.buildFrame(&ws_frame_buf, frame.opcode, frame.payload, frame.fin)) |echo_frame| {
+                                    st.write_list.appendSlice(echo_frame) catch {};
+                                }
+                            },
+                            .ping => {
+                                // Respond with pong
+                                var pong_buf: [131]u8 = undefined; // 125 max payload + 6 header
+                                if (websocket.buildFrame(&pong_buf, .pong, frame.payload, true)) |pong_frame| {
+                                    st.write_list.appendSlice(pong_frame) catch {};
+                                }
+                            },
+                            .close => {
+                                // Send close frame back
+                                var close_buf: [131]u8 = undefined;
+                                if (websocket.buildCloseFrame(&close_buf, .normal, "")) |close_frame| {
+                                    st.write_list.appendSlice(close_frame) catch {};
+                                }
+                                should_close = true;
+                            },
+                            else => {},
+                        }
+                        ws_off += parse_result.consumed;
+                    }
+
+                    // Compact the read buffer
+                    if (ws_off > 0) {
+                        const ws_rem2 = st.read_len - ws_off;
+                        if (ws_rem2 > 0) {
+                            std.mem.copyForwards(u8, st.read_buf[0..ws_rem2], st.read_buf[ws_off..st.read_len]);
+                        }
+                        st.read_len = ws_rem2;
+                        st.touch();
+                    }
+
+                    // Fall through to write flush below
+                } else {
+
                 // Labeled drain loop: after dynamic buffer promotion,
                 // we must re-read immediately (edge-triggered epoll won't fire again).
                 drain: while (true) {
@@ -401,6 +467,20 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                             log_mod.logRequest(log_config, &req, &res, req_start);
                         }
 
+                        // Check if handler upgraded to WebSocket
+                        if (res.ws_upgraded) {
+                            // Build the 101 upgrade response directly into the write list
+                            if (req.headers.get("Sec-WebSocket-Key")) |ws_key| {
+                                var upgrade_buf: [256]u8 = undefined;
+                                if (websocket.buildUpgradeResponse(&upgrade_buf, ws_key, null)) |upgrade_resp| {
+                                    st.write_list.appendSlice(upgrade_resp) catch {};
+                                }
+                            }
+                            st.ws_mode = true;
+                            off += result.total_len;
+                            break;
+                        }
+
                         res.writeTo(&st.write_list);
 
                         off += result.total_len;
@@ -425,6 +505,7 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
 
                     break; // Normal exit from drain loop
                 }
+                } // end else (non-WebSocket HTTP path)
 
                 // Flush writes
                 if (st.write_list.items.len > st.write_off) {
