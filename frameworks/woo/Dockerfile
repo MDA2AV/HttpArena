@@ -10,21 +10,26 @@ RUN curl -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
     && sbcl --non-interactive \
        --load /tmp/quicklisp.lisp \
        --eval '(quicklisp-quickstart:install)' \
-    && echo ';;; Load Quicklisp on startup' >> /root/.sbclrc \
-    && echo '#-quicklisp' >> /root/.sbclrc \
-    && echo '(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))' >> /root/.sbclrc \
-    && echo '  (when (probe-file quicklisp-init) (load quicklisp-init)))' >> /root/.sbclrc
+    && rm /tmp/quicklisp.lisp
 
-# Pre-compile all deps into fasls
+# Pre-compile all deps into FASLs
 RUN sbcl --non-interactive \
+    --load '/root/quicklisp/setup.lisp' \
     --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)'
 
 COPY src/ /app/src/
 
+# Build standalone executable using save-lisp-and-die.
+# Key: single-stage build so CFFI dlopen paths match at runtime.
+# No :compression — compressed cores take >30s to decompress on CI.
+# cffi:reload-foreign-libraries re-opens all foreign lib handles on startup.
+RUN sbcl --non-interactive \
+    --load '/root/quicklisp/setup.lisp' \
+    --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)' \
+    --load '/app/src/server.lisp' \
+    --eval '(defun woo-toplevel () (cffi:reload-foreign-libraries) (httparena::main))' \
+    --eval '(sb-ext:save-lisp-and-die "/app/woo-server" :toplevel (function woo-toplevel) :executable t)'
+
 EXPOSE 8080
 
-# Run directly via SBCL — avoids all CFFI core-restore issues with save-lisp-and-die
-CMD ["sbcl", "--non-interactive", \
-     "--eval", "(ql:quickload '(:woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)", \
-     "--load", "/app/src/server.lisp", \
-     "--eval", "(httparena::main)"]
+CMD ["/app/woo-server"]
