@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 AS builder
+FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sbcl curl ca-certificates build-essential \
@@ -22,18 +22,8 @@ RUN sbcl --non-interactive \
 COPY src/ /app/src/
 
 # Build standalone executable via save-lisp-and-die
-# CFFI foreign library handles are re-opened automatically on core restore
-# as long as the .so files exist at the same paths in the runtime image.
+# Single stage so CFFI foreign library paths match exactly at runtime
 RUN sbcl --non-interactive --load /app/src/build.lisp
-
-# --- Runtime stage: minimal image with just the libs + executable ---
-FROM ubuntu:24.04
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libev4t64 libsqlite3-0 zlib1g \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/woo-server /app/woo-server
 
 EXPOSE 8080
 
