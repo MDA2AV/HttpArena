@@ -11,18 +11,20 @@ const parser = @import("parser.zig");
 const Router = @import("router.zig").Router;
 const compress_mod = @import("compress.zig");
 const log_mod = @import("log.zig");
+const SpscQueue = @import("spsc.zig").SpscQueue;
 const Request = types.Request;
 const Response = types.Response;
 
 // ── Constants ───────────────────────────────────────────────────────
 const MAX_CONNS: usize = 65536;
-const RING_ENTRIES: u16 = 4096;
+const ACCEPTOR_RING_ENTRIES: u16 = 4096;
+const REACTOR_RING_ENTRIES: u16 = 8192;
 const CQE_BATCH: usize = 256;
 const RECV_BUF_SIZE: u32 = 4096;
 const RECV_BUF_COUNT: u16 = 4096; // must be power of 2
-const SEND_BUF_SIZE: usize = 16384;
-const BUFFER_GROUP_ID: u16 = 0;
 const COMPRESS_BUF_SIZE: usize = 131072; // 128KB
+const BUFFER_GROUP_ID: u16 = 0;
+const SPSC_CAPACITY: usize = 8192; // power of 2
 
 // Socket constants
 const SOCK_STREAM: u32 = linux.SOCK.STREAM;
@@ -35,19 +37,18 @@ const IPPROTO_TCP: i32 = 6;
 const TCP_NODELAY: u32 = 1;
 const MSG_NOSIGNAL: u32 = 0x4000;
 
-// io_uring setup flags (may not be in Zig 0.14 std)
+// io_uring setup flags
 const IORING_SETUP_SINGLE_ISSUER: u32 = 1 << 12; // 5.18+
 const IORING_SETUP_DEFER_TASKRUN: u32 = 1 << 13; // 6.1+
 
 // CQE flags
 const IORING_CQE_F_MORE: u32 = 1 << 1;
-const IORING_CQE_F_NOTIF: u32 = linux.IORING_CQE_F_NOTIF; // 1 << 3, zero-copy send notification
+const IORING_CQE_F_NOTIF: u32 = linux.IORING_CQE_F_NOTIF;
 
 // Registered file descriptor flag
 const IOSQE_FIXED_FILE: u8 = linux.IOSQE_FIXED_FILE;
 
 // ── User data encoding ─────────────────────────────────────────────
-// Pack operation type (upper 8 bits) + fd (lower 24 bits) into u64
 const Op = enum(u8) {
     accept = 1,
     recv = 2,
@@ -70,30 +71,20 @@ fn unpackFd(ud: u64) i32 {
 
 // ── Connection state ────────────────────────────────────────────────
 const ConnState = struct {
-    // Accumulated partial request data (when a single recv buffer doesn't have a complete request)
     read_buf: [65536]u8 = undefined,
     read_len: usize = 0,
-
-    // Write buffer for responses
     write_buf: std.ArrayList(u8),
-
-    // Send state
     write_off: usize = 0,
     send_inflight: bool = false,
-    zc_notif_pending: bool = false, // true while waiting for send_zc notification CQE
-
-    // Dynamic read buffer for large request bodies (e.g. uploads)
+    zc_notif_pending: bool = false,
     dyn_buf: ?[]u8 = null,
     dyn_len: usize = 0,
     dyn_alloc: ?std.mem.Allocator = null,
 
     fn init(alloc: std.mem.Allocator) ConnState {
-        return .{
-            .write_buf = std.ArrayList(u8).init(alloc),
-        };
+        return .{ .write_buf = std.ArrayList(u8).init(alloc) };
     }
 
-    /// Promote from static buffer to dynamic heap buffer of given size.
     fn promoteToDynamic(self: *ConnState, a: std.mem.Allocator, needed: usize) bool {
         const buf = a.alloc(u8, needed) catch return false;
         if (self.read_len > 0) {
@@ -105,12 +96,9 @@ const ConnState = struct {
         return true;
     }
 
-    /// Free dynamic buffer and revert to static.
     fn revertToStatic(self: *ConnState) void {
         if (self.dyn_buf) |buf| {
-            if (self.dyn_alloc) |a| {
-                a.free(buf);
-            }
+            if (self.dyn_alloc) |a| a.free(buf);
         }
         self.dyn_buf = null;
         self.dyn_len = 0;
@@ -118,13 +106,11 @@ const ConnState = struct {
         self.read_len = 0;
     }
 
-    /// Get the active read slice.
     fn readSlice(self: *ConnState) []const u8 {
         if (self.dyn_buf) |buf| return buf[0..self.dyn_len];
         return self.read_buf[0..self.read_len];
     }
 
-    /// Get remaining writable portion of active buffer.
     fn readBufRemaining(self: *ConnState) ?[]u8 {
         if (self.dyn_buf) |buf| {
             if (self.dyn_len >= buf.len) return null;
@@ -134,7 +120,6 @@ const ConnState = struct {
         return self.read_buf[self.read_len..];
     }
 
-    /// Advance read position after successful read.
     fn advanceRead(self: *ConnState, n: usize) void {
         if (self.dyn_buf != null) {
             self.dyn_len += n;
@@ -143,7 +128,6 @@ const ConnState = struct {
         }
     }
 
-    /// Get active read length.
     fn activeReadLen(self: *ConnState) usize {
         if (self.dyn_buf != null) return self.dyn_len;
         return self.read_len;
@@ -163,14 +147,12 @@ const ConnState = struct {
     }
 };
 
-// ── Connection Pool for io_uring ─────────────────────────────────────
-// Pre-allocated pool of ConnState objects to avoid malloc/free per connection.
-// Uses a stack-based free list for O(1) acquire/release.
+// ── Connection Pool ─────────────────────────────────────────────────
 const URING_POOL_SIZE: usize = 4096;
 
 const UringConnPool = struct {
     slots: []ConnState,
-    free_stack: []u16, // indices into slots
+    free_stack: []u16,
     free_count: usize,
     alloc: std.mem.Allocator,
 
@@ -180,20 +162,13 @@ const UringConnPool = struct {
             alloc.free(slots);
             return null;
         };
-        // Initialize free stack: all slots available (reverse order so 0 is popped first)
         for (0..URING_POOL_SIZE) |i| {
             stack[i] = @intCast(URING_POOL_SIZE - 1 - i);
         }
-        // Initialize all ConnState write_buf ArrayLists
         for (slots) |*s| {
             s.* = ConnState.init(alloc);
         }
-        return .{
-            .slots = slots,
-            .free_stack = stack,
-            .free_count = URING_POOL_SIZE,
-            .alloc = alloc,
-        };
+        return .{ .slots = slots, .free_stack = stack, .free_count = URING_POOL_SIZE, .alloc = alloc };
     }
 
     fn acquire(self: *UringConnPool) ?*ConnState {
@@ -206,7 +181,6 @@ const UringConnPool = struct {
     }
 
     fn release(self: *UringConnPool, st: *ConnState) void {
-        // Calculate index from pointer arithmetic
         const base = @intFromPtr(self.slots.ptr);
         const ptr = @intFromPtr(st);
         const stride = @sizeOf(ConnState);
@@ -224,9 +198,7 @@ const UringConnPool = struct {
     }
 
     fn deinit(self: *UringConnPool) void {
-        for (self.slots) |*s| {
-            s.deinit();
-        }
+        for (self.slots) |*s| s.deinit();
         self.alloc.free(self.slots);
         self.alloc.free(self.free_stack);
     }
@@ -235,7 +207,7 @@ const UringConnPool = struct {
 // ── Server Configuration ────────────────────────────────────────────
 pub const Config = struct {
     port: u16 = 8080,
-    threads: ?usize = null,
+    threads: ?usize = null, // null = auto-detect CPU count
     compression: bool = true,
     shutdown_timeout: u32 = 30,
     logging: log_mod.LogConfig = .{},
@@ -248,7 +220,7 @@ pub fn isShuttingDown() bool {
     return shutdown_flag.load(.acquire);
 }
 
-// ── Signal handling (self-pipe trick, same as epoll server) ─────────
+// ── Signal handling (self-pipe trick) ───────────────────────────────
 var signal_pipe: [2]i32 = .{ -1, -1 };
 
 fn signalHandler(_: c_int) callconv(.C) void {
@@ -273,7 +245,7 @@ fn installSignalHandlers() void {
     _ = libc.sigaction(libc.SIGINT, &act, null);
 }
 
-// ── Server ──────────────────────────────────────────────────────────
+// ── Public Server ───────────────────────────────────────────────────
 pub const UringServer = struct {
     router: *Router,
     config: Config,
@@ -285,110 +257,78 @@ pub const UringServer = struct {
     pub fn listen(self: *UringServer) !void {
         installSignalHandlers();
 
-        const n_threads = self.config.threads orelse @max(Thread.getCpuCount() catch 1, 1);
+        const alloc = std.heap.c_allocator;
+        const n_reactors = self.config.threads orelse @max(Thread.getCpuCount() catch 1, 1);
 
-        var threads = std.ArrayList(Thread).init(std.heap.c_allocator);
-        defer threads.deinit();
+        // Create a single listen socket
+        const listen_fd: i32 = @intCast(posix.socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0) catch return error.SocketError);
+        setSockOptInt(listen_fd, SOL_SOCKET, SO_REUSEPORT, 1);
+        setSockOptInt(listen_fd, SOL_SOCKET, SO_REUSEADDR, 1);
 
-        for (1..n_threads) |_| {
-            const t = try Thread.spawn(.{}, workerThread, .{ self.router, self.config, false });
-            try threads.append(t);
+        const address = std.net.Address.initIp4(.{ 0, 0, 0, 0 }, self.config.port);
+        posix.bind(listen_fd, &address.any, address.getOsSockLen()) catch return error.BindError;
+        posix.listen(listen_fd, 4096) catch return error.ListenError;
+
+        // Allocate SPSC queues — one per reactor
+        var queues = try alloc.alloc(SpscQueue(i32), n_reactors);
+        defer alloc.free(queues);
+        for (queues) |*q| {
+            q.* = try SpscQueue(i32).init(alloc, SPSC_CAPACITY);
+        }
+        defer {
+            for (queues) |*q| q.deinit(alloc);
         }
 
-        workerThread(self.router, self.config, true);
+        // Spawn reactor threads
+        var reactor_threads = std.ArrayList(Thread).init(alloc);
+        defer reactor_threads.deinit();
 
-        for (threads.items) |t| {
+        for (0..n_reactors) |i| {
+            const t = try Thread.spawn(.{}, reactorThread, .{
+                self.router,
+                self.config,
+                &queues[i],
+            });
+            try reactor_threads.append(t);
+        }
+
+        // Run acceptor on main thread
+        acceptorThread(listen_fd, queues, n_reactors);
+
+        // Wait for reactors to finish
+        for (reactor_threads.items) |t| {
             t.join();
         }
+
+        posix.close(listen_fd);
     }
 };
 
-fn workerThread(router: *Router, config: Config, is_primary: bool) void {
-    const alloc = std.heap.c_allocator;
-    const compression_enabled = config.compression;
-    const log_config = config.logging;
-    const logging = log_config.enabled;
+// ═══════════════════════════════════════════════════════════════════
+// ACCEPTOR THREAD — dedicated accept loop, distributes fds round-robin
+// ═══════════════════════════════════════════════════════════════════
 
-    // Create listening socket with SO_REUSEPORT
-    const sock: i32 = @intCast(posix.socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0) catch return);
-    defer posix.close(sock);
-
-    setSockOptInt(sock, SOL_SOCKET, SO_REUSEPORT, 1);
-    setSockOptInt(sock, SOL_SOCKET, SO_REUSEADDR, 1);
-    setSockOptInt(sock, IPPROTO_TCP, TCP_NODELAY, 1);
-
-    const address = std.net.Address.initIp4(.{ 0, 0, 0, 0 }, config.port);
-    posix.bind(sock, &address.any, address.getOsSockLen()) catch return;
-    posix.listen(sock, 4096) catch return;
-
-    // Initialize io_uring with SINGLE_ISSUER + DEFER_TASKRUN
-    var params = mem.zeroInit(linux.io_uring_params, .{
-        .flags = IORING_SETUP_SINGLE_ISSUER | IORING_SETUP_DEFER_TASKRUN,
-        .sq_thread_idle = 1000,
-    });
-
-    var ring = IoUring.init_params(RING_ENTRIES, &params) catch blk: {
-        // Fallback: try without DEFER_TASKRUN (requires kernel 6.1+)
-        var params2 = mem.zeroInit(linux.io_uring_params, .{
-            .flags = IORING_SETUP_SINGLE_ISSUER,
-            .sq_thread_idle = 1000,
-        });
-        break :blk IoUring.init_params(RING_ENTRIES, &params2) catch blk2: {
-            // Fallback: no special flags
-            break :blk2 IoUring.init(RING_ENTRIES, 0) catch return;
-        };
-    };
+fn acceptorThread(
+    listen_fd: i32,
+    queues: []SpscQueue(i32),
+    n_reactors: usize,
+) void {
+    // Acceptor uses a simple io_uring ring — just multishot accept + signal pipe
+    var ring = IoUring.init(ACCEPTOR_RING_ENTRIES, 0) catch return;
     defer ring.deinit();
 
-    // Try to register sparse file descriptor table for direct I/O
-    // This avoids per-IO fd table lookup overhead (atomic refcount on struct file)
-    // Falls back to regular fds on older kernels (< 5.19)
-    const use_direct_fds = blk: {
-        ring.register_files_sparse(@intCast(MAX_CONNS)) catch break :blk false;
-        break :blk true;
-    };
-
-    // send_zc (zero-copy send) — probe on first send, fallback to regular send if kernel < 6.0
-    // State: 0 = untested, 1 = supported, 2 = unsupported
-    var send_zc_state: u8 = 0;
-
-    // Allocate recv buffer slab for BufferGroup
-    const slab_size: usize = @as(usize, RECV_BUF_COUNT) * @as(usize, RECV_BUF_SIZE);
-    const slab = alloc.alloc(u8, slab_size) catch return;
-    defer alloc.free(slab);
-
-    // Initialize kernel-managed buffer ring (replaces provide_buffers)
-    // BufferGroup uses shared memory — buffer return is zero-SQE (just a memory write)
-    var buf_group = BufferGroup.init(
-        &ring,
-        BUFFER_GROUP_ID,
-        slab,
-        RECV_BUF_SIZE,
-        RECV_BUF_COUNT,
+    // Arm multishot accept
+    _ = ring.accept_multishot(
+        packUserData(.accept, listen_fd),
+        listen_fd,
+        null,
+        null,
+        SOCK_NONBLOCK,
     ) catch return;
-    defer buf_group.deinit();
-
-    // Connection state array (sparse, indexed by fd or file index)
-    var conns: [MAX_CONNS]?*ConnState = undefined;
-    @memset(&conns, null);
-
-    // Connection pool — pre-allocated ConnState objects for O(1) acquire/release
-    var pool_opt = UringConnPool.init(alloc);
-    defer {
-        if (pool_opt) |*p| p.deinit();
-    }
-
-    // Arm multishot accept (direct or regular depending on kernel support)
-    if (use_direct_fds) {
-        armMultishotAcceptDirect(&ring, sock) catch return;
-    } else {
-        armMultishotAccept(&ring, sock) catch return;
-    }
     _ = ring.submit() catch return;
 
-    // Monitor signal pipe on primary thread
-    if (is_primary and signal_pipe[0] >= 0) {
-        // Use poll_add for signal pipe (regular fd, not registered)
+    // Monitor signal pipe for shutdown
+    if (signal_pipe[0] >= 0) {
         _ = ring.poll_add(
             packUserData(.cancel, signal_pipe[0]),
             signal_pipe[0],
@@ -397,10 +337,171 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
         _ = ring.submit() catch {};
     }
 
-    // Main event loop
+    var cqes: [CQE_BATCH]linux.io_uring_cqe = undefined;
+    var next_reactor: usize = 0;
+    const one: c_int = 1;
+
+    while (!shutdown_flag.load(.acquire)) {
+        const count = ring.copy_cqes(&cqes, 1) catch |err| {
+            if (err == error.SignalInterrupt) continue;
+            break;
+        };
+        if (count == 0) continue;
+
+        var needs_submit = false;
+
+        for (cqes[0..count]) |cqe| {
+            const ud = cqe.user_data;
+            if (ud == 0) continue;
+            const op = unpackOp(ud);
+            const fd = unpackFd(ud);
+            const res = cqe.res;
+
+            switch (op) {
+                .accept => {
+                    if (res >= 0) {
+                        const client_fd: i32 = res;
+
+                        // Set TCP_NODELAY on accepted fd (acceptor has the real fd)
+                        posix.setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &mem.toBytes(one)) catch {};
+
+                        // Round-robin distribute to reactors
+                        const target = next_reactor;
+                        next_reactor = (next_reactor + 1) % n_reactors;
+
+                        // Spin-enqueue (queue is large, should rarely spin)
+                        while (!queues[target].enqueue(client_fd)) {
+                            // Queue full — brief yield and retry
+                            std.atomic.spinLoopHint();
+                        }
+                    }
+
+                    // Re-arm if kernel dropped multishot
+                    if (cqe.flags & IORING_CQE_F_MORE == 0) {
+                        _ = ring.accept_multishot(
+                            packUserData(.accept, listen_fd),
+                            listen_fd,
+                            null,
+                            null,
+                            SOCK_NONBLOCK,
+                        ) catch {};
+                        needs_submit = true;
+                    }
+                },
+
+                .cancel => {
+                    // Signal pipe — shutdown
+                    if (fd == signal_pipe[0]) {
+                        var sig_buf: [16]u8 = undefined;
+                        _ = posix.read(signal_pipe[0], &sig_buf) catch {};
+                        shutdown_flag.store(true, .release);
+                    }
+                },
+
+                else => {},
+            }
+        }
+
+        if (needs_submit) {
+            _ = ring.submit() catch {};
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// REACTOR THREAD — handles I/O for connections assigned by acceptor
+// ═══════════════════════════════════════════════════════════════════
+
+fn reactorThread(
+    router: *Router,
+    config: Config,
+    queue: *SpscQueue(i32),
+) void {
+    const alloc = std.heap.c_allocator;
+    const compression_enabled = config.compression;
+    const log_config = config.logging;
+    const logging = log_config.enabled;
+
+    // Initialize io_uring with SINGLE_ISSUER + DEFER_TASKRUN
+    var params = mem.zeroInit(linux.io_uring_params, .{
+        .flags = IORING_SETUP_SINGLE_ISSUER | IORING_SETUP_DEFER_TASKRUN,
+        .sq_thread_idle = 1000,
+    });
+
+    var ring = IoUring.init_params(REACTOR_RING_ENTRIES, &params) catch blk: {
+        var params2 = mem.zeroInit(linux.io_uring_params, .{
+            .flags = IORING_SETUP_SINGLE_ISSUER,
+            .sq_thread_idle = 1000,
+        });
+        break :blk IoUring.init_params(REACTOR_RING_ENTRIES, &params2) catch blk2: {
+            break :blk2 IoUring.init(REACTOR_RING_ENTRIES, 0) catch return;
+        };
+    };
+    defer ring.deinit();
+
+    // send_zc probe state: 0 = untested, 1 = supported, 2 = unsupported
+    var send_zc_state: u8 = 0;
+
+    // Buffer ring for recv
+    const slab_size: usize = @as(usize, RECV_BUF_COUNT) * @as(usize, RECV_BUF_SIZE);
+    const slab = alloc.alloc(u8, slab_size) catch return;
+    defer alloc.free(slab);
+
+    var buf_group = BufferGroup.init(&ring, BUFFER_GROUP_ID, slab, RECV_BUF_SIZE, RECV_BUF_COUNT) catch return;
+    defer buf_group.deinit();
+
+    // Connection state (sparse, indexed by fd)
+    var conns: [MAX_CONNS]?*ConnState = undefined;
+    @memset(&conns, null);
+
+    // Connection pool
+    var pool_opt = UringConnPool.init(alloc);
+    defer {
+        if (pool_opt) |*p| p.deinit();
+    }
+
+    // Main reactor event loop
     var cqes: [CQE_BATCH]linux.io_uring_cqe = undefined;
 
     while (!shutdown_flag.load(.acquire)) {
+        // 1. Drain new connections from SPSC queue
+        var drained: usize = 0;
+        while (queue.dequeue()) |new_fd| {
+            const fd_idx: usize = @intCast(@as(u32, @bitCast(new_fd)));
+            if (fd_idx >= MAX_CONNS) {
+                posix.close(@intCast(@as(u32, @bitCast(new_fd))));
+                continue;
+            }
+
+            // Acquire ConnState from pool or heap
+            const from_pool = if (pool_opt) |*p| p.acquire() else null;
+            const st: *ConnState = from_pool orelse alloc.create(ConnState) catch {
+                posix.close(@intCast(@as(u32, @bitCast(new_fd))));
+                continue;
+            };
+            if (from_pool == null) {
+                st.* = ConnState.init(alloc);
+            }
+            conns[fd_idx] = st;
+
+            // Arm multishot recv
+            _ = buf_group.recv_multishot(
+                packUserData(.recv, new_fd),
+                new_fd,
+                0,
+            ) catch {
+                releaseConn(&pool_opt, st, alloc);
+                conns[fd_idx] = null;
+                posix.close(@intCast(@as(u32, @bitCast(new_fd))));
+                continue;
+            };
+            drained += 1;
+        }
+        if (drained > 0) {
+            _ = ring.submit() catch {};
+        }
+
+        // 2. Process CQEs
         const count = ring.copy_cqes(&cqes, 1) catch |err| {
             if (err == error.SignalInterrupt) continue;
             break;
@@ -412,119 +513,29 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
 
         for (cqes[0..count]) |cqe| {
             const ud = cqe.user_data;
-            if (ud == 0) continue; // internal completion
+            if (ud == 0) continue;
             const op = unpackOp(ud);
             const fd = unpackFd(ud);
             const res = cqe.res;
 
             switch (op) {
-                .accept => {
-                    if (res >= 0) {
-                        // res is either a real fd (regular) or file index (direct)
-                        const conn_idx: usize = @intCast(@as(u32, @bitCast(@as(i32, res))));
-
-                        // Set TCP_NODELAY only for regular fds (direct fds don't expose real fd)
-                        if (!use_direct_fds) {
-                            setSockOptInt(res, IPPROTO_TCP, TCP_NODELAY, 1);
-                        }
-
-                        if (conn_idx < MAX_CONNS) {
-                            // Try pool first, fall back to heap allocation
-                            const from_pool = if (pool_opt) |*p| p.acquire() else null;
-                            const st: *ConnState = from_pool orelse alloc.create(ConnState) catch {
-                                if (use_direct_fds) {
-                                    _ = ring.close_direct(packUserData(.close, @as(i32, res)), @intCast(@as(u32, @bitCast(@as(i32, res))))) catch {};
-                                    needs_submit = true;
-                                } else {
-                                    posix.close(@intCast(@as(u32, @bitCast(@as(i32, res)))));
-                                }
-                                continue;
-                            };
-                            // Only init if heap-allocated (pool slots are pre-initialized and reset on acquire)
-                            if (from_pool == null) {
-                                st.* = ConnState.init(alloc);
-                            }
-                            conns[conn_idx] = st;
-
-                            // Arm multishot recv using buffer group
-                            const recv_sqe = buf_group.recv_multishot(
-                                packUserData(.recv, @as(i32, res)),
-                                @as(i32, res),
-                                0,
-                            ) catch {
-                                if (pool_opt) |*p| {
-                                    if (p.isPooled(st)) { p.release(st); } else { st.deinit(); alloc.destroy(st); }
-                                } else { st.deinit(); alloc.destroy(st); }
-                                conns[conn_idx] = null;
-                                if (use_direct_fds) {
-                                    _ = ring.close_direct(packUserData(.close, @as(i32, res)), @intCast(@as(u32, @bitCast(@as(i32, res))))) catch {};
-                                    needs_submit = true;
-                                } else {
-                                    posix.close(@intCast(@as(u32, @bitCast(@as(i32, res)))));
-                                }
-                                continue;
-                            };
-
-                            // Set IOSQE_FIXED_FILE for direct fd mode
-                            if (use_direct_fds) {
-                                recv_sqe.flags |= IOSQE_FIXED_FILE;
-                            }
-
-                            needs_submit = true;
-                        } else {
-                            if (use_direct_fds) {
-                                _ = ring.close_direct(packUserData(.close, @as(i32, res)), @intCast(@as(u32, @bitCast(@as(i32, res))))) catch {};
-                                needs_submit = true;
-                            } else {
-                                posix.close(@intCast(@as(u32, @bitCast(@as(i32, res)))));
-                            }
-                        }
-                    }
-
-                    // Re-arm multishot accept if kernel dropped it
-                    if (cqe.flags & IORING_CQE_F_MORE == 0) {
-                        if (use_direct_fds) {
-                            armMultishotAcceptDirect(&ring, sock) catch {};
-                        } else {
-                            armMultishotAccept(&ring, sock) catch {};
-                        }
-                        needs_submit = true;
-                    }
-                },
-
                 .recv => {
                     const has_more = (cqe.flags & IORING_CQE_F_MORE) != 0;
 
                     if (res <= 0) {
-                        // Connection closed or error — return buffer if present
                         if (cqe.buffer_id()) |_| {
                             buf_group.put_cqe(cqe) catch {};
                         } else |_| {}
-                        const uidx: usize = @intCast(@as(u32, @bitCast(fd)));
-                        if (uidx < MAX_CONNS) {
-                            if (conns[uidx]) |st| {
-                                if (pool_opt) |*p| {
-                                    if (p.isPooled(st)) { p.release(st); } else { st.deinit(); alloc.destroy(st); }
-                                } else { st.deinit(); alloc.destroy(st); }
-                                conns[uidx] = null;
-                            }
-                            if (use_direct_fds) {
-                                _ = ring.close_direct(packUserData(.close, fd), @intCast(@as(u32, @bitCast(fd)))) catch {};
-                                needs_submit = true;
-                            } else {
-                                posix.close(@intCast(@as(u32, @bitCast(fd))));
-                            }
-                        }
+                        closeConn(&conns, &pool_opt, &ring, fd, alloc, false);
                         continue;
                     }
 
-                    // Get recv data from buffer group
                     const recv_data = buf_group.get_cqe(cqe) catch continue;
 
                     const uidx: usize = @intCast(@as(u32, @bitCast(fd)));
                     if (uidx < MAX_CONNS) {
                         if (conns[uidx]) |st| {
-                            // Copy recv data into active buffer (static or dynamic)
+                            // Copy recv data into connection buffer
                             if (st.dyn_buf) |dbuf| {
                                 const space = dbuf.len - st.dyn_len;
                                 const copy_len = @min(recv_data.len, space);
@@ -537,36 +548,27 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                                 st.read_len += copy_len;
                             }
 
-                            // Return buffer to kernel ASAP (zero-SQE — just a memory write!)
+                            // Return buffer to kernel (zero-SQE)
                             buf_group.put_cqe(cqe) catch {};
 
                             // Parse and handle pipelined requests
                             var off: usize = 0;
-                            var close_after_write = false;
                             const cur_len = st.activeReadLen();
                             const cur_data = st.readSlice();
                             while (off < cur_len) {
                                 const result = parser.parse(cur_data[off..cur_len]) orelse {
-                                    // If headers are complete but parse failed, check for large body
                                     const remaining = cur_data[off..cur_len];
                                     if (mem.indexOf(u8, remaining, "\r\n\r\n")) |hdr_end| {
-                                        // Check if large body needs promotion
                                         const cl = detectContentLength(remaining[0 .. hdr_end + 4]);
                                         if (cl != null and cl.? > 65536 and st.dyn_buf == null) {
                                             const total_needed = hdr_end + 4 + cl.?;
                                             _ = st.promoteToDynamic(alloc, total_needed);
-                                            // Wait for next recv CQE to deliver more body data
                                             break;
                                         }
-                                        // If dynamic buffer active but body still incomplete, wait
-                                        if (st.dyn_buf != null) {
-                                            break;
-                                        }
-                                        // Genuinely bad request — send 400
+                                        if (st.dyn_buf != null) break;
                                         const bad_resp = "HTTP/1.1 400 Bad Request\r\nContent-Length: 11\r\nConnection: close\r\n\r\nBad Request";
                                         st.write_buf.appendSlice(bad_resp) catch {};
                                         off += hdr_end + 4;
-                                        close_after_write = true;
                                         break;
                                     }
                                     break;
@@ -579,13 +581,11 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                                 }
 
                                 const req_start = if (logging) log_mod.now() else 0;
-
                                 router.handle(&req, &resp);
 
                                 if (compression_enabled) {
                                     _ = compress_mod.compressResponse(&compress_buf, &req, &resp);
                                 }
-
                                 if (logging) {
                                     log_mod.logRequest(log_config, &req, &resp, req_start);
                                 }
@@ -597,7 +597,6 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                             // Compact read buffer
                             if (off > 0) {
                                 if (st.dyn_buf != null) {
-                                    // Done with large body — revert to static buffer
                                     const rem = st.dyn_len - off;
                                     if (rem > 0 and rem <= 65536) {
                                         @memcpy(st.read_buf[0..rem], st.dyn_buf.?[off..st.dyn_len]);
@@ -611,41 +610,34 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                                 }
                             }
 
-                            // Submit send if we have data and no send in flight
+                            // Submit send if data ready
                             if (st.write_buf.items.len > st.write_off and !st.send_inflight) {
                                 const send_data = st.write_buf.items[st.write_off..];
                                 if (send_zc_state != 2) {
-                                    // Try zero-copy send (probe on first attempt)
-                                    armSendZcEx(&ring, fd, send_data, use_direct_fds) catch {
-                                        // send_zc SQE prep failed — fall back to regular send
-                                        armSendEx(&ring, fd, send_data, use_direct_fds) catch {};
+                                    armSendZc(&ring, fd, send_data) catch {
+                                        armSend(&ring, fd, send_data) catch {};
                                     };
                                 } else {
-                                    armSendEx(&ring, fd, send_data, use_direct_fds) catch {};
+                                    armSend(&ring, fd, send_data) catch {};
                                 }
                                 st.send_inflight = true;
                                 needs_submit = true;
                             }
                         } else {
-                            // No ConnState — still need to return buffer
                             buf_group.put_cqe(cqe) catch {};
                         }
                     } else {
-                        // fd out of range — return buffer
                         buf_group.put_cqe(cqe) catch {};
                     }
 
-                    // Re-arm recv if multishot was dropped
+                    // Re-arm recv if multishot dropped
                     if (!has_more) {
                         if (uidx < MAX_CONNS and conns[uidx] != null) {
-                            const re_recv_sqe = buf_group.recv_multishot(
+                            _ = buf_group.recv_multishot(
                                 packUserData(.recv, fd),
                                 fd,
                                 0,
                             ) catch continue;
-                            if (use_direct_fds) {
-                                re_recv_sqe.flags |= IOSQE_FIXED_FILE;
-                            }
                             needs_submit = true;
                         }
                     }
@@ -656,61 +648,36 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                     if (uidx >= MAX_CONNS) continue;
                     const st = conns[uidx] orelse continue;
 
-                    // Handle send_zc notification CQE — buffer is now safe to reuse
+                    // send_zc notification — buffer safe to reuse
                     if (cqe.flags & IORING_CQE_F_NOTIF != 0) {
                         st.zc_notif_pending = false;
-                        // Now safe to reuse write buffer
                         if (!st.send_inflight) {
                             st.write_buf.clearRetainingCapacity();
                             st.write_off = 0;
-
                             if (shutdown_flag.load(.acquire)) {
-                                if (pool_opt) |*p| {
-                                    if (p.isPooled(st)) { p.release(st); } else { st.deinit(); alloc.destroy(st); }
-                                } else { st.deinit(); alloc.destroy(st); }
-                                conns[uidx] = null;
-                                if (use_direct_fds) {
-                                    _ = ring.close_direct(packUserData(.close, fd), @intCast(@as(u32, @bitCast(fd)))) catch {};
-                                    needs_submit = true;
-                                } else {
-                                    posix.close(@intCast(@as(u32, @bitCast(fd))));
-                                }
+                                closeConn(&conns, &pool_opt, &ring, fd, alloc, false);
                             }
                         }
                         continue;
                     }
 
                     if (res <= 0) {
-                        // Send error — check if it's send_zc not supported (-EINVAL/-ENOSYS)
                         if (send_zc_state == 0 and (res == -22 or res == -38)) {
-                            // send_zc not supported by kernel — mark and retry with regular send
                             send_zc_state = 2;
-                            armSendEx(&ring, fd, st.write_buf.items[st.write_off..], use_direct_fds) catch {
+                            armSend(&ring, fd, st.write_buf.items[st.write_off..]) catch {
                                 st.send_inflight = false;
                             };
                             needs_submit = true;
                             continue;
                         }
-                        // Real send error — close connection
-                        if (pool_opt) |*p| {
-                            if (p.isPooled(st)) { p.release(st); } else { st.deinit(); alloc.destroy(st); }
-                        } else { st.deinit(); alloc.destroy(st); }
-                        conns[uidx] = null;
-                        if (use_direct_fds) {
-                            _ = ring.close_direct(packUserData(.close, fd), @intCast(@as(u32, @bitCast(fd)))) catch {};
-                            needs_submit = true;
-                        } else {
-                            posix.close(@intCast(@as(u32, @bitCast(fd))));
-                        }
+                        closeConn(&conns, &pool_opt, &ring, fd, alloc, false);
                         continue;
                     }
 
-                    // Successful send — mark send_zc as supported if probing
                     if (send_zc_state == 0 and (cqe.flags & IORING_CQE_F_MORE) != 0) {
-                        send_zc_state = 1; // send_zc confirmed working
+                        send_zc_state = 1;
                     }
 
-                    // Check if send_zc notification will follow (IORING_CQE_F_MORE set)
                     const zc_notif_coming = (cqe.flags & IORING_CQE_F_MORE) != 0;
                     if (zc_notif_coming) {
                         st.zc_notif_pending = true;
@@ -719,51 +686,26 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
                     st.write_off += @as(usize, @intCast(res));
 
                     if (st.write_off < st.write_buf.items.len) {
-                        // Partial send — resubmit remainder
-                        // For partial sends, use regular send to avoid complex buffer lifetime tracking
-                        armSendEx(&ring, fd, st.write_buf.items[st.write_off..], use_direct_fds) catch {
+                        // Partial send — use regular send for remainder
+                        armSend(&ring, fd, st.write_buf.items[st.write_off..]) catch {
                             st.send_inflight = false;
                         };
                         needs_submit = true;
                     } else {
-                        // Send complete
                         st.send_inflight = false;
-
                         if (!st.zc_notif_pending) {
-                            // No notification pending — safe to reuse buffer now
                             st.write_buf.clearRetainingCapacity();
                             st.write_off = 0;
-
                             if (shutdown_flag.load(.acquire)) {
-                                if (pool_opt) |*p| {
-                                    if (p.isPooled(st)) { p.release(st); } else { st.deinit(); alloc.destroy(st); }
-                                } else { st.deinit(); alloc.destroy(st); }
-                                conns[uidx] = null;
-                                if (use_direct_fds) {
-                                    _ = ring.close_direct(packUserData(.close, fd), @intCast(@as(u32, @bitCast(fd)))) catch {};
-                                    needs_submit = true;
-                                } else {
-                                    posix.close(@intCast(@as(u32, @bitCast(fd))));
-                                }
+                                closeConn(&conns, &pool_opt, &ring, fd, alloc, false);
                             }
                         }
-                        // If zc_notif_pending, buffer cleanup deferred to notification handler above
                     }
                 },
 
-                .close => {
-                    // close_direct completion — fd slot is now free in the registered table
-                    // Nothing to do; the kernel has already freed the slot
-                },
-
-                .cancel => {
-                    // Signal pipe readable or cancel completion — check for shutdown
-                    if (is_primary and fd == signal_pipe[0]) {
-                        var sig_buf: [16]u8 = undefined;
-                        _ = posix.read(signal_pipe[0], &sig_buf) catch {};
-                        shutdown_flag.store(true, .release);
-                    }
-                },
+                .close => {},
+                .cancel => {},
+                .accept => {}, // reactor doesn't accept — this shouldn't happen
             }
         }
 
@@ -772,75 +714,57 @@ fn workerThread(router: *Router, config: Config, is_primary: bool) void {
         }
     }
 
-    // Cleanup: close all connections
+    // Cleanup all connections
     for (0..MAX_CONNS) |i| {
         if (conns[i]) |st| {
-            if (pool_opt) |*p| {
-                if (p.isPooled(st)) { p.release(st); } else { st.deinit(); alloc.destroy(st); }
-            } else { st.deinit(); alloc.destroy(st); }
+            releaseConn(&pool_opt, st, alloc);
             conns[i] = null;
-            if (use_direct_fds) {
-                _ = ring.close_direct(packUserData(.close, @as(i32, @intCast(i))), @intCast(i)) catch {};
-            } else {
-                posix.close(@intCast(i));
-            }
+            posix.close(@intCast(i));
         }
     }
-    // Submit any pending close_direct operations during cleanup
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────
+
+fn releaseConn(pool_opt: *?UringConnPool, st: *ConnState, alloc: std.mem.Allocator) void {
+    if (pool_opt.*) |*p| {
+        if (p.isPooled(st)) {
+            p.release(st);
+            return;
+        }
+    }
+    st.deinit();
+    alloc.destroy(st);
+}
+
+fn closeConn(
+    conns: *[MAX_CONNS]?*ConnState,
+    pool_opt: *?UringConnPool,
+    ring: *IoUring,
+    fd: i32,
+    alloc: std.mem.Allocator,
+    use_direct_fds: bool,
+) void {
+    const uidx: usize = @intCast(@as(u32, @bitCast(fd)));
+    if (uidx < MAX_CONNS) {
+        if (conns[uidx]) |st| {
+            releaseConn(pool_opt, st, alloc);
+            conns[uidx] = null;
+        }
+    }
     if (use_direct_fds) {
-        _ = ring.submit() catch {};
-    }
-    // Unregister file table (ring deinit will handle this too, but be explicit)
-    if (use_direct_fds) {
-        ring.unregister_files() catch {};
+        _ = ring.close_direct(packUserData(.close, fd), @intCast(@as(u32, @bitCast(fd)))) catch {};
+    } else {
+        posix.close(@intCast(@as(u32, @bitCast(fd))));
     }
 }
 
-// ── SQE helpers ─────────────────────────────────────────────────────
-
-fn armMultishotAccept(ring: *IoUring, sock: i32) !void {
-    _ = try ring.accept_multishot(
-        packUserData(.accept, sock),
-        sock,
-        null,
-        null,
-        SOCK_NONBLOCK,
-    );
+fn armSend(ring: *IoUring, fd: i32, data: []const u8) !void {
+    _ = try ring.send(packUserData(.send, fd), fd, data, MSG_NOSIGNAL);
 }
 
-fn armMultishotAcceptDirect(ring: *IoUring, sock: i32) !void {
-    _ = try ring.accept_multishot_direct(
-        packUserData(.accept, sock),
-        sock,
-        null,
-        null,
-        SOCK_NONBLOCK,
-    );
-}
-
-fn armSendEx(ring: *IoUring, fd: i32, data: []const u8, fixed_file: bool) !void {
-    const sqe = try ring.send(
-        packUserData(.send, fd),
-        fd,
-        data,
-        MSG_NOSIGNAL,
-    );
-    if (fixed_file) {
-        sqe.flags |= IOSQE_FIXED_FILE;
-    }
-}
-
-fn armSendZcEx(ring: *IoUring, fd: i32, data: []const u8, fixed_file: bool) !void {
-    const sqe = try ring.send_zc(
-        packUserData(.send, fd),
-        fd,
-        data,
-        MSG_NOSIGNAL,
-        0, // zc_flags — no IORING_SEND_ZC_REPORT_USAGE needed
-    );
-    if (fixed_file) {
-        sqe.flags |= IOSQE_FIXED_FILE;
-    }
+fn armSendZc(ring: *IoUring, fd: i32, data: []const u8) !void {
+    _ = try ring.send_zc(packUserData(.send, fd), fd, data, MSG_NOSIGNAL, 0);
 }
 
 fn setSockOptInt(fd: i32, level: i32, optname: u32, val: c_int) void {
@@ -849,7 +773,7 @@ fn setSockOptInt(fd: i32, level: i32, optname: u32, val: c_int) void {
 }
 
 /// Scan raw header bytes for a Content-Length value.
-fn detectContentLength(headers: []const u8) ?usize {
+pub fn detectContentLength(headers: []const u8) ?usize {
     var pos: usize = 0;
     while (pos < headers.len) {
         const line_end = mem.indexOf(u8, headers[pos..], "\r\n") orelse headers.len - pos;
