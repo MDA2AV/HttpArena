@@ -19,17 +19,14 @@ RUN sbcl --non-interactive \
 
 COPY src/ /app/src/
 
-# Build standalone executable using save-lisp-and-die.
-# Key: single-stage build so CFFI dlopen paths match at runtime.
-# No :compression — compressed cores take >30s to decompress on CI.
-# cffi:reload-foreign-libraries re-opens all foreign lib handles on startup.
-RUN sbcl --non-interactive \
-    --load '/root/quicklisp/setup.lisp' \
-    --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)' \
-    --load '/app/src/server.lisp' \
-    --eval '(defun woo-toplevel () (cffi:reload-foreign-libraries) (httparena::main))' \
-    --eval '(sb-ext:save-lisp-and-die "/app/woo-server" :toplevel (function woo-toplevel) :executable t)'
+# No save-lisp-and-die: CFFI foreign library handles become stale in core
+# images and cffi:reload-foreign-libraries is unreliable with libev.
+# Instead, load from pre-compiled FASLs at startup (~2-3s with warm cache).
 
 EXPOSE 8080
 
-CMD ["/app/woo-server"]
+CMD ["sbcl", "--noinform", "--disable-debugger", \
+     "--load", "/root/quicklisp/setup.lisp", \
+     "--eval", "(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)", \
+     "--load", "/app/src/server.lisp", \
+     "--eval", "(httparena::main)"]
