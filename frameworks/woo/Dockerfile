@@ -15,16 +15,20 @@ RUN curl -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
     && echo '(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))' >> /root/.sbclrc \
     && echo '  (when (probe-file quicklisp-init) (load quicklisp-init)))' >> /root/.sbclrc
 
-# Pre-fetch + compile all deps
+# Pre-compile all deps
 RUN sbcl --non-interactive \
     --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)'
 
 COPY src/ /app/src/
 
-# Build standalone executable via save-lisp-and-die
-# Single stage so CFFI foreign library paths match exactly at runtime
+# Build standalone binary — single stage so library paths match
 RUN sbcl --non-interactive --load /app/src/build.lisp
+
+# Verify the binary exists
+RUN ls -lh /app/woo-server
 
 EXPOSE 8080
 
+# Force-load libev via LD_PRELOAD so CFFI finds it on core restore
+ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libev.so
 CMD ["/app/woo-server"]
