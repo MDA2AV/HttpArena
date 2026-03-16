@@ -21,6 +21,7 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("blitz", blitz_mod);
     exe.linkLibC();
+    exe.linkSystemLibrary("sqlite3");
     b.installArtifact(exe);
 
     // Run step

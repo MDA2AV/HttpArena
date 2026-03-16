@@ -9,8 +9,8 @@
     },
     .dependencies = .{
         .blitz = .{
-            .url = "https://github.com/BennyFranciscus/blitz/archive/3d4d530be84555685cada92677c36a650fca8945.tar.gz",
-            .hash = "blitz-0.1.0-OJAP5lYxBgAiWvLKfm5DYI_zuKDs21bg2rCjNBfm4U1t",
+            .url = "https://github.com/BennyFranciscus/blitz/archive/d25bb31a7e83b85f6ff9dcaa3617abd8237e3dea.tar.gz",
+            .hash = "blitz-0.1.0-OJAP5qp3BgDeUQIsiZ8X9TnmL1AY7WODgjQydJxHrjNX",
         },
     },
 }
