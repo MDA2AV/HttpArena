@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sbcl curl ca-certificates build-essential \
@@ -15,22 +15,26 @@ RUN curl -o /tmp/quicklisp.lisp https://beta.quicklisp.org/quicklisp.lisp \
     && echo '(let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp" (user-homedir-pathname))))' >> /root/.sbclrc \
     && echo '  (when (probe-file quicklisp-init) (load quicklisp-init)))' >> /root/.sbclrc
 
-# Pre-fetch + compile all Quicklisp deps (FASLs get cached)
+# Pre-fetch + compile all deps
 RUN sbcl --non-interactive \
     --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)'
 
-COPY src/server.lisp /app/src/server.lisp
+COPY src/ /app/src/
 
-# Pre-compile server.lisp to FASL
-RUN sbcl --non-interactive \
-    --eval '(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)' \
-    --eval '(compile-file "/app/src/server.lisp" :output-file "/app/src/server.fasl")'
+# Build standalone executable via save-lisp-and-die
+# CFFI foreign library handles are re-opened automatically on core restore
+# as long as the .so files exist at the same paths in the runtime image.
+RUN sbcl --non-interactive --load /app/src/build.lisp
+
+# --- Runtime stage: minimal image with just the libs + executable ---
+FROM ubuntu:24.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libev4t64 libsqlite3-0 zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/woo-server /app/woo-server
 
 EXPOSE 8080
 
-# Load pre-compiled FASLs at runtime — avoids CFFI/save-lisp-and-die issues.
-# All FASLs are already compiled, so quickload just loads them (no compilation).
-CMD ["sbcl", "--non-interactive", \
-     "--eval", "(ql:quickload (list :woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)", \
-     "--load", "/app/src/server.fasl", \
-     "--eval", "(httparena::main)"]
+CMD ["/app/woo-server"]
