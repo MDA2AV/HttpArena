@@ -1,5 +1,3 @@
-(ql:quickload '(:woo :jonathan :cl-ppcre :babel :salza2 :sqlite) :silent t)
-
 (defpackage :httparena
   (:use :cl)
   (:export :main))
