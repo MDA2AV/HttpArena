@@ -34,17 +34,12 @@ rescue
   nil
 end
 
-# Large dataset – pre-process and pre-compress at startup
-LARGE_GZIP_BUF = begin
+# Large dataset – pre-process at startup, compress per-request
+LARGE_PAYLOAD = begin
   if File.exists?(LARGE_DATASET_PATH)
     raw = Array(JSON::Any).from_json(File.read(LARGE_DATASET_PATH))
     items = process_items(raw)
-    payload = {items: items, count: items.size}.to_json
-    io = IO::Memory.new
-    Compress::Gzip::Writer.open(io, level: Compress::Gzip::BEST_SPEED) do |gz|
-      gz.print payload
-    end
-    io.to_slice.dup
+    {items: items, count: items.size}.to_json
   else
     nil
   end
@@ -133,10 +128,12 @@ end
 
 get "/compression" do |env|
   server_header(env)
-  if buf = LARGE_GZIP_BUF
+  if payload = LARGE_PAYLOAD
     env.response.content_type = "application/json"
     env.response.headers["Content-Encoding"] = "gzip"
-    env.response.write(buf)
+    Compress::Gzip::Writer.open(env.response, level: Compress::Gzip::BEST_SPEED) do |gz|
+      gz.print payload
+    end
     nil
   else
     env.response.status_code = 500
