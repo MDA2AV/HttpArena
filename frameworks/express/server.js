@@ -122,9 +122,8 @@ function startWorker() {
         const buf = Buffer.from(JSON.stringify({ items, count: items.length }));
         res
             .set('server', SERVER_NAME)
-            .set('content-type', 'application/json')
-            .set('content-length', buf.length)
-            .send(buf);
+            .writeHead(200, { 'content-type': 'application/json', 'content-length': buf.length });
+        res.end(buf);
     });
 
     // --- /compression ---
