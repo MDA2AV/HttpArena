@@ -1,0 +1,21 @@
+{
+  "display_name": "Express",
+  "language": "JS",
+  "type": "framework",
+  "engine": "V8",
+  "description": "Fast, unopinionated, minimalist web framework for Node.js. The most widely used backend framework in the JavaScript ecosystem.",
+  "repo": "https://github.com/expressjs/express",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed",
+    "noisy",
+    "baseline-h2",
+    "static-h2"
+  ]
+}
