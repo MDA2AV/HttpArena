@@ -247,14 +247,13 @@ let db_endpoint req _server () =
 let routes =
   let open Uri in
   let open Route in
-  let open Type in
-  [ get  (rel / "pipeline" /?? any) --> pipeline
+  [ get  (rel / "pipeline" /?? nil) --> pipeline
   ; get  (rel / "baseline11" /?? any) --> baseline11_get
-  ; post any (rel / "baseline11" /?? any) --> baseline11_post
+  ; post Type.any (rel / "baseline11" /?? any) --> baseline11_post
   ; get  (rel / "baseline2" /?? any) --> baseline2
-  ; get  (rel / "json" /?? any) --> json_endpoint
-  ; get  (rel / "compression" /?? any) --> compression
-  ; post any (rel / "upload" /?? any) --> upload
+  ; get  (rel / "json" /?? nil) --> json_endpoint
+  ; get  (rel / "compression" /?? nil) --> compression
+  ; post Type.any (rel / "upload" /?? nil) --> upload
   ; get  (rel / "db" /?? any) --> db_endpoint
   ]
 
