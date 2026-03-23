@@ -1,0 +1,3 @@
+(executable
+ (name server)
+ (libraries vif flux yojson sqlite3))

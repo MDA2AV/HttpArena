@@ -1,0 +1,19 @@
+{
+  "display_name": "vif",
+  "language": "OCaml",
+  "type": "framework",
+  "engine": "httpcats/Miou",
+  "description": "Vif web framework for OCaml 5 with multicore support via Miou scheduler and httpcats HTTP engine.",
+  "repo": "https://github.com/robur-coop/vif",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "noisy",
+    "mixed"
+  ]
+}
