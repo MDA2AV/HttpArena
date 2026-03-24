@@ -49,6 +49,7 @@ fn handleJson(_: *blitz.Request, res: *blitz.Response) void {
     if (small_dataset_parsed) |parsed| {
         const body = serializeDatasetJson(parsed.value.array.items);
         if (body.len > 0) {
+            defer std.heap.c_allocator.free(body);
             _ = res.json(body);
             return;
         }
@@ -58,12 +59,13 @@ fn handleJson(_: *blitz.Request, res: *blitz.Response) void {
 
 fn handleCompression(req: *blitz.Request, res: *blitz.Response) void {
     if (large_dataset_parsed) |parsed| {
+        const alloc = std.heap.c_allocator;
         const body = serializeDatasetJson(parsed.value.array.items);
         if (body.len > 0) {
+            defer alloc.free(body);
             // Check if client accepts gzip
             if (req.headers.get("Accept-Encoding")) |ae| {
                 if (mem.indexOf(u8, ae, "gzip") != null) {
-                    const alloc = std.heap.c_allocator;
                     const gzip_buf = alloc.alloc(u8, body.len) catch {
                         _ = res.json(body);
                         return;
