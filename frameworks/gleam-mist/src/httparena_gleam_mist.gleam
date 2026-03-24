@@ -577,17 +577,3 @@ pub fn main() {
 
   process.sleep_forever()
 }
-|> mist.new
-    |> mist.port(8080)
-    |> mist.bind("0.0.0.0")
-    |> mist.start
-
-  process.sleep_forever()
-}
-|> mist.new
-    |> mist.port(8080)
-    |> mist.bind("0.0.0.0")
-    |> mist.start
-
-  process.sleep_forever()
-}
