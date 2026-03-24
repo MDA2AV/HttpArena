@@ -38,12 +38,18 @@ let process_items (items : Yojson.Basic.t list) : Yojson.Basic.t list =
     | other -> other
   ) items
 
-(* Small dataset — raw JSON array *)
-let dataset_raw : Yojson.Basic.t list option =
+(* Small dataset — pre-processed JSON string (cached at startup) *)
+let small_payload : string option =
   match read_file dataset_path with
   | Some s ->
     (match Yojson.Basic.from_string s with
-     | `List items -> Some items
+     | `List items ->
+       let processed = process_items items in
+       let result = `Assoc [
+         ("items", `List processed);
+         ("count", `Int (List.length processed))
+       ] in
+       Some (Yojson.Basic.to_string result)
      | _ -> None
      | exception _ -> None)
   | None -> None
@@ -134,20 +140,14 @@ let baseline2 req _server () =
   let* () = Response.with_string req (string_of_int total) in
   Response.respond `OK
 
-(* GET /json — process dataset and return JSON *)
+(* GET /json — return pre-processed dataset JSON *)
 let json_endpoint req _server () =
   let open Response.Syntax in
   let* () = server_header () in
-  match dataset_raw with
-  | Some items ->
-    let processed = process_items items in
-    let result = `Assoc [
-      ("items", `List processed);
-      ("count", `Int (List.length processed))
-    ] in
-    let s = Yojson.Basic.to_string result in
+  match small_payload with
+  | Some payload ->
     let* () = Response.add ~field:"content-type" "application/json" in
-    let* () = Response.with_string req s in
+    let* () = Response.with_string req payload in
     Response.respond `OK
   | None ->
     let* () = Response.add ~field:"content-type" "text/plain" in
