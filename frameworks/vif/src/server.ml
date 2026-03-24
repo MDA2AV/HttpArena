@@ -88,14 +88,25 @@ let sum_query_params req =
   ) 0 params
 
 let read_body req =
-  let src = Request.source req in
-  let stream = Flux.Stream.from src in
-  Flux.Stream.into Flux.Sink.string stream
+  let (Flux.Source.Source { init; pull; stop }) = Request.source req in
+  let state = init () in
+  let buf = Buffer.create 4096 in
+  let rec loop state =
+    match pull state with
+    | Some (chunk, state') -> Buffer.add_string buf chunk; loop state'
+    | None -> stop state; Buffer.contents buf
+  in
+  loop state
 
 let count_body_bytes req =
-  let src = Request.source req in
-  let stream = Flux.Stream.from src in
-  Flux.Stream.into (Flux.Sink.fold (fun acc chunk -> acc + String.length chunk) 0) stream
+  let (Flux.Source.Source { init; pull; stop }) = Request.source req in
+  let state = init () in
+  let rec loop state acc =
+    match pull state with
+    | Some (chunk, state') -> loop state' (acc + String.length chunk)
+    | None -> stop state; acc
+  in
+  loop state 0
 
 (* ---------------------------------------------------------------------------
    Routes
@@ -259,6 +270,7 @@ let routes =
 
 let () =
   Miou_unix.run @@ fun () ->
+  let domains = max 1 (Domain.recommended_domain_count () - 1) in
   let addr = Unix.ADDR_INET (Unix.inet_addr_any, 8080) in
-  let cfg = Vif.config ~level:(Some Logs.Error) addr in
+  let cfg = Vif.config ~domains ~level:(Some Logs.Error) addr in
   Vif.run ~cfg routes ()
