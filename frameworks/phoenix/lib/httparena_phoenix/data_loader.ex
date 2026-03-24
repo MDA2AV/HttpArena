@@ -9,16 +9,12 @@ defmodule HttparenaPhoenix.DataLoader do
     dataset = load_json(dataset_path)
     large_dataset = load_json("/data/dataset-large.json")
 
-    json_cache = build_json_response(dataset)
-    json_large_cache = build_json_response(large_dataset)
-
     static_files = load_static_files()
 
     db_available = File.exists?("/data/benchmark.db")
 
     :persistent_term.put(:dataset, dataset)
-    :persistent_term.put(:json_cache, json_cache)
-    :persistent_term.put(:json_large_cache, json_large_cache)
+    :persistent_term.put(:large_dataset, large_dataset)
     :persistent_term.put(:static_files, static_files)
     :persistent_term.put(:db_available, db_available)
   end
@@ -32,15 +28,6 @@ defmodule HttparenaPhoenix.DataLoader do
         end
       _ -> []
     end
-  end
-
-  defp build_json_response(dataset) do
-    items = Enum.map(dataset, fn d ->
-      total = Float.round(d["price"] * d["quantity"] * 1.0, 2)
-      Map.put(d, "total", total)
-    end)
-
-    Jason.encode!(%{"items" => items, "count" => length(items)})
   end
 
   defp load_static_files do

@@ -19,27 +19,11 @@ try:
 except Exception:
     pass
 
-# Pre-computed JSON for /json endpoint
-json_buf: bytes | None = None
-if dataset_items is not None:
-    items = []
-    for d in dataset_items:
-        item = dict(d)
-        item["total"] = round(d["price"] * d["quantity"] * 100) / 100
-        items.append(item)
-    json_buf = orjson.dumps({"items": items, "count": len(items)})
-
-# Large dataset for compression (pre-serialised, compressed per-request)
-large_json_buf: bytes | None = None
+# Large dataset for compression
+large_dataset_items = None
 try:
     with open("/data/dataset-large.json") as f:
-        raw = json.load(f)
-    items = []
-    for d in raw:
-        item = dict(d)
-        item["total"] = round(d["price"] * d["quantity"] * 100) / 100
-        items.append(item)
-    large_json_buf = orjson.dumps({"items": items, "count": len(items)})
+        large_dataset_items = json.load(f)
 except Exception:
     pass
 
@@ -149,6 +133,27 @@ async def db_endpoint(request: Request) -> Response:
             }
         )
     body = orjson.dumps({"items": items, "count": len(items)})
+    return _json_resp(body)
+
+
+async def upload_endpoint(request: Request) -> Response:
+    data = await request.body()
+    return _text(str(len(data)))
+
+
+# ── App ──────────────────────────────────────────────────────────────
+routes = [
+    Route("/pipeline", pipeline, methods=["GET"]),
+    Route("/baseline11", baseline11, methods=["GET", "POST"]),
+    Route("/baseline2", baseline2, methods=["GET"]),
+    Route("/json", json_endpoint, methods=["GET"]),
+    Route("/compression", compression_endpoint, methods=["GET"]),
+    Route("/db", db_endpoint, methods=["GET"]),
+    Route("/upload", upload_endpoint, methods=["POST"]),
+]
+
+app = Starlette(routes=routes)
+tems, "count": len(items)})
     return _json_resp(body)
 
 

@@ -548,10 +548,8 @@ pub fn main() {
     Error(_) -> "/data/dataset.json"
   }
   let dataset = load_dataset(dataset_path)
-  let json_cache = build_json_response(dataset)
 
   let large_dataset = load_dataset("/data/dataset-large.json")
-  let json_large_cache = build_json_response(large_dataset)
 
   let static_files = load_static_files()
 
@@ -563,8 +561,7 @@ pub fn main() {
   let ctx =
     Context(
       dataset:,
-      json_cache:,
-      json_large_cache:,
+      large_dataset:,
       static_files:,
       db_available:,
     )
@@ -574,6 +571,20 @@ pub fn main() {
       handle_request(req, ctx)
     }
     |> mist.new
+    |> mist.port(8080)
+    |> mist.bind("0.0.0.0")
+    |> mist.start
+
+  process.sleep_forever()
+}
+|> mist.new
+    |> mist.port(8080)
+    |> mist.bind("0.0.0.0")
+    |> mist.start
+
+  process.sleep_forever()
+}
+|> mist.new
     |> mist.port(8080)
     |> mist.bind("0.0.0.0")
     |> mist.start

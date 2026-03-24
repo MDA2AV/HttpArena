@@ -88,16 +88,20 @@ class App < Sinatra::Base
   end
 
   get '/json' do
-    payload = settings.json_payload
-    halt 500, 'No dataset' unless payload
+    dataset = settings.dataset_items
+    halt 500, 'No dataset' unless dataset
+    items = dataset.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
+    payload = JSON.generate({ 'items' => items, 'count' => items.length })
     content_type 'application/json'
     headers 'Server' => 'sinatra'
     payload
   end
 
   get '/compression' do
-    payload = settings.large_json_payload
-    halt 500, 'No dataset' unless payload
+    dataset = settings.large_dataset_items
+    halt 500, 'No dataset' unless dataset
+    items = dataset.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
+    payload = JSON.generate({ 'items' => items, 'count' => items.length })
     sio = StringIO.new
     gz = Zlib::GzipWriter.new(sio, 1)
     gz.write(payload)

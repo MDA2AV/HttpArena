@@ -231,24 +231,30 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void handleJson(RoutingContext ctx) {
-        if (jsonResponse == null) {
+        if (processedItems == null) {
             ctx.response().setStatusCode(500).end("Dataset not loaded");
             return;
         }
-        ctx.response()
-            .putHeader("content-type", "application/json")
-            .end(Buffer.buffer(jsonResponse));
+        try {
+            byte[] body = MAPPER.writeValueAsBytes(Map.of("items", processedItems, "count", processedItems.size()));
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .end(Buffer.buffer(body));
+        } catch (Exception e) {
+            ctx.response().setStatusCode(500).end("Serialization failed");
+        }
     }
 
     private void handleCompression(RoutingContext ctx) {
-        if (largeJsonResponse == null) {
+        if (largeProcessedItems == null) {
             ctx.response().setStatusCode(500).end("Large dataset not loaded");
             return;
         }
         try {
+            byte[] body = MAPPER.writeValueAsBytes(Map.of("items", largeProcessedItems, "count", largeProcessedItems.size()));
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
             java.util.zip.GZIPOutputStream gz = new java.util.zip.GZIPOutputStream(baos);
-            gz.write(largeJsonResponse);
+            gz.write(body);
             gz.close();
             ctx.response()
                 .putHeader("content-type", "application/json")

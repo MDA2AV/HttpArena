@@ -46,17 +46,15 @@ struct JsonResponse: Content {
 
 final class AppState: Sendable {
     let dataset: [DatasetItem]
-    let jsonCache: [UInt8]
-    let jsonLargeCache: [UInt8]
+    let largeDataset: [DatasetItem]
     let staticFiles: [String: StaticFile]
     let dbPath: String
     let dbAvailable: Bool
 
-    init(dataset: [DatasetItem], jsonCache: [UInt8], jsonLargeCache: [UInt8],
+    init(dataset: [DatasetItem], largeDataset: [DatasetItem],
          staticFiles: [String: StaticFile], dbPath: String, dbAvailable: Bool) {
         self.dataset = dataset
-        self.jsonCache = jsonCache
-        self.jsonLargeCache = jsonLargeCache
+        self.largeDataset = largeDataset
         self.staticFiles = staticFiles
         self.dbPath = dbPath
         self.dbAvailable = dbAvailable
@@ -319,6 +317,12 @@ app.get("static", ":filename") { req -> Response in
     }
     var headers = HTTPHeaders()
     headers.add(name: .contentType, value: file.contentType)
+    headers.add(name: "server", value: "vapor")
+    return Response(status: .ok, headers: headers, body: .init(data: Data(file.data)))
+}
+
+try app.run()
+.contentType)
     headers.add(name: "server", value: "vapor")
     return Response(status: .ok, headers: headers, body: .init(data: Data(file.data)))
 }

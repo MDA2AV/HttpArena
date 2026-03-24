@@ -15,29 +15,13 @@ try:
 except Exception:
     pass
 
-# Large dataset for compression — pre-compute JSON, compress per-request
-large_json_buf = None
+# Large dataset for compression
+large_dataset_items = None
 try:
     with open('/data/dataset-large.json') as f:
-        raw = json.load(f)
-    items = []
-    for d in raw:
-        item = dict(d)
-        item['total'] = round(d['price'] * d['quantity'] * 100) / 100
-        items.append(item)
-    large_json_buf = json.dumps({'items': items, 'count': len(items)}).encode()
+        large_dataset_items = json.load(f)
 except Exception:
     pass
-
-# Pre-compute JSON response for /json endpoint
-json_response_buf = None
-if dataset_items:
-    items = []
-    for d in dataset_items:
-        item = dict(d)
-        item['total'] = round(d['price'] * d['quantity'] * 100) / 100
-        items.append(item)
-    json_response_buf = json.dumps({'items': items, 'count': len(items)}).encode()
 
 # SQLite
 db_available = os.path.exists('/data/benchmark.db')
@@ -141,6 +125,33 @@ def db_endpoint(request):
     resp = HttpResponse(body, content_type='application/json')
     resp['Server'] = 'django'
     return resp
+
+
+@require_http_methods(["POST"])
+def upload_endpoint(request):
+    # Stream from wsgi.input directly to avoid buffering the entire body
+    # Also handles chunked Transfer-Encoding where CONTENT_LENGTH is absent
+    content_length = request.META.get('CONTENT_LENGTH')
+    stream = request.META['wsgi.input']
+    total = 0
+    if content_length:
+        remaining = int(content_length)
+        while remaining > 0:
+            chunk = stream.read(min(65536, remaining))
+            if not chunk:
+                break
+            total += len(chunk)
+            remaining -= len(chunk)
+    else:
+        while True:
+            chunk = stream.read(65536)
+            if not chunk:
+                break
+            total += len(chunk)
+    resp = HttpResponse(str(total), content_type='text/plain')
+    resp['Server'] = 'django'
+    return resp
+ resp
 
 
 @require_http_methods(["POST"])

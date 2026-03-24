@@ -279,19 +279,21 @@ router.get("json") { _, _ -> Response in
     if state.dataset.isEmpty {
         return Response(status: .internalServerError)
     }
+    let jsonBytes = buildJsonCache(state.dataset)
     return Response(
         status: .ok,
         headers: [.contentType: "application/json"],
-        body: .init(byteBuffer: ByteBuffer(bytes: state.jsonCache))
+        body: .init(byteBuffer: ByteBuffer(bytes: jsonBytes))
     )
 }
 
 // GET /compression — returns large JSON; ResponseCompressionMiddleware handles gzip
 router.get("compression") { _, _ -> Response in
+    let jsonBytes = buildJsonCache(state.largeDataset)
     return Response(
         status: .ok,
         headers: [.contentType: "application/json"],
-        body: .init(byteBuffer: ByteBuffer(bytes: state.jsonLargeCache))
+        body: .init(byteBuffer: ByteBuffer(bytes: jsonBytes))
     )
 }
 

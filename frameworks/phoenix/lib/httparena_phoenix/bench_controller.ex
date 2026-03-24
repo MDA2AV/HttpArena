@@ -44,17 +44,27 @@ defmodule HttparenaPhoenix.BenchController do
   end
 
   def json(conn, _params) do
-    json_cache = :persistent_term.get(:json_cache)
+    dataset = :persistent_term.get(:dataset)
+    items = Enum.map(dataset, fn d ->
+      total = Float.round(d["price"] * d["quantity"] * 1.0, 2)
+      Map.put(d, "total", total)
+    end)
+    body = Jason.encode!(%{"items" => items, "count" => length(items)})
 
     conn
     |> put_resp_header("server", "phoenix")
     |> put_resp_header("content-type", "application/json")
-    |> send_resp(200, json_cache)
+    |> send_resp(200, body)
   end
 
   def compression(conn, _params) do
-    json_large_cache = :persistent_term.get(:json_large_cache)
-    compressed = :zlib.gzip(json_large_cache)
+    large_dataset = :persistent_term.get(:large_dataset)
+    items = Enum.map(large_dataset, fn d ->
+      total = Float.round(d["price"] * d["quantity"] * 1.0, 2)
+      Map.put(d, "total", total)
+    end)
+    body = Jason.encode!(%{"items" => items, "count" => length(items)})
+    compressed = :zlib.gzip(body)
 
     conn
     |> put_resp_header("server", "phoenix")

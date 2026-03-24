@@ -54,20 +54,24 @@ class BenchmarkController < ActionController::API
   end
 
   def json_endpoint
-    if @@json_payload
+    if @@dataset_items
+      items = @@dataset_items.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
+      payload = JSON.generate({ 'items' => items, 'count' => items.length })
       response.headers['Server'] = 'rails'
       response.headers['Content-Type'] = 'application/json'
-      render plain: @@json_payload
+      render plain: payload
     else
       head 500
     end
   end
 
   def compression
-    if @@large_json_payload
+    if @@large_dataset_items
+      items = @@large_dataset_items.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
+      payload = JSON.generate({ 'items' => items, 'count' => items.length })
       sio = StringIO.new
       gz = Zlib::GzipWriter.new(sio, 1)
-      gz.write(@@large_json_payload)
+      gz.write(payload)
       gz.close
       response.headers['Server'] = 'rails'
       response.headers['Content-Type'] = 'application/json'

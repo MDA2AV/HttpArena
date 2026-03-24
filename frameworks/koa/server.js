@@ -7,8 +7,6 @@ const zlib = require('zlib');
 const SERVER_NAME = 'koa';
 
 let datasetItems;
-let largeJsonBuf;
-let jsonBuf;
 let dbStmt;
 const staticFiles = {};
 const MIME_TYPES = {
@@ -133,15 +131,22 @@ function startWorker() {
 
     // --- /json ---
     router.get('/json', (ctx) => {
-        if (!jsonBuf) {
+        if (!datasetItems) {
             ctx.status = 500;
             ctx.body = 'No dataset';
             return;
         }
+        const items = datasetItems.map(d => ({
+            id: d.id, name: d.name, category: d.category,
+            price: d.price, quantity: d.quantity, active: d.active,
+            tags: d.tags, rating: d.rating,
+            total: Math.round(d.price * d.quantity * 100) / 100
+        }));
+        const body = JSON.stringify({ items, count: items.length });
         ctx.set('server', SERVER_NAME);
         ctx.set('content-type', 'application/json');
-        ctx.set('content-length', String(jsonBuf.length));
-        ctx.body = jsonBuf;
+        ctx.set('content-length', String(Buffer.byteLength(body)));
+        ctx.body = body;
     });
 
     // --- /compression ---
@@ -251,4 +256,6 @@ if (cluster.isPrimary) {
     for (let i = 0; i < numCPUs; i++) cluster.fork();
 } else {
     startWorker();
+}
+;
 }

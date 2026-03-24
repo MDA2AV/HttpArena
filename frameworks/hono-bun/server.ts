@@ -12,22 +12,7 @@ const MIME_TYPES: Record<string, string> = {
 // Load datasets
 const datasetItems: any[] = JSON.parse(readFileSync("/data/dataset.json", "utf8"));
 
-const processedItems = datasetItems.map((d: any) => ({
-  id: d.id, name: d.name, category: d.category,
-  price: d.price, quantity: d.quantity, active: d.active,
-  tags: d.tags, rating: d.rating,
-  total: Math.round(d.price * d.quantity * 100) / 100,
-}));
-const smallPayload = Buffer.from(JSON.stringify({ items: processedItems, count: processedItems.length }));
-
-const largeData = JSON.parse(readFileSync("/data/dataset-large.json", "utf8"));
-const largeItems = largeData.map((d: any) => ({
-  id: d.id, name: d.name, category: d.category,
-  price: d.price, quantity: d.quantity, active: d.active,
-  tags: d.tags, rating: d.rating,
-  total: Math.round(d.price * d.quantity * 100) / 100,
-}));
-const largeJsonBuf = Buffer.from(JSON.stringify({ items: largeItems, count: largeItems.length }));
+const largeDatasetItems: any[] = JSON.parse(readFileSync("/data/dataset-large.json", "utf8"));
 
 // Open SQLite database read-only
 let dbStmt: any = null;
@@ -199,4 +184,49 @@ Bun.serve({
   port: 8080,
   reusePort: true,
   fetch: app.fetch,
+});
+gth });
+  return new Response(body, {
+    headers: {
+      "content-type": "application/json",
+      "content-length": String(Buffer.byteLength(body)),
+      server: SERVER_NAME,
+    },
+  });
+});
+
+// --- /upload ---
+app.post("/upload", async (c) => {
+  const ab = await c.req.arrayBuffer();
+  return new Response(String(ab.byteLength), {
+    headers: { "content-type": "text/plain", server: SERVER_NAME },
+  });
+});
+
+// --- /static/:filename ---
+app.get("/static/:filename", (c) => {
+  const filename = c.req.param("filename");
+  const sf = staticFiles[filename];
+  if (sf) {
+    return new Response(sf.buf, {
+      headers: {
+        "content-type": sf.ct,
+        "content-length": String(sf.buf.length),
+        server: SERVER_NAME,
+      },
+    });
+  }
+  return new Response("Not found", { status: 404 });
+});
+
+// Catch-all
+app.all("*", () => new Response("Not found", { status: 404 }));
+
+// Start — Bun native serve (no adapter needed)
+Bun.serve({
+  port: 8080,
+  reusePort: true,
+  fetch: app.fetch,
+});
+pp.fetch,
 });
