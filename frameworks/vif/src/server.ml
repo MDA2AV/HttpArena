@@ -88,7 +88,7 @@ let sum_query_params req =
   ) 0 params
 
 let read_body req =
-  let (Flux.Source.Source { init; pull; stop }) = Request.source req in
+  let (Flux.Source { init; pull; stop }) = Request.source req in
   let state = init () in
   let buf = Buffer.create 4096 in
   let rec loop state =
@@ -99,7 +99,7 @@ let read_body req =
   loop state
 
 let count_body_bytes req =
-  let (Flux.Source.Source { init; pull; stop }) = Request.source req in
+  let (Flux.Source { init; pull; stop }) = Request.source req in
   let state = init () in
   let rec loop state acc =
     match pull state with
