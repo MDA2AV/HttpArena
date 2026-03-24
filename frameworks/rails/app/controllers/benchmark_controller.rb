@@ -8,20 +8,16 @@ class BenchmarkController < ActionController::API
   DATASET_PATH = ENV.fetch('DATASET_PATH', '/data/dataset.json')
   LARGE_DATASET_PATH = '/data/dataset-large.json'
 
-  @@json_payload = nil
+  @@dataset_items = nil
   @@db_available = File.exist?('/data/benchmark.db')
 
   if File.exist?(DATASET_PATH)
-    raw = JSON.parse(File.read(DATASET_PATH))
-    items = raw.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
-    @@json_payload = JSON.generate({ 'items' => items, 'count' => items.length })
+    @@dataset_items = JSON.parse(File.read(DATASET_PATH))
   end
 
-  @@large_json_payload = nil
+  @@large_dataset_items = nil
   if File.exist?(LARGE_DATASET_PATH)
-    raw = JSON.parse(File.read(LARGE_DATASET_PATH))
-    items = raw.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
-    @@large_json_payload = JSON.generate({ 'items' => items, 'count' => items.length })
+    @@large_dataset_items = JSON.parse(File.read(LARGE_DATASET_PATH))
   end
 
   DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'
