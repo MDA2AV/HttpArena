@@ -62,6 +62,8 @@ Each item in `dataset.json`:
 }
 ```
 
+The `count` field must be dynamically computed from the number of items (e.g. `len(items)`, `items.length`, `items.size()`), not hardcoded to `50`.
+
 ## Parameters
 
 | Parameter | Value |

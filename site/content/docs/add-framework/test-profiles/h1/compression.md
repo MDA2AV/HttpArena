@@ -51,6 +51,8 @@ Content-Encoding: gzip
 (gzip-compressed ~1 MB JSON)
 ```
 
+The response JSON follows the same structure as the [JSON Processing](../json-processing) endpoint: `{"items": [...], "count": N}`. The `count` field must be dynamically computed from the number of items (e.g. `len(items)`, `items.length`, `items.size()`), not hardcoded to `6000`.
+
 ## Scoring
 
 Raw requests per second alone is not a fair metric for compression benchmarks. A framework that compresses less aggressively produces larger responses, reducing CPU cost per request and inflating its RPS — but at the expense of bandwidth efficiency.
