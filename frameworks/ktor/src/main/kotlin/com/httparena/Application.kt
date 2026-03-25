@@ -16,6 +16,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.sql.Connection
 import java.sql.DriverManager
+import java.util.zip.Deflater
 import java.util.zip.GZIPOutputStream
 
 @Serializable
@@ -140,7 +141,9 @@ object AppData {
 
     fun gzipCompress(data: ByteArray): ByteArray {
         val bos = ByteArrayOutputStream(data.size / 4)
-        GZIPOutputStream(bos).use { it.write(data) }
+        object : GZIPOutputStream(bos) {
+            init { def.setLevel(Deflater.BEST_SPEED) }
+        }.use { it.write(data) }
         return bos.toByteArray()
     }
 }
