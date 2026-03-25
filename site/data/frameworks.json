@@ -1,374 +1,64 @@
 {
-  "actix-websocket": {
-    "description": "Actix-web WebSocket echo server",
-    "repo": "https://github.com/actix/actix-web",
-    "type": "framework",
-    "engine": "Actix"
-  },
-  "actix": {
-    "description": "Actix-web 4 with rustls for HTTP/2 support, compiled with -O3 and thin LTO.",
-    "repo": "https://github.com/actix/actix-web",
-    "type": "framework",
-    "engine": "actix"
-  },
-  "aspnet-grpc": {
-    "description": "ASP.NET Core gRPC server using .NET 10 preview with Kestrel.",
-    "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "framework",
-    "engine": "Kestrel"
-  },
-  "aspnet-minimal": {
-    "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
-    "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "framework",
-    "engine": "Kestrel"
-  },
-  "aspnet-websocket": {
-    "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.",
-    "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "framework",
-    "engine": "Kestrel"
-  },
-  "blitz": {
-    "description": "Custom Zig HTTP server with dual epoll/io_uring backends. Zero-copy parsing, pre-computed responses, pipeline batching.",
-    "repo": "https://github.com/BennyFranciscus/blitz",
-    "type": "engine",
-    "engine": "io_uring"
-  },
-  "bun-websocket": {
-    "description": "Bun WebSocket echo server",
-    "repo": "https://github.com/oven-sh/bun",
-    "type": "framework",
-    "engine": "Bun"
-  },
-  "bun": {
-    "description": "Bun's built-in HTTP server using JavaScriptCore engine with multi-core clustering.",
-    "repo": "https://github.com/oven-sh/bun",
-    "type": "framework",
-    "engine": "JSC"
-  },
-  "caddy": {
-    "description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.",
-    "repo": "https://github.com/caddyserver/caddy",
-    "type": "engine",
-    "engine": "caddy"
-  },
-  "chi": {
-    "description": "Chi is a lightweight, idiomatic and composable router for building Go HTTP services, built on top of net/http.",
-    "repo": "https://github.com/go-chi/chi",
-    "type": "framework",
-    "engine": "chi"
-  },
-  "deno-websocket": {
-    "description": "Deno WebSocket echo server",
-    "repo": "https://github.com/denoland/deno",
-    "type": "framework",
-    "engine": "Deno"
-  },
-  "deno": {
-    "description": "Deno HTTP server using deno serve --parallel with zero-dependency native fetch handler.",
-    "repo": "https://github.com/denoland/deno",
-    "type": "framework",
-    "engine": "V8"
-  },
-  "Django": {
-    "description": "Django web framework on Gunicorn with sync workers, one worker per CPU core.",
-    "repo": "https://github.com/django/django",
-    "type": "framework",
-    "engine": "gunicorn"
-  },
-  "drogon": {
-    "description": "Drogon C++ framework using HttpController with async callbacks, mimalloc allocator, and -flto optimization.",
-    "repo": "https://github.com/drogonframework/drogon",
-    "type": "framework",
-    "engine": "drogon"
-  },
-  "echo": {
-    "description": "Echo is a high performance, extensible, minimalist Go web framework with optimized HTTP router, middleware support, and data binding.",
-    "repo": "https://github.com/labstack/echo",
-    "type": "framework",
-    "engine": "echo"
-  },
-  "Elysia": {
-    "description": "Ergonomic TypeScript framework built for Bun with end-to-end type safety and excellent DX.",
-    "repo": "https://github.com/elysiajs/elysia",
-    "type": "framework",
-    "engine": "Bun"
-  },
-  "Express": {
-    "description": "Fast, unopinionated, minimalist web framework for Node.js. The most widely used backend framework in the JavaScript ecosystem.",
-    "repo": "https://github.com/expressjs/express",
-    "type": "framework",
-    "engine": "V8"
-  },
-  "FastAPI": {
-    "description": "FastAPI async web framework on Uvicorn (uvloop), multi-worker via gunicorn.",
-    "repo": "https://github.com/fastapi/fastapi",
-    "type": "framework",
-    "engine": "uvicorn"
-  },
-  "Fastify": {
-    "description": "Fast and low-overhead Node.js web framework built for developer experience and performance.",
-    "repo": "https://github.com/fastify/fastify",
-    "type": "framework",
-    "engine": "V8"
-  },
-  "FastPySGI": {
-    "description": "An ultra fast WSGI/ASGI server for Python",
-    "repo": "https://github.com/remittor/fastpysgi",
-    "type": "engine",
-    "engine": "libuv"
-  },
-  "fiber": {
-    "description": "Fiber is an Express-inspired Go web framework built on fasthttp, featuring zero-allocation routing and extreme performance.",
-    "repo": "https://github.com/gofiber/fiber",
-    "type": "framework",
-    "engine": "fiber"
-  },
-  "flask": {
-    "description": "Flask web framework on Gunicorn with sync workers, one worker per CPU core.",
-    "repo": "https://github.com/pallets/flask",
-    "type": "framework",
-    "engine": "gunicorn"
-  },
-  "GenHTTP-WS": {
-    "description": "GenHTTP WebSocket echo server using the functional API with zero-allocation frame handling.",
-    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "framework",
-    "engine": "GenHTTP"
-  },
-  "GenHTTP": {
-    "description": "Lightweight, embeddable and modular C# web server.",
-    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "framework",
-    "engine": "GenHTTP"
-  },
-  "gin": {
-    "description": "Gin is a Go web framework with a martini-like API, featuring the fastest HTTP router (httprouter) and zero-allocation routing.",
-    "repo": "https://github.com/gin-gonic/gin",
-    "type": "framework",
-    "engine": "gin"
-  },
-  "gleam-mist": {
-    "description": "Mist HTTP server for Gleam on the BEAM VM \u2014 first Gleam and first BEAM entry in HttpArena.",
-    "repo": "https://github.com/rawhat/mist",
-    "type": "framework",
-    "engine": "BEAM"
-  },
-  "go-fasthttp": {
-    "description": "High-performance Go HTTP server using fasthttp with zero-allocation design and buffer reuse.",
-    "repo": "https://github.com/valyala/fasthttp",
-    "type": "framework",
-    "engine": "fasthttp"
-  },
-  "go-websocket": {
-    "description": "Go WebSocket echo server using gobwas/ws",
-    "repo": "https://github.com/gobwas/ws",
-    "type": "framework",
-    "engine": "net/http"
-  },
-  "grpc-go": {
-    "description": "Go gRPC server using google.golang.org/grpc.",
-    "repo": "https://github.com/grpc/grpc-go",
-    "type": "framework",
-    "engine": "grpc-go"
-  },
-  "h2o-mruby": {
-    "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
-    "repo": "https://github.com/h2o/h2o",
-    "type": "framework",
-    "engine": "h2o"
-  },
-  "h2o": {
-    "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
-    "repo": "https://github.com/h2o/h2o",
-    "type": "engine",
-    "engine": "h2o"
-  },
-  "Hono (Bun)": {
-    "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
-    "repo": "https://github.com/honojs/hono",
-    "type": "framework",
-    "engine": "JSC"
-  },
-  "hono (node)": {
-    "description": "Ultrafast web framework built on Web Standards, runs on any JS runtime.",
-    "repo": "https://github.com/honojs/hono",
-    "type": "framework",
-    "engine": "Node"
-  },
-  "hummingbird": {
-    "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
-    "repo": "https://github.com/hummingbird-project/hummingbird",
-    "type": "framework",
-    "engine": "Hummingbird"
-  },
-  "hyper": {
-    "description": "Low-level HTTP library for Rust, built on tokio with multi-threaded async runtime.",
-    "repo": "https://github.com/hyperium/hyper",
-    "type": "engine",
-    "engine": "hyper"
-  },
-  "kemal": {
-    "description": "Kemal web framework for Crystal, compiled with --release optimizations.",
-    "repo": "https://github.com/kemalcr/kemal",
-    "type": "framework",
-    "engine": "Kemal"
-  },
-  "Koa": {
-    "description": "Expressive middleware framework for Node.js by the Express team, using async/await.",
-    "repo": "https://github.com/koajs/koa",
-    "type": "framework",
-    "engine": "V8"
-  },
-  "ktor": {
-    "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
-    "repo": "https://github.com/ktorio/ktor",
-    "type": "framework",
-    "engine": "Netty"
-  },
-  "lithium": {
-    "description": "Lithium C++ HTTP framework with compile-time reflection, boost::context coroutines, and -O3 -march=native -flto.",
-    "repo": "https://github.com/matt-42/lithium",
-    "type": "framework",
-    "engine": "li/http"
-  },
-  "nginx-openresty": {
-    "description": "OpenResty (Nginx + LuaJIT) with Lua content handlers for all benchmark endpoints.",
-    "repo": "https://github.com/openresty/openresty",
-    "type": "framework",
-    "engine": "openresty"
-  },
-  "nginx": {
-    "description": "Nginx with a custom C handler module, compiled with -O3 -march=native.",
-    "repo": "https://github.com/nginx/nginx",
-    "type": "engine",
-    "engine": "nginx"
-  },
-  "node-websocket": {
-    "description": "Node.js WebSocket echo server using ws package",
-    "repo": "https://github.com/websockets/ws",
-    "type": "framework",
-    "engine": "V8"
-  },
-  "node": {
-    "description": "Bare Node.js HTTP server using the cluster module for multi-core scaling.",
-    "repo": "https://github.com/nodejs/node",
-    "type": "framework",
-    "engine": "V8"
-  },
-  "phoenix": {
-    "description": "Phoenix 1.7 on Cowboy \u2014 the most popular Elixir web framework. First Elixir entry in HttpArena.",
-    "repo": "https://github.com/phoenixframework/phoenix",
-    "type": "framework",
-    "engine": "BEAM"
-  },
-  "prologue": {
-    "description": "Prologue web framework for Nim \u2014 compiles to native C with powerful routing and middleware support.",
-    "repo": "https://github.com/planety/prologue",
-    "type": "framework",
-    "engine": "asynchserver"
-  },
-  "quarkus-jvm-grpc": {
-    "description": "Quarkus gRPC server using quarkus-grpc on Vert.x with h2c, JDK 21, optimized JVM tuning.",
-    "repo": "https://github.com/quarkusio/quarkus",
-    "type": "framework",
-    "engine": "Vert.x (gRPC)"
-  },
-  "quarkus-jvm": {
-    "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
-    "repo": "https://github.com/quarkusio/quarkus",
-    "type": "framework",
-    "engine": "Netty"
-  },
-  "Rails": {
-    "description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.",
-    "repo": "https://github.com/rails/rails",
-    "type": "framework",
-    "engine": "puma"
-  },
-  "ringzero": {
-    "description": "Custom C HTTP server built on io_uring with a multi-reactor architecture. No epoll, no thread-per-connection.",
-    "repo": "https://github.com/MDA2AV/ringzero",
-    "type": "engine",
-    "engine": "io_uring"
-  },
-  "rocket": {
-    "description": "Rocket 0.5 on Tokio with Rustls for HTTP/2, compiled with -O3 and thin LTO.",
-    "repo": "https://github.com/SergioBenitez/Rocket",
-    "type": "framework",
-    "engine": "rocket"
-  },
-  "salvo": {
-    "description": "Salvo web framework with Quinn HTTP/3 support on Tokio runtime, compiled with -O3 and thin LTO.",
-    "repo": "https://github.com/salvo-rs/salvo",
-    "type": "framework",
-    "engine": "Salvo"
-  },
-  "Sinatra": {
-    "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
-    "repo": "https://github.com/sinatra/sinatra",
-    "type": "framework",
-    "engine": "puma"
-  },
-  "spring-jvm-grpc": {
-    "description": "Spring Boot gRPC server using grpc-spring-boot-starter with Netty transport on JDK 24.",
-    "repo": "https://github.com/grpc-ecosystem/grpc-spring",
-    "type": "framework",
-    "engine": "Netty (gRPC)"
-  },
-  "spring-jvm-jetty": {
-    "description": "Spring Boot with embedded Jetty 12 on JDK 21, supporting HTTP/1.1 and HTTP/2.",
-    "repo": "https://github.com/spring-projects/spring-boot",
-    "type": "framework",
-    "engine": "Jetty"
-  },
-  "spring-jvm": {
-    "description": "Spring Boot with embedded Tomcat on JDK 21 (HotSpot JVM with ZGC).",
-    "repo": "https://github.com/spring-projects/spring-boot",
-    "type": "framework",
-    "engine": "Tomcat"
-  },
-  "Starlette": {
-    "description": "Starlette ASGI framework on Uvicorn (uvloop), multi-worker via gunicorn. The foundation FastAPI is built on.",
-    "repo": "https://github.com/encode/starlette",
-    "type": "framework",
-    "engine": "uvicorn"
-  },
-  "tonic-grpc": {
-    "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
-    "repo": "https://github.com/hyperium/tonic",
-    "type": "framework",
-    "engine": "Tonic"
-  },
-  "ulfius": {
-    "description": "Ulfius C REST framework built on GNU Libmicrohttpd with Jansson JSON. Lightweight with small memory footprint, designed for embedded systems.",
-    "repo": "https://github.com/babelouest/ulfius",
-    "type": "framework",
-    "engine": "libmicrohttpd"
-  },
-  "ultimate-express": {
-    "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
-    "repo": "https://github.com/dimdenGD/ultimate-express",
-    "type": "framework",
-    "engine": "uWebSockets"
-  },
-  "Vapor": {
-    "description": "Vapor is the most popular server-side Swift web framework, built on SwiftNIO with async/await, Codable routing, and middleware support.",
-    "repo": "https://github.com/vapor/vapor",
-    "type": "framework",
-    "engine": "SwiftNIO"
-  },
-  "vertx": {
-    "description": "Eclipse Vert.x 4.5 \u2014 reactive toolkit on Netty with event-loop threading, JDK 21.",
-    "repo": "https://github.com/eclipse-vertx/vert.x",
-    "type": "engine",
-    "engine": "Netty"
-  },
-  "zerg": {
-    "description": "Raw C# TCP server on Linux io_uring via zerg, with zero-copy buffer rings and manual HTTP parsing.",
-    "repo": "https://github.com/MDA2AV/zerg",
-    "type": "framework",
-    "engine": "io_uring"
-  }
+  "actix": {"description": "Actix-web 4 with rustls for HTTP/2 support, compiled with -O3 and thin LTO.", "repo": "https://github.com/actix/actix-web", "type": "framework", "engine": "actix"},
+  "actix-websocket": {"description": "Actix-web WebSocket echo server", "repo": "https://github.com/actix/actix-web", "type": "framework", "engine": "Actix"},
+  "aspnet-grpc": {"description": "ASP.NET Core gRPC server using .NET 10 preview with Kestrel.", "repo": "https://github.com/dotnet/aspnetcore", "type": "framework", "engine": "Kestrel"},
+  "aspnet-minimal": {"description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.", "repo": "https://github.com/dotnet/aspnetcore", "type": "framework", "engine": "Kestrel"},
+  "aspnet-websocket": {"description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.", "repo": "https://github.com/dotnet/aspnetcore", "type": "framework", "engine": "Kestrel"},
+  "blitz": {"description": "Custom Zig HTTP server with dual epoll/io_uring backends. Zero-copy parsing, pre-computed responses, pipeline batching.", "repo": "https://github.com/BennyFranciscus/blitz", "type": "engine", "engine": "io_uring"},
+  "bun": {"description": "Bun's built-in HTTP server using JavaScriptCore engine with multi-core clustering.", "repo": "https://github.com/oven-sh/bun", "type": "framework", "engine": "JSC"},
+  "bun-websocket": {"description": "Bun WebSocket echo server", "repo": "https://github.com/oven-sh/bun", "type": "framework", "engine": "Bun"},
+  "caddy": {"description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.", "repo": "https://github.com/caddyserver/caddy", "type": "engine", "engine": "caddy"},
+  "chi": {"description": "Chi is a lightweight, idiomatic and composable router for building Go HTTP services, built on top of net/http.", "repo": "https://github.com/go-chi/chi", "type": "framework", "engine": "chi"},
+  "deno": {"description": "Deno HTTP server using deno serve --parallel with zero-dependency native fetch handler.", "repo": "https://github.com/denoland/deno", "type": "framework", "engine": "V8"},
+  "deno-websocket": {"description": "Deno WebSocket echo server", "repo": "https://github.com/denoland/deno", "type": "framework", "engine": "Deno"},
+  "Django": {"description": "Django web framework on Gunicorn with sync workers, one worker per CPU core.", "repo": "https://github.com/django/django", "type": "framework", "engine": "gunicorn"},
+  "drogon": {"description": "Drogon C++ framework using HttpController with async callbacks, mimalloc allocator, and -flto optimization.", "repo": "https://github.com/drogonframework/drogon", "type": "framework", "engine": "drogon"},
+  "echo": {"description": "Echo is a high performance, extensible, minimalist Go web framework with optimized HTTP router, middleware support, and data binding.", "repo": "https://github.com/labstack/echo", "type": "framework", "engine": "echo"},
+  "Elysia": {"description": "Ergonomic TypeScript framework built for Bun with end-to-end type safety and excellent DX.", "repo": "https://github.com/elysiajs/elysia", "type": "framework", "engine": "Bun"},
+  "Express": {"description": "Fast, unopinionated, minimalist web framework for Node.js. The most widely used backend framework in the JavaScript ecosystem.", "repo": "https://github.com/expressjs/express", "type": "framework", "engine": "V8"},
+  "FastAPI": {"description": "FastAPI async web framework on Uvicorn (uvloop), multi-worker via gunicorn.", "repo": "https://github.com/fastapi/fastapi", "type": "framework", "engine": "uvicorn"},
+  "Fastify": {"description": "Fast and low-overhead Node.js web framework built for developer experience and performance.", "repo": "https://github.com/fastify/fastify", "type": "framework", "engine": "V8"},
+  "FastPySGI": {"description": "An ultra fast WSGI/ASGI server for Python", "repo": "https://github.com/remittor/fastpysgi", "type": "engine", "engine": "libuv"},
+  "fiber": {"description": "Fiber is an Express-inspired Go web framework built on fasthttp, featuring zero-allocation routing and extreme performance.", "repo": "https://github.com/gofiber/fiber", "type": "framework", "engine": "fiber"},
+  "flask": {"description": "Flask web framework on Gunicorn with sync workers, one worker per CPU core.", "repo": "https://github.com/pallets/flask", "type": "framework", "engine": "gunicorn"},
+  "GenHTTP": {"description": "Lightweight, embeddable and modular C# web server.", "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP", "type": "framework", "engine": "GenHTTP"},
+  "GenHTTP-WS": {"description": "GenHTTP WebSocket echo server using the functional API with zero-allocation frame handling.", "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP", "type": "framework", "engine": "GenHTTP"},
+  "gin": {"description": "Gin is a Go web framework with a martini-like API, featuring the fastest HTTP router (httprouter) and zero-allocation routing.", "repo": "https://github.com/gin-gonic/gin", "type": "framework", "engine": "gin"},
+  "gleam-mist": {"description": "Mist HTTP server for Gleam on the BEAM VM — first Gleam and first BEAM entry in HttpArena.", "repo": "https://github.com/rawhat/mist", "type": "framework", "engine": "BEAM"},
+  "go-fasthttp": {"description": "High-performance Go HTTP server using fasthttp with zero-allocation design and buffer reuse.", "repo": "https://github.com/valyala/fasthttp", "type": "framework", "engine": "fasthttp"},
+  "go-websocket": {"description": "Go WebSocket echo server using gobwas/ws", "repo": "https://github.com/gobwas/ws", "type": "framework", "engine": "net/http"},
+  "grpc-go": {"description": "Go gRPC server using google.golang.org/grpc.", "repo": "https://github.com/grpc/grpc-go", "type": "framework", "engine": "grpc-go"},
+  "h2o": {"description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.", "repo": "https://github.com/h2o/h2o", "type": "engine", "engine": "h2o"},
+  "h2o-mruby": {"description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.", "repo": "https://github.com/h2o/h2o", "type": "framework", "engine": "h2o"},
+  "hono (node)": {"description": "Ultrafast web framework built on Web Standards, runs on any JS runtime.", "repo": "https://github.com/honojs/hono", "type": "framework", "engine": "Node"},
+  "Hono (Bun)": {"description": "Ultrafast Web Standards framework running natively on Bun — no adapter overhead.", "repo": "https://github.com/honojs/hono", "type": "framework", "engine": "JSC"},
+  "hummingbird": {"description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.", "repo": "https://github.com/hummingbird-project/hummingbird", "type": "framework", "engine": "Hummingbird"},
+  "hyper": {"description": "Low-level HTTP library for Rust, built on tokio with multi-threaded async runtime.", "repo": "https://github.com/hyperium/hyper", "type": "engine", "engine": "hyper"},
+  "kemal": {"description": "Kemal web framework for Crystal, compiled with --release optimizations.", "repo": "https://github.com/kemalcr/kemal", "type": "framework", "engine": "Kemal"},
+  "Koa": {"description": "Expressive middleware framework for Node.js by the Express team, using async/await.", "repo": "https://github.com/koajs/koa", "type": "framework", "engine": "V8"},
+  "ktor": {"description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.", "repo": "https://github.com/ktorio/ktor", "type": "framework", "engine": "Netty"},
+  "lithium": {"description": "Lithium C++ HTTP framework with compile-time reflection, boost::context coroutines, and -O3 -march=native -flto.", "repo": "https://github.com/matt-42/lithium", "type": "framework", "engine": "li/http"},
+  "nginx": {"description": "Nginx with a custom C handler module, compiled with -O3 -march=native.", "repo": "https://github.com/nginx/nginx", "type": "engine", "engine": "nginx"},
+  "nginx-openresty": {"description": "OpenResty (Nginx + LuaJIT) with Lua content handlers for all benchmark endpoints.", "repo": "https://github.com/openresty/openresty", "type": "framework", "engine": "openresty"},
+  "node": {"description": "Bare Node.js HTTP server using the cluster module for multi-core scaling.", "repo": "https://github.com/nodejs/node", "type": "framework", "engine": "V8"},
+  "node-websocket": {"description": "Node.js WebSocket echo server using ws package", "repo": "https://github.com/websockets/ws", "type": "framework", "engine": "V8"},
+  "phoenix": {"description": "Phoenix 1.7 on Cowboy — the most popular Elixir web framework. First Elixir entry in HttpArena.", "repo": "https://github.com/phoenixframework/phoenix", "type": "framework", "engine": "BEAM"},
+  "prologue": {"description": "Prologue web framework for Nim — compiles to native C with powerful routing and middleware support.", "repo": "https://github.com/planety/prologue", "type": "framework", "engine": "asynchserver"},
+  "quarkus-jvm": {"description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.", "repo": "https://github.com/quarkusio/quarkus", "type": "framework", "engine": "Netty"},
+  "quarkus-jvm-grpc": {"description": "Quarkus gRPC server using quarkus-grpc on Vert.x with h2c, JDK 21, optimized JVM tuning.", "repo": "https://github.com/quarkusio/quarkus", "type": "framework", "engine": "Vert.x (gRPC)"},
+  "Rails": {"description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.", "repo": "https://github.com/rails/rails", "type": "framework", "engine": "puma"},
+  "ringzero": {"description": "Custom C HTTP server built on io_uring with a multi-reactor architecture. No epoll, no thread-per-connection.", "repo": "https://github.com/MDA2AV/ringzero", "type": "engine", "engine": "io_uring"},
+  "rocket": {"description": "Rocket 0.5 on Tokio with Rustls for HTTP/2, compiled with -O3 and thin LTO.", "repo": "https://github.com/SergioBenitez/Rocket", "type": "framework", "engine": "rocket"},
+  "salvo": {"description": "Salvo web framework with Quinn HTTP/3 support on Tokio runtime, compiled with -O3 and thin LTO.", "repo": "https://github.com/salvo-rs/salvo", "type": "framework", "engine": "Salvo"},
+  "Sinatra": {"description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.", "repo": "https://github.com/sinatra/sinatra", "type": "framework", "engine": "puma"},
+  "spring-jvm": {"description": "Spring Boot with embedded Tomcat on JDK 21 (HotSpot JVM with ZGC).", "repo": "https://github.com/spring-projects/spring-boot", "type": "framework", "engine": "Tomcat"},
+  "spring-jvm-grpc": {"description": "Spring Boot gRPC server using grpc-spring-boot-starter with Netty transport on JDK 24.", "repo": "https://github.com/grpc-ecosystem/grpc-spring", "type": "framework", "engine": "Netty (gRPC)"},
+  "spring-jvm-jetty": {"description": "Spring Boot with embedded Jetty 12 on JDK 21, supporting HTTP/1.1 and HTTP/2.", "repo": "https://github.com/spring-projects/spring-boot", "type": "framework", "engine": "Jetty"},
+  "Starlette": {"description": "Starlette ASGI framework on Uvicorn (uvloop), multi-worker via gunicorn. The foundation FastAPI is built on.", "repo": "https://github.com/encode/starlette", "type": "framework", "engine": "uvicorn"},
+  "tonic-grpc": {"description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.", "repo": "https://github.com/hyperium/tonic", "type": "framework", "engine": "Tonic"},
+  "ulfius": {"description": "Ulfius C REST framework built on GNU Libmicrohttpd with Jansson JSON. Lightweight with small memory footprint, designed for embedded systems.", "repo": "https://github.com/babelouest/ulfius", "type": "framework", "engine": "libmicrohttpd"},
+  "ultimate-express": {"description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.", "repo": "https://github.com/dimdenGD/ultimate-express", "type": "framework", "engine": "uWebSockets"},
+  "Vapor": {"description": "Vapor is the most popular server-side Swift web framework, built on SwiftNIO with async/await, Codable routing, and middleware support.", "repo": "https://github.com/vapor/vapor", "type": "framework", "engine": "SwiftNIO"},
+  "vertx": {"description": "Eclipse Vert.x 4.5 — reactive toolkit on Netty with event-loop threading, JDK 21.", "repo": "https://github.com/eclipse-vertx/vert.x", "type": "engine", "engine": "Netty"},
+  "zerg": {"description": "Raw C# TCP server on Linux io_uring via zerg, with zero-copy buffer rings and manual HTTP parsing.", "repo": "https://github.com/MDA2AV/zerg", "type": "framework", "engine": "io_uring"}
 }
