@@ -71,11 +71,12 @@ rebuild_site_data() {
         local meta="$fw_dir/meta.json"
         [ -f "$meta" ] || continue
         $fw_first || echo ',' >> "$fw_json"
+        local dn=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('display_name',sys.argv[2]))" "$meta" "$fw")
         local desc=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('description',''))" "$meta")
         local repo=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('repo',''))" "$meta")
         local ftype=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('type','realistic'))" "$meta")
         local engine=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('engine',''))" "$meta")
-        printf '  "%s": {"description": "%s", "repo": "%s", "type": "%s", "engine": "%s"}' "$fw" "$desc" "$repo" "$ftype" "$engine" >> "$fw_json"
+        printf '  "%s": {"description": "%s", "repo": "%s", "type": "%s", "engine": "%s"}' "$dn" "$desc" "$repo" "$ftype" "$engine" >> "$fw_json"
         fw_first=false
     done
     echo '' >> "$fw_json"
