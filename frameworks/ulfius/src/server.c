@@ -90,15 +90,7 @@ static void load_dataset(void) {
     free(data);
     if (!root || !json_is_array(root)) { json_decref(root); return; }
 
-    /* Pre-compute total for each item */
-    size_t i;
-    json_t *item;
-    json_array_foreach(root, i, item) {
-        double price = json_number_value(json_object_get(item, "price"));
-        json_int_t qty = json_integer_value(json_object_get(item, "quantity"));
-        double total = round(price * qty * 100.0) / 100.0;
-        json_object_set_new(item, "total", json_real(total));
-    }
+    /* Store raw items — totals are computed per-request as required by spec */
     dataset_items = root;
 }
 
@@ -108,7 +100,7 @@ static unsigned char *gzip_compress(const char *input, size_t in_len, size_t *ou
     if (!buf) return NULL;
 
     z_stream strm = {0};
-    if (deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+    if (deflateInit2(&strm, Z_BEST_SPEED, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
         free(buf);
         return NULL;
     }
@@ -216,11 +208,26 @@ int cb_json(const struct _u_request *request, struct _u_response *response, void
         ulfius_set_string_body_response(response, 500, "No dataset");
         return U_CALLBACK_CONTINUE;
     }
-    json_t *resp = json_object();
-    json_object_set(resp, "items", dataset_items);
-    json_object_set_new(resp, "count", json_integer(json_array_size(dataset_items)));
-    char *body = json_dumps(resp, JSON_COMPACT);
-    json_decref(resp);
+
+    /* Per-request: iterate items, compute total, build response */
+    json_t *items_out = json_array();
+    size_t i;
+    json_t *item;
+    json_array_foreach(dataset_items, i, item) {
+        double price = json_number_value(json_object_get(item, "price"));
+        json_int_t qty = json_integer_value(json_object_get(item, "quantity"));
+        double total = round(price * qty * 100.0) / 100.0;
+
+        json_t *out = json_deep_copy(item);
+        json_object_set_new(out, "total", json_real(total));
+        json_array_append_new(items_out, out);
+    }
+
+    json_t *resp_json = json_object();
+    json_object_set_new(resp_json, "items", items_out);
+    json_object_set_new(resp_json, "count", json_integer(json_array_size(items_out)));
+    char *body = json_dumps(resp_json, JSON_COMPACT);
+    json_decref(resp_json);
     ulfius_set_string_body_response(response, 200, body);
     u_map_put(response->map_header, "Content-Type", "application/json");
     free(body);
