@@ -14,7 +14,7 @@ $jsonData = json_decode(file_get_contents('/data/dataset.json'), true);
 
 //$bad = fn($x) => !in_array($x, ['POST', 'GET', 'HEAD']);
 
-function baseline11()
+function baseline()
 {
     $sum = array_sum(ngx::query_args());
     if(ngx_request_method() === 'POST') {
@@ -29,6 +29,7 @@ function json()
 {
     global $jsonData;
 
+    $total = [];
     foreach ($jsonData as $item) {
         $item['total'] = $item['price'] * $item['quantity'];
         $total[] = $item;
@@ -44,13 +45,13 @@ function upload()
     echo strlen(ngx_request_body());
 }
 
-function compression()
-{
+//function compression()
+//{
     //global $largeJson;
 
-    ngx_header_set('Content-Type', 'application/json');
+//    ngx_header_set('Content-Type', 'application/json');
     //echo $largeJson;
-}
+//}
 
 function pipeline()
 {
