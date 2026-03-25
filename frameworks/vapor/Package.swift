@@ -16,10 +16,18 @@ let package = Package(
                 .apt(["libsqlite3-dev"]),
             ]
         ),
+        .systemLibrary(
+            name: "CZlib",
+            path: "Sources/CZlib",
+            providers: [
+                .apt(["zlib1g-dev"]),
+            ]
+        ),
         .executableTarget(
             name: "Server",
             dependencies: [
                 "CSQLite",
+                "CZlib",
                 .product(name: "Vapor", package: "vapor"),
             ],
             path: "src"

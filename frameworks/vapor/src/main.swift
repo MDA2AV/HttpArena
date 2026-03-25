@@ -1,5 +1,6 @@
 import Foundation
 import Vapor
+import CZlib
 
 #if canImport(CSQLite)
 import CSQLite
@@ -185,6 +186,34 @@ func queryDb(dbPath: String, minPrice: Double, maxPrice: Double) -> [UInt8] {
     return [UInt8](jsonData)
 }
 
+// MARK: - Gzip Helper
+
+func gzipCompress(_ data: [UInt8], level: Int32 = 1) -> [UInt8] {
+    var stream = z_stream()
+    // windowBits = 15 + 16 = 31 for gzip format
+    let rc = deflateInit2_(&stream, level, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY,
+                           ZLIB_VERSION, Int32(MemoryLayout<z_stream>.size))
+    guard rc == Z_OK else { return data }
+
+    let bufferSize = deflateBound(&stream, UInt(data.count))
+    var output = [UInt8](repeating: 0, count: Int(bufferSize))
+
+    data.withUnsafeBufferPointer { inputPtr in
+        stream.next_in = UnsafeMutablePointer(mutating: inputPtr.baseAddress!)
+        stream.avail_in = uInt(data.count)
+
+        output.withUnsafeMutableBufferPointer { outputPtr in
+            stream.next_out = outputPtr.baseAddress!
+            stream.avail_out = uInt(outputPtr.count)
+            deflate(&stream, Z_FINISH)
+        }
+    }
+
+    let compressedSize = Int(stream.total_out)
+    deflateEnd(&stream)
+    return Array(output.prefix(compressedSize))
+}
+
 // MARK: - Main
 
 let datasetPath = ProcessInfo.processInfo.environment["DATASET_PATH"] ?? "/data/dataset.json"
@@ -217,8 +246,8 @@ app.http.server.configuration.hostname = "0.0.0.0"
 app.http.server.configuration.port = 8080
 app.http.server.configuration.serverName = "vapor"
 
-// Enable response compression
-app.http.server.configuration.responseCompression = .enabled
+// Note: NOT using Vapor's built-in responseCompression (.enabled uses zlib level 6).
+// The /compression endpoint handles gzip manually at level 1 per spec.
 
 // Routes
 
@@ -275,12 +304,14 @@ app.get("json") { req -> Response in
     return Response(status: .ok, headers: headers, body: .init(data: Data(jsonBytes)))
 }
 
-// GET /compression
+// GET /compression — manual gzip at level 1 (spec requirement)
 app.get("compression") { req -> Response in
+    let compressed = gzipCompress(state.jsonLargeCache, level: 1)
     var headers = HTTPHeaders()
     headers.add(name: .contentType, value: "application/json")
+    headers.add(name: .contentEncoding, value: "gzip")
     headers.add(name: "server", value: "vapor")
-    return Response(status: .ok, headers: headers, body: .init(data: Data(state.jsonLargeCache)))
+    return Response(status: .ok, headers: headers, body: .init(data: Data(compressed)))
 }
 
 // POST /upload
