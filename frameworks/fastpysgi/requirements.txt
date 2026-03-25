@@ -1,0 +1,2 @@
+fastpysgi==0.4
+orjson==3.10.15
