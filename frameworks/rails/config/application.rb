@@ -4,6 +4,7 @@ require 'action_controller/railtie'
 class BenchmarkApp < Rails::Application
   config.load_defaults 8.0
   config.eager_load = true
+  config.enable_reloading = false
   config.api_only = true
   config.secret_key_base = 'benchmark-not-secret'
   config.hosts.clear
