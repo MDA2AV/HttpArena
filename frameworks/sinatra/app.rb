@@ -9,6 +9,9 @@ class App < Sinatra::Base
     set :server, :puma
     set :logging, false
     set :show_exceptions, false
+    disable :static
+    disable :protection
+    set :host_authorization, { permitted_hosts: [] }
 
     # Load dataset
     dataset_path = ENV.fetch('DATASET_PATH', '/data/dataset.json')
