@@ -1,7 +1,7 @@
 {
   "display_name": "caddy",
   "language": "Go",
-  "type": "framework",
+  "type": "engine",
   "engine": "caddy",
   "description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.",
   "repo": "https://github.com/caddyserver/caddy",

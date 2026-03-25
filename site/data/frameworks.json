@@ -7,7 +7,7 @@
   "blitz": {"description": "Custom Zig HTTP server with dual epoll/io_uring backends. Zero-copy parsing, pre-computed responses, pipeline batching.", "repo": "https://github.com/BennyFranciscus/blitz", "type": "engine", "engine": "io_uring"},
   "bun": {"description": "Bun's built-in HTTP server using JavaScriptCore engine with multi-core clustering.", "repo": "https://github.com/oven-sh/bun", "type": "framework", "engine": "JSC"},
   "bun-websocket": {"description": "Bun WebSocket echo server", "repo": "https://github.com/oven-sh/bun", "type": "framework", "engine": "Bun"},
-  "caddy": {"description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.", "repo": "https://github.com/caddyserver/caddy", "type": "framework", "engine": "caddy"},
+  "caddy": {"description": "Caddy web server with a custom handler module for benchmark endpoints, native HTTP/2 support.", "repo": "https://github.com/caddyserver/caddy", "type": "engine", "engine": "caddy"},
   "chi": {"description": "Chi is a lightweight, idiomatic and composable router for building Go HTTP services, built on top of net/http.", "repo": "https://github.com/go-chi/chi", "type": "framework", "engine": "chi"},
   "deno": {"description": "Deno HTTP server using deno serve --parallel with zero-dependency native fetch handler.", "repo": "https://github.com/denoland/deno", "type": "framework", "engine": "V8"},
   "deno-websocket": {"description": "Deno WebSocket echo server", "repo": "https://github.com/denoland/deno", "type": "framework", "engine": "Deno"},
