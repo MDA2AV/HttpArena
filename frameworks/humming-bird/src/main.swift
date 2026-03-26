@@ -56,13 +56,13 @@ final class AppState: Sendable {
 
     init(
         dataset: [DatasetItem],
-        jsonLargeCache: [UInt8],
+        jsonLargeCache: ByteBuffer,
         staticFiles: [String: StaticFile],
         dbPath: String,
         dbAvailable: Bool
     ) {
         self.dataset = dataset
-        self.jsonLargeCache = ByteBuffer(bytes: jsonLargeCache)
+        self.jsonLargeCache = jsonLargeCache
         self.staticFiles = staticFiles
         self.dbPath = dbPath
         self.dbAvailable = dbAvailable
@@ -96,7 +96,7 @@ func buildJsonCache(_ items: [DatasetItem]) -> ByteBuffer {
         )
     }
     let resp = JsonResponse(items: processed, count: processed.count)
-    return (try? JSONEncoder().encodeAsByteBuffer(resp)) ?? ByteBuffer()
+    return (try? JSONEncoder().encodeAsByteBuffer(resp, allocator: ByteBufferAllocator())) ?? ByteBuffer()
 }
 
 func loadStaticFiles() -> [String: StaticFile] {
