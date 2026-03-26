@@ -122,8 +122,7 @@ class BenchmarkController < ActionController::API
   end
 
   def async_db
-    conn = get_pg
-    unless conn
+    unless get_pg
       render json: { items: [], count: 0 }
       return
     end
@@ -131,7 +130,9 @@ class BenchmarkController < ActionController::API
     min_val = (params[:min] || 10.0).to_f
     max_val = (params[:max] || 50.0).to_f
 
-    result = conn.exec_params(PG_QUERY, [min_val, max_val])
+    result = get_pg.with do |conn|
+      conn.exec_params(PG_QUERY, [min_val, max_val])
+    end
     items = result.map do |r|
       {
         'id' => r['id'].to_i, 'name' => r['name'], 'category' => r['category'],
@@ -182,10 +183,9 @@ class BenchmarkController < ActionController::API
   end
 
   def get_pg
-    Thread.current[:pg_conn] ||= begin
+    return unless ENV['DATABASE_URL']
+    Thread.current[:pg_conn] ||= ConnectionPool.new(size: 4, timeout: 5) do
       PG.connect(ENV['DATABASE_URL'])
-    rescue
-      nil
     end
   end
 end
