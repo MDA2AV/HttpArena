@@ -42,7 +42,7 @@ $http_worker->onMessage = static function ($connection, $request) {
         case '/baseline11':
             $sum = array_sum($request->get());
             if($request->method() === 'POST') {
-                $sum += (int) $request->rawBody();
+                $sum += $request->rawBody();
             }
             
             $connection->headers = ['Content-Type' => 'text/plain'];
@@ -79,11 +79,13 @@ $http_worker->onMessage = static function ($connection, $request) {
             return $connection->send($resp);
 
         case '/db':
-            $min = (float) $request->get('min', 10);
-            $max = (float) $request->get('max', 50);
-
             $connection->headers = ['Content-Type' => 'application/json'];
-            return $connection->send(DB::query($min, $max));
+            return $connection->send(
+                DB::query(
+                    $request->get('min', 10),
+                    $request->get('max', 50)
+                )
+            );
     }
 
     // Serve static files
