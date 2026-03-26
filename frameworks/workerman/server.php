@@ -79,10 +79,6 @@ $http_worker->onMessage = static function ($connection, $request) {
             $resp = new Response(200, ['Content-Type' => 'application/json'], $largeJson);
             return $connection->send($resp);
 
-        case '/upload':
-            $connection->headers = ['Content-Type' => 'text/plain'];
-            return $connection->send(strlen($request->rawBody()));
-
         case '/db':
             $min = (float) $request->get('min', 10);
             $max = (float) $request->get('max', 50);
@@ -93,7 +89,7 @@ $http_worker->onMessage = static function ($connection, $request) {
 
     // Serve static files
     if (str_starts_with($path, '/static/')) {
-        $response = (new Response())->withFile($path);
+        $response = (new Response())->withFile('/data' . $path);
         return $connection->send($response);
     }
 
