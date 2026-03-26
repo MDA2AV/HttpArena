@@ -19,7 +19,6 @@ struct DataItem {
     bool active;
     std::vector<std::string> tags;
     Rating rating;
-    double total;
 };
 static std::vector<DataItem> dataset;
 
@@ -88,7 +87,6 @@ static void loadDataset()
             for (const auto &t : d["tags"]) item.tags.push_back(t.asString());
         item.rating.score = d["rating"]["score"].asDouble();
         item.rating.count = d["rating"]["count"].asInt64();
-        item.total = std::round(item.price * item.quantity * 100.0) / 100.0;
         dataset.push_back(std::move(item));
     }
 }
@@ -204,7 +202,7 @@ public:
                 rating["score"] = d.rating.score;
                 rating["count"] = static_cast<Json::Int64>(d.rating.count);
                 item["rating"] = std::move(rating);
-                item["total"] = d.total;
+                item["total"] = std::round(d.price * d.quantity * 100.0) / 100.0;
                 items.append(std::move(item));
             }
             respJson["items"] = std::move(items);
