@@ -211,7 +211,7 @@ public:
             wb["indentation"] = "";
             auto resp = HttpResponse::newHttpResponse();
             resp->setBody(Json::writeString(wb, respJson));
-            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->addHeader("Content-Type", "application/json");
             callback(resp);
         } else {
             auto resp = HttpResponse::newHttpResponse();
@@ -227,7 +227,7 @@ public:
         if (!json_large_response.empty()) {
             auto resp = HttpResponse::newHttpResponse();
             resp->setBody(json_large_response);
-            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->addHeader("Content-Type", "application/json");
             callback(resp);
         } else {
             auto resp = HttpResponse::newHttpResponse();
@@ -278,7 +278,7 @@ public:
         if (!db_available || !getDb() || !tl_stmt) {
             auto resp = HttpResponse::newHttpResponse();
             resp->setBody("{\"items\":[],\"count\":0}");
-            resp->setContentTypeCode(CT_APPLICATION_JSON);
+            resp->addHeader("Content-Type", "application/json");
             callback(resp);
             return;
         }
@@ -319,7 +319,7 @@ public:
         wb["indentation"] = "";
         auto resp = HttpResponse::newHttpResponse();
         resp->setBody(Json::writeString(wb, respJson));
-        resp->setContentTypeCode(CT_APPLICATION_JSON);
+        resp->addHeader("Content-Type", "application/json");
         callback(resp);
     }
 
