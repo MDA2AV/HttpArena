@@ -79,7 +79,7 @@ class App < Sinatra::Base
   get '/baseline2' do
     total = 0
     request.GET.each do |_k, v|
-      total += v.to_i if v =~ /\A-?\d+\z/
+      total += v.to_i
     end
     content_type 'text/plain'
     headers 'Server' => 'sinatra'
