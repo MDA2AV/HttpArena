@@ -29,6 +29,7 @@ Data files are **mounted automatically** by the benchmark runner — your Docker
 | `/data/benchmark.db` | SQLite database (100K rows) for `/db` |
 | `/data/static/` | 20 static files for `/static/*` |
 | `/certs/server.crt`, `/certs/server.key` | TLS certificate and key for HTTPS/H2/H3 |
+| `DATABASE_URL` env var | Postgres connection string for `/pgdb` (set automatically when `async-db` profile runs) |
 
 {{< cards >}}
   {{< card link="h1" title="HTTP/1.1" subtitle="Baseline, short-lived connections, JSON processing, upload, compression, and pipelined benchmarks over plain TCP." icon="lightning-bolt" >}}

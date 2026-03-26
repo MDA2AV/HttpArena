@@ -15,6 +15,7 @@
     "compression",
     "mixed",
     "noisy",
+    "async-db",
     "baseline-h2",
     "static-h2"
   ]

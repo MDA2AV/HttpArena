@@ -42,8 +42,9 @@ declare -A PROFILES=(
     [unary-grpc]="1|0||256,1024|grpc"
     [unary-grpc-tls]="1|0||256,1024|grpc-tls"
     [echo-ws]="16|0||512,4096,16384|ws-echo"
+    [async-db]="1|0||256,1024,4096|pgdb"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
+PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -275,9 +276,13 @@ cleanup() {
 # Save original CPU governor
 ORIG_GOVERNOR=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo "")
 
+PG_CONTAINER="httparena-postgres"
+
 restore_settings() {
     docker stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+    docker stop -t 5 "$PG_CONTAINER" 2>/dev/null || true
+    docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     if [ -n "$ORIG_GOVERNOR" ]; then
         echo "[restore] Restoring CPU governor to $ORIG_GOVERNOR..."
         for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
@@ -313,6 +318,28 @@ if [ -x "frameworks/$FRAMEWORK/build.sh" ]; then
     "frameworks/$FRAMEWORK/build.sh" || { echo "FAIL: build"; exit 1; }
 else
     docker build -t "$IMAGE_NAME" "frameworks/$FRAMEWORK" || { echo "FAIL: build"; exit 1; }
+fi
+
+# Start Postgres sidecar if async-db is needed
+if echo ",$FRAMEWORK_TESTS," | grep -qF ",async-db,"; then
+    if [ -z "$PROFILE_FILTER" ] || [ "$PROFILE_FILTER" = "async-db" ]; then
+        echo "[postgres] Starting Postgres sidecar..."
+        docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+        docker run -d --name "$PG_CONTAINER" --network host \
+            -e POSTGRES_USER=bench \
+            -e POSTGRES_PASSWORD=bench \
+            -e POSTGRES_DB=benchmark \
+            -v "$ROOT_DIR/data/pgdb-seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro" \
+            postgres:17-alpine
+        for i in $(seq 1 30); do
+            if docker exec "$PG_CONTAINER" pg_isready -U bench -d benchmark >/dev/null 2>&1; then
+                echo "[postgres] Ready"
+                break
+            fi
+            [ "$i" -eq 30 ] && { echo "FAIL: Postgres did not start"; exit 1; }
+            sleep 1
+        done
+    fi
 fi
 
 # Determine which profiles to run
@@ -356,6 +383,9 @@ for profile in "${profiles_to_run[@]}"; do
         -v "$ROOT_DIR/data/benchmark.db:/data/benchmark.db:ro"
         -v "$ROOT_DIR/data/static:/data/static:ro"
         -v "$CERTS_DIR:/certs:ro")
+    if [ "$endpoint" = "pgdb" ]; then
+        docker_args+=(-e "DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark")
+    fi
     if [ -n "$cpu_limit" ]; then
         if [[ "$cpu_limit" == *-* ]]; then
             docker_args+=(--cpuset-cpus="$cpu_limit")
@@ -486,6 +516,9 @@ for profile in "${profiles_to_run[@]}"; do
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/db-get.raw,$REQUESTS_DIR/upload-small.raw,$REQUESTS_DIR/json-gzip.raw,$REQUESTS_DIR/json-gzip.raw"
             -c "$CONNS" -t "$THREADS" -d 15s -p "$pipeline")
+    elif [ "$endpoint" = "pgdb" ]; then
+        gc_args=("http://localhost:$PORT/pgdb?min=10&max=50"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     elif [ "$endpoint" = "noisy" ]; then
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/noise-badpath.raw,$REQUESTS_DIR/noise-badcl.raw,$REQUESTS_DIR/noise-binary.raw"

@@ -14,6 +14,7 @@
   (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "HTTP/3" "proto" "h3" "conns" (slice 256 512) "scored" true "engineScored" true)
   (dict "id" "static-h3" "label" "Static" "sublabel" "HTTP/3" "proto" "h3" "conns" (slice 256 512) "scored" true "engineScored" true)
   (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true)
+  (dict "id" "async-db" "label" "Async DB" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 256 1024 4096) "scored" true "engineScored" false)
 }}
 
 {{/* Build a clean JSON blob: array of {profile, framework, rps, language} entries */}}

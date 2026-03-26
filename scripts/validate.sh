@@ -15,8 +15,13 @@ META_FILE="$ROOT_DIR/frameworks/$FRAMEWORK/meta.json"
 CERTS_DIR="$ROOT_DIR/certs"
 DATA_DIR="$ROOT_DIR/data"
 
+PG_CONTAINER="httparena-validate-postgres"
+PG_NETWORK="httparena-validate-net"
+
 cleanup() {
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+    docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+    docker network rm "$PG_NETWORK" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -70,8 +75,31 @@ if [ "$ENGINE" = "io_uring" ]; then
     docker_args+=(--ulimit memlock=-1:-1)
 fi
 
+# Start Postgres sidecar if async-db is needed
+if has_test "async-db"; then
+    echo "[postgres] Starting Postgres sidecar for validation..."
+    docker network create "$PG_NETWORK" 2>/dev/null || true
+    docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+    docker run -d --name "$PG_CONTAINER" --network "$PG_NETWORK" \
+        -e POSTGRES_USER=bench \
+        -e POSTGRES_PASSWORD=bench \
+        -e POSTGRES_DB=benchmark \
+        -v "$DATA_DIR/pgdb-seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro" \
+        postgres:17-alpine
+    for i in $(seq 1 30); do
+        if docker exec "$PG_CONTAINER" pg_isready -U bench -d benchmark >/dev/null 2>&1; then
+            echo "[postgres] Ready"
+            break
+        fi
+        [ "$i" -eq 30 ] && { echo "FAIL: Postgres sidecar not ready"; exit 1; }
+        sleep 1
+    done
+    docker_args+=(--network "$PG_NETWORK")
+    docker_args+=(-e "DATABASE_URL=postgres://bench:bench@$PG_CONTAINER:5432/benchmark")
+fi
+
 # Remove any stale container from a previous run
-cleanup
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
 docker run "${docker_args[@]}" "$IMAGE_NAME"
 
@@ -135,7 +163,7 @@ check_header() {
     local value
     value=$(echo "$headers" | grep -i "^${header_name}:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
 
-    if [ "$value" = "$expected_value" ]; then
+    if [ "$value" = "$expected_value" ] || [[ "$value" == "$expected_value;"* ]]; then
         echo "  PASS [$label] ($header_name: $value)"
         PASS=$((PASS + 1))
     else
@@ -393,6 +421,49 @@ if has_test "static-h2"; then
         # 404 for missing files
         check_status "GET /static/nonexistent.txt" "404" \
             -sk --http2 "https://localhost:$H2PORT/static/nonexistent.txt"
+    fi
+fi
+
+# ───── Async Database (GET /pgdb) ─────
+
+if has_test "async-db"; then
+    echo "[test] async-db endpoint"
+    response=$(curl -s "http://localhost:$PORT/pgdb?min=10&max=50")
+    pgdb_result=$(echo "$response" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+count = d.get('count', 0)
+items = d.get('items', [])
+has_rating = all('rating' in item and 'score' in item['rating'] for item in items) if items else False
+has_tags = all(isinstance(item.get('tags'), list) for item in items) if items else False
+has_active_bool = all(isinstance(item.get('active'), bool) for item in items) if items else False
+print(f'{count} {has_rating} {has_tags} {has_active_bool}')
+" 2>/dev/null || echo "0 False False False")
+    pgdb_count=$(echo "$pgdb_result" | cut -d' ' -f1)
+    pgdb_rating=$(echo "$pgdb_result" | cut -d' ' -f2)
+    pgdb_tags=$(echo "$pgdb_result" | cut -d' ' -f3)
+    pgdb_active=$(echo "$pgdb_result" | cut -d' ' -f4)
+
+    if [ "$pgdb_count" -gt 0 ] && [ "$pgdb_count" -le 50 ] && [ "$pgdb_rating" = "True" ] && [ "$pgdb_tags" = "True" ] && [ "$pgdb_active" = "True" ]; then
+        echo "  PASS [GET /pgdb?min=10&max=50] ($pgdb_count items, correct structure)"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL [GET /pgdb?min=10&max=50]: count=$pgdb_count, rating=$pgdb_rating, tags=$pgdb_tags, active=$pgdb_active"
+        FAIL=$((FAIL + 1))
+    fi
+
+    check_header "GET /pgdb Content-Type" "Content-Type" "application/json" \
+        "http://localhost:$PORT/pgdb?min=10&max=50"
+
+    # Anti-cheat: empty range should return 0 items
+    response_empty=$(curl -s "http://localhost:$PORT/pgdb?min=9999&max=9999")
+    pgdb_empty=$(echo "$response_empty" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count','-1'))" 2>/dev/null || echo "-1")
+    if [ "$pgdb_empty" = "0" ]; then
+        echo "  PASS [GET /pgdb empty range] (count=0)"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL [GET /pgdb empty range]: expected count=0, got $pgdb_empty"
+        FAIL=$((FAIL + 1))
     fi
 fi
 
