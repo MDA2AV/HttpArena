@@ -220,10 +220,19 @@ async fn json_endpoint(state: web::Data<Arc<AppState>>) -> HttpResponse {
 }
 
 async fn compression(state: web::Data<Arc<AppState>>) -> HttpResponse {
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+    use std::io::Write;
+
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::fast());
+    encoder.write_all(&state.json_large_cache).unwrap();
+    let compressed = encoder.finish().unwrap();
+
     HttpResponse::Ok()
         .insert_header(("Content-Type", "application/json"))
+        .insert_header(("Content-Encoding", "gzip"))
         .insert_header(("Server", "actix"))
-        .body(state.json_large_cache.clone())
+        .body(compressed)
 }
 
 async fn db_endpoint(req: HttpRequest, db: web::Data<WorkerDb>) -> HttpResponse {
