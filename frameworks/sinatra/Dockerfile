@@ -6,6 +6,7 @@ RUN apt-get update && \
 
 ENV RUBY_YJIT_ENABLE=1
 ENV RACK_ENV=production
+ENV WEB_CONCURRENCY=auto
 
 WORKDIR /app
 
