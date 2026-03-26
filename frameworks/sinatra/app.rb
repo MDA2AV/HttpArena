@@ -11,9 +11,14 @@ class App < Sinatra::Base
     set :server, :puma
     set :logging, false
     set :show_exceptions, false
+
+    # Disable unused protections
     disable :static
     disable :protection
     set :host_authorization, { permitted_hosts: [] }
+
+    # Set root once instead executing the proc on every request
+    set :root, File.expand_path(__dir__)
 
     # Load dataset
     dataset_path = ENV.fetch('DATASET_PATH', '/data/dataset.json')
