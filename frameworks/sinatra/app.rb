@@ -59,12 +59,12 @@ class App < Sinatra::Base
   def handle_baseline11
     total = 0
     request.GET.each do |_k, v|
-      total += v.to_i if v =~ /\A-?\d+\z/
+      total += v.to_i
     end
     if request.post?
       request.body.rewind
       body_str = request.body.read.strip
-      total += body_str.to_i if body_str =~ /\A-?\d+\z/
+      total += body_str.to_i
     end
     content_type 'text/plain'
     headers 'Server' => 'sinatra'
