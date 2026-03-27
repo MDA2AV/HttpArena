@@ -8,9 +8,9 @@ namespace genhttp.Tests;
 
 public class Json
 {
-    private static List<DatasetItem>? datasetItems = LoadItems();
+    private static readonly List<DatasetItem>? DatasetItems = LoadItems();
 
-    private static List<DatasetItem> LoadItems()
+    private static List<DatasetItem>? LoadItems()
     {
         var jsonOptions = new JsonSerializerOptions
         {
@@ -31,14 +31,14 @@ public class Json
     [ResourceMethod]
     public ListWithCount<ProcessedItem> Compute()
     {
-        if (datasetItems == null)
+        if (DatasetItems == null)
         {
             throw new ProviderException(ResponseStatus.InternalServerError, "No dataset");
         }
         
-        var processed = new List<ProcessedItem>(datasetItems.Count);
+        var processed = new List<ProcessedItem>(DatasetItems.Count);
         
-        foreach (var d in datasetItems)
+        foreach (var d in DatasetItems)
         {
             processed.Add(new ProcessedItem
             {

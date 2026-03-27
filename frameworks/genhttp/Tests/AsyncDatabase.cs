@@ -1,8 +1,4 @@
 using System.Text.Json;
-
-using GenHTTP.Api.Content;
-using GenHTTP.Api.Protocol;
-
 using GenHTTP.Modules.Webservices;
 
 using Npgsql;

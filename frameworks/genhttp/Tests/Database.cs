@@ -19,7 +19,7 @@ public class Database
     
     private static readonly SqliteConnection? DbConn = OpenConnection();
 
-    private static SqliteConnection OpenConnection()
+    private static SqliteConnection? OpenConnection()
     {
         var dbPath = "/data/benchmark.db";
 

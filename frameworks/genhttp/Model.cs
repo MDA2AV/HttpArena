@@ -8,8 +8,8 @@ public class DatasetItem
     public double Price { get; set; }
     public int Quantity { get; set; }
     public bool Active { get; set; }
-    public List<string> Tags { get; set; } = new();
-    public RatingInfo Rating { get; set; } = new();
+    public List<string>? Tags { get; set; }
+    public RatingInfo? Rating { get; set; }
 }
 
 public class ProcessedItem
@@ -20,8 +20,8 @@ public class ProcessedItem
     public double Price { get; set; }
     public int Quantity { get; set; }
     public bool Active { get; set; }
-    public List<string> Tags { get; set; } = new();
-    public RatingInfo Rating { get; set; } = new();
+    public List<string>? Tags { get; set; }
+    public RatingInfo? Rating { get; set; }
     public double Total { get; set; }
 }
 

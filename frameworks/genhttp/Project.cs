@@ -1,6 +1,4 @@
-﻿using System.IO.Compression;
-
-using GenHTTP.Api.Content;
+﻿using GenHTTP.Api.Content;
 using GenHTTP.Api.Protocol;
 
 using GenHTTP.Modules.Compression;
@@ -76,7 +74,7 @@ public static class Project
     {
         var service = ServiceResource.From<Compression>().ExecutionMode(ExecutionMode.Auto);
 
-        service.Add(CompressedContent.Default().Level(CompressionLevel.Fastest));
+        service.Add(CompressedContent.Default());
 
         return app.Add("compression", service);
     }
