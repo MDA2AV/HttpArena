@@ -1,0 +1,1608 @@
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305ade5c0
+object refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305ade5c0>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x000071e307a81340 (most recent call first):
+  File "/app/./app.py", line 309 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305ade590
+object refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305ade590>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x000071e307a81340 (most recent call first):
+  File "/app/./app.py", line 309 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305ade5c0
+object refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305ade5c0>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x000071e307a81340 (most recent call first):
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+  File "/app/./app.py", line 309 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+Worker process added with PID: 162
+Worker process added with PID: 164
+Worker process added with PID: 165
+Worker process added with PID: 167
+Worker process added with PID: 170
+Worker process added with PID: 173
+Worker process added with PID: 175
+Worker process added with PID: 176
+Worker process added with PID: 178
+Worker process added with PID: 179
+Worker process added with PID: 182
+Worker process added with PID: 184
+Worker process added with PID: 186
+Worker process added with PID: 187
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305adff10
+object refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305adff10>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x000071e307a81340 (most recent call first):
+  File "/app/./app.py", line 309 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py"Python/gc.c:1767: , line PyObject_GC_Track: 193 in runAssertion failed
+: object already tracked by the garbage collector  File "
+/app/./app.py"Enable tracemalloc to get the memory block allocation traceback
+
+, line object address  : 0x71e305adff70
+object refcount : 1
+322object type     : 0x59a5ca9871a0
+Python/gc.c:1767:  in object type name: _asyncio.FutureIter
+<module>PyObject_GC_Track: object repr     : 
+<_asyncio.FutureIter object at 0x71e305adff70>Assertion failed
+: object already tracked by the garbage collector
+Fatal Python error: _PyObject_AssertFailed: 
+_PyObject_AssertFailed
+Python runtime state: initializedEnable tracemalloc to get the memory block allocation traceback
+
+
+
+object address  : 0x71e305adff70
+Thread 0xobject refcount : 1
+000071e3057c96c0object type     : 0x59a5ca9871a0
+ (most recent call first):
+object type name: _asyncio.FutureIter
+  File object repr     : "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker<_asyncio.FutureIter object at 0x71e305adff70>
+  File 
+"
+/usr/local/lib/python3.13/threading.py"Fatal Python error: , line _PyObject_AssertFailed995:  in _PyObject_AssertFailedrun
+
+Python runtime state:   File initialized"
+/usr/local/lib/python3.13/threading.py
+", line Thread 0x000071e3057c96c01044 (most recent call first):
+ in _bootstrap_inner  File 
+"  File /usr/local/lib/python3.13/concurrent/futures/thread.py""/usr/local/lib/python3.13/threading.py, line ", line 1015 in 90_bootstrap in 
+_worker
+
+Current thread 0x  File 000071e307a81340" (most recent call first):
+/usr/local/lib/python3.13/threading.py  File "", line /app/./app.py"995, line  in run
+309  File  in "app/usr/local/lib/python3.13/threading.py
+"  File , line "/usr/local/lib/python3.13/asyncio/events.py1044" in , line _bootstrap_inner89
+ in   File _run"
+/usr/local/lib/python3.13/threading.py  File "", line /usr/local/lib/python3.13/asyncio/base_events.py"1015, line  in _bootstrap
+
+2050Current thread 0x in 000071e307a81340_run_once (most recent call first):
+
+  File   File ""/app/./app.py/usr/local/lib/python3.13/asyncio/base_events.py"", line , line 683 in 309run_forever in 
+app  File 
+"  File /usr/local/lib/python3.13/site-packages/fastpysgi.py""/usr/local/lib/python3.13/asyncio/events.py, line "90, line  in 89multi_run in 
+_run  File 
+"  File /usr/local/lib/python3.13/site-packages/fastpysgi.py""/usr/local/lib/python3.13/asyncio/base_events.py, line "71, line  in run
+  File 2050" in /usr/local/lib/python3.13/site-packages/fastpysgi.py_run_once"
+, line   File "193/usr/local/lib/python3.13/asyncio/base_events.py in "run, line 
+683  File  in "run_forever/app/./app.py
+"  File , line "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 32290 in  in <module>multi_run
+
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File Python/gc.c:1767: "/app/./app.py"PyObject_GC_Track: , line 
+Extension modules: asyncpg.pgproto.pgprotoAssertion failed322 in : object already tracked by the garbage collector<module>
+
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305adff70
+object refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305adff70>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x000071e307a81340 (most recent call first):
+  File "/app/./app.py", line 309 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: , asyncpg.protocol.protocol, _fastpysgi (total: 3)
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Enable tracemalloc to get the memory block allocation traceback
+
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+asyncpg.protocol.protocolobject address  : 0x71e305adff70
+object refcount : 1
+Worker process added with PID: 83
+object type     : 0x59a5ca9871a0
+Worker process added with PID: 84
+object type name: _asyncio.FutureIter
+Worker process added with PID: 86
+object repr     : <_asyncio.FutureIter object at 0x71e305adff70>, 
+Worker process added with PID: 89
+_fastpysgi
+Worker process added with PID: 90
+ (total: Fatal Python error: 3_PyObject_AssertFailed): _PyObject_AssertFailed
+Worker process added with PID: 91
+
+Worker process added with PID: 94
+Python runtime state: initialized
+Worker process added with PID: 96
+
+Worker process added with PID: 99
+Thread 0x000071e3057c96c0 (most recent call first):
+Worker process added with PID: 100
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+Worker process added with PID: 103
+Worker process added with PID: 105
+  File "/usr/local/lib/python3.13/threading.py", line 995
+Worker process added with PID: 107
+Extension modules:  in asyncpg.pgproto.pgprotorun
+Worker process added with PID: 109
+Worker process added with PID: 111
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in Python/gc.c:1767: _bootstrap_inner, PyObject_GC_Track: 
+Worker process added with PID: 113
+asyncpg.protocol.protocol  File "/usr/local/lib/python3.13/threading.py"Assertion failed, line : object already tracked by the garbage collector1015 in 
+Worker process added with PID: 114
+_bootstrap, 
+Worker process added with PID: 115
+_fastpysgiEnable tracemalloc to get the memory block allocation traceback
+Worker process added with PID: 119
+
+Worker process added with PID: 121
+
+Worker process added with PID: 124
+ (total: object address  : 0x71e305adff70
+Worker process added with PID: 127
+3Current thread 0xobject refcount : 1
+Worker process added with PID: 128
+)000071e307a81340object type     : 0x59a5ca9871a0
+Worker process added with PID: 130
+Worker process added with PID: 132
+
+Worker process added with PID: 134
+ (most recent call first):
+Worker process added with PID: 136
+object type name: _asyncio.FutureIter
+Worker process added with PID: 137
+  File object repr     : "/app/./app.py", line 309<_asyncio.FutureIter object at 0x71e305adff70> in app
+
+  File 
+"Fatal Python error: /usr/local/lib/python3.13/asyncio/events.py_PyObject_AssertFailed": , line _PyObject_AssertFailed89
+ in Python runtime state: _runinitialized
+
+  File 
+"Thread 0x/usr/local/lib/python3.13/asyncio/base_events.py000071e3057c96c0" (most recent call first):
+, line   File "2050/usr/local/lib/python3.13/concurrent/futures/thread.py in "_run_once, line 
+  File "90/usr/local/lib/python3.13/asyncio/base_events.py in "_worker, line 
+683 in   File run_forever"
+/usr/local/lib/python3.13/threading.py  File "", line /usr/local/lib/python3.13/site-packages/fastpysgi.py995" in , line run90
+ in   File multi_run"
+/usr/local/lib/python3.13/threading.py  File "", line /usr/local/lib/python3.13/site-packages/fastpysgi.pyPython/gc.c:1767: "1044PyObject_GC_Track: , line  in _bootstrap_inner71Assertion failed
+ in : object already tracked by the garbage collector  File run
+"
+/usr/local/lib/python3.13/threading.py  File Enable tracemalloc to get the memory block allocation traceback
+
+"", line object address  : 0x71e305adff70
+/usr/local/lib/python3.13/site-packages/fastpysgi.py1015object refcount : 1
+" in object type     : 0x59a5ca9871a0
+, line _bootstrapobject type name: _asyncio.FutureIter
+
+193object repr     : 
+ in Current thread 0xrun000071e307a81340<_asyncio.FutureIter object at 0x71e305adff70>
+ (most recent call first):
+
+  File   File 
+"Fatal Python error: "/app/./app.py_PyObject_AssertFailed/app/./app.py": ", line _PyObject_AssertFailed, line 
+Python runtime state: 309initialized in 322
+app in 
+
+<module>Thread 0x  File 
+000071e3057c96c0" (most recent call first):
+/usr/local/lib/python3.13/asyncio/events.py  File "", line /usr/local/lib/python3.13/concurrent/futures/thread.py89" in , line _run
+90  File  in "_worker/usr/local/lib/python3.13/asyncio/base_events.py
+"  File , line "/usr/local/lib/python3.13/threading.py"2050, line  in 995_run_once in 
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+run  File 
+"/usr/local/lib/python3.13/asyncio/base_events.py  File "", line /usr/local/lib/python3.13/threading.py"683, line  in 1044run_forever in 
+_bootstrap_inner  File 
+"  File /usr/local/lib/python3.13/site-packages/fastpysgi.py""/usr/local/lib/python3.13/threading.py, line ", line 901015 in  in multi_run_bootstrap
+
+  File 
+"Current thread 0x/usr/local/lib/python3.13/site-packages/fastpysgi.py000071e307a81340" (most recent call first):
+, line   File 71" in /app/./app.pyrun"
+, line   File "309/usr/local/lib/python3.13/site-packages/fastpysgi.py in "app, line 
+  File 193" in /usr/local/lib/python3.13/asyncio/events.pyrun"
+, line Python/gc.c:1767:   File 89PyObject_GC_Track: " in /app/./app.py_run"
+Assertion failed, line   File : object already tracked by the garbage collector"/usr/local/lib/python3.13/asyncio/base_events.py
+322" in , line Enable tracemalloc to get the memory block allocation traceback
+
+<module>2050
+ in object address  : 0x71e305adff70
+_run_once
+object refcount : 1
+  File object type     : 0x59a5ca9871a0
+"/usr/local/lib/python3.13/asyncio/base_events.pyobject type name: _asyncio.FutureIter
+"object repr     : , line Python/gc.c:1767: 683 in run_foreverPyObject_GC_Track: 
+<_asyncio.FutureIter object at 0x71e305adff70>  File 
+"
+/usr/local/lib/python3.13/site-packages/fastpysgi.pyAssertion failed"Fatal Python error: , line : object already tracked by the garbage collector_PyObject_AssertFailed90:  in _PyObject_AssertFailed
+multi_run
+
+Python runtime state: Enable tracemalloc to get the memory block allocation traceback
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+Worker process added with PID: 162
+Worker process added with PID: 164
+Worker process added with PID: 165
+Worker process added with PID: 167
+Worker process added with PID: 170
+Worker process added with PID: 173
+Worker process added with PID: 175
+Worker process added with PID: 176
+Worker process added with PID: 178
+Worker process added with PID: 179
+Worker process added with PID: 182
+Worker process added with PID: 184
+Worker process added with PID: 186
+Worker process added with PID: 187
+Worker process added with PID: 189
+Worker process added with PID: 191
+Worker process added with PID: 193
+Worker process added with PID: 195
+Worker process added with PID: 196
+Worker process added with PID: 198
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+
+  File initialized"
+/usr/local/lib/python3.13/site-packages/fastpysgi.py
+", line Thread 0x71000071e3057c96c0 in  (most recent call first):
+run  File 
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+Worker process added with PID: 162
+Worker process added with PID: 164
+Worker process added with PID: 165
+Worker process added with PID: 167
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+"  File /usr/local/lib/python3.13/concurrent/futures/thread.py""/usr/local/lib/python3.13/site-packages/fastpysgi.py, line ", line 90193 in  in _workerrun
+
+  File   File ""/usr/local/lib/python3.13/threading.py/app/./app.py"", line , line 995 in 322run in 
+<module>  File 
+"/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.pyobject address  : 0x71e305adff70
+", line object refcount : 1
+1015object type     : 0x59a5ca9871a0
+ in object type name: _asyncio.FutureIter
+_bootstrapobject repr     : 
+
+
+Extension modules: Current thread 0xasyncpg.pgproto.pgproto000071e307a81340 (most recent call first):
+  File "/app/./app.py<_asyncio.FutureIter object at 0x71e305adff70>", line 
+
+309,  in Fatal Python error: asyncpg.protocol.protocol_PyObject_AssertFailedapp: 
+_PyObject_AssertFailed  File 
+"Python runtime state: /usr/local/lib/python3.13/asyncio/events.pyinitialized
+", 
+_fastpysgiThread 0x, line  (total: 3)
+000071e3057c96c0 (most recent call first):
+  File Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+"
+Extension modules: object address  : 0x71e305adff10
+asyncpg.pgproto.pgprotoobject refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305adff10>
+
+Fatal Python error: , asyncpg.protocol.protocol_PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0,  (most recent call first):
+_fastpysgi  File  (total: "3/usr/local/lib/python3.13/concurrent/futures/thread.py)"
+, line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 
+Extension modules: 1044/usr/local/lib/python3.13/concurrent/futures/thread.py in "_bootstrap_inner, line 
+  File 90" in /usr/local/lib/python3.13/threading.py_worker"
+, line   File "1015/usr/local/lib/python3.13/threading.py in "_bootstrap, line 
+995
+ in Current thread 0xrun000071e307a81340
+ (most recent call first):
+  File   File ""/usr/local/lib/python3.13/threading.py/app/./app.py"", line , line 1044 in 309_bootstrap_inner in 
+app  File 
+"  File /usr/local/lib/python3.13/threading.py""/usr/local/lib/python3.13/asyncio/events.py, line "1015, line  in _bootstrap89
+ in 
+_runCurrent thread 0x
+000071e307a81340  File  (most recent call first):
+"  File /usr/local/lib/python3.13/asyncio/base_events.py""/app/./app.py, line ", line 2050309 in  in _run_onceapp
+asyncpg.pgproto.pgproto
+  File   File ""/usr/local/lib/python3.13/asyncio/base_events.py/usr/local/lib/python3.13/asyncio/events.py"", line , line , 68389asyncpg.protocol.protocol in  in run_forever_run
+
+  File   File "", /usr/local/lib/python3.13/site-packages/fastpysgi.py_fastpysgi/usr/local/lib/python3.13/asyncio/base_events.py" (total: ", line 3, line 90) in 
+2050multi_run in 
+_run_once  File 
+"  File /usr/local/lib/python3.13/site-packages/fastpysgi.py""Python/gc.c:1767: /usr/local/lib/python3.13/asyncio/base_events.py, line PyObject_GC_Track: "71, line Assertion failed in 683: object already tracked by the garbage collectorrun in 
+
+run_forever  File 
+"Enable tracemalloc to get the memory block allocation traceback
+
+  File /usr/local/lib/python3.13/site-packages/fastpysgi.pyobject address  : 0x71e305adff70
+""object refcount : 1
+/usr/local/lib/python3.13/site-packages/fastpysgi.py, line object type     : 0x59a5ca9871a0
+"193object type name: _asyncio.FutureIter
+, line  in object repr     : 90run in 
+multi_run<_asyncio.FutureIter object at 0x71e305adff70>  File 
+"
+  File /app/./app.py
+""Fatal Python error: /usr/local/lib/python3.13/site-packages/fastpysgi.py, line _PyObject_AssertFailed": , line _PyObject_AssertFailed32271
+ in  in Python runtime state: <module>run
+initialized
+  File 
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+"
+/usr/local/lib/python3.13/site-packages/fastpysgi.pyThread 0x"000071e3057c96c0, line  (most recent call first):
+  File 193" in /usr/local/lib/python3.13/concurrent/futures/thread.pyrun"
+, line   File "/app/./app.py90" in , line _worker
+  File "322/usr/local/lib/python3.13/threading.py in "<module>, line 
+995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Current thread 0x000071e307a81340 (most recent call first):
+Worker process added with PID: 70
+  File "/app/./app.py", line 309 in app
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+FastPySGI server running on PID: 1
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+Worker process added with PID: 7
+Worker process added with PID: 8
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+Worker process added with PID: 9
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+Worker process added with PID: 162
+Worker process added with PID: 164
+Worker process added with PID: 165
+Worker process added with PID: 167
+Worker process added with PID: 170
+Worker process added with PID: 173
+Worker process added with PID: 175
+Worker process added with PID: 176
+Worker process added with PID: 178
+Worker process added with PID: 179
+Worker process added with PID: 182
+Worker process added with PID: 184
+Worker process added with PID: 186
+Worker process added with PID: 187
+Worker process added with PID: 189
+Worker process added with PID: 191
+Worker process added with PID: 193
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 7189 in  in run_run
+
+  File   File ""/usr/local/lib/python3.13/site-packages/fastpysgi.py/usr/local/lib/python3.13/asyncio/base_events.py"", line , line 193 in 2050run in 
+_run_once  File 
+"  File /app/./app.py""/usr/local/lib/python3.13/asyncio/base_events.py, line ", line 683 in 322run_forever in 
+<module>  File 
+"/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 
+Extension modules: 193asyncpg.pgproto.pgproto in run
+  File "/app/./app.py", , line asyncpg.protocol.protocol322 in <module>
+, _fastpysgi (total: 3)
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, 
+Extension modules: asyncpg.pgproto.pgproto, _fastpysgiasyncpg.protocol.protocol, _fastpysgi (total: 3)
+ (total: 
+Extension modules: asyncpg.pgproto.pgproto, 3asyncpg.protocol.protocol)
+, _fastpysgi (total: 3)
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305adff70
+object refcount : 1
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305adff70>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+
+Current thread 0x000071e307a81340 (most recent call first):
+  File "/app/./app.py", line 309 in app
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+Worker process added with PID: 162
+Worker process added with PID: 164
+Worker process added with PID: 165
+Worker process added with PID: 167
+Worker process added with PID: 170
+Worker process added with PID: 173
+Worker process added with PID: 175
+Worker process added with PID: 176
+Worker process added with PID: 178
+Worker process added with PID: 179
+Worker process added with PID: 182
+Worker process added with PID: 184
+Worker process added with PID: 186
+Worker process added with PID: 187
+Worker process added with PID: 189
+Worker process added with PID: 191
+Worker process added with PID: 193
+Worker process added with PID: 195
+Worker process added with PID: 196
+Worker process added with PID: 198
+Worker process added with PID: 201
+Worker process added with PID: 203
+Worker process added with PID: 204
+Worker process added with PID: 206
+Worker process added with PID: 208
+Worker process added with PID: 210
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x71e305adff70
+object refcount : 1
+object type     : 0x59a5ca9871a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x71e305adff70>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x000071e3057c96c0 (most recent call first):
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x000071e307a81340 (most recent call first):
+  File "/app/./app.py", line 309 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 7
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 18
+Worker process added with PID: 20
+Worker process added with PID: 22
+Worker process added with PID: 24
+Worker process added with PID: 26
+Worker process added with PID: 28
+Worker process added with PID: 31
+Worker process added with PID: 32
+Worker process added with PID: 35
+Worker process added with PID: 37
+Worker process added with PID: 40
+Worker process added with PID: 41
+Worker process added with PID: 42
+Worker process added with PID: 44
+Worker process added with PID: 47
+Worker process added with PID: 49
+Worker process added with PID: 51
+Worker process added with PID: 53
+Worker process added with PID: 54
+Worker process added with PID: 57
+Worker process added with PID: 60
+Worker process added with PID: 62
+Worker process added with PID: 65
+Worker process added with PID: 67
+Worker process added with PID: 68
+Worker process added with PID: 70
+Worker process added with PID: 71
+Worker process added with PID: 74
+Worker process added with PID: 76
+Worker process added with PID: 77
+Worker process added with PID: 80
+Worker process added with PID: 82
+Worker process added with PID: 83
+Worker process added with PID: 84
+Worker process added with PID: 86
+Worker process added with PID: 89
+Worker process added with PID: 90
+Worker process added with PID: 91
+Worker process added with PID: 94
+Worker process added with PID: 96
+Worker process added with PID: 99
+Worker process added with PID: 100
+Worker process added with PID: 103
+Worker process added with PID: 105
+Worker process added with PID: 107
+Worker process added with PID: 109
+Worker process added with PID: 111
+Worker process added with PID: 113
+Worker process added with PID: 114
+Worker process added with PID: 115
+Worker process added with PID: 119
+Worker process added with PID: 121
+Worker process added with PID: 124
+Worker process added with PID: 127
+Worker process added with PID: 128
+Worker process added with PID: 130
+Worker process added with PID: 132
+Worker process added with PID: 134
+Worker process added with PID: 136
+Worker process added with PID: 137
+Worker process added with PID: 139
+Worker process added with PID: 141
+Worker process added with PID: 143
+Worker process added with PID: 145
+Worker process added with PID: 146
+Worker process added with PID: 148
+Worker process added with PID: 151
+Worker process added with PID: 154
+Worker process added with PID: 156
+Worker process added with PID: 158
+Worker process added with PID: 160
+Worker process added with PID: 162
+Worker process added with PID: 164
+Worker process added with PID: 165
+Worker process added with PID: 167
+Worker process added with PID: 170
+Worker process added with PID: 173
+Worker process added with PID: 175
+Worker process added with PID: 176
+Worker process added with PID: 178
+Worker process added with PID: 179
+Worker process added with PID: 182
+Worker process added with PID: 184
+Worker process added with PID: 186
+Worker process added with PID: 187
+Worker process added with PID: 189
+Worker process added with PID: 191
+Worker process added with PID: 193
+Worker process added with PID: 195
+Worker process added with PID: 196
+Worker process added with PID: 198
+Worker process added with PID: 201
+Worker process added with PID: 203
+Worker process added with PID: 204
+Worker process added with PID: 206
+Worker process added with PID: 208
+Worker process added with PID: 210
+Worker process added with PID: 213
+Worker process added with PID: 214
+Worker process added with PID: 217
+Worker process added with PID: 218
+Worker process added with PID: 220
+Worker process added with PID: 222
+Worker process added with PID: 225
+Worker process added with PID: 228
+Worker process added with PID: 229
+Worker process added with PID: 231
+Worker process added with PID: 234
+Worker process added with PID: 236
+Worker process added with PID: 237
+Worker process added with PID: 239
+Worker process added with PID: 242
+Worker process added with PID: 244
+Worker process added with PID: 246
+Worker process added with PID: 249
+Worker process added with PID: 250
+Worker process added with PID: 253
+Worker process added with PID: 254
+Worker process added with PID: 255

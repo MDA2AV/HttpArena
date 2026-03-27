@@ -1,0 +1,100 @@
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+Python/gc.c:1767: PyObject_GC_Track: Assertion failed: object already tracked by the garbage collector
+Enable tracemalloc to get the memory block allocation traceback
+
+object address  : 0x7d722bde3c40
+object refcount : 1
+object type     : 0x62d8b8ee71a0
+object type name: _asyncio.FutureIter
+object repr     : <_asyncio.FutureIter object at 0x7d722bde3c40>
+
+Fatal Python error: _PyObject_AssertFailed: _PyObject_AssertFailed
+Python runtime state: initialized
+
+Thread 0x00007d722bac46c0 (most recent call first):
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.13/threading.py", line 995 in run
+  File "/usr/local/lib/python3.13/threading.py", line 1044 in _bootstrap_inner
+  File "/usr/local/lib/python3.13/threading.py", line 1015 in _bootstrap
+
+Current thread 0x00007d722dd7c340 (most recent call first):
+  File "/app/./app.py", line 160 in baseline11
+  File "/app/./app.py", line 307 in app
+  File "/usr/local/lib/python3.13/asyncio/events.py", line 89 in _run
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 2050 in _run_once
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 683 in run_forever
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 90 in multi_run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 71 in run
+  File "/usr/local/lib/python3.13/site-packages/fastpysgi.py", line 193 in run
+  File "/app/./app.py", line 322 in <module>
+
+Extension modules: asyncpg.pgproto.pgproto, asyncpg.protocol.protocol, _fastpysgi (total: 3)
+FastPySGI server multiple workers listening at http://0.0.0.0:8080
+FastPySGI server running on PID: 1
+Worker process added with PID: 8
+Worker process added with PID: 9
+Worker process added with PID: 10
+Worker process added with PID: 11
+Worker process added with PID: 12
+Worker process added with PID: 13
+Worker process added with PID: 14
+Worker process added with PID: 15
+Worker process added with PID: 16
+Worker process added with PID: 17
+Worker process added with PID: 20
+Worker process added with PID: 23
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized
+BufferError: Existing exports of data: object cannot be re-sized

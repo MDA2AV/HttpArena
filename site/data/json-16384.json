@@ -971,5 +971,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "FastPySGI-ASGI",
+    "language": "Python",
+    "rps": 592124,
+    "avg_latency": "25.25ms",
+    "p99_latency": "80.20ms",
+    "cpu": "10132.4%",
+    "memory": "3.8GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "4.71GB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 2960624,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]

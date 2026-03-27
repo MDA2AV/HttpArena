@@ -1148,5 +1148,30 @@
     "tpl_db": 48545,
     "tpl_upload": 50252,
     "tpl_compression": 78513
+  },
+  {
+    "framework": "FastPySGI-ASGI",
+    "language": "Python",
+    "rps": 39885,
+    "avg_latency": "377.00ms",
+    "p99_latency": "2.27s",
+    "cpu": "10525.0%",
+    "memory": "2.7GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.59GB/s",
+    "input_bw": "3.90GB/s",
+    "reconnects": 129127,
+    "status_2xx": 599084,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0,
+    "tpl_baseline": 325092,
+    "tpl_json": 52254,
+    "tpl_db": 52737,
+    "tpl_upload": 65253,
+    "tpl_compression": 103748
   }
 ]
