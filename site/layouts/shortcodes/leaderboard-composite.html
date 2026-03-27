@@ -140,6 +140,7 @@ html.dark .composite-disclaimer { color: #fff !important; background: rgba(234,1
   html.dark .composite-resource-toggle { color:#64748b; border-color:#334155; }
   html.dark .composite-resource-toggle:hover { color:#94a3b8; border-color:#475569; }
   html.dark .composite-resource-toggle.active { color:#34d399; border-color:#059669; background:rgba(5,150,105,0.12); }
+  .composite-sort-col:hover { opacity:0.7; }
   </style>
 
   <div style="overflow-x:auto; overflow-y:hidden; margin-top:1rem;">
@@ -156,6 +157,7 @@ var currentEntries = compositeEntries;
 var currentMeta = compositeMeta;
 var profiles = compositeProfiles;
 var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
+var compositeSortCol = 'composite';
 
 var allProfileIds = profiles.map(function(p) { return p.id; });
 var profileLabels = {};
@@ -437,21 +439,34 @@ function renderComposite() {
     }
     results.push({ framework: fw, language: fwLang[fw] || '', scores: scores, composite: composite, participated: participated });
   });
-  results.sort(function(a, b) { return b.composite - a.composite; });
+  // Sort by active column
+  if (compositeSortCol === 'composite' || compositeSortCol === null) {
+    results.sort(function(a, b) { return b.composite - a.composite; });
+  } else {
+    var sortIdx = activeIds.indexOf(compositeSortCol);
+    if (sortIdx >= 0) {
+      results.sort(function(a, b) { return (b.scores[sortIdx] || 0) - (a.scores[sortIdx] || 0); });
+    } else {
+      results.sort(function(a, b) { return b.composite - a.composite; });
+    }
+  }
 
   // Render
   var table = document.getElementById('composite-table');
   table.innerHTML = '';
 
+  var sortableStyle = ' cursor:pointer; user-select:none;';
+  var activeSort = ' border-bottom:2px solid currentColor;';
+
   // Header
   var header = document.createElement('div');
   header.className = 'lb-row lb-header';
   header.style.gridTemplateColumns = '2rem 9rem 3.5rem 3.5rem repeat(' + activeCount + ', minmax(4.2rem, 5.5rem))';
-  var headerHtml = '<div title="Rank by composite score">#</div>' +
+  var headerHtml = '<div title="Rank">#</div>' +
     '<div>Framework</div>' +
     '<div>Lang</div>' +
-    '<div style="font-weight:700; padding-left:0.5rem;" title="Composite score: average of normalized profile scores">Score</div>';
-  activeIds.forEach(function(pid) {
+    '<div class="composite-sort-col" data-sort="composite" style="font-weight:700; padding-left:0.5rem;' + sortableStyle + (compositeSortCol === 'composite' || compositeSortCol === null ? activeSort : '') + '" title="Sort by composite score">Score</div>';
+  activeIds.forEach(function(pid, i) {
     var proto = profileProtos[pid];
     var scored = isScoredForType(pid);
     var bgStyle;
@@ -471,10 +486,18 @@ function renderComposite() {
     var sublabel = profileSublabels[pid] || proto;
     var label = profileLabels[pid] + (scored ? '' : ' *');
     var sublabel = profileSublabels[pid] || (proto === 'h3' ? 'HTTP/3' : proto === 'h2' ? 'HTTP/2' : 'HTTP/1.1');
-    headerHtml += '<div style="text-align:right; font-size:0.62rem; line-height:1.2;' + bgStyle + '" title="' + profileLabels[pid] + ' (' + sublabel + ')' + (scored ? ' — counts toward composite score' : ' — reference only, does not count toward composite score') + '">' + label + '</div>';
+    headerHtml += '<div class="composite-sort-col" data-sort="' + pid + '" style="text-align:right; font-size:0.62rem; line-height:1.2;' + bgStyle + sortableStyle + (compositeSortCol === pid ? activeSort : '') + '" title="Sort by ' + profileLabels[pid] + ' (' + sublabel + ')' + (scored ? '' : ' — reference only') + '">' + label + '</div>';
   });
   header.innerHTML = headerHtml;
   table.appendChild(header);
+
+  // Attach sort handlers to header columns
+  header.querySelectorAll('.composite-sort-col').forEach(function(col) {
+    col.addEventListener('click', function() {
+      compositeSortCol = col.dataset.sort;
+      renderComposite();
+    });
+  });
 
   var maxComposite = results.length > 0 ? results[0].composite : 1;
 
@@ -605,6 +628,7 @@ document.querySelectorAll('.composite-proto-select').forEach(function(btn) {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.composite-proto-select').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
+    compositeSortCol = 'composite';
     syncTestFilters();
     renderComposite();
   });
