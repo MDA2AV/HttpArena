@@ -41,7 +41,7 @@ declare -A PROFILES=(
     [static-h3]="32|0||256,512|static-h3"
     [unary-grpc]="1|0||256,1024|grpc"
     [unary-grpc-tls]="1|0||256,1024|grpc-tls"
-    [echo-ws]="16|0||512,4096,16384|ws-echo"
+    [echo-ws]="1|0||512,4096,16384|ws-echo"
     [async-db]="1|0||512,1024|async-db"
 )
 PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)

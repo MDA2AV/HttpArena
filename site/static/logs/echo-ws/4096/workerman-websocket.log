@@ -1,0 +1,8 @@
+Workerman[ws.php] start in DEBUG mode
+----------------------------------------------- WORKERMAN -----------------------------------------------
+Workerman/5.1.10        PHP/8.5.3 (JIT on)            Linux/6.17.0-19-generic
+------------------------------------------------ WORKERS ------------------------------------------------
+event-loop  proto       user        worker      listen                      count       state            
+event       tcp         root        none        websocket://0.0.0.0:8080    128          [OK]            
+---------------------------------------------------------------------------------------------------------
+Press Ctrl+C to stop. Start success.

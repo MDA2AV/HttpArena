@@ -1,5 +1,5 @@
 {{ $profiles := slice
-  (dict "id" "echo-ws" "label" "Echo (WebSocket)" "conns" (slice 512 4096 16384) "desc" "WebSocket echo test — upgrade to WebSocket on <code>/ws</code>, then send text messages and receive echoes. Measures WebSocket frame processing throughput with pipelined messages. Benchmarked with <code>gcannon --ws</code>.")
+  (dict "id" "echo-ws" "label" "Echo (WebSocket)" "conns" (slice 512 4096 16384) "desc" "WebSocket echo test — upgrade to WebSocket on <code>/ws</code>, then send one message at a time and wait for the echo before sending the next. Measures single-message round-trip throughput. Benchmarked with <code>gcannon --ws -p 1</code>.")
 }}
 
 {{/* Build JSON data blob for round switching */}}

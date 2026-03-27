@@ -7,14 +7,14 @@
   "os": "Ubuntu 24.04.4 LTS",
   "kernel": "6.17.0-19-generic",
   "docker": "29.3.0",
-  "commit": "14f2672",
+  "commit": "87e3708",
   "governor": "performance",
   "docker_runtime": "runc",
   "threads_per_core": "2",
   "tcp": {
     "lo_mtu": "65536",
     "congestion": "cubic",
-    "somaxconn": "4096",
+    "somaxconn": "65535",
     "rmem_max": "7500000",
     "wmem_max": "7500000"
   }

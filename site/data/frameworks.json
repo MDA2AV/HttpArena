@@ -62,5 +62,6 @@
   "ultimate-express": {"description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.", "repo": "https://github.com/dimdenGD/ultimate-express", "type": "framework", "engine": "uWebSockets"},
   "Vapor": {"description": "Vapor is the most popular server-side Swift web framework, built on SwiftNIO with async/await, Codable routing, and middleware support.", "repo": "https://github.com/vapor/vapor", "type": "framework", "engine": "SwiftNIO"},
   "vertx": {"description": "Eclipse Vert.x 4.5 — reactive toolkit on Netty with event-loop threading, JDK 21.", "repo": "https://github.com/eclipse-vertx/vert.x", "type": "engine", "engine": "Netty"},
+  "workerman-websocket": {"description": "Workerman WebSocket echo server", "repo": "https://github.com/walkor/Workerman", "type": "framework", "engine": "Workerman"},
   "zerg": {"description": "Raw C# TCP server on Linux io_uring via zerg, with zero-copy buffer rings and manual HTTP parsing.", "repo": "https://github.com/MDA2AV/zerg", "type": "framework", "engine": "io_uring"}
 }
