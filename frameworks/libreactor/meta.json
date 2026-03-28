@@ -1,0 +1,14 @@
+{
+  "display_name": "libreactor",
+  "language": "C",
+  "type": "engine",
+  "engine": "epoll",
+  "description": "High-performance C event-driven HTTP library using epoll and picohttpparser. Top performer on TechEmpower benchmarks.",
+  "repo": "https://github.com/fredrikwidlund/libreactor",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ]
+}
