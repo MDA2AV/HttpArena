@@ -1,8 +1,12 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <signal.h>
+#include <unistd.h>
+#include <sched.h>
+#include <sys/wait.h>
 
 #include <reactor.h>
 
@@ -133,18 +137,44 @@ static void callback(reactor_event *event)
     server_not_found(request);
 }
 
-int main(void)
+static void run_worker(int cpu)
 {
-    server s;
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(cpu, &cpuset);
+    sched_setaffinity(0, sizeof(cpuset), &cpuset);
 
+    server s;
     reactor_construct();
     server_construct(&s, callback, &s);
     server_open(&s,
                 net_socket(net_resolve("0.0.0.0", "8080", AF_INET, SOCK_STREAM, AI_PASSIVE)),
                 NULL);
-    fprintf(stderr, "libreactor listening on :8080\n");
     reactor_loop();
     server_destruct(&s);
     reactor_destruct();
+}
+
+int main(void)
+{
+    int cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    if (cpus < 1) cpus = 1;
+
+    fprintf(stderr, "libreactor: spawning %d workers on :8080\n", cpus);
+
+    for (int i = 1; i < cpus; i++)
+    {
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            run_worker(i);
+            _exit(0);
+        }
+    }
+
+    run_worker(0);
+
+    /* wait for children (shouldn't reach here) */
+    while (wait(NULL) > 0);
     return 0;
 }
