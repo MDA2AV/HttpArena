@@ -37,7 +37,7 @@ jobs:
         working-directory: site
         run: |
           hugo mod tidy
-          hugo --minify --baseURL "https://MDA2AV.github.io/HttpArena/"
+          hugo --minify --baseURL "http://www.http-arena.com"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
