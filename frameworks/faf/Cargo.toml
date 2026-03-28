@@ -1,0 +1,17 @@
+[package]
+name = "httparena-faf"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+opt-level = 3
+panic = "abort"
+codegen-units = 1
+lto = "thin"
+debug = false
+incremental = false
+overflow-checks = false
+
+[dependencies]
+libc = "0.2"
+socket2 = { version = "0.5", features = ["all"] }
