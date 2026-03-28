@@ -1,0 +1,23 @@
+{
+  "display_name": "axum",
+  "language": "Rust",
+  "type": "framework",
+  "engine": "Axum",
+  "description": "Axum 0.8 on Tokio/Hyper with Rustls for HTTP/2, compiled with -O3 and thin LTO.",
+  "repo": "https://github.com/tokio-rs/axum",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "noisy",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed",
+    "async-db",
+    "static",
+    "baseline-h2",
+    "static-h2"
+  ]
+}
