@@ -1,8 +1,6 @@
 package main
 
 import (
-	"compress/flate"
-	"compress/gzip"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -18,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	_ "modernc.org/sqlite"
 )
 
@@ -172,6 +171,10 @@ func main() {
 	e.HideBanner = true
 	e.HidePort = true
 
+	gzipMiddleware := middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 1,
+	})
+
 	e.GET("/pipeline", func(c echo.Context) error {
 		c.Response().Header().Set("Server", "echo")
 		return c.String(http.StatusOK, "ok")
@@ -214,30 +217,8 @@ func main() {
 
 	e.GET("/compression", func(c echo.Context) error {
 		c.Response().Header().Set("Server", "echo")
-		ae := c.Request().Header.Get("Accept-Encoding")
-		if strings.Contains(ae, "deflate") {
-			c.Response().Header().Set("Content-Type", "application/json")
-			c.Response().Header().Set("Content-Encoding", "deflate")
-			c.Response().WriteHeader(http.StatusOK)
-			w, err := flate.NewWriter(c.Response(), flate.BestSpeed)
-			if err == nil {
-				w.Write(jsonLargeResponse)
-				w.Close()
-			}
-			return nil
-		} else if strings.Contains(ae, "gzip") {
-			c.Response().Header().Set("Content-Type", "application/json")
-			c.Response().Header().Set("Content-Encoding", "gzip")
-			c.Response().WriteHeader(http.StatusOK)
-			w, err := gzip.NewWriterLevel(c.Response(), gzip.BestSpeed)
-			if err == nil {
-				w.Write(jsonLargeResponse)
-				w.Close()
-			}
-			return nil
-		}
 		return c.Blob(http.StatusOK, "application/json", jsonLargeResponse)
-	})
+	}, gzipMiddleware)
 
 	e.POST("/upload", func(c echo.Context) error {
 		size, _ := io.Copy(io.Discard, c.Request().Body)
