@@ -29,11 +29,7 @@ class _StaticFile {
 }
 
 Future<void> main() async {
-  final envWorkers = int.tryParse(Platform.environment['WORKERS'] ?? '');
-  final n = (envWorkers != null && envWorkers > 0)
-      ? envWorkers
-      : Platform.numberOfProcessors;
-  stderr.writeln('[boot] workers=$n');
+  final n = Platform.numberOfProcessors;
   for (var i = 1; i < n; i++) {
     await Isolate.spawn(_run, null);
   }
@@ -109,12 +105,20 @@ Future<void> _run(dynamic _) async {
   });
 
   app.get('/baseline11', (req, res) {
-    final sum = _sumQueryInts(req.query);
+    var sum = 0;
+    for (final v in req.query.values) {
+      final n = int.tryParse(v);
+      if (n != null) sum += n;
+    }
     res.text('$sum');
   });
 
   app.post('/baseline11', (req, res) async {
-    var sum = _sumQueryInts(req.query);
+    var sum = 0;
+    for (final v in req.query.values) {
+      final n = int.tryParse(v);
+      if (n != null) sum += n;
+    }
     final body = await req.body;
     if (body != null) {
       final s = body is String
@@ -292,21 +296,6 @@ Map<String, dynamic> _mapItem(dynamic d) => {
       'total':
           ((d['price'] as num) * (d['quantity'] as num) * 100).round() / 100,
     };
-
-int _sumQueryInts(Map<String, String> query) {
-  final a = query['a'];
-  final b = query['b'];
-  if (a != null && b != null && query.length == 2) {
-    return (int.tryParse(a) ?? 0) + (int.tryParse(b) ?? 0);
-  }
-
-  var sum = 0;
-  for (final v in query.values) {
-    final n = int.tryParse(v);
-    if (n != null) sum += n;
-  }
-  return sum;
-}
 
 Map<String, _StaticFile> _loadStaticFiles() {
   final result = <String, _StaticFile>{};
