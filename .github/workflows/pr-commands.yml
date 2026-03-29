@@ -25,18 +25,35 @@ jobs:
           PR="$PR_NUMBER"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
 
-          # Detect changed frameworks from PR files via API (most reliable)
-          FRAMEWORKS=$(gh api "/repos/$REPO/pulls/$PR/files" --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u | head -1)
-          echo "framework=$FRAMEWORKS" >> "$GITHUB_OUTPUT"
-          echo "Detected framework: $FRAMEWORKS"
+          # Detect changed frameworks from PR files via API (fallback)
+          AUTO_FRAMEWORK=$(gh api "/repos/$REPO/pulls/$PR/files" --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u | head -1)
 
           if echo "$COMMENT_BODY" | grep -q '/benchmark'; then
             echo "command=benchmark" >> "$GITHUB_OUTPUT"
-            # Extract optional profile: /benchmark baseline
-            PROFILE=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+\K\S+' || echo "")
-            echo "profile=$PROFILE" >> "$GITHUB_OUTPUT"
+
+            # Parse flags: -f <framework> -t <test>
+            EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-f\s+\K\S+' || echo "")
+            EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-t\s+\K\S+' || echo "")
+
+            # Fallback: positional arg (legacy: /benchmark baseline)
+            if [ -z "$EXPLICIT_FW" ] && [ -z "$EXPLICIT_TEST" ]; then
+              EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+\K[^-]\S*' || echo "")
+            fi
+
+            FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
+            echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
+            echo "profile=$EXPLICIT_TEST" >> "$GITHUB_OUTPUT"
+            echo "Detected framework: $FRAMEWORK (auto: $AUTO_FRAMEWORK, explicit: $EXPLICIT_FW)"
+            echo "Profile: $EXPLICIT_TEST"
+
           elif echo "$COMMENT_BODY" | grep -q '/validate'; then
             echo "command=validate" >> "$GITHUB_OUTPUT"
+
+            # Parse -f flag for validate too
+            EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/validate\s+.*-f\s+\K\S+' || echo "")
+            FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
+            echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
+            echo "Detected framework: $FRAMEWORK"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -74,13 +91,13 @@ jobs:
             -f framework=${{ steps.parse.outputs.framework }} \
             -f profile="${{ steps.parse.outputs.profile }}"
 
-          gh pr comment "${{ steps.parse.outputs.pr }}" --body "🚀 Benchmark run triggered for \`${{ steps.parse.outputs.framework }}\`${{ steps.parse.outputs.profile && format(' (profile: {0})', steps.parse.outputs.profile) || ' (all profiles)' }}. Results will be posted here when done."
+          gh pr comment "${{ steps.parse.outputs.pr }}" --body "🚀 Benchmark run triggered for \`${{ steps.parse.outputs.framework }}\`${{ steps.parse.outputs.profile && format(' (test: {0})', steps.parse.outputs.profile) || ' (all tests)' }}. Results will be posted here when done."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: No framework detected
         if: steps.parse.outputs.framework == ''
         run: |
-          gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to test. Make sure the PR modifies files under \`frameworks/<name>/\`."
+          gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to test. Either modify files under \`frameworks/<name>/\` or specify explicitly: \`/benchmark -f <framework> -t <test>\`"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
