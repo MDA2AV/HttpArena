@@ -13,6 +13,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -113,14 +114,8 @@ public class BenchmarkResource {
     @Path("/upload")
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.TEXT_PLAIN)
-    public String upload(InputStream body) throws IOException {
-        byte[] buf = new byte[65536];
-        long total = 0;
-        int n;
-        while ((n = body.read(buf)) != -1) {
-            total += n;
-        }
-        return String.valueOf(total);
+    public long upload(InputStream body) throws IOException {
+        return body.transferTo(OutputStream.nullOutputStream());
     }
 
     @GET
