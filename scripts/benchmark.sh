@@ -286,9 +286,13 @@ restore_settings() {
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     if [ -n "$ORIG_GOVERNOR" ]; then
         echo "[restore] Restoring CPU governor to $ORIG_GOVERNOR..."
-        for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-            sudo sh -c "echo $ORIG_GOVERNOR > $g" 2>/dev/null || true
-        done
+        if command -v cpupower &>/dev/null; then
+            sudo cpupower frequency-set -g "$ORIG_GOVERNOR" 2>/dev/null || true
+        else
+            for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+                sudo sh -c "echo $ORIG_GOVERNOR > $g" 2>/dev/null || true
+            done
+        fi
     fi
 }
 trap restore_settings EXIT
@@ -297,13 +301,23 @@ trap restore_settings EXIT
 docker ps -q --filter "name=httparena-" | xargs -r docker stop -t 5 2>/dev/null || true
 docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f 2>/dev/null || true
 
+AVAILABLE_CPUS=$(nproc 2>/dev/null || echo "64")
+echo "[info] Available CPUs: $AVAILABLE_CPUS"
+
 echo "[tune] Setting CPU governor to performance..."
-for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-    sudo sh -c "echo performance > $g" 2>/dev/null || true
-done
+if command -v cpupower &>/dev/null; then
+    sudo cpupower frequency-set -g performance 2>/dev/null && echo "[tune] CPU governor set to performance" || echo "[warn] Could not set CPU governor (no sudo?). Results may vary."
+else
+    for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        sudo sh -c "echo performance > $g" 2>/dev/null || true
+    done
+    if [ $? -ne 0 ]; then
+        echo "[warn] Could not set CPU governor. Results may vary."
+    fi
+fi
 
 echo "[tune] Setting TCP accept queue for high connection counts..."
-sudo sysctl -w net.core.somaxconn=65535 > /dev/null 2>&1 || true
+sudo sysctl -w net.core.somaxconn=65535 > /dev/null 2>&1 || echo "[warn] Could not set somaxconn (no sudo?)"
 sudo sysctl -w net.ipv4.tcp_max_syn_backlog=65535 > /dev/null 2>&1 || true
 sudo sysctl -w net.core.netdev_max_backlog=65535 > /dev/null 2>&1 || true
 
@@ -312,8 +326,11 @@ sudo sysctl -w net.core.rmem_max=7500000 > /dev/null 2>&1 || true
 sudo sysctl -w net.core.wmem_max=7500000 > /dev/null 2>&1 || true
 
 echo "[clean] Restarting Docker daemon..."
-sudo systemctl restart docker
-sleep 3
+if sudo systemctl restart docker 2>/dev/null; then
+    sleep 3
+else
+    echo "[warn] Could not restart Docker (no sudo?). Skipping daemon restart."
+fi
 echo "[clean] Dropping kernel caches..."
 sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches' 2>/dev/null || true
 sync
@@ -397,6 +414,11 @@ for profile in "${profiles_to_run[@]}"; do
         if [[ "$cpu_limit" == *-* ]]; then
             docker_args+=(--cpuset-cpus="$cpu_limit")
         else
+            # Cap CPU limit to available cores
+            if [ "$cpu_limit" -gt "$AVAILABLE_CPUS" ] 2>/dev/null; then
+                echo "[warn] Profile requests ${cpu_limit} CPUs but only ${AVAILABLE_CPUS} available — capping to ${AVAILABLE_CPUS}"
+                cpu_limit="$AVAILABLE_CPUS"
+            fi
             docker_args+=(--cpus="$cpu_limit")
         fi
     fi
