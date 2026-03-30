@@ -1,6 +1,7 @@
 use ntex::http::header::{CONTENT_TYPE, SERVER};
-use ntex::util::{Bytes, BytesMut};
-use ntex::web::{self, App, HttpRequest, HttpResponse};
+use ntex::util::BytesMut;
+use ntex::web::{self, App, HttpResponse};
+use ntex_files as fs;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use std::io::Write;
@@ -8,7 +9,6 @@ use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::sync::Arc;
 
 static SERVER_NAME: &str = "ntex";
@@ -56,18 +56,35 @@ struct JsonResponse {
     count: usize,
 }
 
-struct StaticFile {
-    data: Vec<u8>,
-    content_type: String,
-}
-
 struct AppState {
     dataset: Vec<DatasetItem>,
     json_large_cache: Vec<u8>,
-    static_files: HashMap<String, StaticFile>,
 }
 
 struct WorkerDb(RefCell<Option<Connection>>);
+
+#[derive(Deserialize)]
+struct BaselineParams {
+    #[serde(default)]
+    a: i64,
+    #[serde(default)]
+    b: i64,
+}
+
+#[derive(Deserialize)]
+struct DbParams {
+    #[serde(default = "default_min")]
+    min: f64,
+    #[serde(default = "default_max")]
+    max: f64,
+}
+
+fn default_min() -> f64 {
+    10.0
+}
+fn default_max() -> f64 {
+    50.0
+}
 
 fn load_dataset() -> Vec<DatasetItem> {
     let path = std::env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".to_string());
@@ -102,49 +119,6 @@ fn process_items(dataset: &[DatasetItem]) -> Vec<u8> {
     serde_json::to_vec(&resp).unwrap_or_default()
 }
 
-fn load_static_files() -> HashMap<String, StaticFile> {
-    let mime_types: HashMap<&str, &str> = [
-        (".css", "text/css"),
-        (".js", "application/javascript"),
-        (".html", "text/html"),
-        (".woff2", "font/woff2"),
-        (".svg", "image/svg+xml"),
-        (".webp", "image/webp"),
-        (".json", "application/json"),
-    ]
-    .into();
-    let mut files = HashMap::new();
-    if let Ok(entries) = std::fs::read_dir("/data/static") {
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().to_string();
-            if let Ok(data) = std::fs::read(entry.path()) {
-                let ext = name.rfind('.').map(|i| &name[i..]).unwrap_or("");
-                let ct = mime_types.get(ext).unwrap_or(&"application/octet-stream");
-                files.insert(
-                    name,
-                    StaticFile {
-                        data,
-                        content_type: ct.to_string(),
-                    },
-                );
-            }
-        }
-    }
-    files
-}
-
-fn parse_query_sum(query: &str) -> i64 {
-    let mut sum: i64 = 0;
-    for pair in query.split('&') {
-        if let Some(val) = pair.split('=').nth(1) {
-            if let Ok(n) = val.parse::<i64>() {
-                sum += n;
-            }
-        }
-    }
-    sum
-}
-
 async fn pipeline() -> HttpResponse {
     HttpResponse::Ok()
         .header(SERVER, SERVER_NAME)
@@ -152,8 +126,8 @@ async fn pipeline() -> HttpResponse {
         .body("ok")
 }
 
-async fn baseline11_get(req: HttpRequest) -> HttpResponse {
-    let sum = req.uri().query().map(parse_query_sum).unwrap_or(0);
+async fn baseline11_get(params: web::types::Query<BaselineParams>) -> HttpResponse {
+    let sum = params.a + params.b;
     HttpResponse::Ok()
         .header(SERVER, SERVER_NAME)
         .header(CONTENT_TYPE, "text/plain")
@@ -161,10 +135,10 @@ async fn baseline11_get(req: HttpRequest) -> HttpResponse {
 }
 
 async fn baseline11_post(
-    req: HttpRequest,
+    params: web::types::Query<BaselineParams>,
     mut body: web::types::Payload,
 ) -> Result<HttpResponse, web::error::PayloadError> {
-    let mut sum = req.uri().query().map(parse_query_sum).unwrap_or(0);
+    let mut sum = params.a + params.b;
     let mut buf = BytesMut::new();
     while let Some(chunk) = ntex::util::stream_recv(&mut body).await {
         buf.extend_from_slice(&chunk?);
@@ -180,8 +154,8 @@ async fn baseline11_post(
         .body(sum.to_string()))
 }
 
-async fn baseline2(req: HttpRequest) -> HttpResponse {
-    let sum = req.uri().query().map(parse_query_sum).unwrap_or(0);
+async fn baseline2(params: web::types::Query<BaselineParams>) -> HttpResponse {
+    let sum = params.a + params.b;
     HttpResponse::Ok()
         .header(SERVER, SERVER_NAME)
         .header(CONTENT_TYPE, "text/plain")
@@ -221,23 +195,10 @@ async fn compression(state: web::types::State<Arc<AppState>>) -> HttpResponse {
         .body(compressed)
 }
 
-async fn db_endpoint(req: HttpRequest, db: web::types::State<WorkerDb>) -> HttpResponse {
-    let min: f64 = req
-        .uri()
-        .query()
-        .and_then(|q| {
-            q.split('&')
-                .find_map(|p| p.strip_prefix("min=").and_then(|v| v.parse().ok()))
-        })
-        .unwrap_or(10.0);
-    let max: f64 = req
-        .uri()
-        .query()
-        .and_then(|q| {
-            q.split('&')
-                .find_map(|p| p.strip_prefix("max=").and_then(|v| v.parse().ok()))
-        })
-        .unwrap_or(50.0);
+async fn db_endpoint(
+    params: web::types::Query<DbParams>,
+    db: web::types::State<WorkerDb>,
+) -> HttpResponse {
     let borrow = db.0.borrow();
     let conn = match borrow.as_ref() {
         Some(c) => c,
@@ -250,7 +211,7 @@ async fn db_endpoint(req: HttpRequest, db: web::types::State<WorkerDb>) -> HttpR
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ?1 AND ?2 LIMIT 50",
         )
         .unwrap();
-    let rows = stmt.query_map(rusqlite::params![min, max], |row| {
+    let rows = stmt.query_map(rusqlite::params![params.min, params.max], |row| {
         Ok(serde_json::json!({
             "id": row.get::<_, i64>(0)?,
             "name": row.get::<_, String>(1)?,
@@ -277,7 +238,7 @@ async fn db_endpoint(req: HttpRequest, db: web::types::State<WorkerDb>) -> HttpR
 }
 
 async fn async_db_endpoint(
-    req: HttpRequest,
+    params: web::types::Query<DbParams>,
     pool: web::types::State<Option<Pool>>,
 ) -> HttpResponse {
     let pool = match pool.as_ref() {
@@ -289,22 +250,6 @@ async fn async_db_endpoint(
                 .body(r#"{"items":[],"count":0}"#);
         }
     };
-    let min: f64 = req
-        .uri()
-        .query()
-        .and_then(|q| {
-            q.split('&')
-                .find_map(|p| p.strip_prefix("min=").and_then(|v| v.parse().ok()))
-        })
-        .unwrap_or(10.0);
-    let max: f64 = req
-        .uri()
-        .query()
-        .and_then(|q| {
-            q.split('&')
-                .find_map(|p| p.strip_prefix("max=").and_then(|v| v.parse().ok()))
-        })
-        .unwrap_or(50.0);
     let client = match pool.get().await {
         Ok(c) => c,
         Err(_) => {
@@ -328,7 +273,7 @@ async fn async_db_endpoint(
                 .body(r#"{"items":[],"count":0}"#);
         }
     };
-    let rows = match client.query(&stmt, &[&min, &max]).await {
+    let rows = match client.query(&stmt, &[&params.min, &params.max]).await {
         Ok(r) => r,
         Err(_) => {
             return HttpResponse::Ok()
@@ -362,21 +307,6 @@ async fn async_db_endpoint(
         .body(result.to_string())
 }
 
-async fn static_file(
-    state: web::types::State<Arc<AppState>>,
-    path: web::types::Path<String>,
-) -> HttpResponse {
-    let filename = path.into_inner();
-    if let Some(sf) = state.static_files.get(&filename) {
-        HttpResponse::Ok()
-            .header(SERVER, SERVER_NAME)
-            .header(CONTENT_TYPE, sf.content_type.as_str())
-            .body(sf.data.clone())
-    } else {
-        HttpResponse::NotFound().finish()
-    }
-}
-
 #[ntex::main]
 async fn main() -> std::io::Result<()> {
     let dataset = load_dataset();
@@ -391,7 +321,6 @@ async fn main() -> std::io::Result<()> {
     let state = Arc::new(AppState {
         dataset,
         json_large_cache,
-        static_files: load_static_files(),
     });
 
     let pg_pool: Option<Pool> = std::env::var("DATABASE_URL").ok().and_then(|url| {
@@ -435,7 +364,7 @@ async fn main() -> std::io::Result<()> {
             .route("/compression", web::get().to(compression))
             .route("/db", web::get().to(db_endpoint))
             .route("/async-db", web::get().to(async_db_endpoint))
-            .route("/static/{filename}", web::get().to(static_file))
+            .service(fs::Files::new("/static", "/data/static"))
     })
     .workers(workers)
     .backlog(4096)

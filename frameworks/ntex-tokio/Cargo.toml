@@ -6,6 +6,7 @@ rust-version = "1.88"
 
 [dependencies]
 ntex = { version = "3", features = ["tokio", "compress"] }
+ntex-files = "3"
 # Pin ntex-error to <1.6.2 — upstream 1.6.2 removed ErrorType used by ntex 3.6.2
 ntex-error = ">=1.4, <1.6.2"
 serde = { version = "1", features = ["derive"] }
