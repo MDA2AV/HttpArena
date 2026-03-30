@@ -858,5 +858,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "Roda",
+    "language": "Ruby",
+    "rps": 398,
+    "avg_latency": "610.47ms",
+    "p99_latency": "1.86s",
+    "cpu": "11842.4%",
+    "memory": "16.3GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "33.05KB/s",
+    "input_bw": "7.77GB/s",
+    "reconnects": 0,
+    "status_2xx": 1992,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
