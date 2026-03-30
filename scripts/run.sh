@@ -35,10 +35,6 @@ fi
 
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
 
-has_test() {
-    echo "$TESTS" | grep -qw "$1"
-}
-
 cleanup() {
     echo ""
     echo "[stop] Stopping container..."
@@ -57,35 +53,22 @@ fi
 # Remove any stale container
 docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
-# Build docker run args
+# Build docker run args — mount all data files unconditionally for local testing
 docker_args=(--name "$CONTAINER_NAME" -p "$PORT:8080")
 docker_args+=(-v "$DATA_DIR/dataset.json:/data/dataset.json:ro")
+docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
+docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 
-needs_h2=false
-if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || has_test "static-h3"; then
-    needs_h2=true
-fi
-
-if $needs_h2 && [ -d "$CERTS_DIR" ]; then
+if [ -d "$CERTS_DIR" ]; then
     docker_args+=(-p "$H2PORT:8443" -v "$CERTS_DIR:/certs:ro")
 fi
 
-if has_test "compression"; then
-    docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
+DB_FILE="$DATA_DIR/benchmark.db"
+if [ ! -f "$DB_FILE" ]; then
+    echo "[db] benchmark.db not found, generating..."
+    python3 "$SCRIPT_DIR/generate-db.py" "$DATA_DIR/dataset.json" "$DB_FILE"
 fi
-
-if has_test "mixed"; then
-    DB_FILE="$DATA_DIR/benchmark.db"
-    if [ ! -f "$DB_FILE" ]; then
-        echo "[db] benchmark.db not found, generating..."
-        python3 "$SCRIPT_DIR/generate-db.py" "$DATA_DIR/dataset.json" "$DB_FILE"
-    fi
-    docker_args+=(-v "$DB_FILE:/data/benchmark.db:ro")
-fi
-
-if has_test "static-h2" || has_test "static-h3"; then
-    docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
-fi
+docker_args+=(-v "$DB_FILE:/data/benchmark.db:ro")
 
 ENGINE=$(python3 -c "import json; print(json.load(open('$META_FILE')).get('engine',''))" 2>/dev/null || true)
 if [ "$ENGINE" = "io_uring" ]; then
@@ -97,7 +80,7 @@ echo ""
 echo "============================================"
 echo "  Framework: $FRAMEWORK"
 echo "  HTTP:      http://localhost:$PORT"
-if $needs_h2; then
+if [ -d "$CERTS_DIR" ]; then
     echo "  HTTPS/H2:  https://localhost:$H2PORT"
 fi
 echo "  Tests:     $TESTS"
