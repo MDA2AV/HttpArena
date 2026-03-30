@@ -103,10 +103,34 @@ DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark
 ## Implementation notes
 
 - **Async driver required** - use your language's async Postgres driver (e.g., `asyncpg` for Python, `tokio-postgres` for Rust, `pg` for Node.js, `r2d2`/`deadpool` for connection pools)
-- **Connection pool** - initialize a pool at startup. Recommended pool size: number of CPU cores or 16–32 connections
+- **Connection pool** - initialize a pool at startup. Recommended pool size: number of CPU cores or 16-32 connections
 - **Prepared statements** - prepare the query once per connection, reuse across requests
 - **Default parameters** - if `min` or `max` query parameters are missing, default to `10` and `50` respectively
 - **Tags are JSONB** - Postgres returns them as native JSON, no string parsing needed (unlike the SQLite `/db` endpoint)
+
+## Important: DATABASE_URL
+
+The connection string is provided via the `DATABASE_URL` environment variable. **Never hardcode** `localhost:5432` or other connection details - always read from `DATABASE_URL`.
+
+The benchmark runner starts Postgres and waits for the seed data to be fully loaded before starting your framework container. By the time your server starts, Postgres is ready and accepting connections.
+
+**Recommended: lazy initialization with retry.** As a safety net, handle the case where the initial connection fails gracefully. Do not crash the server - return the empty fallback response and retry on the next request.
+
+```
+# Pseudocode
+pg_pool = null
+
+on_startup:
+    try: pg_pool = connect(DATABASE_URL)
+    catch: pg_pool = null  # don't crash
+
+on_request /async-db:
+    if pg_pool is null:
+        try: pg_pool = connect(DATABASE_URL)
+        catch: return {"items":[],"count":0}
+    try: return query(pg_pool)
+    catch: pg_pool = null; return {"items":[],"count":0}
+```
 
 ## Parameters
 

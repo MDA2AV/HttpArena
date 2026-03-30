@@ -351,7 +351,7 @@ fi
 
 # Start Postgres sidecar if async-db is needed
 if echo ",$FRAMEWORK_TESTS," | grep -qF ",async-db,"; then
-    if [ -z "$PROFILE_FILTER" ] || [ "$PROFILE_FILTER" = "async-db" ]; then
+    if [ -z "$PROFILE_FILTER" ] || [ "$PROFILE_FILTER" = "async-db" ] || [ "$PROFILE_FILTER" = "mixed" ]; then
         echo "[postgres] Starting Postgres sidecar..."
         docker rm -f "$PG_CONTAINER" 2>/dev/null || true
         docker run -d --name "$PG_CONTAINER" --network host \
@@ -361,12 +361,14 @@ if echo ",$FRAMEWORK_TESTS," | grep -qF ",async-db,"; then
             -v "$ROOT_DIR/data/pgdb-seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro" \
             postgres:17-alpine \
             -c max_connections=1000
-        for i in $(seq 1 30); do
+        for i in $(seq 1 60); do
             if docker exec "$PG_CONTAINER" pg_isready -U bench -d benchmark >/dev/null 2>&1; then
-                echo "[postgres] Ready"
-                break
+                if docker exec "$PG_CONTAINER" psql -U bench -d benchmark -tAc "SELECT 1 FROM items LIMIT 1" 2>/dev/null | grep -q 1; then
+                    echo "[postgres] Ready (seeded)"
+                    break
+                fi
             fi
-            [ "$i" -eq 30 ] && { echo "FAIL: Postgres did not start"; exit 1; }
+            [ "$i" -eq 60 ] && { echo "FAIL: Postgres did not start"; exit 1; }
             sleep 1
         done
     fi
