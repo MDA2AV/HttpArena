@@ -330,7 +330,12 @@ func main() {
                 staticHandler(ctx)
                 return
             }
-            baseline11Handler(ctx)
+			if strings.HasPrefix(string(ctx.Path()), "/baseline") {
+				baseline11Handler(ctx)
+				return
+			}
+
+			ctx.SetStatusCode(fasthttp.StatusNotFound)
 		}
 	}
 	numCPU := runtime.NumCPU()
