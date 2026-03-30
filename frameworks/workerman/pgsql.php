@@ -1,13 +1,11 @@
 <?php
 
-//'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'
-
 class Pgsql
 {
     private static PDO $pdo;
     private static PDOStatement $bench;
 
-    public function __construct()
+    public static function init()
     {
         self::$pdo = new PDO(
             'pgsql:host=localhost;port=5432;dbname=benchmark',

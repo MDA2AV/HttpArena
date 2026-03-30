@@ -59,7 +59,7 @@ function loadStaticFiles()
 
 $http_worker->onWorkerStart = static function () {
     DB::Init();
-    new Pgsql();
+    Pgsql::init();
 };
 
 // Data received
