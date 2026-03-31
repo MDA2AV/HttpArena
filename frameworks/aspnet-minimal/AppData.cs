@@ -26,7 +26,7 @@ static class AppData
 
     static void LoadDataset()
     {
-        var path = Environment.GetEnvironmentVariable("DATASET_PATH") ?? "R:\\OpenSource\\HttpArena\\frameworks\\aspnet-minimal\\bin\\Debug\\net10.0\\data/dataset.json";
+        var path = Environment.GetEnvironmentVariable("DATASET_PATH") ?? "data/dataset.json";
         if (!File.Exists(path)) return;
         DatasetItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(path), JsonOptions);
     }
