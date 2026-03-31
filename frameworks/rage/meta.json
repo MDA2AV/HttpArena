@@ -1,7 +1,7 @@
 {
   "display_name": "Rage",
   "language": "Ruby",
-  "type": "framework",
+  "type": "tuned",
   "engine": "iodine",
   "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
   "repo": "https://github.com/rage-rb/rage",
