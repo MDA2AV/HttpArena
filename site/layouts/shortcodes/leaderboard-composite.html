@@ -1,14 +1,15 @@
 {{ $profiles := slice
+  (dict "id" "mixed" "label" "Mixed" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096) "scored" true "engineScored" false)
+  (dict "id" "mini" "label" "Mini" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 128) "scored" false "engineScored" false)
   (dict "id" "baseline" "label" "Baseline" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096 16384) "scored" true "engineScored" true)
   (dict "id" "pipelined" "label" "Pipelined" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096 16384) "scored" false "engineScored" true)
   (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096) "scored" true "engineScored" true)
   (dict "id" "json" "label" "JSON" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096 16384) "scored" true "engineScored" false)
   (dict "id" "upload" "label" "Upload" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 64 256 512) "scored" true "engineScored" false)
   (dict "id" "compression" "label" "Compression" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096 16384) "scored" true "engineScored" false)
-  (dict "id" "noisy" "label" "Noisy" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096 16384) "scored" false "engineScored" false)
-  (dict "id" "mixed" "label" "Mixed" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096) "scored" true "engineScored" false)
   (dict "id" "static" "label" "Static" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096 16384) "scored" true "engineScored" false)
   (dict "id" "tcp-frag" "label" "TCP Frag" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096 16384) "scored" true "engineScored" false)
+  (dict "id" "noisy" "label" "Noisy" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096 16384) "scored" false "engineScored" false)
   (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "HTTP/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "static-h2" "label" "Static" "sublabel" "HTTP/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
@@ -277,7 +278,7 @@ function loadData(newEntries, newMeta) {
     memSums[key] = (memSums[key] || 0) + parseMem(e.memory);
     bwSums[key] = (bwSums[key] || 0) + parseBandwidth(e.bandwidth);
     counts[key] = (counts[key] || 0) + 1;
-    if (e.profile === 'mixed') {
+    if (e.profile === 'mixed' || e.profile === 'mini') {
       var fw = e.framework;
       if (!tplSums[fw]) tplSums[fw] = {baseline:0, json:0, db:0, upload:0, compression:0, static:0, async_db:0, count:0};
       tplSums[fw].baseline += (e.tpl_baseline || 0);
@@ -540,16 +541,18 @@ function renderComposite() {
 
   // For mixed: compute weighted scores and re-normalize
   var mixedWeights = {baseline:0.15, json:1, db:10, upload:10, compression:7, static:2, async_db:10};
-  if (activeIds.indexOf('mixed') >= 0) {
-    var maxWeighted = 0;
-    Object.keys(avgTplMixed).forEach(function(fw) {
-      if (isExcluded(fw)) return;
-      var t = avgTplMixed[fw];
-      var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.db * mixedWeights.db + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-      if (w > maxWeighted) maxWeighted = w;
-    });
-    if (maxWeighted > 0) maxRpsByProfile['mixed'] = maxWeighted;
-  }
+  ['mixed', 'mini'].forEach(function(mpid) {
+    if (activeIds.indexOf(mpid) >= 0) {
+      var maxWeighted = 0;
+      Object.keys(avgTplMixed).forEach(function(fw) {
+        if (isExcluded(fw)) return;
+        var t = avgTplMixed[fw];
+        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.db * mixedWeights.db + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+        if (w > maxWeighted) maxWeighted = w;
+      });
+      if (maxWeighted > 0) maxRpsByProfile[mpid] = maxWeighted;
+    }
+  });
 
   // For compression: compute bandwidth-adjusted RPS and re-normalize
   var minBwPerReq = {};
@@ -596,7 +599,7 @@ function renderComposite() {
         var rps = avgByProfile[pid][fw];
         var effectiveRps = rps;
         // For mixed: use weighted template score
-        if (pid === 'mixed' && avgTplMixed[fw]) {
+        if ((pid === 'mixed' || pid === 'mini') && avgTplMixed[fw]) {
           var t = avgTplMixed[fw];
           effectiveRps = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.db * mixedWeights.db + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
         }

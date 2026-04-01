@@ -35,6 +35,7 @@ declare -A PROFILES=(
     [compression]="1|0||4096,16384|compression"
     [noisy]="1|0||512,4096,16384|noisy"
     [mixed]="1|5||4096|mixed"
+    [mini]="1|5|4|128|mini"
     [static]="1|10||4096,16384|static"
     [tcp-frag]="1|2||512,4096,16384|tcp-frag"
     [baseline-h2]="1|0||256,1024|h2"
@@ -46,7 +47,7 @@ declare -A PROFILES=(
     [echo-ws]="1|0||512,4096,16384|ws-echo"
     [async-db]="1|0||1024|async-db"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed static async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
+PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed mini static async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -362,7 +363,7 @@ fi
 
 # Start Postgres sidecar if async-db is needed
 if echo ",$FRAMEWORK_TESTS," | grep -qF ",async-db,"; then
-    if [ -z "$PROFILE_FILTER" ] || [ "$PROFILE_FILTER" = "async-db" ] || [ "$PROFILE_FILTER" = "mixed" ]; then
+    if [ -z "$PROFILE_FILTER" ] || [ "$PROFILE_FILTER" = "async-db" ] || [ "$PROFILE_FILTER" = "mixed" ] || [ "$PROFILE_FILTER" = "mini" ]; then
         echo "[postgres] Starting Postgres sidecar..."
         docker rm -f "$PG_CONTAINER" 2>/dev/null || true
         docker run -d --name "$PG_CONTAINER" --network host \
@@ -426,9 +427,12 @@ for profile in "${profiles_to_run[@]}"; do
         -v "$ROOT_DIR/data/benchmark.db:/data/benchmark.db:ro"
         -v "$ROOT_DIR/data/static:/data/static:ro"
         -v "$CERTS_DIR:/certs:ro")
-    if [ "$endpoint" = "async-db" ] || [ "$endpoint" = "mixed" ]; then
+    if [ "$endpoint" = "async-db" ] || [ "$endpoint" = "mixed" ] || [ "$endpoint" = "mini" ]; then
         docker_args+=(-e "DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark")
         docker_args+=(-e "DATABASE_MAX_CONN=256")
+    fi
+    if [ "$endpoint" = "mini" ]; then
+        docker_args+=(--memory=16g --memory-swap=16g)
     fi
     if [ -n "$cpu_limit" ]; then
         if [[ "$cpu_limit" == *-* ]]; then
@@ -567,6 +571,10 @@ for profile in "${profiles_to_run[@]}"; do
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/db-get.raw,$REQUESTS_DIR/upload-small.raw,$REQUESTS_DIR/json-gzip.raw,$REQUESTS_DIR/json-gzip.raw,$REQUESTS_DIR/static-reset.css.raw,$REQUESTS_DIR/static-app.js.raw,$REQUESTS_DIR/async-db-get.raw,$REQUESTS_DIR/async-db-get.raw"
             -c "$CONNS" -t "$THREADS" -d 15s -p "$pipeline")
+    elif [ "$endpoint" = "mini" ]; then
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/db-get.raw,$REQUESTS_DIR/upload-small.raw,$REQUESTS_DIR/json-gzip.raw,$REQUESTS_DIR/json-gzip.raw,$REQUESTS_DIR/static-reset.css.raw,$REQUESTS_DIR/static-app.js.raw,$REQUESTS_DIR/async-db-get.raw,$REQUESTS_DIR/async-db-get.raw"
+            -c "$CONNS" -t 4 -d 15s -p "$pipeline")
     elif [ "$endpoint" = "async-db" ]; then
         gc_args=("http://localhost:$PORT/async-db?min=10&max=50"
             -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline")
@@ -735,7 +743,7 @@ else: print(f'{bps}B/s')
     tpl_json=""
     if [ "$USE_H2LOAD" = "false" ] && [ "$USE_OHA" = "false" ]; then
         tpl_line=$(echo "$best_output" | grep -oP 'Per-template-ok: \K.*' || echo "")
-        if [ -n "$tpl_line" ] && [ "$endpoint" = "mixed" ]; then
+        if [ -n "$tpl_line" ] && ([ "$endpoint" = "mixed" ] || [ "$endpoint" = "mini" ]); then
             # Mixed templates: get×3, post_cl×2, json-get×1, db-get×1, upload-small×1, json-gzip×2, static×2, async-db×2
             IFS=',' read -ra tpl_counts <<< "$tpl_line"
             t_baseline=$(( ${tpl_counts[0]:-0} + ${tpl_counts[1]:-0} + ${tpl_counts[2]:-0} + ${tpl_counts[3]:-0} + ${tpl_counts[4]:-0} ))

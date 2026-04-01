@@ -1032,6 +1032,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "Scotty",
+    "language": "Haskell",
+    "rps": 15550,
+    "avg_latency": "501.79ms",
+    "p99_latency": "551.50ms",
+    "cpu": "263.1%",
+    "memory": "4.5GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "2.31MB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 77752,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "Sinatra",
     "language": "Ruby",
     "rps": 647785,

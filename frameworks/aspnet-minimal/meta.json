@@ -15,6 +15,7 @@
     "compression",
     "noisy",
     "mixed",
+    "mini",
     "static",
     "tcp-frag",
     "async-db",
