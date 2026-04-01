@@ -93,11 +93,11 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          find results -name "${{ inputs.framework }}.json" -exec git add {} +
-          find site/static/logs -name "${{ inputs.framework }}.log" -exec git add {} +
-          git add site/data/frameworks.json site/data/current.json 2>/dev/null || true
+          find results -name "${{ inputs.framework }}.json" -exec git add -f {} +
+          find site/static/logs -name "${{ inputs.framework }}.log" -exec git add -f {} +
+          git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
           # Only add leaderboard files that the benchmark actually changed
-          git diff --name-only site/data/ 2>/dev/null | xargs -r git add
+          git diff --name-only site/data/ 2>/dev/null | xargs -r git add -f
           if git diff --cached --quiet; then
             echo "No results to commit"
           else
