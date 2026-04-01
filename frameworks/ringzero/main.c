@@ -16,7 +16,7 @@ static void on_signal(int sig)
     g_eng.running = 0;
 }
 
-/* ── minimal HTTP request parsing for /baseline11 ────────────── */
+/* ── minimal HTTP request parsing for /baseline11 ───────────── */
 
 static int parse_int(const char *s, int len)
 {
