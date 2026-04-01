@@ -1,10 +1,19 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.HttpResults;
+
+
+[JsonSerializable(typeof(ResponseDto))]
+[JsonSerializable(typeof(ProcessedItem))]
+[JsonSerializable(typeof(RatingInfo))]
+[JsonSerializable(typeof(List<string>))]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+partial class AppJsonContext : JsonSerializerContext { }
 
 static class Handlers
 {
-    
     public static int Sum(int a, int b) => a + b;
-    
+
     public static async ValueTask<int> SumBody(int a, int b, HttpRequest req)
     {
         using var reader = new StreamReader(req.Body);
@@ -25,23 +34,29 @@ static class Handlers
         return Results.Text(size.ToString());
     }
 
-    public static IResult Json()
+    public static Results<JsonHttpResult<ResponseDto>, ProblemHttpResult> Json()
     {
         if (AppData.DatasetItems == null)
-            return Results.Problem("Dataset not loaded");
+            return TypedResults.Problem("Dataset not loaded");
 
         var items = new List<ProcessedItem>(AppData.DatasetItems.Count);
         foreach (var item in AppData.DatasetItems)
         {
             items.Add(new ProcessedItem
             {
-                Id = item.Id, Name = item.Name, Category = item.Category,
-                Price = item.Price, Quantity = item.Quantity, Active = item.Active,
-                Tags = item.Tags, Rating = item.Rating,
+                Id = item.Id,
+                Name = item.Name,
+                Category = item.Category,
+                Price = item.Price,
+                Quantity = item.Quantity,
+                Active = item.Active,
+                Tags = item.Tags,
+                Rating = item.Rating,
                 Total = Math.Round(item.Price * item.Quantity, 2)
             });
         }
-        return Results.Json(new { items, count = items.Count });
+
+        return TypedResults.Json(new ResponseDto(items, AppData.DatasetItems.Count), AppJsonContext.Default);
     }
 
     public static IResult Compression()

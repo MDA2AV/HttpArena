@@ -1,3 +1,5 @@
+record ResponseDto(IReadOnlyList<ProcessedItem> Items, int Count);
+
 class DatasetItem
 {
     public int Id { get; set; }
@@ -6,7 +8,7 @@ class DatasetItem
     public double Price { get; set; }
     public int Quantity { get; set; }
     public bool Active { get; set; }
-    public List<string> Tags { get; set; } = new();
+    public List<string> Tags { get; set; } = [];
     public RatingInfo Rating { get; set; } = new();
 }
 
@@ -18,7 +20,7 @@ class ProcessedItem
     public double Price { get; set; }
     public int Quantity { get; set; }
     public bool Active { get; set; }
-    public List<string> Tags { get; set; } = new();
+    public List<string> Tags { get; set; } = [];
     public RatingInfo Rating { get; set; } = new();
     public double Total { get; set; }
 }
