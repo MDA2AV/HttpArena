@@ -46,21 +46,21 @@ jobs:
             exit 1
           fi
 
-      - name: Fetch main branch data for comparison
-        run: |
-          # Save PR's site/data aside, get main's for comparison
-          cp -r site/data /tmp/pr_site_data 2>/dev/null || true
-          git fetch origin main --depth=1
-          git checkout origin/main -- site/data/ 2>/dev/null || true
-          # Keep main's site/data for comparison, restore PR code
-          cp -r site/data /tmp/main_site_data 2>/dev/null || true
-          cp -r /tmp/pr_site_data/* site/data/ 2>/dev/null || true
-
       - name: Clean previous containers, results, and temp data
         run: |
           docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f 2>/dev/null || true
           rm -rf results/
           rm -rf /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data /tmp/bench_comparison.md /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt
+
+      - name: Fetch main branch data for comparison
+        run: |
+          # Save PR's site/data aside, get main's for comparison
+          cp -r site/data /tmp/pr_site_data
+          git fetch origin main --depth=1
+          git checkout origin/main -- site/data/ 2>/dev/null || true
+          # Keep main's site/data for comparison, restore PR code
+          cp -r site/data /tmp/main_site_data
+          cp -r /tmp/pr_site_data/* site/data/
 
       - name: Run benchmarks
         id: bench
