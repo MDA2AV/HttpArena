@@ -107,8 +107,8 @@ def _get_db() -> sqlite3.Connection:
 
 # -- Postgres DB ------------------------------------------------------------
 
-PG_POOL_MIN_SIZE = 2
-PG_POOL_MAX_SIZE = 2
+PG_POOL_MIN_SIZE = 3
+PG_POOL_MAX_SIZE = 3
 
 class NoResetConnection(asyncpg.Connection):
     __slots__ = ()
@@ -126,30 +126,21 @@ async def db_close():
 
 async def db_setup():
     global DATABASE_POOL, DATABASE_URL, WRK_COUNT
+    global PG_POOL_MIN_SIZE, PG_POOL_MAX_SIZE
     await db_close()
     max_pool_size = 0
     if not DATABASE_URL:
         return
-    '''
-    max_connections = 0
-    try:
-        conn = await asyncpg.connect(DATABASE_URL)
-        try:
-            result = await conn.fetchval("SHOW max_connections;")
-            max_connections = int(result)
-        finally:
-            await conn.close()
-    except Exception:
-        pass
-    if not max_connections:
-        return
-    max_pool_size = int(max_connections * 0.87 / WRK_COUNT) + 1
-    '''
+    DATABASE_MAX_CONN = os.environ.get("DATABASE_MAX_CONN", None)
+    if DATABASE_MAX_CONN:
+        avr_pool_size = DATABASE_MAX_CONN * 0.92 / WRK_COUNT
+        PG_POOL_MIN_SIZE = int(avr_pool_size + 0.35)
+        PG_POOL_MAX_SIZE = int(avr_pool_size + 0.95)
     try:
         DATABASE_POOL = await asyncpg.create_pool(
             dsn = DATABASE_URL,
-            min_size = PG_POOL_MIN_SIZE,
-            max_size = max(max_pool_size, PG_POOL_MAX_SIZE),
+            min_size = max(PG_POOL_MIN_SIZE, 1),
+            max_size = max(PG_POOL_MAX_SIZE, 2),
             connection_class = NoResetConnection
         )
     except Exception:

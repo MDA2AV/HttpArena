@@ -123,12 +123,16 @@ def db_setup():
     db_close()
     if not DATABASE_URL:
         return
-    max_pool_size = 0
+    DATABASE_MAX_CONN = os.environ.get("DATABASE_MAX_CONN", None)
+    if DATABASE_MAX_CONN:
+        avr_pool_size = DATABASE_MAX_CONN * 0.92 / WRK_COUNT
+        PG_POOL_MIN_SIZE = int(avr_pool_size + 0.35)
+        PG_POOL_MAX_SIZE = int(avr_pool_size + 0.95)
     try:
         DATABASE_POOL = psycopg_pool.ConnectionPool(
             conninfo = DATABASE_URL,
-            min_size = PG_POOL_MIN_SIZE,
-            max_size = max(max_pool_size, PG_POOL_MAX_SIZE),
+            min_size = max(PG_POOL_MIN_SIZE, 1),
+            max_size = max(PG_POOL_MAX_SIZE, 2),
             kwargs = { 'row_factory': psycopg.rows.dict_row },
         )
         #DATABASE_POOL.wait()
