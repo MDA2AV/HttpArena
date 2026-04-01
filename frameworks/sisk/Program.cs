@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Cryptography.X509Certificates;
 
 using System.Text.Json;
 using sisk;
@@ -10,10 +9,6 @@ using Sisk.Cadente.CoreEngine;
 using Sisk.Core.Http;
 using Sisk.Core.Http.FileSystem;
 using Sisk.Core.Routing;
-
-var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
-var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
-var hasCert = File.Exists(certPath) && File.Exists(keyPath);
 
 var server = HttpServer.CreateBuilder()
                        .UseEngine<CadenteHttpServerEngine>()
@@ -25,11 +20,6 @@ var server = HttpServer.CreateBuilder()
                            c.ErrorsLogsStream = null;
                        });
 
-if (hasCert)
-{
-    server.UseSsl(X509Certificate2.CreateFromPemFile(certPath, keyPath))
-          .UseListeningPort(new ListeningPort(true, "0.0.0.0", 8443));
-}
 
 Router router = new Router();
 
