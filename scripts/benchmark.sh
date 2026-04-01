@@ -154,6 +154,8 @@ for e in deduped:
         final.append(e)
         seen2.add(name)
 
+final.sort(key=lambda e: e.get('framework', '').lower())
+
 with open(data_file, 'w') as out:
     json.dump(final, out, indent=2)
 " "$data_file" "$conn_dir"
