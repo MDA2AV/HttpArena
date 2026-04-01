@@ -1,0 +1,20 @@
+{
+  "framework": "ringzero",
+  "language": "C",
+  "rps": 3513163,
+  "avg_latency": "145us",
+  "p99_latency": "192us",
+  "cpu": "6398.7%",
+  "memory": "4.1GiB",
+  "connections": 512,
+  "threads": 64,
+  "duration": "5s",
+  "pipeline": 1,
+  "bandwidth": "281.32MB/s",
+  "input_bw": "271.38MB/s",
+  "reconnects": 0,
+  "status_2xx": 17565816,
+  "status_3xx": 0,
+  "status_4xx": 538,
+  "status_5xx": 0
+}

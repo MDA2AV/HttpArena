@@ -114,25 +114,5 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
-  },
-  {
-    "framework": "ngx-php",
-    "language": "PHP",
-    "rps": 181401,
-    "avg_latency": "89.17ms",
-    "p99_latency": "367.64ms",
-    "cpu": "9627.9%",
-    "memory": "7.0GiB",
-    "connections": 512,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 32,
-    "bandwidth": "2754.31MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 907327,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
   }
 ]
