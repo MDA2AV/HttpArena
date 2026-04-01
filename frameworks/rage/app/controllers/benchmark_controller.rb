@@ -182,7 +182,7 @@ class BenchmarkController < RageController::API
   private
 
   def get_db
-    Thread.current[:rage_db] ||= begin
+    Fiber[:rage_db] ||= begin
       db = SQLite3::Database.new(self.class.database_path, readonly: true)
       db.execute('PRAGMA mmap_size=268435456')
       db.results_as_hash = true
@@ -193,7 +193,7 @@ class BenchmarkController < RageController::API
   end
 
   def get_pg
-    Thread.current[:rage_pg] ||= begin
+    Fiber[:rage_pg] ||= begin
       PG.connect(ENV['DATABASE_URL'])
     rescue
       nil
