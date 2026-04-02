@@ -7,6 +7,8 @@ require 'zlib'
 require 'pg'
 
 class App < Sinatra::Base
+  SERVER_NAME = 'sinatra'.freeze
+
   configure do
     set :server, :puma
     set :logging, false
@@ -21,7 +23,8 @@ class App < Sinatra::Base
     set :root, File.expand_path(__dir__)
 
     # Load dataset
-    dataset_path = ENV.fetch('DATASET_PATH', '/data/dataset.json')
+    DATA_DIR = ENV.fetch('DATA_DIR', '/data')
+    dataset_path = File.join DATA_DIR, 'dataset.json'
     if File.exist?(dataset_path)
       set :dataset_items, JSON.parse(File.read(dataset_path))
     else
@@ -29,9 +32,9 @@ class App < Sinatra::Base
     end
 
     # Large dataset for compression
-    large_path = '/data/dataset-large.json'
-    if File.exist?(large_path)
-      raw = JSON.parse(File.read(large_path))
+    dataset_large_path = File.join DATA_DIR, 'dataset-large.json'
+    if File.exist?(dataset_large_path)
+      raw = JSON.parse(File.read(dataset_large_path))
       items = raw.map do |d|
         d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0)
       end
@@ -50,7 +53,8 @@ class App < Sinatra::Base
       '.webp'  => 'image/webp',
       '.json'  => 'application/json'
     }.freeze
-    static_dir = '/data/static'
+
+    static_dir = File.join DATA_DIR, 'static'
     if Dir.exist?(static_dir)
       cache = {}
       Dir.foreach(static_dir) do |name|
@@ -67,19 +71,21 @@ class App < Sinatra::Base
     end
 
     # SQLite
-    set :db_available, File.exist?('/data/benchmark.db')
+    set :database_path, File.join(DATA_DIR, 'benchmark.db')
   end
 
-  DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'
+  DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'.freeze
+  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'.freeze
 
   helpers do
     def get_db
       Thread.current[:sinatra_db] ||= begin
-        db = SQLite3::Database.new('/data/benchmark.db', readonly: true)
+        db = SQLite3::Database.new(settings.database_path, readonly: true)
         db.execute('PRAGMA mmap_size=268435456')
         db.results_as_hash = true
         db
+      rescue
+        nil
       end
     end
 
@@ -98,7 +104,7 @@ class App < Sinatra::Base
 
   get '/pipeline' do
     content_type 'text/plain'
-    headers 'Server' => 'sinatra'
+    headers 'Server' => SERVER_NAME
     'ok'
   end
 
@@ -113,7 +119,7 @@ class App < Sinatra::Base
       total += body_str.to_i
     end
     content_type 'text/plain'
-    headers 'Server' => 'sinatra'
+    headers 'Server' => SERVER_NAME
     total.to_s
   end
 
@@ -126,7 +132,7 @@ class App < Sinatra::Base
       total += v.to_i
     end
     content_type 'text/plain'
-    headers 'Server' => 'sinatra'
+    headers 'Server' => SERVER_NAME
     total.to_s
   end
 
@@ -137,38 +143,34 @@ class App < Sinatra::Base
       d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0)
     end
     content_type 'application/json'
-    headers 'Server' => 'sinatra'
+    headers 'Server' => SERVER_NAME
     JSON.generate({ 'items' => items, 'count' => items.length })
   end
 
   get '/compression' do
-    payload = settings.large_json_payload
-    halt 500, 'No dataset' unless payload
+    dataset = settings.large_json_payload
+    halt 500, 'No dataset' unless dataset
     if request.get_header('HTTP_ACCEPT_ENCODING')&.include?('gzip')
       sio = StringIO.new
       gz = Zlib::GzipWriter.new(sio, 1)
-      gz.write(payload)
+      gz.write(dataset)
       gz.close
       content_type 'application/json'
-      headers 'Content-Encoding' => 'gzip', 'Server' => 'sinatra'
+      headers 'Content-Encoding' => 'gzip', 'Server' => SERVER_NAME
       sio.string
     else
       content_type 'application/json'
-      headers 'Server' => 'sinatra'
-      payload
+      headers 'Server' => SERVER_NAME
+      dataset
     end
   end
 
   get '/db' do
-    unless settings.db_available
-      content_type 'application/json'
-      headers 'Server' => 'sinatra'
-      return '{"items":[],"count":0}'
-    end
-    min_val = (params['min'] || 10).to_f
-    max_val = (params['max'] || 50).to_f
-    db = get_db
-    rows = db.execute(DB_QUERY, [min_val, max_val])
+    min_val = (params['min'] || 10).to_i
+    max_val = (params['max'] || 50).to_i
+
+    rows = get_db&.execute(DB_QUERY, [min_val, max_val]) || []
+
     items = rows.map do |r|
       {
         'id' => r['id'], 'name' => r['name'], 'category' => r['category'],
@@ -178,39 +180,17 @@ class App < Sinatra::Base
       }
     end
     content_type 'application/json'
-    headers 'Server' => 'sinatra'
+    headers 'Server' => SERVER_NAME
     JSON.generate({ 'items' => items, 'count' => items.length })
   end
 
-  get '/static/:filename' do
-    filename = params['filename']
-    entry = settings.static_files_cache[filename]
-    if entry
-      content_type entry[:content_type]
-      headers 'Server' => 'sinatra'
-      entry[:data]
-    else
-      headers 'Server' => 'sinatra'
-      halt 404, 'Not Found'
-    end
-  end
-
   get '/async-db' do
-    content_type 'application/json'
-    headers 'Server' => 'sinatra'
-    conn = pg_conn
-    unless conn
-      return '{"items":[],"count":0}'
-    end
-    min_val = (params['min'] || 10.0).to_f
-    max_val = (params['max'] || 50.0).to_f
-    begin
-      result = conn.exec_prepared('select', [min_val, max_val])
-    rescue PG::Error
-      Thread.current[:sinatra_pg] = nil
-      return '{"items":[],"count":0}'
-    end
-    items = result.map do |r|
+    min_val = (params['min'] || 10).to_i
+    max_val = (params['max'] || 50).to_i
+
+    rows = pg_conn&.exec_prepared('select', [min_val, max_val]) || []
+
+    items = rows.map do |r|
       {
         'id' => r['id'].to_i, 'name' => r['name'], 'category' => r['category'],
         'price' => r['price'].to_f, 'quantity' => r['quantity'].to_i,
@@ -219,7 +199,22 @@ class App < Sinatra::Base
         'rating' => { 'score' => r['rating_score'].to_f, 'count' => r['rating_count'].to_i }
       }
     end
+    content_type 'application/json'
+    headers 'Server' => SERVER_NAME
     JSON.generate({ 'items' => items, 'count' => items.length })
+  end
+
+  get '/static/:filename' do
+    filename = params['filename']
+    entry = settings.static_files_cache[filename]
+    if entry
+      content_type entry[:content_type]
+      headers 'Server' => SERVER_NAME
+      entry[:data]
+    else
+      headers 'Server' => SERVER_NAME
+      halt 404, 'Not Found'
+    end
   end
 
   # POST /upload is handled by UploadHandler middleware in config.ru
