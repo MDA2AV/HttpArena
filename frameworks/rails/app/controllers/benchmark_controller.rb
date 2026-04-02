@@ -4,15 +4,26 @@ require 'zlib'
 require 'pg'
 
 class BenchmarkController < ActionController::API
-  # Pre-load datasets at class level (shared across workers via preload)
-  DATASET_PATH = ENV.fetch('DATASET_PATH', '/data/dataset.json')
-  LARGE_DATASET_PATH = '/data/dataset-large.json'
+  mattr_accessor :dataset, :dataset_large, :database_path, :static_files_cache
 
-  mattr_accessor :dataset_items, :db_available, :large_json_payload, :static_files_cache
-  self.db_available = File.exist?('/data/benchmark.db')
+  DATA_DIR = ENV.fetch('DATA_DIR', '/data')
+  dataset_path = File.join(DATA_DIR, 'dataset.json')
+  dataset_large_path = File.join(DATA_DIR, 'dataset-large.json')
+  database_path = File.join(DATA_DIR, 'benchmark.db')
+  static_dir = File.join(DATA_DIR, 'static')
 
-  if File.exist?(DATASET_PATH)
-    self.dataset_items = JSON.parse(File.read(DATASET_PATH))
+  if File.exist?(dataset_path)
+    self.dataset = JSON.parse(File.read(dataset_path))
+  end
+
+  if File.exist?(dataset_large_path)
+    raw = JSON.parse(File.read(dataset_large_path))
+    items = raw.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
+    self.dataset_large = JSON.generate({ 'items' => items, 'count' => items.length })
+  end
+
+  if File.exist?(database_path)
+    self.database_path = database_path
   end
 
   # Load static files into memory
@@ -26,30 +37,20 @@ class BenchmarkController < ActionController::API
     '.json'  => 'application/json'
   }.freeze
 
-  static_dir = '/data/static'
-  if Dir.exist?(static_dir)
-    cache = {}
+  self.static_files_cache = {}
+  if File.exist?(static_dir)
     Dir.foreach(static_dir) do |name|
       next if name == '.' || name == '..'
       path = File.join(static_dir, name)
       next unless File.file?(path)
       ext = File.extname(name)
       ct = MIME_TYPES.fetch(ext, 'application/octet-stream')
-      cache[name] = { data: File.binread(path), content_type: ct }
+      self.static_files_cache[name] = { data: File.binread(path), content_type: ct }
     end
-    self.static_files_cache = cache
-  else
-    self.static_files_cache = {}
   end
 
-  if File.exist?(LARGE_DATASET_PATH)
-    raw = JSON.parse(File.read(LARGE_DATASET_PATH))
-    items = raw.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
-    self.large_json_payload = JSON.generate({ 'items' => items, 'count' => items.length })
-  end
-
-  DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'
+  DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'.freeze
+  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'.freeze
 
   def pipeline
     render plain: 'ok'
@@ -76,8 +77,8 @@ class BenchmarkController < ActionController::API
   end
 
   def json_endpoint
-    if dataset_items
-      items = dataset_items.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
+    if dataset
+      items = dataset.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
       body = JSON.generate({ 'items' => items, 'count' => items.length })
       response.headers['Content-Type'] = 'application/json'
       render plain: body
@@ -91,26 +92,22 @@ class BenchmarkController < ActionController::API
     if accept_encodings.include? 'gzip'
       sio = StringIO.new
       gz = Zlib::GzipWriter.new(sio, 1)
-      gz.write(large_json_payload)
+      gz.write(self.class.dataset_large)
       gz.close
       response.headers['Content-Type'] = 'application/json'
       response.headers['Content-Encoding'] = 'gzip'
       send_data sio.string, disposition: :inline
     else
-      render json: large_json_payload
+      render json: self.class.dataset_large
     end
   end
 
   def db
-    unless db_available
-      render json: { items: [], count: 0 }
-      return
-    end
+    min_val = (params[:min] || 10).to_i
+    max_val = (params[:max] || 50).to_i
 
-    min_val = (params[:min] || 10).to_f
-    max_val = (params[:max] || 50).to_f
-    conn = get_db
-    rows = conn.execute(DB_QUERY, [min_val, max_val])
+    rows = get_db&.execute(DB_QUERY, [min_val, max_val]) || []
+
     items = rows.map do |r|
       {
         'id' => r['id'], 'name' => r['name'], 'category' => r['category'],
@@ -123,17 +120,12 @@ class BenchmarkController < ActionController::API
   end
 
   def async_db
-    conn = get_pg
-    unless conn
-      render json: { items: [], count: 0 }
-      return
-    end
+    min_val = (params[:min] || 10).to_i
+    max_val = (params[:max] || 50).to_i
 
-    min_val = (params[:min] || 10.0).to_f
-    max_val = (params[:max] || 50.0).to_f
+    rows = get_pg&.exec_prepared('select', [min_val, max_val]) || []
 
-    result = conn.exec_params(PG_QUERY, [min_val, max_val])
-    items = result.map do |r|
+    items = rows.map do |r|
       {
         'id' => r['id'].to_i, 'name' => r['name'], 'category' => r['category'],
         'price' => r['price'].to_f, 'quantity' => r['quantity'].to_i,
@@ -143,9 +135,6 @@ class BenchmarkController < ActionController::API
       }
     end
     render json: { items: items, count: items.length }
-  rescue PG::Error
-    Thread.current[:pg_conn] = nil
-    render json: { items: [], count: 0 }
   end
 
   def static_file
@@ -175,16 +164,20 @@ class BenchmarkController < ActionController::API
 
   def get_db
     Thread.current[:rails_db] ||= begin
-      db = SQLite3::Database.new('/data/benchmark.db', readonly: true)
+      db = SQLite3::Database.new(self.class.database_path, readonly: true)
       db.execute('PRAGMA mmap_size=268435456')
       db.results_as_hash = true
       db
+    rescue
+      nil
     end
   end
 
   def get_pg
     Thread.current[:pg_conn] ||= begin
-      PG.connect(ENV['DATABASE_URL'])
+      db = PG.connect(ENV['DATABASE_URL'])
+      db.prepare('select', PG_QUERY)
+      db
     rescue
       nil
     end

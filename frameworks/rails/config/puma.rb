@@ -1,4 +1,4 @@
-thread_count = ENV.fetch('RAILS_MAX_THREADS').to_i
+thread_count = ENV.fetch('RAILS_MAX_THREADS', 4).to_i
 threads thread_count, thread_count
 
 bind 'tcp://0.0.0.0:8080'
