@@ -19,7 +19,18 @@ var options = new JsonSerializerOptions
 
 var server = new SimpleWServer(IPAddress.Any, 8080)
     .ConfigureJsonEngine(new SystemTextJsonEngine(_ => options))
-    .Configure(o => o.MaxRequestBodySize = 25 * 1024 * 1024);
+    .Configure(o => {
+        o.MaxRequestBodySize = 25 * 1024 * 1024;
+
+        // Always beneficial socket options (see https://simplew.net/guide/performances.html#performance-oriented-configuration)
+        o.TcpNoDelay = true;
+        o.ReuseAddress = true;
+        o.TcpKeepAlive = true;
+
+        // Advanced tuning (platform dependent, see https://simplew.net/guide/performances.html#performance-oriented-configuration)
+        o.AcceptPerCore = true;
+        o.ReusePort = true; // linux only
+    });
 
 if (Directory.Exists("/data/static"))
 {
