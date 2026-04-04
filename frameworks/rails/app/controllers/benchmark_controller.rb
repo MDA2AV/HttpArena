@@ -123,7 +123,9 @@ class BenchmarkController < ActionController::API
     min_val = (params[:min] || 10).to_i
     max_val = (params[:max] || 50).to_i
 
-    rows = get_pg&.exec_prepared('select', [min_val, max_val]) || []
+    rows = self.class.get_async_db&.with do |connection|
+      connection.exec_prepared('select', [min_val, max_val])
+    end || []
 
     items = rows.map do |r|
       {
@@ -173,13 +175,15 @@ class BenchmarkController < ActionController::API
     end
   end
 
-  def get_pg
-    Thread.current[:pg_conn] ||= begin
-      db = PG.connect(ENV['DATABASE_URL'])
-      db.prepare('select', PG_QUERY)
-      db
-    rescue
-      nil
+  def self.get_async_db
+    @async_db ||= begin
+      return unless ENV['DATABASE_URL'].present?
+      max_connections = ENV.fetch('RAILS_MAX_THREADS', 4).to_i
+      ConnectionPool.new(size: max_connections, timeout: 5) do
+        db = PG.connect(ENV['DATABASE_URL'])
+        db.prepare('select', PG_QUERY)
+        db
+      end
     end
   end
 end
