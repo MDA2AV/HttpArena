@@ -131,7 +131,7 @@ class BenchmarkController < RageController::API
   end
 
   def async_db
-    conn = get_pg
+    conn = get_async_db
     unless conn
       render json: { items: [], count: 0 }
       return
@@ -192,11 +192,13 @@ class BenchmarkController < RageController::API
     end
   end
 
-  def get_pg
-    Thread.current[:rage_pg] ||= begin
-      PG.connect(ENV['DATABASE_URL'])
-    rescue
-      nil
+  def get_async_db
+    return unless ENV['DATABASE_URL'].present?
+    max_connections = ENV.fetch('RAILS_MAX_THREADS', 4)
+    @async_db ||= ConnectionPool.new(size: max_connections, timeout: 5) do
+      db = PG.connect(ENV['DATABASE_URL'])
+      db.prepare('select', PG_QUERY)
+      db
     end
   end
 end
