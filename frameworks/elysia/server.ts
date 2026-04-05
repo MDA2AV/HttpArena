@@ -1,16 +1,23 @@
 import { Elysia } from "elysia";
 import { Database } from "bun:sqlite";
 import { readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const MIME_TYPES: Record<string, string> = {
   ".css": "text/css", ".js": "application/javascript", ".html": "text/html",
   ".woff2": "font/woff2", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json",
 };
 
-// Load datasets
-const datasetItems: any[] = JSON.parse(readFileSync("/data/dataset.json", "utf8"));
+// Resolve repository-relative data paths (works on Windows)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "..", "..", "data");
 
-const largeData = JSON.parse(readFileSync("/data/dataset-large.json", "utf8"));
+// Load datasets
+const datasetItems: any[] = JSON.parse(readFileSync(path.join(DATA_DIR, "dataset.json"), "utf8"));
+
+const largeData = JSON.parse(readFileSync(path.join(DATA_DIR, "dataset-large.json"), "utf8"));
 const largeItems = largeData.map((d: any) => ({
   id: d.id, name: d.name, category: d.category,
   price: d.price, quantity: d.quantity, active: d.active,
@@ -23,7 +30,7 @@ const largeJsonBuf = Buffer.from(JSON.stringify({ items: largeItems, count: larg
 let dbStmt: any = null;
 for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
   try {
-    const db = new Database("/data/benchmark.db", { readonly: true });
+  const db = new Database(path.join(DATA_DIR, "benchmark.db"), { readonly: true });
     db.exec("PRAGMA mmap_size=268435456");
     dbStmt = db.prepare("SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50");
   } catch (e) {
@@ -44,7 +51,7 @@ let pgPool: any = null;
   }
 }
 
-const STATIC_DIR = "/data/static";
+const STATIC_DIR = path.join(DATA_DIR, "static");
 
 function sumQuery(url: string): number {
   const q = url.indexOf("?");
