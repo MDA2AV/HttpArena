@@ -1,9 +1,12 @@
 using System.Text.Json;
+using System.Buffers;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 
-[JsonSerializable(typeof(ResponseDto))]
+[JsonSerializable(typeof(ResponseDto<ProcessedItem>))]
+[JsonSerializable(typeof(ResponseDto<DbResponseItemDto>))]
+[JsonSerializable(typeof(DbResponseItemDto))]
 [JsonSerializable(typeof(ProcessedItem))]
 [JsonSerializable(typeof(RatingInfo))]
 [JsonSerializable(typeof(List<string>))]
@@ -22,27 +25,40 @@ static class Handlers
 
     public static string Text() => "ok";
 
-    public static async Task<IResult> Upload(HttpRequest req)
+    public static async ValueTask<string> Upload(HttpRequest req)
     {
         long size = 0;
-        var buffer = new byte[65536];
-        int read;
-        while ((read = await req.Body.ReadAsync(buffer)) > 0)
+        var buffer = ArrayPool<byte>.Shared.Rent(65536);
+        try
         {
-            size += read;
+            int read;
+            while ((read = await req.Body.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0)
+            {
+                size += read;
+            }
         }
-        return Results.Text(size.ToString());
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+
+        return size.ToString();
     }
 
-    public static Results<JsonHttpResult<ResponseDto>, ProblemHttpResult> Json()
+    public static Results<JsonHttpResult<ResponseDto<ProcessedItem>>, ProblemHttpResult> Json()
     {
-        if (AppData.DatasetItems == null)
+        var source = AppData.DatasetItems;
+        if (source == null)
             return TypedResults.Problem("Dataset not loaded");
 
-        var items = new List<ProcessedItem>(AppData.DatasetItems.Count);
-        foreach (var item in AppData.DatasetItems)
+        int count = source.Count;
+
+        var items = new ProcessedItem[count];
+
+        for (int i = 0; i < count; i++)
         {
-            items.Add(new ProcessedItem
+            var item = source[i];
+            items[i] = new ProcessedItem
             {
                 Id = item.Id,
                 Name = item.Name,
@@ -52,59 +68,62 @@ static class Handlers
                 Active = item.Active,
                 Tags = item.Tags,
                 Rating = item.Rating,
-                Total = Math.Round(item.Price * item.Quantity, 2)
-            });
+                Total = Math.Round(item.Price * item.Quantity, 2) 
+            };
         }
 
-        return TypedResults.Json(new ResponseDto(items, AppData.DatasetItems.Count), AppJsonContext.Default);
+        return TypedResults.Json(new ResponseDto<ProcessedItem>(items, count), AppJsonContext.Default.ResponseDtoProcessedItem);
     }
 
-    public static IResult Compression()
+    public static Results<FileContentHttpResult, ProblemHttpResult> Compression()
     {
         if (AppData.LargeJsonResponse == null)
-        {
-            return Results.StatusCode(500);
-        }
+            return TypedResults.Problem("Dataset not loaded");
 
-        return Results.Bytes(AppData.LargeJsonResponse, "application/json");
+        return TypedResults.Bytes(AppData.LargeJsonResponse, "application/json");
     }
 
-    public static IResult Database(HttpRequest req)
+    public static Results<JsonHttpResult<ResponseDto<DbResponseItemDto>>, ProblemHttpResult> Database(HttpRequest req)
     {
         if (AppData.DbPool == null)
-            return Results.Problem("DB not available");
+            return TypedResults.Problem("DB not available");
 
         double min = 10, max = 50;
-        if (req.Query.ContainsKey("min") && double.TryParse(req.Query["min"], out double pmin))
-            min = pmin;
-        if (req.Query.ContainsKey("max") && double.TryParse(req.Query["max"], out double pmax))
-            max = pmax;
+        // Optimize query lookups
+        var query = req.Query;
+        if (query.TryGetValue("min", out var minStr) && double.TryParse(minStr, out var pmin)) min = pmin;
+        if (query.TryGetValue("max", out var maxStr) && double.TryParse(maxStr, out var pmax)) max = pmax;
 
         var conn = AppData.DbPool.Rent();
         try
         {
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN @min AND @max LIMIT 50";
+            
             cmd.Parameters.AddWithValue("@min", min);
             cmd.Parameters.AddWithValue("@max", max);
+            
             using var reader = cmd.ExecuteReader();
 
-            var items = new List<object>();
+            var items = new List<DbResponseItemDto>(50); 
+            
             while (reader.Read())
             {
-                items.Add(new
+                items.Add(new DbResponseItemDto
                 {
-                    id = reader.GetInt32(0),
-                    name = reader.GetString(1),
-                    category = reader.GetString(2),
-                    price = reader.GetDouble(3),
-                    quantity = reader.GetInt32(4),
-                    active = reader.GetInt32(5) == 1,
-                    tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                    rating = new { score = reader.GetDouble(7), count = reader.GetInt32(8) },
+                    Id = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    Category = reader.GetString(2),
+                    Price = reader.GetDouble(3),
+                    Quantity = reader.GetInt32(4),
+                    Active = reader.GetInt32(5) == 1,
+                    // Using the source-gen context is already great!
+                    Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
+                    Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) },
                 });
             }
-            return Results.Json(new { items, count = items.Count });
+
+            return TypedResults.Json(new ResponseDto<DbResponseItemDto>(items, items.Count), AppJsonContext.Default.ResponseDtoDbResponseItemDto);
         }
         finally
         {
@@ -112,39 +131,42 @@ static class Handlers
         }
     }
 
-    public static async Task<IResult> AsyncDatabase(HttpRequest req)
+    public static async Task<Results<JsonHttpResult<ResponseDto<DbResponseItemDto>>, ProblemHttpResult>> AsyncDatabase(HttpRequest req)
     {
         if (AppData.PgDataSource == null)
-            return Results.Json(new { items = Array.Empty<object>(), count = 0 });
+            return TypedResults.Problem("DB not available");
 
+        // Query Parsing
         double min = 10, max = 50;
-        if (req.Query.ContainsKey("min") && double.TryParse(req.Query["min"], out double pmin))
-            min = pmin;
-        if (req.Query.ContainsKey("max") && double.TryParse(req.Query["max"], out double pmax))
-            max = pmax;
+        var query = req.Query;
+        if (query.TryGetValue("min", out var minVal) && double.TryParse(minVal, out var pmin)) min = pmin;
+        if (query.TryGetValue("max", out var maxVal) && double.TryParse(maxVal, out var pmax)) max = pmax;
 
         await using var cmd = AppData.PgDataSource.CreateCommand(
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50");
+        
         cmd.Parameters.AddWithValue(min);
         cmd.Parameters.AddWithValue(max);
+        
         await using var reader = await cmd.ExecuteReaderAsync();
 
-        var items = new List<object>();
+        var items = new List<DbResponseItemDto>(50); 
+
         while (await reader.ReadAsync())
         {
-            items.Add(new
+            items.Add(new DbResponseItemDto
             {
-                id = reader.GetInt32(0),
-                name = reader.GetString(1),
-                category = reader.GetString(2),
-                price = reader.GetDouble(3),
-                quantity = reader.GetInt32(4),
-                active = reader.GetBoolean(5),
-                tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                rating = new { score = reader.GetDouble(7), count = reader.GetInt32(8) },
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1),
+                Category = reader.GetString(2),
+                Price = reader.GetDouble(3),
+                Quantity = reader.GetInt32(4),
+                Active = reader.GetBoolean(5),
+                Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
+                Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) }
             });
         }
-        return Results.Json(new { items, count = items.Count });
-    }
 
+        return TypedResults.Json(new ResponseDto<DbResponseItemDto>(items, items.Count), AppJsonContext.Default.ResponseDtoDbResponseItemDto);
+    }
 }

@@ -15,3 +15,6 @@ frameworks/blitz/.zig-cache
 # IDE settings
 *.user
 .vs/
+
+# Ignore node modules anywhere in the repo
+node_modules/

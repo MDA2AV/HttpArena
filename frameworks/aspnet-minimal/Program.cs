@@ -36,11 +36,14 @@ builder.Services.AddResponseCompression();
 
 var app = builder.Build();
 
-app.UseResponseCompression();
+app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/compression"), subApp => 
+{
+    subApp.UseResponseCompression();
+});
 
 app.Use((ctx, next) =>
 {
-    ctx.Response.Headers["Server"] = "aspnet-minimal";
+    ctx.Response.Headers.Server = "aspnet-minimal";
     return next();
 });
 
