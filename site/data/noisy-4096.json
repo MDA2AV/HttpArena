@@ -792,6 +792,26 @@
     "type": "tuned"
   },
   {
+    "framework": "spring-boot",
+    "language": "Java",
+    "rps": 10815,
+    "avg_latency": "7.22ms",
+    "p99_latency": "122.30ms",
+    "cpu": "2142.8%",
+    "memory": "1.1GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "2.38MB/s",
+    "input_bw": "1.09MB/s",
+    "reconnects": 676,
+    "status_2xx": 54075,
+    "status_3xx": 0,
+    "status_4xx": 24217,
+    "status_5xx": 0
+  },
+  {
     "framework": "spring-jvm",
     "language": "Java",
     "rps": 4785,
