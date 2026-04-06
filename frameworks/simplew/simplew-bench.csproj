@@ -9,6 +9,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
-    <PackageReference Include="SimpleW" Version="26.0.0-rc.20260402-1652" />
+    <PackageReference Include="SimpleW" Version="26.0.0-rc.20260405-1671" />
   </ItemGroup>
 </Project>
