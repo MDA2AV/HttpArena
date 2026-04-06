@@ -44,7 +44,7 @@ jobs:
     needs: detect
     if: needs.detect.outputs.frameworks != '[]' && vars.RUNNER_LOCAL != 'true'
     runs-on: self-hosted
-    environment: runner
+    # environment: runner  # uncomment to require approval for validation runs
     timeout-minutes: 30
     strategy:
       matrix:

@@ -23,27 +23,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  acknowledge:
-    if: github.event.issue.pull_request && (contains(github.event.comment.body, '/validate') || contains(github.event.comment.body, '/benchmark')) && vars.RUNNER_LOCAL != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Acknowledge command
-        run: |
-          COMMAND="validate"
-          if echo "$COMMENT_BODY" | grep -q '/benchmark'; then COMMAND="benchmark"; fi
-          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="eyes"
-          gh pr comment "${{ github.event.issue.number }}" \
-            --repo "${{ github.repository }}" \
-            --body "👋 \`/$COMMAND\` request received. A collaborator will review and approve the run."
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMENT_BODY: ${{ github.event.comment.body }}
+  # ── /validate — runs directly, no approval needed ──
 
-  handle-command:
-    needs: acknowledge
-    if: github.event.issue.pull_request && (contains(github.event.comment.body, '/validate') || contains(github.event.comment.body, '/benchmark')) && vars.RUNNER_LOCAL != 'true'
+  handle-validate:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/validate') && !contains(github.event.comment.body, '/benchmark') && vars.RUNNER_LOCAL != 'true'
     runs-on: self-hosted
-    environment: runner
+    # environment: runner  # uncomment to require approval for validation runs
     steps:
       - uses: actions/checkout@v5
         with:
@@ -55,44 +40,11 @@ jobs:
         run: |
           PR="$PR_NUMBER"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
-
-          # Detect changed frameworks from PR files via API (paginated, fallback)
           AUTO_FRAMEWORK=$(gh api "/repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u | head -1)
-
-          if echo "$COMMENT_BODY" | grep -q '/benchmark'; then
-            echo "command=benchmark" >> "$GITHUB_OUTPUT"
-
-            # Parse flags: -f <framework> -t <test>
-            EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-f\s+\K\S+' || echo "")
-            EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-t\s+\K\S+' || echo "")
-
-            # Fallback: positional arg (legacy: /benchmark baseline)
-            if [ -z "$EXPLICIT_FW" ] && [ -z "$EXPLICIT_TEST" ]; then
-              EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+\K[^-]\S*' || echo "")
-            fi
-
-            # Parse --save flag
-            SAVE_FLAG=""
-            if echo "$COMMENT_BODY" | grep -q '\-\-save'; then
-              SAVE_FLAG="true"
-            fi
-
-            FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
-            echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
-            echo "profile=$EXPLICIT_TEST" >> "$GITHUB_OUTPUT"
-            echo "save=$SAVE_FLAG" >> "$GITHUB_OUTPUT"
-            echo "Detected framework: $FRAMEWORK (auto: $AUTO_FRAMEWORK, explicit: $EXPLICIT_FW)"
-            echo "Profile: $EXPLICIT_TEST, Save: $SAVE_FLAG"
-
-          elif echo "$COMMENT_BODY" | grep -q '/validate'; then
-            echo "command=validate" >> "$GITHUB_OUTPUT"
-
-            # Parse -f flag for validate too
-            EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/validate\s+.*-f\s+\K\S+' || echo "")
-            FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
-            echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
-            echo "Detected framework: $FRAMEWORK"
-          fi
+          EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/validate\s+.*-f\s+\K\S+' || echo "")
+          FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
+          echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
+          echo "Detected framework: $FRAMEWORK"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMENT_BODY: ${{ github.event.comment.body }}
@@ -106,7 +58,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run validate
-        if: steps.parse.outputs.command == 'validate' && steps.parse.outputs.framework != ''
+        if: steps.parse.outputs.framework != ''
         run: |
           FRAMEWORK="${{ steps.parse.outputs.framework }}"
           echo "Validating $FRAMEWORK..."
@@ -121,8 +73,81 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: No framework detected
+        if: steps.parse.outputs.framework == ''
+        run: |
+          gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to validate. Either modify files under \`frameworks/<name>/\` or specify explicitly: \`/validate -f <framework>\`"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── /benchmark — requires collaborator approval ──
+
+  acknowledge-benchmark:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/benchmark') && vars.RUNNER_LOCAL != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge command
+        run: |
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="eyes"
+          gh pr comment "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "👋 \`/benchmark\` request received. A collaborator will review and approve the run."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  handle-benchmark:
+    needs: acknowledge-benchmark
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/benchmark') && vars.RUNNER_LOCAL != 'true'
+    runs-on: self-hosted
+    environment: runner
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 0
+
+      - name: Parse command
+        id: parse
+        run: |
+          PR="$PR_NUMBER"
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+          AUTO_FRAMEWORK=$(gh api "/repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u | head -1)
+
+          # Parse flags: -f <framework> -t <test>
+          EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-f\s+\K\S+' || echo "")
+          EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-t\s+\K\S+' || echo "")
+
+          # Fallback: positional arg (legacy: /benchmark baseline)
+          if [ -z "$EXPLICIT_FW" ] && [ -z "$EXPLICIT_TEST" ]; then
+            EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+\K[^-]\S*' || echo "")
+          fi
+
+          # Parse --save flag
+          SAVE_FLAG=""
+          if echo "$COMMENT_BODY" | grep -q '\-\-save'; then
+            SAVE_FLAG="true"
+          fi
+
+          FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
+          echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
+          echo "profile=$EXPLICIT_TEST" >> "$GITHUB_OUTPUT"
+          echo "save=$SAVE_FLAG" >> "$GITHUB_OUTPUT"
+          echo "Detected framework: $FRAMEWORK (auto: $AUTO_FRAMEWORK, explicit: $EXPLICIT_FW)"
+          echo "Profile: $EXPLICIT_TEST, Save: $SAVE_FLAG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+
+      - name: React to comment
+        run: |
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="rocket"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run benchmark
-        if: steps.parse.outputs.command == 'benchmark' && steps.parse.outputs.framework != ''
+        if: steps.parse.outputs.framework != ''
         run: |
           gh workflow run benchmark-pr.yml \
             -f pr=${{ steps.parse.outputs.pr }} \
