@@ -3,19 +3,28 @@
 class Db
 {
     private static $prepared;
+    private static bool $available = false;
 
     public static function init()
     {
+        if (!file_exists('/data/benchmark.db')) {
+            self::$available = false;
+            return;
+        }
         $db = new Sqlite3('/data/benchmark.db', SQLITE3_OPEN_READONLY);
 
         self::$prepared = $db->prepare('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count
                             FROM items
                             WHERE price BETWEEN ? AND ?
                             LIMIT 50');
+        self::$available = true;
     }
 
     public static function query($min, $max)
     {
+        if (!self::$available) {
+            return '{"items":[],"count":0}';
+        }
         self::$prepared->bindValue(1, $min, SQLITE3_FLOAT);
         self::$prepared->bindValue(2, $max, SQLITE3_FLOAT);
 
