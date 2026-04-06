@@ -189,26 +189,6 @@
     "type": "tuned"
   },
   {
-    "framework": "spring-boot",
-    "language": "Java",
-    "rps": 282012,
-    "avg_latency": "4.83ms",
-    "p99_latency": "11.40ms",
-    "cpu": "1120.1%",
-    "memory": "582.6MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "1.93MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 1410064,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
     "framework": "workerman-websocket",
     "language": "PHP",
     "rps": 3257342,

@@ -1,1 +1,24 @@
-[]
+[
+  {
+    "id": 2,
+    "name": "i9 14900K",
+    "date": "2026-03-09",
+    "cpu": "Intel(R) Core(TM) i9-14900K",
+    "cores": "32",
+    "ram": "62Gi",
+    "os": "Ubuntu 24.04.4 LTS",
+    "kernel": "6.17.0-14-generic",
+    "docker": "29.2.1",
+    "docker_runtime": "runc",
+    "governor": "powersave",
+    "commit": "828440f",
+    "smt": "on",
+    "tcp": {
+      "lo_mtu": "65536",
+      "congestion": "cubic",
+      "somaxconn": "4096",
+      "rmem_max": "212992",
+      "wmem_max": "212992"
+    }
+  }
+]
