@@ -2,7 +2,7 @@ FROM ubuntu:24.04 AS build
 RUN apt-get update && apt-get install -y gcc make git && rm -rf /var/lib/apt/lists/*
 WORKDIR /deps
 RUN git clone --branch liburing-2.9 --depth 1 https://github.com/axboe/liburing.git && \
-    cd liburing && ./configure --prefix=/usr && make -j$(nproc) && make install
+    cd liburing && ./configure --prefix=/usr && make -j$(nproc) -C src && make install -C src
 WORKDIR /build
 COPY . .
 RUN make clean && make -j$(nproc)
