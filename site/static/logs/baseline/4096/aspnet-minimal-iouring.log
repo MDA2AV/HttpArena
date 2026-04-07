@@ -1,0 +1,2 @@
+[io_uring] DOTNET_SYSTEM_NET_SOCKETS_IO_URING=1
+[io_uring] Runtime type found: Interop+Sys+IoUringSqRingInfo — io_uring is ACTIVE

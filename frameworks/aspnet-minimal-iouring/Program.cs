@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 
+AppContext.SetSwitch("System.Net.Sockets.UseIoUringSqPoll", true);
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 
@@ -48,6 +50,16 @@ app.Use((ctx, next) =>
 });
 
 AppData.Load();
+
+// Detect io_uring socket engine
+var ioUringEnv = Environment.GetEnvironmentVariable("DOTNET_SYSTEM_NET_SOCKETS_IO_URING");
+Console.WriteLine($"[io_uring] DOTNET_SYSTEM_NET_SOCKETS_IO_URING={ioUringEnv ?? "(not set)"}");
+var socketAsm = typeof(System.Net.Sockets.Socket).Assembly;
+var ioUringType = socketAsm.GetTypes()
+    .FirstOrDefault(t => t.Name.Contains("IOUring", StringComparison.OrdinalIgnoreCase));
+Console.WriteLine(ioUringType != null
+    ? $"[io_uring] Runtime type found: {ioUringType.FullName} — io_uring is ACTIVE"
+    : "[io_uring] No io_uring types in runtime — falling back to epoll");
 
 app.MapGet("/pipeline", Handlers.Text);
 

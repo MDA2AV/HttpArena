@@ -105,4 +105,28 @@ for sig_line in sorted(method_starts.keys(), reverse=True):
 
 with open(src_file, 'w') as f:
     f.writelines(lines)
-print('Done')
+print('Done patching SocketAsyncEngine')
+
+# Patch 3: Fix "Destination is too short" in FinishOperationAccept
+# io_uring accept returns full sockaddr_storage (128 bytes) but the
+# remoteSocketAddress buffer is sized for the specific address family.
+# Fix: clamp copy length to destination size.
+saea_file = 'src/libraries/System.Net.Sockets/src/System/Net/Sockets/SocketAsyncEventArgs.Unix.cs'
+with open(saea_file) as f:
+    saea_text = f.read()
+
+old_copy = 'new ReadOnlySpan<byte>(_acceptBuffer, 0, _acceptAddressBufferCount).CopyTo(remoteSocketAddress.Buffer.Span);'
+new_copy = ('int _copyLen = Math.Min(_acceptAddressBufferCount, remoteSocketAddress.Buffer.Length);\n'
+            '            new ReadOnlySpan<byte>(_acceptBuffer, 0, _copyLen).CopyTo(remoteSocketAddress.Buffer.Span);')
+
+if old_copy in saea_text:
+    saea_text = saea_text.replace(old_copy, new_copy)
+    # Also fix the Size assignment to use clamped length
+    saea_text = saea_text.replace(
+        'remoteSocketAddress.Size = _acceptAddressBufferCount;',
+        'remoteSocketAddress.Size = _copyLen;')
+    with open(saea_file, 'w') as f:
+        f.write(saea_text)
+    print('Patched: FinishOperationAccept buffer overflow fix')
+else:
+    print('WARNING: could not find FinishOperationAccept CopyTo pattern')
