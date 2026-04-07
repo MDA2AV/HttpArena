@@ -1,0 +1,4 @@
+GET /static/regular.woff2 HTTP/1.1
+Host: localhost:8080
+Accept-Encoding: gzip
+

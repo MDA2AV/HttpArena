@@ -2,7 +2,6 @@ using System.Security.Cryptography.X509Certificates;
 
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -36,10 +35,7 @@ builder.Services.AddResponseCompression();
 
 var app = builder.Build();
 
-app.UseWhen(ctx => ctx.Request.Path.StartsWithSegments("/compression"), subApp => 
-{
-    subApp.UseResponseCompression();
-});
+app.UseResponseCompression();
 
 app.Use((ctx, next) =>
 {
@@ -61,18 +57,6 @@ app.MapGet("/compression", Handlers.Compression);
 app.MapGet("/db", Handlers.Database);
 app.MapGet("/async-db", Handlers.AsyncDatabase);
 
-if (Directory.Exists("/data/static"))
-{
-    var typeProvider = new FileExtensionContentTypeProvider();
-    
-    typeProvider.Mappings[".js"] = "application/javascript";
-    
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider("/data/static"),
-        ContentTypeProvider = typeProvider,
-        RequestPath = "/static"
-    });
-}
+app.MapStaticAssets();
 
 app.Run();

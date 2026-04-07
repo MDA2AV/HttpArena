@@ -1,0 +1,30 @@
+[
+  {
+    "framework": "aspnet-minimal",
+    "language": "C#",
+    "rps": 54064,
+    "avg_latency": "2.29ms",
+    "p99_latency": "7.06ms",
+    "cpu": "390.7%",
+    "memory": "202.7MiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "776.00MB/s",
+    "input_bw": "3.30MB/s",
+    "reconnects": 81031,
+    "status_2xx": 810960,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0,
+    "tpl_static_gzip": 201762,
+    "tpl_json_gzip": 40451,
+    "tpl_static_plain": 203529,
+    "tpl_json_plain": 40884,
+    "tpl_binary_gzip": 81480,
+    "tpl_binary_plain": 80967,
+    "tpl_svg": 80817,
+    "tpl_other": 81067
+  }
+]

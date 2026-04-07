@@ -87,7 +87,7 @@ if has_test "mixed" || has_test "sync-db"; then
     docker_args+=(-v "$DB_FILE:/data/benchmark.db:ro")
 fi
 
-if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "mixed"; then
+if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "assets-4" || has_test "assets-16" || has_test "mixed"; then
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
@@ -573,6 +573,90 @@ if has_test "static" || has_test "mixed"; then
 
     check_status "GET /static/nonexistent.txt" "404" "$STATIC_DOCS" \
         -s "http://localhost:$PORT/static/nonexistent.txt"
+fi
+
+# ───── Static Assets (assets-4 / assets-16: static + json with conditional compression) ─────
+
+if has_test "assets-4" || has_test "assets-16"; then
+    ASSETS_DOCS="$DOCS_BASE/h1/workload/assets-4/validation"
+    echo "[test] assets-4/assets-16 (asset compression)"
+
+    # 1. JSON without compression header → must be uncompressed
+    json_plain_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/json")
+    json_plain_enc=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/json" | grep -i "^Content-Encoding:" | tr -d '\r' || true)
+    if [ "$json_plain_size" -gt 0 ] && [ -z "$json_plain_enc" ]; then
+        echo "  PASS [json no-gzip] ($json_plain_size bytes, no Content-Encoding)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[json no-gzip]: expected uncompressed response, got Content-Encoding: $json_plain_enc" "$ASSETS_DOCS"
+    fi
+
+    # 2. JSON with Accept-Encoding: gzip → must be gzip-compressed
+    json_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/json" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
+    if [[ "$json_gzip_enc" == *"gzip"* ]]; then
+        echo "  PASS [json gzip] (Content-Encoding: $json_gzip_enc)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[json gzip]: expected Content-Encoding: gzip, got '$json_gzip_enc'" "$ASSETS_DOCS"
+    fi
+
+    # 3. Static text file without compression → must be uncompressed, size matches disk
+    app_js_expected=$(wc -c < "$DATA_DIR/static/app.js" 2>/dev/null || echo "0")
+    app_js_actual=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/app.js")
+    app_js_enc=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/static/app.js" | grep -i "^Content-Encoding:" | tr -d '\r' || true)
+    if [ "$app_js_actual" -eq "$app_js_expected" ] && [ -z "$app_js_enc" ]; then
+        echo "  PASS [static/app.js no-gzip] ($app_js_actual bytes, matches disk)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/app.js no-gzip]: expected $app_js_expected bytes uncompressed, got $app_js_actual (enc: $app_js_enc)" "$ASSETS_DOCS"
+    fi
+
+    # 4. Static text file with Accept-Encoding: gzip → must be gzip-compressed
+    #    Check Content-Encoding header AND verify raw bytes start with gzip magic (1f 8b)
+    app_js_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/app.js" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
+    _gzip_tmp=$(mktemp)
+    curl -s --raw --max-time 30 -H "Accept-Encoding: gzip" -o "$_gzip_tmp" "http://localhost:$PORT/static/app.js"
+    _gzip_magic=$(xxd -l 2 -p "$_gzip_tmp" 2>/dev/null || true)
+    rm -f "$_gzip_tmp"
+    if [[ "$app_js_gzip_enc" == *"gzip"* ]] && [ "$_gzip_magic" = "1f8b" ]; then
+        echo "  PASS [static/app.js gzip] (Content-Encoding: $app_js_gzip_enc, gzip magic verified)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/app.js gzip]: expected gzip response, got enc='$app_js_gzip_enc' magic='$_gzip_magic'" "$ASSETS_DOCS"
+    fi
+
+    # 5. Binary file (webp) with Accept-Encoding: gzip → must NOT compress
+    webp_expected=$(wc -c < "$DATA_DIR/static/hero.webp" 2>/dev/null || echo "0")
+    webp_gzip_size=$(curl -s --max-time 30 -H "Accept-Encoding: gzip" -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/hero.webp")
+    webp_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/hero.webp" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
+    if [ -z "$webp_gzip_enc" ] && [ "$webp_gzip_size" -eq "$webp_expected" ]; then
+        echo "  PASS [static/hero.webp gzip-skip] ($webp_gzip_size bytes, no compression — correct)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/hero.webp gzip-skip]: binary file should NOT be compressed, got size=$webp_gzip_size enc='$webp_gzip_enc'" "$ASSETS_DOCS"
+    fi
+
+    # 6. Binary file (woff2) with Accept-Encoding: gzip → must NOT compress
+    woff2_expected=$(wc -c < "$DATA_DIR/static/regular.woff2" 2>/dev/null || echo "0")
+    woff2_gzip_size=$(curl -s --max-time 30 -H "Accept-Encoding: gzip" -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/regular.woff2")
+    woff2_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/regular.woff2" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
+    if [ -z "$woff2_gzip_enc" ] && [ "$woff2_gzip_size" -eq "$woff2_expected" ]; then
+        echo "  PASS [static/regular.woff2 gzip-skip] ($woff2_gzip_size bytes, no compression — correct)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/regular.woff2 gzip-skip]: binary file should NOT be compressed, got size=$woff2_gzip_size enc='$woff2_gzip_enc'" "$ASSETS_DOCS"
+    fi
+
+    # 7. SVG with Accept-Encoding: gzip → accept either compressed or uncompressed
+    svg_expected=$(wc -c < "$DATA_DIR/static/icon-sprite.svg" 2>/dev/null || echo "0")
+    svg_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/icon-sprite.svg" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
+    if [[ "$svg_gzip_enc" == *"gzip"* ]]; then
+        echo "  PASS [static/icon-sprite.svg gzip] (compressed — accepted)"
+        PASS=$((PASS + 1))
+    else
+        echo "  PASS [static/icon-sprite.svg gzip] (not compressed — also accepted for SVG)"
+        PASS=$((PASS + 1))
+    fi
 fi
 
 # ───── Static Files H2 (GET /static/* over HTTP/2 + TLS) ─────

@@ -16,6 +16,8 @@
     "noisy",
     "api-4",
     "api-16",
+    "assets-4",
+    "assets-16",
     "static",
     "tcp-frag",
     "async-db",
