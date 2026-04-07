@@ -3,6 +3,6 @@ Workerman[server.php] start in DEBUG mode
 Workerman/5.1.11        PHP/8.5.4 (JIT on)            Linux/6.17.0-20-generic
 --------------------------------------------- WORKERS ----------------------------------------------
 event-loop  proto       user        worker      listen                 count       state            
-event       tcp         root        none        http://0.0.0.0:8080    64           [OK]            
+event       tcp         root        bench       http://0.0.0.0:8080    64           [OK]            
 ----------------------------------------------------------------------------------------------------
 Press Ctrl+C to stop. Start success.
