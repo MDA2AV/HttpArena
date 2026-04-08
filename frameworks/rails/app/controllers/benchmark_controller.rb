@@ -13,13 +13,13 @@ class BenchmarkController < ActionController::API
   static_dir = File.join(DATA_DIR, 'static')
 
   if File.exist?(dataset_path)
-    self.dataset = JSON.parse(File.read(dataset_path))
+    self.dataset = JSON.parse(File.read(dataset_path)).freeze
   end
 
   if File.exist?(dataset_large_path)
     raw = JSON.parse(File.read(dataset_large_path))
     items = raw.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
-    self.dataset_large = JSON.generate({ 'items' => items, 'count' => items.length })
+    self.dataset_large = JSON.generate({ 'items' => items, 'count' => items.length }).freeze
   end
 
   if File.exist?(database_path)
@@ -48,6 +48,7 @@ class BenchmarkController < ActionController::API
       self.static_files_cache[name] = { data: File.binread(path), content_type: ct }
     end
   end
+  self.static_files_cache.freeze
 
   DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'.freeze
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'.freeze
@@ -143,8 +144,7 @@ class BenchmarkController < ActionController::API
 
   def static_file
     filename = params[:filename]
-    entry = static_files_cache[filename] if static_files_cache
-    if entry
+    if entry = static_files_cache[filename]
       send_data entry[:data], type: entry[:content_type], disposition: :inline
     else
       head 404
