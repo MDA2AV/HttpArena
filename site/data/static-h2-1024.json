@@ -440,6 +440,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "Swoole",
+    "language": "PHP",
+    "rps": 580739,
+    "avg_latency": "164.13ms",
+    "p99_latency": "164.13ms",
+    "cpu": "4388.3%",
+    "memory": "2.2GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "8.81GB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 2903877,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "vertx",
     "language": "Java",
     "rps": 396707,

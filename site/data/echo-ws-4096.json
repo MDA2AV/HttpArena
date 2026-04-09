@@ -180,6 +180,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "Swoole",
+    "language": "PHP",
+    "rps": 3409498,
+    "avg_latency": "1.20ms",
+    "p99_latency": "6.86ms",
+    "cpu": "6348.9%",
+    "memory": "195.1MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "22.90MB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 17047492,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "workerman-websocket",
     "language": "PHP",
     "rps": 3484682,
