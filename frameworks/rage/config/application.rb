@@ -11,6 +11,9 @@ end
 
 require "rage/setup"
 
+# Silence warnings
+$VERBOSE = nil
+
 # Monkeypatch the parser to handle a request body that isn't multipart
 Rage::ParamsParser.class_eval do
   def self.prepare(env, url_params)
