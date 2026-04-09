@@ -1,0 +1,1024 @@
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDFATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+ole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
+PHP Fatal error:  Uncaught PDOException: SQLSTATE[08006] [7] connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "connect_timeout=30" does not exist in /swoole/PostgreSQL.php:22
+Stack trace:
+#0 /swoole/PostgreSQL.php(22): PDO->__construct()
+#1 /swoole/swoole.php(50): PostgreSQL::init()
+#2 [internal function]: {closure:/swoole/swoole.php:48}()
+#3 /swoole/swoole.php(130): Swoole\Server->start()
+#4 {main}
+  thrown in /swoole/PostgreSQL.php on line 22
