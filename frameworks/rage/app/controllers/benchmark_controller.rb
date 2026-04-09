@@ -114,7 +114,9 @@ class BenchmarkController < RageController::API
     min_val = (params[:min] || 10).to_i
     max_val = (params[:max] || 50).to_i
 
-    rows = get_db&.execute(DB_QUERY, [min_val, max_val]) || []
+    rows = self.class.get_db_statement&.with do |statement|
+      statement.execute([min_val, max_val])
+    end || []
 
     items = rows.map do |r|
       {
@@ -172,14 +174,17 @@ class BenchmarkController < RageController::API
 
   private
 
-  def get_db
-    Thread.current[:rage_db] ||= begin
-      db = SQLite3::Database.new(self.class.database_path, readonly: true)
-      db.execute('PRAGMA mmap_size=268435456')
-      db.results_as_hash = true
-      db
-    rescue
-      nil
+  def self.get_db_statement
+    @db_statement ||= begin
+      return unless database_path
+      processors = Integer(::Concurrent.available_processor_count)
+      pool_size = (2 * Math.log(256 / processors)).floor
+      ConnectionPool.new(size: pool_size, timeout: 5) do
+        db = SQLite3::Database.new(database_path, readonly: true)
+        db.execute('PRAGMA mmap_size=268435456')
+        db.results_as_hash = true
+        db.prepare(DB_QUERY)
+      end
     end
   end
 
