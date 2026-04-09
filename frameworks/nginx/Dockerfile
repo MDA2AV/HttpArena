@@ -48,6 +48,11 @@ RUN mkdir -p /usr/local/nginx/logs
 
 COPY nginx.conf /usr/local/nginx/conf/nginx.conf
 
+COPY data2/static /data2/static
+COPY compress.sh /
+RUN chmod +x /compress.sh
+RUN /compress.sh
+
 EXPOSE 8080 8443/tcp 8443/udp
 
 CMD ["nginx"]

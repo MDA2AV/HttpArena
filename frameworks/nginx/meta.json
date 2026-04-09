@@ -12,7 +12,9 @@
     "limited-conn",
     "static",
     "baseline-h2",
-    "static-h2"
+    "static-h2",
+    "assets-4",
+    "assets-16"  
   ],
   "maintainers": []
 }
