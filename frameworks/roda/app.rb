@@ -172,7 +172,6 @@ class App < Roda
       total += v.to_i
     end
     if request.post?
-      request.body.rewind
       body_str = request.body.read.strip
       total += body_str.to_i
     end
