@@ -178,8 +178,7 @@ class BenchmarkController < RageController::API
     @db_statement ||= begin
       return unless database_path
       processors = Integer(::Concurrent.available_processor_count)
-      pool_size = (2 * Math.log(256 / processors)).floor
-      ConnectionPool.new(size: pool_size, timeout: 5) do
+      ConnectionPool.new(size: processors, timeout: 5) do
         db = SQLite3::Database.new(database_path, readonly: true)
         db.execute('PRAGMA mmap_size=268435456')
         db.results_as_hash = true
@@ -192,8 +191,7 @@ class BenchmarkController < RageController::API
     @async_db ||= begin
       return unless ENV['DATABASE_URL']
       processors = Integer(::Concurrent.available_processor_count)
-      pool_size = (2 * Math.log(256 / processors)).floor
-      ConnectionPool.new(size: pool_size, timeout: 5) do
+      ConnectionPool.new(size: processors, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
         db.prepare('select', PG_QUERY)
         db
