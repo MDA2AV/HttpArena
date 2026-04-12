@@ -16,7 +16,7 @@ SKIP_LIST=""
 SKIP_TESTS=""
 
 # Ordered test profiles
-TESTS=(baseline pipelined limited-conn json upload compression noisy api-4 api-16 assets-4 assets-16 static async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
+TESTS=(baseline pipelined limited-conn json upload api-4 api-16 static async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
 
 # Collect enabled frameworks and their supported tests
 declare -A FW_TESTS

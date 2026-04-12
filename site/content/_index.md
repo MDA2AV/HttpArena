@@ -68,8 +68,8 @@ html.dark .test-card-endpoint { color: #64748b; }
 </style>
 
 <div class="tests-section">
-<h2>23 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
-<p class="tests-sub">Every framework is tested under diverse, realistic workloads — from raw throughput to compression, gRPC unary calls, and WebSocket echo.</p>
+<h2>22 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
+<p class="tests-sub">Every framework is tested under diverse, realistic workloads — from raw throughput to JSON processing, gRPC unary calls, and WebSocket echo.</p>
 
 <div class="tests-proto">
 <span class="tests-proto-label tests-proto-h1">H/1.1 Isolated</span>
@@ -87,37 +87,27 @@ html.dark .test-card-endpoint { color: #64748b; }
   <a class="test-card" href="docs/test-profiles/h1/isolated/json-processing">
     <div class="test-card-title">JSON Processing</div>
     <div class="test-card-desc">Load dataset, compute derived fields, serialize ~10 KB JSON response.</div>
-    <div class="test-card-endpoint">GET /json</div>
+    <div class="test-card-endpoint">GET /json/{count}</div>
+  </a>
+  <a class="test-card" href="docs/test-profiles/h1/isolated/json-compressed">
+    <div class="test-card-title">JSON Compressed</div>
+    <div class="test-card-desc">Same JSON workload with <code>Accept-Encoding: gzip, br</code> — measures serialization + compression.</div>
+    <div class="test-card-endpoint">GET /json/{count}?m=N</div>
   </a>
   <a class="test-card" href="docs/test-profiles/h1/isolated/upload">
     <div class="test-card-title">Upload (20 MB)</div>
     <div class="test-card-desc">Ingest a 20 MB binary payload and return its byte count.</div>
     <div class="test-card-endpoint">POST /upload</div>
   </a>
-  <a class="test-card" href="docs/test-profiles/h1/isolated/compression">
-    <div class="test-card-title">Compression</div>
-    <div class="test-card-desc">Serve ~1 MB JSON compressed (gzip or brotli). Bandwidth-adjusted scoring.</div>
-    <div class="test-card-endpoint">GET /compression</div>
-  </a>
-  <a class="test-card" href="docs/test-profiles/h1/isolated/noisy">
-    <div class="test-card-title">Noisy (Resilience)</div>
-    <div class="test-card-desc">Valid requests mixed with malformed noise — bad paths, bad content-length, binary. Only 2xx count.</div>
-    <div class="test-card-endpoint">GET/POST /baseline11 + noise</div>
-  </a>
   <a class="test-card" href="docs/test-profiles/h1/isolated/async-database">
     <div class="test-card-title">Async Database (Postgres)</div>
     <div class="test-card-desc">Async Postgres query over 100K rows — tests event loop scheduling, connection pooling, and async driver efficiency.</div>
-    <div class="test-card-endpoint">GET /async-db</div>
+    <div class="test-card-endpoint">GET /async-db?limit=N</div>
   </a>
   <a class="test-card" href="docs/test-profiles/h1/isolated/static">
     <div class="test-card-title">Static Files</div>
     <div class="test-card-desc">Round-robin across 20 static files — CSS, JS, HTML, fonts, images.</div>
     <div class="test-card-endpoint">GET /static/*</div>
-  </a>
-  <a class="test-card" href="docs/test-profiles/h1/isolated/tcp-frag">
-    <div class="test-card-title">TCP Fragmentation</div>
-    <div class="test-card-desc">Baseline workload with MTU 69 — every packet fragmented into ~29-byte segments. Stress tests TCP reassembly.</div>
-    <div class="test-card-endpoint">GET/POST /baseline11 (MTU 69)</div>
   </a>
   <a class="test-card" href="docs/test-profiles/h1/isolated/pipelined">
     <div class="test-card-title">Pipelined (16x)</div>
@@ -139,16 +129,6 @@ html.dark .test-card-endpoint { color: #64748b; }
     <div class="test-card-title">API-16</div>
     <div class="test-card-desc">Same API workload (baseline, JSON, async-db) with 16 CPUs and 32 GB memory — tests performance scaling.</div>
     <div class="test-card-endpoint">GET/POST API endpoints (16 CPU, 32 GB)</div>
-  </a>
-  <a class="test-card" href="docs/test-profiles/h1/workload/assets-4">
-    <div class="test-card-title">Assets-4</div>
-    <div class="test-card-desc">Static files and JSON with compression, constrained to 4 CPUs — tests asset serving with on-the-fly compression.</div>
-    <div class="test-card-endpoint">GET /static/* + /json (4 CPU)</div>
-  </a>
-  <a class="test-card" href="docs/test-profiles/h1/workload/assets-16">
-    <div class="test-card-title">Assets-16</div>
-    <div class="test-card-desc">Same asset workload with 16 CPUs and 32 GB memory — tests asset serving scaling.</div>
-    <div class="test-card-endpoint">GET /static/* + /json (gzip, 16 CPU)</div>
   </a>
 </div>
 </div>

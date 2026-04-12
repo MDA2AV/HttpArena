@@ -13,7 +13,7 @@ Create a `meta.json` file in your framework directory:
   "description": "Short description of the framework and its key features.",
   "repo": "https://github.com/org/repo",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "compression", "noisy", "api-4", "api-16", "baseline-h2", "static-h2"],
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "json-comp", "upload", "api-4", "api-16", "baseline-h2", "static-h2"],
   "maintainers": ["your-github-username"]
 }
 ```
@@ -39,17 +39,13 @@ Create a `meta.json` file in your framework directory:
 | `baseline` | HTTP/1.1 | `/baseline11` |
 | `pipelined` | HTTP/1.1 | `/pipeline` |
 | `limited-conn` | HTTP/1.1 | `/baseline11` |
-| `json` | HTTP/1.1 | `/json` |
+| `json` | HTTP/1.1 | `/json/{count}` |
+| `json-comp` | HTTP/1.1 | `/json/{count}?m=N` (must honor `Accept-Encoding: gzip, br`) |
 | `upload` | HTTP/1.1 | `/upload` |
-| `compression` | HTTP/1.1 | `/compression` |
-| `noisy` | HTTP/1.1 | `/baseline11` |
 | `static` | HTTP/1.1 | `/static/*` (port 8080) |
-| `tcp-frag` | HTTP/1.1 | `/baseline11` (loopback MTU 69) |
-| `async-db` | HTTP/1.1 | `/async-db` (requires `DATABASE_URL` env var) |
-| `api-4` | HTTP/1.1 | `/baseline11`, `/json`, `/async-db` (4 CPU, 16 GB) |
-| `api-16` | HTTP/1.1 | `/baseline11`, `/json`, `/async-db` (16 CPU, 32 GB) |
-| `assets-4` | HTTP/1.1 | `/static/*`, `/json`, `/compression` (4 CPU, 16 GB) |
-| `assets-16` | HTTP/1.1 | `/static/*`, `/json`, `/compression` (16 CPU, 32 GB) |
+| `async-db` | HTTP/1.1 | `/async-db?limit=N` (requires `DATABASE_URL` env var) |
+| `api-4` | HTTP/1.1 | `/baseline11`, `/json/{count}`, `/async-db` (4 CPU, 16 GB) |
+| `api-16` | HTTP/1.1 | `/baseline11`, `/json/{count}`, `/async-db` (16 CPU, 32 GB) |
 | `baseline-h2` | HTTP/2 | `/baseline2` (TLS, port 8443) |
 | `static-h2` | HTTP/2 | `/static/*` (TLS, port 8443) |
 | `gateway-64` | HTTP/2 | `/static/*`, `/json`, `/async-db` via reverse proxy (TLS, port 8443) |
@@ -66,7 +62,7 @@ Only include profiles your framework supports. Frameworks missing a profile simp
 The `async-db` profile requires an async PostgreSQL driver. The benchmark script starts a Postgres sidecar with 100K rows and passes `DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark` to your container. Your framework must:
 
 1. Connect to Postgres using the `DATABASE_URL` environment variable
-2. Implement `GET /async-db?min=X&max=Y` that queries: `SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50`
+2. Implement `GET /async-db?min=X&max=Y&limit=N` that queries: `SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3`
 3. Return JSON: `{"items": [...], "count": N}` with nested `rating: {score, count}` and `tags` as a JSON array
 4. Return `{"items":[],"count":0}` if the database is unavailable
 5. Use lazy connection initialization — retry connecting if Postgres isn't ready at startup

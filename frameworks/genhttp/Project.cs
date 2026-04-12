@@ -7,6 +7,7 @@ using GenHTTP.Modules.Layouting.Provider;
 using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
+using GenHTTP.Modules.Functional;
 
 using genhttp.Tests;
 
@@ -14,7 +15,6 @@ namespace genhttp;
 
 public static class Project
 {
-
     public static IHandlerBuilder Create()
     {
         var app = Layout.Create()
@@ -25,7 +25,6 @@ public static class Project
                         .AddService<Json>("json", mode: ExecutionMode.Auto)
                         .AddService<Database>("db", mode: ExecutionMode.Auto)
                         .AddService<AsyncDatabase>("async-db", mode: ExecutionMode.Auto)
-                        .AddService<Compression>("compression", mode: ExecutionMode.Auto)
                         .AddStaticFiles()
                         .AddWebsocket()
                         .Add(Concern.From(AddHeader));
@@ -35,13 +34,9 @@ public static class Project
 
     private static LayoutBuilder AddStaticFiles(this LayoutBuilder app)
     {
-        var staticDir = "/data/static";
-
-        if (Directory.Exists(staticDir))
+        if (Directory.Exists("/data/static"))
         {
-            var files = ResourceTree.FromDirectory("/data/static");
-
-            app.Add("static", Resources.From(files));
+            app.Add("static", ResourceTree.FromDirectory("/data/static"));
         }
 
         return app;

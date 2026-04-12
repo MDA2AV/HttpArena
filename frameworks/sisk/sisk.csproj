@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
     <PackageReference Include="Sisk.Cadente.CoreEngine" Version="1.6.2-beta11" />
     <PackageReference Include="Sisk.HttpServer" Version="1.6.1" />

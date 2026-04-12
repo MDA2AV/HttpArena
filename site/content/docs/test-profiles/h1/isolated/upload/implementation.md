@@ -4,13 +4,13 @@ title: Implementation Guidelines
 {{< type-rules production="Must use the framework standard body reading API. Streaming is allowed if the framework supports it natively." tuned="May use custom buffer sizes, direct socket reads, or bypass framework body parsing for maximum throughput." engine="No specific rules." >}}
 
 
-The Upload profile measures how efficiently a framework handles large request body ingestion. Each request sends a 20 MB binary payload and the server returns the byte count.
+The Upload profile measures how efficiently a framework handles large request body ingestion. The benchmark rotates across four payload sizes: 500 KB, 2 MB, 10 MB, and 20 MB. The server returns the byte count.
 
 **Connections:** 32, 256
 
 ## How it works
 
-1. The load generator sends `POST /upload` with a 20 MB binary body using a pre-built raw request file
+1. The load generator sends `POST /upload` with a binary body (500 KB, 2 MB, 10 MB, or 20 MB) using pre-built raw request files, rotating every 5 requests
 2. The server reads the entire request body
 3. Returns the total number of bytes received as plain text
 
@@ -52,7 +52,7 @@ Content-Type: text/plain
 | Pipeline | 1 |
 | Duration | 5s |
 | Runs | 3 (best taken) |
-| Payload | 20 MB binary (`data/upload.bin`) |
+| Payloads | 500 KB, 2 MB, 10 MB, 20 MB (rotated with `-r 5`) |
 
 ## Notes
 

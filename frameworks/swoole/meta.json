@@ -1,0 +1,24 @@
+{
+  "display_name": "Swoole",
+  "language": "PHP",
+  "type": "tuned",
+  "engine": "Swoole",
+  "description": "Swoole is an event-driven, asynchronous, coroutine-based concurrency library with high performance for PHP.",
+  "repo": "https://github.com/swoole/swoole-src",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "baseline-h2",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "noisy",
+    "static",
+    "static-h2",
+    "api-4",
+    "api-16",
+    "async-db"
+  ]
+}

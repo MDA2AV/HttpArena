@@ -3,12 +3,6 @@ set -e
 
 NPROC=$(nproc)
 
-# Preprocess dataset-large.json → response-large.json for /compression
-if [ -f /data/dataset-large.json ]; then
-    jq '{ items: [.[] | . + { total: ((.price * .quantity * 100 | round) / 100) }], count: length }' \
-        /data/dataset-large.json > /tmp/response-large.json
-fi
-
 # Generate h2o.conf
 CERT_FILE=${TLS_CERT:-/certs/server.crt}
 KEY_FILE=${TLS_KEY:-/certs/server.key}
@@ -92,24 +86,33 @@ hosts:
             unless \$dataset
               \$dataset = JSON.parse(File.open("/data/dataset.json", "r").read)
             end
-            items = \$dataset.map do |d|
+            path = env["PATH_INFO"]
+            count_str = path.split("/").last
+            count = count_str.to_i
+            count = 0 if count < 0
+            count = \$dataset.length if count > \$dataset.length
+            m = 1
+            qs = env["QUERY_STRING"]
+            if qs
+              qs.split("&").each do |pair|
+                k, v = pair.split("=", 2)
+                m = v.to_i if k == "m" && v
+              end
+            end
+            m = 1 if m == 0
+            items = \$dataset[0, count].map do |d|
               item = {}
               d.each { |k, v| item[k] = v }
-              item["total"] = (d["price"] * d["quantity"] * 100.0).round / 100.0
+              item["total"] = d["price"] * d["quantity"] * m
               item
             end
-            body = JSON.generate({"items" => items, "count" => items.length})
+            body = JSON.generate({"items" => items, "count" => count})
             [200, {"content-type" => "application/json"}, [body]]
           end
 
-      "/compression":
-        file.file: /tmp/response-large.json
-        header.add: "content-type: application/json"
-        compress:
-          gzip: 1
-
       "/static":
         file.dir: /data/static
+        file.send-compressed: ON
 EOF
 
 exec h2o -c /tmp/h2o.conf

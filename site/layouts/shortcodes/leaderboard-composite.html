@@ -1,17 +1,13 @@
 {{ $profiles := slice
   (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true)
   (dict "id" "api-16" "label" "API-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false)
-  (dict "id" "assets-4" "label" "Assets-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true)
-  (dict "id" "assets-16" "label" "Assets-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false)
   (dict "id" "baseline" "label" "Baseline" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
   (dict "id" "pipelined" "label" "Pipelined" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
   (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
   (dict "id" "json" "label" "JSON" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
+  (dict "id" "json-comp" "label" "JSON Compressed" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" true "engineScored" false)
   (dict "id" "upload" "label" "Upload" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 32 256) "scored" true "engineScored" false)
-  (dict "id" "compression" "label" "Compression" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" false)
   (dict "id" "static" "label" "Static" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024 4096 6800) "scored" true "engineScored" false)
-  (dict "id" "tcp-frag" "label" "TCP Frag" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" false "engineScored" false)
-  (dict "id" "noisy" "label" "Noisy" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" false "engineScored" false)
   (dict "id" "async-db" "label" "Async DB" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" true "engineScored" false)
   (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
@@ -31,7 +27,7 @@
     {{ $data := index site.Data $key }}
     {{ if $data }}
       {{ range $data }}
-        {{ $entries = $entries | append (dict "profile" $p.id "label" $p.label "framework" .framework "rps" .rps "language" (.language | default "") "cpu" (.cpu | default "") "memory" (.memory | default "") "bandwidth" (.bandwidth | default "") "tpl_baseline" (.tpl_baseline | default 0) "tpl_json" (.tpl_json | default 0) "tpl_upload" (.tpl_upload | default 0) "tpl_compression" (.tpl_compression | default 0) "tpl_static" (.tpl_static | default 0) "tpl_async_db" (.tpl_async_db | default 0)) }}
+        {{ $entries = $entries | append (dict "profile" $p.id "label" $p.label "framework" .framework "rps" .rps "language" (.language | default "") "cpu" (.cpu | default "") "memory" (.memory | default "") "bandwidth" (.bandwidth | default "") "tpl_baseline" (.tpl_baseline | default 0) "tpl_json" (.tpl_json | default 0) "tpl_upload" (.tpl_upload | default 0) "tpl_static" (.tpl_static | default 0) "tpl_async_db" (.tpl_async_db | default 0)) }}
       {{ end }}
     {{ end }}
   {{ end }}
@@ -278,7 +274,7 @@ function entriesFromRound(roundData) {
       var data = roundData[key];
       if (data) {
         data.forEach(function(d) {
-          entries.push({ profile: p.id, label: p.label, framework: d.framework, rps: d.rps, language: d.language || '', cpu: d.cpu || '', memory: d.memory || '', bandwidth: d.bandwidth || '', tpl_baseline: d.tpl_baseline || 0, tpl_json: d.tpl_json || 0, tpl_upload: d.tpl_upload || 0, tpl_compression: d.tpl_compression || 0, tpl_static: d.tpl_static || 0, tpl_async_db: d.tpl_async_db || 0 });
+          entries.push({ profile: p.id, label: p.label, framework: d.framework, rps: d.rps, language: d.language || '', cpu: d.cpu || '', memory: d.memory || '', bandwidth: d.bandwidth || '', tpl_baseline: d.tpl_baseline || 0, tpl_json: d.tpl_json || 0, tpl_upload: d.tpl_upload || 0, tpl_static: d.tpl_static || 0, tpl_async_db: d.tpl_async_db || 0 });
         });
       }
     });
@@ -305,12 +301,11 @@ function loadData(newEntries, newMeta) {
     if (e.profile === 'api-4' || e.profile === 'api-16') {
       if (!tplSumsByProfile[e.profile]) tplSumsByProfile[e.profile] = {};
       var fw = e.framework;
-      if (!tplSumsByProfile[e.profile][fw]) tplSumsByProfile[e.profile][fw] = {baseline:0, json:0, upload:0, compression:0, static:0, async_db:0, count:0};
+      if (!tplSumsByProfile[e.profile][fw]) tplSumsByProfile[e.profile][fw] = {baseline:0, json:0, upload:0, static:0, async_db:0, count:0};
       var t = tplSumsByProfile[e.profile][fw];
       t.baseline += (e.tpl_baseline || 0);
       t.json += (e.tpl_json || 0);
       t.upload += (e.tpl_upload || 0);
-      t.compression += (e.tpl_compression || 0);
       t.static += (e.tpl_static || 0);
       t.async_db += (e.tpl_async_db || 0);
       t.count++;
@@ -332,7 +327,6 @@ function loadData(newEntries, newMeta) {
         baseline: t.baseline / t.count,
         json: t.json / t.count,
         upload: t.upload / t.count,
-        compression: t.compression / t.count,
         static: t.static / t.count,
         async_db: t.async_db / t.count
       };
@@ -589,48 +583,17 @@ function renderComposite() {
   });
 
   // For api workloads: compute weighted scores and re-normalize
-  var mixedWeights = {baseline:0.15, json:1, upload:10, compression:7, static:2, async_db:10};
+  var mixedWeights = {baseline:0.15, json:1, upload:10, static:2, async_db:10};
   ['api-4', 'api-16'].forEach(function(mpid) {
     if (activeIds.indexOf(mpid) >= 0) {
       var maxWeighted = 0;
       Object.keys(avgTplByProfile[mpid] || {}).forEach(function(fw) {
         if (isExcluded(fw)) return;
         var t = avgTplByProfile[mpid][fw];
-        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
         if (w > maxWeighted) maxWeighted = w;
       });
       if (maxWeighted > 0) maxRpsByProfile[mpid] = maxWeighted;
-    }
-  });
-
-  // For compression: compute bandwidth-adjusted RPS and re-normalize
-  var minBwPerReq = {};
-  activeIds.forEach(function(pid) {
-    if (pid !== 'compression') return;
-    var minVal = Infinity;
-    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
-      if (isExcluded(fw)) return;
-      var rps = avgByProfile[pid][fw] || 0;
-      var bw = avgBwByProfile[pid][fw] || 0;
-      if (rps > 0 && bw > 0) {
-        var bpr = bw / rps;
-        if (bpr < minVal) minVal = bpr;
-      }
-    });
-    if (minVal < Infinity) {
-      minBwPerReq[pid] = minVal;
-      var maxAdj = 0;
-      Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
-        if (isExcluded(fw)) return;
-        var rps = avgByProfile[pid][fw] || 0;
-        var bw = avgBwByProfile[pid][fw] || 0;
-        if (rps > 0 && bw > 0) {
-          var ratio = minVal / (bw / rps);
-          var adj = rps * ratio * ratio;
-          if (adj > maxAdj) maxAdj = adj;
-        }
-      });
-      if (maxAdj > 0) maxRpsByProfile[pid] = maxAdj;
     }
   });
 
@@ -642,21 +605,16 @@ function renderComposite() {
       Object.keys(avgTplByProfile[pid] || {}).forEach(function(fw) {
         if (isExcluded(fw)) return;
         var t = avgTplByProfile[pid][fw];
-        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
         if (w > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = w; bestFw = fw; }
         else if (w > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = w; secondFw = fw; }
         else if (w > thirdScore) { thirdScore = w; thirdFw = fw; }
       });
     } else {
-      var useAdjusted = pid === 'compression' && minBwPerReq[pid];
       Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
         if (isExcluded(fw)) return;
         var rps = avgByProfile[pid][fw] || 0;
         var score = rps;
-        if (useAdjusted && rps > 0) {
-          var bw = (avgBwByProfile[pid] && avgBwByProfile[pid][fw]) || 0;
-          if (bw > 0) { var ratio = minBwPerReq[pid] / (bw / rps); score = rps * ratio * ratio; }
-        }
         if (score > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = score; bestFw = fw; }
         else if (score > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = score; secondFw = fw; }
         else if (score > thirdScore) { thirdScore = score; thirdFw = fw; }
@@ -702,15 +660,7 @@ function renderComposite() {
         // For api workloads: use weighted template score
         if ((pid === 'api-4' || pid === 'api-16') && avgTplByProfile[pid] && avgTplByProfile[pid][fw]) {
           var t = avgTplByProfile[pid][fw];
-          effectiveRps = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-        }
-        // For compression: use bandwidth-adjusted RPS (squared penalty)
-        if (pid === 'compression' && minBwPerReq[pid]) {
-          var bw = avgBwByProfile[pid][fw] || 0;
-          if (bw > 0 && rps > 0) {
-            var ratio = minBwPerReq[pid] / (bw / rps);
-            effectiveRps = rps * ratio * ratio;
-          }
+          effectiveRps = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
         }
         var rpsScore = (effectiveRps / maxRpsByProfile[pid]) * 100;
         var profileScore = rpsScore * wRps;
@@ -790,7 +740,7 @@ function renderComposite() {
     Object.keys(avgTplByProfile[mpid] || {}).forEach(function(fw) {
       if (isExcluded(fw)) return;
       var t = avgTplByProfile[mpid][fw];
-      var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+      var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
       if (w > maxW) maxW = w;
     });
     allMaxWeighted[mpid] = maxW;
@@ -808,7 +758,7 @@ function renderComposite() {
           var t = avgTplByProfile[pid] && avgTplByProfile[pid][fw];
           var maxW = allMaxWeighted[pid] || 0;
           if (t && maxW > 0) {
-            var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + t.compression * mixedWeights.compression + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+            var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
             sum += (w / maxW) * 100;
           }
         } else {

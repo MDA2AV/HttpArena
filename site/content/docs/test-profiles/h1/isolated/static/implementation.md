@@ -10,17 +10,17 @@ Serves 20 static files of various types and sizes over HTTP/1.1, simulating a re
 
 ## Workload
 
-The load generator ([gcannon](https://github.com/MDA2AV/gcannon)) requests 20 static files in a round-robin pattern using raw HTTP/1.1 request templates. All requests include `Accept-Encoding: br;q=1, gzip;q=0.8`.
+The load generator ([wrk](https://github.com/wg/wrk)) requests 20 static files in a round-robin pattern using a Lua rotation script. All requests include `Accept-Encoding: br;q=1, gzip;q=0.8`.
 
-- **CSS** (5 files, 8–55 KB): `reset.css`, `layout.css`, `theme.css`, `components.css`, `utilities.css`
-- **JavaScript** (5 files, 15–400 KB): `analytics.js`, `helpers.js`, `app.js`, `vendor.js`, `router.js`
-- **HTML** (2 files, 5–8 KB): `header.html`, `footer.html`
-- **Fonts** (2 files, 20–25 KB): `regular.woff2`, `bold.woff2`
-- **SVG** (2 files, 12–55 KB): `logo.svg`, `icon-sprite.svg`
-- **Images** (3 files, 15–120 KB): `hero.webp`, `thumb1.webp`, `thumb2.webp`
+- **CSS** (5 files, 8–200 KB): `reset.css`, `layout.css`, `theme.css`, `components.css`, `utilities.css`
+- **JavaScript** (5 files, 12–300 KB): `analytics.js`, `helpers.js`, `app.js`, `vendor.js`, `router.js`
+- **HTML** (2 files, 55–120 KB): `header.html`, `footer.html`
+- **Fonts** (2 files, 18–22 KB): `regular.woff2`, `bold.woff2`
+- **SVG** (2 files, 15–70 KB): `logo.svg`, `icon-sprite.svg`
+- **Images** (3 files, 6–45 KB): `hero.webp`, `thumb1.webp`, `thumb2.webp`
 - **JSON** (1 file, 3 KB): `manifest.json`
 
-Total payload: ~1.16 MB across 20 files (~966 KB compressible text + ~200 KB binary).
+Total payload: ~842 KB across 20 files (~743 KB compressible text + ~99 KB binary). Brotli-compressed total: ~219 KB.
 
 Pre-compressed versions of all text files (`.gz` at level 9, `.br` at level 11) are available in the `data/static/` directory alongside the originals.
 
@@ -30,7 +30,7 @@ All requests include `Accept-Encoding: br;q=1, gzip;q=0.8`, indicating the clien
 
 **Compression is optional.** Frameworks that don't compress will serve files uncompressed — there is no penalty or validation failure. However, frameworks that do compress will benefit from reduced I/O, which naturally improves throughput.
 
-- **Text files** (CSS, JS, HTML, SVG, JSON): good candidates for compression (60-90% size reduction)
+- **Text files** (CSS, JS, HTML, SVG, JSON): good candidates for compression (68–94% size reduction with brotli)
 - **Binary files** (woff2, webp): already compressed formats — servers should skip compression for these
 - **Pre-compressed files**: `.gz` and `.br` versions are available on disk. Frameworks that support serving pre-compressed files (e.g., Nginx `gzip_static`/`brotli_static`) can serve these directly with zero CPU overhead
 
@@ -80,4 +80,4 @@ Content-Type: text/css
 | Pipeline | 1 |
 | Duration | 5s |
 | Runs | 3 (best taken) |
-| Load generator | gcannon with `--raw` (multi-template) |
+| Load generator | wrk with Lua rotation script |

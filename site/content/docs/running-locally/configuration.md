@@ -40,17 +40,13 @@ Each profile defines: pipeline depth, requests per connection, CPU limit, connec
 | baseline | 1 | 0 | 0-31,64-95 | 512, 4096 | `/baseline11` |
 | pipelined | 16 | 0 | 0-31,64-95 | 512, 4096 | `/pipeline` |
 | limited-conn | 1 | 10 | 0-31,64-95 | 512, 4096 | `/baseline11` |
-| json | 1 | 0 | 0-31,64-95 | 4096 | `/json` |
+| json | 1 | 0 | 0-31,64-95 | 4096 | `/json/{count}` (7 counts) |
+| json-comp | 1 | 0 | 0-31,64-95 | 512, 4096, 16384 | `/json/{count}?m=N` + `Accept-Encoding: gzip, br` |
 | upload | 1 | 0 | 0-31,64-95 | 32, 256 | `/upload` |
-| compression | 1 | 0 | 0-31,64-95 | 512, 4096 | `/compression` |
-| noisy | 1 | 0 | 0-31,64-95 | 512, 4096, 16384 | `/baseline11` + noise |
 | api-4 | 1 | 5 | 0-3 | 256 | mixed (baseline, json, async-db) |
 | api-16 | 1 | 5 | 0-7,64-71 | 1024 | mixed (baseline, json, async-db) |
-| assets-4 | 1 | 10 | 0-3 | 256 | mixed (static, json, compression) |
-| assets-16 | 1 | 10 | 0-7,64-71 | 1024 | mixed (static, json, compression) |
-| static | 1 | 10 | 0-31,64-95 | 1024, 4096, 6800 | `/static/*` (20 files) |
-| sync-db | 1 | 0 | 0-31,64-95 | 1024 | `/db` |
-| async-db | 1 | 0 | 0-31,64-95 | 1024 | `/async-db` |
+| static | 1 | 200 | 0-31,64-95 | 1024, 4096, 6800 | `/static/*` (20 files, wrk) |
+| async-db | 1 | 0 | 0-31,64-95 | 1024 | `/async-db?limit=N` (5 limits) |
 | baseline-h2 | 1 | 0 | 0-31,64-95 | 256, 1024 | `/baseline2` (h2load) |
 | static-h2 | 1 | 0 | 0-31,64-95 | 256, 1024 | `/static/*` (h2load) |
 | unary-grpc | 1 | 0 | 0-31,64-95 | 256, 1024 | gRPC `GetSum` (h2load h2c) |

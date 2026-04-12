@@ -9,7 +9,7 @@ BENCHMARK="$SCRIPT_DIR/benchmark.sh"
 LOG_DIR="$ROOT_DIR/results/logs"
 mkdir -p "$LOG_DIR"
 
-H1_PROFILES=(baseline pipelined limited-conn json upload compression noisy api-4 api-16 static async-db)
+H1_PROFILES=(baseline pipelined limited-conn json upload api-4 api-16 static async-db)
 
 # Frameworks to skip (already benchmarked)
 SKIP_LIST=""

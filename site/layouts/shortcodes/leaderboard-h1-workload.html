@@ -203,10 +203,6 @@ html.dark .lb-sortable.sort-desc::after { color: #60a5fa; }
 .lb-row.lb-row-reconn {
   grid-template-columns: 2.5rem 11rem 5.5rem 4.95rem 3.5rem 5.5rem 7rem 5.5rem 4rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
 }
-.lb-row.lb-row-noisy {
-  grid-template-columns: 2.5rem 11rem 5.5rem 4.95rem 3.5rem 5.5rem 7rem 5.5rem 4rem 5.5rem 5rem 5.5rem 4.5rem;
-}
-.lb-row.lb-row-noisy .lb-bar-cell { display: none; }
 .lb-row:not(.lb-header) { cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.06); }
 .lb-row:not(.lb-header):hover { background: rgba(0,0,0,0.03); }
 .lb-row.lb-hidden { display: none; }
@@ -363,8 +359,6 @@ html.dark .lb-card-title { color: #ffffff; }
 {{ $profiles := slice
   (dict "id" "api-4"         "label" "API-4"                  "conns" (slice 256) "desc" "Lighter workload (baseline, JSON, async-db) with the server constrained to 4 CPU threads (cores 0-3). 4 threads, 256 connections. Measures framework efficiency under limited resources — closer to a typical production deployment. <a href='/docs/test-profiles/h1/workload/api-4/' class='lb-desc-link'>Learn more &rarr;</a>")
   (dict "id" "api-16"        "label" "API-16"                 "conns" (slice 1024) "desc" "Same API workload (baseline, JSON, async-db) with the server constrained to 16 CPU threads (cores 0-7, 64-71) and 32 GB memory. 64 threads, 256 connections. Tests performance scaling with more resources. <a href='/docs/test-profiles/h1/workload/api-16/' class='lb-desc-link'>Learn more &rarr;</a>")
-  (dict "id" "assets-4"      "label" "Assets-4"               "conns" (slice 256) "desc" "Static files and JSON with compression, constrained to 4 CPUs and 16 GB memory. Mix of compressed and uncompressed requests — tests how efficiently a framework handles asset serving with on-the-fly compression under limited resources. <a href='/docs/test-profiles/h1/workload/assets-4/' class='lb-desc-link'>Learn more &rarr;</a>")
-  (dict "id" "assets-16"     "label" "Assets-16"              "conns" (slice 1024) "desc" "Same asset workload (static files, JSON, compression) with the server constrained to 16 CPU threads (cores 0-7, 64-71) and 32 GB memory. Tests asset serving performance scaling with more resources. <a href='/docs/test-profiles/h1/workload/assets-16/' class='lb-desc-link'>Learn more &rarr;</a>")
 }}
 
 {{/* Build JSON data blob for round switching */}}
@@ -457,84 +451,6 @@ html.dark .lb-type-badge-engine { background:rgba(220,38,38,0.12); color:#f87171
   </div>
 
   <div class="lb-desc">{{ $p.desc | safeHTML }}</div>
-  {{ if eq $p.id "tcp-frag" }}
-  <details style="margin-top:0.5rem; margin-bottom:0.75rem; padding:0.5rem 1rem; border-radius:0.5rem; background:rgba(59,130,246,0.04); border:1px solid rgba(59,130,246,0.15); font-size:0.8rem;">
-    <summary style="cursor:pointer; font-weight:600; color:#3b82f6; user-select:none;">View request templates (8 templates, MTU 69)</summary>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-top:0.75rem;">
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#3b82f6;margin-right:4px;"></span>GET (×2) — 355B, 13 segments</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">GET /baseline11?a=13&b=42 HTTP/1.1
-Host: localhost:8080
-User-Agent: Mozilla/5.0 (X11; Linux x86_64) ...
-Accept: text/html,application/xhtml+xml,...
-Accept-Language: en-US,en;q=0.9,pt;q=0.8
-Cache-Control: no-cache
-Pragma: no-cache</pre>
-      </div>
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#8b5cf6;margin-right:4px;"></span>POST — 360B, 13 segments</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">POST /baseline11?a=13&b=42 HTTP/1.1
-Host: localhost:8080
-User-Agent: Mozilla/5.0 ...
-Content-Type: text/plain
-Content-Length: 2
-
-20</pre>
-      </div>
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f59e0b;margin-right:4px;"></span>Chunked — 379B, 14 segments (header boundary splits at segment edge)</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">POST /baseline11?a=13&b=42 HTTP/1.1
-Host: localhost:8080
-User-Agent: Mozilla/5.0 ...
-Content-Type: text/plain
-Transfer-Encoding: chunked
-        &#8592; \r\n\r\n splits across segment boundary
-2\r\n20\r\n0\r\n\r\n</pre>
-      </div>
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#64748b;margin-right:4px;"></span>Noise — 843B, 30 segments (500-char junk path)</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">POST /AAAAAAA...500 A's...AAAA HTTP/1.1
-Host: localhost:8080
-User-Agent: Mozilla/5.0 ...
-Content-Type: text/plain
-Content-Length: 5
-
-hello</pre>
-      </div>
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#10b981;margin-right:4px;"></span>Cookie bomb — 2,097B, 73 segments</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">GET /baseline11?a=13&b=42 HTTP/1.1
-Host: localhost:8080
-Cookie: session=aaaa...2000 chars...aaaa
-Accept: text/html</pre>
-      </div>
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#06b6d4;margin-right:4px;"></span>30 Headers — 380B, 14 segments</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">GET /baseline11?a=13&b=42 HTTP/1.1
-Host: localhost:8080
-X-H00: 0
-X-H01: 1
-... (30 tiny headers)
-X-H29: 29</pre>
-      </div>
-      <div>
-        <div style="font-weight:600; font-size:0.7rem; margin-bottom:0.25rem;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#ec4899;margin-right:4px;"></span>Body29 — 146B, 6 segments (body fills exactly one segment)</div>
-        <pre style="font-size:0.6rem; background:rgba(0,0,0,0.04); padding:0.4rem; border-radius:4px; overflow-x:auto; margin:0; line-height:1.3;">POST /baseline11?a=0&b=0 HTTP/1.1
-Host: localhost:8080
-Content-Type: text/plain
-Content-Length: 29
-
-aaaaaaaaaaaaaaaaaaaaaaaaaaa42</pre>
-      </div>
-    </div>
-  </details>
-  <style>
-  html.dark details[open] > div pre { background: rgba(255,255,255,0.06) !important; color: #e2e8f0; }
-  html.dark details { background: rgba(59,130,246,0.08) !important; border-color: rgba(59,130,246,0.25) !important; }
-  html.dark details summary { color: #60a5fa !important; }
-  </style>
-  {{ end }}
-
   <div class="lb-filters" style="margin:0 0 0.5rem 0;">
     <span class="lb-filters-label">Type</span>
     <div class="lb-type-filter lb-type-all" data-type="all">All</div>
@@ -545,9 +461,9 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaa42</pre>
   <div class="lb-filters" style="margin:0 0 0 0;">
     <span class="lb-filters-label">Conn</span>
     <div class="lb-conn-tabs" data-for="{{ $p.id }}">
-      {{ if not (or (eq $p.id "api-4") (eq $p.id "api-16") (eq $p.id "compression")) }}<div class="lb-conn-tab active" data-conns="best">Best</div>{{ end }}
+      {{ if not (or (eq $p.id "api-4") (eq $p.id "api-16")) }}<div class="lb-conn-tab active" data-conns="best">Best</div>{{ end }}
     {{ range $ci, $c := $p.conns }}
-      <div class="lb-conn-tab{{ if or (eq $p.id "api-4") (eq $p.id "api-16") (eq $p.id "compression") }}{{ if eq $ci 0 }} active{{ end }}{{ end }}" data-conns="{{ $c }}">{{ $c }}</div>
+      <div class="lb-conn-tab{{ if or (eq $p.id "api-4") (eq $p.id "api-16") }}{{ if eq $ci 0 }} active{{ end }}{{ end }}" data-conns="{{ $c }}">{{ $c }}</div>
     {{ end }}
     </div>
   </div>
@@ -567,11 +483,10 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaa42</pre>
   </div>
   <div style="font-size:0.75rem; color:#94a3b8; margin:0 0 0.75rem 0;">Click a row to expand details</div>
 
-  {{ $isReconn := or (eq $p.id "limited-conn") (eq $p.id "noisy") (eq $p.id "static") }}
-  {{ $isNoisy := eq $p.id "noisy" }}
-  <div class="lb-conn-panel{{ if not (or (eq $p.id "api-4") (eq $p.id "api-16") (eq $p.id "compression")) }} active{{ end }}" data-profile="{{ $p.id }}" data-conns="best">
+  {{ $isReconn := or (eq $p.id "limited-conn") (eq $p.id "static") }}
+  <div class="lb-conn-panel{{ if not (or (eq $p.id "api-4") (eq $p.id "api-16")) }} active{{ end }}" data-profile="{{ $p.id }}" data-conns="best">
     <div class="lb">
-      <div class="lb-row lb-header{{ if $isReconn }} lb-row-reconn{{ end }}{{ if $isNoisy }} lb-row-noisy{{ end }}">
+      <div class="lb-row lb-header{{ if $isReconn }} lb-row-reconn{{ end }}">
         <div title="Rank by requests per second">#</div>
         <div title="HTTP server framework name">Framework</div>
         <div title="Programming language">Lang</div>
@@ -593,9 +508,9 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaa42</pre>
   {{ range $ci, $c := $p.conns }}
   {{ $key := printf "%s-%d" $p.id $c }}
   {{ $data := index site.Data $key }}
-  <div class="lb-conn-panel{{ if and (or (eq $p.id "api-4") (eq $p.id "api-16") (eq $p.id "compression")) (eq $ci 0) }} active{{ end }}" data-profile="{{ $p.id }}" data-conns="{{ $c }}">
+  <div class="lb-conn-panel{{ if and (or (eq $p.id "api-4") (eq $p.id "api-16")) (eq $ci 0) }} active{{ end }}" data-profile="{{ $p.id }}" data-conns="{{ $c }}">
   <div class="lb">
-    <div class="lb-row lb-header{{ if $isReconn }} lb-row-reconn{{ end }}{{ if $isNoisy }} lb-row-noisy{{ end }}">
+    <div class="lb-row lb-header{{ if $isReconn }} lb-row-reconn{{ end }}">
       <div title="Rank by requests per second">#</div>
       <div title="HTTP server framework name">Framework</div>
       <div title="Programming language">Lang</div>
@@ -619,7 +534,7 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaa42</pre>
     {{ $pct := mul (div (float $r.rps) (float $maxRps)) 100.0 }}
     {{ $meta := index site.Data.frameworks $r.framework }}
     {{ $s2xx := int ($r.status_2xx | default 0) }}{{ $s3xx := int ($r.status_3xx | default 0) }}{{ $s4xx := int ($r.status_4xx | default 0) }}{{ $s5xx := int ($r.status_5xx | default 0) }}{{ $errs := add $s4xx $s5xx }}
-    <div class="lb-row{{ if $isReconn }} lb-row-reconn{{ end }}{{ if $isNoisy }} lb-row-noisy{{ end }}" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ printf "%.0f" $r.rps }}" data-bandwidth="{{ $r.bandwidth | default "" }}" data-input-bw="{{ $r.input_bw | default "" }}" data-type="{{ with $meta }}{{ .type | default "production" }}{{ end }}" data-engine="{{ with $meta }}{{ .engine | default "" }}{{ end }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}" data-s2xx="{{ $s2xx }}" data-s3xx="{{ $s3xx }}" data-s4xx="{{ $s4xx }}" data-s5xx="{{ $s5xx }}" {{ if $r.tpl_baseline }}data-tpl-baseline="{{ int $r.tpl_baseline }}" data-tpl-json="{{ int ($r.tpl_json | default 0) }}" data-tpl-upload="{{ int ($r.tpl_upload | default 0) }}" data-tpl-compression="{{ int ($r.tpl_compression | default 0) }}" data-tpl-static="{{ int ($r.tpl_static | default 0) }}" data-tpl-async-db="{{ int ($r.tpl_async_db | default 0) }}"{{ end }}{{ if $r.tf_get }} data-tf-get="{{ int $r.tf_get }}" data-tf-get-err="{{ int ($r.tf_get_err | default 0) }}" data-tf-post="{{ int ($r.tf_post | default 0) }}" data-tf-post-err="{{ int ($r.tf_post_err | default 0) }}" data-tf-chunked="{{ int ($r.tf_chunked | default 0) }}" data-tf-chunked-err="{{ int ($r.tf_chunked_err | default 0) }}" data-tf-noise="{{ int ($r.tf_noise | default 0) }}" data-tf-noise-err="{{ int ($r.tf_noise_err | default 0) }}" data-tf-cookie="{{ int ($r.tf_cookie | default 0) }}" data-tf-cookie-err="{{ int ($r.tf_cookie_err | default 0) }}" data-tf-headers="{{ int ($r.tf_headers | default 0) }}" data-tf-headers-err="{{ int ($r.tf_headers_err | default 0) }}" data-tf-body29="{{ int ($r.tf_body29 | default 0) }}" data-tf-body29-err="{{ int ($r.tf_body29_err | default 0) }}"{{ end }}>
+    <div class="lb-row{{ if $isReconn }} lb-row-reconn{{ end }}" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ printf "%.0f" $r.rps }}" data-bandwidth="{{ $r.bandwidth | default "" }}" data-input-bw="{{ $r.input_bw | default "" }}" data-type="{{ with $meta }}{{ .type | default "production" }}{{ end }}" data-engine="{{ with $meta }}{{ .engine | default "" }}{{ end }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}" data-s2xx="{{ $s2xx }}" data-s3xx="{{ $s3xx }}" data-s4xx="{{ $s4xx }}" data-s5xx="{{ $s5xx }}" {{ if $r.tpl_baseline }}data-tpl-baseline="{{ int $r.tpl_baseline }}" data-tpl-json="{{ int ($r.tpl_json | default 0) }}" data-tpl-upload="{{ int ($r.tpl_upload | default 0) }}" data-tpl-static="{{ int ($r.tpl_static | default 0) }}" data-tpl-async-db="{{ int ($r.tpl_async_db | default 0) }}"{{ end }}{{ if $r.tf_get }} data-tf-get="{{ int $r.tf_get }}" data-tf-get-err="{{ int ($r.tf_get_err | default 0) }}" data-tf-post="{{ int ($r.tf_post | default 0) }}" data-tf-post-err="{{ int ($r.tf_post_err | default 0) }}" data-tf-chunked="{{ int ($r.tf_chunked | default 0) }}" data-tf-chunked-err="{{ int ($r.tf_chunked_err | default 0) }}" data-tf-noise="{{ int ($r.tf_noise | default 0) }}" data-tf-noise-err="{{ int ($r.tf_noise_err | default 0) }}" data-tf-cookie="{{ int ($r.tf_cookie | default 0) }}" data-tf-cookie-err="{{ int ($r.tf_cookie_err | default 0) }}" data-tf-headers="{{ int ($r.tf_headers | default 0) }}" data-tf-headers-err="{{ int ($r.tf_headers_err | default 0) }}" data-tf-body29="{{ int ($r.tf_body29 | default 0) }}" data-tf-body29-err="{{ int ($r.tf_body29_err | default 0) }}"{{ end }}>
       {{ $ftype := "framework" }}{{ with $meta }}{{ $ftype = .type | default "production" }}{{ end }}
       <div class="lb-rank">{{ add $j 1 }}</div>
       <div class="lb-name">{{ $r.framework }}</div>
@@ -659,8 +574,7 @@ var barH1WkClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'
 /* Build "Best" panels — pick best RPS per framework across all conn counts */
 function buildH1WkBestPanels() {
   lbH1WkRoot.querySelectorAll('.lb-conn-panel[data-conns="best"]').forEach(function(bestPanel) {
-    /* Skip compression and api — handled by their own score functions */
-    if (bestPanel.dataset.profile === 'compression') return;
+    /* Skip api — handled by its own score function */
     if (bestPanel.dataset.profile === 'api-4') return;
     if (bestPanel.dataset.profile === 'api-16') return;
 
@@ -754,7 +668,6 @@ function applyH1WkFilters() {
   buildH1WkBestPanels();
 
   lbH1WkRoot.querySelectorAll('.lb-conn-panel').forEach(function(connPanel) {
-    var isCompression = connPanel.dataset.profile === 'compression';
     var rows = connPanel.querySelectorAll('.lb-row:not(.lb-header)');
     var visibleIdx = 0;
     var maxRps = 0;
@@ -780,7 +693,7 @@ function applyH1WkFilters() {
     });
 
     var isMixed = connPanel.dataset.profile === 'api-4' || connPanel.dataset.profile === 'api-16';
-    if (!isCompression && !isMixed) {
+    if (!isMixed) {
       rows.forEach(function(row) {
         if (row.classList.contains('lb-hidden')) return;
         var rankEl = row.querySelector('.lb-rank');
@@ -798,9 +711,7 @@ function applyH1WkFilters() {
     }
   });
 
-  h1Wk_applyCompressionScores();
   applyH1WkMixedScores();
-  if (typeof h1Wk_applyTcpFragScores === 'function') h1Wk_applyTcpFragScores();
 }
 
 /* Dropdown filter system — shared state, synced across all panels */
@@ -956,10 +867,9 @@ lbH1WkRoot.querySelectorAll('.lb-type-filter').forEach(function(btn) {
 /* Column sorting */
 function h1Wk_parseSortValue(row, key) {
   var isReconn = row.classList.contains('lb-row-reconn');
-  var isCompression = row.dataset.compressionDone === '1';
   var isMixed = row.dataset.mixedDone === '1';
   var offset = isReconn ? 1 : 0;
-  var extraOffset = (isCompression ? 1 : 0) + (isMixed ? 1 : 0); /* BW/req cell + mixed score cell */
+  var extraOffset = isMixed ? 1 : 0; /* mixed score cell */
   var stats = row.querySelectorAll('.lb-stat');
   if (key === 'rps') return Number(row.dataset.rps);
   if (key === 'errors') return Number(row.dataset.s4xx || 0) + Number(row.dataset.s5xx || 0);
@@ -1016,10 +926,8 @@ lbH1WkRoot.querySelectorAll('.lb-sortable').forEach(function(hdr) {
     });
     rows.forEach(function(row) { lb.appendChild(row); });
 
-    /* Re-rank visible rows (skip for compression — handled by h1Wk_applyCompressionScores) */
-    var connPanel = lb.closest('.lb-conn-panel');
-    var isCompression = connPanel && connPanel.dataset.profile === 'compression';
-    if (!isCompression) {
+    /* Re-rank visible rows */
+    {
       var visibleIdx = 0;
       var maxRps = 0;
       rows.forEach(function(row) {
@@ -1058,12 +966,11 @@ document.addEventListener('click', function(e) {
   var rps = row.querySelector('.lb-rps').textContent;
   var conns = row.querySelector('.lb-conns').textContent;
   var statOffset = isReconn ? 1 : 0;
-  var extraOffset = row.dataset.compressionDone === '1' ? 1 : 0;
   var bw = row.querySelectorAll('.lb-stat')[statOffset].textContent;
-  var cpu = row.querySelectorAll('.lb-stat')[statOffset + 1 + extraOffset].textContent;
-  var mem = row.querySelectorAll('.lb-stat')[statOffset + 2 + extraOffset].textContent;
-  var avgLat = row.querySelectorAll('.lb-stat')[statOffset + 3 + extraOffset].textContent;
-  var p99 = row.querySelectorAll('.lb-stat')[statOffset + 4 + extraOffset].textContent;
+  var cpu = row.querySelectorAll('.lb-stat')[statOffset + 1].textContent;
+  var mem = row.querySelectorAll('.lb-stat')[statOffset + 2].textContent;
+  var avgLat = row.querySelectorAll('.lb-stat')[statOffset + 3].textContent;
+  var p99 = row.querySelectorAll('.lb-stat')[statOffset + 4].textContent;
 
   var s2xx = Number(row.dataset.s2xx || 0);
   var s3xx = Number(row.dataset.s3xx || 0);
@@ -1136,8 +1043,7 @@ window.addEventListener('roundChanged', function(ev) {
 
     if (!results || results.length === 0) return;
 
-    var isReconn = profile === 'limited-conn' || profile === 'noisy';
-    var isNoisy = profile === 'noisy';
+    var isReconn = profile === 'limited-conn';
     var sorted = results.slice().sort(function(a, b) { return b.rps - a.rps; });
     var maxRps = sorted[0].rps || 1;
 
@@ -1153,7 +1059,7 @@ window.addEventListener('roundChanged', function(ev) {
           '<div class="lb-status-tip"><div><b>2xx:</b> ' + rs2.toLocaleString() + '</div><div><b>3xx:</b> ' + rs3.toLocaleString() + '</div><div><b>4xx:</b> ' + rs4.toLocaleString() + '</div><div><b>5xx:</b> ' + rs5.toLocaleString() + '</div></div></div>'
         : '<div class="lb-status"><span class="lb-status-na">\u2014</span></div>';
       var row = document.createElement('div');
-      row.className = 'lb-row' + (isReconn ? ' lb-row-reconn' : '') + (isNoisy ? ' lb-row-noisy' : '');
+      row.className = 'lb-row' + (isReconn ? ' lb-row-reconn' : '');
       row.dataset.lang = r.language || '';
       row.dataset.name = r.framework;
       row.dataset.rps = String(r.rps);
@@ -1171,7 +1077,6 @@ window.addEventListener('roundChanged', function(ev) {
         row.dataset.tplJson = String(r.tpl_json || 0);
 
         row.dataset.tplUpload = String(r.tpl_upload || 0);
-        row.dataset.tplCompression = String(r.tpl_compression || 0);
         row.dataset.tplStatic = String(r.tpl_static || 0);
         row.dataset.tplAsyncDb = String(r.tpl_async_db || 0);
       }
@@ -1197,177 +1102,8 @@ window.addEventListener('roundChanged', function(ev) {
   // Rebuild best panels and re-apply filters
   buildH1WkBestPanels();
   applyH1WkFilters();
-  if (typeof h1Wk_applyCompressionScores === 'function') h1Wk_applyCompressionScores();
   if (typeof applyH1WkMixedScores === 'function') applyH1WkMixedScores();
-  if (typeof h1Wk_applyTcpFragScores === 'function') h1Wk_applyTcpFragScores();
 });
-
-/* Compression score: replace bar with bandwidth-adjusted score */
-function h1Wk_parseBw(s) {
-  if (!s) return 0;
-  var m = String(s).match(/([\d.]+)\s*(GB|MB|KB)\/s/i);
-  if (!m) return 0;
-  var v = parseFloat(m[1]), u = m[2].toUpperCase();
-  if (u === 'GB') return v * 1024;
-  if (u === 'KB') return v / 1024;
-  return v;
-}
-
-var h1Wk_compressionGrid = '2.5rem 10rem 5.5rem 4.95rem 4.5rem 3.5rem 6.5rem 5rem 5rem 3.5rem 4.5rem 5.5rem 5rem 5rem 4rem';
-
-function applyH1WkCompressionPanel(panel) {
-  var rows = Array.from(panel.querySelectorAll('.lb-row:not(.lb-header)'));
-  if (rows.length === 0) return;
-
-  var header = panel.querySelector('.lb-row.lb-header');
-
-  // Add BW/req header and Score header (only once)
-  if (header && !header.dataset.compressionDone) {
-    header.style.gridTemplateColumns = h1Wk_compressionGrid;
-    var divs = header.querySelectorAll(':scope > div');
-    // Insert BW/req header after BW (index 7)
-    var bprHeader = document.createElement('div');
-    bprHeader.style.textAlign = 'right';
-    bprHeader.title = 'Average bandwidth per request — lower means better compression';
-    bprHeader.textContent = 'BW/req';
-    bprHeader.style.fontWeight = '600';
-    bprHeader.style.fontSize = '0.75rem';
-    header.insertBefore(bprHeader, divs[8]);
-    // Replace bar div (now index 10) with Score
-    divs = header.querySelectorAll(':scope > div');
-    var barDiv = divs[10];
-    if (barDiv && !barDiv.dataset.sort) {
-      barDiv.textContent = 'Score';
-      barDiv.style.textAlign = 'right';
-      barDiv.style.fontWeight = '600';
-      barDiv.title = 'Bandwidth-adjusted score — penalizes larger (worse-compressed) responses';
-    }
-    header.dataset.compressionDone = '1';
-  }
-
-  // Compute min bw/req and adjusted scores
-  var minBpr = Infinity;
-  var rowData = [];
-  rows.forEach(function(row) {
-    if (row.classList.contains('lb-hidden')) return;
-    var rps = Number(row.dataset.rps);
-    var bw = h1Wk_parseBw(row.dataset.bandwidth);
-    var bpr = (rps > 0 && bw > 0) ? bw / rps : 0;
-    rowData.push({ row: row, rps: rps, bw: bw, bpr: bpr });
-    if (bpr > 0 && bpr < minBpr) minBpr = bpr;
-  });
-
-  if (minBpr === Infinity) return;
-
-  var maxAdj = 0;
-  rowData.forEach(function(d) {
-    d.adj = (d.bpr > 0) ? d.rps * (minBpr / d.bpr) : 0;
-    if (d.adj > maxAdj) maxAdj = d.adj;
-  });
-
-  rowData.sort(function(a, b) { return b.adj - a.adj; });
-  var lb = panel.querySelector('.lb');
-  rowData.forEach(function(d, idx) {
-    var score = maxAdj > 0 ? (d.adj / maxAdj * 100) : 0;
-    d.row.style.gridTemplateColumns = h1Wk_compressionGrid;
-
-    // Insert BW/req cell (only once)
-    if (!d.row.dataset.compressionDone) {
-      var children = d.row.querySelectorAll(':scope > div');
-      var bprCell = document.createElement('div');
-      bprCell.className = 'lb-stat lb-bpr-cell';
-      bprCell.style.textAlign = 'right';
-      var bprKB = d.bpr > 0 ? (d.bpr * 1024).toFixed(0) : '\u2014';
-      bprCell.textContent = bprKB !== '\u2014' ? bprKB + ' KB' : bprKB;
-      d.row.insertBefore(bprCell, children[8]);
-      d.row.dataset.compressionDone = '1';
-    } else {
-      var bprCell = d.row.querySelector('.lb-bpr-cell');
-      if (bprCell) {
-        var bprKB = d.bpr > 0 ? (d.bpr * 1024).toFixed(0) : '\u2014';
-        bprCell.textContent = bprKB !== '\u2014' ? bprKB + ' KB' : bprKB;
-      }
-    }
-
-    // Replace bar with score or update existing score
-    var barCell = d.row.querySelector('.lb-bar-cell');
-    if (barCell) {
-      var color = score >= 80 ? '#16a34a' : score >= 50 ? '#ca8a04' : '#dc2626';
-      barCell.outerHTML = '<div class="lb-stat lb-score-cell" style="text-align:right; font-weight:700; color:' + color + ';">' + score.toFixed(1) + '</div>';
-    } else {
-      var scoreCell = d.row.querySelector('.lb-score-cell');
-      if (scoreCell) {
-        var color = score >= 80 ? '#16a34a' : score >= 50 ? '#ca8a04' : '#dc2626';
-        scoreCell.textContent = score.toFixed(1);
-        scoreCell.style.color = color;
-      }
-    }
-
-    var rankEl = d.row.querySelector('.lb-rank');
-    if (rankEl) rankEl.textContent = String(idx + 1);
-    d.row.dataset.adjScore = score.toFixed(1);
-    lb.appendChild(d.row);
-  });
-}
-
-function h1Wk_applyCompressionScores() {
-  // Process connection panels
-  document.querySelectorAll('.lb-conn-panel[data-profile="compression"]:not([data-conns="best"])').forEach(applyH1WkCompressionPanel);
-
-  // Build best panel using adjusted scores
-  document.querySelectorAll('.lb-conn-panel[data-profile="compression"][data-conns="best"]').forEach(function(bestPanel) {
-    var parentPanel = bestPanel.closest('.lb-panel');
-    var connPanels = parentPanel.querySelectorAll('.lb-conn-panel[data-profile="compression"]:not([data-conns="best"])');
-    var best = {};
-
-    connPanels.forEach(function(cp) {
-      cp.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
-        var name = row.dataset.name;
-        var score = parseFloat(row.dataset.adjScore || '0');
-        if (!best[name] || score > best[name].score) {
-          best[name] = { score: score, row: row };
-        }
-      });
-    });
-
-    var lb = bestPanel.querySelector('.lb');
-    lb.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(r) { r.remove(); });
-
-    // Update best header
-    var header = bestPanel.querySelector('.lb-row.lb-header');
-    if (header && !header.dataset.compressionDone) {
-      header.style.gridTemplateColumns = h1Wk_compressionGrid;
-      var divs = header.querySelectorAll(':scope > div');
-      var bprHeader = document.createElement('div');
-      bprHeader.style.textAlign = 'right';
-      bprHeader.title = 'Average bandwidth per request — lower means better compression';
-      bprHeader.textContent = 'BW/req';
-      bprHeader.style.fontWeight = '600';
-      bprHeader.style.fontSize = '0.75rem';
-      header.insertBefore(bprHeader, divs[8]);
-      divs = header.querySelectorAll(':scope > div');
-      var barDiv = divs[10];
-      if (barDiv && !barDiv.dataset.sort) {
-        barDiv.textContent = 'Score';
-        barDiv.style.textAlign = 'right';
-        barDiv.style.fontWeight = '600';
-        barDiv.title = 'Bandwidth-adjusted score — penalizes larger (worse-compressed) responses';
-      }
-      header.dataset.compressionDone = '1';
-    }
-
-    var entries = Object.values(best).sort(function(a, b) { return b.score - a.score; });
-    entries.forEach(function(entry, idx) {
-      var clone = entry.row.cloneNode(true);
-      clone.dataset.adjScore = entry.score;
-      clone.style.gridTemplateColumns = h1Wk_compressionGrid;
-      var rankEl = clone.querySelector('.lb-rank');
-      rankEl.textContent = String(idx + 1);
-      lb.appendChild(clone);
-    });
-  });
-}
-h1Wk_applyCompressionScores();
 
 /* Mixed workload: weighted scoring + stacked mix bar */
 function h1Wk_fmtK(n) {
@@ -1425,7 +1161,6 @@ function applyH1WkMixedPanel(panel) {
       json: Number(row.dataset.tplJson) || 0,
 
       upload: Number(row.dataset.tplUpload) || 0,
-      compression: Number(row.dataset.tplCompression) || 0,
       static: Number(row.dataset.tplStatic) || 0,
       async_db: Number(row.dataset.tplAsyncDb) || 0
     };
@@ -1600,84 +1335,6 @@ function applyH1WkMixedScores() {
     });
   });
 }
-/* TCP Fragmentation: stacked bar showing ok/error per template */
-var h1Wk_tfKeys = ['get','post','chunked','noise','cookie','headers','body29'];
-var h1Wk_tfColors = {get:'#3b82f6', post:'#8b5cf6', chunked:'#f59e0b', noise:'#64748b', cookie:'#10b981', headers:'#06b6d4', body29:'#ec4899'};
-var h1Wk_tfLabels = {get:'GET', post:'POST', chunked:'Chunked', noise:'Noise', cookie:'Cookie', headers:'30 Headers', body29:'Body29'};
-var h1Wk_tfGrid = '2.5rem 10rem 5.5rem 4.95rem 4.5rem 3.5rem 5.5rem 5.5rem 1fr 5.5rem 5rem 5.5rem 4.5rem';
-
-function h1Wk_buildTfBar(ok, err) {
-  var total = 0;
-  h1Wk_tfKeys.forEach(function(k) { total += (ok[k] || 0) + (err[k] || 0); });
-  if (total === 0) return '';
-  var tipLines = h1Wk_tfKeys.map(function(k) {
-    var o = ok[k] || 0, e = err[k] || 0;
-    return h1Wk_tfLabels[k] + ': ' + h1Wk_fmtK(o) + ' ok, ' + h1Wk_fmtK(e) + ' err';
-  }).join('&#10;');
-  var html = '<div class="lb-mix-wrap" title="' + tipLines + '">';
-  h1Wk_tfKeys.forEach(function(k) {
-    var o = ok[k] || 0;
-    if (o > 0) {
-      var pct = o / total * 100;
-      html += '<div class="lb-mix-seg" style="width:' + pct.toFixed(1) + '%;background:' + h1Wk_tfColors[k] + ' !important;"></div>';
-    }
-  });
-  h1Wk_tfKeys.forEach(function(k) {
-    var e = err[k] || 0;
-    if (e > 0) {
-      var pct = e / total * 100;
-      html += '<div class="lb-mix-seg" style="width:' + pct.toFixed(1) + '%;background:' + h1Wk_tfColors[k] + ' !important;opacity:0.3;"></div>';
-    }
-  });
-  html += '</div>';
-  return html;
-}
-
-function applyH1WkTcpFragPanel(panel) {
-  var rows = Array.from(panel.querySelectorAll('.lb-row:not(.lb-header)'));
-  if (rows.length === 0) return;
-  var hasData = rows.some(function(r) { return r.dataset.tfGet; });
-  if (!hasData) return;
-
-  var header = panel.querySelector('.lb-row.lb-header');
-  if (header && !header.dataset.tfDone) {
-    header.style.gridTemplateColumns = h1Wk_tfGrid;
-    var barHeader = header.querySelector('.lb-bar-cell');
-    if (barHeader) {
-      barHeader.className = 'lb-mix-header';
-      barHeader.innerHTML = '<div style="font-size:0.65rem;font-weight:600;margin-bottom:1px;">Request Mix (solid=ok, faded=err)</div>' +
-        '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;">' +
-        h1Wk_tfKeys.map(function(k) {
-          return '<span style="display:inline-flex;align-items:center;gap:2px;font-size:0.55rem;color:#94a3b8;line-height:1;">' +
-            '<span style="width:6px;height:6px;border-radius:1px;background:' + h1Wk_tfColors[k] + ';flex-shrink:0;"></span>' +
-            h1Wk_tfLabels[k] + '</span>';
-        }).join('') + '</div>';
-    }
-    header.dataset.tfDone = '1';
-  }
-
-  rows.forEach(function(row) {
-    if (row.dataset.tfDone) return;
-    row.style.gridTemplateColumns = h1Wk_tfGrid;
-    var ok = {}, err = {};
-    h1Wk_tfKeys.forEach(function(k) {
-      var dKey = 'tf' + k.charAt(0).toUpperCase() + k.slice(1);
-      ok[k] = Number(row.dataset[dKey]) || 0;
-      err[k] = Number(row.dataset[dKey + 'Err']) || 0;
-    });
-    var barCell = row.querySelector('.lb-bar-cell');
-    if (barCell) {
-      barCell.outerHTML = '<div class="lb-mix-cell">' + h1Wk_buildTfBar(ok, err) + '</div>';
-    }
-    row.dataset.tfDone = '1';
-  });
-}
-
-function h1Wk_applyTcpFragScores() {
-  document.querySelectorAll('.lb-conn-panel[data-profile="tcp-frag"]').forEach(applyH1WkTcpFragPanel);
-}
-h1Wk_applyTcpFragScores();
-
 applyH1WkFilters();
 
 /* Floating header on scroll */

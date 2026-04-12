@@ -47,14 +47,9 @@ app.MapControllers();
 
 if (Directory.Exists("/data/static"))
 {
-    var typeProvider = new FileExtensionContentTypeProvider();
-
-    typeProvider.Mappings[".js"] = "application/javascript";
-
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider("/data/static"),
-        ContentTypeProvider = typeProvider,
         RequestPath = "/static"
     });
 }

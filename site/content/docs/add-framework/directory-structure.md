@@ -41,7 +41,6 @@ The benchmark runner mounts these paths into your container (read-only):
 | Path | Purpose |
 |------|---------|
 | `/data/dataset.json` | 50-item dataset for `/json` endpoint |
-| `/data/dataset-large.json` | 6000-item dataset for `/compression` endpoint |
 | `/data/benchmark.db` | SQLite database (100K rows) for `/db` endpoint |
 | `/data/static/` | 20 static files (CSS, JS, HTML, fonts, images) |
 | `/certs/server.crt` | TLS certificate for HTTPS/H2/H3 |

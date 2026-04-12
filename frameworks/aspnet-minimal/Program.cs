@@ -52,9 +52,7 @@ app.MapPost("/baseline11", Handlers.SumBody);
 app.MapGet("/baseline2", Handlers.Sum);
 
 app.MapPost("/upload", Handlers.Upload);
-app.MapGet("/json", Handlers.Json);
-app.MapGet("/compression", Handlers.Compression);
-app.MapGet("/db", Handlers.Database);
+app.MapGet("/json/{count}", Handlers.Json);
 app.MapGet("/async-db", Handlers.AsyncDatabase);
 
 app.MapStaticAssets();

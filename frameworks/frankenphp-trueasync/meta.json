@@ -11,6 +11,7 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "upload",
     "noisy",
     "static",

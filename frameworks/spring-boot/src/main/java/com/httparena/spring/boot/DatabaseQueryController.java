@@ -48,11 +48,11 @@ public class DatabaseQueryController {
                 itemRow.id(),
                 itemRow.name(),
                 itemRow.category(),
-                itemRow.price(),
+                (int) itemRow.price(),
                 itemRow.quantity(),
                 itemRow.active() == 1,
                 jsonMapper.readValue(itemRow.tags(), new TypeReference<>() {}),
-                new Rating(itemRow.ratingScore(), itemRow.ratingCount())
+                new Rating((int) itemRow.ratingScore(), itemRow.ratingCount())
         );
     }
 

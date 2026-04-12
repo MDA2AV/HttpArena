@@ -1,2 +1,0 @@
-server-1  | Cannot load library libgssapi_krb5.so.2 
-server-1  | Error: libgssapi_krb5.so.2: cannot open shared object file: No such file or directory

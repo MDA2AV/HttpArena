@@ -12,12 +12,12 @@
     "limited-conn",
     "json",
     "upload",
-    "compression",
     "noisy",
     "api-4",
     "api-16",
     "static",
-    "async-db"
+    "async-db",
+    "sync-db"
   ],
   "maintainers": []
 }

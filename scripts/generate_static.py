@@ -166,13 +166,180 @@ SVG_ICON_NAMES = [
     'send', 'inbox', 'message-circle', 'message-square', 'users', 'user-plus',
 ]
 
+# --- Compressibility-focused palettes ---
+
+# Small palette of reused colors (80% of color picks come from here)
+COLOR_PALETTE = [
+    'var(--primary)', 'var(--secondary)', 'var(--fg)', 'var(--bg)',
+    'var(--border-color)', 'var(--surface)', 'var(--muted)', 'var(--accent)',
+]
+
+# Common spacing values reused heavily
+COMMON_SPACINGS = ['0', '4px', '8px', '12px', '16px', '24px', '32px', '0.5rem', '1rem', '1.5rem', '2rem']
+
+# Common property-value combos repeated across many rules
+COMMON_DECL_BLOCKS = [
+    'display:flex;align-items:center',
+    'display:flex;justify-content:center',
+    'display:flex;align-items:center;justify-content:space-between',
+    'display:flex;flex-direction:column',
+    'display:flex;align-items:center;gap:8px',
+    'display:flex;align-items:center;gap:16px',
+    'display:grid;gap:16px',
+    'display:grid;gap:24px',
+    'position:relative',
+    'position:absolute;top:0;left:0',
+    'position:absolute;top:0;right:0',
+    'position:absolute;inset:0',
+    'position:fixed;top:0;left:0;right:0',
+    'position:sticky;top:0',
+    'overflow:hidden',
+    'overflow:hidden;text-overflow:ellipsis;white-space:nowrap',
+    'width:100%',
+    'width:100%;height:100%',
+    'max-width:100%',
+    'margin:0 auto',
+    'margin:0',
+    'padding:0',
+    'padding:8px 16px',
+    'padding:12px 24px',
+    'padding:16px',
+    'padding:16px 24px',
+    'padding:24px',
+    'border:0',
+    'border:1px solid var(--border-color)',
+    'border-bottom:1px solid var(--border-color)',
+    'border-radius:4px',
+    'border-radius:8px',
+    'border-radius:9999px',
+    'box-sizing:border-box',
+    'cursor:pointer',
+    'color:inherit',
+    'color:var(--fg)',
+    'color:var(--primary)',
+    'background:transparent',
+    'background:var(--bg)',
+    'background:var(--surface)',
+    'font-size:.875rem',
+    'font-size:1rem',
+    'font-weight:600',
+    'line-height:1.5',
+    'text-decoration:none',
+    'list-style:none',
+    'outline:none',
+    'transition:all .2s ease',
+    'transition:opacity .2s ease',
+    'transition:background .15s ease',
+    'transition:color .15s ease',
+    'opacity:0',
+    'opacity:1',
+    'visibility:hidden',
+    'visibility:visible',
+    'pointer-events:none',
+    'user-select:none',
+    '-webkit-appearance:none',
+    'appearance:none',
+]
+
+# High-frequency selectors (real apps reuse these)
+HIGH_FREQ_SELECTORS = [
+    '.btn', '.btn-primary', '.btn-secondary', '.btn-outline', '.btn-sm', '.btn-lg',
+    '.btn-icon', '.btn-link', '.btn-ghost', '.btn-group',
+    '.card', '.card-header', '.card-body', '.card-footer', '.card-title',
+    '.card-text', '.card-img', '.card-overlay',
+    '.form-group', '.form-control', '.form-label', '.form-input', '.form-select',
+    '.form-check', '.form-text', '.form-error', '.form-row',
+    '.nav', '.nav-item', '.nav-link', '.nav-pills', '.nav-tabs',
+    '.navbar', '.navbar-brand', '.navbar-nav', '.navbar-toggle',
+    '.modal', '.modal-header', '.modal-body', '.modal-footer', '.modal-overlay',
+    '.modal-content', '.modal-close', '.modal-title',
+    '.dropdown', '.dropdown-toggle', '.dropdown-menu', '.dropdown-item',
+    '.alert', '.alert-success', '.alert-danger', '.alert-warning', '.alert-info',
+    '.badge', '.badge-primary', '.badge-secondary',
+    '.table', '.table-header', '.table-row', '.table-cell', '.table-body',
+    '.list', '.list-item', '.list-group',
+    '.tab', '.tab-panel', '.tab-list', '.tab-content',
+    '.avatar', '.avatar-sm', '.avatar-lg',
+    '.tooltip', '.tooltip-inner', '.tooltip-arrow',
+    '.container', '.row', '.col',
+    '.flex', '.flex-center', '.flex-between',
+    '.text-center', '.text-left', '.text-right', '.text-muted',
+    '.d-none', '.d-block', '.d-flex', '.d-grid',
+    '.m-0', '.m-1', '.m-2', '.m-3', '.m-4',
+    '.p-0', '.p-1', '.p-2', '.p-3', '.p-4',
+    '.w-100', '.h-100',
+    '.sr-only', '.visually-hidden',
+    '.skeleton', '.skeleton-text', '.skeleton-circle',
+    '.spinner', '.spinner-sm',
+    '.divider', '.spacer',
+    '.sidebar', '.sidebar-nav', '.sidebar-item',
+    '.header', '.header-inner', '.header-logo', '.header-actions',
+    '.footer', '.footer-inner', '.footer-links',
+    '.hero', '.hero-title', '.hero-subtitle', '.hero-cta',
+    '.section', '.section-header', '.section-body',
+    '.input', '.input-group', '.input-icon',
+    '.search', '.search-input', '.search-results',
+    '.tag', '.tag-group', '.chip', '.chip-group',
+    '.toast', '.toast-body', '.toast-close',
+    '.progress', '.progress-bar',
+    '.breadcrumb', '.breadcrumb-item',
+    '.pagination', '.pagination-item',
+]
+
+# Minified variable names (real minified JS)
+JS_MINIFIED_VARS = ['e', 't', 'n', 'r', 'o', 'i', 'a', 's', 'c', 'l',
+                    'u', 'd', 'p', 'f', 'h', 'm', 'g', 'v', 'b', 'y']
+
+# Repeated string literals in JS (API paths, event names, DOM queries)
+JS_REPEATED_STRINGS = [
+    '"/api/v1/users"', '"/api/v1/items"', '"/api/v1/auth/login"',
+    '"/api/v1/auth/refresh"', '"/api/v1/config"', '"/api/v1/search"',
+    '"/api/v1/data"', '"/api/v2/users"', '"/api/v2/items"', '"/api/v2/search"',
+    '"click"', '"change"', '"submit"', '"input"', '"keydown"',
+    '"focus"', '"blur"', '"resize"', '"scroll"', '"load"',
+    '"mouseover"', '"mouseout"', '"touchstart"', '"touchend"',
+    '"application/json"', '"Content-Type"', '"Authorization"',
+    '"Bearer "', '"GET"', '"POST"', '"PUT"', '"DELETE"',
+    '".btn"', '".card"', '".modal"', '".nav"', '".form-control"',
+    '"data-id"', '"data-type"', '"data-state"', '"data-action"',
+    '"aria-hidden"', '"aria-expanded"', '"aria-label"', '"aria-selected"',
+    '"true"', '"false"', '"undefined"', '"object"', '"string"', '"number"',
+]
+
+# Repeated function body patterns (webpack/bundler style)
+JS_WEBPACK_PATTERNS = [
+    'Object.defineProperty(e,"__esModule",{value:!0})',
+    'Object.defineProperty(t,"__esModule",{value:!0})',
+    'Object.defineProperty(n,"__esModule",{value:!0})',
+    'e.exports=t',
+    'e.exports=n',
+    'n.d(e,{default:function(){return r}})',
+    'n.d(e,{default:function(){return o}})',
+    'n.r(e)',
+    'n.r(t)',
+    'if(typeof e!=="object"||e===null)return e',
+    'if(typeof t!=="object"||t===null)return t',
+]
+
+
+def pick_color():
+    """Pick a color, 80% from palette, 20% from full list."""
+    if random.random() < 0.80:
+        return random.choice(COLOR_PALETTE)
+    return random.choice(COLORS)
+
+
+def pick_spacing():
+    """Pick a spacing value from the common set."""
+    return random.choice(COMMON_SPACINGS)
+
 
 def css_value(prop):
     """Generate a realistic CSS value for a given property."""
     if prop in CSS_VALUES:
         return random.choice(CSS_VALUES[prop])
     if 'color' in prop or prop == 'background' and random.random() < 0.5:
-        return random.choice(COLORS)
+        return pick_color()
     if 'font-family' in prop:
         return random.choice(FONT_FAMILIES)
     if 'shadow' in prop:
@@ -198,10 +365,7 @@ def css_value(prop):
     if any(x in prop for x in ['margin','padding','top','right','bottom','left','gap','width','height']):
         if random.random() < 0.15:
             return 'auto' if 'margin' in prop else '100%'
-        v = random.choice([0,1,2,4,6,8,10,12,14,16,20,24,28,32,36,40,48,56,64,72,80,96])
-        u = random.choice(['px','rem']) if v > 0 else '0'
-        if u == 'rem': return f'{v/16:.4g}rem'
-        return f'{v}px' if v else '0'
+        return pick_spacing()
     if 'font-size' in prop:
         v = random.choice([10,11,12,13,14,15,16,18,20,22,24,28,32,36,40,48,56,64])
         return f'{v}px'
@@ -212,7 +376,7 @@ def css_value(prop):
     if 'border' in prop and 'radius' not in prop:
         w = random.choice([1,2,3])
         s = random.choice(['solid','dashed','dotted','none'])
-        return f'{w}px {s} {random.choice(COLORS)}'
+        return f'{w}px {s} {pick_color()}'
     if 'animation' in prop:
         name = random.choice(['fadeIn','fadeOut','slideIn','slideOut','pulse','bounce','spin','shake'])
         d = random.choice(['.2s','.3s','.5s','.8s','1s','1.5s','2s'])
@@ -221,26 +385,44 @@ def css_value(prop):
         f = random.choice(['blur','brightness','contrast','saturate','grayscale','sepia'])
         if f == 'blur': return f'blur({random.choice([1,2,4,8,12,16,20,24])}px)'
         return f'{f}({random.choice([".5",".75",".9","1","1.1","1.25","1.5","2"])})'
-    return random.choice(COLORS)
+    return pick_color()
 
 
 def gen_css_rule():
     """Generate a single CSS rule with 2-6 declarations."""
-    prefix = random.choice(COMPONENT_PREFIXES)
-    suffix = random.choice(COMPONENT_SUFFIXES)
-    pseudo = random.choice(['', ':hover', ':focus', ':active', ':first-child', ':last-child',
-                           '::before', '::after', ':focus-visible', ':not(:last-child)',
-                           ':nth-child(2n)', ':disabled', '[aria-expanded="true"]', ':checked',
-                           ':placeholder-shown', '::placeholder', ':focus-within', ':empty'])
-    combinator = random.choice(['', ' ', ' > ', ' + ', ' ~ '])
-    child = ''
-    if combinator.strip():
-        child = random.choice([f'.{random.choice(COMPONENT_PREFIXES)}{random.choice(COMPONENT_SUFFIXES)}',
-                               'span', 'div', 'a', 'p', 'svg', 'img', 'input', 'button', 'label',
-                               '[role="button"]', '[data-active]', '*'])
-    selector = f'.{prefix}{suffix}{combinator}{child}{pseudo}'
-    props = random.sample(CSS_PROPS, random.randint(2, 6))
-    decls = ';'.join(f'{p}:{css_value(p)}' for p in props)
+    # 60% chance: use a high-frequency selector, 40%: generated selector
+    if random.random() < 0.60:
+        selector = random.choice(HIGH_FREQ_SELECTORS)
+        pseudo = random.choice(['', '', '', ':hover', ':focus', ':active',
+                               ':first-child', ':last-child', '::before', '::after',
+                               ':focus-visible', ':disabled', ':not(:last-child)'])
+        selector = selector + pseudo
+    else:
+        prefix = random.choice(COMPONENT_PREFIXES)
+        suffix = random.choice(COMPONENT_SUFFIXES)
+        pseudo = random.choice(['', ':hover', ':focus', ':active', ':first-child', ':last-child',
+                               '::before', '::after', ':focus-visible', ':not(:last-child)',
+                               ':nth-child(2n)', ':disabled', '[aria-expanded="true"]', ':checked',
+                               ':placeholder-shown', '::placeholder', ':focus-within', ':empty'])
+        combinator = random.choice(['', ' ', ' > ', ' + ', ' ~ '])
+        child = ''
+        if combinator.strip():
+            child = random.choice([f'.{random.choice(COMPONENT_PREFIXES)}{random.choice(COMPONENT_SUFFIXES)}',
+                                   'span', 'div', 'a', 'p', 'svg', 'img', 'input', 'button', 'label',
+                                   '[role="button"]', '[data-active]', '*'])
+        selector = f'.{prefix}{suffix}{combinator}{child}{pseudo}'
+
+    # 40% chance: use a common declaration block (high repetition), then add 0-2 extras
+    if random.random() < 0.40:
+        base = random.choice(COMMON_DECL_BLOCKS)
+        extras = []
+        for _ in range(random.randint(0, 2)):
+            p = random.choice(CSS_PROPS)
+            extras.append(f'{p}:{css_value(p)}')
+        decls = base + (';' + ';'.join(extras) if extras else '')
+    else:
+        props = random.sample(CSS_PROPS, random.randint(2, 6))
+        decls = ';'.join(f'{p}:{css_value(p)}' for p in props)
     return f'{selector}{{{decls}}}'
 
 
@@ -295,9 +477,26 @@ def gen_css_custom_props():
         ('--z-modal', '1050'),
         ('--z-popover', '1060'),
         ('--z-tooltip', '1070'),
+        ('--surface', random.choice(['#fff','#fafafa','#f8f9fa','#1e1e2e'])),
+        ('--surface-hover', random.choice(['#f5f5f5','#f0f0f0','#2a2a3e'])),
+        ('--muted', random.choice(['#6c757d','#8d99ae','#adb5bd'])),
+        ('--danger', random.choice(['#dc3545','#e94560','#d90429'])),
+        ('--success', random.choice(['#198754','#20c997'])),
+        ('--warning', random.choice(['#ffc107','#fd7e14'])),
+        ('--info', random.choice(['#0dcaf0','#0d6efd'])),
     ]
     decls = ';'.join(f'{k}:{v}' for k, v in props)
     return f':root{{{decls}}}'
+
+
+def gen_css_media_block():
+    """Generate a media query block with rules inside (responsive overrides)."""
+    mq = random.choice(MEDIA_QUERIES)
+    # Real CSS has lots of rules inside media queries; generate 3-10
+    inner_parts = []
+    for _ in range(random.randint(3, 10)):
+        inner_parts.append(gen_css_rule())
+    return f'{mq}{{{"".join(inner_parts)}}}'
 
 
 def generate_css(target_kb, include_vars=False, include_keyframes=False, include_media=False):
@@ -308,13 +507,11 @@ def generate_css(target_kb, include_vars=False, include_keyframes=False, include
     target_bytes = target_kb * 1024
     while len(''.join(parts)) < target_bytes:
         r = random.random()
-        if include_keyframes and r < 0.05:
+        if include_keyframes and r < 0.04:
             parts.append(gen_css_keyframe())
-        elif include_media and r < 0.15:
-            # Media query block with 2-5 rules
-            mq = random.choice(MEDIA_QUERIES)
-            inner = ''.join(gen_css_rule() for _ in range(random.randint(2, 5)))
-            parts.append(f'{mq}{{{inner}}}')
+        elif include_media and r < 0.25:
+            # Media query block with more rules (responsive overrides are very common)
+            parts.append(gen_css_media_block())
         else:
             parts.append(gen_css_rule())
     return ''.join(parts)[:target_bytes]
@@ -324,6 +521,9 @@ def generate_css(target_kb, include_vars=False, include_keyframes=False, include
 
 def gen_js_string():
     """Generate a realistic JS string literal."""
+    # 50% chance: use a repeated string for compressibility
+    if random.random() < 0.50:
+        return random.choice(JS_REPEATED_STRINGS)
     templates = [
         lambda: f'"{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}"',
         lambda: f'"/{"/".join(random.choice(["api","v1","v2","auth","users","items","data","config","search","admin"]) for _ in range(random.randint(1,3)))}"',
@@ -331,17 +531,21 @@ def gen_js_string():
         lambda: f'"{random.choice(["GET","POST","PUT","PATCH","DELETE","HEAD","OPTIONS"])}"',
         lambda: f'"data-{random.choice(["id","type","state","index","key","value","action","target","source","ref"])}"',
         lambda: f'"aria-{random.choice(["label","hidden","expanded","selected","disabled","live","role","controls","describedby","labelledby"])}"',
-        lambda: f'`{random.choice(["Error","Warning","Info","Debug","Trace"])}: ${{{random.choice(JS_VAR_PREFIXES)}}}`',
+        lambda: f'`{random.choice(["Error","Warning","Info","Debug","Trace"])}: ${{{random.choice(JS_MINIFIED_VARS)}}}`',
         lambda: f'"{random.choice(["click","submit","change","input","focus","blur","keydown","keyup","resize","scroll","load","error","mouseover","mouseout","touchstart","touchend","pointerdown","pointerup","dragstart","drop"])}"',
     ]
     return random.choice(templates)()
 
 
+def gen_js_var():
+    """Pick a minified variable name (reuses the small pool heavily)."""
+    return random.choice(JS_MINIFIED_VARS)
+
+
 def gen_js_function(depth=0):
     """Generate a realistic JS function."""
     name = f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}'
-    params = ','.join(random.sample(['e','t','n','r','o','i','a','s','c','l','u','d','p','f','h','m','g','v','b','y','w','x','k','_','$'],
-                                    random.randint(0, 4)))
+    params = ','.join(random.sample(JS_MINIFIED_VARS, random.randint(0, 4)))
     body_parts = []
     num_statements = random.randint(3, 12)
     for _ in range(num_statements):
@@ -356,23 +560,75 @@ def gen_js_function(depth=0):
         return f'export function {name}({params}){{{body}}}'
 
 
+def gen_js_component_function():
+    """Generate a repetitive component-style function (like React components in a bundle)."""
+    name = f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}'
+    v1 = gen_js_var()
+    v2 = gen_js_var()
+    v3 = gen_js_var()
+    # Repeated pattern: component wrapper with props/state/render
+    body_parts = [
+        f'var {v1}=this.props||{{}}',
+        f'var {v2}=this.state||{{}}',
+        f'if(!{v1})return null',
+        f'{v2}.loading&&(this.setState({{loading:!1}}))',
+    ]
+    # Add repeated event handler registrations
+    for _ in range(random.randint(2, 5)):
+        evt = random.choice(['"click"', '"change"', '"submit"', '"input"', '"keydown"', '"focus"', '"blur"'])
+        body_parts.append(f'{v1}.addEventListener({evt},{v3})')
+    # Add repeated DOM manipulations
+    for _ in range(random.randint(1, 3)):
+        cls = random.choice(['"btn"', '"card"', '"modal"', '"active"', '"hidden"', '"loading"'])
+        body_parts.append(f'{v1}.classList.add({cls})')
+    body_parts.append(f'return {v2}')
+    body = ';'.join(body_parts)
+    return f'function {name}({v1},{v2},{v3}){{{body}}}'
+
+
+def gen_js_webpack_module():
+    """Generate a webpack-style module wrapper (highly repetitive in real bundles)."""
+    module_id = random.randint(100, 9999)
+    v1 = gen_js_var()
+    v2 = gen_js_var()
+    v3 = gen_js_var()
+    inner_parts = [random.choice(JS_WEBPACK_PATTERNS) for _ in range(random.randint(2, 5))]
+    # Add some statements
+    for _ in range(random.randint(2, 6)):
+        inner_parts.append(gen_js_statement(0))
+    body = ';'.join(inner_parts)
+    return f'__webpack_modules__[{module_id}]=function({v1},{v2},{v3}){{{body}}}'
+
+
+def gen_js_define_property_block():
+    """Generate repeated Object.defineProperty calls (very common in bundled code)."""
+    obj = gen_js_var()
+    props = random.sample([f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}' for _ in range(10)],
+                          random.randint(4, 8))
+    parts = []
+    for prop in props:
+        val = random.choice([gen_js_var(), gen_js_string(), 'null', 'void 0', '!0', '!1'])
+        parts.append(f'Object.defineProperty({obj},"{prop}",{{enumerable:!0,get:function(){{return {val}}}}})')
+    return ';'.join(parts)
+
+
 def gen_js_statement(depth=0):
     """Generate a single JS statement."""
     r = random.random()
-    v1 = random.choice('etnoiasc')
-    v2 = random.choice('lduphfmg')
+    v1 = gen_js_var()
+    v2 = gen_js_var()
 
     if r < 0.15:
         # Variable declaration
         val = random.choice([
             gen_js_string(),
             str(random.randint(0, 9999)),
-            random.choice(['true', 'false', 'null', 'void 0', '""', '[]', '{}', 'new Map', 'new Set', 'Object.create(null)']),
+            random.choice(['!0', '!1', 'null', 'void 0', '""', '[]', '{}', 'new Map', 'new Set', 'Object.create(null)']),
             f'{v2}.{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}',
             f'{v2}[{gen_js_string()}]',
             f'document.querySelector({gen_js_string()})',
         ])
-        return f'const {v1}={val}'
+        return f'var {v1}={val}'
     elif r < 0.25:
         # If statement
         cond = random.choice([
@@ -395,7 +651,7 @@ def gen_js_statement(depth=0):
         methods = []
         for _ in range(random.randint(1, 4)):
             m = f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}'
-            args = ','.join(random.choice([gen_js_string(), str(random.randint(0,99)), 'true', 'null', v1, v2])
+            args = ','.join(random.choice([gen_js_string(), str(random.randint(0,99)), '!0', 'null', v1, v2])
                           for _ in range(random.randint(0, 2)))
             methods.append(f'.{m}({args})')
         return f'{obj}{"".join(methods)}'
@@ -411,7 +667,7 @@ def gen_js_statement(depth=0):
     elif r < 0.55:
         # Object destructuring/spread
         keys = random.sample([f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}' for _ in range(8)], random.randint(2, 5))
-        return f'const {{{",".join(keys)}}}={v1}'
+        return f'var {{{",".join(keys)}}}={v1}'
     elif r < 0.62:
         # Promise/async
         return random.choice([
@@ -434,7 +690,7 @@ def gen_js_statement(depth=0):
         # Return
         return random.choice([
             f'return {v1}',
-            f'return{{{",".join(f"{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}:{random.choice([v1,v2,"null","true",str(random.randint(0,99))])}" for _ in range(random.randint(2,5)))}}}',
+            f'return{{{",".join(f"{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}:{random.choice([v1,v2,"null","!0",str(random.randint(0,99))])}" for _ in range(random.randint(2,5)))}}}',
             f'return {v1}?{v2}:null',
         ])
     elif r < 0.80:
@@ -443,10 +699,10 @@ def gen_js_statement(depth=0):
         return f'switch({v1}){{{cases}default:break}}'
     elif r < 0.86:
         # For loop
-        return f'for(let {v2}=0;{v2}<{v1}.length;{v2}++){{{gen_js_statement(depth+1)}}}'
+        return f'for(var {v2}=0;{v2}<{v1}.length;{v2}++){{{gen_js_statement(depth+1)}}}'
     elif r < 0.92:
         # Ternary assignment
-        return f'const {v2}={v1}?{gen_js_string()}:{gen_js_string()}'
+        return f'var {v2}={v1}?{gen_js_string()}:{gen_js_string()}'
     else:
         # Console/logging
         level = random.choice(['log','warn','error','debug','info','trace'])
@@ -459,13 +715,13 @@ def gen_js_class():
     parent = random.choice(['', f' extends {random.choice(JS_NOUNS)}'])
     methods = []
     # Constructor
-    params = ','.join(random.sample([f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}' for _ in range(6)], random.randint(1, 4)))
-    ctor_body = ';'.join(f'this.{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}={random.choice("etnoiasc")}' for _ in range(random.randint(2, 5)))
+    params = ','.join(random.sample(JS_MINIFIED_VARS[:10], random.randint(1, 4)))
+    ctor_body = ';'.join(f'this.{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}={gen_js_var()}' for _ in range(random.randint(2, 5)))
     methods.append(f'constructor({params}){{{ctor_body}}}')
     # Regular methods
     for _ in range(random.randint(3, 8)):
         mname = f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}'
-        mparams = ','.join(random.sample(list('etnoiasclud'), random.randint(0, 3)))
+        mparams = ','.join(random.sample(JS_MINIFIED_VARS[:10], random.randint(0, 3)))
         mbody = ';'.join(gen_js_statement(0) for _ in range(random.randint(2, 6)))
         prefix = random.choice(['', 'async ', 'static ', 'get '])
         methods.append(f'{prefix}{mname}({mparams}){{{mbody}}}')
@@ -481,38 +737,65 @@ def gen_js_object_literal():
         val = random.choice([
             gen_js_string(),
             str(random.randint(0, 9999)),
-            random.choice(['true', 'false', 'null']),
+            random.choice(['!0', '!1', 'null']),
             f'[{",".join(gen_js_string() for _ in range(random.randint(2,5)))}]',
             f'{{{",".join(f"{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}:{gen_js_string()}" for _ in range(random.randint(2,4)))}}}',
         ])
         entries.append(f'{key}:{val}')
-    return f'const {name}={{{",".join(entries)}}}'
+    return f'var {name}={{{",".join(entries)}}}'
 
 
 def generate_js(target_kb):
     """Generate JS content targeting approximately target_kb kilobytes."""
     parts = []
-    # Imports at top
-    for _ in range(random.randint(5, 15)):
+    # Larger, more repetitive import section
+    import_modules = [
+        './utils', './helpers', './api', './config', './constants', './types',
+        './hooks', './store', './services', './components', './lib',
+        './router', './middleware', './validators', './formatters', './cache',
+        '@app/core', '@app/ui', '@app/data', '@app/auth', '@app/router',
+        '@app/state', '@app/i18n', '@app/theme', '@app/logger', '@app/analytics',
+        '@app/events', '@app/dom', '@app/http', '@app/storage', '@app/crypto',
+    ]
+    for mod in import_modules:
         names = ','.join(random.sample([f'{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}' for _ in range(8)], random.randint(1, 4)))
-        module = random.choice([
-            f'./{random.choice(["utils","helpers","api","config","constants","types","hooks","store","services","components","lib"])}',
-            f'@app/{random.choice(["core","ui","data","auth","router","state","i18n","theme","logger","analytics"])}',
-        ])
-        parts.append(f'import{{{names}}}from"{module}"')
+        parts.append(f'import{{{names}}}from"{mod}"')
+
+    # Webpack runtime preamble (very repetitive, compresses well)
+    parts.append('var __webpack_modules__={}')
+    parts.append('var __webpack_module_cache__={}')
+    parts.append('function __webpack_require__(e){var t=__webpack_module_cache__[e];if(t!==void 0)return t.exports;var n=__webpack_module_cache__[e]={exports:{}};return __webpack_modules__[e](n,n.exports,__webpack_require__),n.exports}')
+    parts.append('__webpack_require__.d=function(e,t){for(var n in t)Object.prototype.hasOwnProperty.call(t,n)&&!Object.prototype.hasOwnProperty.call(e,n)&&Object.defineProperty(e,n,{enumerable:!0,get:t[n]})}')
+    parts.append('__webpack_require__.r=function(e){typeof Symbol!=="undefined"&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})}')
+
     target_bytes = target_kb * 1024
     while len(';'.join(parts)) < target_bytes:
         r = random.random()
-        if r < 0.35:
+        if r < 0.20:
             parts.append(gen_js_function())
-        elif r < 0.5:
+        elif r < 0.30:
             parts.append(gen_js_class())
-        elif r < 0.65:
+        elif r < 0.40:
             parts.append(gen_js_object_literal())
-        else:
-            # IIFE or module pattern
+        elif r < 0.52:
+            # Webpack module wrapper (very repetitive across bundles)
+            parts.append(gen_js_webpack_module())
+        elif r < 0.62:
+            # Component-style function (repetitive pattern)
+            parts.append(gen_js_component_function())
+        elif r < 0.72:
+            # Object.defineProperty block (repetitive)
+            parts.append(gen_js_define_property_block())
+        elif r < 0.82:
+            # IIFE (module pattern)
             body = ';'.join(gen_js_statement(0) for _ in range(random.randint(5, 15)))
             parts.append(f'(function(){{{body}}})()')
+        else:
+            # Repeated module registration pattern
+            mod_id = str(random.randint(100, 9999))
+            v = gen_js_var()
+            inner = ';'.join(gen_js_statement(0) for _ in range(random.randint(3, 8)))
+            parts.append(f'__webpack_require__.r({v}=__webpack_require__({mod_id}));{inner}')
     return ';'.join(parts)[:target_bytes]
 
 
@@ -553,11 +836,101 @@ HTML_TEXTS = [
     'Load Balancer', 'Auto Scaling', 'Container Orchestration', 'Log Aggregation',
 ]
 
+# Common inline SVG icons reused across HTML (like heroicons/feather)
+INLINE_SVG_ICONS = [
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
+    '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>',
+]
+
+# Repeated class name combos (real HTML uses the same class combos everywhere)
+COMMON_CLASS_COMBOS = [
+    'class="btn btn-primary"',
+    'class="btn btn-secondary"',
+    'class="btn btn-outline"',
+    'class="btn btn-sm"',
+    'class="btn btn-icon"',
+    'class="card"',
+    'class="card-header"',
+    'class="card-body"',
+    'class="card-footer"',
+    'class="form-group"',
+    'class="form-control"',
+    'class="form-label"',
+    'class="nav-item"',
+    'class="nav-link"',
+    'class="nav-link active"',
+    'class="list-item"',
+    'class="list-group"',
+    'class="d-flex align-items-center"',
+    'class="d-flex justify-content-between"',
+    'class="d-flex align-items-center gap-2"',
+    'class="d-flex flex-column"',
+    'class="d-none d-md-block"',
+    'class="text-muted"',
+    'class="text-center"',
+    'class="container"',
+    'class="row"',
+    'class="col"',
+    'class="col-md-6"',
+    'class="col-lg-4"',
+    'class="mt-2"',
+    'class="mt-3"',
+    'class="mb-2"',
+    'class="mb-3"',
+    'class="p-3"',
+    'class="p-4"',
+    'class="badge badge-primary"',
+    'class="badge badge-secondary"',
+    'class="alert alert-success"',
+    'class="alert alert-danger"',
+    'class="avatar avatar-sm"',
+    'class="tooltip"',
+    'class="dropdown-menu"',
+    'class="dropdown-item"',
+    'class="modal-overlay"',
+    'class="modal-content"',
+    'class="sr-only"',
+    'class="skeleton skeleton-text"',
+    'class="spinner spinner-sm"',
+    'class="table-row"',
+    'class="table-cell"',
+    'class="tab-panel"',
+    'class="tab-list"',
+    'class="section-header"',
+    'class="section-body"',
+    'class="sidebar-item"',
+    'class="header-inner d-flex align-items-center"',
+    'class="footer-inner"',
+]
+
+
+def gen_html_attr():
+    """Generate HTML attributes, heavily reusing common class combos."""
+    if random.random() < 0.60:
+        # Use a common class combo
+        combo = random.choice(COMMON_CLASS_COMBOS)
+        extras = []
+        if random.random() < 0.4:
+            extras.append(f'data-{random.choice(["id","type","state","action"])}="{random.choice(JS_VAR_PREFIXES)}{random.choice(JS_NOUNS)}"')
+        if random.random() < 0.2:
+            extras.append(f'aria-{random.choice(["label","hidden","expanded"])}="{random.choice(["true","false"])}"')
+        return combo + (' ' + ' '.join(extras) if extras else '')
+    else:
+        return ' '.join(random.choice(HTML_ATTRS)() for _ in range(random.randint(1, 4)))
+
 
 def gen_html_element(depth=0, max_depth=4):
     """Generate an HTML element with optional nesting."""
     tag = random.choice(HTML_TAGS)
-    attrs = ' '.join(random.choice(HTML_ATTRS)() for _ in range(random.randint(1, 4)))
+    attrs = gen_html_attr()
     void_tags = {'img', 'input', 'hr', 'br', 'source', 'meta', 'link'}
     if tag in void_tags:
         return f'<{tag} {attrs}/>'
@@ -568,22 +941,150 @@ def gen_html_element(depth=0, max_depth=4):
     return f'<{tag} {attrs}>{children}</{tag}>'
 
 
+def gen_html_card():
+    """Generate a repeating card component (very common in real apps)."""
+    icon = random.choice(INLINE_SVG_ICONS)
+    title = random.choice(HTML_TEXTS)
+    text = random.choice(HTML_TEXTS)
+    badge_cls = random.choice(['"badge badge-primary"', '"badge badge-secondary"', '"badge"'])
+    return (
+        f'<div class="card">'
+        f'<div class="card-header d-flex align-items-center">{icon}<span class="card-title">{title}</span>'
+        f'<span class={badge_cls}>{random.randint(1,99)}</span></div>'
+        f'<div class="card-body"><p class="text-muted">{text}</p></div>'
+        f'<div class="card-footer d-flex justify-content-between">'
+        f'<button class="btn btn-sm btn-outline">{icon} Edit</button>'
+        f'<button class="btn btn-sm btn-primary">View</button></div></div>'
+    )
+
+
+def gen_html_table_rows(count):
+    """Generate repeated table rows."""
+    rows = []
+    for i in range(count):
+        cells = []
+        cells.append(f'<td class="table-cell">{i+1}</td>')
+        cells.append(f'<td class="table-cell">{random.choice(JS_NOUNS)}</td>')
+        cells.append(f'<td class="table-cell text-muted">{random.choice(HTML_TEXTS)}</td>')
+        cells.append(f'<td class="table-cell"><span class="badge badge-{random.choice(["primary","secondary","success","danger"])}">{random.choice(["Active","Inactive","Pending","Error"])}</span></td>')
+        cells.append(f'<td class="table-cell"><button class="btn btn-sm btn-icon">{random.choice(INLINE_SVG_ICONS)}</button></td>')
+        rows.append(f'<tr class="table-row">{"".join(cells)}</tr>')
+    return ''.join(rows)
+
+
+def gen_html_list_items(count):
+    """Generate repeated list items."""
+    items = []
+    for _ in range(count):
+        icon = random.choice(INLINE_SVG_ICONS)
+        text = random.choice(HTML_TEXTS)
+        items.append(
+            f'<li class="list-item d-flex align-items-center">'
+            f'{icon}<span class="list-item-text">{text}</span>'
+            f'<span class="text-muted">{random.randint(0,999)}</span></li>'
+        )
+    return ''.join(items)
+
+
+def gen_html_nav():
+    """Generate a navigation section with repeated links."""
+    links = []
+    for _ in range(random.randint(5, 12)):
+        icon = random.choice(INLINE_SVG_ICONS)
+        text = random.choice(HTML_TEXTS).split()[0]
+        active = ' active' if random.random() < 0.15 else ''
+        links.append(f'<a class="nav-link{active}" href="#">{icon}<span>{text}</span></a>')
+    return f'<nav class="nav"><div class="nav-list">{"".join(links)}</div></nav>'
+
+
 def generate_html(target_kb, kind='header'):
     """Generate HTML content targeting approximately target_kb kilobytes."""
     parts = ['<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">']
     parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
     parts.append(f'<title>{random.choice(HTML_TEXTS)}</title>')
-    for i in range(3):
-        parts.append(f'<link rel="stylesheet" href="/static/{random.choice(["reset","layout","theme","components","utilities"])}.css">')
+    # Link tags (repeated)
+    for css_file in ['reset', 'layout', 'theme', 'components', 'utilities']:
+        parts.append(f'<link rel="stylesheet" href="/static/{css_file}.css">')
+    parts.append('<link rel="icon" href="/static/logo.svg" type="image/svg+xml">')
+    parts.append('<link rel="manifest" href="/static/manifest.json">')
     parts.append('</head><body>')
+
     target_bytes = target_kb * 1024
-    while len(''.join(parts)) < target_bytes - 50:
-        parts.append(gen_html_element(0, 5))
+    while len(''.join(parts)) < target_bytes - 100:
+        r = random.random()
+        if r < 0.20:
+            # Card components (repeating)
+            parts.append('<div class="row">')
+            for _ in range(random.randint(2, 4)):
+                parts.append(f'<div class="col-lg-4 col-md-6">{gen_html_card()}</div>')
+            parts.append('</div>')
+        elif r < 0.35:
+            # Table with repeated rows
+            parts.append('<div class="table-wrapper"><table class="table"><thead class="table-header"><tr>')
+            for h in ['#', 'Name', 'Description', 'Status', 'Actions']:
+                parts.append(f'<th class="table-cell">{h}</th>')
+            parts.append('</tr></thead><tbody class="table-body">')
+            parts.append(gen_html_table_rows(random.randint(5, 15)))
+            parts.append('</tbody></table></div>')
+        elif r < 0.50:
+            # List with repeated items
+            parts.append(f'<div class="section"><div class="section-header"><h2>{random.choice(HTML_TEXTS)}</h2></div>')
+            parts.append(f'<ul class="list-group">{gen_html_list_items(random.randint(5, 12))}</ul></div>')
+        elif r < 0.60:
+            # Navigation (repeated structure)
+            parts.append(gen_html_nav())
+        elif r < 0.70:
+            # Form with repeated form groups
+            parts.append('<form class="form">')
+            for _ in range(random.randint(3, 6)):
+                label = random.choice(HTML_TEXTS).split()[0]
+                parts.append(
+                    f'<div class="form-group"><label class="form-label">{label}</label>'
+                    f'<input class="form-control" type="{random.choice(["text","email","password","number"])}" '
+                    f'placeholder="{label}"/>'
+                    f'<span class="form-text text-muted">Enter your {label.lower()}</span></div>'
+                )
+            parts.append('<button class="btn btn-primary" type="submit">Submit</button></form>')
+        else:
+            # Generic nested elements
+            parts.append(gen_html_element(0, 5))
+
+    # Script tags at bottom (repeated pattern)
+    for js_file in ['vendor', 'app', 'analytics', 'helpers', 'router']:
+        parts.append(f'<script src="/static/{js_file}.js" defer></script>')
+
     parts.append('</body></html>')
     return ''.join(parts)[:target_bytes]
 
 
 # --- SVG generation ---
+
+# Reusable path data fragments (real icon sets share similar path structures)
+SVG_COMMON_PATHS = [
+    'M3 12h18', 'M3 6h18', 'M3 18h18',  # menu lines
+    'M12 5v14', 'M5 12h14',  # plus/cross arms
+    'M6 9l6 6 6-6', 'M18 15l-6-6-6 6',  # chevrons
+    'M5 12h14M12 5l7 7-7 7',  # arrow right
+    'M19 12H5M12 19l-7-7 7-7',  # arrow left
+    'M18 6L6 18M6 6l12 12',  # close X
+    'M20 6L9 17l-5-5',  # check
+    'M4 4h16v16H4z',  # square
+    'M4 4l16 16M4 20L20 4',  # X mark
+    'M12 2L2 7l10 5 10-5-10-5z',  # diamond top
+    'M2 17l10 5 10-5',  # diamond bottom
+    'M12 22V12', 'M12 2v10',  # vertical lines
+    'M2 12h10', 'M12 12h10',  # horizontal halves
+]
+
+SVG_COMMON_ATTRS = [
+    'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"',
+    'fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"',
+    'fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"',
+    'fill="currentColor"',
+    'fill="currentColor" opacity=".5"',
+    'fill="none" stroke="currentColor" stroke-width="2"',
+]
+
 
 def gen_svg_path():
     """Generate a realistic SVG path data string."""
@@ -617,20 +1118,27 @@ def gen_svg_path():
 
 def gen_svg_icon(name):
     """Generate an SVG icon symbol."""
-    paths = ''.join(f'<path d="{gen_svg_path()}" fill="none" stroke="currentColor" stroke-width="{random.choice(["1.5","2","2.5"])}" stroke-linecap="round" stroke-linejoin="round"/>'
-                    for _ in range(random.randint(1, 4)))
-    extra = ''
+    parts = []
+    attrs = random.choice(SVG_COMMON_ATTRS)
+    # 40% chance: include a common reusable path fragment
+    if random.random() < 0.40:
+        common_path = random.choice(SVG_COMMON_PATHS)
+        parts.append(f'<path d="{common_path}" {attrs}/>')
+    # Add 1-3 unique paths
+    for _ in range(random.randint(1, 3)):
+        parts.append(f'<path d="{gen_svg_path()}" {attrs}/>')
+    # Extra shapes with repeated attributes
     if random.random() < 0.3:
         cx, cy, r = random.randint(4, 20), random.randint(4, 20), random.randint(2, 8)
-        extra = f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="currentColor" stroke-width="2"/>'
+        parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" {attrs}/>')
     if random.random() < 0.2:
         x, y, w, h = random.randint(2, 8), random.randint(2, 8), random.randint(6, 16), random.randint(6, 16)
         rx = random.choice([0, 1, 2, 3])
-        extra += f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" fill="none" stroke="currentColor" stroke-width="2"/>'
+        parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" {attrs}/>')
     if random.random() < 0.15:
         pts = ' '.join(f'{random.randint(2,22)},{random.randint(2,22)}' for _ in range(random.randint(3, 6)))
-        extra += f'<polygon points="{pts}" fill="none" stroke="currentColor" stroke-width="2"/>'
-    return f'<symbol id="{name}" viewBox="0 0 24 24">{paths}{extra}</symbol>'
+        parts.append(f'<polygon points="{pts}" {attrs}/>')
+    return f'<symbol id="{name}" viewBox="0 0 24 24">{"".join(parts)}</symbol>'
 
 
 def generate_icon_sprite(target_kb):
@@ -638,13 +1146,16 @@ def generate_icon_sprite(target_kb):
     parts = ['<svg xmlns="http://www.w3.org/2000/svg" style="display:none">']
     parts.append('<defs>')
     target_bytes = target_kb * 1024
-    icons_used = set()
+    icon_counter = 0
+    # Generate multiple variants of each icon name (real icon sets have many variants)
+    variants = ['', '-alt', '-filled', '-outlined', '-rounded', '-sharp', '-thin', '-bold',
+                '-solid', '-light', '-duotone', '-sm', '-lg', '-xl']
     while len(''.join(parts)) < target_bytes - 200:
-        name = random.choice(SVG_ICON_NAMES)
-        if name in icons_used:
-            name = f'{name}-{random.choice(["alt","filled","outlined","rounded","sharp","thin","bold"])}'
-        icons_used.add(name)
+        base_name = SVG_ICON_NAMES[icon_counter % len(SVG_ICON_NAMES)]
+        variant = variants[icon_counter // len(SVG_ICON_NAMES) % len(variants)]
+        name = base_name + variant
         parts.append(gen_svg_icon(name))
+        icon_counter += 1
     parts.append('</defs></svg>')
     return ''.join(parts)[:target_bytes]
 
@@ -655,19 +1166,31 @@ def generate_logo_svg(target_kb):
     # Background
     parts.append(f'<rect width="200" height="60" rx="8" fill="{random.choice(COLORS)}"/>')
     target_bytes = target_kb * 1024
+    # Add reusable defs for gradients and filters (compresses well due to repetition)
+    parts.append('<defs>')
+    for i in range(5):
+        c1, c2 = pick_color(), pick_color()
+        parts.append(f'<linearGradient id="g{i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="{c1}"/><stop offset="100%" stop-color="{c2}"/></linearGradient>')
+    parts.append('</defs>')
+
     while len(''.join(parts)) < target_bytes - 50:
         r = random.random()
-        if r < 0.3:
-            parts.append(f'<path d="{gen_svg_path()}" fill="{random.choice(COLORS)}" opacity="{random.choice([".3",".5",".7",".8","1"])}"/>')
-        elif r < 0.5:
+        if r < 0.25:
+            grad = f'url(#g{random.randint(0,4)})' if random.random() < 0.5 else pick_color()
+            parts.append(f'<path d="{gen_svg_path()}" fill="{grad}" opacity="{random.choice([".3",".5",".7",".8","1"])}"/>')
+        elif r < 0.45:
             cx, cy, rx, ry = random.randint(10, 190), random.randint(5, 55), random.randint(3, 20), random.randint(3, 15)
-            parts.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{random.choice(COLORS)}" opacity=".6"/>')
-        elif r < 0.7:
+            parts.append(f'<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{pick_color()}" opacity=".6"/>')
+        elif r < 0.65:
             x, y = random.randint(10, 150), random.randint(10, 50)
-            parts.append(f'<text x="{x}" y="{y}" font-family="sans-serif" font-size="{random.randint(10, 28)}" font-weight="{random.choice(["400","600","700","800"])}" fill="{random.choice(COLORS)}">{random.choice(["Arena","HTTP","Web","App","Hub","Dev","Pro","Lab"])}</text>')
-        else:
+            parts.append(f'<text x="{x}" y="{y}" font-family="sans-serif" font-size="{random.randint(10, 28)}" font-weight="{random.choice(["400","600","700","800"])}" fill="{pick_color()}">{random.choice(["Arena","HTTP","Web","App","Hub","Dev","Pro","Lab"])}</text>')
+        elif r < 0.80:
             x, y, w, h = random.randint(5, 160), random.randint(5, 45), random.randint(10, 40), random.randint(5, 20)
-            parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{random.randint(0,6)}" fill="{random.choice(COLORS)}" opacity=".5"/>')
+            parts.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{random.randint(0,6)}" fill="{pick_color()}" opacity=".5"/>')
+        else:
+            # Repeated decorative circles (compresses well)
+            cx, cy, r2 = random.randint(5, 195), random.randint(5, 55), random.randint(1, 8)
+            parts.append(f'<circle cx="{cx}" cy="{cy}" r="{r2}" fill="{pick_color()}" opacity=".4"/>')
     parts.append('</svg>')
     return ''.join(parts)[:target_bytes]
 
@@ -779,6 +1302,57 @@ def generate_woff2(target_kb):
     return bytes(data[:target_bytes])
 
 
+def add_entropy(content, target_ratio=0.33):
+    """Inject unique tokens into content to reduce compressibility toward target_ratio.
+    target_ratio is compressed/original (e.g. 0.33 means compressed is 1/3 of original).
+    """
+    if isinstance(content, str):
+        data = content.encode('utf-8')
+    else:
+        data = content
+    original_size = len(data)
+
+    # Check current ratio
+    current_br = len(brotli.compress(data, quality=11))
+    current_ratio = current_br / original_size
+    if current_ratio >= target_ratio:
+        return content  # already at or above target
+
+    # Binary search for the right amount of entropy to inject
+    # Strategy: replace random positions with unique hex strings
+    text = content if isinstance(content, str) else content.decode('utf-8', errors='replace')
+    best = text
+    # Inject unique comments/tokens at regular intervals
+    inject_pct = 0.0
+    step = 0.05
+    while inject_pct < 0.8:
+        inject_pct += step
+        # Generate unique tokens
+        num_injections = int(original_size * inject_pct / 16)
+        positions = sorted(random.sample(range(max(1, len(text) - 1)), min(num_injections, len(text) - 1)))
+        parts = []
+        prev = 0
+        uid = 0
+        for pos in positions:
+            parts.append(text[prev:pos])
+            # Inject a unique hex token that won't compress well
+            parts.append(f'{uid:04x}{random.getrandbits(32):08x}')
+            uid += 1
+            prev = pos
+        parts.append(text[prev:])
+        candidate = ''.join(parts)[:original_size]
+        # Pad to original size if needed
+        while len(candidate.encode('utf-8')) < original_size:
+            candidate += f'{random.getrandbits(64):016x}'
+        candidate = candidate.encode('utf-8')[:original_size].decode('utf-8', errors='ignore')
+
+        br_size = len(brotli.compress(candidate.encode('utf-8'), quality=11))
+        ratio = br_size / len(candidate.encode('utf-8'))
+        if ratio >= target_ratio * 0.9:  # within 10% of target
+            return candidate
+    return best
+
+
 # --- Main generation ---
 
 def compress_and_save(filepath, content):
@@ -826,42 +1400,42 @@ def main():
     print(f'  {"File":30s} {"Original":>8s}  {"Gzip-9":>14s}  {"Brotli-11":>14s}')
     print(f'  {"-"*30} {"-"*8}  {"-"*14}  {"-"*14}')
 
-    # CSS files
+    # CSS files — realistic spread: reset is tiny, components is big
     compress_and_save(os.path.join(OUT, 'reset.css'),
-                      generate_css(8, include_vars=True))
+                      generate_css(8, include_vars=True))            # ~1.5 KB br
     compress_and_save(os.path.join(OUT, 'layout.css'),
-                      generate_css(20, include_media=True))
+                      generate_css(25, include_media=True))          # ~4 KB br
     compress_and_save(os.path.join(OUT, 'theme.css'),
-                      generate_css(15, include_vars=True, include_keyframes=True))
+                      generate_css(18, include_vars=True, include_keyframes=True))  # ~3 KB br
     compress_and_save(os.path.join(OUT, 'components.css'),
-                      generate_css(55, include_media=True, include_keyframes=True))
+                      generate_css(200, include_media=True, include_keyframes=True)) # ~35 KB br
     compress_and_save(os.path.join(OUT, 'utilities.css'),
-                      generate_css(45, include_media=True))
+                      generate_css(60, include_media=True))          # ~10 KB br
 
-    # JS files
-    compress_and_save(os.path.join(OUT, 'analytics.js'), generate_js(15))
-    compress_and_save(os.path.join(OUT, 'helpers.js'), generate_js(25))
-    compress_and_save(os.path.join(OUT, 'app.js'), generate_js(250))
-    compress_and_save(os.path.join(OUT, 'vendor.js'), generate_js(400))
-    compress_and_save(os.path.join(OUT, 'router.js'), generate_js(50))
+    # JS files — vendor is huge, analytics is small
+    compress_and_save(os.path.join(OUT, 'analytics.js'), generate_js(12))   # ~3 KB br
+    compress_and_save(os.path.join(OUT, 'helpers.js'), generate_js(22))     # ~5 KB br
+    compress_and_save(os.path.join(OUT, 'app.js'), generate_js(200))         # ~48 KB br
+    compress_and_save(os.path.join(OUT, 'vendor.js'), generate_js(300))     # ~72 KB br
+    compress_and_save(os.path.join(OUT, 'router.js'), generate_js(35))      # ~8 KB br
 
-    # HTML files
-    compress_and_save(os.path.join(OUT, 'header.html'), generate_html(8, 'header'))
-    compress_and_save(os.path.join(OUT, 'footer.html'), generate_html(5, 'footer'))
+    # HTML files — header is bigger than footer
+    compress_and_save(os.path.join(OUT, 'header.html'), generate_html(120, 'header'))  # ~6 KB br
+    compress_and_save(os.path.join(OUT, 'footer.html'), generate_html(55, 'footer'))   # ~3 KB br
 
-    # SVG files
-    compress_and_save(os.path.join(OUT, 'icon-sprite.svg'), generate_icon_sprite(55))
-    compress_and_save(os.path.join(OUT, 'logo.svg'), generate_logo_svg(12))
+    # SVG files — icon sprite is bigger than logo
+    compress_and_save(os.path.join(OUT, 'icon-sprite.svg'), generate_icon_sprite(70))  # ~11 KB br
+    compress_and_save(os.path.join(OUT, 'logo.svg'), generate_logo_svg(15))            # ~2 KB br
 
-    # JSON manifest
-    compress_and_save(os.path.join(OUT, 'manifest.json'), generate_manifest(2))
+    # JSON manifest — small PWA config
+    compress_and_save(os.path.join(OUT, 'manifest.json'), generate_manifest(2))        # ~0.7 KB br
 
-    # Binary files
-    save_binary(os.path.join(OUT, 'hero.webp'), generate_webp(120))
-    save_binary(os.path.join(OUT, 'thumb1.webp'), generate_webp(20))
-    save_binary(os.path.join(OUT, 'thumb2.webp'), generate_webp(15))
-    save_binary(os.path.join(OUT, 'regular.woff2'), generate_woff2(20))
-    save_binary(os.path.join(OUT, 'bold.woff2'), generate_woff2(25))
+    # Binary files — hero is big, thumbs are small
+    save_binary(os.path.join(OUT, 'hero.webp'), generate_webp(45))      # 45 KB
+    save_binary(os.path.join(OUT, 'thumb1.webp'), generate_webp(8))     # 8 KB
+    save_binary(os.path.join(OUT, 'thumb2.webp'), generate_webp(6))     # 6 KB
+    save_binary(os.path.join(OUT, 'regular.woff2'), generate_woff2(18)) # 18 KB
+    save_binary(os.path.join(OUT, 'bold.woff2'), generate_woff2(22))    # 22 KB
 
     # Summary
     print()

@@ -1,14 +1,10 @@
-using System.Collections.Concurrent;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 using System.Text.Json;
 using sisk;
-using Microsoft.Data.Sqlite;
 using Npgsql;
 using Sisk.Cadente.CoreEngine;
 using Sisk.Core.Http;
-using Sisk.Core.Http.FileSystem;
 using Sisk.Core.Routing;
 
 var server = HttpServer.CreateBuilder()
@@ -16,9 +12,62 @@ var server = HttpServer.CreateBuilder()
                        .UseListeningPort(new ListeningPort(false, "0.0.0.0", 8080))
                        .UseMinimalConfiguration();
 
+// Pre-load static files with pre-compressed variants
+var staticMimeTypes = new Dictionary<string, string>
+{
+    [".css"] = "text/css", [".js"] = "application/javascript", [".html"] = "text/html",
+    [".woff2"] = "font/woff2", [".svg"] = "image/svg+xml", [".webp"] = "image/webp", [".json"] = "application/json",
+};
+var staticCache = new Dictionary<string, (byte[] data, byte[]? br, byte[]? gz, string contentType)>();
+if (Directory.Exists("/data/static"))
+{
+    foreach (var file in Directory.GetFiles("/data/static"))
+    {
+        var name = Path.GetFileName(file);
+        if (name.EndsWith(".br") || name.EndsWith(".gz")) continue;
+        var ext = Path.GetExtension(name);
+        var ct = staticMimeTypes.GetValueOrDefault(ext, "application/octet-stream");
+        var brPath = file + ".br";
+        var gzPath = file + ".gz";
+        staticCache[name] = (
+            File.ReadAllBytes(file),
+            File.Exists(brPath) ? File.ReadAllBytes(brPath) : null,
+            File.Exists(gzPath) ? File.ReadAllBytes(gzPath) : null,
+            ct
+        );
+    }
+}
+
 Router router = new Router();
 
-router.SetRoute(HttpFileServer.CreateServingRoute("/static", "/data/static"));
+router.MapGet("/static/<filename>", r =>
+{
+    var filename = r.RouteParameters["filename"].ToString();
+    if (!staticCache.TryGetValue(filename, out var sf))
+        return new HttpResponse(404);
+    var ae = r.Headers.AcceptEncoding ?? "";
+    byte[] body;
+    string? encoding = null;
+    if (sf.br != null && ae.Contains("br"))
+    {
+        body = sf.br;
+        encoding = "br";
+    }
+    else if (sf.gz != null && ae.Contains("gzip"))
+    {
+        body = sf.gz;
+        encoding = "gzip";
+    }
+    else
+    {
+        body = sf.data;
+    }
+    var resp = new HttpResponse(200);
+    resp.Content = new ByteArrayContent(body);
+    resp.Headers.Add("Content-Type", sf.contentType);
+    if (encoding != null) resp.Headers.Add("Content-Encoding", encoding);
+    return resp;
+});
 
 router.MapGet("/baseline11", r => new HttpResponse(Sum(r)));
 router.MapPost("/baseline11", r => new HttpResponse(Sum(r)));
@@ -45,44 +94,19 @@ router.MapPost("/upload", r =>
     return new HttpResponse(total.ToString());
 });
 
-var largeJsonBytes = LoadJson();
-
-router.MapGet("/compression", r =>
-{
-    HttpContent baseContent = new ByteArrayContent(largeJsonBytes!);
-
-    if (r.Headers.AcceptEncoding?.Contains("gzip") == true)
-    {
-        baseContent = new GZipContent(baseContent);
-    }
-    else if (r.Headers.AcceptEncoding?.Contains("deflate") == true)
-    {
-        baseContent = new DeflateContent(baseContent);
-    }
-    else if (r.Headers.AcceptEncoding?.Contains("br") == true)
-    {
-        baseContent = new BrotliContent(baseContent);
-    }
-
-    return new HttpResponse
-    {
-        Content = baseContent,
-        Headers = new()
-        {
-            ContentType = "application/json"
-        }
-    };
-});
-
 var datasetItems = LoadItems();
 
-router.MapGet("/json", r =>
+router.MapGet("/json/<count>", r =>
 {
-    var processed = new List<ProcessedItem>(datasetItems.Count);
+    int count = Math.Clamp(int.Parse(r.RouteParameters["count"].ToString()), 0, datasetItems!.Count);
+    int m = 1;
+    if (r.Query.TryGetValue("m", out var mStr)) { int.TryParse(mStr, out m); if (m == 0) m = 1; }
+    var processed = new ProcessedItem[count];
 
-    foreach (var d in datasetItems)
+    for (int i = 0; i < count; i++)
     {
-        processed.Add(new ProcessedItem
+        var d = datasetItems[i];
+        processed[i] = new ProcessedItem
         {
             Id = d.Id,
             Name = d.Name,
@@ -92,61 +116,14 @@ router.MapGet("/json", r =>
             Active = d.Active,
             Tags = d.Tags,
             Rating = d.Rating,
-            Total = Math.Round(d.Price * d.Quantity, 2)
-        });
+            Total = d.Price * d.Quantity * m
+        };
     }
-
-    var result = new ListWithCount<ProcessedItem>(processed);
 
     return new HttpResponse
     {
-        Content = JsonContent.Create(result)
+        Content = JsonContent.Create(new ListWithCount<ProcessedItem>(processed.ToList()))
     };
-});
-
-var dbPool = OpenPool();
-
-router.MapGet("/db", request =>
-{
-    var min = request.Query.TryGetValue("min", out var vmin) ? vmin.GetInteger() : 10;
-    var max = request.Query.TryGetValue("max", out var vmax) ? vmax.GetInteger() : 50;
-
-    var conn = dbPool!.Rent();
-    try
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN @min AND @max LIMIT 50";
-        cmd.Parameters.AddWithValue("@min", min);
-        cmd.Parameters.AddWithValue("@max", max);
-
-        using var reader = cmd.ExecuteReader();
-
-        var items = new List<ProcessedItem>();
-
-        while (reader.Read())
-        {
-            items.Add(new ProcessedItem
-            {
-                Id = reader.GetInt32(0),
-                Name = reader.GetString(1),
-                Category = reader.GetString(2),
-                Price = reader.GetDouble(3),
-                Quantity = reader.GetInt32(4),
-                Active = reader.GetInt32(5) == 1,
-                Tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) },
-            });
-        }
-
-        return new HttpResponse
-        {
-            Content = JsonContent.Create(new ListWithCount<ProcessedItem>(items))
-        };
-    }
-    finally
-    {
-        dbPool.Return(conn);
-    }
 });
 
 var pgDataSource = OpenPgPool();
@@ -155,11 +132,13 @@ router.MapGet("/async-db", async (HttpRequest request) =>
 {
     var min = request.Query.TryGetValue("min", out var vmin) ? vmin.GetInteger() : 10;
     var max = request.Query.TryGetValue("max", out var vmax) ? vmax.GetInteger() : 50;
+    var limit = request.Query.TryGetValue("limit", out var vlim) ? Math.Clamp(vlim.GetInteger(), 1, 50) : 50;
 
     await using var cmd = pgDataSource.CreateCommand(
-        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50");
-    cmd.Parameters.AddWithValue((double)min);
-    cmd.Parameters.AddWithValue((double)max);
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
+    cmd.Parameters.AddWithValue(min);
+    cmd.Parameters.AddWithValue(max);
+    cmd.Parameters.AddWithValue(limit);
     await using var reader = await cmd.ExecuteReaderAsync();
 
     var items = new List<object>();
@@ -171,11 +150,11 @@ router.MapGet("/async-db", async (HttpRequest request) =>
             id = reader.GetInt32(0),
             name = reader.GetString(1),
             category = reader.GetString(2),
-            price = reader.GetDouble(3),
+            price = reader.GetInt32(3),
             quantity = reader.GetInt32(4),
             active = reader.GetBoolean(5),
             tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-            rating = new { score = reader.GetDouble(7), count = reader.GetInt32(8) },
+            rating = new { score = reader.GetInt32(7), count = reader.GetInt32(8) },
         });
     }
 
@@ -204,42 +183,6 @@ static string Sum(HttpRequest request)
     return (a + b + c).ToString();
 }
 
-static byte[]? LoadJson()
-{
-    var jsonOptions = new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
-    var largePath = "/data/dataset-large.json";
-
-    if (File.Exists(largePath))
-    {
-        var largeItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(largePath), jsonOptions);
-
-        if (largeItems != null)
-        {
-            var processed = largeItems.Select(d => new ProcessedItem
-            {
-                Id = d.Id,
-                Name = d.Name,
-                Category = d.Category,
-                Price = d.Price,
-                Quantity = d.Quantity,
-                Active = d.Active,
-                Tags = d.Tags,
-                Rating = d.Rating,
-                Total = Math.Round(d.Price * d.Quantity, 2)
-            }).ToList();
-
-            return JsonSerializer.SerializeToUtf8Bytes(new { items = processed, count = processed.Count }, jsonOptions);
-        }
-    }
-
-    return null;
-}
-
 static List<DatasetItem>? LoadItems()
 {
     var jsonOptions = new JsonSerializerOptions
@@ -258,13 +201,6 @@ static List<DatasetItem>? LoadItems()
     return null;
 }
 
-static SqlitePool? OpenPool()
-{
-    var dbPath = "/data/benchmark.db";
-    if (!File.Exists(dbPath)) return null;
-    return new SqlitePool($"Data Source={dbPath};Mode=ReadOnly", Environment.ProcessorCount);
-}
-
 static NpgsqlDataSource? OpenPgPool()
 {
     var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
@@ -280,31 +216,3 @@ static NpgsqlDataSource? OpenPgPool()
     catch { return null; }
 }
 
-sealed class SqlitePool
-{
-    private readonly ConcurrentBag<SqliteConnection> _connections = new();
-
-    public SqlitePool(string connectionString, int size)
-    {
-        for (int i = 0; i < size; i++)
-        {
-            var conn = new SqliteConnection(connectionString);
-            conn.Open();
-            using var pragma = conn.CreateCommand();
-            pragma.CommandText = "PRAGMA mmap_size=268435456";
-            pragma.ExecuteNonQuery();
-            _connections.Add(conn);
-        }
-    }
-
-    public SqliteConnection Rent()
-    {
-        SqliteConnection? conn;
-        var spin = new SpinWait();
-        while (!_connections.TryTake(out conn))
-            spin.SpinOnce();
-        return conn;
-    }
-
-    public void Return(SqliteConnection conn) => _connections.Add(conn);
-}

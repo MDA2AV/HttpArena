@@ -27,16 +27,19 @@ public class AsyncDatabaseQueryController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Items getItems(
-            @RequestParam(defaultValue = "10") float min,
-            @RequestParam(defaultValue = "50") float max)
+            @RequestParam(defaultValue = "10") int min,
+            @RequestParam(defaultValue = "50") int max,
+            @RequestParam(defaultValue = "50") int limit)
     {
+        int clampedLimit = Math.min(Math.max(limit, 1), 50);
         try (var stream = jdbcClient.sql("""
                         SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count
                         FROM items
                         WHERE price BETWEEN ? AND ?
-                        LIMIT 50""")
+                        LIMIT ?""")
                 .param(1, min)
                 .param(2, max)
+                .param(3, clampedLimit)
                 .query(ItemRow.class)
                 .stream())
         {
@@ -60,6 +63,6 @@ public class AsyncDatabaseQueryController {
         );
     }
 
-    record ItemRow(int id, String name, String category, float price, int quantity, boolean active, String tags, float ratingScore, int ratingCount) {
+    record ItemRow(int id, String name, String category, int price, int quantity, boolean active, String tags, int ratingScore, int ratingCount) {
     }
 }

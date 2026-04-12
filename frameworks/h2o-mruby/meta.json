@@ -8,12 +8,11 @@
   "enabled": true,
   "tests": [
     "baseline",
-    "tcp-frag",
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "upload",
-    "compression",
     "noisy",
     "baseline-h2",
     "static-h2"

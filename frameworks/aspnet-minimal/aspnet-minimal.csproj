@@ -6,7 +6,6 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>    
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
   </ItemGroup>
 </Project>

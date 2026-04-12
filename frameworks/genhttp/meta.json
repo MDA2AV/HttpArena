@@ -11,12 +11,11 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "upload",
-    "compression",
     "async-db",
     "noisy",
     "static",
-    "tcp-frag",
     "echo-ws",
     "api-4",
     "api-16"

@@ -42,12 +42,11 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Pipelined | Yes | 16 requests batched per connection |
 | Short-lived | Yes | Connections closed after 10 requests |
 | JSON | Yes | Dataset processing and serialization |
+| JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | Upload | Yes | 20 MB body ingestion, return byte count |
-| Compression | Yes | ~1 MB compressed JSON response (gzip or brotli) |
 | Static | Yes | 20 static files served over HTTP/1.1 |
 | Async DB | Yes | Async Postgres query with connection pooling |
 | TCP Frag | No (*) | Baseline with MTU 69 — TCP fragmentation stress |
-| Noisy | No (*) | Valid requests interleaved with malformed noise |
 
 ### H/1.1 Workload
 
@@ -55,8 +54,6 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | API-4 | Yes | Baseline + JSON + async-db on 4 CPUs |
 | API-16 | Yes | Baseline + JSON + async-db on 16 CPUs |
-| Assets-4 | Yes | Static + JSON + compression on 4 CPUs |
-| Assets-16 | Yes | Static + JSON + compression on 16 CPUs |
 
 ### H/2
 
@@ -142,7 +139,7 @@ Framework A still leads because its raw throughput advantage outweighs B's CPU e
 Engines and frameworks are scored **separately** — each type has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload, compression).
+- **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
 
 The Type filter on the composite leaderboard switches between the two rankings.
 

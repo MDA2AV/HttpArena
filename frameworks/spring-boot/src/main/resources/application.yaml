@@ -1,14 +1,14 @@
 spring:
   application:
     name: spring-boot
+  threads:
+    virtual:
+      enabled: true
   mvc:
     static-path-pattern: /static/**
   web:
     resources:
       static-locations: file:/data/static/
-  threads:
-    virtual:
-      enabled: true
 server:
   compression:
     enabled: true

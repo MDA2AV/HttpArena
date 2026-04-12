@@ -28,11 +28,11 @@ public class PipelineGet : IReturn<string> { }
 [Route("/upload", "POST")]
 public class UploadPost : IReturn<HttpResult> { }
 
-[Route("/compression", "GET")]
-public class CompressionGet : IReturn<byte[]> { }
-
-[Route("/json", "GET")]
-public class JsonGet : IReturn<ListWithCount<ProcessedItem>> { }
+[Route("/json/{Count}", "GET")]
+public class JsonGet : IReturn<ListWithCount<ProcessedItem>>
+{
+    public int Count { get; set; }
+}
 
 [Route("/db", "GET")]
 public class DbGet : IReturn<ListWithCount<ProcessedItem>>
@@ -46,4 +46,5 @@ public class AsyncDbGet : IReturn<ListWithCount<object>>
 {
     public int Min { get; set; } = 10;
     public int Max { get; set; } = 50;
+    public int Limit { get; set; } = 50;
 }

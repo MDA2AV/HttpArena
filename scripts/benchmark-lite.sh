@@ -25,7 +25,7 @@ RESULTS_DIR="$ROOT_DIR/results"
 CERTS_DIR="$ROOT_DIR/certs"
 
 # Profile definitions: pipeline|req_per_conn|cpu_limit|connections|endpoint
-# endpoint: empty = /baseline11 (raw), "json" = /json (GET), "compression" = /compression (GET+gzip), "pipeline" = /pipeline, "upload" = POST /upload (raw),
+# endpoint: empty = /baseline11 (raw), "json" = /json (GET), "pipeline" = /pipeline, "upload" = POST /upload (raw),
 #           "h2" = /baseline2 (h2load), "static-h2" = multi-URI h2load, "h3" = /baseline2 (oha HTTP/3), "static-h3" = multi-URI oha,
 #           "grpc" = gRPC unary (h2load h2c), "grpc-tls" = gRPC unary (h2load TLS),
 #           "static" = multi-URI static files (gcannon --raw), "ws-echo" = WebSocket echo (gcannon --ws)
@@ -35,10 +35,9 @@ declare -A PROFILES=(
     [pipelined]="16|0||512|pipeline"
     [limited-conn]="1|10||512|"
     [json]="1|0||512|json"
+    [json-comp]="1|0||512|json-compressed"
     [upload]="1|0||128|upload"
-    [compression]="1|0||512|compression"
-    [noisy]="1|0||512|noisy"
-    [static]="1|10||512|static"
+    [static]="1|10||256,512|static"
     [baseline-h2]="1|0||512|h2"
     [static-h2]="1|0||512|static-h2"
     [unary-grpc]="1|0||512|grpc"
@@ -46,7 +45,7 @@ declare -A PROFILES=(
     [echo-ws]="1|0||512|ws-echo"
     [async-db]="1|0||512|async-db"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy static async-db baseline-h2 static-h2 unary-grpc unary-grpc-tls echo-ws)
+PROFILE_ORDER=(baseline pipelined limited-conn json json-comp upload static async-db baseline-h2 static-h2 unary-grpc unary-grpc-tls echo-ws)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -296,6 +295,8 @@ restore_settings() {
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
     docker stop -t 5 "$PG_CONTAINER" 2>/dev/null || true
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+    echo "[restore] Restoring loopback MTU to 65536..."
+    sudo ip link set lo mtu 65536 2>/dev/null || true
     if [ -n "$ORIG_GOVERNOR" ]; then
         echo "[restore] Restoring CPU governor to $ORIG_GOVERNOR..."
         if command -v cpupower &>/dev/null; then
@@ -336,6 +337,8 @@ echo "[tune] Setting UDP buffer sizes for QUIC..."
 sudo sysctl -w net.core.rmem_max=7500000 > /dev/null 2>&1 || true
 sudo sysctl -w net.core.wmem_max=7500000 > /dev/null 2>&1 || true
 
+echo "[tune] Setting loopback MTU to 1500 (realistic Ethernet)..."
+sudo ip link set lo mtu 1500 2>/dev/null || echo "[warn] Could not set loopback MTU"
 
 echo "[clean] Restarting Docker daemon..."
 if sudo systemctl restart docker 2>/dev/null; then
@@ -439,7 +442,6 @@ for profile in "${profiles_to_run[@]}"; do
         --ulimit memlock=-1:-1
         --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE"
         -v "$ROOT_DIR/data/dataset.json:/data/dataset.json:ro"
-        -v "$ROOT_DIR/data/dataset-large.json:/data/dataset-large.json:ro"
         -v "$ROOT_DIR/data/static:/data/static:ro"
         -v "$CERTS_DIR:/certs:ro")
     if [ "$endpoint" = "async-db" ] || [ "$endpoint" = "api-4" ] || [ "$endpoint" = "api-16" ]; then
@@ -498,12 +500,10 @@ for profile in "${profiles_to_run[@]}"; do
             [ "$endpoint" = "h2" ] && local_check_url="https://localhost:$H2PORT/baseline2?a=1&b=1"
         elif [ "$endpoint" = "upload" ]; then
             local_check_url="http://localhost:$PORT/baseline11?a=1&b=1"
-        elif [ "$endpoint" = "noisy" ]; then
-            local_check_url="http://localhost:$PORT/baseline11?a=1&b=1"
         elif [ "$endpoint" = "static" ]; then
             local_check_url="http://localhost:$PORT/static/reset.css"
         elif [ "$endpoint" = "json" ]; then
-            local_check_url="http://localhost:$PORT/json"
+            local_check_url="http://localhost:$PORT/json/1"
         elif [ "$endpoint" = "ws-echo" ]; then
             local_check_url="http://localhost:$PORT/ws"
         else
@@ -586,30 +586,29 @@ for profile in "${profiles_to_run[@]}"; do
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     elif [ "$endpoint" = "upload" ]; then
         gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/upload.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
-    elif [ "$endpoint" = "compression" ]; then
-        gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/json-gzip.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+            --raw "$REQUESTS_DIR/upload-500k.raw,$REQUESTS_DIR/upload-2m.raw,$REQUESTS_DIR/upload-10m.raw,$REQUESTS_DIR/upload-20m.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -r 5)
     elif [ "$endpoint" = "api-4" ] || [ "$endpoint" = "api-16" ]; then
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/async-db-get.raw,$REQUESTS_DIR/async-db-get.raw"
             -c "$CONNS" -t 64 -d 15s -p "$pipeline")
     elif [ "$endpoint" = "async-db" ]; then
-        gc_args=("http://localhost:$PORT/async-db?min=10&max=50"
-            -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline")
-    elif [ "$endpoint" = "noisy" ]; then
         gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/noise-badpath.raw,$REQUESTS_DIR/noise-badcl.raw,$REQUESTS_DIR/noise-binary.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+            --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
+            -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
     elif [ "$endpoint" = "static" ]; then
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/static-reset.css.raw,$REQUESTS_DIR/static-layout.css.raw,$REQUESTS_DIR/static-theme.css.raw,$REQUESTS_DIR/static-components.css.raw,$REQUESTS_DIR/static-utilities.css.raw,$REQUESTS_DIR/static-analytics.js.raw,$REQUESTS_DIR/static-helpers.js.raw,$REQUESTS_DIR/static-app.js.raw,$REQUESTS_DIR/static-vendor.js.raw,$REQUESTS_DIR/static-router.js.raw,$REQUESTS_DIR/static-header.html.raw,$REQUESTS_DIR/static-footer.html.raw,$REQUESTS_DIR/static-regular.woff2.raw,$REQUESTS_DIR/static-bold.woff2.raw,$REQUESTS_DIR/static-logo.svg.raw,$REQUESTS_DIR/static-icon-sprite.svg.raw,$REQUESTS_DIR/static-hero.webp.raw,$REQUESTS_DIR/static-thumb1.webp.raw,$REQUESTS_DIR/static-thumb2.webp.raw,$REQUESTS_DIR/static-manifest.json.raw"
+            --recv-buf 16384
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     elif [ "$endpoint" = "json" ]; then
-        gc_args=("http://localhost:$PORT/json"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -r 25)
+    elif [ "$endpoint" = "json-compressed" ]; then
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/json-gzip-1.raw,$REQUESTS_DIR/json-gzip-5.raw,$REQUESTS_DIR/json-gzip-10.raw,$REQUESTS_DIR/json-gzip-15.raw,$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -r 25)
     elif [ -n "${CUSTOM_RAW:-}" ]; then
         gc_args=("http://localhost:$PORT"
             --raw "$CUSTOM_RAW"
@@ -777,7 +776,6 @@ else: print(f'{bps}B/s')
   \"tpl_json\": $t_json,
   \"tpl_db\": 0,
   \"tpl_upload\": 0,
-  \"tpl_compression\": 0,
   \"tpl_static\": 0,
   \"tpl_async_db\": $t_async_db"
         fi

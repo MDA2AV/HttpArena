@@ -9,45 +9,12 @@ public class BenchmarkServices : Service
 {
     private static readonly List<DatasetItem>? Items = LoadItems();
     
-    private static readonly byte[]? LargeJson = LoadLargeJsonBytes();
-    
     static List<DatasetItem>? LoadItems()
     {
         var path = Resolve("/data/dataset.json", "../../../../../../data/dataset.json");
         if (path == null) return null;
-        
+
         return JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(path));
-    }
-
-    static byte[]? LoadLargeJsonBytes()
-    {      
-        var jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-        
-        var largePath = "/data/dataset-large.json";
-        
-        if (File.Exists(largePath))
-        {
-            var largeItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(largePath), jsonOptions);
-            
-            if (largeItems != null)
-            {
-                var processed = largeItems.Select(d => new ProcessedItem
-                {
-                    Id = d.Id, Name = d.Name, Category = d.Category,
-                    Price = d.Price, Quantity = d.Quantity, Active = d.Active,
-                    Tags = d.Tags, Rating = d.Rating,
-                    Total = Math.Round(d.Price * d.Quantity, 2)
-                }).ToList();
-                
-                return JsonSerializer.SerializeToUtf8Bytes(new { items = processed, count = processed.Count }, jsonOptions);
-            }
-        }
-
-        return null;
     }
 
     static string? Resolve(string primary, string fallback)
@@ -78,19 +45,19 @@ public class BenchmarkServices : Service
         return ToResult(ms.Length.ToString());
     }
 
-    // ── /compression ──────────────────────────────────────────────────────────
-    public byte[] Get(CompressionGet _)
-    {
-        Response!.ContentType = "application/json";
-        return LargeJson;
-    }
-
     // ── /json ─────────────────────────────────────────────────────────────────
-    public object Get(JsonGet _)
+    public object Get(JsonGet req)
     {
         if (Items == null) return new ListWithCount<ProcessedItem>(new());
 
-        var processed = Items.ConvertAll(d => d.ToProcessed());
+        int m = 1;
+        if (Request?.QueryString["m"] is string mStr && int.TryParse(mStr, out var pm)) m = pm;
+
+        var count = Math.Clamp(req.Count, 0, Items.Count);
+        var processed = new List<ProcessedItem>(count);
+        for (int i = 0; i < count; i++)
+            processed.Add(Items[i].ToProcessed(m));
+
         return new ListWithCount<ProcessedItem>(processed);
     }
 
@@ -120,13 +87,13 @@ public class BenchmarkServices : Service
                     Id       = reader.GetInt32(0),
                     Name     = reader.GetString(1),
                     Category = reader.GetString(2),
-                    Price    = reader.GetDouble(3),
+                    Price    = reader.GetInt32(3),
                     Quantity = reader.GetInt32(4),
                     Active   = reader.GetInt32(5) == 1,
                     Tags     = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
                     Rating   = new RatingInfo
                     {
-                        Score = reader.GetDouble(7),
+                        Score = reader.GetInt32(7),
                         Count = reader.GetInt32(8)
                     }
                 });
@@ -146,11 +113,14 @@ public class BenchmarkServices : Service
         var ds = TryResolve<NpgsqlDataSource>();
         if (ds == null) return new ListWithCount<object>(new());
 
+        var limit = Math.Clamp(req.Limit, 1, 50);
+
         await using var cmd = ds.CreateCommand(
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
-            "FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50");
-        cmd.Parameters.AddWithValue((double)req.Min);
-        cmd.Parameters.AddWithValue((double)req.Max);
+            "FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
+        cmd.Parameters.AddWithValue(req.Min);
+        cmd.Parameters.AddWithValue(req.Max);
+        cmd.Parameters.AddWithValue(limit);
 
         await using var reader = await cmd.ExecuteReaderAsync();
         var items = new List<object>();
@@ -162,11 +132,11 @@ public class BenchmarkServices : Service
                 id       = reader.GetInt32(0),
                 name     = reader.GetString(1),
                 category = reader.GetString(2),
-                price    = reader.GetDouble(3),
+                price    = reader.GetInt32(3),
                 quantity = reader.GetInt32(4),
                 active   = reader.GetBoolean(5),
                 tags     = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                rating   = new { score = reader.GetDouble(7), count = reader.GetInt32(8) }
+                rating   = new { score = reader.GetInt32(7), count = reader.GetInt32(8) }
             });
         }
 

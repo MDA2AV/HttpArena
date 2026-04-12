@@ -1,18 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"runtime"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
-
-	"compress/flate"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valyala/fasthttp"
@@ -20,15 +19,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 type Rating struct {
-	Score float64 `json:"score"`
-	Count int     `json:"count"`
+	Score int `json:"score"`
+	Count int `json:"count"`
 }
 
 type DatasetItem struct {
 	ID       int      `json:"id"`
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
-	Price    float64  `json:"price"`
+	Price    int      `json:"price"`
 	Quantity int      `json:"quantity"`
 	Active   bool     `json:"active"`
 	Tags     []string `json:"tags"`
@@ -39,12 +38,12 @@ type ProcessedItem struct {
 	ID       int      `json:"id"`
 	Name     string   `json:"name"`
 	Category string   `json:"category"`
-	Price    float64  `json:"price"`
+	Price    int      `json:"price"`
 	Quantity int      `json:"quantity"`
 	Active   bool     `json:"active"`
 	Tags     []string `json:"tags"`
 	Rating   Rating   `json:"rating"`
-	Total    float64  `json:"total"`
+	Total    int      `json:"total"`
 }
 
 type ProcessResponse struct {
@@ -53,7 +52,6 @@ type ProcessResponse struct {
 }
 
 var dataset []DatasetItem
-var jsonLargeResponse []byte
 var db *sql.DB
 var pgPool *pgxpool.Pool
 
@@ -67,36 +65,6 @@ func loadDataset() {
 		return
 	}
 	json.Unmarshal(data, &dataset)
-}
-
-func loadDatasetLarge() {
-	data, err := os.ReadFile("/data/dataset-large.json")
-	if err != nil {
-		return
-	}
-	var raw []struct {
-		ID       int      `json:"id"`
-		Name     string   `json:"name"`
-		Category string   `json:"category"`
-		Price    float64  `json:"price"`
-		Quantity int      `json:"quantity"`
-		Active   bool     `json:"active"`
-		Tags     []string `json:"tags"`
-		Rating   Rating   `json:"rating"`
-	}
-	if json.Unmarshal(data, &raw) != nil {
-		return
-	}
-	items := make([]ProcessedItem, len(raw))
-	for i, d := range raw {
-		items[i] = ProcessedItem{
-			ID: d.ID, Name: d.Name, Category: d.Category,
-			Price: d.Price, Quantity: d.Quantity, Active: d.Active,
-			Tags: d.Tags, Rating: d.Rating,
-			Total: math.Round(d.Price*float64(d.Quantity)*100) / 100,
-		}
-	}
-	jsonLargeResponse, _ = json.Marshal(ProcessResponse{Items: items, Count: len(items)})
 }
 
 func baseline11Handler(ctx *fasthttp.RequestCtx) {
@@ -123,9 +91,22 @@ func pipelineHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBodyString("ok")
 }
 
-func processHandler(ctx *fasthttp.RequestCtx) {
-	items := make([]ProcessedItem, len(dataset))
-	for i, d := range dataset {
+func processHandler(ctx *fasthttp.RequestCtx, count int) {
+	if count > len(dataset) {
+		count = len(dataset)
+	}
+	if count < 0 {
+		count = 0
+	}
+
+	m, _ := strconv.Atoi(string(ctx.QueryArgs().Peek("m")))
+	if m == 0 {
+		m = 1
+	}
+
+	items := make([]ProcessedItem, count)
+	for i := 0; i < count; i++ {
+		d := dataset[i]
 		items[i] = ProcessedItem{
 			ID:       d.ID,
 			Name:     d.Name,
@@ -135,18 +116,32 @@ func processHandler(ctx *fasthttp.RequestCtx) {
 			Active:   d.Active,
 			Tags:     d.Tags,
 			Rating:   d.Rating,
-			Total:    math.Round(d.Price*float64(d.Quantity)*100) / 100,
+			Total:    d.Price * d.Quantity * m,
 		}
 	}
 
-	resp := ProcessResponse{Items: items, Count: len(items)}
+	resp := ProcessResponse{Items: items, Count: count}
 	ctx.Response.Header.Set("Server", "go-fasthttp")
 	ctx.SetContentType("application/json")
 	body, _ := json.Marshal(resp)
-	ctx.SetBody(body)
+
+	ae := string(ctx.Request.Header.Peek("Accept-Encoding"))
+	if strings.Contains(ae, "gzip") {
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		gz.Write(body)
+		gz.Close()
+		ctx.Response.Header.Set("Content-Encoding", "gzip")
+		ctx.SetBody(buf.Bytes())
+	} else {
+		ctx.SetBody(body)
+	}
 }
 
 func loadDB() {
+	if _, err := os.Stat("/data/benchmark.db"); err != nil {
+		return
+	}
 	d, err := sql.Open("sqlite", "file:/data/benchmark.db?mode=ro&immutable=1")
 	if err != nil {
 		return
@@ -180,19 +175,31 @@ func asyncDbHandler(ctx *fasthttp.RequestCtx) {
 		ctx.SetBodyString(`{"items":[],"count":0}`)
 		return
 	}
-	minPrice := 10.0
-	maxPrice := 50.0
+	minPrice := 10
+	maxPrice := 50
+	limit := 50
 	if v := ctx.QueryArgs().Peek("min"); len(v) > 0 {
-		if f, err := strconv.ParseFloat(string(v), 64); err == nil {
-			minPrice = f
+		if n, err := strconv.Atoi(string(v)); err == nil {
+			minPrice = n
 		}
 	}
 	if v := ctx.QueryArgs().Peek("max"); len(v) > 0 {
-		if f, err := strconv.ParseFloat(string(v), 64); err == nil {
-			maxPrice = f
+		if n, err := strconv.Atoi(string(v)); err == nil {
+			maxPrice = n
 		}
 	}
-	rows, err := pgPool.Query(context.Background(), "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50", minPrice, maxPrice)
+	if v := ctx.QueryArgs().Peek("limit"); len(v) > 0 {
+		if n, err := strconv.Atoi(string(v)); err == nil {
+			limit = n
+			if limit < 1 {
+				limit = 1
+			}
+			if limit > 50 {
+				limit = 50
+			}
+		}
+	}
+	rows, err := pgPool.Query(context.Background(), "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3", minPrice, maxPrice, limit)
 	if err != nil {
 		ctx.Response.Header.Set("Server", "go-fasthttp")
 		ctx.SetContentType("application/json")
@@ -204,7 +211,7 @@ func asyncDbHandler(ctx *fasthttp.RequestCtx) {
 	for rows.Next() {
 		var id, quantity, ratingCount int
 		var name, category string
-		var price, ratingScore float64
+		var price, ratingScore int
 		var active bool
 		var tags []byte
 		if err := rows.Scan(&id, &name, &category, &price, &quantity, &active, &tags, &ratingScore, &ratingCount); err != nil {
@@ -265,7 +272,7 @@ func dbHandler(ctx *fasthttp.RequestCtx) {
 	for rows.Next() {
 		var id, quantity, active, ratingCount int
 		var name, category, tags string
-		var price, ratingScore float64
+		var price, ratingScore int
 		if err := rows.Scan(&id, &name, &category, &price, &quantity, &active, &tags, &ratingScore, &ratingCount); err != nil {
 			continue
 		}
@@ -285,30 +292,17 @@ func dbHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody(body)
 }
 
-var compressedHandler fasthttp.RequestHandler
-
 func main() {
 	loadDataset()
-	loadDatasetLarge()
 	loadDB()
 	loadPgPool()
 
-	compressedHandler = fasthttp.CompressHandlerLevel(func(ctx *fasthttp.RequestCtx) {
-		ctx.Response.Header.Set("Server", "go-fasthttp")
-		ctx.SetContentType("application/json")
-		ctx.SetBody(jsonLargeResponse)
-	}, flate.BestSpeed)
-
-	fsHandler := (&fasthttp.FS{
-		Root:            "/data/static",
-		Compress:        true,
-		AcceptByteRange: true,
-	}).NewRequestHandler()
-
-	staticHandler := func(ctx *fasthttp.RequestCtx) {
-		ctx.URI().SetPathBytes(ctx.Path()[len("/static"):])
-		fsHandler(ctx)
+	fs := &fasthttp.FS{
+		Root:        "/data/static",
+		PathRewrite: fasthttp.NewPathSlashesStripper(1),
+		Compress:    true,
 	}
+	fsHandler := fs.NewRequestHandler()
 
 	handler := func(ctx *fasthttp.RequestCtx) {
 		method := string(ctx.Method())
@@ -318,29 +312,24 @@ func main() {
 			return
 		}
 
-		switch string(ctx.Path()) {
-		case "/pipeline":
+		path := string(ctx.Path())
+		switch {
+		case path == "/pipeline":
 			pipelineHandler(ctx)
-		case "/json":
-			processHandler(ctx)
-		case "/compression":
-			compressedHandler(ctx)
-		case "/upload":
+		case strings.HasPrefix(path, "/json/"):
+			count, _ := strconv.Atoi(path[len("/json/"):])
+			processHandler(ctx, count)
+		case path == "/upload":
 			uploadHandler(ctx)
-		case "/db":
+		case path == "/db":
 			dbHandler(ctx)
-		case "/async-db":
+		case path == "/async-db":
 			asyncDbHandler(ctx)
+		case strings.HasPrefix(path, "/static/"):
+			fsHandler(ctx)
+		case strings.HasPrefix(path, "/baseline"):
+			baseline11Handler(ctx)
 		default:
-			if strings.HasPrefix(string(ctx.Path()), "/static/") {
-				staticHandler(ctx)
-				return
-			}
-			if strings.HasPrefix(string(ctx.Path()), "/baseline") {
-				baseline11Handler(ctx)
-				return
-			}
-
 			ctx.SetStatusCode(fasthttp.StatusNotFound)
 		}
 	}

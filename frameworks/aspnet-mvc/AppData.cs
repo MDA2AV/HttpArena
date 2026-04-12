@@ -12,7 +12,6 @@ static class AppData
     };
 
     public static List<DatasetItem>? DatasetItems;
-    public static byte[]? LargeJsonResponse;
 
     public static SqlitePool? DbPool;
     public static NpgsqlDataSource? PgDataSource;
@@ -20,7 +19,6 @@ static class AppData
     public static void Load()
     {
         LoadDataset();
-        LoadLargeDataset();
         OpenDatabase();
         OpenPgPool();
     }
@@ -30,28 +28,6 @@ static class AppData
         var path = Environment.GetEnvironmentVariable("DATASET_PATH") ?? "/data/dataset.json";
         if (!File.Exists(path)) return;
         DatasetItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(path), JsonOptions);
-    }
-
-    static void LoadLargeDataset()
-    {
-        var path = "/data/dataset-large.json";
-        if (!File.Exists(path)) return;
-        var items = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(path), JsonOptions);
-        if (items == null) return;
-
-        var processed = new List<ProcessedItem>(items.Count);
-        foreach (var item in items)
-        {
-            processed.Add(new ProcessedItem
-            {
-                Id = item.Id, Name = item.Name, Category = item.Category,
-                Price = item.Price, Quantity = item.Quantity, Active = item.Active,
-                Tags = item.Tags, Rating = item.Rating,
-                Total = Math.Round(item.Price * item.Quantity, 2)
-            });
-        }
-        LargeJsonResponse = JsonSerializer.SerializeToUtf8Bytes(
-            new { items = processed, count = processed.Count }, JsonOptions);
     }
 
     static void OpenPgPool()

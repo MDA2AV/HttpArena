@@ -77,11 +77,11 @@ public class Database
                     Id = reader.GetInt32(0),
                     Name = reader.GetString(1),
                     Category = reader.GetString(2),
-                    Price = reader.GetDouble(3),
+                    Price = (int)reader.GetDouble(3),
                     Quantity = reader.GetInt32(4),
                     Active = reader.GetInt32(5) == 1,
                     Tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                    Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) },
+                    Rating = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) },
                 });
             }
 

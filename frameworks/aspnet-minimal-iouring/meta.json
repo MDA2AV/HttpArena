@@ -11,11 +11,10 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "upload",
-    "compression",
     "noisy",
     "static",
-    "tcp-frag",
     "async-db",
     "baseline-h2",
     "static-h2"

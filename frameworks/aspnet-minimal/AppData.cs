@@ -1,6 +1,4 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Npgsql;
 
 static class AppData
@@ -12,16 +10,12 @@ static class AppData
     };
 
     public static List<DatasetItem>? DatasetItems;
-    public static byte[]? LargeJsonResponse;
 
-    public static SqlitePool? DbPool;
     public static NpgsqlDataSource? PgDataSource;
 
     public static void Load()
     {
         LoadDataset();
-        LoadLargeDataset();
-        OpenDatabase();
         OpenPgPool();
     }
 
@@ -32,35 +26,12 @@ static class AppData
         DatasetItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(path), JsonOptions);
     }
 
-    static void LoadLargeDataset()
-    {
-        var path = "/data/dataset-large.json";
-        if (!File.Exists(path)) return;
-        var items = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(path), JsonOptions);
-        if (items == null) return;
-
-        var processed = new List<ProcessedItem>(items.Count);
-        foreach (var item in items)
-        {
-            processed.Add(new ProcessedItem
-            {
-                Id = item.Id, Name = item.Name, Category = item.Category,
-                Price = item.Price, Quantity = item.Quantity, Active = item.Active,
-                Tags = item.Tags, Rating = item.Rating,
-                Total = Math.Round(item.Price * item.Quantity, 2)
-            });
-        }
-        LargeJsonResponse = JsonSerializer.SerializeToUtf8Bytes(
-            new { items = processed, count = processed.Count }, JsonOptions);
-    }
-
     static void OpenPgPool()
     {
         var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
         if (string.IsNullOrEmpty(dbUrl)) return;
         try
         {
-            // Parse postgres:// URI into Npgsql connection string
             var uri = new Uri(dbUrl);
             var userInfo = uri.UserInfo.Split(':');
             var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size=256;Minimum Pool Size=64;Multiplexing=true;No Reset On Close=true;Max Auto Prepare=4;Auto Prepare Min Usages=1";
@@ -69,40 +40,4 @@ static class AppData
         }
         catch { }
     }
-
-    static void OpenDatabase()
-    {
-        var path = "/data/benchmark.db";
-        if (!File.Exists(path)) return;
-        DbPool = new SqlitePool($"Data Source={path};Mode=ReadOnly", Environment.ProcessorCount);
-    }
-}
-
-sealed class SqlitePool
-{
-    private readonly ConcurrentBag<SqliteConnection> _connections = new();
-
-    public SqlitePool(string connectionString, int size)
-    {
-        for (int i = 0; i < size; i++)
-        {
-            var conn = new SqliteConnection(connectionString);
-            conn.Open();
-            using var pragma = conn.CreateCommand();
-            pragma.CommandText = "PRAGMA mmap_size=268435456";
-            pragma.ExecuteNonQuery();
-            _connections.Add(conn);
-        }
-    }
-
-    public SqliteConnection Rent()
-    {
-        SqliteConnection? conn;
-        var spin = new SpinWait();
-        while (!_connections.TryTake(out conn))
-            spin.SpinOnce();
-        return conn;
-    }
-
-    public void Return(SqliteConnection conn) => _connections.Add(conn);
 }

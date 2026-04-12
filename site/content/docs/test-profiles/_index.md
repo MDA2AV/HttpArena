@@ -26,7 +26,6 @@ Data files are **mounted automatically** by the benchmark runner — your Docker
 | Path | Description |
 |------|-------------|
 | `/data/dataset.json` | 50-item dataset for `/json` |
-| `/data/dataset-large.json` | 6000-item dataset for `/compression` |
 | `/data/static/` | 20 static files for `/static/*` |
 | `/certs/server.crt`, `/certs/server.key` | TLS certificate and key for HTTPS/H2/H3 |
 | `DATABASE_URL` env var | Postgres connection string for `/async-db` (set automatically when `async-db` profile runs) |

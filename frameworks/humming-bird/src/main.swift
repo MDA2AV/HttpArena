@@ -14,7 +14,7 @@ import PostgresNIO
 // MARK: - Data Models
 
 struct Rating: Codable, Sendable {
-    let score: Double
+    let score: Int
     let count: Int
 }
 
@@ -22,7 +22,7 @@ struct DatasetItem: Codable, Sendable {
     let id: Int
     let name: String
     let category: String
-    let price: Double
+    let price: Int
     let quantity: Int
     let active: Bool
     let tags: [String]
@@ -33,12 +33,12 @@ struct ProcessedItem: Codable, Sendable {
     let id: Int
     let name: String
     let category: String
-    let price: Double
+    let price: Int
     let quantity: Int
     let active: Bool
     let tags: [String]
     let rating: Rating
-    let total: Double
+    let total: Int
 }
 
 struct JsonResponse: Codable, Sendable {
@@ -50,20 +50,17 @@ struct JsonResponse: Codable, Sendable {
 
 final class AppState: Sendable {
     let dataset: [DatasetItem]
-    let jsonLargeCache: ByteBuffer
     let staticFiles: [String: StaticFile]
     let dbPath: String
     let dbAvailable: Bool
 
     init(
         dataset: [DatasetItem],
-        jsonLargeCache: ByteBuffer,
         staticFiles: [String: StaticFile],
         dbPath: String,
         dbAvailable: Bool
     ) {
         self.dataset = dataset
-        self.jsonLargeCache = jsonLargeCache
         self.staticFiles = staticFiles
         self.dbPath = dbPath
         self.dbAvailable = dbAvailable
@@ -73,6 +70,8 @@ final class AppState: Sendable {
 struct StaticFile: Sendable {
     let data: ByteBuffer
     let contentType: String
+    let br: ByteBuffer?
+    let gz: ByteBuffer?
 }
 
 // MARK: - Helpers
@@ -82,23 +81,14 @@ func loadDataset(path: String) -> [DatasetItem] {
     return (try? JSONDecoder().decode([DatasetItem].self, from: data)) ?? []
 }
 
-func buildJsonCache(_ items: [DatasetItem]) -> ByteBuffer {
-    let processed = items.map { item in
-        ProcessedItem(
-            id: item.id,
-            name: item.name,
-            category: item.category,
-            price: item.price,
-            quantity: item.quantity,
-            active: item.active,
-            tags: item.tags,
-            rating: item.rating,
-            total: (item.price * Double(item.quantity) * 100.0).rounded() / 100.0
-        )
+func parseQueryIntParam(_ query: String, key: String) -> Int? {
+    for pair in query.split(separator: "&") {
+        let kv = pair.split(separator: "=", maxSplits: 1)
+        if kv.count == 2, kv[0] == key {
+            return Int(kv[1])
+        }
     }
-    let resp = JsonResponse(items: processed, count: processed.count)
-    return (try? JSONEncoder().encodeAsByteBuffer(resp, allocator: ByteBufferAllocator()))
-        ?? ByteBuffer()
+    return nil
 }
 
 func loadStaticFiles() -> [String: StaticFile] {
@@ -108,6 +98,7 @@ func loadStaticFiles() -> [String: StaticFile] {
         return files
     }
     for name in entries {
+        if name.hasSuffix(".br") || name.hasSuffix(".gz") { continue }
         let path = "\(dir)/\(name)"
         guard let data = FileManager.default.contents(atPath: path) else { continue }
         let ext = (name as NSString).pathExtension
@@ -122,7 +113,14 @@ func loadStaticFiles() -> [String: StaticFile] {
         case "json": ct = "application/json"
         default: ct = "application/octet-stream"
         }
-        files[name] = StaticFile(data: ByteBuffer(data: data), contentType: ct)
+        let brData = FileManager.default.contents(atPath: path + ".br")
+        let gzData = FileManager.default.contents(atPath: path + ".gz")
+        files[name] = StaticFile(
+            data: ByteBuffer(data: data),
+            contentType: ct,
+            br: brData.map { ByteBuffer(data: $0) },
+            gz: gzData.map { ByteBuffer(data: $0) }
+        )
     }
     return files
 }
@@ -138,18 +136,18 @@ func parseQuerySum(_ query: String) -> Int {
     return sum
 }
 
-func parseQueryParam(_ query: String, key: String) -> Double? {
+func parseQueryParam(_ query: String, key: String) -> Int? {
     for pair in query.split(separator: "&") {
         let kv = pair.split(separator: "=", maxSplits: 1)
         if kv.count == 2, kv[0] == key {
-            return Double(kv[1])
+            return Int(kv[1])
         }
     }
     return nil
 }
 
 // Simple SQLite query helper
-func queryDb(dbPath: String, minPrice: Double, maxPrice: Double) -> [UInt8] {
+func queryDb(dbPath: String, minPrice: Int, maxPrice: Int) -> [UInt8] {
     var db: OpaquePointer?
     guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
         return [UInt8](#"{"items":[],"count":0}"#.utf8)
@@ -166,20 +164,20 @@ func queryDb(dbPath: String, minPrice: Double, maxPrice: Double) -> [UInt8] {
     }
     defer { sqlite3_finalize(stmt) }
 
-    sqlite3_bind_double(stmt, 1, minPrice)
-    sqlite3_bind_double(stmt, 2, maxPrice)
+    sqlite3_bind_int64(stmt, 1, Int64(minPrice))
+    sqlite3_bind_int64(stmt, 2, Int64(maxPrice))
 
     var items: [[String: Any]] = []
     while sqlite3_step(stmt) == SQLITE_ROW {
         let id = sqlite3_column_int64(stmt, 0)
         let name = String(cString: sqlite3_column_text(stmt, 1))
         let category = String(cString: sqlite3_column_text(stmt, 2))
-        let price = sqlite3_column_double(stmt, 3)
+        let price = Int(sqlite3_column_int64(stmt, 3))
         let quantity = sqlite3_column_int64(stmt, 4)
         let active = sqlite3_column_int64(stmt, 5) == 1
         let tagsStr = String(cString: sqlite3_column_text(stmt, 6))
         let tags = (try? JSONSerialization.jsonObject(with: Data(tagsStr.utf8))) ?? []
-        let ratingScore = sqlite3_column_double(stmt, 7)
+        let ratingScore = Int(sqlite3_column_int64(stmt, 7))
         let ratingCount = sqlite3_column_int64(stmt, 8)
 
         let item: [String: Any] = [
@@ -219,16 +217,16 @@ func parseDatabaseURL(_ url: String) -> PostgresClient.Configuration? {
     return config
 }
 
-func queryPgDb(client: PostgresClient, minPrice: Double, maxPrice: Double) async -> [UInt8] {
+func queryPgDb(client: PostgresClient, minPrice: Int, maxPrice: Int, limit: Int) async -> [UInt8] {
     do {
         let rows = try await client.query(
-            "SELECT id, name, category, price, quantity, active, tags::text, rating_score, rating_count FROM items WHERE price BETWEEN \(minPrice) AND \(maxPrice) LIMIT 50"
+            "SELECT id, name, category, price, quantity, active, tags::text, rating_score, rating_count FROM items WHERE price BETWEEN \(minPrice) AND \(maxPrice) LIMIT \(limit)"
         )
         var items: [[String: Any]] = []
         for try await row in rows {
             let (id, name, category, price, quantity, active, tagsStr, ratingScore, ratingCount) =
                 try row.decode(
-                    (Int, String, String, Double, Int, Bool, String, Double, Int).self,
+                    (Int, String, String, Int, Int, Bool, String, Int, Int).self,
                     context: .default)
             let tags = (try? JSONSerialization.jsonObject(with: Data(tagsStr.utf8))) ?? []
             items.append([
@@ -251,15 +249,11 @@ func queryPgDb(client: PostgresClient, minPrice: Double, maxPrice: Double) async
 let datasetPath = ProcessInfo.processInfo.environment["DATASET_PATH"] ?? "/data/dataset.json"
 let dataset = loadDataset(path: datasetPath)
 
-let largeDataset = loadDataset(path: "/data/dataset-large.json")
-let jsonLargeCache = buildJsonCache(largeDataset)
-
 let dbPath = "/data/benchmark.db"
 let dbAvailable = FileManager.default.fileExists(atPath: dbPath)
 
 let state = AppState(
     dataset: dataset,
-    jsonLargeCache: jsonLargeCache,
     staticFiles: loadStaticFiles(),
     dbPath: dbPath,
     dbAvailable: dbAvailable
@@ -324,25 +318,35 @@ router.get("baseline2") { request, _ -> Response in
     )
 }
 
-// GET /json
-router.get("json") { _, _ -> Response in
+// GET /json/{count}
+router.get("json/{count}") { request, context -> Response in
     if state.dataset.isEmpty {
         return Response(status: .internalServerError)
     }
-    let jsonBytes = buildJsonCache(state.dataset)
+    let countParam = context.parameters.get("count").flatMap(Int.init) ?? 0
+    let count = max(0, min(countParam, state.dataset.count))
+    let query = request.uri.query ?? ""
+    let m = parseQueryIntParam(query, key: "m") ?? 1
+    let processed = Array(state.dataset.prefix(count)).map { item in
+        ProcessedItem(
+            id: item.id,
+            name: item.name,
+            category: item.category,
+            price: item.price,
+            quantity: item.quantity,
+            active: item.active,
+            tags: item.tags,
+            rating: item.rating,
+            total: item.price * item.quantity * m
+        )
+    }
+    let resp = JsonResponse(items: processed, count: count)
+    let jsonBytes = (try? JSONEncoder().encodeAsByteBuffer(resp, allocator: ByteBufferAllocator()))
+        ?? ByteBuffer()
     return Response(
         status: .ok,
         headers: [.contentType: "application/json"],
         body: .init(byteBuffer: jsonBytes)
-    )
-}
-
-// GET /compression — returns large JSON; ResponseCompressionMiddleware handles gzip
-router.get("compression") { _, _ -> Response in
-    Response(
-        status: .ok,
-        headers: [.contentType: "application/json"],
-        body: .init(byteBuffer: state.jsonLargeCache)
     )
 }
 
@@ -369,8 +373,8 @@ router.get("db") { request, _ -> Response in
         )
     }
     let query = request.uri.query ?? ""
-    let minPrice = parseQueryParam(query, key: "min") ?? 10.0
-    let maxPrice = parseQueryParam(query, key: "max") ?? 50.0
+    let minPrice = parseQueryParam(query, key: "min") ?? 10
+    let maxPrice = parseQueryParam(query, key: "max") ?? 50
     let result = queryDb(dbPath: state.dbPath, minPrice: minPrice, maxPrice: maxPrice)
     return Response(
         status: .ok,
@@ -389,9 +393,11 @@ router.get("async-db") { request, _ -> Response in
         )
     }
     let query = request.uri.query ?? ""
-    let minPrice = parseQueryParam(query, key: "min") ?? 10.0
-    let maxPrice = parseQueryParam(query, key: "max") ?? 50.0
-    let result = await queryPgDb(client: client, minPrice: minPrice, maxPrice: maxPrice)
+    let minPrice = parseQueryParam(query, key: "min") ?? 10
+    let maxPrice = parseQueryParam(query, key: "max") ?? 50
+    let limitRaw = parseQueryParam(query, key: "limit") ?? 50
+    let limit = max(1, min(limitRaw, 50))
+    let result = await queryPgDb(client: client, minPrice: minPrice, maxPrice: maxPrice, limit: limit)
     return Response(
         status: .ok,
         headers: [.contentType: "application/json"],
@@ -400,10 +406,25 @@ router.get("async-db") { request, _ -> Response in
 }
 
 // GET /static/{filename}
-router.get("static/{filename}") { _, context -> Response in
+router.get("static/{filename}") { request, context -> Response in
     let filename = context.parameters.get("filename") ?? ""
     guard let file = state.staticFiles[filename] else {
         return Response(status: .notFound)
+    }
+    let ae = request.headers[values: .acceptEncoding].first ?? ""
+    if let brBuf = file.br, ae.contains("br") {
+        return Response(
+            status: .ok,
+            headers: [.contentType: file.contentType, .contentEncoding: "br"],
+            body: .init(byteBuffer: brBuf)
+        )
+    }
+    if let gzBuf = file.gz, ae.contains("gzip") {
+        return Response(
+            status: .ok,
+            headers: [.contentType: file.contentType, .contentEncoding: "gzip"],
+            body: .init(byteBuffer: gzBuf)
+        )
     }
     return Response(
         status: .ok,

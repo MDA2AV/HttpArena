@@ -21,7 +21,7 @@ Run the validation suite against a framework. Builds the Docker image, starts th
 
 ## Validation coverage
 
-Each subscribed test triggers its corresponding validation checks. Workload profiles (`api-4`, `api-16`, `assets-4`, `assets-16`) automatically trigger validation for all endpoints they use, even if those individual tests are not in `meta.json`.
+Each subscribed test triggers its corresponding validation checks. Workload profiles (`api-4`, `api-16`) automatically trigger validation for all endpoints they use, even if those individual tests are not in `meta.json`.
 
 On failure, each check prints a link to the relevant validation documentation page for reference.
 
@@ -37,7 +37,7 @@ Several validations use randomized inputs to detect hardcoded responses:
 
 ```
 === Validating: express ===
-[info] Subscribed tests: baseline json upload compression
+[info] Subscribed tests: baseline json upload
 [build] Building Docker image...
 [ready] Server is up
 [test] baseline endpoints

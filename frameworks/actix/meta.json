@@ -1,26 +1,24 @@
 {
   "display_name": "actix",
   "language": "Rust",
-  "type": "production",
+  "type": "tuned",
   "engine": "actix",
-  "description": "Actix-web 4 with rustls for HTTP/2 support, compiled with -O3 and thin LTO.",
+  "description": "Actix-web 4 with rustls for HTTP/2 support. Tuned: static assets preloaded in-memory with precompressed .br/.gz neighbors, JSON responses precomputed per (count, m) pair with gzip+brotli cached at startup, Compress middleware bypassed. Compiled with -O3 and thin LTO.",
   "repo": "https://github.com/actix/actix-web",
   "enabled": true,
   "tests": [
     "baseline",
-    "noisy",
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "upload",
-    "compression",
     "api-4",
     "api-16",
     "static",
     "async-db",
     "baseline-h2",
-    "static-h2",
-    "tcp-frag"
+    "static-h2"
   ],
   "maintainers": []
 }

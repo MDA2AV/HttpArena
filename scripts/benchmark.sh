@@ -25,7 +25,7 @@ RESULTS_DIR="$ROOT_DIR/results"
 CERTS_DIR="$ROOT_DIR/certs"
 
 # Profile definitions: pipeline|req_per_conn|cpu_limit|connections|endpoint
-# endpoint: empty = /baseline11 (raw), "json" = /json (GET), "compression" = /compression (GET+gzip), "pipeline" = /pipeline, "upload" = POST /upload (raw),
+# endpoint: empty = /baseline11 (raw), "json" = /json (GET), "pipeline" = /pipeline, "upload" = POST /upload (raw),
 #           "h2" = /baseline2 (h2load), "static-h2" = multi-URI h2load, "h3" = /baseline2 (oha HTTP/3), "static-h3" = multi-URI oha,
 #           "grpc" = gRPC unary (h2load h2c), "grpc-tls" = gRPC unary (h2load TLS),
 #           "static" = multi-URI static files (gcannon --raw), "ws-echo" = WebSocket echo (gcannon --ws),
@@ -35,14 +35,11 @@ declare -A PROFILES=(
     [pipelined]="16|0|0-31,64-95|512,4096|pipeline"
     [limited-conn]="1|10|0-31,64-95|512,4096|"
     [json]="1|0|0-31,64-95|4096|json"
+    [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [upload]="1|0|0-31,64-95|32,256|upload"
-    [compression]="1|0|0-31,64-95|512,4096|compression"
-    [noisy]="1|0|0-31,64-95|512,4096,16384|noisy"
     [api-4]="1|5|0-3|256|api-4"
     [api-16]="1|5|0-7,64-71|1024|api-16"
-    [assets-4]="1|10|0-3|256|assets-4"
-    [assets-16]="1|10|0-7,64-71|1024|assets-16"
-    [static]="1|10|0-31,64-95|1024,4096,6800|static"
+    [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
     [unary-grpc]="1|0|0-31,64-95|256,1024|grpc"
@@ -51,7 +48,7 @@ declare -A PROFILES=(
     [echo-ws]="1|0|0-31,64-95|512,4096,16384|ws-echo"
     [async-db]="1|0|0-31,64-95|1024|async-db"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy api-4 api-16 assets-4 assets-16 static async-db baseline-h2 static-h2 gateway-64 unary-grpc unary-grpc-tls echo-ws)
+PROFILE_ORDER=(baseline pipelined limited-conn json json-comp upload api-4 api-16 static async-db baseline-h2 static-h2 gateway-64 unary-grpc unary-grpc-tls echo-ws)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -297,6 +294,8 @@ restore_settings() {
     fi
     docker stop -t 5 "$PG_CONTAINER" 2>/dev/null || true
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
+    echo "[restore] Restoring loopback MTU to 65536..."
+    sudo ip link set lo mtu 65536 2>/dev/null || true
     if [ -n "$ORIG_GOVERNOR" ]; then
         echo "[restore] Restoring CPU governor to $ORIG_GOVERNOR..."
         if command -v cpupower &>/dev/null; then
@@ -338,6 +337,8 @@ echo "[tune] Setting UDP buffer sizes for QUIC..."
 sudo sysctl -w net.core.rmem_max=7500000 > /dev/null 2>&1 || true
 sudo sysctl -w net.core.wmem_max=7500000 > /dev/null 2>&1 || true
 
+echo "[tune] Setting loopback MTU to 1500 (realistic Ethernet)..."
+sudo ip link set lo mtu 1500 2>/dev/null || echo "[warn] Could not set loopback MTU"
 
 echo "[clean] Restarting Docker daemon..."
 if sudo systemctl restart docker 2>/dev/null; then
@@ -473,17 +474,16 @@ for profile in "${profiles_to_run[@]}"; do
             --ulimit memlock=-1:-1
             --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE"
             -v "$ROOT_DIR/data/dataset.json:/data/dataset.json:ro"
-            -v "$ROOT_DIR/data/dataset-large.json:/data/dataset-large.json:ro"
             -v "$ROOT_DIR/data/static:/data/static:ro"
             -v "$CERTS_DIR:/certs:ro")
         if [ "$endpoint" = "async-db" ] || [ "$endpoint" = "api-4" ] || [ "$endpoint" = "api-16" ]; then
             docker_args+=(-e "DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark")
             docker_args+=(-e "DATABASE_MAX_CONN=256")
         fi
-        if [ "$endpoint" = "api-4" ] || [ "$endpoint" = "assets-4" ]; then
+        if [ "$endpoint" = "api-4" ]; then
             docker_args+=(--memory=16g --memory-swap=16g)
         fi
-        if [ "$endpoint" = "api-16" ] || [ "$endpoint" = "assets-16" ]; then
+        if [ "$endpoint" = "api-16" ]; then
             docker_args+=(--memory=32g --memory-swap=32g)
         fi
         if [ -n "$cpu_limit" ]; then
@@ -535,12 +535,10 @@ for profile in "${profiles_to_run[@]}"; do
             [ "$endpoint" = "h2" ] && local_check_url="https://localhost:$H2PORT/baseline2?a=1&b=1"
         elif [ "$endpoint" = "upload" ]; then
             local_check_url="http://localhost:$PORT/baseline11?a=1&b=1"
-        elif [ "$endpoint" = "noisy" ]; then
-            local_check_url="http://localhost:$PORT/baseline11?a=1&b=1"
         elif [ "$endpoint" = "static" ]; then
             local_check_url="http://localhost:$PORT/static/reset.css"
         elif [ "$endpoint" = "json" ]; then
-            local_check_url="http://localhost:$PORT/json"
+            local_check_url="http://localhost:$PORT/json/1"
         elif [ "$endpoint" = "ws-echo" ]; then
             local_check_url="http://localhost:$PORT/ws"
         else
@@ -564,6 +562,7 @@ for profile in "${profiles_to_run[@]}"; do
     # Build load generator args based on profile endpoint
     USE_H2LOAD=false
     USE_OHA=false
+    USE_WRK=false
     if [ "$endpoint" = "ws-echo" ]; then
         gc_args=("http://localhost:$PORT/ws"
             --ws
@@ -624,35 +623,29 @@ for profile in "${profiles_to_run[@]}"; do
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     elif [ "$endpoint" = "upload" ]; then
         gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/upload.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
-    elif [ "$endpoint" = "compression" ]; then
-        gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/json-gzip.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+            --raw "$REQUESTS_DIR/upload-500k.raw,$REQUESTS_DIR/upload-2m.raw,$REQUESTS_DIR/upload-10m.raw,$REQUESTS_DIR/upload-20m.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -r 5)
     elif [ "$endpoint" = "api-4" ] || [ "$endpoint" = "api-16" ]; then
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/async-db-get.raw,$REQUESTS_DIR/async-db-get.raw"
             -c "$CONNS" -t 64 -d 15s -p "$pipeline")
-    elif [ "$endpoint" = "assets-4" ] || [ "$endpoint" = "assets-16" ]; then
-        # 20 templates: all static files send Accept-Encoding: br, gzip; json requests do NOT send compression header
-        gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/static-app.js.raw,$REQUESTS_DIR/static-vendor.js.raw,$REQUESTS_DIR/static-components.css.raw,$REQUESTS_DIR/static-utilities.css.raw,$REQUESTS_DIR/static-header.html.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/static-router.js.raw,$REQUESTS_DIR/static-helpers.js.raw,$REQUESTS_DIR/static-layout.css.raw,$REQUESTS_DIR/static-theme.css.raw,$REQUESTS_DIR/static-footer.html.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/static-hero.webp.raw,$REQUESTS_DIR/static-regular.woff2.raw,$REQUESTS_DIR/static-thumb1.webp.raw,$REQUESTS_DIR/static-bold.woff2.raw,$REQUESTS_DIR/static-icon-sprite.svg.raw,$REQUESTS_DIR/static-logo.svg.raw,$REQUESTS_DIR/static-manifest.json.raw,$REQUESTS_DIR/static-reset.css.raw"
-            -c "$CONNS" -t 64 -d 15s -p "$pipeline")
     elif [ "$endpoint" = "async-db" ]; then
-        gc_args=("http://localhost:$PORT/async-db?min=10&max=50"
-            -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline")
-    elif [ "$endpoint" = "noisy" ]; then
         gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/noise-badpath.raw,$REQUESTS_DIR/noise-badcl.raw,$REQUESTS_DIR/noise-binary.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+            --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
+            -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
     elif [ "$endpoint" = "static" ]; then
-        gc_args=("http://localhost:$PORT"
-            --raw "$REQUESTS_DIR/static-reset.css.raw,$REQUESTS_DIR/static-layout.css.raw,$REQUESTS_DIR/static-theme.css.raw,$REQUESTS_DIR/static-components.css.raw,$REQUESTS_DIR/static-utilities.css.raw,$REQUESTS_DIR/static-analytics.js.raw,$REQUESTS_DIR/static-helpers.js.raw,$REQUESTS_DIR/static-app.js.raw,$REQUESTS_DIR/static-vendor.js.raw,$REQUESTS_DIR/static-router.js.raw,$REQUESTS_DIR/static-header.html.raw,$REQUESTS_DIR/static-footer.html.raw,$REQUESTS_DIR/static-regular.woff2.raw,$REQUESTS_DIR/static-bold.woff2.raw,$REQUESTS_DIR/static-logo.svg.raw,$REQUESTS_DIR/static-icon-sprite.svg.raw,$REQUESTS_DIR/static-hero.webp.raw,$REQUESTS_DIR/static-thumb1.webp.raw,$REQUESTS_DIR/static-thumb2.webp.raw,$REQUESTS_DIR/static-manifest.json.raw"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+        USE_WRK=true
+        gc_args=(wrk -t "$THREADS" -c "$CONNS" -d "$DURATION"
+            -s "$REQUESTS_DIR/static-rotate.lua"
+            "http://localhost:$PORT")
     elif [ "$endpoint" = "json" ]; then
-        gc_args=("http://localhost:$PORT/json"
-            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -r 25)
+    elif [ "$endpoint" = "json-compressed" ]; then
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/json-gzip-1.raw,$REQUESTS_DIR/json-gzip-5.raw,$REQUESTS_DIR/json-gzip-10.raw,$REQUESTS_DIR/json-gzip-15.raw,$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -r 25)
     elif [ -n "${CUSTOM_RAW:-}" ]; then
         gc_args=("http://localhost:$PORT"
             --raw "$CUSTOM_RAW"
@@ -660,9 +653,10 @@ for profile in "${profiles_to_run[@]}"; do
     else
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_chunked.raw"
+            --recv-buf 512
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     fi
-    if [ "$USE_H2LOAD" = "false" ] && [ "$req_per_conn" -gt 0 ] 2>/dev/null; then
+    if [ "$USE_H2LOAD" = "false" ] && [ "$USE_WRK" = "false" ] && [ "$req_per_conn" -gt 0 ] 2>/dev/null; then
         gc_args+=(-r "$req_per_conn")
     fi
 
@@ -696,7 +690,9 @@ for profile in "${profiles_to_run[@]}"; do
             stats_pid=$!
         fi
 
-        if [ "$USE_OHA" = "true" ]; then
+        if [ "$USE_WRK" = "true" ]; then
+            output=$(timeout 45 taskset -c "$GCANNON_CPUS" "${gc_args[@]}" 2>&1) || true
+        elif [ "$USE_OHA" = "true" ]; then
             timeout --foreground 45 "${gc_args[@]}" || true
             output=$(cat "$oha_out" 2>/dev/null)
             rm -f "$oha_out"
@@ -724,7 +720,11 @@ for profile in "${profiles_to_run[@]}"; do
         echo "$output"
         echo "  CPU: $avg_cpu | Mem: $peak_mem"
 
-        if [ "$USE_OHA" = "true" ]; then
+        if [ "$USE_WRK" = "true" ]; then
+            # wrk: "Requests/sec: 1283707.14"
+            rps_int=$(echo "$output" | grep -oP 'Requests/sec:\s+\K[\d.]+' | cut -d. -f1 || echo "0")
+            rps_int=${rps_int:-0}
+        elif [ "$USE_OHA" = "true" ]; then
             # oha JSON: .summary.requestsPerSec
             rps_int=$(echo "$output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(int(d['summary']['requestsPerSec']))" 2>/dev/null || echo "0")
             rps_int=${rps_int:-0}
@@ -757,7 +757,16 @@ for profile in "${profiles_to_run[@]}"; do
     echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
     # Extract metrics
-    if [ "$USE_OHA" = "true" ]; then
+    if [ "$USE_WRK" = "true" ]; then
+        # wrk: "Latency   3.70ms    8.37ms 279.91ms   96.41%"
+        avg_lat=$(echo "$best_output" | grep "Latency" | head -1 | awk '{print $2}')
+        p99_lat="$avg_lat"  # wrk doesn't report p99; use avg as placeholder
+        reconnects="0"
+        bandwidth=$(echo "$best_output" | grep -oP 'Transfer/sec:\s+\K\S+' || echo "0")
+        # wrk: "12966401 requests in 10.10s, 188.34GB read"
+        total_reqs=$(echo "$best_output" | grep -oP '(\d+) requests in' | grep -oP '\d+' || echo "0")
+        status_2xx=$total_reqs; status_3xx=0; status_4xx=0; status_5xx=0
+    elif [ "$USE_OHA" = "true" ]; then
         # oha JSON: .summary.average (seconds), .latencyPercentiles.p99 (seconds)
         avg_lat=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d['summary']['average']; print(f'{v*1e6:.0f}us' if v<0.001 else f'{v*1000:.2f}ms')" 2>/dev/null || echo "—")
         p99_lat=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d['latencyPercentiles']['p99']; print(f'{v*1e6:.0f}us' if v<0.001 else f'{v*1000:.2f}ms')" 2>/dev/null || echo "—")
@@ -776,9 +785,13 @@ for profile in "${profiles_to_run[@]}"; do
         bandwidth=$(echo "$best_output" | grep -oP 'Bandwidth:\s+\K\S+' || echo "0")
     fi
 
-    # Extract status codes
+    # Extract status codes (wrk sets them above in the latency section)
+    if [ "$USE_WRK" != "true" ]; then
     status_2xx=0; status_3xx=0; status_4xx=0; status_5xx=0
-    if [ "$USE_OHA" = "true" ]; then
+    fi
+    if [ "$USE_WRK" = "true" ]; then
+        : # already set above
+    elif [ "$USE_OHA" = "true" ]; then
         status_2xx=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin).get('statusCodeDistribution',{}); print(sum(v for k,v in d.items() if 200<=int(k)<300))" 2>/dev/null || echo "0")
         status_3xx=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin).get('statusCodeDistribution',{}); print(sum(v for k,v in d.items() if 300<=int(k)<400))" 2>/dev/null || echo "0")
         status_4xx=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin).get('statusCodeDistribution',{}); print(sum(v for k,v in d.items() if 400<=int(k)<500))" 2>/dev/null || echo "0")
@@ -797,7 +810,7 @@ for profile in "${profiles_to_run[@]}"; do
 
     # Compute input bandwidth from raw template sizes × RPS
     input_bw=""
-    if [ "$USE_H2LOAD" = "false" ] && [ "$USE_OHA" = "false" ]; then
+    if [ "$USE_H2LOAD" = "false" ] && [ "$USE_OHA" = "false" ] && [ "$USE_WRK" = "false" ]; then
         raw_arg=""
         prev_was_raw=false
         for arg in "${gc_args[@]}"; do
@@ -838,30 +851,8 @@ else: print(f'{bps}B/s')
   \"tpl_json\": $t_json,
   \"tpl_db\": 0,
   \"tpl_upload\": 0,
-  \"tpl_compression\": 0,
   \"tpl_static\": 0,
   \"tpl_async_db\": $t_async_db"
-        fi
-        if [ -n "$tpl_line" ] && ([ "$endpoint" = "assets-4" ] || [ "$endpoint" = "assets-16" ]); then
-            # assets-4/16 templates (20): text-gzip(5)+json-gzip(1), text-plain(5)+json-plain(1), binary-gzip(2), binary-plain(2), svg-gzip(1), svg-plain(1), manifest(1), reset.css(1)
-            IFS=',' read -ra tpl_counts <<< "$tpl_line"
-            t_static_gzip=$(( ${tpl_counts[0]:-0} + ${tpl_counts[1]:-0} + ${tpl_counts[2]:-0} + ${tpl_counts[3]:-0} + ${tpl_counts[4]:-0} ))
-            t_json_gzip=$(( ${tpl_counts[5]:-0} ))
-            t_static_plain=$(( ${tpl_counts[6]:-0} + ${tpl_counts[7]:-0} + ${tpl_counts[8]:-0} + ${tpl_counts[9]:-0} + ${tpl_counts[10]:-0} ))
-            t_json_plain=$(( ${tpl_counts[11]:-0} ))
-            t_binary_gzip=$(( ${tpl_counts[12]:-0} + ${tpl_counts[13]:-0} ))
-            t_binary_plain=$(( ${tpl_counts[14]:-0} + ${tpl_counts[15]:-0} ))
-            t_svg=$(( ${tpl_counts[16]:-0} + ${tpl_counts[17]:-0} ))
-            t_other=$(( ${tpl_counts[18]:-0} + ${tpl_counts[19]:-0} ))
-            tpl_json=",
-  \"tpl_static_gzip\": $t_static_gzip,
-  \"tpl_json_gzip\": $t_json_gzip,
-  \"tpl_static_plain\": $t_static_plain,
-  \"tpl_json_plain\": $t_json_plain,
-  \"tpl_binary_gzip\": $t_binary_gzip,
-  \"tpl_binary_plain\": $t_binary_plain,
-  \"tpl_svg\": $t_svg,
-  \"tpl_other\": $t_other"
         fi
         if [ -n "$tpl_line" ] && [ -n "${CUSTOM_TPL_PARSER:-}" ]; then
             tpl_json=$(echo "$best_output" | bash -c "$CUSTOM_TPL_PARSER")

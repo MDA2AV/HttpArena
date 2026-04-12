@@ -26,10 +26,9 @@ public class BenchmarkResource {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private List<Map<String, Object>> dataset;
-    private byte[] largeJsonResponse;
     private boolean dbAvailable = false;
     private static final String DB_QUERY = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50";
-    private static final String PG_QUERY = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50";
+    private static final String PG_QUERY = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?";
     private static final ThreadLocal<Connection> tlConn = new ThreadLocal<>();
     private static final ThreadLocal<PreparedStatement> tlStmt = new ThreadLocal<>();
     private HikariDataSource pgPool;
@@ -41,19 +40,6 @@ public class BenchmarkResource {
         File f = new File(path);
         if (f.exists()) {
             dataset = mapper.readValue(f, new TypeReference<>() {});
-        }
-        File largef = new File("/data/dataset-large.json");
-        if (largef.exists()) {
-            List<Map<String, Object>> largeDataset = mapper.readValue(largef, new TypeReference<>() {});
-            List<Map<String, Object>> largeItems = new ArrayList<>(largeDataset.size());
-            for (Map<String, Object> item : largeDataset) {
-                Map<String, Object> processed = new LinkedHashMap<>(item);
-                double price = ((Number) item.get("price")).doubleValue();
-                int quantity = ((Number) item.get("quantity")).intValue();
-                processed.put("total", Math.round(price * quantity * 100.0) / 100.0);
-                largeItems.add(processed);
-            }
-            largeJsonResponse = mapper.writeValueAsBytes(Map.of("items", largeItems, "count", largeItems.size()));
         }
         // Check SQLite database availability
         File dbFile = new File("/data/benchmark.db");
@@ -151,11 +137,11 @@ public class BenchmarkResource {
                 row.put("id", rs.getInt(1));
                 row.put("name", rs.getString(2));
                 row.put("category", rs.getString(3));
-                row.put("price", rs.getDouble(4));
+                row.put("price", rs.getInt(4));
                 row.put("quantity", rs.getInt(5));
                 row.put("active", rs.getInt(6) == 1);
                 row.put("tags", tags);
-                row.put("rating", Map.of("score", rs.getDouble(8), "count", rs.getInt(9)));
+                row.put("rating", Map.of("score", rs.getInt(8), "count", rs.getInt(9)));
                 items.add(row);
             }
             rs.close();
@@ -170,17 +156,20 @@ public class BenchmarkResource {
     @GET
     @Path("/async-db")
     @Produces(MediaType.APPLICATION_JSON)
-    public jakarta.ws.rs.core.Response asyncDb(@QueryParam("min") String minParam, @QueryParam("max") String maxParam) {
+    public jakarta.ws.rs.core.Response asyncDb(@QueryParam("min") String minParam, @QueryParam("max") String maxParam, @QueryParam("limit") String limitParam) {
         if (pgPool == null)
             return jakarta.ws.rs.core.Response.ok("{\"items\":[],\"count\":0}".getBytes())
                 .header("Content-Type", "application/json").build();
-        double minPrice = 10.0, maxPrice = 50.0;
-        if (minParam != null) try { minPrice = Double.parseDouble(minParam); } catch (NumberFormatException ignored) {}
-        if (maxParam != null) try { maxPrice = Double.parseDouble(maxParam); } catch (NumberFormatException ignored) {}
+        int minPrice = 10, maxPrice = 50;
+        int limit = 50;
+        if (minParam != null) try { minPrice = Integer.parseInt(minParam); } catch (NumberFormatException ignored) {}
+        if (maxParam != null) try { maxPrice = Integer.parseInt(maxParam); } catch (NumberFormatException ignored) {}
+        if (limitParam != null) try { limit = Math.max(1, Math.min(50, Integer.parseInt(limitParam))); } catch (NumberFormatException ignored) {}
         try (Connection conn = pgPool.getConnection()) {
             PreparedStatement stmt = conn.prepareStatement(PG_QUERY);
-            stmt.setDouble(1, minPrice);
-            stmt.setDouble(2, maxPrice);
+            stmt.setInt(1, minPrice);
+            stmt.setInt(2, maxPrice);
+            stmt.setInt(3, limit);
             ResultSet rs = stmt.executeQuery();
             List<Map<String, Object>> items = new ArrayList<>();
             while (rs.next()) {
@@ -189,11 +178,11 @@ public class BenchmarkResource {
                 row.put("id", rs.getInt(1));
                 row.put("name", rs.getString(2));
                 row.put("category", rs.getString(3));
-                row.put("price", rs.getDouble(4));
+                row.put("price", rs.getInt(4));
                 row.put("quantity", rs.getInt(5));
                 row.put("active", rs.getBoolean(6));
                 row.put("tags", tags);
-                row.put("rating", Map.of("score", rs.getDouble(8), "count", rs.getInt(9)));
+                row.put("rating", Map.of("score", rs.getInt(8), "count", rs.getInt(9)));
                 items.add(row);
             }
             rs.close();
@@ -207,27 +196,24 @@ public class BenchmarkResource {
     }
 
     @GET
-    @Path("/json")
+    @Path("/json/{count}")
     @Produces(MediaType.APPLICATION_JSON)
     @NonBlocking
-    public Map<String, Object> json() {
-        List<Map<String, Object>> items = new ArrayList<>(dataset.size());
-        for (Map<String, Object> item : dataset) {
+    public Map<String, Object> json(@PathParam("count") int count, @QueryParam("m") String mParam) {
+        if (count > dataset.size()) count = dataset.size();
+        if (count < 0) count = 0;
+        int m = 1;
+        if (mParam != null) try { m = Integer.parseInt(mParam); } catch (NumberFormatException ignored) {}
+        List<Map<String, Object>> items = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            Map<String, Object> item = dataset.get(i);
             Map<String, Object> processed = new LinkedHashMap<>(item);
-            double price = ((Number) item.get("price")).doubleValue();
+            int price = ((Number) item.get("price")).intValue();
             int quantity = ((Number) item.get("quantity")).intValue();
-            processed.put("total", Math.round(price * quantity * 100.0) / 100.0);
+            processed.put("total", (long) price * quantity * m);
             items.add(processed);
         }
         return Map.of("items", items, "count", items.size());
-    }
-
-    @GET
-    @Path("/compression")
-    @Produces(MediaType.APPLICATION_JSON)
-    @NonBlocking
-    public byte[] compression() {
-        return largeJsonResponse;
     }
 
     private PreparedStatement getDbStmt() {

@@ -1,5 +1,5 @@
 {
-  "date": "2026-04-08",
+  "date": "2026-04-12",
   "cpu": "AMD Ryzen Threadripper PRO 3995WX 64-Cores",
   "cores": "64",
   "threads": "128",
@@ -7,12 +7,12 @@
   "os": "Ubuntu 24.04.4 LTS",
   "kernel": "6.17.0-20-generic",
   "docker": "29.3.0",
-  "commit": "3100572f",
+  "commit": "604007c8",
   "governor": "performance",
   "docker_runtime": "runc",
   "threads_per_core": "2",
   "tcp": {
-    "lo_mtu": "65536",
+    "lo_mtu": "1500",
     "congestion": "cubic",
     "somaxconn": "65535",
     "rmem_max": "7500000",

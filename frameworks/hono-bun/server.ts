@@ -12,15 +12,6 @@ const MIME_TYPES: Record<string, string> = {
 // Load datasets
 const datasetItems: any[] = JSON.parse(readFileSync("/data/dataset.json", "utf8"));
 
-const largeData = JSON.parse(readFileSync("/data/dataset-large.json", "utf8"));
-const largeItems = largeData.map((d: any) => ({
-  id: d.id, name: d.name, category: d.category,
-  price: d.price, quantity: d.quantity, active: d.active,
-  tags: d.tags, rating: d.rating,
-  total: Math.round(d.price * d.quantity * 100) / 100,
-}));
-const largeJsonBuf = Buffer.from(JSON.stringify({ items: largeItems, count: largeItems.length }));
-
 // Open SQLite database read-only
 let dbStmt: any = null;
 for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
@@ -45,8 +36,6 @@ let pgPool: any = null;
     } catch (_) {}
   }
 }
-
-const STATIC_DIR = "/data/static";
 
 const app = new Hono();
 
@@ -93,42 +82,21 @@ app.get("/baseline2", (c) => {
   });
 });
 
-// --- /json ---
-app.get("/json", (c) => {
-  const processedItems = datasetItems.map((d: any) => ({
+// --- /json/:count ---
+app.get("/json/:count", (c) => {
+  const count = Math.max(0, Math.min(parseInt(c.req.param("count"), 10) || 0, datasetItems.length));
+  const m = parseInt(c.req.query("m") || "1") || 1;
+  const processedItems = datasetItems.slice(0, count).map((d: any) => ({
     id: d.id, name: d.name, category: d.category,
     price: d.price, quantity: d.quantity, active: d.active,
     tags: d.tags, rating: d.rating,
-    total: Math.round(d.price * d.quantity * 100) / 100,
+    total: d.price * d.quantity * m,
   }));
-  const body = JSON.stringify({ items: processedItems, count: processedItems.length });
+  const body = JSON.stringify({ items: processedItems, count });
   return new Response(body, {
     headers: {
       "content-type": "application/json",
       "content-length": String(Buffer.byteLength(body)),
-      server: SERVER_NAME,
-    },
-  });
-});
-
-// --- /compression ---
-app.get("/compression", (c) => {
-  const ae = c.req.header("accept-encoding") || "";
-  if (ae.includes("gzip")) {
-    const gz = Buffer.from(Bun.gzipSync(largeJsonBuf, { level: 1 }));
-    return new Response(gz, {
-      headers: {
-        "content-type": "application/json",
-        "content-encoding": "gzip",
-        "content-length": String(gz.length),
-        server: SERVER_NAME,
-      },
-    });
-  }
-  return new Response(largeJsonBuf, {
-    headers: {
-      "content-type": "application/json",
-      "content-length": String(largeJsonBuf.length),
       server: SERVER_NAME,
     },
   });
@@ -167,12 +135,13 @@ app.get("/async-db", async (c) => {
       headers: { "content-type": "application/json", server: SERVER_NAME },
     });
   }
-  const min = parseFloat(c.req.query('min') || '') || 10;
-  const max = parseFloat(c.req.query('max') || '') || 50;
+  const min = parseInt(c.req.query('min') || '', 10) || 10;
+  const max = parseInt(c.req.query('max') || '', 10) || 50;
+  const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '', 10) || 50, 50));
   try {
     const result = await pgPool.query(
-      "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50",
-      [min, max]
+      "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
+      [min, max, limit]
     );
     const items = result.rows.map((r: any) => ({
       id: r.id, name: r.name, category: r.category,
@@ -212,7 +181,7 @@ app.post("/upload", async (c) => {
 // --- /static/:filename ---
 app.get("/static/:filename", async (c) => {
   const filename = c.req.param("filename");
-  const file = Bun.file(`${STATIC_DIR}/${filename}`);
+  const file = Bun.file(`/data/static/${filename}`);
   if (await file.exists()) {
     const ext = filename.slice(filename.lastIndexOf("."));
     return new Response(file, {

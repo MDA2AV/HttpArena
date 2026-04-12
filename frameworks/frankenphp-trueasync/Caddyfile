@@ -5,6 +5,7 @@
 }
 
 :8080 {
+	encode br gzip
 	root * /app
 	php_server {
 		index off

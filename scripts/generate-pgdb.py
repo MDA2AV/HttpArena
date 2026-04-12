@@ -30,11 +30,11 @@ with open(sql_file, 'w') as f:
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     category TEXT NOT NULL,
-    price DOUBLE PRECISION NOT NULL,
+    price INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     active BOOLEAN NOT NULL,
     tags JSONB NOT NULL,
-    rating_score DOUBLE PRECISION NOT NULL,
+    rating_score INTEGER NOT NULL,
     rating_count INTEGER NOT NULL
 );
 -- NO index on price — forces sequential scan
@@ -44,14 +44,14 @@ COPY items (id, name, category, price, quantity, active, tags, rating_score, rat
 
     for i in range(1, TARGET_ROWS + 1):
         base = seed_data[(i - 1) % len(seed_data)]
-        price = round(rng.uniform(1.0, 500.0), 2)
+        price = rng.randint(1, 500)
         quantity = rng.randint(1, 1000)
         active = rng.choice([0, 1])
         ntags = rng.randint(1, 4)
         tags = json.dumps(rng.sample(all_tags, min(ntags, len(all_tags))))
         name = f"{rng.choice(names)} {i}"
         category = rng.choice(categories)
-        rating_score = round(rng.uniform(1.0, 5.0), 1)
+        rating_score = rng.randint(1, 50)
         rating_count = rng.randint(1, 500)
 
         active_str = 't' if active else 'f'

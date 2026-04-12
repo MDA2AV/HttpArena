@@ -52,7 +52,7 @@ echo "[build] Building Docker image..."
 if [ -x "frameworks/$FRAMEWORK/build.sh" ]; then
     "frameworks/$FRAMEWORK/build.sh" || { echo "FAIL: Docker build failed"; exit 1; }
 else
-    docker build -t "$IMAGE_NAME" "frameworks/$FRAMEWORK" || { echo "FAIL: Docker build failed"; exit 1; }
+    docker build --no-cache -t "$IMAGE_NAME" "frameworks/$FRAMEWORK" || { echo "FAIL: Docker build failed"; exit 1; }
 fi
 
 # Create Docker bridge network (required for Docker Desktop / non-Linux hosts)
@@ -74,11 +74,7 @@ if $needs_h2 && [ -d "$CERTS_DIR" ]; then
     docker_args+=(-p "$H2PORT:8443" -v "$CERTS_DIR:/certs:ro")
 fi
 
-if has_test "compression" || has_test "assets-4" || has_test "assets-16"; then
-    docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
-fi
-
-if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "assets-4" || has_test "assets-16"; then
+if has_test "static" || has_test "static-h2" || has_test "static-h3"; then
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
@@ -266,17 +262,18 @@ fi
 
 # ───── JSON Processing (GET /json) ─────
 
-if has_test "json" || has_test "api-4" || has_test "api-16" || has_test "assets-4" || has_test "assets-16"; then
+if has_test "json" || has_test "api-4" || has_test "api-16"; then
     JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
     echo "[test] json endpoint"
-    response=$(curl -s --max-time 30 "http://localhost:$PORT/json")
-    json_result=$(echo "$response" | python3 -c "
+    json_fail=false
+    for jcount in 12 22 31 50; do
+        response=$(curl -s --max-time 30 "http://localhost:$PORT/json/$jcount")
+        json_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
 has_total = all('total' in item for item in items) if items else False
-# Verify total is computed correctly (price * quantity, rounded to 2 decimals)
 correct_totals = True
 for item in items:
     expected = round(item['price'] * item['quantity'], 2)
@@ -285,20 +282,25 @@ for item in items:
         break
 print(f'{count} {has_total} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
-    json_count=$(echo "$json_result" | cut -d' ' -f1)
-    json_total=$(echo "$json_result" | cut -d' ' -f2)
-    json_correct=$(echo "$json_result" | cut -d' ' -f3)
+        json_count=$(echo "$json_result" | cut -d' ' -f1)
+        json_total=$(echo "$json_result" | cut -d' ' -f2)
+        json_correct=$(echo "$json_result" | cut -d' ' -f3)
 
-    if [ "$json_count" = "50" ] && [ "$json_total" = "True" ] && [ "$json_correct" = "True" ]; then
-        echo "  PASS [GET /json] (50 items, totals computed correctly)"
+        if [ "$json_count" = "$jcount" ] && [ "$json_total" = "True" ] && [ "$json_correct" = "True" ]; then
+            :
+        else
+            fail_with_link "[GET /json/$jcount]: count=$json_count, has_total=$json_total, correct_totals=$json_correct" "$JSON_DOCS"
+            json_fail=true
+        fi
+    done
+    if [ "$json_fail" = "false" ]; then
+        echo "  PASS [GET /json/{count}] (4 counts verified, totals correct)"
         PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /json]: count=$json_count, has_total=$json_total, correct_totals=$json_correct" "$JSON_DOCS"
     fi
 
     # Check Content-Type header
     check_header "GET /json Content-Type" "Content-Type" "application/json" "$JSON_DOCS" \
-        "http://localhost:$PORT/json"
+        "http://localhost:$PORT/json/50"
 fi
 
 # ───── Upload (POST /upload) ─────
@@ -324,102 +326,24 @@ if has_test "upload"; then
         fail_with_link "[POST /upload random body]: expected '$EXPECTED_RANDOM_LEN', got '$ACTUAL_LEN'" "$UPLOAD_DOCS"
     fi
 
-    # Large upload: 20 MB binary payload
-    LARGE_SIZE=20971520
-    ACTUAL_LARGE=$(dd if=/dev/urandom bs=1M count=20 2>/dev/null | curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" --data-binary @- "http://localhost:$PORT/upload")
-    if [ "$ACTUAL_LARGE" = "$LARGE_SIZE" ]; then
-        echo "  PASS [POST /upload 20MB] (bytes: $ACTUAL_LARGE)"
+    # Varying upload sizes
+    upload_fail=false
+    for upload_spec in "500K:512000" "2M:2097152" "10M:10485760" "20M:20971520"; do
+        upload_label="${upload_spec%%:*}"
+        upload_size="${upload_spec##*:}"
+        upload_bs=$((upload_size / 1024))
+        ACTUAL_LARGE=$(dd if=/dev/urandom bs=1024 count=$upload_bs 2>/dev/null | curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" --data-binary @- "http://localhost:$PORT/upload")
+        if [ "$ACTUAL_LARGE" = "$upload_size" ]; then
+            :
+        else
+            fail_with_link "[POST /upload $upload_label]: expected '$upload_size', got '$ACTUAL_LARGE'" "$UPLOAD_DOCS"
+            upload_fail=true
+        fi
+    done
+    if [ "$upload_fail" = "false" ]; then
+        echo "  PASS [POST /upload] (4 sizes verified: 500K, 2M, 10M, 20M)"
         PASS=$((PASS + 1))
-    else
-        fail_with_link "[POST /upload 20MB]: expected '$LARGE_SIZE', got '$ACTUAL_LARGE'" "$UPLOAD_DOCS"
     fi
-fi
-
-# ───── Compression (GET /compression) ─────
-
-if has_test "compression" || has_test "assets-4" || has_test "assets-16"; then
-    COMP_DOCS="$DOCS_BASE/h1/isolated/compression/validation"
-    echo "[test] compression endpoint"
-
-    # Must return Content-Encoding: gzip or br when Accept-Encoding: gzip, br is sent
-    comp_headers=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/compression")
-    comp_encoding=$(echo "$comp_headers" | grep -i "^content-encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
-    if [ "$comp_encoding" = "gzip" ] || [ "$comp_encoding" = "br" ]; then
-        echo "  PASS [compression Content-Encoding: $comp_encoding]"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[compression]: expected Content-Encoding gzip or br, got '$comp_encoding'" "$COMP_DOCS"
-    fi
-
-    # Verify compressed response is valid JSON with items and totals
-    comp_response=$(curl -s --max-time 30 --compressed -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/compression")
-    comp_result=$(echo "$comp_response" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-count = d.get('count', 0)
-items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
-print(f'{count} {has_total}')
-" 2>/dev/null || echo "0 False")
-    comp_count=$(echo "$comp_result" | cut -d' ' -f1)
-    comp_total=$(echo "$comp_result" | cut -d' ' -f2)
-
-    if [ "$comp_count" = "6000" ] && [ "$comp_total" = "True" ]; then
-        echo "  PASS [compression response] (6000 items with totals)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[compression response]: count=$comp_count, has_total=$comp_total" "$COMP_DOCS"
-    fi
-
-    # Verify compressed size is reasonable (should be well under 1MB uncompressed ~1MB)
-    comp_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/compression")
-    if [ "$comp_size" -lt 500000 ]; then
-        echo "  PASS [compression size] ($comp_size bytes < 500KB)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[compression size]: $comp_size bytes — compression not effective" "$COMP_DOCS"
-    fi
-
-    # Verify compression happens per-request (not pre-compressed cache)
-    # Request without Accept-Encoding must NOT return Content-Encoding
-    no_enc_headers=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/compression")
-    no_enc_encoding=$(echo "$no_enc_headers" | grep -i "^content-encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
-    if [ -z "$no_enc_encoding" ]; then
-        echo "  PASS [per-request compression] (no Content-Encoding without Accept-Encoding)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[per-request compression]: got Content-Encoding: $no_enc_encoding without Accept-Encoding — compression must happen per request, not pre-compressed" "$COMP_DOCS"
-    fi
-fi
-
-# ───── Noisy / Resilience (baseline + malformed requests) ─────
-
-if has_test "noisy"; then
-    NOISY_DOCS="$DOCS_BASE/h1/isolated/noisy/validation"
-    echo "[test] noisy resilience"
-
-    # Valid baseline request still works
-    check "GET /baseline11?a=13&b=42 (noisy context)" "55" "$NOISY_DOCS" \
-        "http://localhost:$PORT/baseline11?a=13&b=42"
-
-    # Bad method should return 4xx (400 or 405)
-    noisy_bad_method=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' -X GETT "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null || echo "000")
-    if [ "$noisy_bad_method" -ge 400 ] && [ "$noisy_bad_method" -lt 500 ]; then
-        echo "  PASS [bad method] (HTTP $noisy_bad_method)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[bad method]: expected 4xx, got HTTP $noisy_bad_method" "$NOISY_DOCS"
-    fi
-
-    # Nonexistent path should return 404
-    check_status "GET /this/path/does/not/exist" "404" "$NOISY_DOCS" \
-        "http://localhost:$PORT/this/path/does/not/exist"
-
-    # After noise, valid request still works (server didn't crash)
-    A4=$((RANDOM % 900 + 100))
-    B4=$((RANDOM % 900 + 100))
-    check "GET /baseline11?a=$A4&b=$B4 (post-noise)" "$((A4 + B4))" "$NOISY_DOCS" \
-        "http://localhost:$PORT/baseline11?a=$A4&b=$B4"
 fi
 
 # ───── Baseline H2 (GET /baseline2 over HTTP/2 + TLS) ─────
@@ -450,7 +374,7 @@ fi
 
 # ───── Static Files H1 (GET /static/* over HTTP/1.1) ─────
 
-if has_test "static" || has_test "assets-4" || has_test "assets-16"; then
+if has_test "static"; then
     STATIC_DOCS="$DOCS_BASE/h1/isolated/static/validation"
     echo "[test] static endpoint"
     check_header "GET /static/reset.css Content-Type" "Content-Type" "text/css" "$STATIC_DOCS" \
@@ -519,8 +443,12 @@ fi
 if has_test "async-db" || has_test "api-4" || has_test "api-16"; then
     ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
     echo "[test] async-db endpoint"
-    response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=10&max=50")
-    pgdb_result=$(echo "$response" | python3 -c "
+    asyncdb_fail=false
+    db_params=("min=5&max=80&limit=7" "min=20&max=150&limit=18" "min=100&max=400&limit=33" "min=10&max=50&limit=50")
+    for dbp in "${db_params[@]}"; do
+        dblimit=$(echo "$dbp" | grep -oP 'limit=\K[0-9]+')
+        response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?$dbp")
+        pgdb_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 count = d.get('count', 0)
@@ -530,23 +458,28 @@ has_tags = all(isinstance(item.get('tags'), list) for item in items) if items el
 has_active_bool = all(isinstance(item.get('active'), bool) for item in items) if items else False
 print(f'{count} {has_rating} {has_tags} {has_active_bool}')
 " 2>/dev/null || echo "0 False False False")
-    pgdb_count=$(echo "$pgdb_result" | cut -d' ' -f1)
-    pgdb_rating=$(echo "$pgdb_result" | cut -d' ' -f2)
-    pgdb_tags=$(echo "$pgdb_result" | cut -d' ' -f3)
-    pgdb_active=$(echo "$pgdb_result" | cut -d' ' -f4)
+        pgdb_count=$(echo "$pgdb_result" | cut -d' ' -f1)
+        pgdb_rating=$(echo "$pgdb_result" | cut -d' ' -f2)
+        pgdb_tags=$(echo "$pgdb_result" | cut -d' ' -f3)
+        pgdb_active=$(echo "$pgdb_result" | cut -d' ' -f4)
 
-    if [ "$pgdb_count" -gt 0 ] && [ "$pgdb_count" -le 50 ] && [ "$pgdb_rating" = "True" ] && [ "$pgdb_tags" = "True" ] && [ "$pgdb_active" = "True" ]; then
-        echo "  PASS [GET /async-db?min=10&max=50] ($pgdb_count items, correct structure)"
+        if [ "$pgdb_count" = "$dblimit" ] && [ "$pgdb_rating" = "True" ] && [ "$pgdb_tags" = "True" ] && [ "$pgdb_active" = "True" ]; then
+            :
+        else
+            fail_with_link "[GET /async-db?limit=$dblimit]: count=$pgdb_count, rating=$pgdb_rating, tags=$pgdb_tags, active=$pgdb_active" "$ASYNCDB_DOCS"
+            asyncdb_fail=true
+        fi
+    done
+    if [ "$asyncdb_fail" = "false" ]; then
+        echo "  PASS [GET /async-db?limit=N] (4 limits verified, correct structure)"
         PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /async-db?min=10&max=50]: count=$pgdb_count, rating=$pgdb_rating, tags=$pgdb_tags, active=$pgdb_active" "$ASYNCDB_DOCS"
     fi
 
     check_header "GET /async-db Content-Type" "Content-Type" "application/json" "$ASYNCDB_DOCS" \
-        "http://localhost:$PORT/async-db?min=10&max=50"
+        "http://localhost:$PORT/async-db?min=10&max=50&limit=50"
 
     # Anti-cheat: empty range should return 0 items
-    response_empty=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=9999&max=9999")
+    response_empty=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=9999&max=9999&limit=50")
     pgdb_empty=$(echo "$response_empty" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count','-1'))" 2>/dev/null || echo "-1")
     if [ "$pgdb_empty" = "0" ]; then
         echo "  PASS [GET /async-db empty range] (count=0)"

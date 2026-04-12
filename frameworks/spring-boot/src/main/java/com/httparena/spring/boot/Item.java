@@ -6,7 +6,7 @@ public record Item(
         long id,
         String name,
         String category,
-        double price,
+        int price,
         int quantity,
         boolean active,
         List<String> tags,

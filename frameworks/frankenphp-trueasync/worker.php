@@ -11,31 +11,7 @@ set_time_limit(0);
 // --- Preload datasets at startup ---
 
 $dataset = json_decode(file_get_contents('/data/dataset.json'), true);
-$datasetLarge = null;
-
-if (file_exists('/data/dataset-large.json')) {
-    $datasetLarge = json_decode(file_get_contents('/data/dataset-large.json'), true);
-}
-
-// Precompute JSON responses
-$jsonItems = [];
-$jsonCount = count($dataset);
-foreach ($dataset as $item) {
-    $item['total'] = $item['price'] * $item['quantity'];
-    $jsonItems[] = $item;
-}
-$jsonResponse = json_encode(['items' => $jsonItems, 'count' => $jsonCount]);
-
-$compressionItems = null;
-$compressionJson = null;
-if ($datasetLarge !== null) {
-    $compressionItems = [];
-    foreach ($datasetLarge as $item) {
-        $item['total'] = $item['price'] * $item['quantity'];
-        $compressionItems[] = $item;
-    }
-    $compressionJson = json_encode(['items' => $compressionItems, 'count' => count($compressionItems)]);
-}
+// Dataset items loaded (total computed per-request with m param)
 
 // Preload static files into memory
 $staticFiles = [];
@@ -53,10 +29,14 @@ $mimeTypes = [
 if (is_dir($staticDir)) {
     foreach (scandir($staticDir) as $file) {
         if ($file === '.' || $file === '..') continue;
+        if (str_ends_with($file, '.br') || str_ends_with($file, '.gz')) continue;
         $ext = pathinfo($file, PATHINFO_EXTENSION);
+        $base = $staticDir . '/' . $file;
         $staticFiles[$file] = [
-            'data' => file_get_contents($staticDir . '/' . $file),
+            'data' => file_get_contents($base),
             'mime' => $mimeTypes[$ext] ?? 'application/octet-stream',
+            'br'   => file_exists($base . '.br') ? file_get_contents($base . '.br') : null,
+            'gz'   => file_exists($base . '.gz') ? file_get_contents($base . '.gz') : null,
         ];
     }
 }
@@ -137,17 +117,17 @@ function transformDbRow(array $row): array
     $row['active'] = (bool)$row['active'];
     $row['tags'] = json_decode($row['tags'], true);
     $row['rating'] = [
-        'score' => (float)$row['rating_score'],
+        'score' => (int)$row['rating_score'],
         'count' => (int)$row['rating_count'],
     ];
     unset($row['rating_score'], $row['rating_count']);
     return $row;
 }
 
-function dbQuery(PDO $pdo, float $min, float $max): string
+function dbQuery(PDO $pdo, int $min, int $max, int $limit = 50): string
 {
-    $stmt = $pdo->prepare('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50');
-    $stmt->execute([$min, $max]);
+    $stmt = $pdo->prepare('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?');
+    $stmt->execute([$min, $max, $limit]);
     $rows = $stmt->fetchAll();
     $items = array_map('transformDbRow', $rows);
     return json_encode(['items' => $items, 'count' => count($items)]);
@@ -185,10 +165,20 @@ function handlePipeline(Response $response): void
     textResponse($response, 'ok');
 }
 
-function handleJson(Response $response): void
+function handleJson(int $count, Request $request, Response $response): void
 {
-    global $jsonResponse;
-    jsonResponseRaw($response, $jsonResponse);
+    global $dataset;
+    $count = max(0, min($count, count($dataset)));
+    $params = parseQueryParams($request->getUri());
+    $m = (int)($params['m'] ?? 1);
+    if ($m === 0) $m = 1;
+    $items = [];
+    for ($i = 0; $i < $count; $i++) {
+        $item = $dataset[$i];
+        $item['total'] = $item['price'] * $item['quantity'] * $m;
+        $items[] = $item;
+    }
+    jsonResponseRaw($response, json_encode(['items' => $items, 'count' => $count]));
 }
 
 function handleUpload(Request $request, Response $response): void
@@ -197,35 +187,7 @@ function handleUpload(Request $request, Response $response): void
     textResponse($response, (string)strlen($body));
 }
 
-function handleCompression(Request $request, Response $response): void
-{
-    global $compressionJson;
-
-    if ($compressionJson === null) {
-        $response->setStatus(500);
-        $response->setHeader('Content-Type', 'text/plain');
-        $response->write('dataset-large.json not loaded');
-        $response->end();
-        return;
-    }
-
-    $acceptEncoding = $request->getHeader('Accept-Encoding') ?? '';
-
-    $response->setStatus(200);
-    $response->setHeader('Content-Type', 'application/json');
-
-    if (str_contains($acceptEncoding, 'gzip')) {
-        $compressed = gzencode($compressionJson, 1);
-        $response->setHeader('Content-Encoding', 'gzip');
-        $response->write($compressed);
-    } else {
-        $response->write($compressionJson);
-    }
-
-    $response->end();
-}
-
-function handleStatic(string $path, Response $response): void
+function handleStatic(string $path, Request $request, Response $response): void
 {
     global $staticFiles;
 
@@ -239,28 +201,40 @@ function handleStatic(string $path, Response $response): void
         return;
     }
 
+    $f = $staticFiles[$file];
     $response->setStatus(200);
-    $response->setHeader('Content-Type', $staticFiles[$file]['mime']);
-    $response->write($staticFiles[$file]['data']);
+    $response->setHeader('Content-Type', $f['mime']);
+
+    $ae = $request->getHeader('Accept-Encoding') ?? '';
+    if ($f['br'] !== null && str_contains($ae, 'br')) {
+        $response->setHeader('Content-Encoding', 'br');
+        $response->write($f['br']);
+    } elseif ($f['gz'] !== null && str_contains($ae, 'gzip')) {
+        $response->setHeader('Content-Encoding', 'gzip');
+        $response->write($f['gz']);
+    } else {
+        $response->write($f['data']);
+    }
     $response->end();
 }
 
 function handleSyncDb(Request $request, Response $response): void
 {
     $params = parseQueryParams($request->getUri());
-    $min = (float)($params['min'] ?? 10);
-    $max = (float)($params['max'] ?? 50);
+    $min = (int)($params['min'] ?? 10);
+    $max = (int)($params['max'] ?? 50);
     jsonResponseRaw($response, dbQuery(sqliteDb(), $min, $max));
 }
 
 function handleAsyncDb(Request $request, Response $response): void
 {
     $params = parseQueryParams($request->getUri());
-    $min = (float)($params['min'] ?? 10);
-    $max = (float)($params['max'] ?? 50);
+    $min = (int)($params['min'] ?? 10);
+    $max = (int)($params['max'] ?? 50);
+    $limit = max(1, min((int)($params['limit'] ?? 50), 50));
 
     try {
-        jsonResponseRaw($response, dbQuery(pgDb(), $min, $max));
+        jsonResponseRaw($response, dbQuery(pgDb(), $min, $max, $limit));
     } catch (\Throwable $e) {
         jsonResponseRaw($response, '{"items":[],"count":0}');
     }
@@ -276,12 +250,11 @@ HttpServer::onRequest(function (Request $request, Response $response): void {
         $path === '/baseline11'   => handleBaseline($request, $response),
         $path === '/baseline2'    => handleBaseline($request, $response),
         $path === '/pipeline'     => handlePipeline($response),
-        $path === '/json'         => handleJson($response),
+        preg_match('#^/json/(\d+)$#', $path, $m) === 1 => handleJson((int)$m[1], $request, $response),
         $path === '/upload'       => handleUpload($request, $response),
-        $path === '/compression'  => handleCompression($request, $response),
         $path === '/db'           => handleSyncDb($request, $response),
         $path === '/async-db'     => handleAsyncDb($request, $response),
-        str_starts_with($path, '/static/') => handleStatic($path, $response),
+        str_starts_with($path, '/static/') => handleStatic($path, $request, $response),
         default => (function () use ($response) {
             $response->setStatus(404);
             $response->setHeader('Content-Type', 'text/plain');

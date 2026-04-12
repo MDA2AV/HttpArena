@@ -1,4 +1,4 @@
-GET /json HTTP/1.1
+GET /json/50?m=1 HTTP/1.1
 Host: localhost:8080
-Accept-Encoding: gzip
+Accept-Encoding: gzip, br
 

@@ -19,8 +19,8 @@ if [ "$TEST" = "test" ]; then
     echo "  or:  $0 <test-profile>"
     echo ""
     echo "Available profiles:"
-    echo "  baseline pipelined limited-conn json upload compression"
-    echo "  noisy api-4 api-16 assets-4 assets-16 static async-db"
+    echo "  baseline pipelined limited-conn json upload"
+    echo "  api-4 api-16 static async-db"
     echo "  baseline-h2 static-h2 baseline-h3 static-h3"
     echo "  unary-grpc unary-grpc-tls echo-ws"
     exit 1

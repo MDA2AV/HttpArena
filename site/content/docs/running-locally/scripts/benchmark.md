@@ -14,7 +14,7 @@ Run benchmarks for a framework across one or all test profiles. Tunes system set
 | Parameter | Description |
 |-----------|-------------|
 | `<framework>` | Name of the framework directory under `frameworks/` |
-| `[profile]` | Optional — run only this test profile (e.g. `baseline`, `json`, `compression`) |
+| `[profile]` | Optional — run only this test profile (e.g. `baseline`, `json`, `upload`) |
 | `--save` | Persist results to `results/` and rebuild site data in `site/data/` |
 
 Without `--save`, results are displayed but not persisted.

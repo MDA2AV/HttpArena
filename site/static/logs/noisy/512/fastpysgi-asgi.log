@@ -1,7 +1,0 @@
-Exception in callback Task.task_wakeup()
-handle: <Handle Task.task_wakeup()>
-Traceback (most recent call last):
-  File "/usr/local/lib/python3.13/asyncio/events.py", line 89, in _run
-    self._context.run(self._callback, *self._args)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: 'builtin_function_or_method' object does not support vectorcall

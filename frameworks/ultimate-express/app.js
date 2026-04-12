@@ -19,7 +19,6 @@ if (cluster.isPrimary) {
 } else {
     const express = require('ultimate-express');
     const fs = require('fs');
-    const zlib = require('zlib');
     const Database = require('better-sqlite3');
 
     const app = express();
@@ -34,25 +33,14 @@ if (cluster.isPrimary) {
         datasetItems = JSON.parse(fs.readFileSync(process.env.DATASET_PATH || '/data/dataset.json', 'utf8'));
     } catch (e) {}
 
-    // Large dataset for compression
-    let largeJsonBuf;
-    try {
-        const raw = JSON.parse(fs.readFileSync('/data/dataset-large.json', 'utf8'));
-        const items = raw.map(d => ({
-            id: d.id, name: d.name, category: d.category,
-            price: d.price, quantity: d.quantity, active: d.active,
-            tags: d.tags, rating: d.rating,
-            total: Math.round(d.price * d.quantity * 100) / 100
-        }));
-        largeJsonBuf = Buffer.from(JSON.stringify({ items, count: items.length }));
-    } catch (e) {}
-
     // SQLite
     let dbStmt;
     try {
-        const db = new Database('/data/benchmark.db', { readonly: true });
-        db.pragma('mmap_size=268435456');
-        dbStmt = db.prepare('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50');
+        if (fs.existsSync('/data/benchmark.db')) {
+            const db = new Database('/data/benchmark.db', { readonly: true });
+            db.pragma('mmap_size=268435456');
+            dbStmt = db.prepare('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50');
+        }
     } catch (e) {}
 
     // PostgreSQL
@@ -71,13 +59,17 @@ if (cluster.isPrimary) {
         '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json',
     };
 
-    // Pre-load static files
+    // Pre-load static files with pre-compressed variants
     const staticFiles = {};
     try {
         for (const name of fs.readdirSync('/data/static')) {
+            if (name.endsWith('.br') || name.endsWith('.gz')) continue;
             const buf = fs.readFileSync(`/data/static/${name}`);
             const ext = name.slice(name.lastIndexOf('.'));
-            staticFiles[name] = { buf, ct: MIME_TYPES[ext] || 'application/octet-stream' };
+            let br = null, gz = null;
+            try { br = fs.readFileSync(`/data/static/${name}.br`); } catch (_) {}
+            try { gz = fs.readFileSync(`/data/static/${name}.gz`); } catch (_) {}
+            staticFiles[name] = { buf, br, gz, ct: MIME_TYPES[ext] || 'application/octet-stream' };
         }
     } catch (e) {}
 
@@ -94,32 +86,20 @@ if (cluster.isPrimary) {
         res.set(SERVER_HDR).type('text/plain').send('ok');
     });
 
-    app.get('/json', (req, res) => {
+    app.get('/json/:count', (req, res) => {
         if (datasetItems) {
-            const items = datasetItems.map(d => ({
+            let count = parseInt(req.params.count, 10) || 0;
+            if (count < 0) count = 0;
+            if (count > datasetItems.length) count = datasetItems.length;
+            const m = parseInt(req.query.m) || 1;
+            const items = datasetItems.slice(0, count).map(d => ({
                 id: d.id, name: d.name, category: d.category,
                 price: d.price, quantity: d.quantity, active: d.active,
                 tags: d.tags, rating: d.rating,
-                total: Math.round(d.price * d.quantity * 100) / 100
+                total: d.price * d.quantity * m
             }));
-            const body = JSON.stringify({ items, count: items.length });
+            const body = JSON.stringify({ items, count });
             res.set(SERVER_HDR).type('application/json').send(body);
-        } else {
-            res.status(500).send('No dataset');
-        }
-    });
-
-    app.get('/compression', (req, res) => {
-        if (largeJsonBuf) {
-            const acceptEncoding = req.headers['accept-encoding'] || '';
-            if (acceptEncoding.includes('gzip')) {
-                const compressed = zlib.gzipSync(largeJsonBuf, { level: 1 });
-                res.set({ ...SERVER_HDR, 'content-encoding': 'gzip', 'content-type': 'application/json' })
-                   .send(compressed);
-            } else {
-                res.set({ ...SERVER_HDR, 'content-type': 'application/json' })
-                   .send(largeJsonBuf);
-            }
         } else {
             res.status(500).send('No dataset');
         }
@@ -146,12 +126,15 @@ if (cluster.isPrimary) {
         if (!pgPool) {
             return res.set(SERVER_HDR).type('application/json').send('{"items":[],"count":0}');
         }
-        const min = parseFloat(req.query.min) || 10;
-        const max = parseFloat(req.query.max) || 50;
+        const min = parseInt(req.query.min, 10) || 10;
+        const max = parseInt(req.query.max, 10) || 50;
+        let limit = parseInt(req.query.limit, 10) || 50;
+        if (limit < 1) limit = 1;
+        if (limit > 50) limit = 50;
         try {
             const result = await pgPool.query(
-                'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50',
-                [min, max]
+                'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
+                [min, max, limit]
             );
             const items = result.rows.map(r => ({
                 id: r.id, name: r.name, category: r.category,
@@ -196,10 +179,14 @@ if (cluster.isPrimary) {
 
     app.get('/static/:filename', (req, res) => {
         const sf = staticFiles[req.params.filename];
-        if (sf) {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-length': String(sf.buf.length) }).send(sf.buf);
+        if (!sf) return res.status(404).send('Not found');
+        const ae = req.headers['accept-encoding'] || '';
+        if (sf.br && ae.includes('br')) {
+            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-encoding': 'br', 'content-length': String(sf.br.length) }).send(sf.br);
+        } else if (sf.gz && ae.includes('gzip')) {
+            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-encoding': 'gzip', 'content-length': String(sf.gz.length) }).send(sf.gz);
         } else {
-            res.status(404).send('Not found');
+            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-length': String(sf.buf.length) }).send(sf.buf);
         }
     });
 

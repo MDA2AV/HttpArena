@@ -57,7 +57,6 @@ docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 # Build docker run args — mount all data files unconditionally for local testing
 docker_args=(--name "$CONTAINER_NAME" --network host)
 docker_args+=(-v "$DATA_DIR/dataset.json:/data/dataset.json:ro")
-docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
 docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 docker_args+=(-e "DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark")
 docker_args+=(-e "DATABASE_MAX_CONN=512")

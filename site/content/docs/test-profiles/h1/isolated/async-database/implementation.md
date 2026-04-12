@@ -14,9 +14,9 @@ The Async Database profile measures how efficiently a framework handles concurre
 
 1. A Postgres container runs alongside the framework container on the same host, listening on `localhost:5432`
 2. The framework reads the `DATABASE_URL` environment variable at startup and initializes a connection pool
-3. On each `GET /async-db?min=10&max=50` request, the framework:
-   - Parses `min` and `max` query parameters (both floats, default `10` and `50`)
-   - Executes an async range query with `LIMIT 50` against the Postgres `items` table
+3. On each `GET /async-db?min=10&max=50&limit=20` request, the framework:
+   - Parses `min`, `max` (floats, default `10` and `50`) and `limit` (integer, default `50`, max `50`) query parameters
+   - Executes an async range query with the parameterized `LIMIT` against the Postgres `items` table
    - Restructures `rating_score` and `rating_count` into a nested `rating` object
    - Serializes the result as JSON
 4. Returns `Content-Type: application/json`
@@ -37,11 +37,11 @@ CREATE TABLE items (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     category TEXT NOT NULL,
-    price DOUBLE PRECISION NOT NULL,
+    price INTEGER NOT NULL,
     quantity INTEGER NOT NULL,
     active BOOLEAN NOT NULL,
     tags JSONB NOT NULL,
-    rating_score DOUBLE PRECISION NOT NULL,
+    rating_score INTEGER NOT NULL,
     rating_count INTEGER NOT NULL
 );
 -- No index on price - forces sequential scan
@@ -57,13 +57,13 @@ Key differences from the SQLite schema:
 SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count
 FROM items
 WHERE price BETWEEN $1 AND $2
-LIMIT 50
+LIMIT $3
 ```
 
 ## Expected response
 
 ```
-GET /async-db?min=10&max=50 HTTP/1.1
+GET /async-db?min=10&max=50&limit=20 HTTP/1.1
 ```
 
 ```json
@@ -106,7 +106,7 @@ The benchmark runner provides these environment variables to your container:
 - **Async driver required** - use your language's async Postgres driver (e.g., `asyncpg` for Python, `tokio-postgres` for Rust, `pg` for Node.js, `r2d2`/`deadpool` for connection pools)
 - **Connection pool** - initialize a pool at startup. Read `DATABASE_MAX_CONN` to set your pool size. A good default is `min(DATABASE_MAX_CONN, num_cpus)` or a fixed value like 64-128
 - **Prepared statements** - prepare the query once per connection, reuse across requests
-- **Default parameters** - if `min` or `max` query parameters are missing, default to `10` and `50` respectively
+- **Default parameters** - if `min` or `max` query parameters are missing, default to `10` and `50` respectively. If `limit` is missing, default to `50`. Clamp `limit` to the range 1–50
 - **Tags are JSONB** - Postgres returns them as native JSON, no string parsing needed (unlike the SQLite `/db` endpoint)
 
 ## Important: environment variables and initialization
@@ -137,7 +137,8 @@ on_request /async-db:
 
 | Parameter | Value |
 |-----------|-------|
-| Endpoint | `GET /async-db` |
+| Endpoint | `GET /async-db?min=X&max=Y&limit=N` |
+| Limits | 5, 10, 20, 35, 50 (rotated with `-r 25`) |
 | Connections | 1,024 |
 | Pipeline | 1 |
 | Duration | 10s |

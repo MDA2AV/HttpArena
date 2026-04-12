@@ -14,19 +14,17 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URI
 import java.sql.Connection
 import java.sql.DriverManager
-import java.util.zip.GZIPOutputStream
 
 @Serializable
 data class DatasetItem(
     val id: Int,
     val name: String,
     val category: String,
-    val price: Double,
+    val price: Int,
     val quantity: Int,
     val active: Boolean,
     val tags: List<String>,
@@ -35,7 +33,7 @@ data class DatasetItem(
 
 @Serializable
 data class RatingInfo(
-    val score: Double,
+    val score: Int,
     val count: Int
 )
 
@@ -44,12 +42,12 @@ data class ProcessedItem(
     val id: Int,
     val name: String,
     val category: String,
-    val price: Double,
+    val price: Int,
     val quantity: Int,
     val active: Boolean,
     val tags: List<String>,
     val rating: RatingInfo,
-    val total: Double
+    val total: Long
 )
 
 @Serializable
@@ -63,7 +61,7 @@ data class DbItem(
     val id: Int,
     val name: String,
     val category: String,
-    val price: Double,
+    val price: Int,
     val quantity: Int,
     val active: Boolean,
     val tags: List<String>,
@@ -79,8 +77,8 @@ data class DbResponse(
 object AppData {
     val json = Json { ignoreUnknownKeys = true }
     var dataset: List<DatasetItem> = emptyList()
-    var largeJsonCache: ByteArray = ByteArray(0)
-    val staticFiles: MutableMap<String, Pair<ByteArray, String>> = mutableMapOf()
+    data class StaticEntry(val data: ByteArray, val br: ByteArray?, val gz: ByteArray?, val contentType: String)
+    val staticFiles: MutableMap<String, StaticEntry> = mutableMapOf()
     var db: Connection? = null
     var pgPool: HikariDataSource? = null
 
@@ -102,21 +100,21 @@ object AppData {
             dataset = json.decodeFromString<List<DatasetItem>>(dataFile.readText())
         }
 
-        // Large dataset for compression
-        val largeFile = File("/data/dataset-large.json")
-        if (largeFile.exists()) {
-            val largeItems = json.decodeFromString<List<DatasetItem>>(largeFile.readText())
-            largeJsonCache = buildJsonCache(largeItems)
-        }
-
-        // Static files
+        // Static files with pre-compressed variants
         val staticDir = File("/data/static")
         if (staticDir.isDirectory) {
             staticDir.listFiles()?.forEach { file ->
-                if (file.isFile) {
+                if (file.isFile && !file.name.endsWith(".br") && !file.name.endsWith(".gz")) {
                     val ext = file.extension.let { if (it.isNotEmpty()) ".$it" else "" }
                     val ct = mimeTypes[ext] ?: "application/octet-stream"
-                    staticFiles[file.name] = file.readBytes() to ct
+                    val brFile = File(file.path + ".br")
+                    val gzFile = File(file.path + ".gz")
+                    staticFiles[file.name] = StaticEntry(
+                        data = file.readBytes(),
+                        br = if (brFile.exists()) brFile.readBytes() else null,
+                        gz = if (gzFile.exists()) gzFile.readBytes() else null,
+                        contentType = ct
+                    )
                 }
             }
         }
@@ -151,24 +149,6 @@ object AppData {
         }
     }
 
-    private fun buildJsonCache(items: List<DatasetItem>): ByteArray {
-        val processed = items.map { d ->
-            ProcessedItem(
-                id = d.id, name = d.name, category = d.category,
-                price = d.price, quantity = d.quantity, active = d.active,
-                tags = d.tags, rating = d.rating,
-                total = Math.round(d.price * d.quantity * 100.0) / 100.0
-            )
-        }
-        val resp = JsonResponse(items = processed, count = processed.size)
-        return json.encodeToString(JsonResponse.serializer(), resp).toByteArray()
-    }
-
-    fun gzipCompress(data: ByteArray): ByteArray {
-        val bos = ByteArrayOutputStream(data.size / 4)
-        GZIPOutputStream(bos).use { it.write(data) }
-        return bos.toByteArray()
-    }
 }
 
 fun main() {
@@ -179,6 +159,7 @@ fun main() {
         install(DefaultHeaders) {
             header("Server", "ktor")
         }
+        install(Compression)
 
         routing {
             get("/pipeline") {
@@ -202,36 +183,26 @@ fun main() {
                 call.respondText(sum.toString(), ContentType.Text.Plain)
             }
 
-            get("/json") {
+            get("/json/{count}") {
                 if (AppData.dataset.isEmpty()) {
                     call.respondText("Dataset not loaded", ContentType.Text.Plain, HttpStatusCode.InternalServerError)
                     return@get
                 }
-                val processed = AppData.dataset.map { d ->
+                var count = call.parameters["count"]?.toIntOrNull() ?: 0
+                if (count < 0) count = 0
+                if (count > AppData.dataset.size) count = AppData.dataset.size
+                val m = call.request.queryParameters["m"]?.toIntOrNull() ?: 1
+                val processed = AppData.dataset.take(count).map { d ->
                     ProcessedItem(
                         id = d.id, name = d.name, category = d.category,
                         price = d.price, quantity = d.quantity, active = d.active,
                         tags = d.tags, rating = d.rating,
-                        total = Math.round(d.price * d.quantity * 100.0) / 100.0
+                        total = d.price.toLong() * d.quantity * m
                     )
                 }
-                val resp = JsonResponse(items = processed, count = processed.size)
+                val resp = JsonResponse(items = processed, count = count)
                 val body = AppData.json.encodeToString(JsonResponse.serializer(), resp).toByteArray()
                 call.respondBytes(body, ContentType.Application.Json)
-            }
-
-            get("/compression") {
-                if (AppData.largeJsonCache.isEmpty()) {
-                    call.respondText("Dataset not loaded", ContentType.Text.Plain, HttpStatusCode.InternalServerError)
-                    return@get
-                }
-                val acceptEncoding = call.request.header(HttpHeaders.AcceptEncoding) ?: ""
-                if (acceptEncoding.contains("gzip")) {
-                    call.response.header(HttpHeaders.ContentEncoding, "gzip")
-                    call.respondBytes(AppData.gzipCompress(AppData.largeJsonCache), ContentType.Application.Json)
-                } else {
-                    call.respondBytes(AppData.largeJsonCache, ContentType.Application.Json)
-                }
             }
 
             get("/db") {
@@ -258,11 +229,11 @@ fun main() {
                                 id = rs.getInt(1),
                                 name = rs.getString(2),
                                 category = rs.getString(3),
-                                price = rs.getDouble(4),
+                                price = rs.getInt(4),
                                 quantity = rs.getInt(5),
                                 active = rs.getInt(6) == 1,
                                 tags = tags,
-                                rating = RatingInfo(score = rs.getDouble(8), count = rs.getInt(9))
+                                rating = RatingInfo(score = rs.getInt(8), count = rs.getInt(9))
                             )
                         )
                     }
@@ -280,16 +251,18 @@ fun main() {
                     call.respondBytes("{\"items\":[],\"count\":0}".toByteArray(), ContentType.Application.Json)
                     return@get
                 }
-                val min = call.parameters["min"]?.toDoubleOrNull() ?: 10.0
-                val max = call.parameters["max"]?.toDoubleOrNull() ?: 50.0
+                val min = call.request.queryParameters["min"]?.toIntOrNull() ?: 10
+                val max = call.request.queryParameters["max"]?.toIntOrNull() ?: 50
+                val limit = (call.request.queryParameters["limit"]?.toIntOrNull() ?: 50).coerceIn(1, 50)
                 try {
                     val items = mutableListOf<DbItem>()
                     pool.connection.use { conn ->
                         val stmt = conn.prepareStatement(
-                            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50"
+                            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?"
                         )
-                        stmt.setDouble(1, min)
-                        stmt.setDouble(2, max)
+                        stmt.setInt(1, min)
+                        stmt.setInt(2, max)
+                        stmt.setInt(3, limit)
                         val rs = stmt.executeQuery()
                         while (rs.next()) {
                             val tags = AppData.json.decodeFromString<List<String>>(rs.getString(7))
@@ -298,11 +271,11 @@ fun main() {
                                     id = rs.getInt(1),
                                     name = rs.getString(2),
                                     category = rs.getString(3),
-                                    price = rs.getDouble(4),
+                                    price = rs.getInt(4),
                                     quantity = rs.getInt(5),
                                     active = rs.getBoolean(6),
                                     tags = tags,
-                                    rating = RatingInfo(score = rs.getDouble(8), count = rs.getInt(9))
+                                    rating = RatingInfo(score = rs.getInt(8), count = rs.getInt(9))
                                 )
                             )
                         }
@@ -339,8 +312,16 @@ fun main() {
                     call.respond(HttpStatusCode.NotFound)
                     return@get
                 }
-                val (data, contentType) = entry
-                call.respondBytes(data, ContentType.parse(contentType))
+                val ae = call.request.header(HttpHeaders.AcceptEncoding) ?: ""
+                if (entry.br != null && ae.contains("br")) {
+                    call.response.header(HttpHeaders.ContentEncoding, "br")
+                    call.respondBytes(entry.br, ContentType.parse(entry.contentType))
+                } else if (entry.gz != null && ae.contains("gzip")) {
+                    call.response.header(HttpHeaders.ContentEncoding, "gzip")
+                    call.respondBytes(entry.gz, ContentType.parse(entry.contentType))
+                } else {
+                    call.respondBytes(entry.data, ContentType.parse(entry.contentType))
+                }
             }
         }
     }.start(wait = true)

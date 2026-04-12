@@ -45,13 +45,17 @@ static class Handlers
         return size.ToString();
     }
 
-    public static Results<JsonHttpResult<ResponseDto<ProcessedItem>>, ProblemHttpResult> Json()
+    public static Results<JsonHttpResult<ResponseDto<ProcessedItem>>, ProblemHttpResult> Json(int count, HttpRequest req)
     {
         var source = AppData.DatasetItems;
         if (source == null)
             return TypedResults.Problem("Dataset not loaded");
 
-        int count = source.Count;
+        if (count > source.Count) count = source.Count;
+        if (count < 0) count = 0;
+
+        int m = 1;
+        if (req.Query.TryGetValue("m", out var mVal) && int.TryParse(mVal, out var pm)) m = pm;
 
         var items = new ProcessedItem[count];
 
@@ -68,66 +72,11 @@ static class Handlers
                 Active = item.Active,
                 Tags = item.Tags,
                 Rating = item.Rating,
-                Total = Math.Round(item.Price * item.Quantity, 2) 
+                Total = item.Price * item.Quantity * m
             };
         }
 
         return TypedResults.Json(new ResponseDto<ProcessedItem>(items, count), AppJsonContext.Default.ResponseDtoProcessedItem);
-    }
-
-    public static Results<FileContentHttpResult, ProblemHttpResult> Compression()
-    {
-        if (AppData.LargeJsonResponse == null)
-            return TypedResults.Problem("Dataset not loaded");
-
-        return TypedResults.Bytes(AppData.LargeJsonResponse, "application/json");
-    }
-
-    public static Results<JsonHttpResult<ResponseDto<DbResponseItemDto>>, ProblemHttpResult> Database(HttpRequest req)
-    {
-        if (AppData.DbPool == null)
-            return TypedResults.Problem("DB not available");
-
-        double min = 10, max = 50;
-        // Optimize query lookups
-        var query = req.Query;
-        if (query.TryGetValue("min", out var minStr) && double.TryParse(minStr, out var pmin)) min = pmin;
-        if (query.TryGetValue("max", out var maxStr) && double.TryParse(maxStr, out var pmax)) max = pmax;
-
-        var conn = AppData.DbPool.Rent();
-        try
-        {
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN @min AND @max LIMIT 50";
-            
-            cmd.Parameters.AddWithValue("@min", min);
-            cmd.Parameters.AddWithValue("@max", max);
-            
-            using var reader = cmd.ExecuteReader();
-
-            var items = new List<DbResponseItemDto>(50); 
-            
-            while (reader.Read())
-            {
-                items.Add(new DbResponseItemDto
-                {
-                    Id = reader.GetInt32(0),
-                    Name = reader.GetString(1),
-                    Category = reader.GetString(2),
-                    Price = reader.GetDouble(3),
-                    Quantity = reader.GetInt32(4),
-                    Active = reader.GetInt32(5) == 1,
-                    Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-                    Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) },
-                });
-            }
-
-            return TypedResults.Json(new ResponseDto<DbResponseItemDto>(items, items.Count), AppJsonContext.Default.ResponseDtoDbResponseItemDto);
-        }
-        finally
-        {
-            AppData.DbPool.Return(conn);
-        }
     }
 
     public static async Task<Results<JsonHttpResult<ResponseDto<DbResponseItemDto>>, ProblemHttpResult>> AsyncDatabase(HttpRequest req)
@@ -137,19 +86,22 @@ static class Handlers
 
         // Query Parsing
         double min = 10, max = 50;
+        int limit = 50;
         var query = req.Query;
         if (query.TryGetValue("min", out var minVal) && double.TryParse(minVal, out var pmin)) min = pmin;
         if (query.TryGetValue("max", out var maxVal) && double.TryParse(maxVal, out var pmax)) max = pmax;
+        if (query.TryGetValue("limit", out var limVal) && int.TryParse(limVal, out var plim)) limit = Math.Clamp(plim, 1, 50);
 
         await using var cmd = AppData.PgDataSource.CreateCommand(
-            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50");
+            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
         
         cmd.Parameters.AddWithValue(min);
         cmd.Parameters.AddWithValue(max);
-        
+        cmd.Parameters.AddWithValue(limit);
+
         await using var reader = await cmd.ExecuteReaderAsync();
 
-        var items = new List<DbResponseItemDto>(50); 
+        var items = new List<DbResponseItemDto>(limit);
 
         while (await reader.ReadAsync())
         {
@@ -158,11 +110,11 @@ static class Handlers
                 Id = reader.GetInt32(0),
                 Name = reader.GetString(1),
                 Category = reader.GetString(2),
-                Price = reader.GetDouble(3),
+                Price = (int)reader.GetDouble(3),
                 Quantity = reader.GetInt32(4),
                 Active = reader.GetBoolean(5),
                 Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-                Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) }
+                Rating = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
             });
         }
 
