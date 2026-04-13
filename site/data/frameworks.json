@@ -10,6 +10,7 @@
   "aspnet-minimal": {"dir": "aspnet-websocket", "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.", "repo": "https://github.com/dotnet/aspnetcore", "type": "production", "engine": "kestrel"},
   "bun-websocket": {"dir": "bun-websocket", "description": "Bun WebSocket echo server", "repo": "https://github.com/oven-sh/bun", "type": "tuned", "engine": "bun"},
   "deno-websocket": {"dir": "deno-websocket", "description": "Deno WebSocket echo server", "repo": "https://github.com/denoland/deno", "type": "tuned", "engine": "deno"},
+  "elysia": {"dir": "elysia", "description": "An ergonomic framework for Humans", "repo": "https://github.com/elysiajs/elysia", "type": "production", "engine": "jsc"},
   "fastpysgi-asgi": {"dir": "fastpysgi-asgi", "description": "An ultra fast WSGI/ASGI server for Python", "repo": "https://github.com/remittor/fastpysgi", "type": "engine", "engine": "libuv"},
   "fastpysgi-wsgi": {"dir": "fastpysgi-wsgi", "description": "An ultra fast WSGI/ASGI server for Python", "repo": "https://github.com/remittor/fastpysgi", "type": "engine", "engine": "libuv"},
   "fletch": {"dir": "fletch", "description": "Express-inspired HTTP framework for Dart with radix-tree routing, middleware chains, signed sessions, and built-in DI.", "repo": "https://github.com/kartikey321/fletch", "type": "tuned", "engine": "dart:io"},

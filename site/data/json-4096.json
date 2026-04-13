@@ -100,6 +100,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "elysia",
+    "language": "TS",
+    "rps": 923161,
+    "avg_latency": "4.09ms",
+    "p99_latency": "15.60ms",
+    "cpu": "5802.5%",
+    "memory": "1.9GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "3.13GB/s",
+    "input_bw": "44.02MB/s",
+    "reconnects": 183159,
+    "status_2xx": 4615809,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "frankenphp-trueasync",
     "language": "PHP",
     "rps": 136179,
