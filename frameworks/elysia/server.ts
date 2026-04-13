@@ -41,16 +41,9 @@ const STATIC_DIR = "/data/static";
 
 // Postgres client for /async-db (Bun native SQL)
 const databaseURL = process.env.DATABASE_URL;
-let pg: SQL | undefined;
-if (databaseURL) {
-	try {
-		pg = new SQL(databaseURL);
-		await pg.connect();
-	} catch (e) {
-		console.error("pg connect failed:", e);
-		pg = undefined;
-	}
-}
+// Bun.SQL auto-connects on first query — don't call .connect() explicitly,
+// it isn't reliably exposed on the base client and throws in some versions.
+const pg: SQL | undefined = databaseURL ? new SQL(databaseURL) : undefined;
 
 const EMPTY_DB_JSON = '{"items":[],"count":0}';
 
