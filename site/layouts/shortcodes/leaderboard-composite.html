@@ -15,6 +15,8 @@
   (dict "id" "gateway-64" "label" "Gateway-64" "sublabel" "H/2 Gateway" "proto" "h2gw" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "unary-grpc-tls" "label" "Unary TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
+  (dict "id" "stream-grpc" "label" "Stream" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
+  (dict "id" "stream-grpc-tls" "label" "Stream TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
   (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true)
   (dict "id" "static-h3" "label" "Static" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true)
   (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true)

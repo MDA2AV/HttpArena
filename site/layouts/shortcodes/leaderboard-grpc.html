@@ -1,6 +1,8 @@
 {{ $profiles := slice
   (dict "id" "unary-grpc" "label" "Unary (h2c)" "conns" (slice 256 1024) "desc" "Unary gRPC call (<code>BenchmarkService/GetSum</code>) over cleartext HTTP/2 (h2c). Measures raw gRPC transport performance without TLS overhead. Benchmarked with <code>h2load</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/grpc/unary/' class='lb-desc-link'>Learn more &rarr;</a>")
   (dict "id" "unary-grpc-tls" "label" "Unary (TLS)" "conns" (slice 256 1024) "desc" "Same unary gRPC call over encrypted HTTP/2 with TLS 1.3. Measures gRPC performance with real-world TLS encryption. Benchmarked with <code>h2load</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/grpc/unary/' class='lb-desc-link'>Learn more &rarr;</a>")
+  (dict "id" "stream-grpc" "label" "Server Stream (h2c)" "conns" (slice 64) "desc" "Server-streaming gRPC call (<code>BenchmarkService/StreamSum</code>) over cleartext HTTP/2 (h2c). One request, 5000 replies per call. Headline number is messages/sec. Benchmarked with <code>ghz</code> at 64 connections × 256 workers. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/grpc/stream/' class='lb-desc-link'>Learn more &rarr;</a>")
+  (dict "id" "stream-grpc-tls" "label" "Server Stream (TLS)" "conns" (slice 64) "desc" "Same server-streaming workload over encrypted HTTP/2 with TLS 1.3. Measures streaming gRPC throughput with real-world TLS overhead. Benchmarked with <code>ghz</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/grpc/stream/' class='lb-desc-link'>Learn more &rarr;</a>")
 }}
 
 {{/* Build JSON data blob for round switching */}}

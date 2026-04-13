@@ -200,6 +200,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ngx-php",
+    "language": "PHP",
+    "rps": 591203,
+    "avg_latency": "25.51ms",
+    "p99_latency": "577.20ms",
+    "cpu": "6527.5%",
+    "memory": "4.5GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "639.78MB/s",
+    "input_bw": "43.41MB/s",
+    "reconnects": 116299,
+    "status_2xx": 2956017,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "quarkus-jvm",
     "language": "Java",
     "rps": 378156,
