@@ -199,6 +199,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "helidon-tuned",
+    "language": "Java",
+    "rps": 577823,
+    "avg_latency": "878us",
+    "p99_latency": "7.89ms",
+    "cpu": "4862.2%",
+    "memory": "3.8GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "66.10MB/s",
+    "input_bw": "44.64MB/s",
+    "reconnects": 288910,
+    "status_2xx": 2889119,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "hono-bun",
     "language": "TS",
     "rps": 941234,

@@ -39,6 +39,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "helidon-tuned",
+    "language": "Java",
+    "rps": 618043,
+    "avg_latency": "6.69ms",
+    "p99_latency": "6.69ms",
+    "cpu": "6211.7%",
+    "memory": "8.3GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "2.11GB",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 3150737,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ngx-php",
     "language": "PHP",
     "rps": 804422,

@@ -159,6 +159,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "helidon-tuned",
+    "language": "Java",
+    "rps": 265851,
+    "avg_latency": "79.70ms",
+    "p99_latency": "79.70ms",
+    "cpu": "6025.3%",
+    "memory": "15.0GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "4.04GB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 1329521,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "hyper",
     "language": "Rust",
     "rps": 407071,

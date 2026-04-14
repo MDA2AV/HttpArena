@@ -59,6 +59,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "helidon-tuned",
+    "language": "Java",
+    "rps": 823252,
+    "avg_latency": "116.55ms",
+    "p99_latency": "116.55ms",
+    "cpu": "5932.9%",
+    "memory": "26.2GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "29.85MB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 4116469,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "quarkus-jvm",
     "language": "Java",
     "rps": 2572680,
