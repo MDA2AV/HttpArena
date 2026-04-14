@@ -19,6 +19,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "frankenphp-trueasync",
+    "language": "PHP",
+    "rps": 74646,
+    "avg_latency": "54.32ms",
+    "p99_latency": "208.00ms",
+    "cpu": "1926.0%",
+    "memory": "1.4GiB",
+    "connections": 64,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.13GB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 376169,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "nginx",
     "language": "C",
     "rps": 306492,
