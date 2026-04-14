@@ -31,18 +31,9 @@ class Pgsql
             );
     }
 
-    public static function reConnect(): PDOStatement
-    {
-        self::init();
-        return self::$bench;
-    }
-
     public static function query($min, $max, $limit)
     {
         $result = self::$bench;
-        if (!$result instanceof PDOStatement) {
-            $result = self::reConnect();
-        }
 
         $result->execute([$min, $max, $limit]);
         $data = [];
