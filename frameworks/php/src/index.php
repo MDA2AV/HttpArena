@@ -1,20 +1,28 @@
 <?php
 
 require __DIR__ . '/Pgsql.php';
+require __DIR__ . '/data.php';
 
-return match ($_SERVER['PATH_INFO']) {
+$path = $_SERVER['PATH_INFO'];
+
+return match ($path) {
     '/baseline11' => baseline(),
     '/baseline2'  => baseline(),
-    //'/json'     => json(),
-    //'/upload'     => upload(),
+    '/upload'     => upload(),
     '/pipeline'   => pipeline(),
     '/async-db'   => asyncDb(),
 
-    default => notFound()
+    default => rest($path)
 };
 
-// Init
-//Pgsql::init();
+function rest($path)
+{
+    return match (true) {
+        str_starts_with($path, '/json/') => json($path),
+
+        default => notFound()
+    };
+}
 
 function baseline()
 {
@@ -27,24 +35,26 @@ function baseline()
     echo $sum;
 }
 
-// function json()
-// {
-//     $total = [];
-//     foreach (JSON_DATA as $item) {
-//         $item['total'] = $item['price'] * $item['quantity'];
-//         $total[] = $item;
-//     }
+function json($path)
+{
+    $count = explode('/', $path)[2];
+    $m = $_GET['m'] ?? 1;
+    $total = [];
+    $i = 0;
+    while ($i < $count) {
+        $item = JSON_DATA[$i++];
+        $item['total'] = $item['price'] * $item['quantity'] * $m;
+        $total[] = $item;
+    }
+    header('Content-Type: application/json');
+    echo json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
 
-//     header('Content-Type: application/json');
-//     echo json_encode(['items' => $total, 'count' => count($total)],
-//                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-// }
-
-// function upload()
-// {
-//     header('Content-Type: text/plain');
-//     echo strlen($_POST);
-// }
+function upload()
+{
+    header('Content-Type: text/plain');
+    echo $_SERVER['CONTENT_LENGTH'];
+}
 
 function pipeline()
 {

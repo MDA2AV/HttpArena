@@ -17,7 +17,8 @@ COPY nginx.conf .
 
 EXPOSE 8080 8443/tcp 8443/udp
 
-#ENTRYPOINT ["nginx"]
+#ENTRYPOINT ["php", "src/json.php"]
 
-CMD service php8.5-fpm start && \
+CMD php src/json.php && \
+    service php8.5-fpm start && \
     nginx -c /nginx.conf
