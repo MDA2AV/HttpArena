@@ -1,0 +1,34 @@
+Apr 14, 2026 2:00:42 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+Apr 14, 2026 2:00:42 PM com.zaxxer.hikari.HikariDataSource <init>
+INFO: HikariPool-1 - Starting...
+Apr 14, 2026 2:00:42 PM com.zaxxer.hikari.pool.HikariPool checkFailFast
+INFO: HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@314b8f2d
+Apr 14, 2026 2:00:42 PM com.zaxxer.hikari.HikariDataSource <init>
+INFO: HikariPool-1 - Start completed.
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Apr 14, 2026 2:00:43 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x1527cb5e] http://0.0.0.0:8080 bound for socket '@default'
+Apr 14, 2026 2:00:43 PM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.4.1 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Apr 14, 2026 2:00:43 PM io.helidon.common.features.HelidonFeatures features
+WARNING: You are using incubating features. These APIs are not production ready!
+Apr 14, 2026 2:00:43 PM io.helidon.common.features.HelidonFeatures lambda$features$8
+INFO: 	Incubating feature: JSON Binding (JSON/Binding)
+Apr 14, 2026 2:00:43 PM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Apr 14, 2026 2:00:43 PM io.helidon.common.features.HelidonFeatures lambda$features$11
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Apr 14, 2026 2:00:43 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x1e5e43df] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Apr 14, 2026 2:00:43 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x482a58c3] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Apr 14, 2026 2:00:43 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 50 milliseconds. 1083 milliseconds since JVM startup. Java 25.0.2+10-LTS
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)

@@ -157,6 +157,13 @@
     "type": "engine",
     "engine": "h2o"
   },
+  "helidon-production": {
+    "dir": "helidon-production",
+    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
+    "repo": "https://github.com/helidon-io/helidon",
+    "type": "production",
+    "engine": "n\u00edma"
+  },
   "hono-bun": {
     "dir": "hono-bun",
     "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
@@ -212,6 +219,13 @@
     "repo": "https://github.com/websockets/ws",
     "type": "tuned",
     "engine": "v8"
+  },
+  "php-fpm": {
+    "dir": "php",
+    "description": "Plain PHP with PHP-FPM & nginx.",
+    "repo": "https://github.com/php/php-src",
+    "type": "production",
+    "engine": "nginx"
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",

@@ -2,21 +2,20 @@
   {
     "framework": "aspnet-minimal",
     "language": "C#",
-    "rps": 8881000,
-    "avg_latency": "138.16ms",
-    "p99_latency": "885.15ms",
-    "cpu": "2427.9%",
-    "memory": "212.3MiB",
+    "rps": 8617000,
+    "avg_latency": "140.09ms",
+    "p99_latency": "1.08s",
+    "cpu": "2374.6%",
+    "memory": "169.1MiB",
     "connections": 64,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
     "bandwidth": "0",
-    "input_bw": "",
     "reconnects": 0,
-    "status_2xx": 8881,
+    "status_2xx": 8617,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 2
+    "status_5xx": 8
   }
 ]
