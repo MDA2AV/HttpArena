@@ -1,0 +1,19 @@
+[1] Puma starting in cluster mode...
+[1] * Puma version: 7.2.0 ("On The Corner")
+[1] * Ruby version: ruby 4.0.2 (2026-03-17 revision d3da9fec82) +YJIT +MN +PRISM [x86_64-linux]
+[1] *  Min threads: 4
+[1] *  Max threads: 4
+[1] *  Environment: production
+[1] *   Master PID: 1
+[1] *      Workers: 4
+[1] *     Restarts: (✔) hot (✖) phased (✖) refork
+[1] * Preloading application
+[1] * Listening on http://0.0.0.0:8080
+[1] Use Ctrl-C to stop
+[1] ! WARNING: Detected `RUBY_MN_THREADS=1`
+[1] ! This setting is known to cause performance regressions with Puma.
+[1] ! Consider disabling this environment variable: https://github.com/puma/puma/issues/3720
+[1] - Worker 0 (PID: 8) booted in 0.01s, phase: 0
+[1] - Worker 1 (PID: 11) booted in 0.0s, phase: 0
+[1] - Worker 2 (PID: 15) booted in 0.0s, phase: 0
+[1] - Worker 3 (PID: 19) booted in 0.0s, phase: 0
