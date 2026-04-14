@@ -1,50 +1,26 @@
-{"level":"info","ts":1776014016.756134,"msg":"maxprocs: Leaving GOMAXPROCS=4: CPU quota undefined"}
-{"level":"info","ts":1776014016.7561514,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":15461882265,"previous":9223372036854775807}
-{"level":"info","ts":1776014016.7561543,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
-{"level":"info","ts":1776014016.7561557,"msg":"adapted config to JSON","adapter":"caddyfile"}
-{"level":"warn","ts":1776014016.756158,"logger":"admin","msg":"admin endpoint disabled"}
-{"level":"info","ts":1776014016.7563336,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x1762c8f1f680"}
-{"level":"info","ts":1776014016.7565455,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
-{"level":"info","ts":1776014016.756556,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
-{"level":"warn","ts":1776014016.7568924,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":8080"}
-{"level":"warn","ts":1776014016.7568965,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":8080"}
-{"level":"info","ts":1776014016.7568984,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
-{"level":"info","ts":1776014016.756924,"logger":"http","msg":"enabling HTTP/3 listener","addr":":8443"}
-{"level":"info","ts":1776014016.7570539,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
-{"level":"info","ts":1776014016.760904,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/root/.local/share/caddy"}
-{"level":"info","ts":1776014016.762559,"logger":"tls","msg":"finished cleaning storage units"}
-{"level":"info","ts":1776014016.793825,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":1}
-{"level":"info","ts":1776014016.7938855,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":3}
-{"level":"info","ts":1776014016.7938764,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":2}
-{"level":"info","ts":1776014016.794033,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":5}
-{"level":"info","ts":1776014016.7953916,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":4}
-{"level":"info","ts":1776014016.7954826,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":6}
-{"level":"info","ts":1776014016.7955527,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":16}
-{"level":"info","ts":1776014016.7955759,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":17}
-{"level":"info","ts":1776014016.7956438,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":7}
-{"level":"info","ts":1776014016.795694,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":18}
-{"level":"info","ts":1776014016.7958121,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":23}
-{"level":"info","ts":1776014016.7958064,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":11}
-{"level":"info","ts":1776014016.7958827,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":19}
-{"level":"info","ts":1776014016.795921,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":8}
-{"level":"info","ts":1776014016.796096,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":24}
-{"level":"info","ts":1776014016.7962403,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":12}
-{"level":"info","ts":1776014016.796326,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":20}
-{"level":"info","ts":1776014016.7963352,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":9}
-{"level":"info","ts":1776014016.7963984,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":25}
-{"level":"info","ts":1776014016.7964005,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":13}
-{"level":"info","ts":1776014016.7965493,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":10}
-{"level":"info","ts":1776014016.7965548,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":21}
-{"level":"info","ts":1776014016.7966228,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":26}
-{"level":"info","ts":1776014016.7966702,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":14}
-{"level":"info","ts":1776014016.796759,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":15}
-{"level":"info","ts":1776014016.7968373,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":27}
-{"level":"info","ts":1776014016.7968283,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_1","thread":22}
-{"level":"info","ts":1776014016.813575,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":28}
-{"level":"info","ts":1776014016.8295105,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":29}
-{"level":"info","ts":1776014016.8297918,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":30}
-{"level":"info","ts":1776014016.8298798,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":32}
-{"level":"info","ts":1776014016.8299084,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_2","thread":31}
-{"level":"info","ts":1776014016.8301833,"logger":"frankenphp","msg":"FrankenPHP started 🐘","php_version":"8.6.0-dev","num_threads":33,"max_threads":33}
-{"level":"info","ts":1776014016.8304286,"msg":"autosaved config (load with --resume flag)","file":"/root/.config/caddy/autosave.json"}
-{"level":"info","ts":1776014016.8304355,"msg":"serving initial configuration"}
+{"level":"info","ts":1776204810.6723526,"msg":"maxprocs: Leaving GOMAXPROCS=4: CPU quota undefined"}
+{"level":"info","ts":1776204810.67237,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":15461882265,"previous":9223372036854775807}
+{"level":"info","ts":1776204810.6723726,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+{"level":"info","ts":1776204810.672374,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1776204810.6723764,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1776204810.6725779,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x250cff9a7e80"}
+{"level":"info","ts":1776204810.6727798,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1776204810.67279,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
+{"level":"info","ts":1776204810.6926134,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":4}
+{"level":"info","ts":1776204810.6926138,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":1}
+{"level":"info","ts":1776204810.6926918,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":5}
+{"level":"info","ts":1776204810.6926231,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":3}
+{"level":"info","ts":1776204810.6937091,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":6}
+{"level":"info","ts":1776204810.6937203,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php","thread":2}
+{"level":"info","ts":1776204810.6947367,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":7}
+{"level":"info","ts":1776204810.6948097,"logger":"frankenphp","msg":"async worker thread started","worker":"m#/app/worker.php_0","thread":8}
+{"level":"info","ts":1776204810.6948764,"logger":"frankenphp","msg":"FrankenPHP started 🐘","php_version":"8.6.0-dev","num_threads":9,"max_threads":9}
+{"level":"warn","ts":1776204810.711309,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"warn","ts":1776204810.7113245,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"info","ts":1776204810.7113276,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1776204810.7113736,"logger":"http","msg":"enabling HTTP/3 listener","addr":":8443"}
+{"level":"info","ts":1776204810.7114973,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1776204810.715338,"msg":"autosaved config (load with --resume flag)","file":"/root/.config/caddy/autosave.json"}
+{"level":"info","ts":1776204810.7153487,"msg":"serving initial configuration"}
+{"level":"info","ts":1776204810.7182252,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/root/.local/share/caddy"}
+{"level":"info","ts":1776204810.7211757,"logger":"tls","msg":"finished cleaning storage units"}

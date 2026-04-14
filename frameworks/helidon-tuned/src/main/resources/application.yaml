@@ -1,0 +1,72 @@
+data.dir: "/data"
+cert.dir: "/certs"
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  backlog: 8192
+  connection-options:
+    read-timeout: PT0S
+    connect-timeout: PT0S
+  protocols:
+    http_1_1:
+      send-keep-alive-header: false
+      validate-request-headers: false
+      validate-response-headers: false
+      validate-prologue: false
+      validate-path: false
+      recv-log: false
+      send-log: false
+  sockets:
+    - name: "h2-tls" # HTTP/2, grpc
+      host: "0.0.0.0"
+      port: 8443
+      backlog: 8192
+      connection-options:
+        read-timeout: PT0S
+        connect-timeout: PT0S
+      protocols:
+        http_1_1:
+          send-keep-alive-header: false
+          validate-request-headers: false
+          validate-response-headers: false
+          validate-prologue: false
+          validate-path: false
+          recv-log: false
+          send-log: false
+      tls:
+        private-key:
+          pem:
+            key:
+              resource:
+                path: "${cert.dir}/server.key"
+            cert-chain:
+              resource:
+                path: "${cert.dir}/server.crt"
+    - name: "h1-tls"  # json-tls
+      host: "0.0.0.0"
+      port: 8081
+      backlog: 8192
+      connection-options:
+        read-timeout: PT0S
+        connect-timeout: PT0S
+      # benchmark requires http/1.1 only on this port
+      protocols-discover-services: false
+      protocols:
+        http_1_1:
+          send-keep-alive-header: false
+          validate-request-headers: false
+          validate-response-headers: false
+          validate-prologue: false
+          validate-path: false
+          recv-log: false
+          send-log: false
+      tls:
+        private-key:
+          pem:
+            key:
+              resource:
+                path: "${cert.dir}/server.key"
+            cert-chain:
+              resource:
+                path: "${cert.dir}/server.crt"

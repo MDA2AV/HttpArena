@@ -23,6 +23,8 @@ The current subscribed benchmark profiles are:
 - `static-h2`
 - `unary-grpc`
 - `unary-grpc-tls`
+- `stream-grpc`
+- `stream-grpc-tls`
 - `echo-ws`
 
 Profiles not currently supported here:
@@ -34,9 +36,9 @@ Profiles not currently supported here:
 
 The benchmark wiring is split by listener:
 
-- `8080` (`default`): HTTP/1.1 endpoints, cleartext gRPC, and WebSocket
+- `8080` (`default`): HTTP/1.1 endpoints, cleartext gRPC for `unary-grpc` and `stream-grpc`, and WebSocket
 - `8081` (`h1-tls`): HTTP/1.1 + TLS for `json-tls`
-- `8443` (`h2-tls`): HTTP/2 + TLS for `baseline-h2`, `static-h2`, and TLS gRPC
+- `8443` (`h2-tls`): HTTP/2 + TLS for `baseline-h2`, `static-h2`, `unary-grpc-tls`, and `stream-grpc-tls`
 
 Static content and TLS are configured from `application.yaml`, not
 programmatically.

@@ -19,6 +19,15 @@ memory_limit=512M\n\
 
 ENV GODEBUG=cgocheck=0
 
+# GC tuning: GOGC=1000 reduces GC frequency ~10x, cutting stop-the-world
+# overhead on this allocation-heavy workload (+46% throughput on /baseline11).
+ENV GOGC=1000
+
+# For cgo-heavy workloads GOMAXPROCS should be over-provisioned past numCPU
+# (roughly 2x num_cpu) to avoid runtime.stopm futex churn on cgo returns.
+# See PERFORMANCE_NOTES.md. Left unset here so the benchmark operator can
+# tune per-host (e.g. GOMAXPROCS=128 on 64-core HttpArena hardware).
+
 EXPOSE 8080
 EXPOSE 8443
 

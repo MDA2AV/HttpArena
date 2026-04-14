@@ -1,0 +1,1600 @@
+Apr 14, 2026 2:02:30 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Apr 14, 2026 2:02:31 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x6e6f25d5] http://0.0.0.0:8080 bound for socket '@default'
+Apr 14, 2026 2:02:31 PM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.4.1 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Apr 14, 2026 2:02:31 PM io.helidon.common.features.HelidonFeatures features
+WARNING: You are using incubating features. These APIs are not production ready!
+Apr 14, 2026 2:02:31 PM io.helidon.common.features.HelidonFeatures lambda$features$8
+INFO: 	Incubating feature: JSON Binding (JSON/Binding)
+Apr 14, 2026 2:02:31 PM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Apr 14, 2026 2:02:31 PM io.helidon.common.features.HelidonFeatures lambda$features$11
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Apr 14, 2026 2:02:31 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x792d2d7f] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Apr 14, 2026 2:02:31 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x78a8c26a] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Apr 14, 2026 2:02:31 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 37 milliseconds. 998 milliseconds since JVM startup. Java 25.0.2+10-LTS
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x553f5e7d] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x45c61aaf] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x48d7ea4e] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x76090caf] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/app.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x38e552f6] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x4eb75ff5] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x698c5f8a] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x4f1d96b3] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/components.css, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x5b15dbc6] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Connection reset by peer
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Connection reset by peer
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x25f0beb7] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/app.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x723b2f0f] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:36 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x1540dc66] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/components.css, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x5ab068bb] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/app.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x0276c6fc] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x3f8b3ff9] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/components.css, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x5027aaf7] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/app.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x6996602f] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/components.css, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:746)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x36021b7d] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Connection reset by peer
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Connection reset by peer
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x1d4c85fb] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/app.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x3d355f1d] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x13ca2b58] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Connection reset by peer
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Connection reset by peer
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x2ef630e8] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Connection reset by peer
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.write(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.write(Http1ServerResponse.java:874)
+	at java.base/java.util.zip.DeflaterOutputStream.deflate(Unknown Source)
+	at java.base/java.util.zip.DeflaterOutputStream.write(Unknown Source)
+	at java.base/java.util.zip.GZIPOutputStream.write(Unknown Source)
+	at java.base/java.io.InputStream.transferTo(Unknown Source)
+	at java.base/sun.nio.ch.ChannelInputStream.transferTo(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:116)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+	Suppressed: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+		at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:115)
+		... 15 more
+	Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+		at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+		at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+		at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+		at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+		at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+		at java.base/java.io.FilterOutputStream.close(Unknown Source)
+		at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+		... 17 more
+	Caused by: java.io.IOException: Broken pipe
+		at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+		at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+		at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+		at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+		... 26 more
+Caused by: java.io.IOException: Connection reset by peer
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 29 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x4562c4ca] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+
+Apr 14, 2026 2:02:51 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x6e6f25d5 0x56e1cde4] Request failed: HttpPrologue[protocol=HTTP, protocolVersion=1.1, method=GET, uriPath=/static/vendor.js, query=, fragment=], cannot send error response, as response already sent
+io.helidon.http.RequestException: Cannot access static resource
+	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
+	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:197)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:105)
+	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
+	at io.helidon.webserver.http.HttpRoutingImpl.route(HttpRoutingImpl.java:74)
+	at io.helidon.webserver.http1.Http1Connection.route(Http1Connection.java:552)
+	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:218)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: io.helidon.http.InternalServerException: Cannot access static resource
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:245)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.doRoute(HttpRoutingImpl.java:174)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:132)
+	at io.helidon.webserver.http.HttpRoutingImpl$RoutingExecutor.call(HttpRoutingImpl.java:110)
+	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:76)
+	... 8 more
+Caused by: io.helidon.webserver.ServerConnectionException: Failed to close server output stream
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:888)
+	at java.base/java.util.zip.DeflaterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.staticcontent.FileBasedContentHandler.send(FileBasedContentHandler.java:117)
+	at io.helidon.webserver.staticcontent.CachedHandlerPath.handle(CachedHandlerPath.java:73)
+	at io.helidon.webserver.staticcontent.FileSystemContentHandler.doHandle(FileSystemContentHandler.java:105)
+	at io.helidon.webserver.staticcontent.StaticContentHandler.handle(StaticContentHandler.java:233)
+	... 12 more
+Caused by: java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.common.socket.SocketWriterDirect.write(SocketWriterDirect.java:43)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.writeChunked(Http1ServerResponse.java:823)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:749)
+	at io.helidon.webserver.http1.Http1ServerResponse$BlockingOutputStream.write(Http1ServerResponse.java:561)
+	at java.base/java.io.BufferedOutputStream.flushBuffer(Unknown Source)
+	at java.base/java.io.BufferedOutputStream.flush(Unknown Source)
+	at java.base/java.io.FilterOutputStream.close(Unknown Source)
+	at io.helidon.webserver.http1.Http1ServerResponse$ClosingBufferedOutputStream.close(Http1ServerResponse.java:886)
+	... 17 more
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 26 more
+

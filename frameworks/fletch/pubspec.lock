@@ -101,10 +101,10 @@ packages:
     dependency: "direct main"
     description:
       name: fletch
-      sha256: "373f6be6c32e253eee43bfde712e2b22a484acb97d989b6eb0e6ee0e9916c796"
+      sha256: f93be2d9e87a7cd91bf23f0cc1108e91b8fccb54430eedd0d676cc43cc0ec23b
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.0"
+    version: "2.3.0"
   get_it:
     dependency: transitive
     description:
@@ -253,10 +253,10 @@ packages:
     dependency: "direct main"
     description:
       name: sqlite3
-      sha256: caa693ad15a587a2b4fde093b728131a1827903872171089dedb16f7665d3a91
+      sha256: "56da3e13ed7d28a66f930aa2b2b29db6736a233f08283326e96321dd812030f5"
       url: "https://pub.dev"
     source: hosted
-    version: "3.2.0"
+    version: "3.3.1"
   stack_trace:
     dependency: transitive
     description:

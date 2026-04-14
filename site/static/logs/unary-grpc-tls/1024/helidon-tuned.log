@@ -1,0 +1,62 @@
+Apr 14, 2026 6:53:14 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Apr 14, 2026 6:53:14 PM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.4.1 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Apr 14, 2026 6:53:14 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x0117a2f3] http://0.0.0.0:8080 bound for socket '@default'
+Apr 14, 2026 6:53:14 PM io.helidon.common.features.HelidonFeatures features
+WARNING: You are using incubating features. These APIs are not production ready!
+Apr 14, 2026 6:53:14 PM io.helidon.common.features.HelidonFeatures lambda$features$8
+INFO: 	Incubating feature: JSON Binding (JSON/Binding)
+Apr 14, 2026 6:53:14 PM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Apr 14, 2026 6:53:14 PM io.helidon.common.features.HelidonFeatures lambda$features$11
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Apr 14, 2026 6:53:14 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x30b20acb] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Apr 14, 2026 6:53:14 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x738bb6d6] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Apr 14, 2026 6:53:14 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 39 milliseconds. 1009 milliseconds since JVM startup. Java 25.0.2+10-LTS
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)
+Apr 14, 2026 6:53:33 PM io.helidon.grpc.core.SafeStreamObserver onError
+SEVERE: Caught exception handling onError
+java.lang.IllegalArgumentException: newPosition > limit: (12 > 0)
+	at java.base/java.nio.Buffer.createPositionException(Unknown Source)
+	at java.base/java.nio.Buffer.position(Unknown Source)
+	at java.base/java.nio.ByteBuffer.position(Unknown Source)
+	at java.base/java.nio.HeapByteBuffer.put(Unknown Source)
+	at io.helidon.common.buffers.FixedBufferData.writeTo(FixedBufferData.java:146)
+	at io.helidon.common.buffers.CompositeArrayBufferData.writeTo(CompositeArrayBufferData.java:146)
+	at io.helidon.common.socket.TlsNioSocket.doWrite(TlsNioSocket.java:385)
+	at io.helidon.common.socket.TlsNioSocket.write(TlsNioSocket.java:192)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.writeHeaders(Http2ConnectionWriter.java:93)
+	at io.helidon.webserver.grpc.GrpcProtocolHandler$1.close(GrpcProtocolHandler.java:472)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onError(ServerCalls.java:390)
+	at io.helidon.grpc.core.SafeStreamObserver.onError(SafeStreamObserver.java:69)
+	at io.helidon.grpc.core.SafeStreamObserver.onNext(SafeStreamObserver.java:57)
+	at io.helidon.grpc.core.ResponseHelper.complete(ResponseHelper.java:52)
+	at com.httparena.BenchmarkGrpcService.getSum(BenchmarkGrpcService.java:31)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.PartialForwardingServerCallListener.onHalfClose(PartialForwardingServerCallListener.java:35)
+	at io.grpc.ForwardingServerCallListener.onHalfClose(ForwardingServerCallListener.java:23)
+	at io.grpc.ForwardingServerCallListener$SimpleForwardingServerCallListener.onHalfClose(ForwardingServerCallListener.java:40)
+	at io.grpc.Contexts$ContextualizedServerCallListener.onHalfClose(Contexts.java:86)
+	at io.helidon.webserver.grpc.GrpcProtocolHandler.data(GrpcProtocolHandler.java:266)
+	at io.helidon.webserver.http2.Http2ServerStream.handle(Http2ServerStream.java:648)
+	at io.helidon.webserver.http2.Http2ServerStream.run(Http2ServerStream.java:318)
+	at io.helidon.webserver.http2.Http2Connection$StreamRunnable.run(Http2Connection.java:906)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$ThreadBoundFuture.run(Unknown Source)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+

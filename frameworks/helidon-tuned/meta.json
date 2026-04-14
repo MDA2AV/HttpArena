@@ -1,0 +1,32 @@
+{
+    "display_name": "helidon-tuned",
+    "language": "Java",
+    "type": "tuned",
+    "engine": "níma",
+    "description": "Helidon SE 4.4.1 on Níma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
+    "repo": "https://github.com/helidon-io/helidon",
+    "enabled": true,
+    "tests": [
+        "baseline",
+        "pipelined",
+        "limited-conn",
+        "json",
+        "json-comp",
+        "json-tls",
+        "upload",
+        "static",
+        "baseline-h2",
+        "static-h2",
+        "echo-ws",
+        "unary-grpc",
+        "unary-grpc-tls",
+        "stream-grpc",
+        "stream-grpc-tls",
+        "async-db",
+        "api-4",
+        "api-16"
+    ],
+    "maintainers": [
+        "tomas-langer"
+    ]
+}

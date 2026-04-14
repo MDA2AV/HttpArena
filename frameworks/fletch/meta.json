@@ -1,5 +1,5 @@
 {
-  "display_name": "fletch",
+  "display_name": "Fletch",
   "language": "Dart",
   "engine": "dart:io",
   "type": "tuned",
@@ -11,13 +11,11 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
+    "json-tls",
     "upload",
-    "noisy",
-    "api-4",
-    "api-16",
     "static",
-    "async-db",
-    "sync-db"
+    "async-db"
   ],
-  "maintainers": []
+  "maintainers": ["kartikey321"]
 }
