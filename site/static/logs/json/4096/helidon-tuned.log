@@ -1,0 +1,28 @@
+Apr 14, 2026 6:43:39 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Apr 14, 2026 6:43:40 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x7bf8099f] http://0.0.0.0:8080 bound for socket '@default'
+Apr 14, 2026 6:43:40 PM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.4.1 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Apr 14, 2026 6:43:40 PM io.helidon.common.features.HelidonFeatures features
+WARNING: You are using incubating features. These APIs are not production ready!
+Apr 14, 2026 6:43:40 PM io.helidon.common.features.HelidonFeatures lambda$features$8
+INFO: 	Incubating feature: JSON Binding (JSON/Binding)
+Apr 14, 2026 6:43:40 PM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Apr 14, 2026 6:43:40 PM io.helidon.common.features.HelidonFeatures lambda$features$11
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Apr 14, 2026 6:43:40 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x23da53c6] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Apr 14, 2026 6:43:40 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x21aaa5a3] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Apr 14, 2026 6:43:40 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 37 milliseconds. 968 milliseconds since JVM startup. Java 25.0.2+10-LTS
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)

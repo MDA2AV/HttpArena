@@ -20,6 +20,8 @@
         "echo-ws",
         "unary-grpc",
         "unary-grpc-tls",
+        "stream-grpc",
+        "stream-grpc-tls",
         "async-db",
         "api-4",
         "api-16"

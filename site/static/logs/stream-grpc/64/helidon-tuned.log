@@ -1,0 +1,267 @@
+Apr 14, 2026 6:53:39 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Apr 14, 2026 6:53:40 PM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.4.1 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Apr 14, 2026 6:53:40 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x0adb4a0e] http://0.0.0.0:8080 bound for socket '@default'
+Apr 14, 2026 6:53:40 PM io.helidon.common.features.HelidonFeatures features
+WARNING: You are using incubating features. These APIs are not production ready!
+Apr 14, 2026 6:53:40 PM io.helidon.common.features.HelidonFeatures lambda$features$8
+INFO: 	Incubating feature: JSON Binding (JSON/Binding)
+Apr 14, 2026 6:53:40 PM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Apr 14, 2026 6:53:40 PM io.helidon.common.features.HelidonFeatures lambda$features$11
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Apr 14, 2026 6:53:40 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x5eff0fd2] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Apr 14, 2026 6:53:40 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x6cc75a70] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Apr 14, 2026 6:53:40 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 40 milliseconds. 1019 milliseconds since JVM startup. Java 25.0.2+10-LTS
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)
+Apr 14, 2026 6:53:41 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x52216f41] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:41 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x3c088886] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:41 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x2fc615da] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:41 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x3963ecc1] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:41 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x0fc78ca6] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:41 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x2b43e3a9] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:53 PM io.helidon.common.socket.SocketContext log
+WARNING: [0x0adb4a0e 0x1c7e26e0] unexpected I/O exception
+java.io.UncheckedIOException: java.io.IOException: Broken pipe
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:154)
+	at io.helidon.common.socket.SocketWriter.writeNow(SocketWriter.java:81)
+	at io.helidon.http.http2.Http2ConnectionWriter.noLockWrite(Http2ConnectionWriter.java:200)
+	at io.helidon.http.http2.Http2ConnectionWriter.lockedWrite(Http2ConnectionWriter.java:173)
+	at io.helidon.http.http2.Http2ConnectionWriter.write(Http2ConnectionWriter.java:59)
+	at io.helidon.webserver.http2.Http2Connection.writePingAck(Http2Connection.java:766)
+	at io.helidon.webserver.http2.Http2Connection.dispatchHandler(Http2Connection.java:382)
+	at io.helidon.webserver.http2.Http2Connection.doHandle(Http2Connection.java:362)
+	at io.helidon.webserver.http2.Http2Connection.handle(Http2Connection.java:175)
+	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:185)
+	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
+	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+Caused by: java.io.IOException: Broken pipe
+	at java.base/sun.nio.ch.SocketDispatcher.write0(Native Method)
+	at java.base/sun.nio.ch.SocketDispatcher.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.writeFromNativeBuffer(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.IOUtil.write(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.implWrite(Unknown Source)
+	at java.base/sun.nio.ch.SocketChannelImpl.write(Unknown Source)
+	at io.helidon.common.socket.NioSocket.write(NioSocket.java:150)
+	... 12 more
+
+Apr 14, 2026 6:53:53 PM io.helidon.webserver.grpc.GrpcProtocolHandler data
+SEVERE: Failed to process grpc request: +--------+-------------------------------------------------+----------------+
+|   index|  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |            data|
++--------+-------------------------------------------------+----------------+
+|00000000| 00 00 00 00 07 08 01 10 02 18 88 27             |...........'    |
++--------+-------------------------------------------------+----------------+
+
+io.grpc.StatusRuntimeException: CANCELLED: call already cancelled. Use ServerCallStreamObserver.setOnCancelHandler() to disable this exception
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onNext(ServerCalls.java:366)
+	at com.httparena.BenchmarkGrpcService.streamSum(BenchmarkGrpcService.java:42)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.PartialForwardingServerCallListener.onHalfClose(PartialForwardingServerCallListener.java:35)
+	at io.grpc.ForwardingServerCallListener.onHalfClose(ForwardingServerCallListener.java:23)
+	at io.grpc.ForwardingServerCallListener$SimpleForwardingServerCallListener.onHalfClose(ForwardingServerCallListener.java:40)
+	at io.grpc.Contexts$ContextualizedServerCallListener.onHalfClose(Contexts.java:86)
+	at io.helidon.webserver.grpc.GrpcProtocolHandler.data(GrpcProtocolHandler.java:266)
+	at io.helidon.webserver.http2.Http2ServerStream.handle(Http2ServerStream.java:648)
+	at io.helidon.webserver.http2.Http2ServerStream.run(Http2ServerStream.java:318)
+	at io.helidon.webserver.http2.Http2Connection$StreamRunnable.run(Http2Connection.java:906)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$ThreadBoundFuture.run(Unknown Source)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+
+Apr 14, 2026 6:53:53 PM io.helidon.webserver.grpc.GrpcProtocolHandler data
+SEVERE: Failed to process grpc request: +--------+-------------------------------------------------+----------------+
+|   index|  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |            data|
++--------+-------------------------------------------------+----------------+
+|00000000| 00 00 00 00 07 08 01 10 02 18 88 27             |...........'    |
++--------+-------------------------------------------------+----------------+
+
+io.grpc.StatusRuntimeException: CANCELLED: call already cancelled. Use ServerCallStreamObserver.setOnCancelHandler() to disable this exception
+	at io.grpc.Status.asRuntimeException(Status.java:524)
+	at io.grpc.stub.ServerCalls$ServerCallStreamObserverImpl.onNext(ServerCalls.java:366)
+	at com.httparena.BenchmarkGrpcService.streamSum(BenchmarkGrpcService.java:42)
+	at io.grpc.stub.ServerCalls$UnaryServerCallHandler$UnaryServerCallListener.onHalfClose(ServerCalls.java:182)
+	at io.grpc.PartialForwardingServerCallListener.onHalfClose(PartialForwardingServerCallListener.java:35)
+	at io.grpc.ForwardingServerCallListener.onHalfClose(ForwardingServerCallListener.java:23)
+	at io.grpc.ForwardingServerCallListener$SimpleForwardingServerCallListener.onHalfClose(ForwardingServerCallListener.java:40)
+	at io.grpc.Contexts$ContextualizedServerCallListener.onHalfClose(Contexts.java:86)
+	at io.helidon.webserver.grpc.GrpcProtocolHandler.data(GrpcProtocolHandler.java:266)
+	at io.helidon.webserver.http2.Http2ServerStream.handle(Http2ServerStream.java:648)
+	at io.helidon.webserver.http2.Http2ServerStream.run(Http2ServerStream.java:318)
+	at io.helidon.webserver.http2.Http2Connection$StreamRunnable.run(Http2Connection.java:906)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Unknown Source)
+	at java.base/java.util.concurrent.FutureTask.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$ThreadBoundFuture.run(Unknown Source)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+

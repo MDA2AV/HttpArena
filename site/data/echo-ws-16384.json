@@ -119,6 +119,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "helidon-tuned",
+    "language": "Java",
+    "rps": 1981975,
+    "avg_latency": "7.56ms",
+    "p99_latency": "11.30ms",
+    "cpu": "6154.8%",
+    "memory": "3.3GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "13.63MB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 9909876,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "node-websocket",
     "language": "JS",
     "rps": 1831732,

@@ -17,5 +17,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 8
+  },
+  {
+    "framework": "helidon-tuned",
+    "language": "Java",
+    "rps": 513000,
+    "avg_latency": "1.66s",
+    "p99_latency": "2.16s",
+    "cpu": "1452.3%",
+    "memory": "4.2GiB",
+    "connections": 64,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "0",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 513,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 2
   }
 ]
