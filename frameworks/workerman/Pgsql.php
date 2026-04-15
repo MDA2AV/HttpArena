@@ -2,20 +2,24 @@
 
 class Pgsql
 {
-    private static ?PDOStatement $bench;
+    private static ?PDOStatement $bench = null;
 
     public static function init()
     {
-            $dsn = getenv('DATABASE_URL');
+        $dsn = getenv('DATABASE_URL');
+        if (!$dsn) {
+            return;
+        }
 
-            // Parse postgres://user:pass@host:port/dbname
-            $parts = parse_url($dsn);
-            $host = $parts['host'] ?? 'localhost';
-            $port = $parts['port'] ?? 5432;
-            $db = ltrim($parts['path'] ?? '/benchmark', '/');
-            $user = $parts['user'] ?? 'bench';
-            $pass = $parts['pass'] ?? 'bench';
+        // Parse postgres://user:pass@host:port/dbname
+        $parts = parse_url($dsn);
+        $host = $parts['host'] ?? 'localhost';
+        $port = $parts['port'] ?? 5432;
+        $db = ltrim($parts['path'] ?? '/benchmark', '/');
+        $user = $parts['user'] ?? 'bench';
+        $pass = $parts['pass'] ?? 'bench';
 
+        try {
             $pdo = new PDO(
                 "pgsql:host=$host;port=$port;dbname=$db",
                 $user,
@@ -29,19 +33,16 @@ class Pgsql
             self::$bench = $pdo->prepare(
                 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?'
             );
-    }
-
-    public static function reConnect(): PDOStatement
-    {
-        self::init();
-        return self::$bench;
+        } catch (\PDOException $e) {
+            self::$bench = null;
+        }
     }
 
     public static function query($min, $max, $limit)
     {
         $result = self::$bench;
         if (!$result instanceof PDOStatement) {
-            $result = self::reConnect();
+            return json_encode(['items' => [], 'count' => 0]);
         }
 
         $result->execute([$min, $max, $limit]);

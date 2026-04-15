@@ -1,8 +1,5 @@
 FROM ubuntu:24.04
 
-ENV PROCESS_MULTIPLIER=1
-ENV EVENT_LOOP=Select
-
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -yqq && apt-get install -yqq software-properties-common > /dev/null

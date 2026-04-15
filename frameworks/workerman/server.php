@@ -6,7 +6,6 @@ use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Http;   
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/Db.php';
 require_once __DIR__ . '/Pgsql.php';
 
 // #### http worker ####
@@ -100,7 +99,7 @@ $context = [
 $https = new Worker('http://0.0.0.0:8081', $context);
 $https->transport = 'ssl';
 $https->reusePort = true;
-$https->count = shell_exec('nproc');
+$https->count = (int) shell_exec('nproc');
 $https->name = 'bench';
 
 
