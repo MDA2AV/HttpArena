@@ -4,11 +4,8 @@ Rails.application.routes.draw do
   post '/baseline11',  to: 'benchmark#baseline11'
   get  '/baseline2',   to: 'benchmark#baseline2'
   get  '/json/:count', to: 'benchmark#json_endpoint'
-  get  '/compression', to: 'benchmark#compression'
-  get  '/db',          to: 'benchmark#db'
   get  '/async-db',    to: 'benchmark#async_db'
   post '/upload',      to: 'benchmark#upload'
-  get  '/static/:filename', to: 'benchmark#static_file', constraints: { filename: /[^\/]+/ }
 
   # Catch-all for unknown paths → 404
   match '*path', to: 'benchmark#not_found', via: :all

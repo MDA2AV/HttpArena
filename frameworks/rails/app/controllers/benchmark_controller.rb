@@ -4,7 +4,7 @@ require 'zlib'
 require 'pg'
 
 class BenchmarkController < ActionController::API
-  mattr_accessor :dataset, :static_files
+  mattr_accessor :dataset
 
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
   dataset_path = File.join(DATA_DIR, 'dataset.json')
@@ -14,29 +14,7 @@ class BenchmarkController < ActionController::API
     self.dataset = JSON.parse(File.read(dataset_path)).freeze
   end
 
-  # Load static files into memory
-  MIME_TYPES = {
-    '.css'   => 'text/css',
-    '.js'    => 'application/javascript',
-    '.html'  => 'text/html',
-    '.woff2' => 'font/woff2',
-    '.svg'   => 'image/svg+xml',
-    '.webp'  => 'image/webp',
-    '.json'  => 'application/json'
-  }.freeze
-
-  self.static_files = {}
-  if File.exist?(static_dir)
-    Dir.foreach(static_dir) do |name|
-      next if name == '.' || name == '..'
-      path = File.join(static_dir, name)
-      next unless File.file?(path)
-      ext = File.extname(name)
-      ct = MIME_TYPES.fetch(ext, 'application/octet-stream')
-      self.static_files[name] = { path: path, content_type: ct }
-    end
-  end
-  self.static_files.freeze
+  FileUtils.cp_r(File.join(DATA_DIR, 'static'), Rails.root.join('public', 'static'))
 
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
 
@@ -116,15 +94,6 @@ class BenchmarkController < ActionController::API
       }
     end
     render json: { items: items, count: items.length }
-  end
-
-  def static_file
-    filename = params[:filename]
-    if static_file = static_files[filename]
-      send_file static_file[:path], type: static_file[:content_type], disposition: :inline
-    else
-      head 404
-    end
   end
 
   def upload
