@@ -32,6 +32,14 @@ h2load_h3_build_args() {
                   -H "Accept-Encoding: br;q=1, gzip;q=0.8"
                   -c "$conns" -m 64 -t "$H3THREADS" -D "$duration")
             ;;
+        gateway-h3)
+            # Same URIs and mix as gateway-64 (30 static / 20 baseline /
+            # 35 json / 15 async-db) — the only difference is we're pushing
+            # it over QUIC through whatever h3-capable proxy the entry ships.
+            cmd+=(-i "$REQUESTS_DIR/gateway-64-uris.txt"
+                  -H "Accept-Encoding: br;q=1, gzip;q=0.8"
+                  -c "$conns" -m 32 -t "$H3THREADS" -D "$duration")
+            ;;
         *)
             fail "h2load_h3_build_args: unknown endpoint '$endpoint'"
             ;;

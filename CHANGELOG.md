@@ -2,6 +2,215 @@
 
 Notable changes to test profiles, scoring, and validation.
 
+## 2026-04-16
+
+### Production Stack — JWT auth, HybridCache, 10K-item CRUD
+
+Major rework of the `production-stack` profile. The test now models a realistic CRUD API with stateless JWT authentication, a three-tier cache hierarchy under real pressure, and concurrent read+write load.
+
+**Auth: session cookies → JWT HMAC-SHA256.** The shared Rust authsvc (`frameworks/_shared/authsvc/`) was rewritten from a Redis session-lookup service to a stateless JWT verifier. Every `/api/*` request triggers a real HMAC-SHA256 signature verification — no caching at authsvc or at the nginx edge. Dependencies changed from `deadpool-redis` + `redis` + `dashmap` to `hmac` + `sha2` + `base64`. The JWT is pre-generated at `data/jwt-token.txt` with a shared secret. This change was driven by the discovery that Redis-backed session auth was bottlenecked by Redis's single-threaded data path at ~60K rps, and all caching workarounds (authsvc DashMap, nginx proxy_cache) made authsvc's CPU reading 0% — meaning the test was no longer measuring auth cost at all.
+
+**Cache rules.** The type rules require cache-aside behavior (check cache → miss → DB → populate with ≤1s TTL, invalidate on write) but the **cache implementation is the framework's choice** — in-process, Redis-only, two-tier, or framework-native caching are all allowed. The cache strategy is part of the competition.
+
+**Working set: 10 IDs → 10,000 IDs.** `requests/production-stack-reads.txt` expanded from 20 URIs to 20,000 URIs with 10,000 unique item IDs. This exercises the cache hierarchy realistically: at ~250K rps with 1-second TTL, ~92% of item reads hit L1, ~5% hit L2 (Redis), ~3% fall through to Postgres. Previously with 10 IDs, everything stayed in L1 permanently and Postgres was never queried — the test was measuring "in-memory hashmap lookup" instead of "cache-aside under pressure."
+
+**CRUD writes via split h2load.** Two h2load instances run in parallel: one for GETs (reads), one for POSTs (writes with a JSON body). h2load can't mix HTTP methods in one invocation, so `h2load_run` in `scripts/lib/tools/h2load.sh` detects a `--split--` sentinel in the argv, forks two processes on the same cpuset, and combines their output. `h2load_parse` sums 2xx counts from both sections. Write targets are 20 IDs (1–20) overlapping with the read working set, creating realistic cache churn on hot items.
+
+**CPU split tuning.** Empirically tuned to edge 15 / cache 1 / authsvc 4 / server 12 (physical cores). Key findings during tuning:
+- authsvc scales linearly with cores for JWT crypto (HMAC-SHA256 is embarrassingly parallel)
+- BUT stealing cores from server or edge to give to authsvc often makes total throughput WORSE because downstream services can't keep up
+- A cliff exists at 5 physical cores for authsvc on the reference hardware (likely CCX/L3 cache boundary crossing)
+- The optimal split is where edge (~97%), authsvc (~94%), and server (~74%) are all running hot simultaneously
+
+**Postgres on tmpfs.** `scripts/lib/postgres.sh` now starts the sidecar with `--tmpfs /var/lib/postgresql/data:rw,size=2g`. Postgres WAL + data files live in RAM, not a Docker anonymous volume. This fixed two problems: (1) eliminated a ~70MB/run volume leak that accumulated to 22GB over dozens of iterations, and (2) dramatically improved write throughput (POST /api/items from ~700 rps to ~20K+ rps) because `fsync` is a memcpy instead of a disk I/O.
+
+**Docker resource leak fixes.** `postgres_stop` and `framework_stop` now use `docker rm -f -v` (the `-v` deletes attached anonymous volumes). `cleanup_all` in both `benchmark.sh` and `benchmark-lite.sh` runs `docker volume prune -f` and `docker image prune -f` on both startup and exit.
+
+See `frameworks/aspnet-minimal_nginx/README.md` for the reference entry's implementation details (HybridCache, CPU split tuning findings, etc.).
+
+## 2026-04-15
+
+### Production Stack — initial four-service profile
+
+**Four-service compose** (`compose.production-stack.yml`):
+
+- `edge` — reverse proxy, TLS termination, static file serving, `auth_request` for `/api/*`
+- `cache` — Redis 7 with a pre-seed entrypoint that loads 4 sessions + 4 users + 4 products before the stack reports ready
+- `authsvc` — **shared Rust sidecar** (axum + deadpool-redis) living at `frameworks/_shared/authsvc/`. One endpoint: `GET /_auth` that extracts `session=<token>` from the Cookie header, does a single Redis `GET session:<token>`, and returns 200 + `X-User-Id` header on hit or 401 on miss. Every production-stack entry builds and uses this binary unmodified — framework code never sees authentication logic
+- `server` — the framework being benchmarked. Exposes `/public/baseline`, `/public/json/{count}` (unauth), `/api/products?id=N` (cache-aside: Redis → miss → Postgres `SELECT FROM items` → `SETEX` writeback), `/api/me` (reads `X-User-Id` set by edge, does `GET user:{id}` in Redis)
+
+**Why this shape**:
+
+- **Auth at the edge, not per-framework** — prevents the test from becoming a JWT-library benchmark. Frameworks only read `X-User-Id` as a trusted header, never parse cookies or verify tokens
+- **Cache-aside at exactly one endpoint** (`/api/products`) — bounds Redis-client-library variance. A framework only needs to implement `GET` + `SETEX` + fallthrough once
+- **Pre-seeded Redis** (`data/redis-seed.txt` + `data/redis-entrypoint.sh`) — the benchmark measures warm-cache steady state, not cold-start. Every `/api/*` request hits a pre-populated key
+
+**Workload** (20 URIs round-robin, `h2load -m 32`, `Cookie: session=bench-session-001` on every request):
+
+| Category | Count | Weight | Handled by |
+|---|---|---|---|
+| `/static/*` | 6 | 30% | edge (disk, with `gzip_static`) |
+| `/public/json/{count}` | 5 | 25% | server |
+| `/public/baseline?a=N&b=M` | 3 | 15% | server |
+| `/api/products?id={1..4}` | 4 | 20% | edge → authsvc → server (cache-aside) |
+| `/api/me` | 2 | 10% | edge → authsvc → server (Redis read) |
+
+**Validation** (10 new checks in `validate.sh::_validate_production_stack`):
+
+- HTTP/2 negotiation, static Content-Type, static size, public baseline fixed + random anti-cheat, `/public/json/25` count/total correctness
+- **Auth wall**: `/api/products` without a cookie → 401, with a bogus cookie → 401
+- **Authenticated path**: `/api/products?id=1` with `session=bench-session-001` → returns `id=1`; `/api/me` with same cookie → returns user JSON with `id=42` (verifying the seeded session-001 → user-42 chain works end-to-end through authsvc → X-User-Id → Redis user lookup)
+
+**CPU split** is the entry's choice, 64 logical total across 4 services. The reference entry uses `edge: 16 / cache: 4 / authsvc: 4 / server: 40`.
+
+**Scoring**: plain rps (no template split, no bandwidth gain, no composite weighting beyond the standard normalize-and-average path).
+
+**Reference entry**: `frameworks/aspnet-minimal_nginx/` — extended to subscribe to both `gateway-64` and `production-stack`:
+
+- `meta.json` — `tests: ["gateway-64", "production-stack"]`
+- `Program.cs` — kept existing gateway-64 routes, added optional `StackExchange.Redis` connection, new `/public/*` and `/api/*` routes
+- `aspnet-minimal_nginx.csproj` — added `StackExchange.Redis 2.8.16`
+- `proxy-production/nginx.conf` (new) — nginx edge with `auth_request /_auth` + `$upstream_http_x_user_id` capture + `proxy_set_header X-User-Id $auth_user_id`; separate `upstream backend` and `upstream authsvc` blocks with keepalive pools
+- `compose.production-stack.yml` (new) — 4 services, pinned cpusets, host networking, depends_on chain (cache → authsvc/server → edge)
+
+Validated 22/22 passing on first run (12 gateway-64 checks + 10 production-stack checks on the same entry).
+
+### `scripts/lib/gateway.sh` — generalized for multi-container compose profiles
+
+The module name is still "gateway" but it now covers any multi-container profile (gateway-64, gateway-h3, production-stack). New helper `_gateway_expected_containers` returns per-profile expected container count (2 for gateway-*, 4 for production-stack); the post-up warning is now profile-aware instead of hardcoding "expects 2 containers".
+
+`scripts/benchmark.sh`, `scripts/validate.sh`, and the early test-gate checks (postgres sidecar, cert mount, static volume, `GATEWAY_ONLY` detection, docker_args host networking) all updated to recognize production-stack alongside the gateway profiles.
+
+## 2026-04-14
+
+### Gateway-H3 — new h3-at-edge profile added
+
+New `gateway-h3` profile: same two-service proxy + server shape as `gateway-64`, same 20-URI mix, same 64-CPU budget, but with **HTTP/3 over QUIC at the edge** instead of HTTP/2 over TCP. Measures QUIC termination efficiency and h3 stream multiplexing through a proxy in a realistic mixed workload.
+
+**Shape**:
+
+- Conn counts: `64, 256` (lower than gateway-64 because h3 has more per-connection overhead)
+- Same endpoint surface as gateway-64 (`/static/*`, `/baseline2`, `/json/{count}`, `/async-db`), same weights (6 / 4 / 7 / 3 → 30 / 20 / 35 / 15 %)
+- Load generator: `h2load-h3` with `--alpn-list=h3`, `-m 32`, `-H "Accept-Encoding: br;q=1, gzip;q=0.8"`
+- Compose file: `compose.gateway-h3.yml` alongside the legacy `compose.gateway.yml` (kept under its original name for back-compat with gateway-64 entries)
+
+**Reference entry** — new `frameworks/aspnet-minimal_caddy/`:
+
+- Caddy edge, stock `caddy:2-alpine` (h3 out of the box, no custom build)
+- Caddyfile: `protocols h1 h2 h3`, `file_server { precompressed br gzip }` for `/static/*`, `reverse_proxy` with 2048 keepalive pool to localhost:8080
+- Reuses `Handlers.cs` / `AppData.cs` / `Models.cs` from `aspnet-minimal/` via the same COPY-from-repo-root pattern aspnet-minimal_nginx uses
+- Compose split: proxy `0-19,64-83` (20 physical) / server `20-31,84-95` (12 physical)
+
+**Scripts**:
+
+- `scripts/lib/profiles.sh` — new `[gateway-h3]="1|0|0-31,64-95|64,256|gateway-h3"` entry; added to `PROFILE_ORDER`; `endpoint_tool` routes `gateway-h3` to `h2load-h3`
+- `scripts/lib/tools/h2load-h3.sh` — new `gateway-h3` branch reusing `requests/gateway-64-uris.txt` (URIs are identical; only the edge protocol differs)
+- `scripts/lib/gateway.sh` — `gateway_up` / `gateway_down` / `gateway_service_names` now take a profile argument. `_gateway_compose_file` resolves `compose.<profile>.yml` for gateway-h3 while preserving the legacy `compose.gateway.yml` name for gateway-64. Added `GATEWAY_ACTIVE_PROFILE` / `GATEWAY_ACTIVE_FRAMEWORK` state so the EXIT trap tears down whichever stack was last started without needing to be told
+- `scripts/benchmark.sh` — case branch covers both gateway profiles; postgres sidecar check includes gateway-h3; template-split block (6/4/7/3) shared between gateway-64 and gateway-h3 because both use the same URI file
+- `scripts/validate.sh` — factored the 150-line gateway-64 validation body into `_validate_gateway(profile, compose_file, docs_url)` and called it twice, once per profile. gateway-h3 validation uses `curl --http2` (not `--http3`) because QUIC-enabled curl isn't widely available; since h3-capable proxies also answer h2 on the same port, endpoint correctness is still covered. Actual h3 path is exercised at benchmark time by h2load-h3 — if h3 is broken, rps will be zero and visible immediately
+
+**Docs** — new section `docs/test-profiles/h3-gateway/`:
+
+- `_index.md` + `gateway-h3/_index.md` + `gateway-h3/implementation.md` + `gateway-h3/validation.md`
+- Implementation page explains the h3-specific differences from gateway-64: no head-of-line blocking at TCP, userspace QUIC framing, per-packet encryption, UDP send/recv overhead, 0-RTT and connection migration. Lists proxy options: Caddy (easiest, h3 out of the box), nginx 1.25+ with `ngx_http_v3_module` (requires custom build), Envoy, HAProxy 2.8+
+
+**Leaderboard**:
+
+- `layouts/shortcodes/leaderboard-h3-gateway.html` — cloned from h2-gateway shortcode, namespaced `h3gw` throughout
+- `layouts/shortcodes/leaderboard-composite.html` — gateway-h3 added to profiles slice (conn counts 64/256, scored); proto color map gets `h3gw: #22c55e` matching h3 baseline
+- `content/leaderboard/_index.md` — new "H/3 Gateway" tab, wrapper div, dlConfig entry, wrappers map, MutationObserver list
+
+Validated 12/12 passing on first run.
+
+### Gateway-64 — two-service spec tightened, workload rebalanced, rps honesty fix
+
+**Spec narrowed** to exactly one architecture: one proxy + one server. Previously the docs allowed "any architecture" (single-tier, three-tier, load-balanced, split-proxy, multi-server specialization). That freedom made entries incomparable and invited architectural creativity instead of tuning. Now:
+
+- Exactly two services (`proxy` + `server`)
+- Proxy **must** serve `/static/*` directly from disk (no forwarding to server)
+- Server **must** serve `/baseline2`, `/json/{count}`, `/async-db`
+- Proxy **must** terminate TLS at the edge
+- No caches, no load balancers, no additional sidecars beyond the two services
+
+`scripts/lib/gateway.sh` warning tightened from "expected ≥2 containers" to "expects exactly 2 containers" for gateway-* profiles. Implementation docs rewritten to a single architecture diagram and example, deleting the "three-tier", "no proxy", "split proxy", "multi-server specialization" examples.
+
+**Workload rebalanced** from 12 / 3 / 3 / 2 (60 / 15 / 15 / 10 %) to **6 / 4 / 7 / 3 (30 / 20 / 35 / 15 %)**. The new mix is JSON-weighted because server-side compute is the most expensive part of the stack; static serving still keeps the proxy's I/O path under meaningful load; baseline measures raw forwarding efficiency; async-db is the smallest slice because it's latency-bound on the Postgres round-trip rather than CPU-bound on either service. `requests/gateway-64-uris.txt` rewritten with 6 diverse static files (CSS/JS/HTML/WebP), 4 distinct baseline parameter pairs (defeats URI-keyed caches), 7 JSON counts (1/5/10/15/25/40/50 — same ladder as h1-isolated JSON), 3 async-db limits.
+
+**Composite template split** in `scripts/benchmark.sh` updated to match: `tpl_static = total * 6/20`, `tpl_baseline = total * 4/20`, `tpl_json = total * 7/20`, `tpl_async_db = total * 3/20`. Same split shared between gateway-64 and gateway-h3 since they use the same URI file.
+
+**Connection counts iterated during tuning**: started at `256, 1024`, moved through `64, 256` (discovering that on h2 loopback the proxy handles lower conn counts better because `-m 32` streams already provide sufficient multiplexing), landed at **`512, 1024`**. Both points are kept to show scaling behavior: 512 is the efficient regime, 1024 is "what happens when you push past sanity".
+
+**h2load `-m` dropped from 100 to 32** (gateway-64 and static-h2 only, not baseline-h2 or the gRPC profiles). At `-c 64 -m 100` the stack was juggling 6400 in-flight requests on every poll, with ~960 async-db requests fighting for 256 Postgres pool slots — measuring "how well does this stack handle pg pool starvation" instead of the intended mix. `-m 32` halves the in-flight count to a realistic load while still exercising h2 multiplexing meaningfully.
+
+**`H2THREADS` dropped globally from 128 to 64** in `scripts/lib/common.sh`. The load-gen pin (`GCANNON_CPUS=32-63,96-127`) is 64 logical CPUs; running 128 threads meant 2× context-switch overhead on userspace-bound work. Now matches `THREADS` and `H3THREADS`.
+
+**Rps honesty fix**: `h2load_parse` and `h2load_h3_parse` now compute `rps = status_2xx / duration_secs` instead of grabbing the `finished in Xs, Y req/s` number. h2load's own number counts all completed requests including 4xx / 5xx, which silently inflated results when the server was broken. During tuning we discovered this the hard way: `aspnet-minimal_nginx/Program.cs` was registering `/json` (no count route parameter) while the shared `Handlers.Json` expected `int count`, so every `/json/10` / `/json/25` / `/json/50` request returned 404 from the ASP.NET router. h2load reported this as "180 K rps total, but 35% 4xx" and the benchmark was treating the 180 K as the real number. Fixed the route (`/json` → `/json/{count}`) and patched the parser so this class of bug can't silently inflate numbers again.
+
+**Stale-image fix**: `scripts/lib/gateway.sh::gateway_up` now does `docker compose up --build -d` instead of `up -d`. Previously the benchmark script reused whatever image was in the daemon's cache regardless of source changes; an edit to Program.cs could ship silently without being rebuilt, causing the exact 4xx issue above. `validate.sh` was already using `--build`, which is why validation passed while the benchmark was silently running stale code.
+
+**nginx proxy tuning** in `frameworks/aspnet-minimal_nginx/proxy/nginx.conf`:
+
+- `keepalive 1024 → 2048` (40 workers × 2048 = 81920 upstream slots, 5× the peak 16384 in-flight at `1024 conns × 32 streams`)
+- Per-upstream `keepalive_requests 100000` and `keepalive_timeout 300s` — at 80 K+ rps per worker the default 10 K recycle fires every 0.125s, causing unnecessary TCP handshakes to localhost. 100 K keeps connections alive ~1.25s between recycles
+- `gzip_static on` + `gzip_vary on` — serve `.gz` sidecar files from `/data/static/` when the client advertises `Accept-Encoding: gzip`. Previously nginx served uncompressed `app.js` (~200 KB raw) every time even though `app.js.gz` was right there on disk. Changes the `/static/*` path from "compress every request" to "sendfile the prebuilt bytes", at zero CPU cost
+
+**CPU split tuning**: aspnet-minimal_nginx compose moved from 8/24 through 16/16 → 20/12 → 24/8 → 26/6 and back to 20/12 physical-core split between proxy and server (`proxy: "0-19,64-83"` / `server: "20-31,84-95"`). Leaving the entry at 20/12 as a reasonable default; entries are free to pick their own split.
+
+### `scripts/benchmark.sh` — per-container CPU breakdown for multi-container runs
+
+`scripts/lib/stats.sh` now samples per-container (tagged with a snapshot counter) instead of summing at sample time. At stats_stop we derive two things:
+
+- Aggregate: `STATS_AVG_CPU` = mean of per-snapshot CPU sums; `STATS_PEAK_MEM` = max of per-snapshot memory sums (unchanged behavior — `results/*.json` still gets the stack-wide total)
+- Per-container breakdown: new `STATS_BREAKDOWN` string formatted like `"proxy: 4200% 1.2GiB | server: 1200% 512MiB"` using the service name extracted from compose's `<project>-<service>-<index>` pattern
+
+`scripts/benchmark.sh` and `scripts/benchmark-lite.sh` print the breakdown as a second `info` line whenever it's populated (i.e. multi-container runs). Single-container runs suppress it because it would just duplicate the aggregate. Useful for spotting which container is actually the bottleneck during gateway / production-stack tuning — you can now see at a glance whether the proxy is saturated while the server has headroom (or vice versa).
+
+### `scripts/benchmark.sh` — h2load thread-spawn noise suppressed
+
+The trimmed-output filter at the run-display stage now drops `spawning thread #N` and `Warm-up phase is over for thread #N` lines alongside the existing ghz/h2load-h3 warm-up noise. At h2load's 64-thread worker pool this is 128+ lines of boilerplate per run. Applied to both `benchmark.sh` and `benchmark-lite.sh`.
+
+### Raw load-generator logs removed
+
+`scripts/benchmark.sh` and `scripts/benchmark-lite.sh` no longer write per-run raw load-generator output to `site/static/logs/<profile>/<conns>/<framework>.<tool>.run<N>.txt`. The website only links to `${framework}.log` (docker logs) and the per-round files were invisible pollution that ended up tracked in git. The `save_result` block still captures `docker logs $CONTAINER_NAME` to the same directory — that's the file the "Docker logs →" link in the leaderboard popup actually points at. 63 stale run.txt files from earlier iterations were `git rm`'d.
+
+### JSON Compressed composite — compression ratio gain
+
+`json-comp` column on the composite leaderboard now applies a compression-weighted scoring formula, mirroring the legacy `/compression` test. For each framework the handler computes bytes-per-request (`avg_bandwidth / avg_rps`), the field minimum `minBpr` sets the reference, and every framework's effective rps becomes `rps × (minBpr / myBpr)²`. The quadratic exponent is deliberate: doubling the response size quarters the score. Rewards frameworks that pick smaller compression outputs (brotli over gzip, or higher gzip levels) even when raw rps is slightly lower.
+
+Applied in three places in `layouts/shortcodes/leaderboard-composite.html`: the per-profile normalization block (recomputes `maxRpsByProfile['json-comp']` from the adjusted values), the top-3 badge loop (so medals reflect the composite score, not raw rps), and the per-framework score loop (sets `effectiveRps = rps × ratio²` for json-comp specifically).
+
+Also added to the per-profile `json-comp` table on the main leaderboard: new **Score** column (colored green ≥80 / yellow 50–80 / red <50) replaces the bar, new **BW/req** column shows bytes-per-response. Sort is by Score, Best panel picks max score per framework across conn counts. `json-comp` entries are **re-ranked** by score, not raw rps.
+
+Composite popup no longer shows raw rps in parens for json-comp (it was misleading — the displayed score doesn't track rps there). Every other profile still shows it.
+
+Docs: `docs/test-profiles/h1/isolated/json-compressed/implementation.md` has a new **Scoring** section explaining the formula, the quadratic penalty, how the per-profile Best panel differs from the composite column (independent per-conn-count normalization vs. across-conn-count averaging), and what "rewards better ratio" means in practice. `docs/scoring/composite-score.md` has a new **Exception: JSON Compressed** paragraph under Step 2 pointing readers at the full explanation.
+
+## 2026-04-13
+
+### Elysia — PR 489 rebuilt on top of current main
+
+PR 489 (Elysia framework by @SaltyAom) was re-applied from the original commit (`7b1993d`) with the four minimum patches needed for it to run cleanly against the current benchmark shape. The original submission shipped a non-working cluster setup + SQLite handler; rather than tweaking it incrementally, the rebuild restores SaltyAom's architecture and applies only what's required.
+
+**Patches on top of `7b1993d`**:
+
+- **Fork double-loop fixed** — `if (primary) { for loop fork; } else { startup; }` instead of N iterations both forking and running startup. Original structure caused each worker to run startup N times
+- **SQLite removed** — dropped `bun:sqlite`, `/data/benchmark.db` loader, and `/db` route (that test no longer exists in the benchmark)
+- **Static handler rewritten** — replaced `@elysiajs/static` (dynamic mode doesn't set Content-Type in current Elysia versions) with a direct `Bun.file()` handler that sets `content-type` from `file.type`. Simpler and actually works
+- **Upload handler** — destructure `body` from context instead of reading `request.body` stream (was always producing empty responses because the stream was consumed by the parser)
+- **async-db result access** — `result.length` / `result.map(...)` (Bun.SQL returns an array directly; `result.rows` is undefined — SaltyAom's code expected a pg-style response shape)
+- **Postgres pool sizing** — per-worker `max` = `floor(min(DATABASE_MAX_CONN, 240) / workers)` so `workers × perWorker` stays under Postgres `max_connections`. Without this the cluster's 64 workers opened 64 × default-pool-size connections and got rejected with "too many clients already"
+- **pg.connect()** fire-and-forget (no `await`) to avoid top-level `await` inside an `else` block — `bun build --compile` can't handle it
+
+Validation: 23/23 passing on first benchmark run.
+
+### Workerman — Pgsql init guard
+
+`frameworks/workerman/Pgsql.php::init()` previously connected to Postgres unconditionally in `onWorkerStart`. Profiles that don't need a database (baseline, upload, static, json) don't set `DATABASE_URL`, so every worker hit a connection refused on hardcoded `localhost:5432` fallbacks and died. Workerman reported "Start success" because the listeners bound before workers died, but nothing served requests — hence the silent "server did not come up for baseline" warning in the benchmark log.
+
+Fix: early return from `init()` when `DATABASE_URL` is unset; wrap the PDO connect in try/catch so transient DB failures don't crash the worker; `query()` returns an empty `{items:[], count:0}` JSON when the prepared statement is null. Dropped the dead `reConnect()` helper and deleted the unused `Db.php` file (SQLite remnant). `$https->count = (int) shell_exec('nproc')` — was previously assigning the trailing-newline string. Removed `ENV PROCESS_MULTIPLIER=1` and `ENV EVENT_LOOP=Select` from the Dockerfile — neither is referenced by `server.php` and `EVENT_LOOP=Select` was actively misleading (Workerman auto-selects `event` since the image installs `pecl event-3.1.4`).
+
+Validation: 23/23 passing; benchmark: 2.81M rps at baseline-4096c (was crashing before).
+
 ## 2026-04-12
 
 ### Noisy test — removed

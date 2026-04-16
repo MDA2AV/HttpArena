@@ -23,6 +23,8 @@ article { max-width: 100% !important; }
 <span class="http-ver" data-ver="h2">H/2</span>
 <span class="http-ver" data-ver="h2gw">H/2 Gateway</span>
 <span class="http-ver" data-ver="h3">H/3</span>
+<span class="http-ver" data-ver="h3gw">H/3 Gateway</span>
+<span class="http-ver" data-ver="prodstack">Production Stack</span>
 <span class="http-ver" data-ver="grpc">gRPC</span>
 <span class="http-ver" data-ver="ws">WebSocket</span>
 </div>
@@ -48,6 +50,8 @@ article { max-width: 100% !important; }
 .http-ver[data-ver="h2"].active { color: #92400e; background: rgba(234,179,8,0.12); box-shadow: 0 2px 8px rgba(234,179,8,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
 .http-ver[data-ver="h2gw"].active { color: #92400e; background: rgba(234,179,8,0.12); box-shadow: 0 2px 8px rgba(234,179,8,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
 .http-ver[data-ver="h3"].active { color: #166534; background: rgba(34,197,94,0.12); box-shadow: 0 2px 8px rgba(34,197,94,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
+.http-ver[data-ver="h3gw"].active { color: #166534; background: rgba(34,197,94,0.12); box-shadow: 0 2px 8px rgba(34,197,94,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
+.http-ver[data-ver="prodstack"].active { color: #be185d; background: rgba(236,72,153,0.12); box-shadow: 0 2px 8px rgba(236,72,153,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
 .http-ver[data-ver="composite"].active { color: #9a3412; background: rgba(249,115,22,0.12); box-shadow: 0 2px 8px rgba(249,115,22,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
 .http-ver[data-ver="grpc"].active { color: #7c3aed; background: rgba(124,58,237,0.12); box-shadow: 0 2px 8px rgba(124,58,237,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
 html.dark .http-ver { color: #64748b; }
@@ -57,6 +61,8 @@ html.dark .http-ver[data-ver="h1wk"].active { color: #93c5fd; background: rgba(3
 html.dark .http-ver[data-ver="h2"].active { color: #fbbf24; background: rgba(234,179,8,0.15); }
 html.dark .http-ver[data-ver="h2gw"].active { color: #fbbf24; background: rgba(234,179,8,0.15); }
 html.dark .http-ver[data-ver="h3"].active { color: #4ade80; background: rgba(34,197,94,0.15); }
+html.dark .http-ver[data-ver="h3gw"].active { color: #4ade80; background: rgba(34,197,94,0.15); }
+html.dark .http-ver[data-ver="prodstack"].active { color: #f472b6; background: rgba(236,72,153,0.15); }
 html.dark .http-ver[data-ver="composite"].active { color: #fb923c; background: rgba(249,115,22,0.15); }
 .http-ver[data-ver="grpc"].active { color: #7c3aed; background: rgba(124,58,237,0.12); box-shadow: 0 2px 8px rgba(124,58,237,0.15), 0 1px 3px rgba(0,0,0,0.08); font-weight: 700; }
 html.dark .http-ver[data-ver="grpc"].active { color: #a78bfa; background: rgba(124,58,237,0.15); }
@@ -76,6 +82,8 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
       document.getElementById('lb-h2-wrapper').style.display = ver === 'h2' ? '' : 'none';
       document.getElementById('lb-h2gw-wrapper').style.display = ver === 'h2gw' ? '' : 'none';
       document.getElementById('lb-h3-wrapper').style.display = ver === 'h3' ? '' : 'none';
+      document.getElementById('lb-h3gw-wrapper').style.display = ver === 'h3gw' ? '' : 'none';
+      document.getElementById('lb-prodstack-wrapper').style.display = ver === 'prodstack' ? '' : 'none';
       document.getElementById('lb-composite-wrapper').style.display = ver === 'composite' ? '' : 'none';
       document.getElementById('lb-grpc-wrapper').style.display = ver === 'grpc' ? '' : 'none';
       document.getElementById('lb-ws-wrapper').style.display = ver === 'ws' ? '' : 'none';
@@ -130,6 +138,14 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
 
 <div id="lb-h3-wrapper" style="display:none;">
 {{< leaderboard-h3 >}}
+</div>
+
+<div id="lb-h3gw-wrapper" style="display:none;">
+{{< leaderboard-h3-gateway >}}
+</div>
+
+<div id="lb-prodstack-wrapper" style="display:none;">
+{{< leaderboard-production-stack >}}
 </div>
 
 <div id="lb-grpc-wrapper" style="display:none;">
@@ -219,7 +235,7 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
     clearTimeout(favTimer);
     favTimer = setTimeout(applyFavorites, 50);
   });
-  ['lb-h1iso-wrapper','lb-h1wk-wrapper','lb-h2-wrapper','lb-h2gw-wrapper','lb-h3-wrapper','lb-grpc-wrapper','lb-ws-wrapper','lb-composite-wrapper'].forEach(function(id) {
+  ['lb-h1iso-wrapper','lb-h1wk-wrapper','lb-h2-wrapper','lb-h2gw-wrapper','lb-h3-wrapper','lb-h3gw-wrapper','lb-prodstack-wrapper','lb-grpc-wrapper','lb-ws-wrapper','lb-composite-wrapper'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) obs.observe(el, { childList: true, subtree: true });
   });
@@ -238,11 +254,13 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
     h2:    { root: 'lb-h2-wrapper',   tab: 'lb-tab-h2',   panel: 'lb-panel-h2',   connPanel: 'lb-conn-panel-h2',   dd: 'lbDropdownState_h2',   sync: 'lbSyncDropdowns_h2',   eng: 'lbEngineLabels_h2',   filter: 'applyFilters_h2' },
     h2gw:  { root: 'lb-h2gw-wrapper', tab: 'lb-tab-h2gw', panel: 'lb-panel-h2gw', connPanel: 'lb-conn-panel-h2gw', dd: 'lbDropdownState_h2gw', sync: 'lbSyncDropdowns_h2gw', eng: 'lbEngineLabels_h2gw', filter: 'applyFilters_h2gw' },
     h3:    { root: 'lb-h3-wrapper',   tab: 'lb-tab-h3',   panel: 'lb-panel-h3',   connPanel: 'lb-conn-panel-h3',   dd: 'lbDropdownState_h3',   sync: 'lbSyncDropdowns_h3',   eng: 'lbEngineLabels_h3',   filter: 'applyFilters_h3' },
+    h3gw:  { root: 'lb-h3gw-wrapper', tab: 'lb-tab-h3gw', panel: 'lb-panel-h3gw', connPanel: 'lb-conn-panel-h3gw', dd: 'lbDropdownState_h3gw', sync: 'lbSyncDropdowns_h3gw', eng: 'lbEngineLabels_h3gw', filter: 'applyFilters_h3gw' },
+    prodstack: { root: 'lb-prodstack-wrapper', tab: 'lb-tab-prodstack', panel: 'lb-panel-prodstack', connPanel: 'lb-conn-panel-prodstack', dd: 'lbDropdownState_prodstack', sync: 'lbSyncDropdowns_prodstack', eng: 'lbEngineLabels_prodstack', filter: 'applyFilters_prodstack' },
     grpc:  { root: 'lb-grpc-wrapper', tab: 'lb-tab-grpc', panel: 'lb-panel-grpc', connPanel: 'lb-conn-panel-grpc', dd: 'lbDropdownState_grpc', sync: 'lbSyncDropdowns_grpc', eng: 'lbEngineLabels_grpc', filter: 'applyFilters_grpc' },
     ws:    { root: 'lb-ws-wrapper',   tab: 'lb-tab-ws',   panel: 'lb-panel-ws',   connPanel: 'lb-conn-panel-ws',   dd: 'lbDropdownState_ws',   sync: 'lbSyncDropdowns_ws',   eng: 'lbEngineLabels_ws',   filter: 'applyFilters_ws' }
   };
 
-  var wrappers = { composite:'lb-composite-wrapper', h1iso:'lb-h1iso-wrapper', h1wk:'lb-h1wk-wrapper', h2:'lb-h2-wrapper', h2gw:'lb-h2gw-wrapper', h3:'lb-h3-wrapper', grpc:'lb-grpc-wrapper', ws:'lb-ws-wrapper' };
+  var wrappers = { composite:'lb-composite-wrapper', h1iso:'lb-h1iso-wrapper', h1wk:'lb-h1wk-wrapper', h2:'lb-h2-wrapper', h2gw:'lb-h2gw-wrapper', h3:'lb-h3-wrapper', h3gw:'lb-h3gw-wrapper', prodstack:'lb-prodstack-wrapper', grpc:'lb-grpc-wrapper', ws:'lb-ws-wrapper' };
 
   function parseHash() {
     var h = location.hash.slice(1);

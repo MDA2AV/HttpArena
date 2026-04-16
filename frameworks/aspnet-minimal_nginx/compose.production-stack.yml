@@ -1,0 +1,88 @@
+# production-stack compose for aspnet-minimal + nginx + authsvc + redis.
+#
+# Four services pinned via cpuset on a 64-logical-CPU budget:
+#
+#   edge     (nginx)     — 16 logical CPUs (8 physical + 8 SMT siblings)
+#   cache    (redis)     —  4 logical CPUs (Redis is single-threaded;
+#                           more cores don't help the data path, but
+#                           io-threads=4 keeps the syscall path happy)
+#   authsvc  (rust axum) —  4 logical CPUs (tiny hot path, rarely the
+#                           bottleneck — sized conservatively)
+#   server   (aspnet)    — 40 logical CPUs (the bulk of the work: JSON
+#                           serialization, Postgres client, Redis client)
+#
+# All services run network_mode: host so inter-service traffic is native
+# localhost syscalls. No bridge network overhead. Redis binds 6379,
+# authsvc binds 9090, server binds 8080, nginx binds 8443.
+
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "0-14,64-78"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - authsvc
+      - server
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "15,79"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "16-19,80-83"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+
+  server:
+    build:
+      context: ../../
+      dockerfile: frameworks/aspnet-minimal_nginx/Dockerfile
+    network_mode: host
+    cpuset: "20-31,84-95"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - REDIS_URL=redis://127.0.0.1:6379
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    depends_on:
+      - cache

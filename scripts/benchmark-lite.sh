@@ -132,11 +132,18 @@ PROFILE_FILTER="${POSITIONAL[1]:-}"
 cleanup_all() {
     [ -n "${FRAMEWORK:-}" ] && framework_stop 2>/dev/null || true
     postgres_stop
+    # Reclaim anonymous volumes + dangling images from this run. Idempotent
+    # and fast when there's nothing to clean. See scripts/benchmark.sh for
+    # the reasoning — without this, every lite run leaks ~70MB+ per iteration.
+    docker volume prune -f >/dev/null 2>&1 || true
+    docker image prune  -f >/dev/null 2>&1 || true
 }
 trap 'cleanup_all; system_restore' EXIT
 
 docker ps -q  --filter "name=httparena-" | xargs -r docker stop -t 5 2>/dev/null || true
 docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f -v 2>/dev/null || true
+docker volume prune -f >/dev/null 2>&1 || true
+docker image prune  -f >/dev/null 2>&1 || true
 
 info "available cores: $_AVAILABLE_CORES | threads: $THREADS"
 

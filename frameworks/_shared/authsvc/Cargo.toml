@@ -1,0 +1,22 @@
+[package]
+name = "authsvc"
+version = "0.2.0"
+edition = "2021"
+description = "Shared edge auth sidecar for the production-stack test. Verifies HMAC-SHA256 JWTs on every request and returns X-User-Id on success or 401 on failure."
+
+[[bin]]
+name = "authsvc"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.7", default-features = false, features = ["http1", "tokio"] }
+tokio = { version = "1.38", features = ["rt-multi-thread", "net", "macros", "signal"] }
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

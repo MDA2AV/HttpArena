@@ -13,6 +13,8 @@
   (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "gateway-64" "label" "Gateway-64" "sublabel" "H/2 Gateway" "proto" "h2gw" "conns" (slice 512 1024) "scored" true "engineScored" true)
+  (dict "id" "gateway-h3" "label" "Gateway-H3" "sublabel" "H/3 Gateway" "proto" "h3gw" "conns" (slice 64 256) "scored" true "engineScored" true)
+  (dict "id" "production-stack" "label" "Prod Stack" "sublabel" "Production Stack" "proto" "prodstack" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "unary-grpc-tls" "label" "Unary TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
   (dict "id" "stream-grpc" "label" "Stream" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
@@ -1033,7 +1035,7 @@ function renderComposite() {
       var popupBanana = bananaByFw[r.framework];
       var popupCrowns = crownsByFw[r.framework];
       var popupProfileBadges = badgesByFw[r.framework];
-      var protoColorsPopup = { h1iso: '#3b82f6', h1wk: '#2563eb', h2: '#eab308', h3: '#22c55e', grpc: '#7c3aed', ws: '#0891b2' };
+      var protoColorsPopup = { h1iso: '#3b82f6', h1wk: '#2563eb', h2: '#eab308', h2gw: '#eab308', h3: '#22c55e', h3gw: '#22c55e', grpc: '#7c3aed', ws: '#0891b2', prodstack: '#ec4899' };
       if (popupBanana) {
         var pbt = bananaTiers[popupBanana.tier];
         popupBadges += '<div style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;"><span style="font-size:1.5rem;">\uD83C\uDF4C</span><span style="font-weight:700; font-size:0.95rem; color:' + pbt.color + ';">' + pbt.label + ' Banana</span><span style="font-size:0.8rem; color:#64748b;">(' + popupBanana.points + ' pts)</span></div><div style="margin-bottom:0.5rem; font-size:0.8rem; font-style:italic; color:' + pbt.color + ';">' + pbt.msg + '</div>';

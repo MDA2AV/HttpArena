@@ -1,0 +1,36 @@
+services:
+  proxy:
+    build: ./proxy
+    network_mode: host
+    cpuset: "0-19,64-83"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ../../
+      dockerfile: frameworks/aspnet-minimal_caddy/Dockerfile
+    network_mode: host
+    cpuset: "20-31,84-95"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

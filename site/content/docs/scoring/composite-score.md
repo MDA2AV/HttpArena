@@ -72,6 +72,24 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Baseline | Yes | Query parsing over QUIC (UDP) with TLS 1.3 |
 | Static | Yes | 20 static files served over QUIC (UDP) with TLS 1.3 |
 
+### H/2 Gateway
+
+| Profile | Scored | Workload |
+|---|---|---|
+| Gateway-64 | Yes | Two-service proxy + server stack (static / JSON / async-db / baseline mix) over HTTP/2 + TLS, 64-CPU budget split freely between proxy and server |
+
+### H/3 Gateway
+
+| Profile | Scored | Workload |
+|---|---|---|
+| Gateway-H3 | Yes | Same two-service stack as Gateway-64 but with HTTP/3 + QUIC at the edge, measuring h3 proxy termination efficiency at realistic connection counts |
+
+### Production Stack
+
+| Profile | Scored | Workload |
+|---|---|---|
+| Production Stack | Yes | Four-service CRUD API deployment (edge + Redis cache + JWT auth sidecar + framework server) with 10K-item working set. JWT HMAC-SHA256 verified on every `/api/*` request (no caching). Framework implements cache-aside with ≤1s TTL (cache strategy is the framework's choice). Concurrent reads + writes via split h2load. |
+
 ### gRPC
 
 | Profile | Scored | Workload |

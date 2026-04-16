@@ -1,0 +1,736 @@
+{{ $profiles := slice
+  (dict "id" "gateway-h3" "label" "Gateway-H3" "conns" (slice 64 256) "desc" "Two-service Docker Compose stack (proxy + server) with HTTP/3 + QUIC at the edge. Same 20-URI mix as Gateway-64 (static 30%, JSON 35%, baseline 20%, async-db 15%) and same 64-CPU budget — only the edge protocol differs. <a href='/docs/test-profiles/h3-gateway/gateway-h3/' class='lb-desc-link'>Learn more &rarr;</a>")
+}}
+
+{{/* Build JSON data blob for round switching */}}
+{{ $lbH2GwData := dict }}
+{{ range $profiles }}
+  {{ $pid := .id }}
+  {{ range .conns }}
+    {{ $key := printf "%s-%d" $pid . }}
+    {{ $data := index site.Data $key }}
+    {{ if $data }}
+      {{ $lbH2GwData = merge $lbH2GwData (dict $key $data) }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+<script>
+var lbH2GwCurrentData = {{ $lbH2GwData | jsonify | safeJS }};
+var lbH2GwCurrentMeta = {{ site.Data.frameworks | jsonify | safeJS }};
+var lbH2GwProfiles = {{ $profiles | jsonify | safeJS }};
+</script>
+
+<div class="lb-type-note-h3gw" style="margin-top:1rem; margin-bottom:0.75rem; padding:0.85rem 1.25rem; border-radius:0.5rem; background:linear-gradient(135deg, rgba(59,130,246,0.04), rgba(139,92,246,0.04)); border:1px solid rgba(59,130,246,0.15); color:#1e293b; font-size:1.02rem; line-height:1.7;">
+</div>
+<style>
+html.dark .lb-type-note-h3gw { color: #e2e8f0 !important; background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08)) !important; border-color: rgba(59,130,246,0.25) !important; }
+</style>
+
+{{ range $i, $p := $profiles }}
+<div class="lb-panel-h3gw{{ if eq $i 0 }} active{{ end }}" data-panel="{{ $p.id }}" data-conns="{{ delimit $p.conns "," }}" style="margin-top:1rem;">
+  <div class="lb-card">
+  <div class="lb-card-title">Results</div>
+  <div class="lb-tabs">
+  {{ range $j, $pp := $profiles }}
+    <div class="lb-tab-h3gw{{ if eq $pp.id $p.id }} active{{ end }}" data-tab="{{ $pp.id }}">{{ $pp.label }}</div>
+  {{ end }}
+  </div>
+
+  <div class="lb-desc">{{ $p.desc | safeHTML }}</div>
+
+  <div class="lb-filters" style="margin:0 0 0.5rem 0;">
+    <span class="lb-filters-label">Type</span>
+    <div class="lb-type-filter lb-type-all" data-type="all">All</div>
+    <div class="lb-type-filter lb-type-production active" data-type="production">Production</div>
+    <div class="lb-type-filter lb-type-tuned active" data-type="tuned">Tuned</div>
+    <div class="lb-type-filter lb-type-engine" data-type="engine">Engine</div>
+  </div>
+  <div class="lb-filters" style="margin:0 0 0 0;">
+    <span class="lb-filters-label">Conn</span>
+    <div class="lb-conn-tabs" data-for="{{ $p.id }}">
+      <div class="lb-conn-tab active" data-conns="best">Best</div>
+    {{ range $ci, $c := $p.conns }}
+      <div class="lb-conn-tab" data-conns="{{ $c }}">{{ $c }}</div>
+    {{ end }}
+    </div>
+  </div>
+  <div class="lb-filter-bar" style="margin:0.5rem 0; padding:0.5rem 1rem; background:rgba(0,0,0,0.02); border-radius:8px; border:1px solid rgba(0,0,0,0.06); display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+    <div class="lb-dropdown" data-filter="lang" style="position:relative;">
+      <button class="lb-dropdown-btn">Language <span class="lb-dropdown-count"></span><span class="lb-dropdown-arrow">&#9662;</span></button>
+      <div class="lb-dropdown-menu" style="display:none;"></div>
+    </div>
+    <div class="lb-dropdown" data-filter="engine" style="position:relative;">
+      <button class="lb-dropdown-btn">Engine <span class="lb-dropdown-count"></span><span class="lb-dropdown-arrow">&#9662;</span></button>
+      <div class="lb-dropdown-menu" style="display:none;"></div>
+    </div>
+    <div style="position:relative; flex:1; max-width:40rem;">
+      <input type="text" class="lb-search-input" placeholder="Filter by name — comma for multiple" />
+      <button class="lb-search-clear" aria-label="Clear" style="display:none;">&times;</button>
+    </div>
+  </div>
+  <div style="font-size:0.75rem; color:#94a3b8; margin:0 0 0.75rem 0;">Click a row to expand details</div>
+
+  <div class="lb-conn-panel-h3gw active" data-profile="{{ $p.id }}" data-conns="best">
+    <div class="lb">
+      <div class="lb-row lb-header">
+        <div title="Rank by requests per second">#</div>
+        <div title="HTTP server framework name">Framework</div>
+        <div title="Number of concurrent connections" style="text-align:right">Conn</div>
+        <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+        <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
+        <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
+        <div></div>
+        <div class="lb-sortable" data-sort="cpu" title="Total average CPU usage across all containers" style="text-align:right">CPU</div>
+        <div class="lb-sortable" data-sort="mem" title="Peak memory usage" style="text-align:right">Mem</div>
+        <div class="lb-sortable" data-sort="avglat" title="Average request latency" style="text-align:right">Avg Lat</div>
+        <div class="lb-sortable" data-sort="p99" title="99th percentile latency" style="text-align:right">P99</div>
+      </div>
+    </div>
+  </div>
+
+  {{ range $ci, $c := $p.conns }}
+  {{ $key := printf "%s-%d" $p.id $c }}
+  {{ $data := index site.Data $key }}
+  <div class="lb-conn-panel-h3gw" data-profile="{{ $p.id }}" data-conns="{{ $c }}">
+  <div class="lb">
+    <div class="lb-row lb-header">
+      <div title="Rank by requests per second">#</div>
+      <div title="HTTP server framework name">Framework</div>
+      <div title="Number of concurrent connections" style="text-align:right">Conn</div>
+      <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+      <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
+      <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
+      <div></div>
+      <div class="lb-sortable" data-sort="cpu" title="Total average CPU usage across all containers" style="text-align:right">CPU</div>
+      <div class="lb-sortable" data-sort="mem" title="Peak memory usage" style="text-align:right">Mem</div>
+      <div class="lb-sortable" data-sort="avglat" title="Average request latency" style="text-align:right">Avg Lat</div>
+      <div class="lb-sortable" data-sort="p99" title="99th percentile latency" style="text-align:right">P99</div>
+    </div>
+    {{ if $data }}
+    {{ $results := sort $data "rps" "desc" }}
+    {{ $maxRps := 0 }}
+    {{ range $results }}{{ if gt .rps $maxRps }}{{ $maxRps = .rps }}{{ end }}{{ end }}
+    {{ range $j, $r := $results }}
+    {{ $pct := mul (div (float $r.rps) (float $maxRps)) 100.0 }}
+    {{ $meta := index site.Data.frameworks $r.framework }}
+    {{ $s2xx := int ($r.status_2xx | default 0) }}{{ $s3xx := int ($r.status_3xx | default 0) }}{{ $s4xx := int ($r.status_4xx | default 0) }}{{ $s5xx := int ($r.status_5xx | default 0) }}{{ $errs := add $s4xx $s5xx }}
+    <div class="lb-row" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ printf "%.0f" $r.rps }}" data-type="{{ with $meta }}{{ .type | default "production" }}{{ end }}" data-engine="{{ with $meta }}{{ .engine | default "" }}{{ end }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}" data-s2xx="{{ $s2xx }}" data-s3xx="{{ $s3xx }}" data-s4xx="{{ $s4xx }}" data-s5xx="{{ $s5xx }}" {{ if $r.tpl_static }}data-tpl-static="{{ int $r.tpl_static }}" data-tpl-json="{{ int ($r.tpl_json | default 0) }}" data-tpl-async-db="{{ int ($r.tpl_async_db | default 0) }}" data-tpl-baseline="{{ int ($r.tpl_baseline | default 0) }}"{{ end }}>
+      {{ $ftype := "framework" }}{{ with $meta }}{{ $ftype = .type | default "production" }}{{ end }}
+      <div class="lb-rank">{{ add $j 1 }}</div>
+      <div class="lb-name">{{ $r.framework }}</div>
+      <div class="lb-conns">{{ lang.FormatNumber 0 $r.connections }}</div>
+      <div class="lb-rps">{{ lang.FormatNumber 0 $r.rps }}</div>
+      <div class="lb-stat">{{ $r.bandwidth | default "—" }}</div>
+      <div class="lb-status">{{ if or (gt $s2xx 0) (gt $errs 0) }}<span class="{{ if gt $errs 0 }}lb-status-err{{ else }}lb-status-ok{{ end }}">{{ if gt $errs 0 }}{{ lang.FormatNumber 0 $errs }}{{ else }}✓{{ end }}</span><div class="lb-status-tip"><div><b>2xx:</b> {{ lang.FormatNumber 0 $s2xx }}</div><div><b>3xx:</b> {{ lang.FormatNumber 0 $s3xx }}</div><div><b>4xx:</b> {{ lang.FormatNumber 0 $s4xx }}</div><div><b>5xx:</b> {{ lang.FormatNumber 0 $s5xx }}</div></div>{{ else }}<span class="lb-status-na">—</span>{{ end }}</div>
+      <div class="lb-bar-cell">
+        {{ if $r.tpl_static }}
+          {{ $total := add (int ($r.tpl_static | default 0)) (add (int ($r.tpl_json | default 0)) (add (int ($r.tpl_async_db | default 0)) (int ($r.tpl_baseline | default 0)))) }}
+          {{ if gt $total 0 }}
+          <div style="display:flex;height:14px;border-radius:3px;overflow:hidden;background:#f1f5f9;" title="Static: {{ lang.FormatNumber 0 $r.tpl_static }} ({{ printf "%.0f" (mul (div (float $r.tpl_static) (float $total)) 100) }}%)  JSON: {{ lang.FormatNumber 0 ($r.tpl_json | default 0) }} ({{ printf "%.0f" (mul (div (float ($r.tpl_json | default 0)) (float $total)) 100) }}%)  Async DB: {{ lang.FormatNumber 0 ($r.tpl_async_db | default 0) }} ({{ printf "%.0f" (mul (div (float ($r.tpl_async_db | default 0)) (float $total)) 100) }}%)  Baseline: {{ lang.FormatNumber 0 ($r.tpl_baseline | default 0) }} ({{ printf "%.0f" (mul (div (float ($r.tpl_baseline | default 0)) (float $total)) 100) }}%)">
+            <div style="width:{{ printf "%.1f" (mul (div (float $r.tpl_static) (float $total)) 100) }}%;background:#3b82f6;"></div>
+            <div style="width:{{ printf "%.1f" (mul (div (float ($r.tpl_json | default 0)) (float $total)) 100) }}%;background:#f59e0b;"></div>
+            <div style="width:{{ printf "%.1f" (mul (div (float ($r.tpl_async_db | default 0)) (float $total)) 100) }}%;background:#8b5cf6;"></div>
+            <div style="width:{{ printf "%.1f" (mul (div (float ($r.tpl_baseline | default 0)) (float $total)) 100) }}%;background:#10b981;"></div>
+          </div>
+          {{ else }}
+          <div class="lb-bar lb-bar-{{ add $j 1 }}" style="width: {{ printf "%.1f" $pct }}%"></div>
+          {{ end }}
+        {{ else }}
+        <div class="lb-bar lb-bar-{{ add $j 1 }}" style="width: {{ printf "%.1f" $pct }}%"></div>
+        {{ end }}
+      </div>
+      <div class="lb-stat">{{ $r.cpu | default "—" }}</div>
+      <div class="lb-stat">{{ $r.memory | default "—" }}</div>
+      <div class="lb-stat">{{ $r.avg_latency }}</div>
+      <div class="lb-stat">{{ $r.p99_latency }}</div>
+    </div>
+    {{ end }}
+    {{ end }}
+  </div>
+  </div>
+  {{ end }}
+  </div>
+</div>
+{{ end }}
+
+<div class="lb-header-floating" id="lb-floating-header-h3gw"></div>
+
+<style>
+.lb-panel-h3gw { display: none; }
+.lb-panel-h3gw.active { display: block; margin-top: 1rem; }
+/* Gateway grid: # Name Conn Req/s BW Err Bar CPU Mem AvgLat P99 */
+.lb-panel-h3gw .lb-row {
+  grid-template-columns: 2.5rem 14rem 3.5rem 7rem 7rem 3rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
+}
+.lb-tab-h3gw {
+  flex: 1;
+  text-align: center;
+  padding: 0.65rem 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  transition: all 0.2s ease;
+  user-select: none;
+  letter-spacing: -0.01em;
+}
+.lb-tab-h3gw:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.5);
+}
+.lb-tab-h3gw.active {
+  color: #92400e;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+html.dark .lb-tab-h3gw { color: #94a3b8; }
+html.dark .lb-tab-h3gw:hover { color: #e2e8f0; background: rgba(255, 255, 255, 0.06); }
+html.dark .lb-tab-h3gw.active { color: #fbbf24; background: rgba(234, 179, 8, 0.15); box-shadow: 0 2px 8px rgba(234, 179, 8, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3); }
+</style>
+
+<script>
+(function() {
+var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
+var w = document.getElementById('lb-h3gw-wrapper');
+
+/* Build "Best" panels */
+function buildBest() {
+  w.querySelectorAll('.lb-conn-panel-h3gw[data-conns="best"]').forEach(function(bestPanel) {
+    var parentPanel = bestPanel.closest('.lb-panel-h3gw');
+    var connPanels = parentPanel.querySelectorAll('.lb-conn-panel-h3gw:not([data-conns="best"])');
+    var best = {};
+    connPanels.forEach(function(cp) {
+      cp.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
+        var name = row.dataset.name;
+        var rps = Number(row.dataset.rps);
+        if (!best[name] || rps > best[name].rps) {
+          best[name] = { rps: rps, row: row };
+        }
+      });
+    });
+    var lb = bestPanel.querySelector('.lb');
+    lb.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(r) { r.remove(); });
+    var entries = Object.values(best).sort(function(a, b) { return b.rps - a.rps; });
+    entries.forEach(function(entry, idx) {
+      var clone = entry.row.cloneNode(true);
+      clone.dataset.rps = entry.rps;
+      clone.querySelector('.lb-rank').textContent = String(idx + 1);
+      /* Bar will be replaced by applyMixBars */
+      var bar = clone.querySelector('.lb-bar');
+      if (bar) {
+        barClasses.forEach(function(c) { bar.classList.remove(c); });
+        bar.classList.add(barClasses[Math.min(idx, barClasses.length - 1)]);
+        bar.style.width = (entries[0].rps > 0 ? (entry.rps / entries[0].rps * 100) : 0).toFixed(1) + '%';
+      }
+      lb.appendChild(clone);
+    });
+  });
+}
+buildBest();
+
+/* Profile tabs — clicking switches panels */
+w.querySelectorAll('.lb-tab-h3gw').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    w.querySelectorAll('.lb-panel-h3gw').forEach(function(p) { p.classList.remove('active'); });
+    w.querySelector('.lb-panel-h3gw[data-panel="' + tab.dataset.tab + '"]').classList.add('active');
+    applyFilters_h3gw();
+    if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+  });
+});
+
+/* Conn tabs */
+w.querySelectorAll('.lb-conn-tab').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var panel = btn.closest('.lb-panel-h3gw');
+    panel.querySelectorAll('.lb-conn-tab').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    panel.querySelectorAll('.lb-conn-panel-h3gw').forEach(function(cp) { cp.classList.remove('active'); });
+    panel.querySelector('.lb-conn-panel-h3gw[data-conns="' + btn.dataset.conns + '"]').classList.add('active');
+    applyFilters_h3gw();
+    if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+  });
+});
+
+function applyFilters_h3gw(activePanel) {
+  var langState = lbDropdownState_h3gw.lang;
+  var engineState = lbDropdownState_h3gw.engine;
+  var allLangs = langState.selected.size === langState.all.size;
+  var allEngines = engineState.selected.size === engineState.all.size;
+
+  if (!activePanel) activePanel = w.querySelector('.lb-panel-h3gw.active') || w;
+
+  var showAll = activePanel.querySelector('.lb-type-filter[data-type="all"]').classList.contains('active');
+  var showEngine = showAll || activePanel.querySelector('.lb-type-filter[data-type="engine"]').classList.contains('active');
+  var showTuned = showAll || activePanel.querySelector('.lb-type-filter[data-type="tuned"]').classList.contains('active');
+  var showProduction = showAll || activePanel.querySelector('.lb-type-filter[data-type="production"]').classList.contains('active');
+
+  w.classList.toggle('lb-show-all', showAll);
+
+  var typeNote = document.querySelector('.lb-type-note-h3gw');
+  if (typeNote) {
+    var defs = [];
+    if (showProduction) defs.push('<span class="lb-type-badge lb-type-badge-production"><span class="lb-type-square" style="background:#22c55e;"></span> Production</span> Standard framework configuration. Must follow production-specific implementation rules for each test.');
+    if (showTuned) defs.push('<span class="lb-type-badge lb-type-badge-tuned"><span class="lb-type-square" style="background:#eab308;"></span> Tuned</span> May use experimental flags and non-default optimizations. Not bound by production implementation rules.');
+    if (showEngine) defs.push('<span class="lb-type-badge lb-type-badge-engine"><span class="lb-type-square" style="background:#dc2626;"></span> Engine</span> Bare-metal HTTP servers — not frameworks. A different breed entirely.');
+    typeNote.innerHTML = defs.join('<br>');
+  }
+
+  var activeSearchInput = activePanel.querySelector('.lb-search-input') || document.querySelector('.lb-panel-h3gw .lb-search-input');
+  var searchVal = activeSearchInput ? activeSearchInput.value.toLowerCase().trim() : '';
+  var terms = searchVal ? searchVal.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+
+  buildBest();
+
+  w.querySelectorAll('.lb-conn-panel-h3gw').forEach(function(connPanel) {
+    var rows = connPanel.querySelectorAll('.lb-row:not(.lb-header)');
+    var visibleIdx = 0;
+    var maxRps = 0;
+    rows.forEach(function(row) {
+      var lang = row.dataset.lang;
+      var name = row.dataset.name.toLowerCase();
+      var type = row.dataset.type || 'production';
+      var engine = (row.dataset.engine || '').toLowerCase();
+      var langMatch = allLangs || langState.selected.has(lang);
+      var engineMatch = allEngines || engineState.selected.has(engine);
+      var typeMatch = (type === 'engine' && showEngine) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'tuned' && showProduction);
+      var textMatch = terms.length === 0 || terms.some(function(t) {
+        return name.indexOf(t) !== -1 || lang.toLowerCase().indexOf(t) !== -1 || engine.indexOf(t) !== -1;
+      });
+      if (langMatch && engineMatch && typeMatch && textMatch) {
+        row.classList.remove('lb-hidden');
+        var rps = Number(row.dataset.rps);
+        if (rps > maxRps) maxRps = rps;
+      } else {
+        row.classList.add('lb-hidden');
+      }
+    });
+    rows.forEach(function(row) {
+      if (row.classList.contains('lb-hidden')) return;
+      row.querySelector('.lb-rank').textContent = String(visibleIdx + 1);
+      var bar = row.querySelector('.lb-bar');
+      if (bar) {
+        barClasses.forEach(function(c) { bar.classList.remove(c); });
+        bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
+        bar.style.width = (maxRps > 0 ? (Number(row.dataset.rps) / maxRps * 100) : 0).toFixed(1) + '%';
+      }
+      visibleIdx++;
+    });
+  });
+}
+
+/* Dropdown filter system */
+var lbDropdownState_h3gw = {};
+var lbLangs_h3gw = new Set();
+var lbEngines_h3gw = new Set();
+var lbEngineLabels_h3gw = {};
+document.querySelectorAll('.lb-conn-panel-h3gw .lb-row:not(.lb-header), .lb-conn-panel-h3gw.active .lb-row:not(.lb-header)').forEach(function(row) {
+  if (row.dataset.lang) lbLangs_h3gw.add(row.dataset.lang);
+  var engine = row.dataset.engine;
+  if (engine) { var key = engine.toLowerCase(); lbEngines_h3gw.add(key); if (!lbEngineLabels_h3gw[key]) lbEngineLabels_h3gw[key] = engine; }
+});
+// Fallback: also scan rows in panel containers
+document.querySelectorAll('.lb-panel-h3gw .lb-row:not(.lb-header)').forEach(function(row) {
+  if (row.dataset.lang) lbLangs_h3gw.add(row.dataset.lang);
+  var engine = row.dataset.engine;
+  if (engine) { var key = engine.toLowerCase(); lbEngines_h3gw.add(key); if (!lbEngineLabels_h3gw[key]) lbEngineLabels_h3gw[key] = engine; }
+});
+
+lbDropdownState_h3gw.lang = { all: new Set(lbLangs_h3gw), selected: new Set(lbLangs_h3gw) };
+lbDropdownState_h3gw.engine = { all: new Set(lbEngines_h3gw), selected: new Set(lbEngines_h3gw) };
+
+function lbSyncDropdowns_h3gw(filterKey, labels) {
+  var state = lbDropdownState_h3gw[filterKey];
+  document.querySelectorAll('.lb-panel-h3gw .lb-dropdown[data-filter="' + filterKey + '"]').forEach(function(wrapper) {
+    var menu = wrapper.querySelector('.lb-dropdown-menu');
+    var countEl = wrapper.querySelector('.lb-dropdown-count');
+    var sorted = Array.from(state.all).sort();
+    menu.innerHTML = '';
+    var allItem = document.createElement('div');
+    allItem.className = 'lb-dropdown-item' + (state.selected.size === state.all.size ? ' selected' : '');
+    allItem.dataset.val = '__all__';
+    allItem.innerHTML = '<div class="lb-dropdown-check"></div><span>All</span>';
+    menu.appendChild(allItem);
+    var sep = document.createElement('div');
+    sep.className = 'lb-dropdown-sep';
+    menu.appendChild(sep);
+    sorted.forEach(function(v) {
+      var item = document.createElement('div');
+      item.className = 'lb-dropdown-item' + (state.selected.has(v) ? ' selected' : '');
+      item.dataset.val = v;
+      item.innerHTML = '<div class="lb-dropdown-check"></div><span>' + (labels && labels[v] || v) + '</span>';
+      menu.appendChild(item);
+    });
+    var isAll = state.selected.size === state.all.size;
+    countEl.style.display = isAll ? 'none' : '';
+    countEl.textContent = isAll ? '' : state.selected.size;
+  });
+}
+lbSyncDropdowns_h3gw('lang', null);
+lbSyncDropdowns_h3gw('engine', lbEngineLabels_h3gw);
+
+function lbUpdateDropdowns_h3gw(filterKey, labels) {
+  var state = lbDropdownState_h3gw[filterKey];
+  document.querySelectorAll('.lb-panel-h3gw .lb-dropdown[data-filter="' + filterKey + '"]').forEach(function(wrapper) {
+    var menu = wrapper.querySelector('.lb-dropdown-menu');
+    var countEl = wrapper.querySelector('.lb-dropdown-count');
+    var isAll = state.selected.size === state.all.size;
+    countEl.style.display = isAll ? 'none' : '';
+    countEl.textContent = isAll ? '' : state.selected.size;
+    var ai = menu.querySelector('[data-val="__all__"]');
+    if (ai) { if (isAll) ai.classList.add('selected'); else ai.classList.remove('selected'); }
+    menu.querySelectorAll('[data-val]:not([data-val="__all__"])').forEach(function(item) {
+      if (state.selected.has(item.dataset.val)) item.classList.add('selected');
+      else item.classList.remove('selected');
+    });
+  });
+}
+
+document.querySelectorAll('.lb-panel-h3gw .lb-dropdown').forEach(function(dd) {
+  dd.addEventListener('click', function(ev) {
+    var ddItem = ev.target.closest('.lb-dropdown-item');
+    if (ddItem) {
+      var filterKey = dd.dataset.filter;
+      var state = lbDropdownState_h3gw[filterKey];
+      var val = ddItem.dataset.val;
+      if (val === '__all__') {
+        if (state.selected.size === state.all.size) state.selected.clear();
+        else state.selected = new Set(state.all);
+      } else {
+        if (state.selected.has(val)) { state.selected.delete(val); if (state.selected.size === 0) state.selected = new Set(state.all); }
+        else state.selected.add(val);
+      }
+      lbUpdateDropdowns_h3gw(filterKey, filterKey === 'engine' ? lbEngineLabels_h3gw : null);
+      applyFilters_h3gw();
+      if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+      ev.stopPropagation();
+      return;
+    }
+    var ddBtn = ev.target.closest('.lb-dropdown-btn');
+    if (ddBtn) {
+      ev.stopPropagation();
+      var menu = dd.querySelector('.lb-dropdown-menu');
+      var wasOpen = menu.style.display !== 'none';
+      document.querySelectorAll('.lb-panel-h3gw .lb-dropdown-menu').forEach(function(m) { m.style.display = 'none'; });
+      if (!wasOpen) menu.style.display = '';
+    }
+  });
+});
+
+document.addEventListener('click', function(ev) {
+  if (!ev.target.closest('.lb-panel-h3gw .lb-dropdown')) {
+    document.querySelectorAll('.lb-panel-h3gw .lb-dropdown-menu').forEach(function(m) { m.style.display = 'none'; });
+  }
+});
+
+document.querySelectorAll('.lb-panel-h3gw .lb-search-input').forEach(function(input) {
+  var clearBtn = input.parentElement.querySelector('.lb-search-clear');
+  input.addEventListener('input', function() {
+    var val = input.value;
+    document.querySelectorAll('.lb-panel-h3gw .lb-search-input').forEach(function(other) { if (other !== input) other.value = val; });
+    document.querySelectorAll('.lb-panel-h3gw .lb-search-clear').forEach(function(btn) { btn.style.display = val ? '' : 'none'; });
+    applyFilters_h3gw();
+    if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+  });
+  clearBtn.addEventListener('click', function() {
+    document.querySelectorAll('.lb-panel-h3gw .lb-search-input').forEach(function(inp) { inp.value = ''; });
+    document.querySelectorAll('.lb-panel-h3gw .lb-search-clear').forEach(function(btn) { btn.style.display = 'none'; });
+    applyFilters_h3gw();
+    if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+  });
+});
+
+w.querySelectorAll('.lb-type-filter').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var type = btn.dataset.type;
+    var allBtn = w.querySelector('.lb-type-filter[data-type="all"]');
+    var typeButtons = w.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+    if (type === 'all') {
+      var allActive = allBtn.classList.contains('active');
+      typeButtons.forEach(function(f) { f.classList.toggle('active', !allActive); });
+      allBtn.classList.toggle('active', !allActive);
+    } else {
+      btn.classList.toggle('active');
+      var allOn = Array.from(typeButtons).every(function(f) { return f.classList.contains('active'); });
+      allBtn.classList.toggle('active', allOn);
+      var anyOn = Array.from(typeButtons).some(function(f) { return f.classList.contains('active'); });
+      if (!anyOn) { btn.classList.add('active'); }
+    }
+    applyFilters_h3gw();
+    if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+  });
+});
+
+/* Column sorting */
+function parseSortValue(row, key) {
+  var stats = row.querySelectorAll('.lb-stat');
+  if (key === 'rps') return Number(row.dataset.rps);
+  if (key === 'errors') return Number(row.dataset.s4xx || 0) + Number(row.dataset.s5xx || 0);
+  var text = '';
+  switch (key) {
+    case 'bandwidth': text = stats[0] ? stats[0].textContent.trim() : ''; break;
+    case 'cpu': text = stats[1] ? stats[1].textContent.trim() : ''; break;
+    case 'mem': text = stats[2] ? stats[2].textContent.trim() : ''; break;
+    case 'avglat': text = stats[3] ? stats[3].textContent.trim() : ''; break;
+    case 'p99': text = stats[4] ? stats[4].textContent.trim() : ''; break;
+  }
+  if (!text || text === '\u2014') return (key === 'rps' || key === 'bandwidth') ? -Infinity : Infinity;
+  if (key === 'bandwidth') { var bm = text.match(/([\d.]+)/); return bm ? parseFloat(bm[1]) : 0; }
+  if (key === 'cpu') return parseFloat(text) || 0;
+  if (key === 'mem') {
+    var m = text.match(/([\d.]+)\s*(KiB|MiB|GiB|KB|MB|GB)/i);
+    if (!m) return 0;
+    var v = parseFloat(m[1]);
+    var u = m[2].toUpperCase();
+    if (u === 'GIB' || u === 'GB') v *= 1024;
+    if (u === 'KIB' || u === 'KB') v /= 1024;
+    return v;
+  }
+  var lm = text.match(/([\d.]+)\s*(us|ms|s)\b/i);
+  if (!lm) return Infinity;
+  var lv = parseFloat(lm[1]);
+  var lu = lm[2].toLowerCase();
+  if (lu === 'ms') lv *= 1000;
+  else if (lu === 's') lv *= 1000000;
+  return lv;
+}
+
+w.querySelectorAll('.lb-sortable').forEach(function(hdr) {
+  hdr.addEventListener('click', function() {
+    var lb = hdr.closest('.lb');
+    var key = hdr.dataset.sort;
+    var wasAsc = hdr.classList.contains('sort-asc');
+    var wasDesc = hdr.classList.contains('sort-desc');
+    lb.querySelectorAll('.lb-sortable').forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
+    var dir;
+    if (!wasAsc && !wasDesc) dir = (key === 'rps' || key === 'bandwidth') ? 'desc' : 'asc';
+    else if (wasDesc) dir = 'asc';
+    else dir = 'desc';
+    hdr.classList.add('sort-' + dir);
+    var rows = Array.from(lb.querySelectorAll('.lb-row:not(.lb-header)'));
+    rows.sort(function(a, b) {
+      var va = parseSortValue(a, key);
+      var vb = parseSortValue(b, key);
+      return dir === 'asc' ? va - vb : vb - va;
+    });
+    rows.forEach(function(row) { lb.appendChild(row); });
+    var visibleIdx = 0;
+    var maxRps = 0;
+    rows.forEach(function(row) {
+      if (!row.classList.contains('lb-hidden')) {
+        var rps = Number(row.dataset.rps);
+        if (rps > maxRps) maxRps = rps;
+      }
+    });
+    rows.forEach(function(row) {
+      if (row.classList.contains('lb-hidden')) return;
+      row.querySelector('.lb-rank').textContent = String(visibleIdx + 1);
+      var bar = row.querySelector('.lb-bar');
+      if (bar) {
+        barClasses.forEach(function(c) { bar.classList.remove(c); });
+        bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
+        bar.style.width = (maxRps > 0 ? (Number(row.dataset.rps) / maxRps * 100) : 0).toFixed(1) + '%';
+      }
+      visibleIdx++;
+    });
+  });
+});
+
+/* Row click — popup */
+w.addEventListener('click', function(e) {
+  var row = e.target.closest('.lb-row:not(.lb-header)');
+  if (!row) return;
+  if (e.target.closest('.lb-sortable')) return;
+  var name = row.dataset.name;
+  var lang = row.dataset.lang;
+  var desc = row.dataset.desc || '';
+  var repo = row.dataset.repo || '';
+  var rps = row.querySelector('.lb-rps').textContent;
+  var conns = row.querySelector('.lb-conns').textContent;
+  var stats = row.querySelectorAll('.lb-stat');
+  var bw = stats[0].textContent;
+  var cpu = stats[1].textContent;
+  var mem = stats[2].textContent;
+  var avgLat = stats[3].textContent;
+  var p99 = stats[4].textContent;
+  var s2xx = Number(row.dataset.s2xx || 0);
+  var s3xx = Number(row.dataset.s3xx || 0);
+  var s4xx = Number(row.dataset.s4xx || 0);
+  var s5xx = Number(row.dataset.s5xx || 0);
+  var connPanel = row.closest('.lb-conn-panel-h3gw');
+  var profile = connPanel ? connPanel.dataset.profile : '';
+  var connCount = connPanel ? connPanel.dataset.conns : '';
+  if (connCount === 'best') connCount = row.querySelector('.lb-conns').textContent.replace(/,/g, '').trim();
+  var baseUrl = '{{ "logs" | relURL }}';
+  var repoHtml = repo ? '<a class="lb-popup-link" href="' + repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
+  var benchHtml = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(name) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
+  var logHtml = (profile && connCount) ? '<a class="lb-popup-link" href="' + baseUrl + '/' + profile + '/' + connCount + '/' + encodeURIComponent(name) + '.log" target="_blank" rel="noreferrer">Docker logs &rarr;</a>' : '';
+  var statusHtml = s2xx > 0
+    ? '2xx: ' + s2xx.toLocaleString() + ', 3xx: ' + s3xx.toLocaleString() + ', 4xx: ' + s4xx.toLocaleString() + ', 5xx: ' + s5xx.toLocaleString()
+    : '\u2014';
+  var overlay = document.createElement('div');
+  overlay.className = 'lb-overlay';
+  overlay.innerHTML =
+    '<div class="lb-popup">' +
+      '<button class="lb-popup-close" aria-label="Close">&times;</button>' +
+      '<div class="lb-popup-name">' + name + '</div>' +
+      '<div class="lb-popup-lang">' + lang + ' (HTTP/2)</div>' +
+      '<div class="lb-popup-desc">' + desc + '</div>' +
+      '<div class="lb-popup-stats">' +
+        '<div><div class="lb-popup-stat-label">Req/s</div><div class="lb-popup-stat-value">' + rps + '</div></div>' +
+        '<div><div class="lb-popup-stat-label">Connections</div><div class="lb-popup-stat-value">' + conns + '</div></div>' +
+        '<div><div class="lb-popup-stat-label">Avg Latency</div><div class="lb-popup-stat-value">' + avgLat + '</div></div>' +
+        '<div><div class="lb-popup-stat-label">P99 Latency</div><div class="lb-popup-stat-value">' + p99 + '</div></div>' +
+        '<div><div class="lb-popup-stat-label">CPU</div><div class="lb-popup-stat-value">' + cpu + '</div></div>' +
+        '<div><div class="lb-popup-stat-label">Memory</div><div class="lb-popup-stat-value">' + mem + '</div></div>' +
+        '<div style="grid-column:1/-1"><div class="lb-popup-stat-label">Status Codes</div><div class="lb-popup-stat-value">' + statusHtml + '</div></div>' +
+      '</div>' +
+      '<div class="lb-popup-links">' + repoHtml + benchHtml + logHtml + '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  function close() { overlay.remove(); }
+  overlay.querySelector('.lb-popup-close').addEventListener('click', close);
+  overlay.addEventListener('click', function(ev) { if (ev.target === overlay) close(); });
+  document.addEventListener('keydown', function handler(ev) {
+    if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', handler); }
+  });
+});
+
+/* Round switching for H2 leaderboard */
+window.addEventListener('roundChanged', function(ev) {
+  var roundId = ev.detail.round;
+  var data = roundId === null ? lbH2GwCurrentData : (window.roundsData[roundId] || lbH2GwCurrentData);
+  var fwMeta = roundId === null ? lbH2GwCurrentMeta : (data._frameworks || lbH2GwCurrentMeta);
+
+  document.querySelectorAll('#lb-h3gw-wrapper .lb-conn-panel-h3gw:not([data-conns="best"])').forEach(function(panel) {
+    var profile = panel.dataset.profile;
+    var conns = panel.dataset.conns;
+    var key = profile + '-' + conns;
+    var results = data[key];
+    var lb = panel.querySelector('.lb');
+    if (!lb) return;
+
+    lb.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(r) { r.remove(); });
+
+    if (!results || results.length === 0) return;
+
+    var sorted = results.slice().sort(function(a, b) { return b.rps - a.rps; });
+    var maxRps = sorted[0].rps || 1;
+
+    sorted.forEach(function(r, j) {
+      var m = fwMeta[r.framework] || {};
+      var ftype = m.type || 'production';
+      var pct = (r.rps / maxRps * 100).toFixed(1);
+      var rank = String(j + 1);
+      var rs2 = r.status_2xx || 0, rs3 = r.status_3xx || 0, rs4 = r.status_4xx || 0, rs5 = r.status_5xx || 0;
+      var rErrs = rs4 + rs5;
+      var statusCell = (rs2 > 0 || rErrs > 0)
+        ? '<div class="lb-status"><span class="' + (rErrs > 0 ? 'lb-status-err' : 'lb-status-ok') + '">' + (rErrs > 0 ? rErrs.toLocaleString() : '\u2713') + '</span>' +
+          '<div class="lb-status-tip"><div><b>2xx:</b> ' + rs2.toLocaleString() + '</div><div><b>3xx:</b> ' + rs3.toLocaleString() + '</div><div><b>4xx:</b> ' + rs4.toLocaleString() + '</div><div><b>5xx:</b> ' + rs5.toLocaleString() + '</div></div></div>'
+        : '<div class="lb-status"><span class="lb-status-na">\u2014</span></div>';
+      var row = document.createElement('div');
+      row.className = 'lb-row';
+      row.dataset.lang = r.language || '';
+      row.dataset.name = r.framework;
+      row.dataset.rps = String(r.rps);
+      row.dataset.type = ftype;
+      row.dataset.desc = m.description || '';
+      row.dataset.repo = m.repo || '';
+      row.dataset.s2xx = String(rs2);
+      row.dataset.s3xx = String(rs3);
+      row.dataset.s4xx = String(rs4);
+      row.dataset.s5xx = String(rs5);
+      row.innerHTML =
+        '<div class="lb-rank">' + rank + '</div>' +
+        '<div class="lb-name">' + r.framework + '</div>' +
+        '<div class="lb-conns">' + Number(r.connections).toLocaleString() + '</div>' +
+        '<div class="lb-rps">' + Number(r.rps).toLocaleString() + '</div>' +
+        '<div class="lb-stat">' + (r.bandwidth || '\u2014') + '</div>' +
+        statusCell +
+        (function() {
+          var ts = r.tpl_static || 0, tj = r.tpl_json || 0, ta = r.tpl_async_db || 0, tb = r.tpl_baseline || 0;
+          var tt = ts + tj + ta + tb;
+          if (tt > 0) {
+            return '<div class="lb-bar-cell"><div style="display:flex;height:14px;border-radius:3px;overflow:hidden;background:#f1f5f9;" title="Static: ' + ts.toLocaleString() + ' (' + (ts/tt*100).toFixed(0) + '%)  JSON: ' + tj.toLocaleString() + ' (' + (tj/tt*100).toFixed(0) + '%)  Async DB: ' + ta.toLocaleString() + ' (' + (ta/tt*100).toFixed(0) + '%)  Baseline: ' + tb.toLocaleString() + ' (' + (tb/tt*100).toFixed(0) + '%)">' +
+              '<div style="width:' + (ts/tt*100).toFixed(1) + '%;background:#3b82f6;"></div>' +
+              '<div style="width:' + (tj/tt*100).toFixed(1) + '%;background:#f59e0b;"></div>' +
+              '<div style="width:' + (ta/tt*100).toFixed(1) + '%;background:#8b5cf6;"></div>' +
+              '<div style="width:' + (tb/tt*100).toFixed(1) + '%;background:#10b981;"></div>' +
+              '</div></div>';
+          }
+          return '<div class="lb-bar-cell"><div class="lb-bar lb-bar-' + (j + 1) + '" style="width:' + pct + '%"></div></div>';
+        })() +
+        '<div class="lb-stat">' + (r.cpu || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.memory || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.avg_latency || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.p99_latency || '\u2014') + '</div>';
+      lb.appendChild(row);
+    });
+  });
+
+  buildBest();
+  w.querySelectorAll('.lb-panel-h3gw').forEach(function(p) {
+    applyFilters_h3gw(p);
+  });
+});
+applyFilters_h3gw();
+
+/* Floating header on scroll */
+var floaterH2 = document.getElementById('lb-floating-header-h3gw');
+var lastHeaderH2 = null;
+function updateFloatingHeaderH2() {
+  var activePanel = w.querySelector('.lb-panel-h3gw.active');
+  if (!activePanel) { floaterH2.style.display = 'none'; return; }
+  var activeConn = activePanel.querySelector('.lb-conn-panel-h3gw.active');
+  if (!activeConn) { floaterH2.style.display = 'none'; return; }
+  var header = activeConn.querySelector('.lb-row.lb-header');
+  if (!header) { floaterH2.style.display = 'none'; return; }
+  var lb = activeConn.querySelector('.lb');
+  var lbRect = lb.getBoundingClientRect();
+  var headerRect = header.getBoundingClientRect();
+  var nav = document.querySelector('nav');
+  var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+  if (headerRect.bottom < navHeight && lbRect.bottom > navHeight + 60) {
+    if (lastHeaderH2 !== header) {
+      floaterH2.innerHTML = '';
+      floaterH2.appendChild(header.cloneNode(true));
+      lastHeaderH2 = header;
+    }
+    floaterH2.style.left = lbRect.left + 'px';
+    floaterH2.style.width = lbRect.width + 'px';
+    floaterH2.style.display = 'block';
+  } else {
+    floaterH2.style.display = 'none';
+    lastHeaderH2 = null;
+  }
+}
+window.addEventListener('scroll', updateFloatingHeaderH2, { passive: true });
+floaterH2.addEventListener('click', function(e) {
+  var sortBtn = e.target.closest('.lb-sortable');
+  if (!sortBtn || !lastHeaderH2) return;
+  var real = lastHeaderH2.querySelector('.lb-sortable[data-sort="' + sortBtn.dataset.sort + '"]');
+  if (real) { real.click(); lastHeaderH2 = null; updateFloatingHeaderH2(); }
+});
+var obsH2 = new MutationObserver(function() { lastHeaderH2 = null; updateFloatingHeaderH2(); });
+w.querySelectorAll('.lb-panel-h3gw, .lb-conn-panel-h3gw').forEach(function(el) {
+  obsH2.observe(el, { attributes: true, attributeFilter: ['class'] });
+});
+
+/* Expose for deep linking */
+window.lbDropdownState_h3gw = lbDropdownState_h3gw;
+window.lbSyncDropdowns_h3gw = lbSyncDropdowns_h3gw;
+window.lbEngineLabels_h3gw = lbEngineLabels_h3gw;
+window.applyFilters_h3gw = applyFilters_h3gw;
+})();
+</script>
+
+<div class="lb-gw-legend" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;padding:0.4rem 0.75rem;margin:0.5rem 0;font-size:0.75rem;color:#64748b;">
+  <span style="font-weight:600;color:#475569;">Request Mix:</span>
+  <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;border-radius:2px;background:#3b82f6;"></span>Static</span>
+  <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;border-radius:2px;background:#f59e0b;"></span>JSON</span>
+  <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;border-radius:2px;background:#8b5cf6;"></span>Async DB</span>
+  <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;border-radius:2px;background:#10b981;"></span>Baseline</span>
+</div>

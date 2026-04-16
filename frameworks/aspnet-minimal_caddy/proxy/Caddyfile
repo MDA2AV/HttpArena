@@ -1,0 +1,44 @@
+# Caddy gateway — terminates TLS + HTTP/3 on 8443, serves /static/*
+# directly from disk with precompressed sidecars, forwards everything
+# else to the aspnet backend on localhost:8080 over plain HTTP/1.1.
+#
+# HTTP/3 is enabled automatically when Caddy binds a TLS listener —
+# Caddy listens on both 8443/tcp (h1/h2) and 8443/udp (h3) out of the
+# box, so the same Caddyfile covers both paths.
+
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+https://localhost:8443 {
+	tls /certs/server.crt /certs/server.key
+
+	# Static files — served by Caddy directly. `precompressed br gzip`
+	# tells the file_server to prefer foo.br / foo.gz sidecars when the
+	# client advertises matching Accept-Encoding, falling back to the
+	# raw file when no precompressed variant exists.
+	handle /static/* {
+		root * /data
+		file_server {
+			precompressed br gzip
+		}
+	}
+
+	# Everything else forwards to the aspnet backend on h1. Keepalive
+	# is tuned high enough that under a 1024-conn h2load-h3 load we
+	# don't thrash the upstream pool.
+	handle {
+		reverse_proxy 127.0.0.1:8080 {
+			transport http {
+				keepalive 5m
+				keepalive_idle_conns 2048
+				keepalive_idle_conns_per_host 2048
+				versions 1.1
+			}
+		}
+	}
+}

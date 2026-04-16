@@ -105,8 +105,11 @@ framework_start() {
 }
 
 framework_stop() {
-    docker stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
-    docker rm   -f  "$CONTAINER_NAME" 2>/dev/null || true
+    docker stop -t 5  "$CONTAINER_NAME" 2>/dev/null || true
+    # -v nukes any anonymous volumes the framework image declared (e.g.
+    # postgres-style VOLUME directives in a Dockerfile). Without it the
+    # volume lingers on every benchmark cycle and silently fills disk.
+    docker rm   -f -v "$CONTAINER_NAME" 2>/dev/null || true
 }
 
 # ── Readiness probe ─────────────────────────────────────────────────────────

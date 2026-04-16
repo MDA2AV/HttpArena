@@ -51,14 +51,31 @@ PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 cleanup_all() {
     framework_stop
-    gateway_down "$FRAMEWORK"
+    # gateway_down reads the active-profile state tracked by gateway_up,
+    # so it works correctly regardless of which gateway profile was last.
+    gateway_down
     postgres_stop
+
+    # Reclaim anything the compose / framework / postgres stop steps missed.
+    # Specifically:
+    #   - dangling anonymous volumes (compose creates one per service per
+    #     project if the Dockerfile declares VOLUME anywhere; easily 100s
+    #     of MB per benchmark iteration)
+    #   - dangling images from earlier --build cycles (each iteration of
+    #     aspnet-minimal_nginx rebuilds ~300 MB of image layers)
+    # Both are idempotent and fast when there's nothing to clean.
+    docker volume prune -f >/dev/null 2>&1 || true
+    docker image prune  -f >/dev/null 2>&1 || true
 }
 trap 'cleanup_all; system_restore' EXIT
 
-# Clean slate: stop any leftover benchmark containers.
+# Clean slate: stop any leftover benchmark containers from a previous
+# crashed run, AND prune any leftover dangling volumes/images from the
+# same source. Belt-and-suspenders vs. the cleanup_all at exit.
 docker ps -q  --filter "name=httparena-" | xargs -r docker stop -t 5 2>/dev/null || true
 docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f -v 2>/dev/null || true
+docker volume prune -f >/dev/null 2>&1 || true
+docker image prune  -f >/dev/null 2>&1 || true
 
 info "available CPUs: $(nproc 2>/dev/null || echo ?)"
 
@@ -108,9 +125,18 @@ fi
 framework_load_meta "$FRAMEWORK_ARG"
 FRAMEWORK="$FRAMEWORK_ARG"
 
-if [ "$FRAMEWORK_TESTS" != "gateway-64" ]; then
-    framework_build
-fi
+# Framework-level image build — skipped for compose-only entries because
+# their compose files build the server image from the repo root context,
+# not from frameworks/<fw>/. Covers gateway-64, gateway-h3, production-stack,
+# and any combination thereof.
+_has_isolated_test=false
+for t in baseline pipelined limited-conn json json-comp json-tls upload \
+         api-4 api-16 static async-db \
+         baseline-h2 static-h2 baseline-h3 static-h3 \
+         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls echo-ws; do
+    if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
+done
+$_has_isolated_test && framework_build
 
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
@@ -118,7 +144,7 @@ system_tune
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db api-4 api-16 gateway-64; do
+for t in async-db api-4 api-16 gateway-64 gateway-h3 production-stack; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
 $need_pg && postgres_start
@@ -143,19 +169,23 @@ run_one() {
 
     banner "$FRAMEWORK / $profile / ${CONNS}c (tool=$tool)"
 
-    # Gateway profiles use a compose stack, not a single framework container.
+    # Compose-orchestrated profiles (gateway-*, production-stack) use
+    # a multi-container stack instead of a single framework container.
     local is_gateway=false
-    if [ "$endpoint" = "gateway-64" ]; then
-        is_gateway=true
-        gateway_up "$FRAMEWORK"
-    else
-        framework_start "$endpoint" "$PROF_CPU"
-    fi
+    case "$endpoint" in
+        gateway-64|gateway-h3|production-stack)
+            is_gateway=true
+            gateway_up "$FRAMEWORK" "$profile"
+            ;;
+        *)
+            framework_start "$endpoint" "$PROF_CPU"
+            ;;
+    esac
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
         framework_stop
-        $is_gateway && gateway_down "$FRAMEWORK"
+        $is_gateway && gateway_down
         return 1
     fi
 
@@ -229,7 +259,7 @@ run_one() {
 
     # Tear down between iterations.
     if $is_gateway; then
-        gateway_down "$FRAMEWORK"
+        gateway_down
     else
         framework_stop
     fi
@@ -238,12 +268,12 @@ run_one() {
 
 # save_result — write results/<profile>/<conns>/<framework>.json + docker logs.
 #
-# The leaderboard "composite score" for api-4 / api-16 / gateway-64 is built
+# The leaderboard "composite score" for api-4 / api-16 / gateway-* is built
 # from per-template response counts (tpl_baseline / tpl_json / tpl_async_db /
 # tpl_static). Without these fields the site renders rps correctly but the
 # score column collapses to 0. For api-4/16 gcannon_parse already computes
-# them; for gateway-64 we split h2load's total 2xx proportionally across the
-# 20-URI mix (12 static, 3 json, 3 async-db, 2 baseline).
+# them; for gateway-64 / gateway-h3 we split the load-generator's total 2xx
+# proportionally across the 20-URI mix (6 static, 4 baseline, 7 json, 3 db).
 save_result() {
     local profile="$1" CONNS="$2" best_rps="$3" best_cpu="$4" best_mem="$5"
     local dir="$RESULTS_DIR/$profile/$CONNS"
@@ -258,9 +288,11 @@ save_result() {
   \"tpl_upload\": 0,
   \"tpl_static\": 0,
   \"tpl_async_db\": ${BEST_M[tpl_async_db]:-0}"
-    elif [ "$profile" = "gateway-64" ] && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
+    elif { [ "$profile" = "gateway-64" ] || [ "$profile" = "gateway-h3" ]; } \
+         && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
         # Gateway mix: 6 static / 4 baseline / 7 json / 3 async-db = 30 / 20 / 35 / 15 %.
-        # Must stay in sync with requests/gateway-64-uris.txt.
+        # Both gateway profiles share requests/gateway-64-uris.txt, so the
+        # split is identical — only the edge protocol (h2 vs h3) differs.
         local total=${BEST_M[status_2xx]}
         tpl_extra=",
   \"tpl_static\": $(( total * 6 / 20 )),

@@ -7,7 +7,8 @@
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "tests": [
-    "gateway-64"
+    "gateway-64",
+    "production-stack"
   ],
   "maintainers": []
 }
