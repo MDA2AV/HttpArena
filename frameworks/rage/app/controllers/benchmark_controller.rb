@@ -25,10 +25,7 @@ class BenchmarkController < RageController::API
   end
 
   def baseline_one
-    total = 0
-    params.each_value do |v|
-      total += v.to_i
-    end
+    total = params[:a].to_i + params[:b].to_i
     if request.post?
       rack_input = request.send(:rack_request).env["rack.input"]
       rack_input.rewind
@@ -39,10 +36,7 @@ class BenchmarkController < RageController::API
   end
 
   def baseline_two
-    total = 0
-    params.each_value do |v|
-      total += v.to_i
-    end
+    total = params[:a].to_i + params[:b].to_i
     render plain: total.to_s
   end
 
