@@ -13,7 +13,7 @@
 [1] ! WARNING: Detected `RUBY_MN_THREADS=1`
 [1] ! This setting is known to cause performance regressions with Puma.
 [1] ! Consider disabling this environment variable: https://github.com/puma/puma/issues/3720
-[1] - Worker 0 (PID: 8) booted in 0.01s, phase: 0
-[1] - Worker 1 (PID: 11) booted in 0.0s, phase: 0
-[1] - Worker 2 (PID: 15) booted in 0.0s, phase: 0
-[1] - Worker 3 (PID: 19) booted in 0.0s, phase: 0
+[1] - Worker 0 (PID: 8) booted in 0.0s, phase: 0
+[1] - Worker 1 (PID: 12) booted in 0.0s, phase: 0
+[1] - Worker 2 (PID: 16) booted in 0.0s, phase: 0
+[1] - Worker 3 (PID: 20) booted in 0.0s, phase: 0
