@@ -152,8 +152,7 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
 
   <div class="lb-filters composite-resource-wrap" style="margin:0.5rem 0 0 0; padding:0.5rem 1rem; background:rgba(0,0,0,0.02); border-radius:8px; border:1px solid rgba(0,0,0,0.06);">
     <span class="lb-filters-label">Resource factors</span>
-    <div class="composite-resource-toggle" data-resource="cpu">CPU efficiency <span style="font-size:0.6rem; color:#94a3b8;">(1x weight)</span></div>
-    <div class="composite-resource-toggle" data-resource="mem">Memory efficiency <span style="font-size:0.6rem; color:#94a3b8;">(0.5x weight)</span></div>
+    <div class="composite-resource-toggle active" data-resource="mem">Memory efficiency <span style="font-size:0.6rem; color:#94a3b8;">(0.5x weight)</span></div>
   </div>
   <style>
   .composite-resource-toggle { padding:0.3rem 0.75rem; font-size:0.8rem; font-weight:500; color:#94a3b8; cursor:pointer; border-radius:6px; border:1.5px solid #e2e8f0; background:transparent; transition:all 0.15s ease; user-select:none; }
@@ -520,7 +519,6 @@ function renderComposite() {
   if (activeCount === 0) activeIds = allProfileIds.slice();
   activeCount = activeIds.length;
 
-  var useCpu = document.querySelector('.composite-resource-toggle[data-resource="cpu"]').classList.contains('active');
   var useMem = document.querySelector('.composite-resource-toggle[data-resource="mem"]').classList.contains('active');
   var activeTypes = getActiveTypes();
   var hasEngine = activeTypes.indexOf('engine') >= 0;
@@ -531,10 +529,6 @@ function renderComposite() {
     var ftype = fmeta.type || 'production';
     return ftype === 'engine' ? profileEngineScored[pid] : profileScored[pid];
   }
-  var scoredIds = activeIds.filter(function(pid) { return profileScored[pid]; });
-  var scoredCount = scoredIds.length;
-  var engineScoredIds = activeIds.filter(function(pid) { return profileEngineScored[pid]; });
-  var engineScoredCount = engineScoredIds.length;
 
   // Search filter
   var searchVal = (document.querySelector('.composite-search-input').value || '').toLowerCase().trim();
@@ -563,23 +557,16 @@ function renderComposite() {
     return false;
   }
 
-  // Compute max RPS and max efficiency per active profile (filtered by type)
+  // Compute max RPS and max memory efficiency per active profile.
   var maxRpsByProfile = {};
-  var maxCpuEffByProfile = {};
   var maxMemEffByProfile = {};
   activeIds.forEach(function(pid) {
     maxRpsByProfile[pid] = 0;
-    maxCpuEffByProfile[pid] = 0;
     maxMemEffByProfile[pid] = 0;
     Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
       if (isExcluded(fw)) return;
       var rps = avgByProfile[pid][fw] || 0;
       if (rps > maxRpsByProfile[pid]) maxRpsByProfile[pid] = rps;
-      var cpu = avgCpuByProfile[pid][fw] || 0;
-      if (cpu > 0 && rps > 0) {
-        var cpuEff = rps / cpu;
-        if (cpuEff > maxCpuEffByProfile[pid]) maxCpuEffByProfile[pid] = cpuEff;
-      }
       var mem = avgMemByProfile[pid][fw] || 0;
       if (mem > 0 && rps > 0) {
         var memEff = rps / mem;
@@ -690,9 +677,15 @@ function renderComposite() {
     }
   });
 
-  // Weight config
-  var wRps = 1, wCpu = useCpu ? 1 : 0, wMem = useMem ? 0.5 : 0;
-  var totalWeight = wRps + wCpu + wMem;
+  // Scoring model. CPU efficiency was dropped: a framework that uses less
+  // CPU but produces less throughput already scores worse on rps alone, so
+  // rewarding "low CPU" as its own factor double-counted the signal.
+  // Memory (when toggled) adds a 0..50 bonus on top of the rpsScore:
+  // memScore = (rps / memMB) / best(rps / memMB) × 100, then × 0.5.
+  // High rps + low memory can reach ~150; high rps + bloated memory stays
+  // near 100; low rps gets little from either term. The composite is the
+  // SUM across scored profiles (not the mean), so larger numbers separate
+  // strong all-rounders from frameworks that only win a single profile.
 
   // Compute scores
   var results = [];
@@ -718,20 +711,16 @@ function renderComposite() {
           }
         }
         var rpsScore = (effectiveRps / maxRpsByProfile[pid]) * 100;
-        var profileScore = rpsScore * wRps;
-        if (wCpu > 0 && maxCpuEffByProfile[pid] > 0) {
-          var fwCpu = avgCpuByProfile[pid][fw] || 0;
-          var cpuEff = (fwCpu > 0) ? rps / fwCpu : 0;
-          var cpuScore = (cpuEff / maxCpuEffByProfile[pid]) * 100;
-          profileScore += cpuScore * wCpu;
-        }
-        if (wMem > 0 && maxMemEffByProfile[pid] > 0) {
+        var profileScore = rpsScore;
+        if (useMem && maxMemEffByProfile[pid] > 0) {
           var fwMem = avgMemByProfile[pid][fw] || 0;
-          var memEff = (fwMem > 0) ? rps / fwMem : 0;
-          var memScore = (memEff / maxMemEffByProfile[pid]) * 100;
-          profileScore += memScore * wMem;
+          if (fwMem > 0) {
+            var memEff = rps / fwMem;
+            var memScore = (memEff / maxMemEffByProfile[pid]) * 100;
+            profileScore += memScore * 0.5;
+          }
         }
-        scores.push(profileScore / totalWeight);
+        scores.push(profileScore);
         if (isScoredForFw(pid, fw)) participated++;
       } else {
         scores.push(0);
@@ -741,14 +730,11 @@ function renderComposite() {
     if (participated === 0) {
       return;
     } else {
-      var fmeta = meta[fw] || {};
-      var ftype = fmeta.type || 'production';
-      var fwScoredCount = ftype === 'engine' ? engineScoredCount : scoredCount;
       var sum = 0;
       activeIds.forEach(function(pid, i) {
         if (isScoredForFw(pid, fw) && scores[i] > 0) sum += scores[i];
       });
-      composite = fwScoredCount > 0 ? (sum / fwScoredCount) : 0;
+      composite = sum;
     }
     results.push({ framework: fw, language: fwLang[fw] || '', scores: scores, composite: composite, participated: participated });
   });

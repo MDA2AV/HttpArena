@@ -2,7 +2,7 @@
 title: Composite Score
 ---
 
-The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. It uses a normalized arithmetic mean with optional resource efficiency factors.
+The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–100 scale, then **summed** across all scored profiles. An optional memory toggle adds a 0–50 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
 
 ## How it works
 
@@ -22,15 +22,17 @@ This produces a 0–100 value where the top framework scores 100.
 
 **Exception: JSON Compressed.** The `json-comp` profile applies a compression-ratio gain before normalization so frameworks that ship smaller response bodies are rewarded directly. Instead of averaging raw rps, `avgRps` is first scaled by `(minBpr / myBpr)²` where `myBpr = avgBw / avgRps` and `minBpr` is the smallest bytes-per-response across the field. Doubling the response size quarters the score. See the [JSON Compressed implementation](/docs/test-profiles/h1/isolated/json-compressed/implementation/#scoring) for the full formula and rationale.
 
-### Step 3: Arithmetic mean
+### Step 3: Sum across scored profiles
 
-The final composite score is the arithmetic mean of per-profile scores across all **scored** profiles:
+The final composite score is the **sum** of per-profile scores across all **scored** profiles:
 
 ```
-composite = sum(scored_profile_scores) / number_of_scored_profiles
+composite = sum(scored_profile_scores)
 ```
 
-Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite proportionally.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with ~15 scored profiles the ceiling is around 1,500.
+
+Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
 ## Scored vs reference-only profiles
 
@@ -96,55 +98,51 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 
 TCP Frag and Noisy are reference-only — shown for comparison but not counted in the composite score.
 
-## Resource efficiency factors
+## Memory efficiency bonus
 
-Two optional toggles allow factoring in resource efficiency:
+An optional toggle rewards memory efficiency with an **additive** bonus per profile. It never scales down the raw-throughput score — it only adds on top of it, up to +50 points for the most memory-efficient framework in that profile.
 
-- **CPU efficiency** (1× weight) — measures requests per CPU percent (`rps / cpu%`)
-- **Memory efficiency** (0.5× weight) — measures requests per megabyte (`rps / MB`)
+This uses an **efficiency ratio** (`rps / memoryMB`), not absolute memory usage. A framework that is fast *and* lean gets the largest bonus; a framework that uses little memory only because it is slow earns less, because its rps is in the numerator of the ratio.
 
-These use **efficiency ratios**, not absolute resource usage. A framework that achieves high throughput with low resource consumption scores well. A framework that uses little CPU simply because it is slow does **not** benefit.
+CPU efficiency was intentionally dropped: a framework that leaves CPU on the table already scores worse on RPS, so penalizing it a second time for "low efficiency" double-counted the same signal and flattened the throughput differentiation that the benchmark exists to measure.
 
-### How resource scores are computed
+### How the memory bonus is computed
 
 For each profile, compute the efficiency ratio for every framework:
 
 ```
-cpuEfficiency = rps / cpu%
 memEfficiency = rps / memoryMB
 ```
 
 Normalize against the best efficiency in that profile:
 
 ```
-cpuScore = (framework_cpuEff / best_cpuEff) × 100
 memScore = (framework_memEff / best_memEff) × 100
 ```
 
-Combine with the RPS score using configured weights:
+Add half of it on top of the RPS score:
 
 ```
-profileScore = (rpsScore × 1 + cpuScore × wCpu + memScore × wMem) / totalWeight
+profileScore = rpsScore + 0.5 × memScore
 ```
 
-Where `totalWeight = 1 + wCpu + wMem`. With both factors active, `totalWeight = 2.5`, so RPS counts 40%, CPU efficiency 40%, and memory efficiency 20%.
+With the toggle on, per-profile scores range 0–150 (up to 100 from throughput, up to 50 from memory efficiency). Frameworks with no memory data keep their plain `rpsScore`.
 
 ### Example
 
-| Framework | RPS | CPU% | Mem (MB) | rps/cpu | rps/MB |
-|---|---|---|---|---|---|
-| A | 500,000 | 800% | 50 | 625 | 10,000 |
-| B | 100,000 | 100% | 20 | 1,000 | 5,000 |
+| Framework | RPS | Mem (MB) | rps/MB |
+|---|---|---|---|
+| A | 500,000 | 50 | 10,000 |
+| B | 100,000 | 20 | 5,000 |
 
 - RPS scores: A = 100, B = 20
-- CPU efficiency scores: A = 62.5, B = 100 (B gets more throughput per CPU unit)
-- Memory efficiency scores: A = 100, B = 50
+- Memory efficiency scores: A = 100 (best), B = 50
 
-With both factors on (`totalWeight = 2.5`):
-- A: `(100 + 62.5 + 50) / 2.5 = 85.0`
-- B: `(20 + 100 + 25) / 2.5 = 58.0`
+With the memory toggle on:
+- A: `100 + 0.5 × 100 = 150.0`
+- B: `20 + 0.5 × 50 = 45.0`
 
-Framework A still leads because its raw throughput advantage outweighs B's CPU efficiency, but the gap narrows from 5× to 1.5×.
+A leads on both axes and pulls the maximum bonus; B picks up a partial bonus for its lower absolute memory footprint but its 5× throughput deficit still dominates.
 
 ## Engine-level implementations
 
@@ -157,7 +155,7 @@ The Type filter on the composite leaderboard switches between the two rankings.
 
 ## Why this approach
 
-- **Arithmetic mean** — straightforward averaging that doesn't over-penalize a single weak profile
-- **Normalization** — each profile contributes equally regardless of absolute RPS scale (baseline at 1M vs JSON at 200K)
-- **Efficiency ratios** — resource factors measure throughput per unit of resource, preventing slow frameworks from gaming the score by using fewer absolute resources
+- **Sum across profiles** — larger numbers separate strong all-rounders from frameworks that only win a single profile; a framework that covers 15 profiles at 80% crushes one that wins one profile at 100%
+- **Normalization** — each profile contributes equally regardless of absolute RPS scale (baseline at 1M vs JSON at 200K), and is capped at 100 points per profile
+- **Additive memory bonus** — memory-efficient frameworks earn up to +50 per profile on top of their RPS score; slow frameworks can't game the bonus because `rps` is in the efficiency numerator
 - **Average across connections** — each framework is scored on its average RPS across all connection counts, rewarding consistent scaling
