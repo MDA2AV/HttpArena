@@ -234,6 +234,13 @@
     "type": "engine",
     "engine": "hyper"
   },
+  "hyperf": {
+    "dir": "hyperf",
+    "description": "A coroutine framework that focuses on hyperspeed and flexibility. Building microservice or middleware with ease.",
+    "repo": "https://github.com/hyperf/hyperf",
+    "type": "production",
+    "engine": "Swoole"
+  },
   "ktor": {
     "dir": "ktor",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",

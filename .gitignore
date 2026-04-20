@@ -13,6 +13,7 @@ target/
 frameworks/blitz/zig-linux-*
 frameworks/blitz/.zig-cache
 frameworks/fletch/.dart_tool/
+!frameworks/hyperf/bin/
 
 # IDE settings
 *.user

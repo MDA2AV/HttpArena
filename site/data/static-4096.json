@@ -411,6 +411,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "hyperf",
+    "language": "PHP",
+    "rps": 82391,
+    "avg_latency": "45.37ms",
+    "p99_latency": "45.37ms",
+    "cpu": "886.5%",
+    "memory": "1.9GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "4.91GB",
+    "reconnects": 0,
+    "status_2xx": 420189,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "mark",
     "language": "PHP",
     "rps": 283712,

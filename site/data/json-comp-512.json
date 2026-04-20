@@ -357,6 +357,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "hyperf",
+    "language": "PHP",
+    "rps": 250923,
+    "avg_latency": "2.04ms",
+    "p99_latency": "3.35ms",
+    "cpu": "4479.9%",
+    "memory": "1.8GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "268.85MB/s",
+    "input_bw": "18.43MB/s",
+    "reconnects": 50241,
+    "status_2xx": 1254618,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ngx-php",
     "language": "PHP",
     "rps": 587863,

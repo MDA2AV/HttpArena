@@ -158,6 +158,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "hyperf",
+    "language": "PHP",
+    "rps": 431538,
+    "avg_latency": "1.19ms",
+    "p99_latency": "1.64ms",
+    "cpu": "1658.0%",
+    "memory": "1.8GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "2.88MB/s",
+    "reconnects": 0,
+    "status_2xx": 2157693,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "node-websocket",
     "language": "JS",
     "rps": 1969290,
