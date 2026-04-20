@@ -9,7 +9,6 @@
   "tests": [
     "baseline",
     "pipelined",
-    "noisy",
     "limited-conn",
     "json",
     "json-comp",

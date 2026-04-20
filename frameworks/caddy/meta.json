@@ -1,0 +1,11 @@
+{
+  "display_name": "caddy",
+  "language": "Go",
+  "type": "infrastructure",
+  "engine": "caddy",
+  "description": "Caddy with a custom Go handler module for /baseline11, compiled via xcaddy. Native file_server for /static.",
+  "repo": "https://github.com/caddyserver/caddy",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "static"],
+  "maintainers": []
+}

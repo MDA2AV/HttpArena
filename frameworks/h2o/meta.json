@@ -1,7 +1,7 @@
 {
   "display_name": "h2o",
   "language": "C",
-  "type": "engine",
+  "type": "infrastructure",
   "engine": "h2o",
   "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
   "repo": "https://github.com/h2o/h2o",

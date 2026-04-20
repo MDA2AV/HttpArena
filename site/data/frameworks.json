@@ -15,6 +15,13 @@
       }
     ]
   },
+  "apache": {
+    "dir": "apache",
+    "description": "Apache HTTPD 2.4 with event MPM and mod_lua for the dynamic /baseline11 handler. Native file serving for /static/.",
+    "repo": "https://github.com/apache/httpd",
+    "type": "infrastructure",
+    "engine": "apache"
+  },
   "aspnet-minimal": {
     "dir": "aspnet-minimal",
     "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
@@ -80,6 +87,13 @@
     "type": "tuned",
     "engine": "bun"
   },
+  "caddy": {
+    "dir": "caddy",
+    "description": "Caddy with a custom Go handler module for /baseline11, compiled via xcaddy. Native file_server for /static.",
+    "repo": "https://github.com/caddyserver/caddy",
+    "type": "infrastructure",
+    "engine": "caddy"
+  },
   "deno-websocket": {
     "dir": "deno-websocket",
     "description": "Deno WebSocket echo server",
@@ -93,6 +107,13 @@
     "repo": "https://github.com/elysiajs/elysia",
     "type": "production",
     "engine": "jsc"
+  },
+  "envoy": {
+    "dir": "envoy",
+    "description": "Envoy proxy with an inline Lua HTTP filter for /baseline11 and direct_response routes for /static files.",
+    "repo": "https://github.com/envoyproxy/envoy",
+    "type": "infrastructure",
+    "engine": "envoy"
   },
   "fastapi": {
     "dir": "fastapi",
@@ -175,7 +196,7 @@
     "dir": "h2o",
     "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
     "repo": "https://github.com/h2o/h2o",
-    "type": "engine",
+    "type": "infrastructure",
     "engine": "h2o"
   },
   "helidon-production": {
@@ -238,14 +259,14 @@
     "dir": "nginx",
     "description": "Nginx with a custom C handler module, compiled with -O3 -march=native.",
     "repo": "https://github.com/nginx/nginx",
-    "type": "engine",
+    "type": "infrastructure",
     "engine": "nginx"
   },
   "ngx-php": {
     "dir": "ngx-php",
     "description": "Embedded PHP scripting language module for nginx.",
     "repo": "https://github.com/rryqszq4/ngx-php",
-    "type": "production",
+    "type": "tuned",
     "engine": "nginx"
   },
   "node-websocket": {
@@ -261,6 +282,13 @@
     "repo": "https://github.com/php/php-src",
     "type": "production",
     "engine": "nginx"
+  },
+  "pingora": {
+    "dir": "pingora",
+    "description": "Pingora, Cloudflare's Rust HTTP framework, used as a standalone server with custom handlers for /baseline11 and preloaded /static files.",
+    "repo": "https://github.com/cloudflare/pingora",
+    "type": "infrastructure",
+    "engine": "pingora"
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
@@ -391,6 +419,13 @@
     "repo": "https://github.com/hyperium/tonic",
     "type": "tuned",
     "engine": "tonic"
+  },
+  "traefik": {
+    "dir": "traefik",
+    "description": "Traefik with a Yaegi-interpreted local plugin handling /baseline11 computation and /static file serving. Plugin code is interpreted, so throughput is modest by design.",
+    "repo": "https://github.com/traefik/traefik",
+    "type": "infrastructure",
+    "engine": "traefik"
   },
   "ultimate-express": {
     "dir": "ultimate-express",

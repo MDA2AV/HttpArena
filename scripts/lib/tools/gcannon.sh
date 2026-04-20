@@ -17,7 +17,11 @@ gcannon_build_args() {
 
     case "$endpoint" in
         "")  # default: baseline / limited-conn
-            args=("http://localhost:$PORT/baseline11?a=1&b=1"
+            # Mixed GET / POST-Content-Length / POST-Transfer-Encoding:chunked
+            # rotation, matching the "Mixed GET/POST with query parsing" README
+            # description and validate.sh's three-shape correctness suite.
+            args=("http://localhost:$PORT"
+                  --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_chunked.raw"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
             [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;

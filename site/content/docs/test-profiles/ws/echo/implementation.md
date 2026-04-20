@@ -7,7 +7,7 @@ title: Implementation Guidelines
 Measures WebSocket echo throughput. Each connection upgrades via HTTP/1.1, then sends text messages and receives echoes. Each echo counts as one completed response.
 
 **Connections:** 512, 4,096, 16,384
-**Pipeline:** 16 (messages in flight per connection)
+**Pipeline:** 1 (one message in flight per connection — send, await echo, repeat)
 
 ## Workload
 
@@ -48,7 +48,7 @@ Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
 |-----------|-------|
 | Endpoint | `/ws` (WebSocket upgrade) |
 | Connections | 512, 4,096, 16,384 |
-| Pipeline | 16 (messages in flight) |
+| Pipeline | 1 (one message in flight per connection) |
 | Message | `"hello"` (5 bytes, text frame) |
 | Duration | 5s |
 | Runs | 3 (best taken) |

@@ -146,14 +146,15 @@ With the memory toggle on:
 
 B actually wins the memory term despite A's 5× throughput advantage, because `sqrt(rps)` only gives A a √5 ≈ 2.24× boost in the numerator — not enough to beat B's 2.5× memory savings. A still wins overall thanks to its raw throughput lead, but B's lean memory footprint is now rewarded meaningfully instead of being drowned out.
 
-## Engine-level implementations
+## Type-specific scoring
 
-Engines and frameworks are scored **separately** — each type has its own composite ranking and normalization pool. The scored profiles differ by type:
+Types are scored **separately** — each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
-- **Frameworks** are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
+- **Frameworks** (Production + Tuned) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
+- **Infrastructure** (nginx, h2o, and similar proxies/servers) are scored only on Baseline, Pipelined, Short-lived, and Static — the profiles that don't require executing application logic. Other profiles (JSON, async-db, etc.) may be displayed as reference data but do not count toward the infrastructure composite.
 - **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
 
-The Type filter on the composite leaderboard switches between the two rankings.
+The Type filter on the composite leaderboard switches between these rankings. Production and Tuned can be combined (they share the framework normalization pool); Infrastructure and Engine are each exclusive.
 
 ## Why this approach
 

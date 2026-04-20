@@ -15,7 +15,6 @@
     "json-tls",
     "upload",
     "async-db",
-    "noisy",
     "static",
     "echo-ws",
     "api-4",
