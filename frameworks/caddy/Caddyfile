@@ -1,0 +1,41 @@
+{
+	admin off
+	auto_https off
+	log {
+		output discard
+	}
+	order httparena before respond
+	servers {
+		protocols h1 h2
+	}
+}
+
+:8080 {
+	# Custom Go handler compiled in via xcaddy — matches nginx's
+	# ngx_http_httparena_module and h2o's on_baseline11 behavior.
+	@baseline11 path /baseline11
+	handle @baseline11 {
+		httparena
+	}
+
+	# Pipelined profile: fixed "ok" response. Inline respond avoids
+	# the httparena module's query-parsing overhead — critical at 16
+	# pipelined requests per batch.
+	@pipeline path /pipeline
+	handle @pipeline {
+		header Content-Type text/plain
+		respond "ok" 200
+	}
+
+	# Static files mounted read-only at /data/static by the benchmark
+	# harness. handle_path strips the /static/ prefix so file_server
+	# resolves directly against /data/static/<filename>.
+	handle_path /static/* {
+		root * /data/static
+		file_server
+	}
+
+	handle {
+		respond "Not Found" 404
+	}
+}

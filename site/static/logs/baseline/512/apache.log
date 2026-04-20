@@ -1,0 +1,2 @@
+[Sun Apr 19 20:09:30.172337 2026] [mpm_event:notice] [pid 1:tid 1] AH00489: Apache/2.4.66 (Debian) configured -- resuming normal operations
+[Sun Apr 19 20:09:30.175401 2026] [core:notice] [pid 1:tid 1] AH00094: Command line: 'apache2 -D FOREGROUND -f /etc/apache2/httpd.conf'

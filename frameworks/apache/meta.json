@@ -1,0 +1,11 @@
+{
+  "display_name": "apache",
+  "language": "C",
+  "type": "infrastructure",
+  "engine": "apache",
+  "description": "Apache HTTPD 2.4 with event MPM and mod_lua for the dynamic /baseline11 handler. Native file serving for /static/.",
+  "repo": "https://github.com/apache/httpd",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "static"],
+  "maintainers": []
+}

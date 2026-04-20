@@ -13,7 +13,6 @@
     "json",
     "json-comp",
     "upload",
-    "noisy",
     "baseline-h2",
     "static-h2"
   ],

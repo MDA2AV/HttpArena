@@ -1,28 +1,28 @@
 {{ $profiles := slice
-  (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true)
-  (dict "id" "api-16" "label" "API-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false)
-  (dict "id" "baseline" "label" "Baseline" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
-  (dict "id" "pipelined" "label" "Pipelined" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
-  (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
-  (dict "id" "json" "label" "JSON" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "json-comp" "label" "JSON Compressed" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" true "engineScored" false)
-  (dict "id" "json-tls" "label" "JSON TLS" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "upload" "label" "Upload" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 32 256) "scored" true "engineScored" false)
-  (dict "id" "static" "label" "Static" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024 4096 6800) "scored" true "engineScored" false)
-  (dict "id" "async-db" "label" "Async DB" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" true "engineScored" false)
-  (dict "id" "crud" "label" "CRUD" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "gateway-64" "label" "Gateway-64" "sublabel" "H/2 Gateway" "proto" "h2gw" "conns" (slice 512 1024) "scored" true "engineScored" true)
-  (dict "id" "gateway-h3" "label" "Gateway-H3" "sublabel" "H/3 Gateway" "proto" "h3gw" "conns" (slice 64 256) "scored" true "engineScored" true)
-  (dict "id" "production-stack" "label" "Prod Stack" "sublabel" "Production Stack" "proto" "prodstack" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "unary-grpc-tls" "label" "Unary TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "stream-grpc" "label" "Stream" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "stream-grpc-tls" "label" "Stream TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "static-h3" "label" "Static" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true)
+  (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "api-16" "label" "API-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "baseline" "label" "Baseline" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true "infraScored" true)
+  (dict "id" "pipelined" "label" "Pipelined" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true "infraScored" true)
+  (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true "infraScored" true)
+  (dict "id" "json" "label" "JSON" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "json-comp" "label" "JSON Compressed" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "json-tls" "label" "JSON TLS" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "upload" "label" "Upload" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 32 256) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "static" "label" "Static" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024 4096 6800) "scored" true "engineScored" false "infraScored" true)
+  (dict "id" "async-db" "label" "Async DB" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "crud" "label" "CRUD" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "gateway-64" "label" "Gateway-64" "sublabel" "H/2 Gateway" "proto" "h2gw" "conns" (slice 512 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "gateway-h3" "label" "Gateway-H3" "sublabel" "H/3 Gateway" "proto" "h3gw" "conns" (slice 64 256) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "production-stack" "label" "Prod Stack" "sublabel" "Production Stack" "proto" "prodstack" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "unary-grpc-tls" "label" "Unary TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "stream-grpc" "label" "Stream" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "stream-grpc-tls" "label" "Stream TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "static-h3" "label" "Static" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true "infraScored" false)
 }}
 
 {{/* Build a clean JSON blob: array of {profile, framework, rps, language} entries */}}
@@ -64,6 +64,7 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
     <span class="lb-filters-label">Type</span>
     <div class="composite-type-filter active" data-type="production">Production</div>
     <div class="composite-type-filter active" data-type="tuned">Tuned</div>
+    <div class="composite-type-filter" data-type="infrastructure">Infrastructure</div>
     <div class="composite-type-filter" data-type="engine">Engine</div>
   </div>
   <style>
@@ -71,12 +72,14 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
   .composite-type-filter:hover { color:#475569; border-color:#cbd5e1; transform:translateY(-1px); box-shadow:0 2px 4px rgba(0,0,0,0.08); }
   .composite-type-filter[data-type="production"].active { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,0.06); font-weight:600; }
   .composite-type-filter[data-type="tuned"].active { color:#ca8a04; border-color:#eab308; background:rgba(234,179,8,0.06); font-weight:600; }
+  .composite-type-filter[data-type="infrastructure"].active { color:#0891b2; border-color:#0891b2; background:rgba(8,145,178,0.06); font-weight:600; }
   .composite-type-filter[data-type="engine"].active { color:#f59e0b; border-color:#f59e0b; background:rgba(245,158,11,0.06); font-weight:600; }
   html.dark .composite-type-wrap { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.10); }
   html.dark .composite-type-filter { color:#64748b; border-color:#334155; }
   html.dark .composite-type-filter:hover { color:#94a3b8; border-color:#475569; }
   html.dark .composite-type-filter[data-type="production"].active { color:#4ade80; border-color:#22c55e; background:rgba(34,197,94,0.12); }
   html.dark .composite-type-filter[data-type="tuned"].active { color:#fbbf24; border-color:#eab308; background:rgba(234,179,8,0.12); }
+  html.dark .composite-type-filter[data-type="infrastructure"].active { color:#22d3ee; border-color:#0891b2; background:rgba(8,145,178,0.12); }
   html.dark .composite-type-filter[data-type="engine"].active { color:#fbbf24; border-color:#f59e0b; background:rgba(245,158,11,0.12); }
   .composite-badges { display:inline-flex; flex-wrap:wrap; gap:0; margin-left:0.15rem; vertical-align:middle; }
   .composite-badge { display:inline-flex; align-items:center; justify-content:center; font-size:1.05rem; line-height:1; cursor:default; margin-left:-0.15rem; }
@@ -240,8 +243,9 @@ var profileLabels = {};
 var profileProtos = {};
 var profileScored = {};
 var profileEngineScored = {};
+var profileInfraScored = {};
 var profileSublabels = {};
-profiles.forEach(function(p) { profileLabels[p.id] = p.label; profileProtos[p.id] = p.proto; profileScored[p.id] = p.scored !== false; profileEngineScored[p.id] = p.engineScored === true; profileSublabels[p.id] = p.sublabel || ''; });
+profiles.forEach(function(p) { profileLabels[p.id] = p.label; profileProtos[p.id] = p.proto; profileScored[p.id] = p.scored !== false; profileEngineScored[p.id] = p.engineScored === true; profileInfraScored[p.id] = p.infraScored === true; profileSublabels[p.id] = p.sublabel || ''; });
 
 function parseCpu(s) {
   if (!s) return 0;
@@ -523,11 +527,13 @@ function renderComposite() {
   var activeTypes = getActiveTypes();
   var hasEngine = activeTypes.indexOf('engine') >= 0;
 
-  // Per-framework scored profile check: engines use engineScored, others use scored
+  // Per-framework scored profile check: each type has its own scored set.
   function isScoredForFw(pid, fw) {
     var fmeta = meta[fw] || {};
     var ftype = fmeta.type || 'production';
-    return ftype === 'engine' ? profileEngineScored[pid] : profileScored[pid];
+    if (ftype === 'engine') return profileEngineScored[pid];
+    if (ftype === 'infrastructure') return profileInfraScored[pid];
+    return profileScored[pid];
   }
 
   // Search filter
@@ -1120,10 +1126,12 @@ function updateCompositeNote() {
   if (!note) return;
   var prodActive = document.querySelector('.composite-type-filter[data-type="production"]').classList.contains('active');
   var tunedActive = document.querySelector('.composite-type-filter[data-type="tuned"]').classList.contains('active');
+  var infraActive = document.querySelector('.composite-type-filter[data-type="infrastructure"]').classList.contains('active');
   var engineActive = document.querySelector('.composite-type-filter[data-type="engine"]').classList.contains('active');
   var defs = [];
   if (prodActive) defs.push('<span class="lb-type-badge lb-type-badge-production"><span class="lb-type-square" style="background:#22c55e;"></span> Production</span> Standard framework configuration. Must follow production-specific implementation rules for each test.');
   if (tunedActive) defs.push('<span class="lb-type-badge lb-type-badge-tuned"><span class="lb-type-square" style="background:#eab308;"></span> Tuned</span> May use experimental flags and non-default optimizations. Not bound by production implementation rules.');
+  if (infraActive) defs.push('<span class="lb-type-badge lb-type-badge-infrastructure"><span class="lb-type-square" style="background:#0891b2;"></span> Infrastructure</span> Reverse proxies, static-file servers, and their scripting extensions (nginx, h2o, caddy). Scored only on baseline, pipelined, short-lived, and static.');
   if (engineActive) defs.push('<span class="lb-type-badge lb-type-badge-engine"><span class="lb-type-square" style="background:#dc2626;"></span> Engine</span> Bare-metal HTTP servers — not frameworks. A different breed entirely.');
   note.innerHTML = defs.join('<br>');
 }
@@ -1178,15 +1186,17 @@ document.querySelectorAll('.composite-resource-toggle').forEach(function(btn) {
 });
 
 // Type filter click handlers
-// Production and Tuned can be selected together; Engine is always exclusive
+// Production and Tuned can be selected together. Engine and Infrastructure
+// are each exclusive — selecting them clears all other types.
 document.querySelectorAll('.composite-type-filter').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var type = btn.dataset.type;
-    if (type === 'engine') {
+    if (type === 'engine' || type === 'infrastructure') {
       document.querySelectorAll('.composite-type-filter').forEach(function(f) { f.classList.remove('active'); });
       btn.classList.add('active');
     } else {
       document.querySelector('.composite-type-filter[data-type="engine"]').classList.remove('active');
+      document.querySelector('.composite-type-filter[data-type="infrastructure"]').classList.remove('active');
       btn.classList.toggle('active');
       var prodActive = document.querySelector('.composite-type-filter[data-type="production"]').classList.contains('active');
       var tunedActive = document.querySelector('.composite-type-filter[data-type="tuned"]').classList.contains('active');

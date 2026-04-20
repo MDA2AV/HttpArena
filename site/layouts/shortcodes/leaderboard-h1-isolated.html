@@ -177,6 +177,8 @@ html.dark .lb-type-engine.active { color: #fbbf24; border-color: #f59e0b; backgr
 html.dark .lb-type-production.active { color: #4ade80; border-color: #22c55e; background: rgba(34, 197, 94, 0.12); }
 .lb-type-tuned.active { color: #ca8a04; border-color: #eab308; background: rgba(234, 179, 8, 0.06); font-weight: 600; }
 html.dark .lb-type-tuned.active { color: #fbbf24; border-color: #eab308; background: rgba(234, 179, 8, 0.12); }
+.lb-type-infrastructure.active { color: #0891b2; border-color: #0891b2; background: rgba(8, 145, 178, 0.06); font-weight: 600; }
+html.dark .lb-type-infrastructure.active { color: #22d3ee; border-color: #0891b2; background: rgba(8, 145, 178, 0.12); }
 
 
 /* Sortable headers */
@@ -276,6 +278,8 @@ html.dark .lb-row[data-type="production"] .lb-name::before { background: #4ade80
 html.dark .lb-row[data-type="engine"] .lb-name::before { background: #f87171; }
 .lb-row[data-type="tuned"] .lb-name::before { background: #eab308; }
 html.dark .lb-row[data-type="tuned"] .lb-name::before { background: #fbbf24; }
+.lb-row[data-type="infrastructure"] .lb-name::before { background: #0891b2; }
+html.dark .lb-row[data-type="infrastructure"] .lb-name::before { background: #22d3ee; }
 .lb-lang { font-size: 0.8rem; color: #000; }
 .lb-conns { font-size: 0.8rem; color: #000; text-align: right; font-variant-numeric: tabular-nums; }
 .lb-rps { font-weight: 700; font-size: 0.95rem; text-align: right; font-variant-numeric: tabular-nums; color: #000; }
@@ -445,9 +449,11 @@ html.dark .lb-type-note-h1iso { color: #e2e8f0 !important; background: linear-gr
 .lb-type-badge-production { background:rgba(34,197,94,0.12); color:#15803d; border:1px solid rgba(34,197,94,0.3); }
 .lb-type-badge-tuned { background:rgba(234,179,8,0.1); color:#92400e; border:1px solid rgba(234,179,8,0.3); }
 .lb-type-badge-engine { background:rgba(220,38,38,0.08); color:#991b1b; border:1px solid rgba(220,38,38,0.25); }
+.lb-type-badge-infrastructure { background:rgba(8,145,178,0.08); color:#155e75; border:1px solid rgba(8,145,178,0.3); }
 html.dark .lb-type-badge-production { background:rgba(34,197,94,0.15); color:#4ade80; border-color:rgba(34,197,94,0.4); }
 html.dark .lb-type-badge-tuned { background:rgba(234,179,8,0.12); color:#fbbf24; border-color:rgba(234,179,8,0.35); }
 html.dark .lb-type-badge-engine { background:rgba(220,38,38,0.12); color:#f87171; border-color:rgba(220,38,38,0.35); }
+html.dark .lb-type-badge-infrastructure { background:rgba(8,145,178,0.12); color:#22d3ee; border-color:rgba(8,145,178,0.35); }
 .lb-type-square { display:inline-block; width:0.5rem; height:0.5rem; border-radius:2px; vertical-align:middle; }
 </style>
 
@@ -467,6 +473,7 @@ html.dark .lb-type-badge-engine { background:rgba(220,38,38,0.12); color:#f87171
     <div class="lb-type-filter lb-type-all" data-type="all">All</div>
     <div class="lb-type-filter lb-type-production active" data-type="production">Production</div>
     <div class="lb-type-filter lb-type-tuned active" data-type="tuned">Tuned</div>
+    <div class="lb-type-filter lb-type-infrastructure" data-type="infrastructure">Infrastructure</div>
     <div class="lb-type-filter lb-type-engine" data-type="engine">Engine</div>
   </div>
   <div class="lb-filters" style="margin:0 0 0 0;">
@@ -669,6 +676,7 @@ function applyH1IsoFilters() {
   var activePanel = lbH1IsoRoot.querySelector('.lb-panel.active') || lbH1IsoRoot;
   var showAll = activePanel.querySelector('.lb-type-filter[data-type="all"]').classList.contains('active');
   var showEngine = showAll || activePanel.querySelector('.lb-type-filter[data-type="engine"]').classList.contains('active');
+  var showInfrastructure = showAll || activePanel.querySelector('.lb-type-filter[data-type="infrastructure"]').classList.contains('active');
   var showTuned = showAll || activePanel.querySelector('.lb-type-filter[data-type="tuned"]').classList.contains('active');
   var showProduction = showAll || activePanel.querySelector('.lb-type-filter[data-type="production"]').classList.contains('active');
 
@@ -679,6 +687,7 @@ function applyH1IsoFilters() {
     var defs = [];
     if (showProduction) defs.push('<span class="lb-type-badge lb-type-badge-production"><span class="lb-type-square" style="background:#22c55e;"></span> Production</span> Standard framework configuration. Must follow production-specific implementation rules for each test.');
     if (showTuned) defs.push('<span class="lb-type-badge lb-type-badge-tuned"><span class="lb-type-square" style="background:#eab308;"></span> Tuned</span> May use experimental flags and non-default optimizations. Not bound by production implementation rules.');
+    if (showInfrastructure) defs.push('<span class="lb-type-badge lb-type-badge-infrastructure"><span class="lb-type-square" style="background:#0891b2;"></span> Infrastructure</span> Reverse proxies, static-file servers, and their scripting extensions (nginx, h2o). Scored on baseline, pipelined, short-lived, and static only.');
     if (showEngine) defs.push('<span class="lb-type-badge lb-type-badge-engine"><span class="lb-type-square" style="background:#dc2626;"></span> Engine</span> Bare-metal HTTP servers — not frameworks. A different breed entirely.');
     typeNote.innerHTML = defs.join('<br>');
   }
@@ -701,7 +710,7 @@ function applyH1IsoFilters() {
       var type = row.dataset.type || 'production';
       var langMatch = allLangs || langState.selected.has(lang);
       var engineMatch = allEngines || engineState.selected.has(engine);
-      var typeMatch = (type === 'engine' && showEngine) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'tuned' && showProduction);
+      var typeMatch = (type === 'engine' && showEngine) || (type === 'infrastructure' && showInfrastructure) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'infrastructure' && type !== 'tuned' && showProduction);
       var textMatch = terms.length === 0 || terms.some(function(t) {
         return name.indexOf(t) !== -1 || lang.toLowerCase().indexOf(t) !== -1 || engine.indexOf(t) !== -1;
       });

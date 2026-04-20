@@ -45,6 +45,7 @@ html.dark .lb-type-note-gw { color: #e2e8f0 !important; background: linear-gradi
     <div class="lb-type-filter lb-type-all" data-type="all">All</div>
     <div class="lb-type-filter lb-type-production active" data-type="production">Production</div>
     <div class="lb-type-filter lb-type-tuned active" data-type="tuned">Tuned</div>
+    <div class="lb-type-filter lb-type-infrastructure" data-type="infrastructure">Infrastructure</div>
     <div class="lb-type-filter lb-type-engine" data-type="engine">Engine</div>
   </div>
   <div class="lb-filters" style="margin:0 0 0 0;">
@@ -285,6 +286,7 @@ function applyFilters_gw(activePanel) {
 
   var showAll = activePanel.querySelector('.lb-type-filter[data-type="all"]').classList.contains('active');
   var showEngine = showAll || activePanel.querySelector('.lb-type-filter[data-type="engine"]').classList.contains('active');
+  var showInfrastructure = showAll || activePanel.querySelector('.lb-type-filter[data-type="infrastructure"]').classList.contains('active');
   var showTuned = showAll || activePanel.querySelector('.lb-type-filter[data-type="tuned"]').classList.contains('active');
   var showProduction = showAll || activePanel.querySelector('.lb-type-filter[data-type="production"]').classList.contains('active');
 
@@ -295,6 +297,7 @@ function applyFilters_gw(activePanel) {
     var defs = [];
     if (showProduction) defs.push('<span class="lb-type-badge lb-type-badge-production"><span class="lb-type-square" style="background:#22c55e;"></span> Production</span> Standard framework configuration. Must follow production-specific implementation rules for each test.');
     if (showTuned) defs.push('<span class="lb-type-badge lb-type-badge-tuned"><span class="lb-type-square" style="background:#eab308;"></span> Tuned</span> May use experimental flags and non-default optimizations. Not bound by production implementation rules.');
+    if (showInfrastructure) defs.push('<span class="lb-type-badge lb-type-badge-infrastructure"><span class="lb-type-square" style="background:#0891b2;"></span> Infrastructure</span> Reverse proxies, static-file servers, and their scripting extensions (nginx, h2o). Scored on baseline, pipelined, short-lived, and static only.');
     if (showEngine) defs.push('<span class="lb-type-badge lb-type-badge-engine"><span class="lb-type-square" style="background:#dc2626;"></span> Engine</span> Bare-metal HTTP servers — not frameworks. A different breed entirely.');
     typeNote.innerHTML = defs.join('<br>');
   }
@@ -316,7 +319,7 @@ function applyFilters_gw(activePanel) {
       var engine = (row.dataset.engine || '').toLowerCase();
       var langMatch = allLangs || langState.selected.has(lang);
       var engineMatch = allEngines || engineState.selected.has(engine);
-      var typeMatch = (type === 'engine' && showEngine) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'tuned' && showProduction);
+      var typeMatch = (type === 'engine' && showEngine) || (type === 'infrastructure' && showInfrastructure) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'infrastructure' && type !== 'tuned' && showProduction);
       var textMatch = terms.length === 0 || terms.some(function(t) {
         return name.indexOf(t) !== -1 || lang.toLowerCase().indexOf(t) !== -1 || engine.indexOf(t) !== -1;
       });
