@@ -88,6 +88,7 @@ def json_test(req, resp):
 
 
 # Websocket in slime are event driven
+# echo back based on the message type
 @app.websocket("/ws")
 def websocket_test(req, resp):
     def echo_me(msg):
