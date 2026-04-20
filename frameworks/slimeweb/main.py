@@ -91,7 +91,10 @@ def json_test(req, resp):
 @app.websocket("/ws")
 def websocket_test(req, resp):
     def echo_me(msg):
-        resp.send(msg)
+        if isinstance(msg, str):
+            return resp.send_text(msg)
+        else:
+            return resp.send_bytes(msg)
 
     resp.on_message(echo_me)
 
@@ -99,6 +102,8 @@ def websocket_test(req, resp):
 @app.route("/async-db", method="GET")
 async def async_db_test(req, resp):
     global QUERY_STMT, DB_POOL
+    if DB_POOL is None:
+        return resp.json({"items": [], "count": 0})
     min = int(req.query["min"])
     max = int(req.query["max"])
     limit = int(req.query["limit"])
@@ -115,7 +120,7 @@ async def async_db_test(req, resp):
                 "price": data["price"],
                 "quantity": data["quantity"],
                 "active": data["active"],
-                "tags": data["tags"],
+                "tags": json.loads(data["tags"]),
                 "rating": {
                     "score": data["rating_score"],
                     "count": data["rating_count"],
@@ -128,13 +133,17 @@ async def async_db_test(req, resp):
 @app.start()
 async def init():
     global DB_POOL
-    DB_POOL = await pg.create_pool(
-        dsn=os.environ["DATABASE_URL"],
-        min_size=5,
-        max_size=int(os.environ.get("DATABASE_MAX_CONN", 256)),
-    )
-    print("Pool is created successfully")
+    try:
+        DB_POOL = await pg.create_pool(
+            dsn=os.environ["DATABASE_URL"],
+            min_size=5,
+            max_size=int(os.environ.get("DATABASE_MAX_CONN", 256)),
+        )
+        print("Pool is created successfully")
+    except Exception as e:
+        print("Failed to create pool", e)
+        DB_POOL = None
 
 
 if __name__ == "__main__":
-    app.serve(host="0.0.0.0", port=8080)
+    app.serve(host="0.0.0.0", port=8080, static_path="/data/static")
