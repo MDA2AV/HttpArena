@@ -31,8 +31,9 @@ class App < Roda
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
 
   plugin :default_headers, 'Server' => SERVER_NAME
-  plugin :halt
   plugin :request_headers
+  plugin :plain_hash_response_headers
+  plugin :halt
   plugin :send_file
 
   route do |r|
