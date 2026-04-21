@@ -155,10 +155,30 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
     docker run "${docker_args[@]}" "$IMAGE_NAME"
 
-    # Wait for server to start
+    # Wait for server to start.
+    #
+    # Primary probe is GET /baseline11 over plaintext HTTP/1.1 on $PORT — that
+    # works for the vast majority of frameworks, which all listen on 8080.
+    # H/2-only or H/3-only frameworks (e.g. wtx, which speaks h2c on 8080 or
+    # h2/h3 on 8443 depending on build) never respond to an HTTP/1.1 request
+    # and would otherwise time out. Fall back to GET /baseline2 over HTTPS
+    # with ALPN h2 on $H2PORT when the framework subscribes to any h2 or h3
+    # profile. H/3 servers still advertise h2 on the same TLS listener via
+    # ALPN, so this single fallback covers both cases without requiring
+    # curl to be built with HTTP/3 support.
+    need_tls_probe=false
+    if has_test "baseline-h2" || has_test "static-h2" \
+       || has_test "baseline-h3" || has_test "static-h3"; then
+        need_tls_probe=true
+    fi
+
     echo "[wait] Waiting for server..."
     for i in $(seq 1 30); do
         if curl -s --max-time 2 -o /dev/null -w '' "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
+            break
+        fi
+        if [ "$need_tls_probe" = "true" ] && \
+           curl -sk --http2 --max-time 2 -o /dev/null -w '' "https://localhost:$H2PORT/baseline2?a=1&b=1" 2>/dev/null; then
             break
         fi
         if [ "$i" -eq 30 ]; then
