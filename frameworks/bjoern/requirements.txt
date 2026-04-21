@@ -1,0 +1,4 @@
+bjoern==3.2.2
+orjson==3.10.15
+psycopg[binary]==3.2.4
+psycopg_pool==3.2.6
