@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework standard JSON serialization. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline." tuned="May use alternative JSON libraries (simd-json, sonic-json), pre-computed responses, or framework-specific optimizations." engine="No specific rules." >}}
+{{< type-rules production="Must use the framework standard JSON serialization. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline." tuned="May use alternative JSON libraries (simd-json, sonic-json) and framework-specific optimizations. The JSON body must still be serialized per request from live data — pre-computed / pre-serialized response caches or response-lookup tables are not allowed on either type; they short-circuit the serialization workload the profile exists to measure." engine="No specific rules." >}}
 
 
 The JSON Processing profile measures how efficiently a framework handles a typical real-world API workload: loading data, computing derived fields, and serializing a JSON response.
