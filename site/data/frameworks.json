@@ -87,6 +87,13 @@
     "type": "production",
     "engine": "kestrel"
   },
+  "bjoern": {
+    "dir": "bjoern",
+    "description": "A screamingly fast, ultra-lightweight WSGI server",
+    "repo": "https://github.com/jonashaag/bjoern",
+    "type": "engine",
+    "engine": "libev"
+  },
   "bun-websocket": {
     "dir": "bun-websocket",
     "description": "Bun WebSocket echo server",
@@ -266,7 +273,7 @@
     "dir": "lute",
     "description": "Lute standalone Luau runtime",
     "repo": "https://github.com/luau-lang/lute",
-    "type": "tuned",
+    "type": "production",
     "engine": "lute"
   },
   "mark": {
