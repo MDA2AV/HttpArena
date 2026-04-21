@@ -68,7 +68,7 @@ html.dark .test-card-endpoint { color: #64748b; }
 </style>
 
 <div class="tests-section">
-<h2>20 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
+<h2>26 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
 <p class="tests-sub">Every framework is tested under diverse, realistic workloads — from raw throughput to JSON processing, gRPC unary calls, and WebSocket echo.</p>
 
 <div class="tests-proto">
@@ -155,6 +155,16 @@ html.dark .test-card-endpoint { color: #64748b; }
     <div class="test-card-title">Static Files</div>
     <div class="test-card-desc">Round-robin across 20 static files — CSS, JS, HTML, fonts, images.</div>
     <div class="test-card-endpoint">GET /static/* (h2)</div>
+  </a>
+  <a class="test-card" href="docs/test-profiles/h2/baseline-h2c">
+    <div class="test-card-title">Baseline (h2c)</div>
+    <div class="test-card-desc">Cleartext HTTP/2 prior-knowledge on port 8082. No TLS — models reverse-proxy-to-origin and service mesh internals. Anti-cheat rejects dual-serving HTTP/1.1.</div>
+    <div class="test-card-endpoint">GET /baseline2 (h2c :8082)</div>
+  </a>
+  <a class="test-card" href="docs/test-profiles/h2/json-h2c">
+    <div class="test-card-title">JSON (h2c)</div>
+    <div class="test-card-desc">Same JSON serialization workload as the H/1 json profile, served over cleartext h2 on port 8082.</div>
+    <div class="test-card-endpoint">GET /json/:count (h2c :8082)</div>
   </a>
 </div>
 </div>

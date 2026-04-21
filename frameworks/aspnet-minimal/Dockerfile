@@ -17,6 +17,6 @@ RUN dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb \
 
 WORKDIR /app
 COPY --from=build /app/out .
-EXPOSE 8080 8443/tcp 8443/udp
+EXPOSE 8080 8081 8082 8443/tcp 8443/udp
 
 ENTRYPOINT ["dotnet", "aspnet-minimal.dll"]

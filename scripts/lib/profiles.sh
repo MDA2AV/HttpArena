@@ -24,6 +24,8 @@ declare -A PROFILES=(
     [crud]="1|200|1-31,65-95|4096|crud"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
+    [baseline-h2c]="1|0|0-31,64-95|256,1024|h2c"
+    [json-h2c]="1|0|0-31,64-95|4096|json-h2c"
     [baseline-h3]="1|0|0-31,64-95|64|h3"
     [static-h3]="1|0|0-31,64-95|64|static-h3"
     [unary-grpc]="1|0|0-31,64-95|256,1024|grpc"
@@ -42,6 +44,7 @@ PROFILE_ORDER=(
     upload api-4 api-16
     static async-db crud
     baseline-h2 static-h2
+    baseline-h2c json-h2c
     baseline-h3 static-h3
     gateway-64 gateway-h3
     production-stack
@@ -70,8 +73,8 @@ endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
         static|json-tls)                    echo "wrk" ;;
-        # h2load for all HTTP/2 variants
-        h2|static-h2|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
+        # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
+        h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3
         h3|static-h3|gateway-h3)            echo "h2load-h3" ;;
         # ghz for real gRPC (streaming especially)

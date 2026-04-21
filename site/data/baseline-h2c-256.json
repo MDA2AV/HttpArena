@@ -1,0 +1,21 @@
+[
+  {
+    "framework": "aspnet-minimal",
+    "language": "C#",
+    "rps": 3477809,
+    "avg_latency": "7.32ms",
+    "p99_latency": "7.32ms",
+    "cpu": "6246.6%",
+    "memory": "932MiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "76.91MB/s",
+    "reconnects": 0,
+    "status_2xx": 17528159,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  }
+]

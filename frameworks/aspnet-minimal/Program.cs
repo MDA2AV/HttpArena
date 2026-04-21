@@ -23,6 +23,15 @@ builder.WebHost.ConfigureKestrel(options =>
         lo.Protocols = HttpProtocols.Http1;
     });
 
+    // h2c prior-knowledge listener for the baseline-h2c / json-h2c profiles.
+    // Protocols = Http2 with no UseHttps() gives Kestrel cleartext HTTP/2
+    // from the first byte. Clients that try HTTP/1.1 on this port get
+    // rejected, which is what validate.sh's h2c anti-cheat requires.
+    options.ListenAnyIP(8082, lo =>
+    {
+        lo.Protocols = HttpProtocols.Http2;
+    });
+
     if (hasCert)
     {
         options.ListenAnyIP(8443, lo =>

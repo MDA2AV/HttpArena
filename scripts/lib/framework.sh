@@ -125,6 +125,7 @@ framework_stop() {
 framework_wait_ready() {
     local endpoint="$1"
     local probe_url
+    local -a probe_extra=()
 
     info "waiting for server..."
 
@@ -140,6 +141,13 @@ framework_wait_ready() {
             ;;
         static-h2)
             probe_url="https://localhost:$H2PORT/static/reset.css"
+            ;;
+        h2c|json-h2c)
+            # h2c prior-knowledge — curl sends the h2 connection preface
+            # immediately, no HTTP/1.1 Upgrade step. Server must speak h2c
+            # on port 8082 or the probe fails.
+            probe_url="http://localhost:$H2C_PORT/baseline2?a=1&b=1"
+            probe_extra+=(--http2-prior-knowledge)
             ;;
         static)
             probe_url="http://localhost:$PORT/static/reset.css"
@@ -160,7 +168,7 @@ framework_wait_ready() {
 
     local i
     for i in $(seq 1 30); do
-        if curl -sk -o /dev/null --max-time 2 "$probe_url" 2>/dev/null; then
+        if curl -sk -o /dev/null --max-time 2 "${probe_extra[@]}" "$probe_url" 2>/dev/null; then
             info "server ready"
             return 0
         fi

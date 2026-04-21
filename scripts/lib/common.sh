@@ -16,6 +16,7 @@ DATA_DIR="$ROOT_DIR/data"
 PORT=8080         # h1 plaintext, also h2c for gRPC
 H2PORT=8443       # h2 TLS, h3 QUIC
 H1TLS_PORT=8081   # h1 + TLS (json-tls profile)
+H2C_PORT=8082     # h2c prior-knowledge (baseline-h2c, json-h2c profiles)
 
 # Run settings — can be overridden via env vars at invocation time.
 DURATION="${DURATION:-5s}"

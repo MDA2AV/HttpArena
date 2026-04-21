@@ -33,6 +33,24 @@ h2load_build_args() {
                   -H "Accept-Encoding: br;q=1, gzip;q=0.8"
                   -c "$conns" -m 32 -t "$H2THREADS" -D "$duration")
             ;;
+        h2c)
+            # Prior-knowledge h2c on port 8082. h2load's -p h2c flag forces
+            # HTTP/2 cleartext framing from the first byte (the standard h2
+            # connection preface) — no HTTP/1.1 Upgrade dance. An http://
+            # URL already defaults to h2c in h2load, but -p is explicit so a
+            # misconfigured server can't silently downgrade the benchmark
+            # to HTTP/1.1 and still look "fast".
+            cmd+=("http://localhost:$H2C_PORT/baseline2?a=1&b=1"
+                  -p h2c
+                  -c "$conns" -m 100 -t "$H2THREADS" -D "$duration")
+            ;;
+        json-h2c)
+            # Same (count, m) rotation as the json profile (7 fixed pairs),
+            # served over h2c prior-knowledge on port 8082.
+            cmd+=(-i "$REQUESTS_DIR/json-h2c-uris.txt"
+                  -p h2c
+                  -c "$conns" -m 32 -t "$H2THREADS" -D "$duration")
+            ;;
         gateway-64)
             cmd+=(-i "$REQUESTS_DIR/gateway-64-uris.txt"
                   -H "Accept-Encoding: br;q=1, gzip;q=0.8"

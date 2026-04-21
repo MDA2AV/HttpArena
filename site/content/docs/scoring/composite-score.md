@@ -67,6 +67,8 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Baseline | Yes | Query parsing over TLS with multiplexed streams |
 | Static | Yes | 20 static files served over TLS with multiplexed streams |
+| Baseline h2c | Yes | Query parsing over cleartext h2 on port 8082 (prior-knowledge, anti-cheat rejects dual-serving HTTP/1.1) |
+| JSON h2c | Yes | JSON serialization workload over cleartext h2 on port 8082 |
 
 ### H/3
 
