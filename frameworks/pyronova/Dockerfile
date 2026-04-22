@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir maturin
 # rebuilds from that tag. The full source ships at github, not in this
 # PR, so the PR stays small and the build is byte-for-byte reproducible
 # against a signed git ref.
-ARG PYRONOVA_REF=v2.1.5
+ARG PYRONOVA_REF=v2.2.0
 RUN git clone --depth 1 --branch ${PYRONOVA_REF} \
         https://github.com/moomoo-tech/pyronova.git /build/pyronova
 RUN cd /build/pyronova \

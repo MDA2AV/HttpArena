@@ -193,15 +193,19 @@ PG_SQL = (
 )
 
 
-@app.get("/async-db", gil=True)
+@app.get("/async-db")
 def async_db_endpoint(req: "Request"):
-    # `gil=True` is load-bearing: our Rust PgPool lives in a
-    # OnceLock populated by the MAIN interpreter's import-time
-    # `PgPool.connect(...)`. Sub-interpreters run their own copy of
-    # `app.py` but import the mock pyronova.db stub, so `PG_POOL`
-    # stays None in every worker. Routing through the main interp
-    # gives the handler access to the real pool. Validator fails with
-    # `count=0` if we drop `gil=True`.
+    # Pyronova v2.2.0 added a C-FFI DB bridge (`_pyronova_db_fetch_*`
+    # injected into every sub-interp's globals). The bridge forwards
+    # sqlx calls onto the main-process shared pool while releasing the
+    # calling sub-interp's GIL, so this handler now fans out across the
+    # full sub-interp pool instead of serializing on the main interp.
+    # The 3.7k → target-30k+ rps jump on async-db lives here.
+    #
+    # `PG_POOL is None` still guards the "no DB configured" case — on
+    # sub-interp the `PgPool.connect()` call earlier in the module is a
+    # noop that returns a stateless handle; the real sqlx pool is
+    # initialized exactly once by the main interp's import-time call.
     if PG_POOL is None:
         return _EMPTY_DB_RESPONSE
     q = req.query_params
