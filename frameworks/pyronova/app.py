@@ -320,26 +320,49 @@ def _row_to_full_item(row):
 
 @app.get("/crud/items/{id}", gil=True)
 def crud_get_one(req: "Request"):
-    if PG_POOL is None:
-        return _NOT_FOUND
+    # Arena cache-aside validation reads the X-Cache header (MISS/HIT) out
+    # of every response on this endpoint — including 404s. Leaving it off
+    # makes the runner's `curl | grep ^x-cache` pipeline fail under
+    # `set -o pipefail` and kills the entire test script silently, so we
+    # emit the header on every path below.
     try:
         item_id = int(req.params["id"])
     except (KeyError, ValueError):
-        return _BAD_REQUEST
+        return Response(
+            body="bad request", status_code=400,
+            content_type="application/json", headers={"X-Cache": "MISS"},
+        )
+    if PG_POOL is None:
+        return Response(
+            body="not found", status_code=404,
+            content_type="application/json", headers={"X-Cache": "MISS"},
+        )
     now = _time.monotonic()
     entry = _CRUD_CACHE.get(item_id)
     if entry is not None and entry[1] > now:
-        return entry[0]
+        return Response(
+            body=entry[0], status_code=200,
+            content_type="application/json", headers={"X-Cache": "HIT"},
+        )
     try:
         row = PG_POOL.fetch_one(_CRUD_GET_SQL, item_id)
     except RuntimeError:
         log.warning("/crud/items/%s: fetch_one failed", item_id, exc_info=True)
-        return _NOT_FOUND
+        return Response(
+            body="not found", status_code=404,
+            content_type="application/json", headers={"X-Cache": "MISS"},
+        )
     if row is None:
-        return _NOT_FOUND
-    item = _row_to_full_item(row)
-    _CRUD_CACHE[item_id] = (item, now + _CRUD_TTL_S)
-    return item
+        return Response(
+            body="not found", status_code=404,
+            content_type="application/json", headers={"X-Cache": "MISS"},
+        )
+    item_json = json.dumps(_row_to_full_item(row))
+    _CRUD_CACHE[item_id] = (item_json, now + _CRUD_TTL_S)
+    return Response(
+        body=item_json, status_code=200,
+        content_type="application/json", headers={"X-Cache": "MISS"},
+    )
 
 
 @app.get("/crud/items", gil=True)
