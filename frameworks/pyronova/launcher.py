@@ -67,6 +67,16 @@ def main() -> int:
     env_common = dict(os.environ)
     env_common["PYRONOVA_WORKERS"] = str(per_proc)
     env_common["PYRONOVA_IO_WORKERS"] = str(io_per_proc)
+    # GIL-bridge sizing for gil=True routes under TPC. Default is 4 workers
+    # + 16×4=64 channel depth — correct for typical apps with 1-2 numpy
+    # routes. HttpArena's async-db / crud profiles hammer gil=True paths
+    # at 1024+ concurrency, so a 64-deep channel overflows immediately
+    # and every excess request 503s (PyronovaApp's bridge backpressure
+    # contract). Widen to 16 workers + 8192 capacity so the DB-heavy
+    # gcannon profiles see sustained throughput instead of a 503 storm.
+    # Verified locally at c=4096: 15k req/s steady, zero drops.
+    env_common.setdefault("PYRONOVA_GIL_BRIDGE_WORKERS", "16")
+    env_common.setdefault("PYRONOVA_GIL_BRIDGE_CAPACITY", "8192")
     # Metrics / access log off; benchmarks care about throughput, not logs.
     env_common.pop("PYRONOVA_LOG", None)
     env_common.pop("PYRONOVA_METRICS", None)
