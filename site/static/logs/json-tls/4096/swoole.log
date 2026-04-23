@@ -1,0 +1,3 @@
+[2026-04-23 20:28:27 *53.46]	WARNING	Socket::ssl_accept(): bad SSL client[127.0.0.1:8081], reason=294, error_string=unexpected eof while reading
+[2026-04-23 20:28:35 *92.85]	WARNING	Socket::ssl_accept(): bad SSL client[127.0.0.1:8081], reason=294, error_string=unexpected eof while reading
+[2026-04-23 20:28:42 *38.31]	WARNING	Socket::ssl_accept(): bad SSL client[127.0.0.1:8081], reason=294, error_string=unexpected eof while reading

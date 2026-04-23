@@ -251,6 +251,15 @@
     "status_5xx": 0
   },
   {
+<<<<<<< fix_swoole_error
+    "framework": "Swoole",
+    "language": "PHP",
+    "rps": 776894,
+    "avg_latency": "5.37ms",
+    "p99_latency": "5.37ms",
+    "cpu": "6497.1%",
+    "memory": "355MiB",
+=======
     "framework": "servicestack",
     "language": "C#",
     "rps": 14116,
@@ -258,13 +267,20 @@
     "p99_latency": "199.89ms",
     "cpu": "1190.1%",
     "memory": "548MiB",
+>>>>>>> main
     "connections": 4096,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
+<<<<<<< fix_swoole_error
+    "bandwidth": "2.66GB",
+    "reconnects": 0,
+    "status_2xx": 3962375,
+=======
     "bandwidth": "26.09MB",
     "reconnects": 0,
     "status_2xx": 71994,
+>>>>>>> main
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0

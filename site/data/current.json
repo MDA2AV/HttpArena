@@ -10,7 +10,11 @@
   "docker": "29.3.0",
   "docker_runtime": "runc",
   "governor": "performance",
+<<<<<<< fix_swoole_error
+  "commit": "95b5a97e",
+=======
   "commit": "e5890c72",
+>>>>>>> main
   "tcp": {
     "lo_mtu": "1500",
     "congestion": "cubic",
