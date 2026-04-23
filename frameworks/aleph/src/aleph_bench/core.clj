@@ -18,7 +18,7 @@
            (io.vertx.core Vertx)
            (io.vertx.pgclient PgBuilder PgConnectOptions)
            (io.vertx.sqlclient PoolOptions)
-           (java.io ByteArrayOutputStream)
+           (java.io ByteArrayOutputStream )
            (java.net URI))
   (:gen-class))
 
@@ -34,7 +34,6 @@
 (def ^:private ^:const dataset-path "/data/dataset.json")
 (def ^:private ^:const dataset-large-path "/data/dataset-large.json")
 (def ^:private ^:const db-path "/data/benchmark.db")
-(def ^:private ^:const static-dir "/data/static")
 (def ^:private ^:const param-min "min")
 (def ^:private ^:const param-max "max")
 (def ^:private ^:const param-limit "limit")
@@ -74,7 +73,9 @@
                           end (if (neg? amp) (.length qs) amp)
                           eq (.indexOf qs (int \=) i)]
                       (if (and (>= eq 0) (< eq end))
-                        (recur (inc end) (+ sum (try (Long/parseLong (subs qs (inc eq) end)) (catch Exception _ 0))))
+                        (recur (inc end)
+                               (+ sum (long (try (Long/parseLong (subs qs (inc eq) end))
+                                                 (catch Exception _ 0)))))
                         (recur (inc end) sum)))))))
 
 (defn- json-response [data]
