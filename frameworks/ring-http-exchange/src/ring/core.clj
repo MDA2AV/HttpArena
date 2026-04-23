@@ -8,7 +8,7 @@
             [next.jdbc :as jdbc]
             [ring-http-exchange.core :as server])
   (:import (com.zaxxer.hikari HikariConfig HikariDataSource)
-           (java.io ByteArrayOutputStream InputStream)
+           (java.io BufferedInputStream ByteArrayOutputStream InputStream)
            (java.net URI)
            (java.util.concurrent Executors)
            (java.util.zip GZIPOutputStream))
@@ -64,15 +64,18 @@
 
 (defn- sum-params [^String qs]
   (if (nil? qs) 0
-                (loop [i 0 sum 0]
+                (loop [i 0 total-sum 0]
                   (if (>= i (.length qs))
-                    sum
+                    total-sum
                     (let [amp (.indexOf qs (int \&) i)
                           end (if (neg? amp) (.length qs) amp)
                           eq (.indexOf qs (int \=) i)]
                       (if (and (>= eq 0) (< eq end))
-                        (recur (inc end) (+ sum (try (Long/parseLong (subs qs (inc eq) end)) (catch Exception _ 0))))
-                        (recur (inc end) sum)))))))
+                        (recur (inc end)
+                               (+ total-sum
+                                  (long (try (Long/parseLong (subs qs (inc eq) end))
+                                             (catch Exception _ 0)))))
+                        (recur (inc end) total-sum)))))))
 
 (defn- gzip-bytes [^bytes data]
   (let [baos (ByteArrayOutputStream. (alength data))
@@ -119,14 +122,11 @@
         sqlite-tag-parser #(json/read-value % json/keyword-keys-object-mapper)
         sqlite-active #(== 1 (long %))
         pg-tag-parser #(json/read-value (str %))
-        db-query-fn (when (.exists (io/file db-path))
+        db-file-exists? (.exists (io/file db-path))
+        db-query-fn (when db-file-exists?
                       (boa/build-query adapter "sql/db-query"))
-        tl-ds (ThreadLocal.)
-        get-sqlite-ds (fn []
-                        (or (.get tl-ds)
-                            (let [ds (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path :read-only true})]
-                              (.set tl-ds ds)
-                              ds)))
+        sqlite-ds (when db-file-exists?
+                    (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path :read-only true}))
         pg-state (when-let [url (System/getenv "DATABASE_URL")]
                    (try
                      (let [uri (URI. (str/replace url pg-prefix pg-replace))
@@ -135,12 +135,12 @@
                            db (subs (.getPath uri) 1)
                            [user pass] (str/split (.getUserInfo uri) #":" 2)
                            ds (let [cfg (doto (HikariConfig.)
-                                         (.setJdbcUrl (str "jdbc:postgresql://" host ":" port "/" db))
-                                         (.setUsername user)
-                                         (.setPassword (or pass ""))
-                                         (.setMaximumPoolSize (try (Integer/parseInt (System/getenv "DATABASE_MAX_CONN"))
-                                                          (catch Exception _ 256)))
-                                         (.setReadOnly true))]
+                                          (.setJdbcUrl (str "jdbc:postgresql://" host ":" port "/" db))
+                                          (.setUsername user)
+                                          (.setPassword (or pass ""))
+                                          (.setMaximumPoolSize (try (Integer/parseInt (System/getenv "DATABASE_MAX_CONN"))
+                                                                    (catch Exception _ 256)))
+                                          (.setReadOnly true))]
                                 (HikariDataSource. cfg))]
                        {:ds    ds
                         :query (boa/build-query adapter "sql/pg-query")})
@@ -161,21 +161,23 @@
                                              count (min count (long (clojure.core/count dataset)))
                                              params (parse-qs (:query-string req))
                                              m (parse-long-param params param-m 1)
-                                             items (mapv #(process-item % m) (subvec dataset 0 count))
+                                             items (map #(process-item % m) (subvec dataset 0 count))
                                              body-bytes (json/write-value-as-bytes {:items items :count (clojure.core/count items)})
                                              ae (some (fn [[k v]] (when (.equalsIgnoreCase ^String k ae-header) v)) (:headers req))]
                                          (if (and ae (.contains ^String ae enc-gzip))
                                            {:status 200 :headers json-gzip-headers :body (gzip-bytes body-bytes)}
                                            {:status 200 :headers json-headers :body (String. body-bytes)}))))]
            "/upload"           [(POST (fn [req]
-                                        (text-response (alength (.readAllBytes ^InputStream (:body req))))))]
+                                        (with-open [^InputStream in (:body req)]
+                                          (text-response (alength (.readAllBytes in))))))]
            "/db"               [(GET (fn [req]
                                        (if db-query-fn
                                          (let [params (parse-qs (:query-string req))
                                                min-p (parse-double-param params param-min 10.0)
                                                max-p (parse-double-param params param-max 50.0)
                                                limit (parse-long-param params param-limit 50)
-                                               items (try (mapv #(transform-row % sqlite-tag-parser sqlite-active) (db-query-fn (get-sqlite-ds) {:min min-p :max max-p :limit limit}))
+                                               items (try (map #(transform-row % sqlite-tag-parser sqlite-active)
+                                                               (db-query-fn sqlite-ds {:min min-p :max max-p :limit limit}))
                                                           (catch Exception _ []))]
                                            (json-response {:items items :count (clojure.core/count items)}))
                                          empty-db-response)))]
@@ -185,7 +187,8 @@
                                                min-p (parse-double-param params param-min 10.0)
                                                max-p (parse-double-param params param-max 50.0)
                                                limit (parse-long-param params param-limit 50)
-                                               items (try (mapv #(transform-row % pg-tag-parser identity) (pg-query pg-ds {:min min-p :max max-p :limit limit}))
+                                               items (try (map #(transform-row % pg-tag-parser identity)
+                                                               (pg-query pg-ds {:min min-p :max max-p :limit limit}))
                                                           (catch Exception _ []))]
                                            (json-response {:items items :count (clojure.core/count items)}))
                                          empty-db-response)))]

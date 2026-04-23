@@ -13,8 +13,4 @@ COPY --from=builder /app/target/ring-0.1.0-standalone.jar /app/app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", \
-  "-server", \
-  "-XX:+UseParallelGC", \
-  "-XX:MaxRAMPercentage=50", \
-  "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
