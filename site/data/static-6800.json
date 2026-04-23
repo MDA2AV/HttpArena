@@ -505,25 +505,6 @@
     "status_5xx": 0
   },
   {
-    "framework": "lute",
-    "language": "Luau",
-    "rps": 78436,
-    "avg_latency": "88.05ms",
-    "p99_latency": "88.05ms",
-    "cpu": "2922.6%",
-    "memory": "562MiB",
-    "connections": 6800,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "1.19GB",
-    "reconnects": 0,
-    "status_2xx": 400091,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
     "framework": "mark",
     "language": "PHP",
     "rps": 282303,
