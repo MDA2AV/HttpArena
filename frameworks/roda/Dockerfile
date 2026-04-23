@@ -1,7 +1,7 @@
 FROM ruby:4.0-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libsqlite3-dev libjemalloc2 && \
+    apt-get install -y --no-install-recommends build-essential libpq-dev libjemalloc2 && \
     rm -rf /var/lib/apt/lists/*
 
 # Use Jemalloc
@@ -21,6 +21,6 @@ RUN bundle install --jobs=$(nproc)
 
 COPY . .
 
-EXPOSE 8080
+EXPOSE 8080 8081
 
 CMD ["bundle", "exec", "puma", "-C", "puma.rb"]
