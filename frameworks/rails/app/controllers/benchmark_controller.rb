@@ -44,24 +44,8 @@ class BenchmarkController < ActionController::API
       d.merge(total: d[:price] * d[:quantity] * m)
     end
 
-    result = JSON.generate(items: items, count: items.length)
 
-    if accept_encodings = request.headers['Accept-Encoding']
-      types = accept_encodings.split(',').map(&:strip)
-      if types.include? 'gzip'
-        sio = StringIO.new
-        gz = Zlib::GzipWriter.new(sio, 1)
-        gz.write(result)
-        gz.close
-        response.headers['content-type'] = 'application/json'
-        response.headers['content-encoding'] = 'gzip'
-        send_data sio.string, disposition: :inline
-      else
-        render json: result
-      end
-    else
-      render json: result
-    end
+    render json: JSON.generate(items: items, count: items.length)
   end
 
   def async_db
