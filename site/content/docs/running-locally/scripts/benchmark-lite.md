@@ -12,8 +12,8 @@ weight: 4
 | Default load generators | Native binaries | **Always** docker (forced — no env override) |
 | CPU pinning | Per-profile `--cpuset-cpus` | None — all containers see every core |
 | `THREADS` default | 64 | `nproc / 2` |
-| `H2THREADS` / `H3THREADS` default | 128 / 64 | Same as `THREADS` |
-| Profile set | 21 profiles | 15 — skips `api-4`, `api-16`, `json-tls`, `gateway-64`, `stream-grpc`, `stream-grpc-tls` |
+| `H2THREADS` / `H3THREADS` default | 64 / 64 | Same as `THREADS` |
+| Profile set | 26 profiles | 15 — skips `api-4`, `api-16`, `json-tls`, `crud`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `stream-grpc`, `stream-grpc-tls` |
 | Connection counts | Varies (512, 1024, 4096, 16384, …) | One per profile (mostly 512; upload 128; h3 64) |
 | Framework selection | One framework, always | Optional — runs every enabled framework if omitted |
 
