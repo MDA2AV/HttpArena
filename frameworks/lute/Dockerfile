@@ -1,4 +1,4 @@
-ARG LUTE_VERSION=1.0.1-nightly.20260421
+ARG LUTE_VERSION=1.0.1-nightly.20260424
 
 FROM buildpack-deps:curl AS bin
 
