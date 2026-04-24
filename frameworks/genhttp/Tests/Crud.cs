@@ -13,7 +13,7 @@ public class Crud
 {
     private static readonly NpgsqlDataSource? PgDataSource = Postgres.OpenPool();
 
-    private static readonly ConcurrentDictionary<int, ProcessedItem> Cache = new();
+    private static readonly ConcurrentDictionary<int, ProcessedItem> Cache = new(Environment.ProcessorCount, 50_000);
 
     [ResourceMethod]
     public async Task<CrudListResponse> List(string category = "electronics", int page = 1, int limit = 10)
