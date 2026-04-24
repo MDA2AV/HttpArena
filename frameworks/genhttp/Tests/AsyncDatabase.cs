@@ -1,39 +1,23 @@
 using System.Text.Json;
-
+using genhttp.Infrastructure;
 using GenHTTP.Modules.Webservices;
-
-using Npgsql;
 
 namespace genhttp.Tests;
 
 public class AsyncDatabase
 {
-    private static readonly NpgsqlDataSource? PgDataSource = OpenPgPool();
-
-    private static NpgsqlDataSource? OpenPgPool()
-    {
-        var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-        if (string.IsNullOrEmpty(dbUrl)) return null;
-        try
-        {
-            var uri = new Uri(dbUrl);
-            var userInfo = uri.UserInfo.Split(':');
-            var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size=256;Minimum Pool Size=64;Multiplexing=true;No Reset On Close=true;Max Auto Prepare=4;Auto Prepare Min Usages=1";
-            var builder = new NpgsqlDataSourceBuilder(connStr);
-            return builder.Build();
-        }
-        catch { return null; }
-    }
 
     [ResourceMethod]
     public async Task<ListWithCount<object>> Compute(int min = 10, int max = 50, int limit = 50)
     {
-        if (PgDataSource == null)
+        var pool = Postgres.Pool;
+
+        if (pool == null)
         {
             return new ListWithCount<object>(new List<object>());
         }
 
-        await using var cmd = PgDataSource.CreateCommand(
+        await using var cmd = pool.CreateCommand(
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
 
         cmd.Parameters.AddWithValue(min);

@@ -13,6 +13,7 @@
     <PackageReference Include="GenHTTP.Modules.Layouting" Version="10.5.0" />
     <PackageReference Include="GenHTTP.Modules.Webservices" Version="10.5.0" />
     <PackageReference Include="GenHTTP.Modules.Websockets" Version="10.5.0" />
+    <PackageReference Include="GenHTTP.Modules.Caching" Version="10.5.0" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
   </ItemGroup>
 </Project>

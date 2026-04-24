@@ -13,6 +13,9 @@ public static class Project
 {
     public static IHandlerBuilder Create()
     {
+        var crud = Layout.Create()
+                         .AddService<Crud>("items");
+
         var app = Layout.Create()
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
@@ -20,6 +23,7 @@ public static class Project
                         .AddService<Upload>("upload")
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
+                        .Add("crud", crud)
                         .AddStaticFiles()
                         .AddWebsocket();
 
