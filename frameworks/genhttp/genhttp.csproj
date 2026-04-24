@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="GenHTTP.Core" Version="10.5.0" />
-    <PackageReference Include="GenHTTP.Modules.Functional" Version="10.5.0" />
+    <PackageReference Include="GenHTTP.Modules.ServerCaching" Version="10.5.0" />
     <PackageReference Include="GenHTTP.Modules.IO" Version="10.5.0" />
     <PackageReference Include="GenHTTP.Modules.Layouting" Version="10.5.0" />
     <PackageReference Include="GenHTTP.Modules.Webservices" Version="10.5.0" />
