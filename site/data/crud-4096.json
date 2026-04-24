@@ -36,5 +36,24 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "genhttp",
+    "language": "C#",
+    "rps": 0,
+    "avg_latency": "",
+    "p99_latency": "",
+    "cpu": "1928.1%",
+    "memory": "1.5GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "0",
+    "reconnects": 0,
+    "status_2xx": 0,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
