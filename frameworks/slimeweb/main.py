@@ -38,9 +38,9 @@ def baseline_test(req, resp):
     return resp.plain(str(result))
 
 
-@app.route("/pipeline", method="GET")
-def pipeline_test(req, resp):
-    return resp.plain("ok")
+@app.static_route("/pipeline", method="GET")
+def pipeline_test():
+    return "ok"
 
 
 # body_size by default it will read 10MB
