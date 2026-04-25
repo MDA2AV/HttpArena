@@ -270,6 +270,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sinatra",
+    "language": "Ruby",
+    "rps": 198495,
+    "avg_latency": "20.63ms",
+    "p99_latency": "20.63ms",
+    "cpu": "6499.0%",
+    "memory": "7.5GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "683.13MB",
+    "reconnects": 0,
+    "status_2xx": 1012490,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "Swoole",
     "language": "PHP",
     "rps": 776894,
