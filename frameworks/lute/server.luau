@@ -2,10 +2,10 @@ local vm = require("@lute/vm")
 local task = require("@std/task")
 local system = require("@std/system")
 
-local cpuCount = system.threadCount() / 2
+local threadCount = system.threadCount()
 
-for _ = 1, cpuCount do
+for _ = 1, threadCount do
 	task.spawn(vm.create("./serve").serve)
 end
 
-print(`Application started ({cpuCount} server threads).`)
+print(`Application started ({threadCount} server threads).`)
