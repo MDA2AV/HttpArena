@@ -24,26 +24,18 @@ DB_POOL = None
 
 @app.route("/baseline11", method=["GET", "POST"])
 def baseline_test(req, resp):
-    if req.method == "GET":
-        result = 0
-        for q_val in req.query.values():
-            try:
-                result += int(q_val)
-            except ValueError:
-                pass
-        return resp.plain(str(result))
-    else:
-        result = 0
-        for q_val in req.query.values():
-            try:
-                result += int(q_val)
-            except ValueError:
-                pass
+    result = 0
+    for q_val in req.query.values():
+        try:
+            result += int(q_val)
+        except ValueError:
+            pass
+    if req.method == "POST":
         try:
             result += int(req.text)
         except ValueError:
             pass
-        return resp.plain(str(result))
+    return resp.plain(str(result))
 
 
 @app.route("/pipeline", method="GET")
@@ -66,29 +58,28 @@ def json_test(req, resp):
     global JSON_DATASET
     count = int(req.params["count"])
     multiplier = int(req.query["m"])
-    result = []
-    for data in JSON_DATASET[:count]:
-        result.append(
-            {
-                "id": data["id"],
-                "name": data["name"],
-                "category": data["category"],
-                "price": data["price"],
-                "quantity": data["quantity"],
-                "active": data["active"],
-                "tags": data["tags"],
-                "rating": {
-                    "score": data["rating"]["score"],
-                    "count": data["rating"]["count"],
-                },
-                "total": data["price"] * data["quantity"] * multiplier,
-            }
-        )
+    result = [
+        {
+            "id": data["id"],
+            "name": data["name"],
+            "category": data["category"],
+            "price": data["price"],
+            "quantity": data["quantity"],
+            "active": data["active"],
+            "tags": data["tags"],
+            "rating": {
+                "score": data["rating"]["score"],
+                "count": data["rating"]["count"],
+            },
+            "total": data["price"] * data["quantity"] * multiplier,
+        }
+        for data in JSON_DATASET[:count]
+    ]
+
     return resp.json({"items": result, "count": count})
 
 
 # Websocket in slime are event driven
-# echo back based on the message type
 @app.websocket("/ws")
 def websocket_test(req, resp):
     def echo_me(msg):
@@ -110,25 +101,31 @@ async def async_db_test(req, resp):
     limit = int(req.query["limit"])
     result = []
     data_result = None
-    async with DB_POOL.acquire() as conn:
-        data_result = await conn.fetch(QUERY_STMT, min, max, limit)
-    for data in data_result:
-        result.append(
-            {
-                "id": data["id"],
-                "name": data["name"],
-                "category": data["category"],
-                "price": data["price"],
-                "quantity": data["quantity"],
-                "active": data["active"],
-                "tags": json.loads(data["tags"]),
-                "rating": {
-                    "score": data["rating_score"],
-                    "count": data["rating_count"],
-                },
-            }
-        )
+    data_result = await DB_POOL.fetch(QUERY_STMT, min, max, limit)
+    result = [
+        {
+            "id": data["id"],
+            "name": data["name"],
+            "category": data["category"],
+            "price": data["price"],
+            "quantity": data["quantity"],
+            "active": data["active"],
+            "tags": json.loads(data["tags"]),
+            "rating": {
+                "score": data["rating_score"],
+                "count": data["rating_count"],
+            },
+        }
+        for data in data_result
+    ]
     return resp.json({"items": result, "count": len(result)})
+
+
+class NoResetConnection(pg.Connection):
+    __slots__ = ()
+
+    def get_reset_query(self):
+        return ""
 
 
 @app.start()
@@ -139,6 +136,7 @@ async def init():
             dsn=os.environ["DATABASE_URL"],
             min_size=5,
             max_size=int(os.environ.get("DATABASE_MAX_CONN", 256)),
+            connection_class=NoResetConnection,
         )
         print("Pool is created successfully")
     except Exception as e:
