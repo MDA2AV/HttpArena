@@ -1,7 +1,7 @@
 FROM ruby:4.0-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libsqlite3-dev libpq-dev libyaml-dev libjemalloc2 libpq5 && \
+    apt-get install -y --no-install-recommends build-essential libpq-dev libyaml-dev libjemalloc2 libpq5 && \
     rm -rf /var/lib/apt/lists/*
 
 # Use Jemalloc
@@ -15,7 +15,8 @@ ENV RAILS_MAX_THREADS=3
 
 WORKDIR /app
 
-COPY Gemfile .
+COPY Gemfile* .
+RUN bundle config set deployment 'true'
 RUN bundle install --jobs=$(nproc)
 
 COPY . .
@@ -25,4 +26,4 @@ EXPOSE 8080
 ENV THRUSTER_TARGET_PORT=8080
 ENV THRUSTER_LOG_REQUESTS=false
 
-CMD ["thrust", "bin/rails", "s"]
+CMD ["bin/thrust", "bin/rails", "s"]
