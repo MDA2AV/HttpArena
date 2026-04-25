@@ -96,8 +96,6 @@ jobs:
             -f framework=${{ steps.parse.outputs.framework }} \
             -f profile="${{ steps.parse.outputs.profile }}" \
             -f save="${{ steps.parse.outputs.save }}"
-
-          gh pr comment "${{ steps.parse.outputs.pr }}" --body "🚀 Benchmark run triggered for \`${{ steps.parse.outputs.framework }}\`${{ steps.parse.outputs.profile && format(' (test: {0})', steps.parse.outputs.profile) || ' (all tests)' }}${{ steps.parse.outputs.save == 'true' && ' with --save' || '' }}. Results will be posted here when done."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
