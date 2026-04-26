@@ -1,0 +1,51 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    concurrent-ruby (1.3.6)
+    connection_pool (3.0.2)
+    json (2.19.3)
+    nio4r (2.7.5)
+    pg (1.6.3)
+    pg (1.6.3-arm64-darwin)
+    pg (1.6.3-x86_64-linux)
+    puma (7.2.0)
+      nio4r (~> 2.0)
+    rack (3.2.5)
+    roda (3.102.0)
+      rack
+
+PLATFORMS
+  aarch64-linux-gnu
+  aarch64-linux-musl
+  arm-linux-gnu
+  arm-linux-musl
+  arm64-darwin
+  x86-linux-gnu
+  x86-linux-musl
+  x86_64-darwin
+  x86_64-linux
+  x86_64-linux-gnu
+  x86_64-linux-musl
+
+DEPENDENCIES
+  concurrent-ruby
+  connection_pool
+  json
+  pg (~> 1.5)
+  puma (~> 7.2)
+  roda (~> 3.102)
+
+CHECKSUMS
+  concurrent-ruby (1.3.6) sha256=6b56837e1e7e5292f9864f34b69c5a2cbc75c0cf5338f1ce9903d10fa762d5ab
+  connection_pool (3.0.2) sha256=33fff5ba71a12d2aa26cb72b1db8bba2a1a01823559fb01d29eb74c286e62e0a
+  json (2.19.3) sha256=289b0bb53052a1fa8c34ab33cc750b659ba14a5c45f3fcf4b18762dc67c78646
+  nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
+  pg (1.6.3) sha256=1388d0563e13d2758c1089e35e973a3249e955c659592d10e5b77c468f628a99
+  pg (1.6.3-arm64-darwin) sha256=7240330b572e6355d7c75a7de535edb5dfcbd6295d9c7777df4d9dddfb8c0e5f
+  pg (1.6.3-x86_64-linux) sha256=5d9e188c8f7a0295d162b7b88a768d8452a899977d44f3274d1946d67920ae8d
+  puma (7.2.0) sha256=bf8ef4ab514a4e6d4554cb4326b2004eba5036ae05cf765cfe51aba9706a72a8
+  rack (3.2.5) sha256=4cbd0974c0b79f7a139b4812004a62e4c60b145cba76422e288ee670601ed6d3
+  roda (3.102.0) sha256=b2156fff6d2b1b52bfac39e4ccde0d820a26594f069c3d9e99cc0853f7ee7dcc
+
+BUNDLED WITH
+  4.0.6

@@ -15,7 +15,8 @@ ENV MAX_THREADS=4
 
 WORKDIR /app
 
-COPY Gemfile .
+COPY Gemfile* .
+RUN bundle config set deployment 'true'
 RUN bundle install --jobs=$(nproc)
 
 COPY . .
