@@ -109,8 +109,15 @@ html.dark .round-toggle:hover { color:#94a3b8; border-color:#475569; }
       return;
     }
 
-    // Always visible: commit + CPU
-    commitEl.innerHTML = iconGit + ' <code style="font-size:0.75rem;background:rgba(124,58,237,0.08);padding:0.1rem 0.35rem;border-radius:3px;">' + meta.commit + '</code>';
+    // Always visible: CPU. Commit is shown for archived rounds only — the
+    // "current" round no longer carries a commit field (it churned per PR
+    // and was the dominant source of merge conflicts).
+    if (meta.commit) {
+      commitEl.innerHTML = iconGit + ' <code style="font-size:0.75rem;background:rgba(124,58,237,0.08);padding:0.1rem 0.35rem;border-radius:3px;">' + meta.commit + '</code>';
+      commitEl.style.display = '';
+    } else {
+      commitEl.style.display = 'none';
+    }
     var ramInfo = meta.cores + 'C/' + (meta.threads || meta.cores) + 'T';
     ramInfo += ', ' + meta.ram + ' RAM';
     if (meta.ram_speed) ramInfo += ' @ ' + meta.ram_speed;
