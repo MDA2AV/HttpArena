@@ -305,5 +305,5 @@ if __name__ == "__main__":
     fastpysgi.server.read_buffer_size = 256*1024
     fastpysgi.server.max_content_length = 31_000_000
     fastpysgi.server.backlog = 16*1024
-    fastpysgi.server.loop_timeout = 1
+    fastpysgi.server.loop_timeout = 1000
     fastpysgi.run(app, workers = WRK_COUNT, loglevel = 0)

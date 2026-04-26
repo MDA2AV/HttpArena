@@ -1,5 +1,5 @@
-#fastpysgi==0.6  # v0.6 is bugged
-git+https://github.com/remittor/fastpysgi.git@fd71875920d55c03b347ff5b19dc9d93b5983a83#egg=fastpysgi
+#fastpysgi==0.7
+git+https://github.com/remittor/fastpysgi.git@4b4268517a503f51d9e90ecf8a9e47bff79b491f#egg=fastpysgi
 orjson==3.10.15
 psycopg[binary]==3.2.4
 psycopg_pool==3.2.6
