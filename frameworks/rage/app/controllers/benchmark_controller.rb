@@ -31,10 +31,6 @@ class BenchmarkController < RageController::API
     headers["server"] = SERVER_NAME
   end
 
-  def pipeline
-    render plain: 'ok'
-  end
-
   def baseline_one
     total = params[:a].to_i + params[:b].to_i
     if request.post?
