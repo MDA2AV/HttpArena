@@ -308,6 +308,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "roda",
+    "language": "Ruby",
+    "rps": 223003,
+    "avg_latency": "18.35ms",
+    "p99_latency": "18.35ms",
+    "cpu": "6604.8%",
+    "memory": "5.2GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "771.73MB",
+    "reconnects": 0,
+    "status_2xx": 1137061,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "servicestack",
     "language": "C#",
     "rps": 14116,
