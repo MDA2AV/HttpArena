@@ -443,7 +443,7 @@
   },
   "simplew": {
     "dir": "simplew",
-    "description": "SimpleW is Web server Library in .NET Core. Powerfully Simple and Blazingly Fast.",
+    "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
     "repo": "https://github.com/stratdev3/SimpleW",
     "type": "tuned",
     "engine": "simplew"
@@ -452,7 +452,7 @@
     "dir": "sinatra",
     "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
     "repo": "https://github.com/sinatra/sinatra",
-    "type": "tuned",
+    "type": "production",
     "engine": "puma"
   },
   "sisk": {
@@ -531,7 +531,7 @@
     "dir": "userver",
     "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
     "repo": "https://github.com/userver-framework/userver",
-    "type": "tuned",
+    "type": "production",
     "engine": "userver"
   },
   "uvicorn": {

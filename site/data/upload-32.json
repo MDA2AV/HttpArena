@@ -699,6 +699,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "simplew",
+    "language": "C#",
+    "rps": 1782,
+    "avg_latency": "17.91ms",
+    "p99_latency": "61.00ms",
+    "cpu": "2954.6%",
+    "memory": "2.3GiB",
+    "connections": 32,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "256.24KB/s",
+    "input_bw": "14.13GB/s",
+    "reconnects": 1780,
+    "status_2xx": 8914,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "sinatra",
     "language": "Ruby",
     "rps": 956,

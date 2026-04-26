@@ -56,5 +56,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "simplew",
+    "language": "C#",
+    "rps": 416698,
+    "avg_latency": "9.73ms",
+    "p99_latency": "34.90ms",
+    "cpu": "3812.1%",
+    "memory": "1.1GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "152.61MB/s",
+    "input_bw": "35.77MB/s",
+    "reconnects": 29226,
+    "status_2xx": 6250481,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
