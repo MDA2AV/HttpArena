@@ -191,11 +191,8 @@ html.dark .lb-sortable:hover { color: #60a5fa !important; }
 html.dark .lb-sortable.sort-asc::after { color: #60a5fa; }
 html.dark .lb-sortable.sort-desc::after { color: #60a5fa; }
 
-/* Table — overflow-x:auto handles the json-comp panel which uses an
-   all-fixed-width grid (~76rem) that exceeds the card width at typical
-   desktop zooms. Other profiles have a 1fr flex column and don't trigger
-   the scrollbar. */
-.lb { width: 100%; font-family: inherit; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+/* Table */
+.lb { width: 100%; font-family: inherit; }
 .lb-row {
   display: grid;
   grid-template-columns: 2.5rem 11rem 5.5rem 4.95rem 3.5rem 7rem 5.5rem 4rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
@@ -359,6 +356,7 @@ html.dark .lb-card-title { color: #ffffff; }
   .lb-tab { padding: 0.5rem 0.4rem; font-size: 0.75rem; }
   .lb-filters { flex-wrap: wrap; }
   .lb-search-input { width: 100%; }
+  .lb { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   .lb-row { min-width: 58rem; }
   .lb-row.lb-row-reconn { min-width: 64rem; }
   .lb-popup { padding: 1.5rem; max-width: 95vw; }

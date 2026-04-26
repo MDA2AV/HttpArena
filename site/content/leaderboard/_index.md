@@ -627,3 +627,42 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
   window.addEventListener('hashchange', restore);
 })();
 </script>
+
+<style>
+/* Horizontal scroll for all leaderboard tables (.lb). Wide profiles like
+   json-comp (14 fixed-width columns, no flex) overflow the card at typical
+   desktop widths. The script below inserts a thin mirror scrollbar above
+   each .lb so the user doesn't have to scroll the page down to find the
+   horizontal scrollbar on tall tables. The .lb's own native scrollbar is
+   hidden (we drive it via the mirror), but native wheel/touch/keyboard
+   scroll on .lb still works. */
+.lb { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.lb::-webkit-scrollbar { display: none; }
+.lb-scrollbar-top { overflow-x: auto; overflow-y: hidden; height: 12px; margin-bottom: 0.15rem; }
+.lb-scrollbar-top > div { height: 1px; }
+</style>
+<script>
+(function() {
+  function attach(lb) {
+    if (lb.dataset.lbSyncTop) return;
+    var top = document.createElement('div');
+    top.className = 'lb-scrollbar-top';
+    var track = document.createElement('div');
+    top.appendChild(track);
+    lb.parentNode.insertBefore(top, lb);
+    var ignore = false;
+    top.addEventListener('scroll', function() { if (ignore) return; ignore = true; lb.scrollLeft = top.scrollLeft; requestAnimationFrame(function() { ignore = false; }); });
+    lb.addEventListener('scroll', function() { if (ignore) return; ignore = true; top.scrollLeft = lb.scrollLeft; requestAnimationFrame(function() { ignore = false; }); });
+    function resize() { track.style.width = lb.scrollWidth + 'px'; top.style.display = lb.scrollWidth > lb.clientWidth ? '' : 'none'; }
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(lb);
+    resize();
+    lb.dataset.lbSyncTop = '1';
+  }
+  function attachAll() { document.querySelectorAll('.lb').forEach(attach); }
+  if (document.readyState === 'complete') attachAll();
+  else window.addEventListener('load', attachAll);
+  /* Tab/filter switches and dynamic re-renders create new .lb elements;
+     a low-frequency sweep catches them without hooking every event. */
+  setInterval(attachAll, 2000);
+})();
+</script>
