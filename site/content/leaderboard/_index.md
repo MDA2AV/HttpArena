@@ -123,7 +123,8 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
 </div>
 
 <div id="timeline-link-bar" style="display:flex; margin-top:0.5rem; padding:0.45rem 0.9rem; justify-content:flex-end; align-items:center; gap:0.5rem; font-size:0.8rem; color:#64748b;">
-  <span id="timeline-link-prefix">📈 Browse historical benchmark results on</span>
+  <span aria-hidden="true">📈</span>
+  <span id="timeline-link-prefix">Browse historical benchmark results on</span>
   <a id="timeline-link"
      href="https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/"
      target="_blank" rel="noopener"
@@ -137,9 +138,7 @@ html.dark #timeline-link { color:#a78bfa; }
 <script>
 (function() {
   var TIMELINE_BASE = 'https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/';
-  /* Per-version: wrapper id and panel class. Composite has no entry here —
-     it doesn't map onto a single test+conns pair, so the bar keeps the
-     generic prefix + home URL for that view. */
+  /* Per-version: wrapper id and panel class. Composite has no entry here. */
   var VERSION_CFG = {
     h1iso:   { wrapper: 'lb-h1iso-wrapper',   panel: 'lb-panel'         },
     h1wk:    { wrapper: 'lb-h1wk-wrapper',    panel: 'lb-panel'         },
@@ -149,16 +148,14 @@ html.dark #timeline-link { color:#a78bfa; }
     grpc:    { wrapper: 'lb-grpc-wrapper',    panel: 'lb-panel-grpc'    },
     ws:      { wrapper: 'lb-ws-wrapper',      panel: 'lb-panel-ws'      }
   };
-  var GENERIC_PREFIX  = '📈 Browse historical benchmark results on';
-  var SPECIFIC_PREFIX = '📈 Track this test over time:';
-
+  var GENERIC_PREFIX  = 'Browse historical benchmark results on';
+  var SPECIFIC_PREFIX = 'Track this test over time:';
   function setGeneric() {
     var p = document.getElementById('timeline-link-prefix');
     var l = document.getElementById('timeline-link');
     if (p) p.textContent = GENERIC_PREFIX;
     if (l) l.href = TIMELINE_BASE;
   }
-
   function update() {
     var verEl = document.querySelector('.http-ver.active');
     var v = verEl ? verEl.dataset.ver : 'composite';
@@ -172,11 +169,8 @@ html.dark #timeline-link { color:#a78bfa; }
     var connTab = panel.querySelector('.lb-conn-tab.active');
     var conns = connTab ? connTab.dataset.conns : null;
     if (!conns || conns === 'best') {
-      /* "Best" aggregates across conn counts; pick the highest numeric
-         value declared on the panel for the timeline deep link. */
-      var declared = (panel.dataset.conns || '').split(',')
-        .filter(function(c) { return /^\d+$/.test(c); })
-        .map(Number);
+      /* "Best" aggregates across conn counts; pick the highest numeric value declared on the panel for the timeline deep link. */
+      var declared = (panel.dataset.conns || '').split(',').filter(function(c) { return /^\d+$/.test(c); }).map(Number);
       if (!declared.length) { setGeneric(); return; }
       conns = Math.max.apply(null, declared);
     }
@@ -185,10 +179,7 @@ html.dark #timeline-link { color:#a78bfa; }
     if (p) p.textContent = SPECIFIC_PREFIX;
     if (l) l.href = TIMELINE_BASE + '#test=' + test + '-' + conns;
   }
-
-  /* Poll once a frame for the first 2 seconds in case shortcode scripts
-     mutate state asynchronously, then settle into a low-frequency check
-     that catches any tab/filter interaction we didn't event-hook. */
+  /* Poll once a frame for the first 2 seconds in case shortcode scripts mutate state asynchronously, then settle into a low-frequency check that catches any tab/filter interaction we didn't event-hook. */
   var ticks = 0;
   var fast = setInterval(function() {
     update();
