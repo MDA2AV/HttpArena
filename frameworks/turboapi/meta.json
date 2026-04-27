@@ -1,0 +1,16 @@
+{
+  "display_name": "turboapi",
+  "language": "Python",
+  "type": "tuned",
+  "engine": "TurboNet-Zig",
+  "description": "FastAPI-compatible Python framework (Zig HTTP core)",
+  "repo": "https://github.com/justrach/turboAPI",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "json",
+    "json-comp"
+  ],
+  "maintainers": []
+}
