@@ -384,6 +384,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "spring-boot",
+    "language": "Java",
+    "rps": 188030,
+    "avg_latency": "20.64ms",
+    "p99_latency": "20.64ms",
+    "cpu": "2659.2%",
+    "memory": "3.2GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "651.02MB",
+    "reconnects": 0,
+    "status_2xx": 958731,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "Swoole",
     "language": "PHP",
     "rps": 776894,
