@@ -69,6 +69,7 @@ class App < Roda
     end
 
     r.is 'upload' do
+      request.env["puma.mark_as_io_bound"].call
       size = 0
       buf = request.body
       while (chunk = buf.read(65536))
