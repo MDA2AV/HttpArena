@@ -1,3 +1,4 @@
+--!native
 local server = require("@lute/net/server")
 local fs = require("@std/fs")
 local json = require("@std/json")
