@@ -12,6 +12,7 @@
     "pipelined",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "static",
     "async-db",
