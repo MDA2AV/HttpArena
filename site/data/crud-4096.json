@@ -58,6 +58,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ring-http-exchange",
+    "language": "Clojure",
+    "rps": 323609,
+    "avg_latency": "12.41ms",
+    "p99_latency": "297.90ms",
+    "cpu": "6781.8%",
+    "memory": "12.8GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "116.64MB/s",
+    "input_bw": "27.78MB/s",
+    "reconnects": 22247,
+    "status_2xx": 4854135,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "simplew",
     "language": "C#",
     "rps": 416698,

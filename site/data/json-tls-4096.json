@@ -289,6 +289,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "ring-http-exchange",
+    "language": "Clojure",
+    "rps": 460416,
+    "avg_latency": "13.67ms",
+    "p99_latency": "13.67ms",
+    "cpu": "6430.9%",
+    "memory": "14.3GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.57GB",
+    "reconnects": 0,
+    "status_2xx": 2348595,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "servicestack",
     "language": "C#",
     "rps": 14116,

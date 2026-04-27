@@ -1,0 +1,43 @@
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+Apr 27, 2026 10:28:52 AM robaho.net.httpserver.ServerImpl <init>
+INFO: [http:8080] server bound to /0.0.0.0:8080 with backlog 8192
+Apr 27, 2026 10:28:52 AM robaho.net.httpserver.ServerImpl start
+INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@138aa3cc as executor
+Server running on port 8080
+Apr 27, 2026 10:28:52 AM robaho.net.httpserver.ServerImpl <init>
+INFO: [https:8081] server bound to /0.0.0.0:8081 with backlog 8192
+Apr 27, 2026 10:28:52 AM robaho.net.httpserver.ServerImpl start
+INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@138aa3cc as executor
+Server running on port 8081 (TLS)
+Apr 27, 2026 10:28:53 AM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+WARNING: [https:8081] unable to accept connection
+java.net.SocketException: Socket is closed
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(Unknown Source)
+	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(Unknown Source)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+
+Apr 27, 2026 10:29:01 AM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+WARNING: [https:8081] unable to accept connection
+java.net.SocketException: Socket is closed
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(Unknown Source)
+	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(Unknown Source)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+
+Apr 27, 2026 10:29:08 AM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+WARNING: [https:8081] unable to accept connection
+java.net.SocketException: Socket is closed
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(Unknown Source)
+	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(Unknown Source)
+	at java.base/java.lang.VirtualThread.run(Unknown Source)
+
