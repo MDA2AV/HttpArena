@@ -811,6 +811,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sisk",
+    "language": "C#",
+    "rps": 44286,
+    "avg_latency": "23.66ms",
+    "p99_latency": "23.66ms",
+    "cpu": "6068.6%",
+    "memory": "513MiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "811.40MB",
+    "reconnects": 0,
+    "status_2xx": 225171,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "SlimeWeb",
     "language": "Python",
     "rps": 34930,
