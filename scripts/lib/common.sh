@@ -29,7 +29,23 @@ H3THREADS="${H3THREADS:-64}"
 GCANNON="${GCANNON:-gcannon}"
 GCANNON_IMAGE="${GCANNON_IMAGE:-gcannon:latest}"
 GCANNON_MODE="${GCANNON_MODE:-native}"
-GCANNON_CPUS="${GCANNON_CPUS:-32-63,96-127}"
+
+_AVAIL_CORES=$(nproc 2>/dev/null || echo 1)
+if [ -z "${GCANNON_CPUS:-}" ]; then
+    if [ "$_AVAIL_CORES" -ge 128 ]; then
+        GCANNON_CPUS="32-63,96-127"
+    else
+        # For smaller machines, just use the second half of cores for load gen, 
+        # or all cores if we only have 1 or 2.
+        if [ "$_AVAIL_CORES" -le 2 ]; then
+            GCANNON_CPUS="0-$((_AVAIL_CORES - 1))"
+        else
+            _HALF=$((_AVAIL_CORES / 2))
+            GCANNON_CPUS="$_HALF-$((_AVAIL_CORES - 1))"
+        fi
+    fi
+fi
+export GCANNON_CPUS
 
 H2LOAD="${H2LOAD:-h2load}"
 H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:latest}"

@@ -1,0 +1,35 @@
+{
+	admin off
+	auto_https off
+	frankenphp
+}
+
+:8080 {
+	encode br gzip
+	root * /app/public
+	php_server {
+		index off
+		file_server off
+		worker {
+			file /app/worker.php
+			num {$WORKERS:0}
+			async
+			match /*
+		}
+	}
+}
+
+:8443 {
+	tls /certs/server.crt /certs/server.key
+	root * /app/public
+	php_server {
+		index off
+		file_server off
+		worker {
+			file /app/worker.php
+			num {$WORKERS:0}
+			async
+			match /*
+		}
+	}
+}

@@ -41,9 +41,8 @@ The benchmark runner mounts these paths into your container (read-only):
 | Path | Purpose |
 |------|---------|
 | `/data/dataset.json` | 50-item dataset for `/json` endpoint |
-| `/data/benchmark.db` | SQLite database (100K rows) for `/db` endpoint |
-| `/data/static/` | 20 static files (CSS, JS, HTML, fonts, images) |
+| `/data/static/` | 20 static assets (CSS, JS, HTML, fonts, images) — 15 ship with `.gz` and `.br` sibling files for precompression-aware frameworks |
 | `/certs/server.crt` | TLS certificate for HTTPS/H2/H3 |
 | `/certs/server.key` | TLS private key for HTTPS/H2/H3 |
 
-All data mounts are provided unconditionally — your container always has access to all files regardless of which profiles it participates in.
+Postgres (profiles `async-db`, `crud`, `api-4`, `api-16`, and the compose-orchestrated gateway + production-stack) is provided by a separate sidecar container, reachable via the `DATABASE_URL` environment variable — not a mount. Redis (profile `crud`) is similarly reachable via `REDIS_URL`. See [Configuration](../../running-locally/configuration/) for the full env var list.

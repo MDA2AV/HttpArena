@@ -1,8 +1,8 @@
 [INFO] Worker#0 started.
 [INFO] Worker#1 started.
+[INFO] Worker#2 started.
 [INFO] Worker#3 started.
 [INFO] Worker#4 started.
-[INFO] Worker#2 started.
 [INFO] Worker#5 started.
 [INFO] Worker#6 started.
 [INFO] Worker#7 started.
@@ -12,10 +12,10 @@
 [INFO] Worker#11 started.
 [INFO] Worker#12 started.
 [INFO] Worker#13 started.
-[INFO] WebSocket Server listening at 0.0.0.0:9502
 [INFO] Worker#14 started.
-[INFO] HTTP Server listening at 0.0.0.0:8080
 [INFO] Worker#15 started.
+[INFO] WebSocket Server listening at 0.0.0.0:9502
+[INFO] HTTP Server listening at 0.0.0.0:8080
 [INFO] Worker#16 started.
 [INFO] Worker#17 started.
 [INFO] Worker#18 started.
@@ -37,8 +37,8 @@
 [INFO] Worker#34 started.
 [INFO] Worker#35 started.
 [INFO] Worker#36 started.
-[INFO] Worker#38 started.
 [INFO] Worker#37 started.
+[INFO] Worker#38 started.
 [INFO] Worker#39 started.
 [INFO] Worker#40 started.
 [INFO] Worker#41 started.
@@ -113,8 +113,8 @@
 [INFO] Worker#110 started.
 [INFO] Worker#111 started.
 [INFO] Worker#112 started.
-[INFO] Worker#114 started.
 [INFO] Worker#113 started.
+[INFO] Worker#114 started.
 [INFO] Worker#115 started.
 [INFO] Worker#116 started.
 [INFO] Worker#117 started.

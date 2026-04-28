@@ -1,7 +1,7 @@
 {
   "display_name": "sinatra",
   "language": "Ruby",
-  "type": "tuned",
+  "type": "production",
   "engine": "puma",
   "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
   "repo": "https://github.com/sinatra/sinatra",
@@ -12,6 +12,7 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "api-4",
     "api-16",

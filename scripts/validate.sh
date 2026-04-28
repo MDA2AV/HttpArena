@@ -583,7 +583,7 @@ if has_test "json-comp"; then
 
     # Verify compressed response with varying counts and multipliers
     jc_fail=false
-    jc_params=("12:9" "31:4" "50:6")
+    jc_params=("25:3" "40:7" "50:2")
     for jcp in "${jc_params[@]}"; do
         jccount="${jcp%%:*}"
         jcm="${jcp##*:}"

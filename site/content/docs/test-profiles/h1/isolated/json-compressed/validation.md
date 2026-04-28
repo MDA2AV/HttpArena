@@ -21,9 +21,9 @@ Three requests are sent with different counts and multipliers:
 
 | Count | Multiplier |
 |-------|-----------|
-| 12 | 9 |
-| 31 | 4 |
-| 50 | 6 |
+| 25 | 3 |
+| 40 | 7 |
+| 50 | 2 |
 
 For each response, after decompressing, the validator checks:
 

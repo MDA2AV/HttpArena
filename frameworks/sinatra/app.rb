@@ -3,7 +3,6 @@
 require 'bundler/setup'
 Bundler.require(:default)
 
-require 'zlib'
 require 'pg'
 
 class Hash
@@ -90,19 +89,7 @@ class App < Sinatra::Base
       d.merge(total: (d[:price] * d[:quantity] * m))
     end
 
-    result = JSON.generate(items: items, count: items.length)
-
-    if accept_encodings = request.get_header('HTTP_ACCEPT_ENCODING')
-      if accept_encodings.include?('gzip')
-        sio = StringIO.new
-        gz = Zlib::GzipWriter.new(sio, 1)
-        gz.write(result)
-        gz.close
-        headers 'Content-Encoding' => 'gzip'
-        result = sio.string
-      end
-    end
-    render_json result
+    render_json JSON.generate(items: items, count: items.length)
   end
 
   post '/upload' do

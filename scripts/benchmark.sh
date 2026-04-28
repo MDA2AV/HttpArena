@@ -90,7 +90,11 @@ cleanup_all() {
     docker volume prune -f >/dev/null 2>&1 || true
     docker image prune  -f >/dev/null 2>&1 || true
 }
-trap 'cleanup_all; system_restore' EXIT
+if [ "${SKIP_TUNE:-}" != "true" ]; then
+    trap 'cleanup_all; system_restore' EXIT
+else
+    trap 'cleanup_all' EXIT
+fi
 
 # Clean slate: stop any leftover benchmark containers from a previous
 # crashed run, AND prune any leftover dangling volumes/images from the
@@ -171,7 +175,11 @@ $_has_isolated_test && framework_build
 
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
-system_tune
+if [ "${SKIP_TUNE:-}" != "true" ]; then
+    system_tune
+else
+    info "skipping system tuning as requested (SKIP_TUNE=true)"
+fi
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false

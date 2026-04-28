@@ -17,12 +17,15 @@ SimpleW is Web server Library in .NET Core. Powerfully Simple and Blazingly Fast
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/baseline2` | GET | Sums query parameter values (HTTP/2 variant) |
-| `/json` | GET | Processes 50-item dataset, serializes JSON |
-| `/compression` | GET | Gzip-compressed large JSON response |
-| `/db` | GET | SQLite range query with JSON response |
-| `/upload` | POST | Receives 1 MB body, returns byte count |
+| `/json/{count}?m=N` | GET | Processes the first `count` dataset items and computes `total = price * quantity * N` |
+| `/async-db?min=X&max=Y&limit=N` | GET | Postgres range query with JSON response |
+| `/crud/items` | GET/POST | Paginated list and create endpoint for the CRUD profile |
+| `/crud/items/{id}` | GET/PUT | Cached read and cache-invalidating update endpoint |
+| `/upload` | POST | Receives upload bodies up to 20 MB and returns the byte count |
 | `/static/{filename}` | GET | Serves preloaded static files with MIME types |
+| `/ws` | WS | Echo websocket endpoint |
 
 ## Notes
 
-- Self-contained single-file deployment
+- Plain HTTP listens on `8080`.
+- If `/certs/server.crt` and `/certs/server.key` are mounted, HTTPS for `json-tls` listens on `8081`.

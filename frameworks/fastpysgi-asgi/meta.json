@@ -8,10 +8,10 @@
   "enabled": true,
   "tests": [
     "baseline",
-    "pipelined",
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "api-4",
     "api-16",

@@ -4,7 +4,7 @@ title: Implementation Guidelines
 {{< type-rules production="Must use an async PostgreSQL driver with standard connection pooling. Size the pool from `DATABASE_MAX_CONN` (currently 256), not from CPU count." tuned="May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults." engine="No specific rules." >}}
 
 
-The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection. Unlike the [synchronous SQLite `/db` endpoint](../../database) (CPU-bound, tested as the `sync-db` profile), this test exercises async I/O scheduling, connection pooling, and async Postgres driver efficiency.
+The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection — exercising async I/O scheduling, connection pooling, and async Postgres driver efficiency.
 
 **This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
 
@@ -30,7 +30,7 @@ The Async Database profile measures how efficiently a framework handles concurre
 
 ## Database schema
 
-The `items` table in Postgres (100,000 rows, identical logical data to the SQLite `benchmark.db`):
+The `items` table in Postgres (100,000 rows):
 
 ```sql
 CREATE TABLE items (
@@ -46,10 +46,6 @@ CREATE TABLE items (
 );
 -- No index on price - forces sequential scan
 ```
-
-Key differences from the SQLite schema:
-- `active` is `BOOLEAN` (not `INTEGER 0/1`) - no conversion needed
-- `tags` is `JSONB` (not `TEXT`) - no JSON string parsing needed
 
 ## SQL query
 
@@ -108,7 +104,7 @@ The benchmark runner provides these environment variables to your container:
 - **Prepared statements** - prepare the query once per connection, reuse across requests
 - **Default parameters** - all three query parameters are integers. If `min` or `max` is missing, default to `10` and `50`. If `limit` is missing, default to `50`. Clamp `limit` to the range 1–50
 - **Integer types matter** - `price` and `rating_score` are `INTEGER` columns. Read them as `i32`/`int`/equivalent — using `f64`/`double` will fail with type-mismatch errors in strict drivers like `tokio-postgres`
-- **Tags are JSONB** - Postgres returns them as native JSON, no string parsing needed (unlike the SQLite `/db` endpoint)
+- **Tags are JSONB** - Postgres returns them as native JSON, no string parsing needed
 
 ## Important: environment variables and initialization
 

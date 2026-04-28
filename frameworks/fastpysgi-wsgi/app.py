@@ -112,7 +112,7 @@ def get_path_tail(env):
 
 def check_accept_encoding(env, substr):
     aenc = env.get('HTTP_ACCEPT_ENCODING', '')
-    if aenc and substr == "*":
+    if aenc and substr == "":
         return True
     if aenc and substr in aenc:
         return True
@@ -144,31 +144,10 @@ def baseline11(env):
     req_method = env.get('REQUEST_METHOD', '')
     query_params = parse_qs(env.get('QUERY_STRING', ''))
     total = 0
-    for v in query_params.values():
-        try:
-            total += int(v[0])
-        except ValueError:
-            pass
+    for val in query_params.values():
+        total += int(val[0])
     if req_method == "POST":
-        wsgi_input = env['wsgi.input']
-        body = wsgi_input.read(16000)
-        if body:
-            try:
-                total += int(body.decode().strip())
-            except UnicodeDecodeError:
-                pass
-            except ValueError:
-                pass
-    return text_resp(str(total))
-
-def baseline2(env):
-    query_params = parse_qs(env.get('QUERY_STRING', ''))
-    total = 0
-    for v in query_params.values():
-        try:
-            total += int(v[0])
-        except ValueError:
-            pass
+        total += int(env['wsgi.input'].read(100))
     return text_resp(str(total))
 
 def json_endpoint(env):
@@ -238,28 +217,14 @@ def static_file_endpoint(env):
     return make_resp(200, [ ('Content-Type', entry['type']) ], entry['data'], contenc = entry['enc'])
 
 
-READ_BUF_SIZE = 256*1024
-
 def upload_endpoint(env):
-    wsgi_input = env["wsgi.input"]
-    content_length = int(env.get("CONTENT_LENGTH", -1))
-    size = 0
-    if content_length != 0:
-        while True:
-            to_read = min(READ_BUF_SIZE, content_length - size) if content_length > 0 else READ_BUF_SIZE
-            chunk = wsgi_input.read(to_read)
-            if not chunk:
-                break
-            size += len(chunk)
-            if content_length > 0 and size >= content_length:
-                break
+    size = env["wsgi.input"].getbuffer().nbytes
     return text_resp(str(size))
 
 
 ROUTES = {
     '/pipeline': pipeline,
     '/baseline11': baseline11,
-    '/baseline2': baseline2,
     '/json/': json_endpoint,
     '/json-comp/': json_endpoint,
     '/upload': upload_endpoint,
@@ -301,9 +266,14 @@ def app(env, start_response):
 if __name__ == "__main__":
     import fastpysgi
 
-    host = '0.0.0.0'
-    port = 8080
+    certfile = os.environ.get("TLS_CERT", "/certs/server.crt")
+    keyfile  = os.environ.get("TLS_KEY" , "/certs/server.key")
 
-    fastpysgi.server.read_buffer_size = READ_BUF_SIZE
+    fastpysgi.server.delete_all_binds()
+    fastpysgi.server.add_bind('0.0.0.0', 8080)
+    fastpysgi.server.add_bind('0.0.0.0', 8081, (certfile, keyfile, None))
+
+    fastpysgi.server.read_buffer_size = 256*1024
+    fastpysgi.server.max_content_length = 31_000_000
     fastpysgi.server.backlog = 16*1024
-    fastpysgi.run(app, host, port, workers = WRK_COUNT, loglevel = 0)
+    fastpysgi.run(app, workers = WRK_COUNT, loglevel = 0)

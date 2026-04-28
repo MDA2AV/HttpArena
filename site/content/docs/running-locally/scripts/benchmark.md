@@ -64,16 +64,17 @@ Set via `VAR=value ./scripts/benchmark.sh ...` or `export VAR=value`.
 | `DURATION` | `5s` | `-d`/`-D` value passed to each load generator. |
 | `RUNS` | `3` | Measurement iterations per (profile, conns). Best result wins. |
 | `THREADS` | `64` | Load-generator threads for gcannon, wrk, and the default path. |
-| `H2THREADS` | `128` | h2load worker threads (h2, h2c gRPC). |
+| `H2THREADS` | `64` | h2load worker threads (h2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
 
 ### Ports
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `8080` | HTTP/1.1 (and h2c for gRPC). |
-| `H2PORT` | `8443` | HTTPS, HTTP/2 TLS, HTTP/3 QUIC, gRPC-TLS. |
+| `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc`, `stream-grpc`). |
+| `H2PORT` | `8443` | HTTPS / HTTP/2 TLS (`baseline-h2`, `static-h2`, gateway + production-stack), HTTP/3 QUIC (`baseline-h3`, `static-h3`, `gateway-h3`), gRPC-TLS (`unary-grpc-tls`, `stream-grpc-tls`). |
 | `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS — only used by the `json-tls` profile. |
+| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for `baseline-h2c` and `json-h2c`. Must refuse HTTP/1.1 — the validator checks this. |
 
 ### Load generator selection
 
@@ -93,11 +94,11 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 
 | Variable | Default | Used for |
 |---|---|---|
-| `GCANNON` | `gcannon` | Native binary — baseline, pipelined, limited-conn, json, json-comp, upload, api-4/16, async-db, echo-ws. |
+| `GCANNON` | `gcannon` | Native binary — baseline, pipelined, limited-conn, json, json-comp, upload, api-4/16, async-db, crud, echo-ws. |
 | `GCANNON_IMAGE` | `gcannon:latest` | Docker image when `LOADGEN_DOCKER=true`. |
-| `H2LOAD` | `h2load` | Native binary — baseline-h2, static-h2, unary-grpc, unary-grpc-tls, gateway-64. |
+| `H2LOAD` | `h2load` | Native binary — baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack. |
 | `H2LOAD_IMAGE` | `h2load:latest` | Docker image (Ubuntu 24.04 + glibc build; do **not** use the alpine/musl image — it's 20–40% slower). |
-| `H2LOAD_H3` | `h2load-h3` | Native binary — baseline-h3, static-h3. |
+| `H2LOAD_H3` | `h2load-h3` | Native binary — baseline-h3, static-h3, gateway-h3. |
 | `H2LOAD_H3_IMAGE` | `h2load-h3:local` | Docker image with `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` built from source. |
 | `WRK` | `wrk` | Native binary — static, json-tls. |
 | `WRK_IMAGE` | `wrk:local` | Docker image. |
@@ -109,7 +110,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 | Variable | Default | Description |
 |---|---|---|
 | `PG_CONTAINER` | `httparena-postgres` | Name of the sidecar container. |
-| `DATABASE_URL` | `postgres://bench:bench@localhost:5432/benchmark` | Passed to framework containers for `async-db`, `api-4`, `api-16`, `gateway-64`. |
+| `DATABASE_URL` | `postgres://bench:bench@localhost:5432/benchmark` | Passed to framework containers for `async-db`, `crud`, `api-4`, `api-16`, `gateway-64`, `gateway-h3`, `production-stack`. |
 
 ## Profiles
 

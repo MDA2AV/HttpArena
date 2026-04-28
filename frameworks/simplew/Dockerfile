@@ -11,5 +11,5 @@ FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /app
 COPY --from=build /app .
 
-EXPOSE 8080
+EXPOSE 8080 8081
 ENTRYPOINT ["dotnet", "simplew-bench.dll"]

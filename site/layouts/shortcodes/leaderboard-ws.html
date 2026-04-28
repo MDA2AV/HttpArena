@@ -103,6 +103,7 @@ html.dark .lb-type-note-ws { color: #e2e8f0 !important; background: linear-gradi
       <div title="HTTP server engine">Engine</div>
       <div title="Number of concurrent connections" style="text-align:right">Conn</div>
       <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+      <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
       <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
       <div></div>
       <div class="lb-sortable" data-sort="cpu" title="Average CPU usage" style="text-align:right">CPU</div>
@@ -559,9 +560,24 @@ w.addEventListener('click', function(e) {
   var connCount = connPanel ? connPanel.dataset.conns : '';
   if (connCount === 'best') connCount = row.querySelector('.lb-conns').textContent.replace(/,/g, '').trim();
   var baseUrl = '{{ "logs" | relURL }}';
-  var repoHtml = repo ? '<a class="lb-popup-link" href="' + repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
-  var benchHtml = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(name) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
-  var logHtml = (profile && connCount) ? '<a class="lb-popup-link" href="' + baseUrl + '/' + profile + '/' + connCount + '/' + encodeURIComponent(name) + '.log" target="_blank" rel="noreferrer">Docker logs &rarr;</a>' : '';
+  var fwMetaRef = (lbWsCurrentMeta && lbWsCurrentMeta[name]) || {};
+  var dirName = fwMetaRef.dir || name;
+  var variantsList = [{ dir: dirName, description: fwMetaRef.description || desc, repo: fwMetaRef.repo || repo }];
+  if (Array.isArray(fwMetaRef.variants)) {
+    fwMetaRef.variants.forEach(function(v) {
+      variantsList.push({ dir: v.dir, description: v.description || '', repo: v.repo || '' });
+    });
+  }
+  var variantsHtml = variantsList.map(function(v) {
+    var vHeader = variantsList.length > 1
+      ? '<div style="font-size:0.75rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.5rem;">' + v.dir + '</div>'
+      : '';
+    var vDesc = v.description ? '<div class="lb-popup-desc" style="margin-top:0.2rem;">' + v.description + '</div>' : '';
+    var vRepo = v.repo ? '<a class="lb-popup-link" href="' + v.repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
+    var vBench = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(v.dir) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
+    return vHeader + vDesc + '<div class="lb-popup-links" style="margin-top:0.35rem;">' + vRepo + vBench + '</div>';
+  }).join('');
+  var logHtml = (profile && connCount) ? '<a class="lb-popup-link" href="' + baseUrl + '/' + profile + '/' + connCount + '/' + encodeURIComponent(dirName) + '.log" target="_blank" rel="noreferrer">Docker logs &rarr;</a>' : '';
   var statusHtml = s2xx > 0
     ? '2xx: ' + s2xx.toLocaleString() + ', 3xx: ' + s3xx.toLocaleString() + ', 4xx: ' + s4xx.toLocaleString() + ', 5xx: ' + s5xx.toLocaleString()
     : '\u2014';
@@ -572,7 +588,7 @@ w.addEventListener('click', function(e) {
       '<button class="lb-popup-close" aria-label="Close">&times;</button>' +
       '<div class="lb-popup-name">' + name + '</div>' +
       '<div class="lb-popup-lang">' + lang + ' (WebSocket)</div>' +
-      '<div class="lb-popup-desc">' + desc + '</div>' +
+      variantsHtml +
       '<div class="lb-popup-stats">' +
         '<div><div class="lb-popup-stat-label">Req/s</div><div class="lb-popup-stat-value">' + rps + '</div></div>' +
         '<div><div class="lb-popup-stat-label">Connections</div><div class="lb-popup-stat-value">' + conns + '</div></div>' +
@@ -582,7 +598,7 @@ w.addEventListener('click', function(e) {
         '<div><div class="lb-popup-stat-label">Memory</div><div class="lb-popup-stat-value">' + mem + '</div></div>' +
         '<div style="grid-column:1/-1"><div class="lb-popup-stat-label">Status Codes</div><div class="lb-popup-stat-value">' + statusHtml + '</div></div>' +
       '</div>' +
-      '<div class="lb-popup-links">' + repoHtml + benchHtml + logHtml + '</div>' +
+      (logHtml ? '<div class="lb-popup-links" style="margin-top:0.5rem;">' + logHtml + '</div>' : '') +
     '</div>';
   document.body.appendChild(overlay);
   function close() { overlay.remove(); }

@@ -10,13 +10,6 @@ public class AppHost() : AppHostBase("ServiceStack.Benchmark", typeof(AppHost).A
     public void Configure(IWebHostBuilder builder) => builder
         .ConfigureServices((_, services) =>
         {
-            var dbPool = DbConnectionFactory.Open();
-
-            if (dbPool is not null)
-            {
-                services.AddSingleton(dbPool);
-            }
-
             var poolFactory = PgPoolFactory.Open();
 
             if (poolFactory is not null)

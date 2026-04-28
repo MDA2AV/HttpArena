@@ -44,8 +44,11 @@ print(max(ids) if ids else 0)
 
     DATE=$(date +%Y-%m-%d)
 
-    # Read system info from current.json (written by benchmark.sh --save)
+    # Read system info from current.json (written by benchmark.sh --save).
+    # commit is intentionally NOT in current.json anymore (it churned per PR
+    # and dominated merge conflicts); always derive it from git directly.
     CURRENT_JSON="$SITE_DATA/current.json"
+    COMMIT=$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     if [ -f "$CURRENT_JSON" ]; then
         CPU=$(python3 -c "import json; print(json.load(open('$CURRENT_JSON')).get('cpu','unknown'))")
         CORES=$(python3 -c "import json; print(json.load(open('$CURRENT_JSON')).get('cores','unknown'))")
@@ -58,7 +61,6 @@ print(max(ids) if ids else 0)
         KERNEL=$(python3 -c "import json; print(json.load(open('$CURRENT_JSON')).get('kernel','unknown'))")
         DOCKER=$(python3 -c "import json; print(json.load(open('$CURRENT_JSON')).get('docker','unknown'))")
         DOCKER_RUNTIME=$(python3 -c "import json; print(json.load(open('$CURRENT_JSON')).get('docker_runtime','unknown'))")
-        COMMIT=$(python3 -c "import json; print(json.load(open('$CURRENT_JSON')).get('commit','unknown'))")
     else
         echo "Warning: site/data/current.json not found — run benchmark.sh --save first"
         CPU=$(lscpu 2>/dev/null | awk -F: '/Model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')
@@ -76,7 +78,6 @@ print(max(ids) if ids else 0)
         KERNEL=$(uname -r)
         DOCKER=$(docker version --format '{{.Server.Version}}' 2>/dev/null || echo "unknown")
         DOCKER_RUNTIME=$(docker info --format '{{.DefaultRuntime}}' 2>/dev/null || echo "unknown")
-        COMMIT=$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     fi
 
     # Bundle all result data into one JSON

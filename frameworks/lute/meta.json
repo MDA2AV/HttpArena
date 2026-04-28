@@ -1,0 +1,19 @@
+{
+  "display_name": "lute",
+  "language": "Luau",
+  "type": "production",
+  "engine": "lute",
+  "description": "Lute standalone Luau runtime",
+  "repo": "https://github.com/luau-lang/lute",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-tls",
+    "upload",
+    "echo-ws"
+  ],
+  "maintainers": ["nicell"]
+}

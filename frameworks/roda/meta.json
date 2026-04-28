@@ -1,7 +1,7 @@
 {
   "display_name": "roda",
   "language": "Ruby",
-  "type": "tuned",
+  "type": "production",
   "engine": "puma",
   "description": "Roda routing tree web toolkit",
   "repo": "https://github.com/jeremyevans/roda",
@@ -12,6 +12,7 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "api-4",
     "api-16",

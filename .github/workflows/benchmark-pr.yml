@@ -60,6 +60,28 @@ jobs:
             exit 1
           fi
 
+      # When --save is requested, merge origin/main into the PR branch first.
+      # The bot commits its results back to the PR head; on an old branch the
+      # site/data/*.json files have drifted vs. main and the bot commit
+      # immediately makes the PR CONFLICTING. Merging main here lands the
+      # bench commit on a base that's already in sync, so the PR stays
+      # MERGEABLE. Skipped for non-save runs since they don't push back.
+      - name: Merge main into PR branch
+        if: inputs.save == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main --depth=1
+          if ! git merge --no-edit origin/main; then
+            git merge --abort 2>/dev/null || true
+            gh pr comment "${{ inputs.pr }}" \
+              --repo "${{ github.repository }}" \
+              --body "⚠️ \`/benchmark --save\` aborted: \`main\` has diverged and cannot be auto-merged into this branch. Please merge or rebase \`main\` manually, push, and re-run \`/benchmark --save\`."
+            exit 1
+          fi
+
       - name: Clean previous containers, results, and temp data
         run: |
           docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f 2>/dev/null || true

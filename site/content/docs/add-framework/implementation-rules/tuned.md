@@ -10,12 +10,16 @@ Tuned entries have more freedom. They can use non-default configurations, experi
 - Alternative JSON serializers (simd-json, sonic-json, etc.)
 - Custom buffer sizes and TCP socket options
 - Experimental or unstable framework flags
-- Pre-computed responses and response caching
 - Memory-mapped files and in-memory static file caching
 - Custom thread pools and worker configurations
 - Non-default GC settings without documentation requirement
 - Framework-specific performance flags not recommended for production
 - Any compression approach for static files — custom compression, pre-compressed file serving, alternative compression libraries
+
+## What is NOT allowed
+
+- **Pre-computed response bodies** — serializing a fixed response at startup and returning the same bytes per request (e.g. caching a JSON blob and writing it back unchanged). The serialization + compression work is the workload; bypassing it defeats the measurement.
+- **Response caching** — memoizing the full HTTP response body keyed by URL/params and replaying it. This is distinct from upstream data caching (DB query results, JWT verification, etc.), which remains allowed where the profile calls for it (e.g. the CRUD profile's read cache).
 
 ## What is still required
 

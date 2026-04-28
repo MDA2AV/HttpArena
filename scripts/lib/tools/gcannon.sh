@@ -52,7 +52,7 @@ gcannon_build_args() {
             ;;
         json-compressed)
             args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/json-gzip-1.raw,$REQUESTS_DIR/json-gzip-5.raw,$REQUESTS_DIR/json-gzip-10.raw,$REQUESTS_DIR/json-gzip-15.raw,$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
+                  --raw "$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 25)
             ;;
         ws-echo)

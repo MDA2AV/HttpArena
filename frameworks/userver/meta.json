@@ -1,0 +1,16 @@
+{
+  "display_name": "userver",
+  "language": "C++",
+  "type": "production",
+  "engine": "userver",
+  "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
+  "repo": "https://github.com/userver-framework/userver",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "static"
+  ],
+  "maintainers": ["botanegg"]
+}

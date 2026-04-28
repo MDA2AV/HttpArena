@@ -1,0 +1,1 @@
+INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) VALUES (:id, :name, :category, :price, :quantity, true, '["bench"]', 0, 0) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, price = EXCLUDED.price, quantity = EXCLUDED.quantity RETURNING id

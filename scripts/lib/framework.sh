@@ -95,7 +95,18 @@ framework_start() {
     # Profile-declared CPU limit.
     if [ -n "$cpu_limit" ]; then
         if [[ "$cpu_limit" == *-* ]]; then
-            args+=(--cpuset-cpus="$cpu_limit")
+            local max_cpu
+            max_cpu=$(($(nproc)-1))
+            # Extract the largest CPU index from the cpuset string (e.g. "95" from "0-31,64-95")
+            local requested_max
+            requested_max=$(echo "$cpu_limit" | grep -oP '\d+$')
+            
+            if [ "$requested_max" -gt "$max_cpu" ]; then
+                warn "profile cpuset $cpu_limit exceeds available CPUs (max $max_cpu) — using all cores"
+                args+=(--cpus="$(nproc)")
+            else
+                args+=(--cpuset-cpus="$cpu_limit")
+            fi
         else
             local avail
             avail=$(nproc 2>/dev/null || echo 64)

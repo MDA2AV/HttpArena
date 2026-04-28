@@ -16,7 +16,7 @@ The JSON Compressed profile is the same workload as [JSON Processing](../json-pr
    - Returns `Content-Type: application/json` and `Content-Encoding: gzip` (or `br`)
 3. When the client does **not** send `Accept-Encoding`, the server **must not** set `Content-Encoding` — compression is per-request, driven by the client header
 
-The benchmark round-robins across counts 1, 5, 10, 15, 25, 40, and 50 paired with multipliers 3, 7, 2, 5, 4, 8, 6.
+The benchmark round-robins across counts 25, 40, and 50 paired with multipliers 4, 8, and 6.
 
 ## What it measures
 
@@ -63,7 +63,7 @@ Decompressed body:
 | Parameter | Value |
 |-----------|-------|
 | Endpoint | `GET /json/{count}?m={multiplier}` |
-| Counts × multipliers | (1,3), (5,7), (10,2), (15,5), (25,4), (40,8), (50,6) (round-robin) |
+| Counts × multipliers | (25,4), (40,8), (50,6) (round-robin) |
 | Connections | 512, 4096, 16384 |
 | Pipeline | 1 |
 | Duration | 5s |

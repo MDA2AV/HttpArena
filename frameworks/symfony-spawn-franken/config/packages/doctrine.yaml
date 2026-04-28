@@ -1,0 +1,7 @@
+doctrine:
+    dbal:
+        driver_class: Spawn\Symfony\Database\TrueAsyncPgsqlDriver
+        url: '%env(DATABASE_URL)%'
+        server_version: '17'
+        use_savepoints: true
+

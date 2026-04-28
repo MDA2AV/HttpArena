@@ -3,7 +3,7 @@
   "language": "C#",
   "type": "tuned",
   "engine": "simplew",
-  "description": "SimpleW is Web server Library in .NET Core. Powerfully Simple and Blazingly Fast.",
+  "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
   "repo": "https://github.com/stratdev3/SimpleW",
   "enabled": true,
   "tests": [
@@ -12,9 +12,11 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "static",
     "async-db",
+    "crud",
     "api-4",
     "api-16",
     "echo-ws"

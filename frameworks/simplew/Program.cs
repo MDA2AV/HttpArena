@@ -1,227 +1,447 @@
 using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Concurrent;
+using System.IO.Compression;
+using System.Net;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 
-using Microsoft.Data.Sqlite;
 using Npgsql;
 
 using SimpleW;
 using SimpleW.Modules;
 using SimpleW.Benchmarks;
 
-using System.Net;
-using System.Text.Json;
-
-var options = new JsonSerializerOptions
-{
-    // validation fails otherwise
-    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-};
-
-var server = new SimpleWServer(IPAddress.Any, 8080)
-    .ConfigureJsonEngine(new SystemTextJsonEngine(_ => options))
-    .Configure(o => {
-        o.MaxRequestBodySize = 25 * 1024 * 1024;
-
-        // Always beneficial socket options (see https://simplew.net/guide/performances.html#performance-oriented-configuration)
-        o.TcpNoDelay = true;
-        o.ReuseAddress = true;
-        o.TcpKeepAlive = true;
-
-        // Advanced tuning (platform dependent, see https://simplew.net/guide/performances.html#performance-oriented-configuration)
-        o.AcceptPerCore = true;
-        o.ReusePort = true; // linux only
-    });
-
-if (Directory.Exists("/data/static"))
-{
-    server.UseStaticFilesModule(options => {
-        options.Path = "/data/static";
-        options.Prefix = "/static/";
-        options.AutoIndex = false;
-    });
-}
-
-server.MapGet("/baseline11", (int a, int b) => a + b);
-server.MapPost("/baseline11", (int a, int b, HttpSession s) => a + b + ParseInt(s.Request.Body));
-
-server.MapGet("/baseline2", (int a, int b) => a + b);
-
-server.MapGet("/pipeline", (HttpSession s) => s.Response.Text("ok"));
-
-server.MapPost("/upload", (HttpSession s) => s.Request.Body.Length);
-
-var largeJsonBytes = LoadJson();
-
-server.MapGet("/compression", (HttpSession s) => s.Response.Body(largeJsonBytes, "application/json"));
-
+var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 var datasetItems = LoadItems();
-
-server.MapGet("/json", () =>
-{
-    var processed = new List<ProcessedItem>(datasetItems.Count);
-
-    foreach (var d in datasetItems)
-    {
-        processed.Add(new ProcessedItem
-        {
-            Id = d.Id, Name = d.Name, Category = d.Category,
-            Price = d.Price, Quantity = d.Quantity, Active = d.Active,
-            Tags = d.Tags, Rating = d.Rating,
-            Total = Math.Round(d.Price * d.Quantity, 2)
-        });
-    }
-
-    return new ListWithCount<ProcessedItem>(processed);
-});
-
-var dbPool = OpenPool();
-
-server.MapGet("/db", (int min = 10, int max = 50) =>
-{
-    var conn = dbPool!.Rent();
-    try
-    {
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN @min AND @max LIMIT 50";
-        cmd.Parameters.AddWithValue("@min", min);
-        cmd.Parameters.AddWithValue("@max", max);
-
-        using var reader = cmd.ExecuteReader();
-
-        var items = new List<ProcessedItem>();
-
-        while (reader.Read())
-        {
-            items.Add(new ProcessedItem
-            {
-                Id = reader.GetInt32(0),
-                Name = reader.GetString(1),
-                Category = reader.GetString(2),
-                Price = reader.GetDouble(3),
-                Quantity = reader.GetInt32(4),
-                Active = reader.GetInt32(5) == 1,
-                Tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                Rating = new RatingInfo { Score = reader.GetDouble(7), Count = reader.GetInt32(8) },
-            });
-        }
-
-        return new ListWithCount<ProcessedItem>(items);
-    }
-    finally
-    {
-        dbPool.Return(conn);
-    }
-});
-
 var pgDataSource = OpenPgPool();
+var crudCache = new ConcurrentDictionary<int, CrudCacheEntry>();
 
-server.MapGet("/async-db", async (int min = 10, int max = 50) =>
+var plainServer = CreateServer(8080);
+var tlsServer = CreateTlsServer(8081);
+
+if (tlsServer is null)
 {
-    await using var cmd = pgDataSource.CreateCommand(
-        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50");
-    cmd.Parameters.AddWithValue((double)min);
-    cmd.Parameters.AddWithValue((double)max);
-    await using var reader = await cmd.ExecuteReaderAsync();
-
-    var items = new List<object>();
-
-    while (await reader.ReadAsync())
-    {
-        items.Add(new
-        {
-            id = reader.GetInt32(0),
-            name = reader.GetString(1),
-            category = reader.GetString(2),
-            price = reader.GetDouble(3),
-            quantity = reader.GetInt32(4),
-            active = reader.GetBoolean(5),
-            tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-            rating = new { score = reader.GetDouble(7), count = reader.GetInt32(8) },
-        });
-    }
-
-    return new ListWithCount<object>(items);
-});
-
-server.UseWebSocketModule(ws => {
-    ws.OnBinary((conn, ctx, msg) => conn.SendBinaryAsync(msg));
-    ws.OnUnknown((conn, ctx, msg) => conn.SendTextAsync(msg.RawText));
-});
-
-await server.RunAsync();
+    await plainServer.RunAsync();
+}
+else
+{
+    await Task.WhenAll(plainServer.RunAsync(), tlsServer.RunAsync());
+}
 
 return;
 
-static byte[]? LoadJson()
+SimpleWServer CreateServer(int port, SslContext? sslContext = null)
 {
-    var jsonOptions = new JsonSerializerOptions
+    var server = new SimpleWServer(IPAddress.Any, port)
+        .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
+        .Configure(o => {
+            o.MaxRequestBodySize = 25 * 1024 * 1024;
+            o.TcpNoDelay = true;
+            o.ReuseAddress = true;
+            o.TcpKeepAlive = true;
+            o.AcceptPerCore = true;
+            o.ReusePort = true;
+        });
+
+    if (sslContext is not null)
     {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-    
-    var largePath = File.Exists("/data/dataset-large.json") ? "/data/dataset-large.json" : "../../../../../data/dataset-large.json";
-
-    if (File.Exists(largePath))
-    {
-        var largeItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(largePath), jsonOptions);
-
-        if (largeItems != null)
-        {
-            var processed = largeItems.Select(d => new ProcessedItem
-            {
-                Id = d.Id, Name = d.Name, Category = d.Category,
-                Price = d.Price, Quantity = d.Quantity, Active = d.Active,
-                Tags = d.Tags, Rating = d.Rating,
-                Total = Math.Round(d.Price * d.Quantity, 2)
-            }).ToList();
-
-            return JsonSerializer.SerializeToUtf8Bytes(new { items = processed, count = processed.Count }, jsonOptions);
-        }
+        server.UseHttps(sslContext);
     }
 
-    return null;
+    ConfigureRoutes(server);
+    return server;
+}
+
+SimpleWServer? CreateTlsServer(int port)
+{
+    var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
+    var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
+
+    if (!File.Exists(certPath) || !File.Exists(keyPath))
+    {
+        return null;
+    }
+
+    var certificate = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+    var sslContext = new SslContext(
+        SslProtocols.Tls12 | SslProtocols.Tls13,
+        certificate,
+        clientCertificateRequired: false,
+        checkCertificateRevocation: false);
+
+    return CreateServer(port, sslContext);
+}
+
+void ConfigureRoutes(SimpleWServer server)
+{
+    if (Directory.Exists("/data/static"))
+    {
+        server.UseStaticFilesModule(options => {
+            options.Path = "/data/static";
+            options.Prefix = "/static/";
+            options.AutoIndex = false;
+        });
+    }
+
+    server.MapGet("/baseline11", (int a, int b, HttpSession s) => Text(s, a + b));
+    server.MapPost("/baseline11", (int a, int b, HttpSession s) => Text(s, a + b + ParseInt(s.Request.Body)));
+
+    server.MapGet("/baseline2", (int a, int b, HttpSession s) => Text(s, a + b));
+
+    server.MapGet("/pipeline", (HttpSession s) => s.Response.Text("ok"));
+
+    server.MapPost("/upload", (HttpSession s) => Text(s, s.Request.Body.Length));
+
+    server.MapGet("/json/:count", (HttpSession s) =>
+        JsonResponse(s, GetRouteInt(s, "count", 50), GetQueryInt(s, "m", 1)));
+
+    // Kept for old probes and ad-hoc checks; official tests use /json/:count.
+    server.MapGet("/json", (HttpSession s) => JsonResponse(s, 50, GetQueryInt(s, "m", 1)));
+
+    server.MapGet("/async-db", async (HttpSession s) => await AsyncDatabase(s));
+
+    server.MapGet("/crud/items", async (HttpSession s) => await CrudList(s));
+    server.MapGet("/crud/items/:id", async (HttpSession s) => await CrudRead(s));
+    server.MapPost("/crud/items", async (HttpSession s) => await CrudCreate(s));
+    server.Map("PUT", "/crud/items/:id", async (HttpSession s) => await CrudUpdate(s));
+
+    server.UseWebSocketModule(ws => {
+        ws.OnBinary((conn, ctx, msg) => conn.SendBinaryAsync(msg));
+        ws.OnUnknown((conn, ctx, msg) => conn.SendTextAsync(msg.RawText));
+    });
+}
+
+HttpResponse Text(HttpSession session, long value) => session.Response.Text(value.ToString());
+
+HttpResponse JsonResponse(HttpSession session, int count, int multiplier)
+{
+    if (datasetItems is null)
+    {
+        return session.Response.InternalServerError("Dataset not loaded");
+    }
+
+    count = Math.Clamp(count, 0, datasetItems.Count);
+    var processed = new List<ProcessedItem>(count);
+
+    for (var i = 0; i < count; i++)
+    {
+        var item = datasetItems[i];
+        processed.Add(new ProcessedItem
+        {
+            Id = item.Id,
+            Name = item.Name,
+            Category = item.Category,
+            Price = item.Price,
+            Quantity = item.Quantity,
+            Active = item.Active,
+            Tags = item.Tags,
+            Rating = item.Rating,
+            Total = (long)item.Price * item.Quantity * multiplier
+        });
+    }
+
+    return session.Response
+                  .Json(new ListWithCount<ProcessedItem>(processed))
+                  .Compression(HttpResponse.ResponseCompressionMode.Auto, 0, CompressionLevel.Fastest);
+}
+
+async Task<HttpResponse> AsyncDatabase(HttpSession session)
+{
+    if (pgDataSource is null)
+    {
+        return session.Response.Json(new ListWithCount<DbItem>([]));
+    }
+
+    var min = GetQueryInt(session, "min", 10);
+    var max = GetQueryInt(session, "max", 50);
+    var limit = Math.Clamp(GetQueryInt(session, "limit", 50), 1, 50);
+
+    await using var cmd = pgDataSource.CreateCommand(
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
+        "FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
+
+    cmd.Parameters.AddWithValue(min);
+    cmd.Parameters.AddWithValue(max);
+    cmd.Parameters.AddWithValue(limit);
+    cmd.CommandTimeout = 2;
+
+    await using var reader = await cmd.ExecuteReaderAsync(session.RequestAborted);
+
+    var items = new List<DbItem>(limit);
+
+    while (await reader.ReadAsync(session.RequestAborted))
+    {
+        items.Add(ReadDbItem(reader));
+    }
+
+    return session.Response.Json(new ListWithCount<DbItem>(items));
+}
+
+async Task<HttpResponse> CrudList(HttpSession session)
+{
+    if (pgDataSource is null)
+    {
+        return session.Response.InternalServerError("Database not available");
+    }
+
+    var category = GetQueryString(session, "category", "electronics");
+    var page = Math.Max(1, GetQueryInt(session, "page", 1));
+    var limit = Math.Clamp(GetQueryInt(session, "limit", 10), 1, 50);
+    var offset = (page - 1) * limit;
+
+    await using var cmd = pgDataSource.CreateCommand(
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
+        "FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3");
+
+    cmd.Parameters.AddWithValue(category);
+    cmd.Parameters.AddWithValue(limit);
+    cmd.Parameters.AddWithValue(offset);
+    cmd.CommandTimeout = 2;
+
+    await using var reader = await cmd.ExecuteReaderAsync(session.RequestAborted);
+
+    var items = new List<DbItem>(limit);
+
+    while (await reader.ReadAsync(session.RequestAborted))
+    {
+        items.Add(ReadDbItem(reader));
+    }
+
+    return session.Response.Json(new CrudListResponse
+    {
+        Items = items,
+        Total = items.Count,
+        Page = page,
+        Limit = limit
+    });
+}
+
+async Task<HttpResponse> CrudRead(HttpSession session)
+{
+    if (pgDataSource is null)
+    {
+        return session.Response.InternalServerError("Database not available");
+    }
+
+    var id = GetRouteInt(session, "id", 0);
+    var now = Environment.TickCount64;
+
+    if (crudCache.TryGetValue(id, out var cached) && cached.ExpiresAt > now)
+    {
+        return session.Response
+                      .AddHeader("X-Cache", "HIT")
+                      .Body(cached.Body, "application/json");
+    }
+
+    crudCache.TryRemove(id, out _);
+
+    var item = await FetchItemById(id, session.RequestAborted);
+
+    if (item is null)
+    {
+        return session.Response.NotFound();
+    }
+
+    var body = JsonSerializer.SerializeToUtf8Bytes(item, jsonOptions);
+    crudCache[id] = new CrudCacheEntry(body, Environment.TickCount64 + 200);
+
+    return session.Response
+                  .AddHeader("X-Cache", "MISS")
+                  .Body(body, "application/json");
+}
+
+async Task<HttpResponse> CrudCreate(HttpSession session)
+{
+    if (pgDataSource is null)
+    {
+        return session.Response.InternalServerError("Database not available");
+    }
+
+    var item = DeserializeBody<CrudItem>(session);
+
+    if (item is null)
+    {
+        return session.Response.Status(400).Text("Bad Request");
+    }
+
+    await using var cmd = pgDataSource.CreateCommand(
+        "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) " +
+        "VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0) " +
+        "ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 " +
+        "RETURNING id");
+
+    cmd.Parameters.AddWithValue(item.Id);
+    cmd.Parameters.AddWithValue(item.Name ?? "New Product");
+    cmd.Parameters.AddWithValue(item.Category ?? "test");
+    cmd.Parameters.AddWithValue(item.Price);
+    cmd.Parameters.AddWithValue(item.Quantity);
+    cmd.CommandTimeout = 2;
+
+    item.Id = (int)(await cmd.ExecuteScalarAsync(session.RequestAborted))!;
+    crudCache.TryRemove(item.Id, out _);
+
+    return session.Response.Status(201).Json(item);
+}
+
+async Task<HttpResponse> CrudUpdate(HttpSession session)
+{
+    if (pgDataSource is null)
+    {
+        return session.Response.InternalServerError("Database not available");
+    }
+
+    var id = GetRouteInt(session, "id", 0);
+    var item = DeserializeBody<CrudItem>(session);
+
+    if (item is null)
+    {
+        return session.Response.Status(400).Text("Bad Request");
+    }
+
+    await using var cmd = pgDataSource.CreateCommand(
+        "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4");
+
+    cmd.Parameters.AddWithValue(item.Name ?? "Updated");
+    cmd.Parameters.AddWithValue(item.Price);
+    cmd.Parameters.AddWithValue(item.Quantity);
+    cmd.Parameters.AddWithValue(id);
+    cmd.CommandTimeout = 2;
+
+    var affected = await cmd.ExecuteNonQueryAsync(session.RequestAborted);
+
+    if (affected == 0)
+    {
+        return session.Response.NotFound();
+    }
+
+    crudCache.TryRemove(id, out _);
+    item.Id = id;
+
+    return session.Response.Json(item);
+}
+
+async Task<DbItem?> FetchItemById(int id, CancellationToken cancellationToken)
+{
+    await using var cmd = pgDataSource!.CreateCommand(
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
+        "FROM items WHERE id = $1 LIMIT 1");
+
+    cmd.Parameters.AddWithValue(id);
+    cmd.CommandTimeout = 2;
+
+    await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+
+    return await reader.ReadAsync(cancellationToken) ? ReadDbItem(reader) : null;
+}
+
+DbItem ReadDbItem(NpgsqlDataReader reader)
+{
+    return new DbItem
+    {
+        Id = reader.GetInt32(0),
+        Name = reader.GetString(1),
+        Category = reader.GetString(2),
+        Price = reader.GetInt32(3),
+        Quantity = reader.GetInt32(4),
+        Active = reader.GetBoolean(5),
+        Tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6), jsonOptions),
+        Rating = new RatingInfo { Score = reader.GetInt32(7), Count = reader.GetInt32(8) }
+    };
+}
+
+T? DeserializeBody<T>(HttpSession session)
+{
+    try
+    {
+        return JsonSerializer.Deserialize<T>(session.Request.BodyString, jsonOptions);
+    }
+    catch (JsonException)
+    {
+        return default;
+    }
 }
 
 static List<DatasetItem>? LoadItems()
 {
-    var jsonOptions = new JsonSerializerOptions
-    {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+    var datasetPath = Environment.GetEnvironmentVariable("DATASET_PATH") ?? "/data/dataset.json";
 
-    var datasetPath = File.Exists("/data/dataset.json") ? "/data/dataset.json" : "../../../../../data/dataset.json";
-
-    if (File.Exists(datasetPath))
+    if (!File.Exists(datasetPath))
     {
-        return JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(datasetPath), jsonOptions);
+        datasetPath = "../../../../../data/dataset.json";
     }
 
-    return null;
-}
-
-static SqlitePool? OpenPool()
-{
-    var dbPath = "/data/benchmark.db";
-    if (!File.Exists(dbPath)) return null;
-    return new SqlitePool($"Data Source={dbPath};Mode=ReadOnly", Environment.ProcessorCount);
+    return File.Exists(datasetPath)
+        ? JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(datasetPath), jsonOptions)
+        : null;
 }
 
 static NpgsqlDataSource? OpenPgPool()
 {
     var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-    if (string.IsNullOrEmpty(dbUrl)) return null;
+
+    if (string.IsNullOrEmpty(dbUrl))
+    {
+        return null;
+    }
+
     try
     {
         var uri = new Uri(dbUrl);
         var userInfo = uri.UserInfo.Split(':');
-        var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size=256;Minimum Pool Size=64;Multiplexing=true;No Reset On Close=true;Max Auto Prepare=4;Auto Prepare Min Usages=1";
-        var builder = new NpgsqlDataSourceBuilder(connStr);
-        return builder.Build();
+        var maxConn = int.TryParse(Environment.GetEnvironmentVariable("DATABASE_MAX_CONN"), out var p) && p > 0
+            ? p
+            : 256;
+        var minConn = Math.Min(64, maxConn);
+        var connStr =
+            $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};" +
+            $"Maximum Pool Size={maxConn};Minimum Pool Size={minConn};Multiplexing=true;No Reset On Close=true;Max Auto Prepare=20;Auto Prepare Min Usages=1";
+
+        return new NpgsqlDataSourceBuilder(connStr).Build();
     }
-    catch { return null; }
+    catch
+    {
+        return null;
+    }
+}
+
+static int GetRouteInt(HttpSession session, string name, int fallback)
+{
+    if (session.Request.RouteValues is null)
+    {
+        return fallback;
+    }
+
+    if (session.Request.RouteValues.TryGetValue(name, out var value) &&
+        int.TryParse(value, out var parsed))
+    {
+        return parsed;
+    }
+
+    if (session.Request.RouteValues.TryGetValue($":{name}", out value) &&
+        int.TryParse(value, out parsed))
+    {
+        return parsed;
+    }
+
+    return fallback;
+}
+
+static int GetQueryInt(HttpSession session, string name, int fallback)
+{
+    return session.Request.Query.TryGetValue(name, out var value) &&
+           int.TryParse(value, out var parsed)
+        ? parsed
+        : fallback;
+}
+
+static string GetQueryString(HttpSession session, string name, string fallback)
+{
+    return session.Request.Query.TryGetValue(name, out var value) && !string.IsNullOrEmpty(value)
+        ? value
+        : fallback;
 }
 
 static int ParseInt(ReadOnlySequence<byte> sequence)
@@ -238,31 +458,4 @@ static int ParseInt(ReadOnlySequence<byte> sequence)
     return value2;
 }
 
-sealed class SqlitePool
-{
-    private readonly ConcurrentBag<SqliteConnection> _connections = new();
-
-    public SqlitePool(string connectionString, int size)
-    {
-        for (int i = 0; i < size; i++)
-        {
-            var conn = new SqliteConnection(connectionString);
-            conn.Open();
-            using var pragma = conn.CreateCommand();
-            pragma.CommandText = "PRAGMA mmap_size=268435456";
-            pragma.ExecuteNonQuery();
-            _connections.Add(conn);
-        }
-    }
-
-    public SqliteConnection Rent()
-    {
-        SqliteConnection? conn;
-        var spin = new SpinWait();
-        while (!_connections.TryTake(out conn))
-            spin.SpinOnce();
-        return conn;
-    }
-
-    public void Return(SqliteConnection conn) => _connections.Add(conn);
-}
+sealed record CrudCacheEntry(byte[] Body, long ExpiresAt);

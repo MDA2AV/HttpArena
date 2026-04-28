@@ -18,4 +18,5 @@ class MethodGuard
 end
 
 use MethodGuard
+use Rack::Deflater
 run App

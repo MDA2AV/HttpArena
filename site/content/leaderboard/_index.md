@@ -122,6 +122,72 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
 </script>
 </div>
 
+<div id="timeline-link-bar" style="display:flex; margin-top:0.5rem; padding:0.45rem 0.9rem; justify-content:flex-end; align-items:center; gap:0.5rem; font-size:0.8rem; color:#64748b;">
+  <span aria-hidden="true">📈</span>
+  <span id="timeline-link-prefix">Browse historical benchmark results on</span>
+  <a id="timeline-link"
+     href="https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/"
+     target="_blank" rel="noopener"
+     style="color:#7c3aed; text-decoration:none; font-weight:600;">HttpArena Timeline →</a>
+</div>
+<style>
+html.dark #timeline-link-bar { color:#94a3b8; }
+html.dark #timeline-link { color:#a78bfa; }
+#timeline-link:hover { text-decoration:underline; }
+</style>
+<script>
+(function() {
+  var TIMELINE_BASE = 'https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/';
+  /* Per-version: wrapper id and panel class. Composite has no entry here. */
+  var VERSION_CFG = {
+    h1iso:   { wrapper: 'lb-h1iso-wrapper',   panel: 'lb-panel'         },
+    h1wk:    { wrapper: 'lb-h1wk-wrapper',    panel: 'lb-panel'         },
+    h2:      { wrapper: 'lb-h2-wrapper',      panel: 'lb-panel-h2'      },
+    gateway: { wrapper: 'lb-gateway-wrapper', panel: 'lb-panel-gw'      },
+    h3:      { wrapper: 'lb-h3-wrapper',      panel: 'lb-panel-h3'      },
+    grpc:    { wrapper: 'lb-grpc-wrapper',    panel: 'lb-panel-grpc'    },
+    ws:      { wrapper: 'lb-ws-wrapper',      panel: 'lb-panel-ws'      }
+  };
+  var GENERIC_PREFIX  = 'Browse historical benchmark results on';
+  var SPECIFIC_PREFIX = 'Track this test over time:';
+  function setGeneric() {
+    var p = document.getElementById('timeline-link-prefix');
+    var l = document.getElementById('timeline-link');
+    if (p) p.textContent = GENERIC_PREFIX;
+    if (l) l.href = TIMELINE_BASE;
+  }
+  function update() {
+    var verEl = document.querySelector('.http-ver.active');
+    var v = verEl ? verEl.dataset.ver : 'composite';
+    var cfg = VERSION_CFG[v];
+    if (!cfg) { setGeneric(); return; }
+    var wrap = document.getElementById(cfg.wrapper);
+    if (!wrap) { setGeneric(); return; }
+    var panel = wrap.querySelector('.' + cfg.panel + '.active');
+    if (!panel || !panel.dataset.panel) { setGeneric(); return; }
+    var test = panel.dataset.panel;
+    var connTab = panel.querySelector('.lb-conn-tab.active');
+    var conns = connTab ? connTab.dataset.conns : null;
+    if (!conns || conns === 'best') {
+      /* "Best" aggregates across conn counts; pick the highest numeric value declared on the panel for the timeline deep link. */
+      var declared = (panel.dataset.conns || '').split(',').filter(function(c) { return /^\d+$/.test(c); }).map(Number);
+      if (!declared.length) { setGeneric(); return; }
+      conns = Math.max.apply(null, declared);
+    }
+    var p = document.getElementById('timeline-link-prefix');
+    var l = document.getElementById('timeline-link');
+    if (p) p.textContent = SPECIFIC_PREFIX;
+    if (l) l.href = TIMELINE_BASE + '#test=' + test + '-' + conns;
+  }
+  /* Poll once a frame for the first 2 seconds in case shortcode scripts mutate state asynchronously, then settle into a low-frequency check that catches any tab/filter interaction we didn't event-hook. */
+  var ticks = 0;
+  var fast = setInterval(function() {
+    update();
+    if (++ticks > 30) { clearInterval(fast); setInterval(update, 400); }
+  }, 60);
+})();
+</script>
+
 <div id="lb-h1iso-wrapper" style="display:none;">
 {{< leaderboard-h1-isolated >}}
 </div>
@@ -271,6 +337,11 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
     var state = { v: v };
 
     if (v === 'composite') {
+      /* View (table vs graph) */
+      if (typeof window.compositeGetView === 'function') {
+        var cv = window.compositeGetView();
+        if (cv && cv !== 'table') state.view = cv;
+      }
       /* Protocol */
       var protos = [];
       document.querySelectorAll('.composite-proto-select.active').forEach(function(p) { protos.push(p.dataset.proto); });
@@ -361,6 +432,7 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
     if (state.lang) parts.push('lang=' + encodeURIComponent(state.lang));
     if (state.engine) parts.push('engine=' + encodeURIComponent(state.engine));
     if (state.q) parts.push('q=' + encodeURIComponent(state.q));
+    if (state.view) parts.push('view=' + state.view);
     var newHash = parts.length > 0 ? '#' + parts.join('&') : '';
     if (location.hash !== newHash) history.replaceState(null, '', newHash || location.pathname);
   }
@@ -465,6 +537,10 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
       }
       if (typeof renderComposite === 'function') renderComposite();
       if (typeof updateCompositeNote === 'function') updateCompositeNote();
+      /* View (table vs graph) — apply after filters so the first paint uses them */
+      if (typeof window.setCompositeView === 'function') {
+        window.setCompositeView(p.view === 'graph' ? 'graph' : 'table');
+      }
       return;
     }
 
@@ -530,6 +606,7 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
         t.closest('.lb-dropdown-item') || t.closest('.composite-type-filter') ||
         t.closest('.composite-proto-select') || t.closest('.composite-profile-filter') ||
         t.closest('.composite-dropdown-item') || t.closest('.composite-resource-toggle') ||
+        t.closest('.composite-view-tab') ||
         t.closest('[class*="lb-tab"]')) {
       window.dlScheduleUpdate();
     }
@@ -548,5 +625,44 @@ html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
     window.addEventListener('load', deferredRestore);
   }
   window.addEventListener('hashchange', restore);
+})();
+</script>
+
+<style>
+/* Horizontal scroll for all leaderboard tables (.lb). Wide profiles like
+   json-comp (14 fixed-width columns, no flex) overflow the card at typical
+   desktop widths. The script below inserts a thin mirror scrollbar above
+   each .lb so the user doesn't have to scroll the page down to find the
+   horizontal scrollbar on tall tables. The .lb's own native scrollbar is
+   hidden (we drive it via the mirror), but native wheel/touch/keyboard
+   scroll on .lb still works. */
+.lb { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.lb::-webkit-scrollbar { display: none; }
+.lb-scrollbar-top { overflow-x: auto; overflow-y: hidden; height: 12px; margin-bottom: 0.15rem; }
+.lb-scrollbar-top > div { height: 1px; }
+</style>
+<script>
+(function() {
+  function attach(lb) {
+    if (lb.dataset.lbSyncTop) return;
+    var top = document.createElement('div');
+    top.className = 'lb-scrollbar-top';
+    var track = document.createElement('div');
+    top.appendChild(track);
+    lb.parentNode.insertBefore(top, lb);
+    var ignore = false;
+    top.addEventListener('scroll', function() { if (ignore) return; ignore = true; lb.scrollLeft = top.scrollLeft; requestAnimationFrame(function() { ignore = false; }); });
+    lb.addEventListener('scroll', function() { if (ignore) return; ignore = true; top.scrollLeft = lb.scrollLeft; requestAnimationFrame(function() { ignore = false; }); });
+    function resize() { track.style.width = lb.scrollWidth + 'px'; top.style.display = lb.scrollWidth > lb.clientWidth ? '' : 'none'; }
+    if (window.ResizeObserver) new ResizeObserver(resize).observe(lb);
+    resize();
+    lb.dataset.lbSyncTop = '1';
+  }
+  function attachAll() { document.querySelectorAll('.lb').forEach(attach); }
+  if (document.readyState === 'complete') attachAll();
+  else window.addEventListener('load', attachAll);
+  /* Tab/filter switches and dynamic re-renders create new .lb elements;
+     a low-frequency sweep catches them without hooking every event. */
+  setInterval(attachAll, 2000);
 })();
 </script>

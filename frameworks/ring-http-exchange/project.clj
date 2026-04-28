@@ -14,7 +14,8 @@
                  [metosin/jsonista "1.0.0"]
                  [com.zaxxer/HikariCP "6.2.1"]
                  [io.github.robaho/httpserver "1.0.29"]
-                 [com.github.seancorfield/next.jdbc "1.3.1093"]]
+                 [com.github.seancorfield/next.jdbc "1.3.1093"]
+                 [org.clojure/core.cache "1.2.263"]]
 
   :main ^:skip-aot ring.core
 

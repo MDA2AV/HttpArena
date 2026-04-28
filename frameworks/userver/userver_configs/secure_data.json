@@ -1,0 +1,12 @@
+{
+  "postgresql_settings": {
+    "databases": {
+      "hello_world": [{
+        "shard_number" : 0,
+        "hosts": [
+          "postgresql://bench:bench@localhost:5432/benchmark?sslmode=disable"
+        ]
+      }]
+    }
+  }
+}

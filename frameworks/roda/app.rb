@@ -26,10 +26,9 @@ class App < Roda
     opts[:dataset_items] = items
   end
 
-  plugin :public, root: DATA_DIR, gzip: true, brotli: true
-
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
 
+  plugin :public, root: DATA_DIR, gzip: true, brotli: true
   plugin :default_headers, 'Server' => SERVER_NAME
   plugin :request_headers
   plugin :plain_hash_response_headers
@@ -66,20 +65,7 @@ class App < Roda
         d.merge(total: (d[:price] * d[:quantity] * m))
       end
 
-      result = JSON.generate({ 'items' => items, 'count' => count })
-
-      if accept_encodings = r.headers['Accept-Encoding']
-        type = accept_encodings.split(',').map(&:strip)
-        if type.include? 'gzip'
-          sio = StringIO.new
-          gz = Zlib::GzipWriter.new(sio, 1)
-          gz.write(result)
-          gz.close
-          response[RodaResponseHeaders::CONTENT_ENCODING] = 'gzip'
-          result = sio.string
-        end
-      end
-      render_json result
+      render_json JSON.generate(items: items, count: count)
     end
 
     r.is 'upload' do

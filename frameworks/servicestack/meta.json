@@ -1,7 +1,7 @@
 {
   "display_name": "servicestack",
   "language": "C#",
-  "type": "tuned",
+  "type": "production",
   "engine": "kestrel",
   "description": "One framework to power them all. Write your HTTP APIs once and take advantage of end to end typed integrations for all popular Web, Mobile and Desktop platforms.",
   "repo": "https://github.com/ServiceStack/ServiceStack",
@@ -11,6 +11,7 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-tls",
     "json-comp",
     "upload",
     "static",
@@ -18,5 +19,7 @@
     "api-4",
     "api-16"
   ],
-  "maintainers": []
+  "maintainers": [
+    "Kaliumhexacyanoferrat"
+  ]
 }

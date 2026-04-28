@@ -117,6 +117,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp-kestrel",
+    "language": "C#",
+    "rps": 161502,
+    "avg_latency": "47.82ms",
+    "p99_latency": "47.82ms",
+    "cpu": "6210.9%",
+    "memory": "714MiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "2.87GB/s",
+    "reconnects": 0,
+    "status_2xx": 813973,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "h2o",
     "language": "C",
     "rps": 310801,
@@ -353,5 +372,24 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "symfony-spawn-franken",
+    "language": "PHP",
+    "rps": 63518,
+    "avg_latency": "64.13ms",
+    "p99_latency": "64.13ms",
+    "cpu": "5491.9%",
+    "memory": "2.2GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "637.75MB/s",
+    "reconnects": 0,
+    "status_2xx": 320134,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 286846
   }
 ]

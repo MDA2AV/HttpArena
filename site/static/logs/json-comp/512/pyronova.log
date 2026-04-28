@@ -6,16 +6,16 @@
   Script: /app/app.py
 
 
+
+  Pyronova v2.0.2 [hybrid mode]
   Pyronova v2.0.2 [hybrid mode]
   Listening on https://0.0.0.0:8081
+  Listening on https://0.0.0.0:8443
   Sub-interpreters: 32 | IO threads: 32 (CPUs: 64)
+  Sub-interpreters: 32 | IO threads: 32 (CPUs: 64)
+  Routes: 5 sub-interp + 2 GIL + 0 async
   Routes: 5 sub-interp + 2 GIL + 0 async
   Script: /app/app.py
 
-
-  Pyronova v2.0.2 [hybrid mode]
-  Listening on https://0.0.0.0:8443
-  Sub-interpreters: 32 | IO threads: 32 (CPUs: 64)
-  Routes: 5 sub-interp + 2 GIL + 0 async
   Script: /app/app.py
 

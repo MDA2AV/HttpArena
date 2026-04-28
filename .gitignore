@@ -21,3 +21,6 @@ frameworks/fletch/.dart_tool/
 
 # Ignore node modules anywhere in the repo
 node_modules/
+
+# macOS Finder metadata
+.DS_Store

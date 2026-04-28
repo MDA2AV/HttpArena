@@ -1,0 +1,30 @@
+{
+  "display_name": "genhttp-kestrel",
+  "language": "C#",
+  "type": "production",
+  "engine": "kestrel",
+  "description": "Lightweight, embeddable and modular C# web server.",
+  "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "baseline-h2",
+    "baseline-h3",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "async-db",
+    "static",
+    "static-h2",
+    "static-h3",
+    "api-4",
+    "api-16",
+    "crud"
+  ],
+  "maintainers": [
+    "Kaliumhexacyanoferrat"
+  ]
+}

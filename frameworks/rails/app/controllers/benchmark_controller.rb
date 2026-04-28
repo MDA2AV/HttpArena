@@ -18,10 +18,6 @@ class BenchmarkController < ActionController::API
 
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
 
-  def pipeline
-    render plain: 'ok'
-  end
-
   def baseline11
     total = params[:a].to_i + params[:b].to_i
     if request.post?

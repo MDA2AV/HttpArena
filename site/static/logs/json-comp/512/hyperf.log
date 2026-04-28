@@ -11,9 +11,9 @@
 [INFO] Worker#10 started.
 [INFO] Worker#11 started.
 [INFO] Worker#12 started.
-[INFO] Worker#13 started.
 [INFO] WebSocket Server listening at 0.0.0.0:9502
 [INFO] HTTP Server listening at 0.0.0.0:8080
+[INFO] Worker#13 started.
 [INFO] Worker#14 started.
 [INFO] Worker#15 started.
 [INFO] Worker#16 started.
@@ -21,12 +21,12 @@
 [INFO] Worker#18 started.
 [INFO] Worker#19 started.
 [INFO] Worker#20 started.
-[INFO] Worker#22 started.
 [INFO] Worker#21 started.
+[INFO] Worker#22 started.
 [INFO] Worker#23 started.
 [INFO] Worker#24 started.
-[INFO] Worker#25 started.
 [INFO] Worker#26 started.
+[INFO] Worker#25 started.
 [INFO] Worker#27 started.
 [INFO] Worker#28 started.
 [INFO] Worker#29 started.

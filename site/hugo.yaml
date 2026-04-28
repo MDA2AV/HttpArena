@@ -16,6 +16,9 @@ menu:
     - name: Leaderboard
       pageRef: /leaderboard
       weight: 1
+    - name: Timeline
+      url: https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/
+      weight: 1.5
     - name: Knowledge Base
       pageRef: /docs
       weight: 2

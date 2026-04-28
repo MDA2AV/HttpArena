@@ -185,6 +185,13 @@
     "type": "tuned",
     "engine": "frankenphp"
   },
+  "genhttp-kestrel": {
+    "dir": "genhttp-kestrel",
+    "description": "Lightweight, embeddable and modular C# web server.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+    "type": "production",
+    "engine": "kestrel"
+  },
   "genhttp": {
     "dir": "genhttp",
     "description": "Lightweight, embeddable and modular C# web server.",
@@ -291,6 +298,13 @@
     "repo": "https://github.com/fredrikwidlund/libreactorng",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "lute": {
+    "dir": "lute",
+    "description": "Lute standalone Luau runtime",
+    "repo": "https://github.com/luau-lang/lute",
+    "type": "production",
+    "engine": "lute"
   },
   "mark": {
     "dir": "mark",
@@ -410,7 +424,7 @@
     "dir": "roda",
     "description": "Roda routing tree web toolkit",
     "repo": "https://github.com/jeremyevans/roda",
-    "type": "tuned",
+    "type": "production",
     "engine": "puma"
   },
   "rust-epoll": {
@@ -424,12 +438,12 @@
     "dir": "servicestack",
     "description": "One framework to power them all. Write your HTTP APIs once and take advantage of end to end typed integrations for all popular Web, Mobile and Desktop platforms.",
     "repo": "https://github.com/ServiceStack/ServiceStack",
-    "type": "tuned",
+    "type": "production",
     "engine": "kestrel"
   },
   "simplew": {
     "dir": "simplew",
-    "description": "SimpleW is Web server Library in .NET Core. Powerfully Simple and Blazingly Fast.",
+    "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
     "repo": "https://github.com/stratdev3/SimpleW",
     "type": "tuned",
     "engine": "simplew"
@@ -438,7 +452,7 @@
     "dir": "sinatra",
     "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
     "repo": "https://github.com/sinatra/sinatra",
-    "type": "tuned",
+    "type": "production",
     "engine": "puma"
   },
   "sisk": {
@@ -492,6 +506,13 @@
       }
     ]
   },
+  "symfony-spawn-franken": {
+    "dir": "symfony-spawn-franken",
+    "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and FrankenPHP.",
+    "repo": "https://github.com/yangusik/symfony-spawn",
+    "type": "tuned",
+    "engine": "frankenphp"
+  },
   "tonic-grpc": {
     "dir": "tonic-grpc",
     "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
@@ -512,6 +533,13 @@
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "tuned",
     "engine": "uwebsockets"
+  },
+  "userver": {
+    "dir": "userver",
+    "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
+    "repo": "https://github.com/userver-framework/userver",
+    "type": "production",
+    "engine": "userver"
   },
   "uvicorn": {
     "dir": "uvicorn",
