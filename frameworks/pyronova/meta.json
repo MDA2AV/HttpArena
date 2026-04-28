@@ -19,7 +19,10 @@
     "baseline-h2",
     "static-h2",
     "api-4",
-    "api-16"
+    "api-16",
+    "crud",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
   "maintainers": []
 }
