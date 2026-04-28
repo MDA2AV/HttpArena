@@ -1,0 +1,1 @@
+UPDATE items SET name = :name, price = :price, quantity = :quantity WHERE id = :id

@@ -6,7 +6,6 @@
             [jj.sql.boa.query.next-jdbc :refer [->NextJdbcAdapter]]
             [jj.tassu :refer [GET POST PUT route]]
             [jsonista.core :as json]
-            [next.jdbc :as jdbc]
             [ring-http-exchange.core :as server]
             [ring-http-exchange.ssl :as ssl])
   (:import (com.zaxxer.hikari HikariConfig HikariDataSource)
@@ -32,7 +31,6 @@
 (def ^:private ^:const dot ".")
 (def ^:private ^:const not-found-body "Not found")
 (def ^:private ^:const dataset-path "/data/dataset.json")
-(def ^:private ^:const db-path "/data/benchmark.db")
 (def ^:private ^:const static-dir "/data/static")
 (def ^:private ^:const param-min "min")
 (def ^:private ^:const param-max "max")
@@ -50,7 +48,6 @@
 (def ^:private json-gzip-headers {hdr-ct ct-json hdr-ce enc-gzip hdr-server server-name})
 (def ^:private text-headers      {hdr-ct ct-text hdr-server server-name})
 
-(def ^:private sqlite-query (boa/build-query (->NextJdbcAdapter) "sql/db-query"))
 (def ^:private pg-query (boa/build-query (->NextJdbcAdapter) "sql/pg-query"))
 (def ^:private crud-list-query (boa/build-query (->NextJdbcAdapter) "sql/crud-list"))
 (def ^:private crud-read-query (boa/build-query (->NextJdbcAdapter) "sql/crud-read"))
@@ -136,16 +133,6 @@
         ext       (if (>= dot-index 0) (subs name dot-index) "")]
     (get extension-map ext ct-octet)))
 
-(defn- transform-sqlite-row [row]
-  {:id       (:id row)
-   :name     (:name row)
-   :category (:category row)
-   :price    (:price row)
-   :quantity (:quantity row)
-   :active   (== 1 (long (:active row)))
-   :tags     (json/read-value (:tags row) json/keyword-keys-object-mapper)
-   :rating   {:score (:rating_score row) :count (:rating_count row)}})
-
 (defn- transform-pg-row [row]
   {:id       (:id row)
    :name     (:name row)
@@ -196,10 +183,6 @@
          (println (str "Failed to start server on port " port
                        ": " (.getMessage e))))))))
 
-(defn- init-sqlite []
-  (when (.exists (io/file db-path))
-    (jdbc/get-datasource {:dbtype "sqlite" :dbname db-path :read-only true})))
-
 (defn- init-postgres []
   (when-let [url (System/getenv "DATABASE_URL")]
     (try
@@ -242,21 +225,9 @@
   (with-open [^InputStream in (:body req)]
     (text-response (.transferTo in (OutputStream/nullOutputStream)))))
 
-(defn- query-sqlite-items [ds params]
-  (try (mapv transform-sqlite-row (sqlite-query ds params))
-       (catch Exception _ [])))
-
 (defn- query-pg-items [ds params]
   (try (mapv transform-pg-row (pg-query ds params))
        (catch Exception _ [])))
-
-(defn- handle-sqlite [ds req]
-  (let [params (parse-qs (:query-string req))
-        min-p  (safe-parse-double (get params param-min) 10.0)
-        max-p  (safe-parse-double (get params param-max) 50.0)
-        limit  (safe-parse-long (get params param-limit) 50)
-        items  (query-sqlite-items ds {:min min-p :max max-p :limit limit})]
-    (json-response {:items items :count (clojure.core/count items)})))
 
 (defn- handle-pg [ds req]
   (let [params (parse-qs (:query-string req))
@@ -353,13 +324,12 @@
        :body    f}
       {:status 404 :body not-found-body})))
 
-(defn- build-handler [{:keys [dataset sqlite-ds pg-ds]}]
+(defn- build-handler [{:keys [dataset  pg-ds]}]
   (route
     {"/baseline11"       [(GET  handle-baseline-get)
                           (POST handle-baseline-post)]
      "/json/:count"      [(GET  (fn [req] (handle-json dataset req)))]
      "/upload"           [(POST handle-upload)]
-     "/db"               [(GET  (fn [req] (handle-sqlite sqlite-ds req)))]
      "/async-db"         [(GET  (fn [req] (handle-pg pg-ds req)))]
      "/crud/items"       [(GET  (fn [req] (handle-crud-list pg-ds req)))
                           (POST (fn [req] (handle-crud-create pg-ds req)))]
@@ -371,7 +341,6 @@
 (defn -main [& _]
   (let [dataset  (load-json (or (System/getenv "DATASET_PATH") dataset-path))
         handler  (build-handler {:dataset   dataset
-                                 :sqlite-ds (init-sqlite)
                                  :pg-ds     (init-postgres)})]
     (start-server! handler plain-port)
     (start-server! handler tls-port (load-ssl-context))))
