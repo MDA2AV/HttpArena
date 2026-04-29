@@ -36,10 +36,22 @@ function json($request, $count)
         $total[] = $item;
     }
 
+    $result = json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $header = [];
+    if($encoding = $request->header('accept-encoding', '')) {
+        if(str_contains($encoding, 'br')) {
+            $result = brotli_compress($result, 1);
+            $header = ['Content-Encoding' => 'br'];
+        } elseif (str_contains($encoding, 'gzip')) {
+            $result = gzencode($result, 1);
+            $header = ['Content-Encoding' => 'br'];
+        }
+    }
+
     return new Response (
         200,
-        ['Content-Type' => 'application/json'],
-        json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        ['Content-Type' => 'application/json'] + $header,
+        $result
     );
 }
 

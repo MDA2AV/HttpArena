@@ -11,7 +11,8 @@ RUN apt-get install -yqq php8.5-cli php8.5-xml php8.5-zip php8.5-pgsql >/dev/nul
 COPY --from=composer/composer:latest-bin --link /composer /usr/local/bin/composer
 
 RUN apt-get install -y php-pear php8.5-dev libevent-dev git >/dev/null && \
-    pecl install event-3.1.4 > /dev/null && echo "extension=event.so" > /etc/php/8.5/cli/conf.d/30-event.ini
+    pecl install event-3.1.4 >/dev/null && echo "extension=event.so" > /etc/php/8.5/cli/conf.d/30-event.ini && \
+    pecl install brotli >/dev/null && echo "extension=brotli.so" > /etc/php/8.5/cli/conf.d/30-brotli.ini
 
 WORKDIR /mark
 COPY composer.json .
