@@ -9,7 +9,6 @@
                  [org.clojars.jj/tassu "1.0.4"]
                  [org.clojars.jj/boa-sql "1.0.10"]
                  [org.clojars.jj/next-jdbc-adapter "1.0.10"]
-                 [org.xerial/sqlite-jdbc "3.49.1.0"]
                  [org.postgresql/postgresql "42.7.5"]
                  [metosin/jsonista "1.0.0"]
                  [com.zaxxer/HikariCP "6.2.1"]

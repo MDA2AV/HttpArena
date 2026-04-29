@@ -24,14 +24,14 @@
                                              io.netty/netty-transport-native-kqueue
                                              io.netty/netty-transport-native-unix-common]]
                  [io.netty/netty-all "4.2.12.Final"]
-                 [org.clojars.jj/tassu "1.0.3"]
+                 [org.clojars.jj/tassu "1.0.4"]
                  [org.clojars.jj/boa-sql "1.0.10"]
                  [org.clojars.jj/async-boa-sql "1.0.10"]
                  [org.clojars.jj/next-jdbc-adapter "1.0.10"]
                  [org.clojars.jj/vertx-pg-client-async-boa-adapter "1.0.1"]
-                 [org.xerial/sqlite-jdbc "3.49.1.0"]
                  [metosin/jsonista "1.0.0"]
-                 [com.github.seancorfield/next.jdbc "1.3.1093"]]
+
+                 [org.clojure/core.cache "1.2.263"]]
 
   :main ^:skip-aot aleph-bench.core
 
