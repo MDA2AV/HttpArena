@@ -126,7 +126,7 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
   <span aria-hidden="true">📈</span>
   <span id="timeline-link-prefix">Browse historical benchmark results on</span>
   <a id="timeline-link"
-     href="https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/"
+     href="https://timeline.http-arena.com"
      target="_blank" rel="noopener"
      style="color:#7c3aed; text-decoration:none; font-weight:600;">HttpArena Timeline →</a>
 </div>
@@ -137,7 +137,7 @@ html.dark #timeline-link { color:#a78bfa; }
 </style>
 <script>
 (function() {
-  var TIMELINE_BASE = 'https://kaliumhexacyanoferrat.github.io/HttpArena-Timeline/';
+  var TIMELINE_BASE = 'https://timeline.http-arena.com/';
   /* Per-version: wrapper id and panel class. Composite has no entry here. */
   var VERSION_CFG = {
     h1iso:   { wrapper: 'lb-h1iso-wrapper',   panel: 'lb-panel'         },
