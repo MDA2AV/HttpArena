@@ -6,15 +6,6 @@ require 'Pgsql.php';
 Pgsql::init();
 define('JSON_DATA', json_decode(file_get_contents('/data/dataset.json'), true));
 
-function guard()
-{
-    if (!in_array(ngx_request_method(), ['POST', 'GET'])) {
-        ngx_header_set('Content-Type', 'text/plain');
-        echo 'Method Not Allowed';
-        ngx::_exit(405);
-    }
-}
-
 function baseline()
 {
     $sum = array_sum(ngx::query_args());
