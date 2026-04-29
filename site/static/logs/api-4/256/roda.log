@@ -1,6 +1,6 @@
 [1] Puma starting in cluster mode...
-[1] * Puma version: 7.2.0 ("On The Corner")
-[1] * Ruby version: ruby 4.0.2 (2026-03-17 revision d3da9fec82) +YJIT +MN +PRISM [x86_64-linux]
+[1] * Puma version: 8.0.1 ("Into the Arena")
+[1] * Ruby version: ruby 4.0.3 (2026-04-21 revision 85ddef263a) +YJIT +MN +PRISM [x86_64-linux]
 [1] *  Min threads: 4
 [1] *  Max threads: 4
 [1] *  Environment: production
@@ -9,6 +9,7 @@
 [1] *     Restarts: (✔) hot (✖) phased (✖) refork
 [1] * Preloading application
 [1] * Listening on http://0.0.0.0:8080
+[1] * Listening on ssl://0.0.0.0:8081?cert=/certs/server.crt&key=/certs/server.key
 [1] Use Ctrl-C to stop
 [1] ! WARNING: Detected `RUBY_MN_THREADS=1`
 [1] ! This setting is known to cause performance regressions with Puma.
