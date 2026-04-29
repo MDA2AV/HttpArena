@@ -24,7 +24,7 @@ class MarkAsIOBoundThreads
   end
 
   def call(env)
-    if env['PATH_INFO'] == '/baseline'
+    if env['PATH_INFO'].start_with? '/baseline'
       env["puma.mark_as_io_bound"].call
     end
     @app.call(env)
