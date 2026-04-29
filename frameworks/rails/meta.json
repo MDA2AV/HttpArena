@@ -1,7 +1,7 @@
 {
   "display_name": "rails",
   "language": "Ruby",
-  "type": "tuned",
+  "type": "production",
   "engine": "puma",
   "description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.",
   "repo": "https://github.com/rails/rails",

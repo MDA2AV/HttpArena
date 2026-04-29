@@ -20,14 +20,16 @@ class BenchmarkApp < Rails::Application
   # Disable all middleware we don't need
   config.middleware.delete ActionDispatch::HostAuthorization
   config.middleware.delete ActionDispatch::Callbacks
-  config.middleware.delete ActionDispatch::ActionableExceptions
   config.middleware.delete ActionDispatch::RemoteIp
   config.middleware.delete ActionDispatch::RequestId
   config.middleware.delete Rails::Rack::Logger
   config.middleware.delete ActionDispatch::ShowExceptions
 
+  # Add gzip support
+  config.middleware.insert 0, Rack::Deflater
+
   # Catch unknown HTTP methods, routing errors, and mark /upload as binary
-  config.middleware.insert_before 0, Class.new {
+  config.middleware.insert 0, Class.new {
     VALID_METHODS = %w[GET HEAD POST PUT DELETE PATCH OPTIONS TRACE].to_set.freeze
 
     def initialize(app)
