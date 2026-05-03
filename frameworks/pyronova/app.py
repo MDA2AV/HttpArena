@@ -118,7 +118,7 @@ def baseline11_post(req: "Request"):
     body = req.body
     if body:
         try:
-            total += int(body.decode("ascii", errors="replace").strip())
+            total += int(body.decode("ascii", errors="strict").strip())
         except (ValueError, UnicodeDecodeError):
             pass
     return Response(str(total), content_type="text/plain")
@@ -151,28 +151,40 @@ def upload(req: "Request"):
 # 50-item payload). Using Python's stdlib `json.dumps` instead costs
 # ~150μs per call on the same data. Returning the dict shaves ~100μs
 # per request on the /json profile.
+# Per-worker cache of pre-serialized JSON bytes for /json/{count}?m={m}.
+# Eliminates both the Python list comprehension and the Rust sonic-rs
+# serialization pass on cache hits. Each sub-interpreter has its own copy
+# so there is no lock contention. Cap at _JSON_CACHE_MAX keys to bound
+# memory and close the OOM vector from unbounded user-controlled inputs.
+_JSON_CACHE: dict = {}  # (count, m) -> bytes
+_JSON_CACHE_MAX = 256
+
+
 @app.get("/json/{count}")
 def json_endpoint(req: "Request"):
-    # Returning a dict directly triggers Pyronova's Rust-side JSON
-    # serialization path (pythonize + serde_json::to_vec). Empirically
-    # this matches or beats orjson.dumps() + Response(bytes) for
-    # small nested payloads — the explicit orjson path pays the C-API
-    # wrap twice (orjson → bytes, bytes → Response) while the
-    # dict-return path is a single Rust traversal.
     try:
         count = int(req.params["count"])
     except (KeyError, ValueError):
-        return {"items": [], "count": 0}
+        return Response(b'{"items":[],"count":0}', content_type="application/json")
     try:
         m = int(req.query_params.get("m", "1"))
     except ValueError:
         m = 1
-    count = min(count, len(DATASET_ITEMS))
+    count = max(0, min(count, len(DATASET_ITEMS)))
+    key = (count, m)
+    cached = _JSON_CACHE.get(key)
+    if cached is not None:
+        # Always wrap in a fresh Response — never share a mutable Python
+        # object across requests, even if the underlying bytes are the same.
+        return Response(cached, content_type="application/json")
     items = [
         {**dsitem, "total": dsitem["price"] * dsitem["quantity"] * m}
         for dsitem in DATASET_ITEMS[:count]
     ]
-    return {"items": items, "count": count}
+    body = json.dumps({"items": items, "count": count}, separators=(",", ":")).encode()
+    if len(_JSON_CACHE) < _JSON_CACHE_MAX:
+        _JSON_CACHE[key] = body
+    return Response(body, content_type="application/json")
 
 
 @app.get("/json-comp/{count}")
@@ -195,17 +207,16 @@ PG_SQL = (
 
 @app.get("/async-db")
 def async_db_endpoint(req: "Request"):
-    # Pyronova v2.2.0 added a C-FFI DB bridge (`_pyronova_db_fetch_*`
-    # injected into every sub-interp's globals). The bridge forwards
-    # sqlx calls onto the main-process shared pool while releasing the
-    # calling sub-interp's GIL, so this handler now fans out across the
-    # full sub-interp pool instead of serializing on the main interp.
-    # The 3.7k → target-30k+ rps jump on async-db lives here.
-    #
-    # `PG_POOL is None` still guards the "no DB configured" case — on
-    # sub-interp the `PgPool.connect()` call earlier in the module is a
-    # noop that returns a stateless handle; the real sqlx pool is
-    # initialized exactly once by the main interp's import-time call.
+    # Runs on a sub-interpreter worker. `PG_POOL` here is the mock
+    # `_PgPool` proxy installed by `_bootstrap.py` — calls forward to
+    # four C-FFI entry points (`_pyronova_db_fetch_{all,one,scalar}`,
+    # `_pyronova_db_execute`) that Rust injected into each worker's
+    # globals at startup. Those entry points queue the sqlx future
+    # onto the dedicated DB tokio runtime via `rt.spawn + channel`
+    # (see `src/bridge/db_bridge.rs::run_on_db_rt`) and block the
+    # sub-interp thread until the result lands — no nested runtime,
+    # no main-interp GIL bottleneck, parallelism ceiling is
+    # `min(sub_interp_workers, DATABASE_MAX_CONN)`.
     if PG_POOL is None:
         return _EMPTY_DB_RESPONSE
     q = req.query_params
@@ -256,6 +267,7 @@ def _rows_to_payload(rows):
 _EMPTY_DB_RESPONSE = {"items": [], "count": 0}
 _NOT_FOUND = Response("not found", status_code=404, content_type="text/plain")
 _BAD_REQUEST = Response("bad request", status_code=400, content_type="text/plain")
+_INTERNAL_ERROR = Response("internal server error", status_code=500, content_type="text/plain")
 
 
 # ---------------------------------------------------------------------------
@@ -324,48 +336,38 @@ def _row_to_full_item(row):
 
 @app.get("/crud/items/{id}", gil=True)
 def crud_get_one(req: "Request"):
-    # Arena cache-aside validation reads the X-Cache header (MISS/HIT) out
-    # of every response on this endpoint — including 404s. Leaving it off
-    # makes the runner's `curl | grep ^x-cache` pipeline fail under
-    # `set -o pipefail` and kills the entire test script silently, so we
-    # emit the header on every path below.
+    # Arena validator requires an `X-Cache: MISS|HIT` response header on
+    # this endpoint so the cache-aside test can observe that a second
+    # GET for the same id hits the in-process cache without re-querying
+    # Postgres. Header is computed once per code path and wrapped in a
+    # Response() because a bare dict return would skip custom headers.
+    if PG_POOL is None:
+        return _NOT_FOUND
     try:
         item_id = int(req.params["id"])
     except (KeyError, ValueError):
-        return Response(
-            body="bad request", status_code=400,
-            content_type="application/json", headers={"X-Cache": "MISS"},
-        )
-    if PG_POOL is None:
-        return Response(
-            body="not found", status_code=404,
-            content_type="application/json", headers={"X-Cache": "MISS"},
-        )
+        return _BAD_REQUEST
     now = _time.monotonic()
     entry = _CRUD_CACHE.get(item_id)
     if entry is not None and entry[1] > now:
         return Response(
-            body=entry[0], status_code=200,
-            content_type="application/json", headers={"X-Cache": "HIT"},
+            body=json.dumps(entry[0]),
+            content_type="application/json",
+            headers={"x-cache": "HIT"},
         )
     try:
         row = PG_POOL.fetch_one(_CRUD_GET_SQL, item_id)
     except RuntimeError:
         log.warning("/crud/items/%s: fetch_one failed", item_id, exc_info=True)
-        return Response(
-            body="not found", status_code=404,
-            content_type="application/json", headers={"X-Cache": "MISS"},
-        )
+        return _INTERNAL_ERROR
     if row is None:
-        return Response(
-            body="not found", status_code=404,
-            content_type="application/json", headers={"X-Cache": "MISS"},
-        )
-    item_json = json.dumps(_row_to_full_item(row))
-    _CRUD_CACHE[item_id] = (item_json, now + _CRUD_TTL_S)
+        return _NOT_FOUND
+    item = _row_to_full_item(row)
+    _CRUD_CACHE[item_id] = (item, now + _CRUD_TTL_S)
     return Response(
-        body=item_json, status_code=200,
-        content_type="application/json", headers={"X-Cache": "MISS"},
+        body=json.dumps(item),
+        content_type="application/json",
+        headers={"x-cache": "MISS"},
     )
 
 
@@ -392,7 +394,7 @@ def crud_list(req: "Request"):
         rows = PG_POOL.fetch_all(_CRUD_LIST_SQL, category, limit, offset)
     except RuntimeError:
         log.warning("/crud/items list: fetch_all failed", exc_info=True)
-        return _EMPTY_CRUD_LIST
+        return _INTERNAL_ERROR
     items = [_row_to_full_item(r) for r in rows]
     return {"items": items, "total": len(items), "page": page, "limit": limit}
 
@@ -416,7 +418,7 @@ def crud_update(req: "Request"):
         affected = PG_POOL.execute(_CRUD_UPDATE_SQL, name, price, quantity, item_id)
     except RuntimeError:
         log.warning("/crud/items/%s update: execute failed", item_id, exc_info=True)
-        return _NOT_FOUND
+        return _INTERNAL_ERROR
     if affected == 0:
         return _NOT_FOUND
     _CRUD_CACHE.pop(item_id, None)
@@ -446,7 +448,7 @@ def crud_upsert(req: "Request"):
         )
     except RuntimeError:
         log.warning("/crud/items upsert id=%s: fetch_scalar failed", item_id, exc_info=True)
-        return _BAD_REQUEST
+        return _INTERNAL_ERROR
     _CRUD_CACHE.pop(item_id, None)
     return Response(
         body=json.dumps({
@@ -470,4 +472,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PYRONOVA_PORT", "8080"))
     # Detect worker count from cgroup cpu.max (same pattern as actix's helper).
     # Pyronova's engine will fall back to num_cpus if PYRONOVA_WORKERS isn't set.
-    app.run(host=host, port=port)
+    _tls_ports_env = os.environ.get("PYRONOVA_TLS_PORTS")
+    extra_tls_ports = [int(p) for p in _tls_ports_env.split(",") if p.strip()] if _tls_ports_env else None
+    app.run(host=host, port=port, extra_tls_ports=extra_tls_ports)

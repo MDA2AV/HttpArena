@@ -1,21 +1,19 @@
-"""Launcher — spawns two Pyronova processes (HTTP plain + HTTPS).
+"""Launcher — spawns ONE Pyronova process serving all ports simultaneously.
 
-Plain HTTP on $PORT (default 8080) and HTTPS on $PORT+1 for the json-tls
-profile. A separate HTTP/2 listener on 8443 is launched when TLS certs
-are present — rustls advertises ALPN h2 + http/1.1, so clients negotiate
-automatically.
+Plain HTTP on $PORT (default 8080). When TLS certs are present, HTTPS is
+also served on $PORT+1 (json-tls profile) and 8443 (baseline-h2 / static-h2
+profile) via PYRONOVA_TLS_PORTS — all from the same process.
 
-Why two processes: Pyronova's `app.run()` binds a single port. Running it
-twice is the simplest way to serve plaintext + TLS without adding
-multi-bind support to the engine for one benchmark. Each process gets
-half the available CPUs so we don't over-subscribe the sub-interpreter
-pool.
+Each TPC thread creates its own SO_REUSEPORT socket on every port, so all
+cores serve all profiles simultaneously. This gives every profile access to
+all CPUs, unlike the old two-process approach that split cores 50/50.
 """
 
 import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 
 
@@ -41,32 +39,21 @@ def _numa_nodes() -> int:
 
 def main() -> int:
     total = _cpu_count()
-    per_proc = max(total // 2, 1)
-    # IO workers sizing is NUMA-topology-aware. Two regimes:
-    #
-    # Multi-node (Threadripper PRO / EPYC / multi-socket Xeon): cap IO
-    # at `per_proc // 4` so the accept loops + hyper socket threads
-    # stay on a couple of CCDs. Letting IO spread across every CCD
-    # turns every `crossbeam_channel::recv` into an Infinity-Fabric
-    # round trip — Leo observed this as "baseline stops scaling past
-    # 26 cores on the 3995WX" in the Arena run.
-    #
-    # Single-node (laptops, Apple Silicon, most cloud VMs): IO == cores.
-    # The prior NUMA-only formula cost 32% throughput on an M5 Pro
-    # because IO threads starved with no matching compute benefit.
-    if _numa_nodes() > 1:
-        io_per_proc = min(max(per_proc // 4, 4), 16)
-    else:
-        io_per_proc = per_proc
+    per_proc = total
+    io_per_proc = per_proc
 
     base_port = int(os.environ.get("PORT", "8080"))
     tls_cert = os.environ.get("TLS_CERT", "/certs/server.crt")
     tls_key = os.environ.get("TLS_KEY", "/certs/server.key")
     have_tls = os.path.exists(tls_cert) and os.path.exists(tls_key)
 
-    env_common = dict(os.environ)
-    env_common["PYRONOVA_WORKERS"] = str(per_proc)
-    env_common["PYRONOVA_IO_WORKERS"] = str(io_per_proc)
+    env = dict(os.environ)
+    # PYRONOVA_WORKERS controls TPC thread count in TPC mode (one thread per
+    # logical CPU). Rust's auto-detect uses physical_core_count() which misses
+    # hyperthreads — on a 32C/64T Threadripper that would give 32; we want 64.
+    env["PYRONOVA_WORKERS"] = str(per_proc)
+    env["PYRONOVA_HOST"] = "0.0.0.0"
+    env["PYRONOVA_PORT"] = str(base_port)
     # GIL-bridge sizing for gil=True routes under TPC. Default is 4 workers
     # + 16×4=64 channel depth — correct for typical apps with 1-2 numpy
     # routes. HttpArena's async-db / crud profiles hammer gil=True paths
@@ -75,78 +62,62 @@ def main() -> int:
     # contract). Widen to 16 workers + 8192 capacity so the DB-heavy
     # gcannon profiles see sustained throughput instead of a 503 storm.
     # Verified locally at c=4096: 15k req/s steady, zero drops.
-    env_common.setdefault("PYRONOVA_GIL_BRIDGE_WORKERS", "16")
-    env_common.setdefault("PYRONOVA_GIL_BRIDGE_CAPACITY", "8192")
+    env.setdefault("PYRONOVA_GIL_BRIDGE_WORKERS", "16")
+    env.setdefault("PYRONOVA_GIL_BRIDGE_CAPACITY", "8192")
     # Metrics / access log off; benchmarks care about throughput, not logs.
-    env_common.pop("PYRONOVA_LOG", None)
-    env_common.pop("PYRONOVA_METRICS", None)
+    env.pop("PYRONOVA_LOG", None)
+    env.pop("PYRONOVA_METRICS", None)
     # Hard-silence the tracing subscriber. Default level is ERROR, which
     # still writes any `tracing::error!` call to stderr — under 4096-conn
     # load a single recurring error log (see the PyObjRef leak bug) drags
     # throughput by ~3× from log-pipe contention alone. OFF makes every
     # tracing macro a zero-cost no-op, matching what Actix / Helidon /
     # ASP.NET ship in their benchmark images.
-    env_common["PYRONOVA_LOG_LEVEL"] = "OFF"
+    env["PYRONOVA_LOG_LEVEL"] = "OFF"
 
-    procs = []
-
-    # Plain HTTP on $base_port.
-    env_plain = dict(env_common)
-    env_plain["PYRONOVA_PORT"] = str(base_port)
-    env_plain["PYRONOVA_HOST"] = "0.0.0.0"
-    env_plain.pop("PYRONOVA_TLS_CERT", None)
-    env_plain.pop("PYRONOVA_TLS_KEY", None)
-    procs.append(subprocess.Popen(["python3", "app.py"], env=env_plain))
-
-    # HTTPS on $base_port + 1 (json-tls profile target).
     if have_tls:
-        env_tls = dict(env_common)
-        env_tls["PYRONOVA_PORT"] = str(base_port + 1)
-        env_tls["PYRONOVA_HOST"] = "0.0.0.0"
-        env_tls["PYRONOVA_TLS_CERT"] = tls_cert
-        env_tls["PYRONOVA_TLS_KEY"] = tls_key
-        procs.append(subprocess.Popen(["python3", "app.py"], env=env_tls))
+        env["PYRONOVA_TLS_CERT"] = tls_cert
+        env["PYRONOVA_TLS_KEY"] = tls_key
+        env["PYRONOVA_TLS_PORTS"] = f"{base_port + 1},8443"
+    else:
+        env.pop("PYRONOVA_TLS_CERT", None)
+        env.pop("PYRONOVA_TLS_KEY", None)
+        env.pop("PYRONOVA_TLS_PORTS", None)
 
-        # HTTP/2 on 8443 (baseline-h2 / static-h2 profile target). ALPN on
-        # this listener advertises h2 + http/1.1; hyper's AutoBuilder picks
-        # the right protocol from the handshake.
-        env_h2 = dict(env_tls)
-        env_h2["PYRONOVA_PORT"] = "8443"
-        procs.append(subprocess.Popen(["python3", "app.py"], env=env_h2))
+    proc = subprocess.Popen(["python3", "app.py"], env=env)
 
     def shutdown(_sig, _frame):
-        for p in procs:
+        # Signal handlers must not block — offload the wait+kill to a thread.
+        def _cleanup():
+            import logging as _log
             try:
-                p.terminate()
+                proc.terminate()
             except Exception:
-                pass
-        # give them a moment to drain gracefully; Pyronova's graceful shutdown
-        # waits up to 30s for in-flight conns — the Arena harness typically
-        # SIGKILLs the container anyway, but polite is polite.
-        time.sleep(1)
-        for p in procs:
-            if p.poll() is None:
+                _log.warning("launcher: terminate failed for pid %s", proc.pid, exc_info=True)
+            # give it a moment to drain gracefully; Pyronova's graceful
+            # shutdown waits up to 30s for in-flight conns — Arena harness
+            # typically SIGKILLs the container anyway, but polite is polite.
+            time.sleep(1)
+            if proc.poll() is None:
                 try:
-                    p.kill()
+                    proc.kill()
                 except Exception:
-                    pass
-        sys.exit(0)
+                    _log.warning("launcher: kill failed for pid %s", proc.pid, exc_info=True)
+            # os._exit terminates all threads (including this daemon thread);
+            # sys.exit(0) from a daemon thread only kills the daemon thread.
+            os._exit(0)
+        threading.Thread(target=_cleanup, daemon=True).start()
 
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
-    # Wait on the plain HTTP process; when it exits the harness is done
-    # with us anyway. Terminate the others if they're still up.
+    import logging as _log
     try:
-        procs[0].wait()
+        rc = proc.wait()
+        if rc != 0:
+            _log.warning("launcher: process exited with code %d", rc)
     except Exception:
-        pass
-    for p in procs[1:]:
-        if p.poll() is None:
-            try:
-                p.terminate()
-            except Exception:
-                pass
+        _log.warning("launcher: wait() failed", exc_info=True)
     return 0
 
 
