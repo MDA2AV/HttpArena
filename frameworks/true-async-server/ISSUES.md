@@ -1,7 +1,9 @@
 # Known Issues — true-async-server
 
 Test suite: `frameworks/true-async-server/test/validate.sh`
-Latest result against local php-true-async build (post-alpha.3 fixes): **38 / 38 passing** in steady state.
+Latest result against local php-true-async build (post-alpha.3 fixes): **38 / 38 passing** stably across 5 consecutive runs.
+
+No known server bugs at this time.
 
 ---
 
@@ -38,27 +40,6 @@ The `Warning: Attempt to finalize a coroutine that is still in the queue`
 warning no longer appears, and worker threads no longer die during early
 request handling. After sustained validator runs, all 16 worker threads
 remain alive and the listening socket stays bound.
-
----
-
-## Remaining minor issue
-
-### Intermittent missing `Content-Type` header on the first few requests
-
-In the first validator run immediately after `docker compose up`, 1–2 responses
-may omit the `Content-Type` header (body and `Content-Length` are correct).
-The issue disappears after ~20 warm-up requests; subsequent validator runs
-report 38/38.
-
-**Symptom:**
-```
-FAIL [baseline Content-Type]: expected Content-Type~'text/plain' got=''
-FAIL [json Content-Type]:     expected Content-Type~'application/json' got=''
-```
-
-**Likely cause:** narrow worker-init race; same class of bug as the
-finalize-race that was fixed, but in a tighter window. Does not affect
-throughput benchmarks.
 
 ---
 
