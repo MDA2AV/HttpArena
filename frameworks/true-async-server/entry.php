@@ -177,6 +177,7 @@ $server->addHttpHandler(
             } else {
                 $response->setBody($f['data']);
             }
+
             return;
         }
 
@@ -200,7 +201,11 @@ fprintf(
 $pool    = new ThreadPool($workers);
 $futures = [];
 for ($i = 0; $i < $workers; $i++) {
-    $futures[] = $pool->submit(static fn() => $server->start());
+    // Each worker thread has its own PHP environment — re-require class files.
+    $futures[] = $pool->submit(static function () use ($server): void {
+        require __DIR__ . '/PostgreSQL.php';
+        $server->start();
+    });
 }
 
 // Wait until all workers finish (i.e. until the process is stopped).
