@@ -1,17 +1,16 @@
-# Known Issues — true-async-server (alpha.3)
+# Known Issues — true-async-server
 
-Tested against `trueasync/php-true-async:0.7.0-alpha.3-php8.6`.  
-Test suite: `frameworks/true-async-server/test/validate.sh`  
-Result: **34 / 38 passed**.
+Test suite: `frameworks/true-async-server/test/validate.sh`
+Latest result against local php-true-async build (post-alpha.3 fixes): **38 / 38 passing** in steady state.
 
 ---
 
-## Passing test groups
+## Status
 
-| Group | Tests |
+| Group | Result |
 |---|---|
 | baseline HTTP/1.1 (GET, POST, chunked POST) | ✅ |
-| baseline TCP fragmentation — GET only | ✅ 2/4 |
+| baseline TCP fragmentation (split request line, headers, headers/body, body bytes) | ✅ |
 | pipelined | ✅ |
 | json processing | ✅ |
 | upload | ✅ |
@@ -23,61 +22,56 @@ Result: **34 / 38 passed**.
 
 ---
 
-## Failing tests (4)
+## Fixed since alpha.3
 
-### 1. HTTP/1.1 body not fully buffered on fragmented POST
+### 1. HTTP/1.1 body not fully buffered on fragmented POST — FIXED
 
-**Tests:**
-- `POST split headers/body` — headers in one TCP segment, body `"20"` in a second
-- `POST split body bytes` — headers in one TCP segment, body split into `"2"` + `"0"`
+Previously, when a POST body arrived in a separate TCP segment after the headers,
+`HttpRequest::getBody()` returned partial or empty data. The handler now waits
+until `Content-Length` bytes have been fully received before dispatching.
 
-**Observed behaviour:**
-```
-FAIL [POST split headers/body]:  expected='75' got='57'
-FAIL [POST split body bytes]:    expected='75' got='55'
-```
+`POST split headers/body` and `POST split body bytes` now pass reliably.
 
-`57 = 13 + 42 + 2` — the server read only the first byte `"2"` of the two-byte body `"20"`.  
-`55 = 13 + 42 + 0` — the server read no body bytes at all when they arrived in two separate writes.
+### 2. Sporadic empty responses during server startup (finalize-race) — FIXED
 
-**Root cause:**  
-`HttpRequest::getBody()` appears to return whatever bytes are present in the receive buffer at the moment of the call instead of waiting until `Content-Length` bytes have accumulated. When the request body arrives in a separate TCP segment after the headers, the handler coroutine is dispatched before the body bytes land in the buffer, and `getBody()` returns a partial (or empty) string.
-
-**HTTP/2 is not affected** — HTTP/2 frames the body before dispatching, so `getBody()` is always complete.
-
-**Suggested fix (server-level):**  
-`getBody()` must block / yield until `Content-Length` bytes have been fully received from the socket before returning control to the handler.
+The `Warning: Attempt to finalize a coroutine that is still in the queue`
+warning no longer appears, and worker threads no longer die during early
+request handling. After sustained validator runs, all 16 worker threads
+remain alive and the listening socket stays bound.
 
 ---
 
-### 2. Spорadic empty responses during server startup (race condition)
+## Remaining minor issue
 
-**Tests (intermittent):**
-- `GET /baseline11 random a=… b=…`
-- `POST /baseline11 random body=…`
+### Intermittent missing `Content-Type` header on the first few requests
 
-**Observed behaviour:**
-```
-FAIL [GET /baseline11 random a=372 b=922]: expected='1294' got=''
-FAIL [POST /baseline11 random body=346]:   expected='401'  got=''
-```
-The same requests succeed when sent against a server that has been running for several seconds.
+In the first validator run immediately after `docker compose up`, 1–2 responses
+may omit the `Content-Type` header (body and `Content-Length` are correct).
+The issue disappears after ~20 warm-up requests; subsequent validator runs
+report 38/38.
 
-**Server log (concurrent with failures):**
+**Symptom:**
 ```
-Warning: Attempt to finalize a coroutine that is still in the queue in Unknown on line 0
+FAIL [baseline Content-Type]: expected Content-Type~'text/plain' got=''
+FAIL [json Content-Type]:     expected Content-Type~'application/json' got=''
 ```
 
-**Root cause:**  
-When `ThreadPool` starts 16 workers simultaneously, their event-loop initialisation coroutines overlap with early incoming requests. The lifecycle management in `alpha.3` occasionally finalises a request-handler coroutine while it is still enqueued, causing the connection to be closed without a response.
+**Likely cause:** narrow worker-init race; same class of bug as the
+finalize-race that was fixed, but in a tighter window. Does not affect
+throughput benchmarks.
 
-The issue is transient: workers stabilise after a few seconds and subsequent identical requests succeed. A 20-request warm-up + 1 s sleep was added to `validate.sh` to reduce the window, but under low-latency Docker networks the race can still be triggered.
+---
 
-**Suggested fix (server-level):**  
-Ensure that per-worker event-loop initialisation is fully complete (all coroutines flushed) before the first `accept()` call is made, or guard against finalising a coroutine that has not yet been dequeued.
+## Build requirements (host PHP)
 
-**Workaround (application-level):**  
-Set `WORKERS=1` or `WORKERS=2` via environment variable for integration testing; the race disappears with a single worker.
+When running with the `docker-compose.override.yml` that mounts a locally-built
+`php-src`, the host PHP build must enable the following extensions in addition
+to the defaults; otherwise json/async-db/TLS endpoints return HTTP 500:
+
+```
+--enable-ctype --enable-mbstring --enable-tokenizer --enable-filter --enable-session
+--with-openssl --with-pgsql --with-pdo-pgsql
+```
 
 ---
 
