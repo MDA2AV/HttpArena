@@ -1,0 +1,24 @@
+{
+  "display_name": "true-async-server",
+  "language": "PHP",
+  "type": "tuned",
+  "engine": "true-async-server",
+  "description": "Native PHP HTTP server built on the TrueAsync coroutine engine. Each connection runs as a cooperative coroutine; one OS thread per CPU listens via SO_REUSEPORT inside a single PHP process. PDO connection pool, OPcache JIT, no Caddy / FrankenPHP / FastCGI in front.",
+  "repo": "https://github.com/true-async/server",
+  "enabled": true,
+  "maintainers": ["EdmondDantes"],
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "static",
+    "async-db",
+    "api-4",
+    "api-16",
+    "baseline-h2",
+    "static-h2",
+    "json-tls"
+  ]
+}
