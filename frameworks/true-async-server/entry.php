@@ -98,14 +98,8 @@ $server->addHttpHandler(
     {
         $path = $request->getPath();
 
-        if ($path === '/pipeline') {
-            $response->setStatusCode(200)
-                ->setHeader('Content-Type', 'text/plain')
-                ->setBody('ok');
-            return;
-        }
-
-        if ($path === '/baseline2' || $path === '/baseline11') {
+        // Hottest endpoint in the suite (baseline + pipelined + limited-conn) — check first.
+        if ($path === '/baseline11' || $path === '/baseline2') {
             $method = $request->getMethod();
             if ($method !== 'GET' && $method !== 'POST') {
                 $response->setStatusCode(405)
@@ -116,11 +110,18 @@ $server->addHttpHandler(
             $sum = 0;
             foreach ($request->getQuery() as $v) { $sum += (int)$v; }
             if ($method === 'POST') {
-                $sum += (int)$request->getBody();
+                $sum += (int)$request->awaitBody()->getBody();
             }
             $response->setStatusCode(200)
                 ->setHeader('Content-Type', 'text/plain')
                 ->setBody((string)$sum);
+            return;
+        }
+
+        if ($path === '/pipeline') {
+            $response->setStatusCode(200)
+                ->setHeader('Content-Type', 'text/plain')
+                ->setBody('ok');
             return;
         }
 
@@ -150,7 +151,7 @@ $server->addHttpHandler(
         if ($path === '/upload') {
             $response->setStatusCode(200)
                 ->setHeader('Content-Type', 'text/plain')
-                ->setBody((string)strlen($request->getBody()));
+                ->setBody((string)strlen($request->awaitBody()->getBody()));
             return;
         }
 
@@ -166,18 +167,30 @@ $server->addHttpHandler(
         }
 
         if (str_starts_with($path, '/static/') && isset($staticFiles[$path])) {
-            $f  = $staticFiles[$path];
-            $ae = $request->getHeader('Accept-Encoding') ?? '';
+            $f = $staticFiles[$path];
             $response->setStatusCode(200)
                 ->setHeader('Content-Type', $f['mime']);
-            if ($f['br'] !== null && str_contains($ae, 'br')) {
+
+            // Parse Accept-Encoding properly: split on ',', honor q=0 (refusal).
+            $acceptsBr = false; $acceptsGz = false;
+            foreach (explode(',', $request->getHeader('Accept-Encoding') ?? '') as $part) {
+                $semi = strpos($part, ';');
+                $name = strtolower(trim($semi === false ? $part : substr($part, 0, $semi)));
+                if ($name !== 'br' && $name !== 'gzip') continue;
+                if ($semi !== false
+                    && preg_match('/(?:^|;)\s*q=0(?:\.0+)?\s*(?:;|$)/i', substr($part, $semi))) {
+                    continue;
+                }
+                if ($name === 'br') $acceptsBr = true; else $acceptsGz = true;
+            }
+
+            if ($acceptsBr && $f['br'] !== null) {
                 $response->setHeader('Content-Encoding', 'br')->setBody($f['br']);
-            } elseif ($f['gz'] !== null && str_contains($ae, 'gzip')) {
+            } elseif ($acceptsGz && $f['gz'] !== null) {
                 $response->setHeader('Content-Encoding', 'gzip')->setBody($f['gz']);
             } else {
                 $response->setBody($f['data']);
             }
-
             return;
         }
 
