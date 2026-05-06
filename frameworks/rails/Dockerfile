@@ -21,9 +21,6 @@ RUN bundle install --jobs=$(nproc)
 
 COPY . .
 
-EXPOSE 8080
+EXPOSE 8080 8081
 
-ENV THRUSTER_TARGET_PORT=8080
-ENV THRUSTER_LOG_REQUESTS=false
-
-CMD ["bin/thrust", "bin/rails", "s"]
+CMD ["bin/rails", "server"]

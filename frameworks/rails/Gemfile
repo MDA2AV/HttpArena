@@ -5,4 +5,3 @@ gem 'puma', '~> 7.2'
 gem 'pg', '~> 1.5'
 gem 'bootsnap', require: false
 gem 'connection_pool'
-gem 'thruster', require: false
