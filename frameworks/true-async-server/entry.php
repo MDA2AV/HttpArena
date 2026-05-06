@@ -77,10 +77,6 @@ $tlsAvailable = is_readable($certPath) && is_readable($keyPath);
 $config = (new HttpServerConfig())
     ->addListener('0.0.0.0', $port)
     ->setBacklog(2048)
-    ->setReadTimeout(15)
-    ->setWriteTimeout(15)
-    ->setKeepAliveTimeout(60)
-    ->setShutdownTimeout(5)
     ->setMaxBodySize(32 * 1024 * 1024);
 
 if ($tlsAvailable) {
@@ -100,16 +96,8 @@ $server->addHttpHandler(
 
         // Hottest endpoint in the suite (baseline + pipelined + limited-conn) — check first.
         if ($path === '/baseline11' || $path === '/baseline2') {
-            $method = $request->getMethod();
-            if ($method !== 'GET' && $method !== 'POST') {
-                $response->setStatusCode(405)
-                    ->setHeader('Content-Type', 'text/plain')
-                    ->setBody('Method Not Allowed');
-                return;
-            }
-            $sum = 0;
-            foreach ($request->getQuery() as $v) { $sum += (int)$v; }
-            if ($method === 'POST') {
+            $sum = array_sum($request->getQuery());
+            if ($request->getMethod() === 'POST') {
                 $sum += (int)$request->awaitBody()->getBody();
             }
             $response->setStatusCode(200)
