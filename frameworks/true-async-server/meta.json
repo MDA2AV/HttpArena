@@ -13,9 +13,7 @@
     "limited-conn",
     "json",
     "upload",
-    "static",
     "baseline-h2",
-    "static-h2",
     "json-tls"
   ]
 }
