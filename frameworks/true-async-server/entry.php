@@ -80,8 +80,10 @@ $config = (new HttpServerConfig())
     ->setMaxBodySize(32 * 1024 * 1024);
 
 if ($tlsAvailable) {
+    // 8443: h2 + h1 over TLS (ALPN). 8081: h1 over TLS for the json-tls profile.
     $config
         ->addListener('0.0.0.0', $tlsPort, true)
+        ->addListener('0.0.0.0', 8081, true)
         ->setCertificate($certPath)
         ->setPrivateKey($keyPath);
 }
