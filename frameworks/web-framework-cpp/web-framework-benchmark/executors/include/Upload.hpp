@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Executors/HeavyOperationStatelessExecutor.hpp>
+#include <Executors/HeavyOperationStatefulExecutor.hpp>
 
 namespace executor
 {
-	class Upload : public framework::HeavyOperationStatelessExecutor
+	class Upload : public framework::HeavyOperationStatefulExecutor
 	{
 	private:
 		size_t currentSize;
