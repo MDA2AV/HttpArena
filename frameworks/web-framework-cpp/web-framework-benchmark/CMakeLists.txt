@@ -18,7 +18,8 @@ include(FetchContent)
 FetchContent_Declare(
 	WebFramework
 	GIT_REPOSITORY https://github.com/LazyPanda07/WebFramework
-	GIT_TAG v${WEB_FRAMEWORK_VERSION}
+	# GIT_TAG v${WEB_FRAMEWORK_VERSION}
+	GIT_TAG dev
 )
 
 FetchContent_MakeAvailable(WebFramework)

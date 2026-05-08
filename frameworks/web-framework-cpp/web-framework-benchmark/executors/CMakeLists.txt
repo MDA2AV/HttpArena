@@ -9,6 +9,7 @@ add_library(
 	src/Pipeline.cpp
 	src/Upload.cpp
 	src/Static.cpp
+	src/Ws.cpp
 )
 
 target_include_directories(
