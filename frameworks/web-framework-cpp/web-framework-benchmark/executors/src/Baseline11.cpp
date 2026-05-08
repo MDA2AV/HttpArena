@@ -28,6 +28,7 @@ namespace executor
 
 		Baseline11::parseValues(request, a, b);
 
+		response.addHeader("Content-Type", "text/plain");
 		response.setBody(std::to_string(a + b));
 	}
 
@@ -54,6 +55,7 @@ namespace executor
 			std::from_chars(body.data(), body.data() + body.size(), c);
 		}
 
+		response.addHeader("Content-Type", "text/plain");
 		response.setBody(std::to_string(a + b + c));
 	}
 
