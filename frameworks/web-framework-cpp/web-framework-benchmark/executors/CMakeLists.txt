@@ -6,6 +6,9 @@ add_library(
 	${PROJECT_NAME} SHARED
 	src/Baseline11.cpp
 	src/JsonExecutor.cpp
+	src/Pipeline.cpp
+	src/Upload.cpp
+	src/Static.cpp
 )
 
 target_include_directories(

@@ -8,5 +8,20 @@
     "api": "cxx",
     "loadType": "initialization",
     "route": "json/{int:count}"
+  },
+  "Pipeline": {
+    "api": "cxx",
+    "loadType": "initialization",
+    "route": "pipeline"
+  },
+  "Upload": {
+    "api": "cxx",
+    "loadType": "dynamic",
+    "route": "upload"
+  },
+  "Static": {
+    "api": "cxx",
+    "loadType": "initialization",
+    "route": "static/{string:filePath}"
   }
 }

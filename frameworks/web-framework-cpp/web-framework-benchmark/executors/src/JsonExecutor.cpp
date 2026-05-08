@@ -37,5 +37,5 @@ namespace executor
 		response.setBody(result);
 	}
 
-	DEFINE_EXECUTOR(JsonExecutor)
+	DEFINE_EXECUTOR(JsonExecutor);
 }

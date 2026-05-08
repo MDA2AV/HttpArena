@@ -14,7 +14,10 @@
       "pathToCertificate": "/certs/server.crt",
       "pathToKey": "/certs/server.key",
       "useHTTPS": false
-    }
+    },
+    "resourcesThreads": 8,
+    "largeBodySizeThreshold": 5242880,
+    "largeBodyPacketSize": 1048576
   },
   "ThreadPoolServer": {
     "threadCount": 8
