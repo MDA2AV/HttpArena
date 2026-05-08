@@ -79,10 +79,9 @@ fn upstream_rustls_config() -> rustls::ClientConfig {
     config
 }
 
-/// Build a fresh per-worker `Client`. Cross-runtime sharing of pooled connections is risky
-/// (tokio I/O resources are tied to the runtime that opened them), so each worker gets its
-/// own pool. h2/h3 multiplex hundreds of streams per upstream connection, so the upstream
-/// connection-count multiplier here is fine.
+/// Build a fresh `Client` for the runtime currently calling this fn. The Client's pool opens
+/// upstream connections via the calling runtime's reactor; tasks awaiting those connections
+/// must run on the same runtime, so each worker / MT runtime gets its own.
 fn build_client() -> Client {
     let rustls_client = upstream_rustls_config();
     let quic_client = ClientQuicConfig::from_rustls_client_config(rustls_client.clone());
@@ -90,14 +89,10 @@ fn build_client() -> Client {
     Client::new_with_quic(rustls_layer, quic_client)
 }
 
-fn build_handler() -> impl Handler {
-    let static_dir = std::env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
-    let upstream =
-        std::env::var("PROXY_UPSTREAM").unwrap_or_else(|_| "https://localhost:9443".into());
-
+fn build_handler(client: Client, upstream: String, static_dir: String) -> impl Handler {
     (
         Router::new().get("/static/*", files(static_dir)),
-        Proxy::new(build_client(), upstream).with_via_pseudonym("trillium-proxy"),
+        Proxy::new(client, upstream).with_via_pseudonym("trillium-proxy"),
     )
 }
 
@@ -119,18 +114,19 @@ struct WorkerInputs {
     cert: Vec<u8>,
     key: Vec<u8>,
     port: u16,
-    enable_h3: bool,
-    is_quic_worker: bool,
+    upstream: String,
+    static_dir: String,
     swansong: swansong::Swansong,
 }
 
+/// Per-worker current_thread runtime: TCP-only proxy (h1, h2). No QUIC.
 fn run_worker(idx: usize, inputs: WorkerInputs) {
     let WorkerInputs {
         cert,
         key,
         port,
-        enable_h3,
-        is_quic_worker,
+        upstream,
+        static_dir,
         swansong,
     } = inputs;
 
@@ -141,22 +137,66 @@ fn run_worker(idx: usize, inputs: WorkerInputs) {
 
     rt.block_on(async move {
         let listener = bind_reuseport(port).expect("bind proxy port");
-        log::info!("worker {idx}: bound {port} (h3={})", enable_h3 && is_quic_worker);
+        let client = build_client();
+        log::info!("proxy worker {idx}: bound TCP on {port}");
 
-        let config = trillium_tokio::config()
+        trillium_tokio::config()
             .with_prebound_server(listener)
             .with_swansong(swansong.clone())
             .without_signals()
             .with_nodelay()
-            .with_acceptor(RustlsAcceptor::from_single_cert(&cert, &key));
+            .with_acceptor(RustlsAcceptor::from_single_cert(&cert, &key))
+            .spawn(build_handler(client, upstream, static_dir));
 
-        if enable_h3 && is_quic_worker {
-            config
-                .with_quic(QuicConfig::from_single_cert(&cert, &key))
-                .spawn(build_handler());
-        } else {
-            config.spawn(build_handler());
-        }
+        swansong.await;
+    });
+}
+
+struct QuicRuntimeInputs {
+    cert: Vec<u8>,
+    key: Vec<u8>,
+    port: u16,
+    upstream: String,
+    static_dir: String,
+    n_threads: usize,
+    swansong: swansong::Swansong,
+}
+
+/// Dedicated multi-thread runtime: TCP reuseport participant on `port` plus the QUIC endpoint.
+/// h3 stream tasks spawned by quinn's accept loop spread across `n_threads` threads via tokio's
+/// work-stealing scheduler. The per-worker current_thread runtimes still absorb most TCP traffic
+/// (kernel reuseport hash gives the MT runtime ~1/(N+1) of TCP), preserving per-core hot caches.
+fn run_quic_runtime(inputs: QuicRuntimeInputs) {
+    let QuicRuntimeInputs {
+        cert,
+        key,
+        port,
+        upstream,
+        static_dir,
+        n_threads,
+        swansong,
+    } = inputs;
+
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(n_threads)
+        .enable_all()
+        .thread_name("quic-mt")
+        .build()
+        .expect("build quic multi_thread runtime");
+
+    rt.block_on(async move {
+        let listener = bind_reuseport(port).expect("bind proxy port on quic runtime");
+        let client = build_client();
+        log::info!("proxy quic-mt runtime: bound TCP + QUIC on {port} ({n_threads} threads)");
+
+        trillium_tokio::config()
+            .with_prebound_server(listener)
+            .with_swansong(swansong.clone())
+            .without_signals()
+            .with_nodelay()
+            .with_acceptor(RustlsAcceptor::from_single_cert(&cert, &key))
+            .with_quic(QuicConfig::from_single_cert(&cert, &key))
+            .spawn(build_handler(client, upstream, static_dir));
 
         swansong.await;
     });
@@ -183,6 +223,25 @@ fn main() {
         .unwrap_or_else(num_cpus::get)
         .max(1);
 
+    // Default the QUIC runtime size proportionally to N, capped at 8 (Zen2/3/4 CCX size = 4
+    // physical cores / 8 SMT threads — keeping the MT runtime ≤1 CCX worth keeps h3 work
+    // L3-local and avoids paying the ~70-cycle inter-CCX hop on every steal). Override with
+    // QUIC_THREADS for tuning.
+    //
+    // Empirical 8-core measurements: Q=2 preserves full per-worker TCP performance (≤3% delta)
+    // while doubling h3 capacity over the previous worker-0-only design. Q=8 maximizes h3 (~4
+    // cores' worth) at a 12-17% TCP cost. The proportional default lands users near the Q=2
+    // point on small boxes and the Q=8 point on the bench machine.
+    let quic_threads: usize = std::env::var("QUIC_THREADS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or_else(|| (n_workers / 4).max(2).min(8))
+        .max(1);
+
+    let upstream =
+        std::env::var("PROXY_UPSTREAM").unwrap_or_else(|_| "https://localhost:9443".into());
+    let static_dir = std::env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
+
     let swansong = swansong::Swansong::new();
 
     {
@@ -203,16 +262,25 @@ fn main() {
             .expect("spawn signal thread");
     }
 
-    log::info!("proxy starting {n_workers} workers (port={port}, h3={enable_h3})");
+    if enable_h3 {
+        log::info!(
+            "proxy starting: {n_workers} per-worker current_thread workers (TCP) + 1 quic-mt runtime ({quic_threads} threads, h3 enabled, port={port})"
+        );
+    } else {
+        log::info!(
+            "proxy starting: {n_workers} per-worker current_thread workers (TCP, port={port})"
+        );
+    }
 
-    let mut handles = Vec::with_capacity(n_workers);
+    let mut handles = Vec::with_capacity(n_workers + 1);
+
     for idx in 0..n_workers {
         let inputs = WorkerInputs {
             cert: cert.clone(),
             key: key.clone(),
             port,
-            enable_h3,
-            is_quic_worker: idx == 0,
+            upstream: upstream.clone(),
+            static_dir: static_dir.clone(),
             swansong: swansong.clone(),
         };
         handles.push(
@@ -220,6 +288,24 @@ fn main() {
                 .name(format!("worker-{idx}"))
                 .spawn(move || run_worker(idx, inputs))
                 .expect("spawn worker thread"),
+        );
+    }
+
+    if enable_h3 {
+        let inputs = QuicRuntimeInputs {
+            cert: cert.clone(),
+            key: key.clone(),
+            port,
+            upstream: upstream.clone(),
+            static_dir: static_dir.clone(),
+            n_threads: quic_threads,
+            swansong: swansong.clone(),
+        };
+        handles.push(
+            std::thread::Builder::new()
+                .name("quic-mt-driver".into())
+                .spawn(move || run_quic_runtime(inputs))
+                .expect("spawn quic-mt driver thread"),
         );
     }
 

@@ -9,9 +9,13 @@ use trillium::{Conn, Handler, KnownHeaderName, Status};
 #[derive(Debug)]
 struct StaticFile {
     content_type: &'static str,
-    plain: Vec<u8>,
-    br: Option<Vec<u8>>,
-    gz: Option<Vec<u8>>,
+    plain: &'static [u8],
+    br: Option<&'static [u8]>,
+    gz: Option<&'static [u8]>,
+}
+
+fn leak(bytes: Vec<u8>) -> &'static [u8] {
+    Box::leak(bytes.into_boxed_slice())
 }
 
 #[derive(Clone)]
@@ -65,29 +69,29 @@ impl StaticPreload {
                     .entry(base.to_string())
                     .or_insert_with(|| StaticFile {
                         content_type: content_type_for(base),
-                        plain: Vec::new(),
+                        plain: &[],
                         br: None,
                         gz: None,
                     })
-                    .br = Some(bytes);
+                    .br = Some(leak(bytes));
             } else if let Some(base) = name.strip_suffix(".gz") {
                 files
                     .entry(base.to_string())
                     .or_insert_with(|| StaticFile {
                         content_type: content_type_for(base),
-                        plain: Vec::new(),
+                        plain: &[],
                         br: None,
                         gz: None,
                     })
-                    .gz = Some(bytes);
+                    .gz = Some(leak(bytes));
             } else {
                 let entry = files.entry(name.clone()).or_insert_with(|| StaticFile {
                     content_type: content_type_for(&name),
-                    plain: Vec::new(),
+                    plain: &[],
                     br: None,
                     gz: None,
                 });
-                entry.plain = bytes;
+                entry.plain = leak(bytes);
             }
         }
 
@@ -110,19 +114,19 @@ impl Handler for StaticPreload {
             .get_str(KnownHeaderName::AcceptEncoding)
             .unwrap_or("");
 
-        let (body, encoding): (&Vec<u8>, Option<&str>) =
-            if let (Some(br), true) = (file.br.as_ref(), accept.contains("br")) {
+        let (body, encoding): (&'static [u8], Option<&str>) =
+            if let (Some(br), true) = (file.br, accept.contains("br")) {
                 (br, Some("br"))
-            } else if let (Some(gz), true) = (file.gz.as_ref(), accept.contains("gzip")) {
+            } else if let (Some(gz), true) = (file.gz, accept.contains("gzip")) {
                 (gz, Some("gzip"))
             } else {
-                (&file.plain, None)
+                (file.plain, None)
             };
 
         let mut conn = conn
             .with_status(Status::Ok)
             .with_response_header(KnownHeaderName::ContentType, file.content_type)
-            .with_body(body.clone());
+            .with_body(body);
 
         if let Some(enc) = encoding {
             conn = conn.with_response_header(KnownHeaderName::ContentEncoding, enc);

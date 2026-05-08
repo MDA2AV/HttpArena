@@ -3,7 +3,7 @@ services:
     build:
       context: ./proxy
     network_mode: host
-    cpuset: "0-7,64-71"
+    cpuset: "${PROXY_CPUSET:-0-7,64-71}"
     ulimits:
       memlock: -1
       nofile:
@@ -29,7 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "8-31,72-95"
+    cpuset: "${SERVER_CPUSET:-8-31,72-95}"
     ulimits:
       memlock: -1
       nofile:
