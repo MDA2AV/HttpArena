@@ -17,4 +17,4 @@ COPY --from=build /app/build/bin /app
 
 WORKDIR /app
 
-CMD ["/app/server"]
+CMD ["./server"]
