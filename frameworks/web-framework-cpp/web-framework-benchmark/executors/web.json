@@ -3,5 +3,10 @@
     "api": "cxx",
     "loadType": "initialization",
     "route": "baseline11"
+  },
+  "JsonExecutor": {
+    "api": "cxx",
+    "loadType": "initialization",
+    "route": "json/{int:count}"
   }
 }

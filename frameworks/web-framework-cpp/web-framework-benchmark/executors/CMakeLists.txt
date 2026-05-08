@@ -5,6 +5,7 @@ project(executors)
 add_library(
 	${PROJECT_NAME} SHARED
 	src/Baseline11.cpp
+	src/JsonExecutor.cpp
 )
 
 target_include_directories(
