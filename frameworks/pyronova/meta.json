@@ -4,7 +4,7 @@
   "type": "tuned",
   "engine": "pyronova",
   "description": "Pyronova — Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
-  "repo": "https://github.com/moomoo-tech/pyronova",
+  "repo": "https://github.com/leocaolab/pyronova",
   "enabled": true,
   "tests": [
     "baseline",

@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir maturin
 # against a signed git ref.
 ARG PYRONOVA_REF=v2.4.2
 RUN git clone --depth 1 --branch ${PYRONOVA_REF} \
-        https://github.com/moomoo-tech/pyronova.git /build/pyronova
+        https://github.com/leocaolab/pyronova.git /build/pyronova
 RUN cd /build/pyronova \
     && RUSTFLAGS="-C target-cpu=native" \
        maturin build --release --out /wheels --compatibility linux
