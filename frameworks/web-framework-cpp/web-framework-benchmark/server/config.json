@@ -1,0 +1,22 @@
+{
+  "WebServer": {
+    "ip": "127.0.0.1",
+    "port": 8080,
+    "timeout": 30000
+  },
+  "WebFramework": {
+    "assetsPath": "assets",
+    "templatesPath": "templates",
+    "webServerType": "threadPool",
+    "settingsPaths": [ "web.json" ],
+    "loadSources": [ "executors" ],
+    "HTTPS": {
+      "pathToCertificate": "certs/server.crt",
+      "pathToKey": "/certs/server.key",
+      "useHTTPS": false
+    }
+  },
+  "ThreadPoolServer": {
+    "threadCount": 8
+  }
+}
