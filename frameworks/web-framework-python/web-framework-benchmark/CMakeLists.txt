@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 4.0.0)
 
+set(CMAKE_BUILD_TYPE Release)
+
 set(WEB_FRAMEWORK_VERSION 3.4.1)
 
 set(WITH_PYTHON_EXECUTORS ON)
@@ -25,7 +27,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(WebFramework)
 
 execute_process(
-	COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}/WebFramework -G "Ninja" .
+	COMMAND ${CMAKE_COMMAND} -G "Ninja" .
 	WORKING_DIRECTORY ${webframework_SOURCE_DIR}
 )
 
@@ -35,7 +37,7 @@ execute_process(
 )
 
 execute_process(
-	COMMAND ${CMAKE_COMMAND} --install .
+	COMMAND ${CMAKE_COMMAND} --install . --prefix ${CMAKE_INSTALL_PREFIX}/WebFrameworkLibrary
 	WORKING_DIRECTORY ${webframework_SOURCE_DIR}
 )
 
