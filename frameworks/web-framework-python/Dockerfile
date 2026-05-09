@@ -20,5 +20,6 @@ COPY --from=build /app/build/bin /app
 WORKDIR /app
 
 RUN python3 -m pip install WebFramework/api/python/dist/*.whl --break-system-packages
+RUN rm -rf WebFramework
 
 CMD ["python3 -u server"]
