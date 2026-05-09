@@ -10,9 +10,9 @@ class Upload(HeavyOperationStatefulExecutor):
 
     def do_post(self, request, response):
         if int(request.get_headers()["Content-Length"]) >= self._threshold_size:
-            (dart_part, is_last_packet) = request.get_large_data()
+            (data, is_last_packet) = request.get_large_data()
 
-            self._current_size += len(dart_part)
+            self._current_size += len(data)
 
             if is_last_packet:
                 response.set_body(f"{self._current_size}")

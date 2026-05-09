@@ -28,7 +28,6 @@ namespace executor
 
 			if (isLastPacket)
 			{
-				response.addHeader("Content-Type", "text/plain");
 				response.setBody(std::to_string(currentSize));
 			}
 		}
@@ -36,7 +35,6 @@ namespace executor
 		{
 			currentSize = request.getBody().size();
 
-			response.addHeader("Content-Type", "text/plain");
 			response.setBody(std::to_string(currentSize));
 		}
 	}

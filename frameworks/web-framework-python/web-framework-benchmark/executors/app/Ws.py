@@ -18,4 +18,4 @@ class WebSocketEcho(WebSocketExecutor):
             case Frame.FrameType.CLOSE:
                 return Frame.Close(Frame.Close.NORMAL_CLOSURE, "validate done")
             case _:
-                raise Exception(f"Wrong frame type: {frame_type.name}")
+                return None

@@ -1,7 +1,7 @@
 import json
 import copy
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from web_framework_api.web_framework_api import StatelessExecutor
 
@@ -19,6 +19,7 @@ class JsonExecutor(StatelessExecutor):
         multiplier = int(request.get_query_parameters()["m"])
         count = request.get_int_route_parameter("count")
         result: Dict[str, Any] = dict()
+        items: List[Any] = list()
 
         for i in range(count):
             item: Dict[str, Any] = self._items[i]
@@ -26,6 +27,9 @@ class JsonExecutor(StatelessExecutor):
 
             temp["total"] = int(temp["price"]) * int(temp["quantity"]) * multiplier
 
-            result["items"] = temp
+            items.append(temp)
+
+        result["count"] = count
+        result["items"] = items
 
         response.set_body(result)
