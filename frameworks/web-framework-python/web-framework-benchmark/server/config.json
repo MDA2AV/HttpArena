@@ -28,8 +28,7 @@
     },
     "resourcesThreads": 8,
     "largeBodySizeThreshold": 5242880,
-    "largeBodyPacketSize": 1048576,
-    "enableExceptionMessages": true
+    "largeBodyPacketSize": 1048576
   },
   "ThreadPoolServer": {
     "threadCount": 8
