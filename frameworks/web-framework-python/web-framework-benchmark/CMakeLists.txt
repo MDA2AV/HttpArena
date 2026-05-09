@@ -10,7 +10,6 @@ set(BUILD_PYTHON_API ON)
 set(BUILD_CC_API OFF) 
 set(BUILD_CXX_API OFF)
 set(BUILD_CSHARP_API OFF)
-set(WITH_STACKTRACE ON)
 
 project(web_framework_benchmark)
 
