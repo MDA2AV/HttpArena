@@ -19,11 +19,6 @@
     "loadType": "dynamic",
     "route": "upload"
   },
-  "Static": {
-    "api": "cxx",
-    "loadType": "initialization",
-    "route": "static/{string:filePath}"
-  },
   "Ws": {
     "api": "cxx",
     "loadType": "initialization",

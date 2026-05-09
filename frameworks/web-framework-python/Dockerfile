@@ -21,4 +21,4 @@ WORKDIR /app
 
 RUN python3 -m pip install api/python_api/dist/*.whl --break-system-packages
 
-CMD ["python3 -u server"]
+CMD ["python3 server.py"]
