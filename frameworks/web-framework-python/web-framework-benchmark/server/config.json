@@ -8,6 +8,9 @@
     "assetsPath": "/data",
     "templatesPath": "templates",
     "webServerType": "threadPool",
+    "runtimes": [
+      "python"
+    ],
     "settingsPaths": [
       "web.json"
     ],

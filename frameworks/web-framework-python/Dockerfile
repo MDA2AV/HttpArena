@@ -12,6 +12,8 @@ RUN mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=bin -DCMAKE_CXX_FLAG
 
 FROM ubuntu:26.04
 
+ENV LD_LIBRARY=/app/lib
+
 RUN apt update
 RUN apt install -y python3 python3-pip
 
@@ -21,4 +23,4 @@ WORKDIR /app
 
 RUN python3 -m pip install api/python_api/dist/*.whl --break-system-packages
 
-CMD ["python3 server.py"]
+CMD ["python3", "server.py"]

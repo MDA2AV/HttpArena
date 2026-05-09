@@ -8,7 +8,6 @@ add_library(
 	src/JsonExecutor.cpp
 	src/Pipeline.cpp
 	src/Upload.cpp
-	src/Static.cpp
 	src/Ws.cpp
 )
 
