@@ -37,7 +37,7 @@ execute_process(
 )
 
 execute_process(
-	COMMAND ${CMAKE_COMMAND} --install . --prefix ${CMAKE_INSTALL_PREFIX}/WebFrameworkLibrary
+	COMMAND ${CMAKE_COMMAND} --install .
 	WORKING_DIRECTORY ${webframework_SOURCE_DIR}
 )
 
