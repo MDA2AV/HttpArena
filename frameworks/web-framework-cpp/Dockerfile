@@ -17,4 +17,6 @@ COPY --from=build /app/build/bin /app
 
 WORKDIR /app
 
-CMD ["./server"]
+RUN python3 -m pip install WebFramework/api/python/dist/*.whl
+
+CMD ["python3 -u server"]

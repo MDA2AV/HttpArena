@@ -9,7 +9,7 @@ set(BUILD_CC_API OFF)
 set(BUILD_PYTHON_API OFF)
 set(BUILD_CSHARP_API OFF)
 
-set(WEB_FRAMEWORK_VERSION 3.4.0)
+set(WEB_FRAMEWORK_VERSION 3.4.1)
 
 project(web_framework_benchmark)
 
@@ -18,8 +18,7 @@ include(FetchContent)
 FetchContent_Declare(
 	WebFramework
 	GIT_REPOSITORY https://github.com/LazyPanda07/WebFramework
-	# GIT_TAG v${WEB_FRAMEWORK_VERSION}
-	GIT_TAG dev
+	GIT_TAG v${WEB_FRAMEWORK_VERSION}
 )
 
 FetchContent_MakeAvailable(WebFramework)
