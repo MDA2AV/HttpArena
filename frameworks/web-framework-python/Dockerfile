@@ -12,7 +12,7 @@ RUN mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=bin -DCMAKE_CXX_FLAG
 
 FROM ubuntu:26.04
 
-ENV LD_LIBRARY=/app/lib
+ENV LD_LIBRARY_PATH=/app/lib
 
 RUN apt update
 RUN apt install -y python3 python3-pip
