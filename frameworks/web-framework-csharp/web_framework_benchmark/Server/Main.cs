@@ -1,4 +1,5 @@
 ﻿using Framework;
+using Framework.Exceptions;
 using Framework.Utility;
 
 try
@@ -28,9 +29,7 @@ try
 
 	server.Start(true, () => Console.WriteLine("Server is running..."));
 }
-catch (Exception e)
+catch (WebFrameworkException e)
 {
 	Console.WriteLine(e.Message);
-
-	Environment.Exit(1);
 }

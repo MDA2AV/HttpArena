@@ -9,6 +9,8 @@ RUN dotnet publish -c Release -p:PublishDir=/app
 
 FROM ubuntu:26.04
 
+ENV WEB_FRAMEWORK_CSHARP_API_PATH=/app/WebFrameworkCSharpAPI.dll
+
 RUN apt update
 RUN apt install -y dotnet-runtime-10.0
 
@@ -18,4 +20,6 @@ COPY --from=build /app/ /app
 
 WORKDIR /app
 
-CMD ["dotnet", "./Server.dll"]
+RUN ln -s $(find / -name libhostfxr.so)
+
+CMD ["LD_LIBRARY_PATH=/app", "dotnet", "./Server.dll"]

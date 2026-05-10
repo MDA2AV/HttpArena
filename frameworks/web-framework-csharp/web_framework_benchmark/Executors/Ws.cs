@@ -13,7 +13,7 @@ public class Ws : StatelessExecutor
 
 public class WebSocketEcho : WebSocketExecutor
 {
-	public override FramePayload? OnReceive(Frame frame)
+	public override FramePayload? OnReceive(Frame frame, ref Frame.Close? close)
 	{
 		switch (frame.GetFrameType())
 		{
@@ -22,6 +22,8 @@ public class WebSocketEcho : WebSocketExecutor
 				return frame.GetPayload();
 				
 			case Frame.Type.close:
+				close = new(Frame.Close.Code.normalClosure, "validate done");
+
 				return null;
 
 			default:
