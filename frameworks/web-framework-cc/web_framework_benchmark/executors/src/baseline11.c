@@ -2,9 +2,9 @@
 
 static void parse_values(http_request_t request, int* a, int* b);
 
-DEFINE_DEFAULT_EXECUTOR(baseline_t, STATELESS_EXECUTOR)
+DEFINE_DEFAULT_EXECUTOR(baseline11_t, STATELESS_EXECUTOR)
 
-DEFINE_EXECUTOR_METHOD(baseline_t, GET_METHOD, request, response)
+DEFINE_EXECUTOR_METHOD(baseline11_t, GET_METHOD, request, response)
 {
 	int a;
 	int b;
@@ -19,7 +19,7 @@ DEFINE_EXECUTOR_METHOD(baseline_t, GET_METHOD, request, response)
 	wf_set_body(response, buffer, sizeof(buffer));
 }
 
-DEFINE_EXECUTOR_METHOD(baseline_t, POST_METHOD, request, response)
+DEFINE_EXECUTOR_METHOD(baseline11_t, POST_METHOD, request, response)
 {
 	int a;
 	int b;
