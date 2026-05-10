@@ -28,7 +28,6 @@ public class JsonExecutor : StatelessExecutor
 			result.items.Add(temp);
 		}
 
-		response.AddHeader("Content-Type", "text/plain");
 		response.SetBody(result);
 	}
 }

@@ -17,7 +17,6 @@ public class Baseline11 : StatelessExecutor
 	{
 		ParseValues(request, out int a, out int b);
 
-		response.AddHeader("Content-Type", "text/plain");
 		response.SetBody($"{a + b}");
 	}
 
@@ -37,7 +36,6 @@ public class Baseline11 : StatelessExecutor
 			c = int.Parse(request.GetHttpBody());
 		}
 
-		response.AddHeader("Content-Type", "text/plain");
 		response.SetBody($"{a + b + c}");
 	}
 }

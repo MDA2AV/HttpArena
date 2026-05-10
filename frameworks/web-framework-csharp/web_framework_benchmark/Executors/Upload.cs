@@ -17,7 +17,6 @@ public class Upload : HeavyOperationStatefulExecutor
 
 			if (last)
 			{
-				response.AddHeader("Content-Type", "text/plain");
 				response.SetBody($"{currentSize}");
 			}
 		}
@@ -25,7 +24,6 @@ public class Upload : HeavyOperationStatefulExecutor
 		{
 			currentSize = request.GetHttpBody().Length;
 
-			response.AddHeader("Content-Type", "text/plain");
 			response.SetBody($"{currentSize}");
 		}
 	}
