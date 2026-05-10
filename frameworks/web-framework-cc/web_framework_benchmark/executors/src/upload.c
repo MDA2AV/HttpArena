@@ -23,7 +23,7 @@ DEFINE_EXECUTOR_METHOD(upload_t, POST_METHOD, request, response)
 
 	if (atoi(contentLength) >= THRESHOLD_SIZE)
 	{
-		large_data_t* data = NULL;
+		const large_data_t* data = NULL;
 		
 		wf_get_large_data(request, &data);
 
