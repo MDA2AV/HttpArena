@@ -10,4 +10,11 @@
     <PackageReference Include="WebFrameworkCSharpAPI" Version="3.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="web.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

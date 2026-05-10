@@ -3,13 +3,11 @@ FROM ubuntu:26.04 AS build
 RUN apt update
 RUN apt install -y dotnet-sdk-10.0
 
-COPY . .
+COPY web_framework_benchmark/ .
 
 RUN dotnet publish -c Release -p:PublishDir=/app
 
 FROM ubuntu:26.04
-
-ENV LD_LIBRARY_PATH=/app/lib
 
 RUN apt update
 RUN apt install -y dotnet-runtime-10.0
@@ -20,4 +18,4 @@ COPY --from=build /app/ /app
 
 WORKDIR /app
 
-# CMD ["dotnet", "Server.dll"]
+CMD ["dotnet", "./Server.dll"]
