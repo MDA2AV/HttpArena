@@ -31,7 +31,7 @@ DEFINE_EXECUTOR_METHOD(upload_t, POST_METHOD, request, response)
 
 		if (data->is_last_packet)
 		{
-			const char buffer[32];
+			char buffer[32];
 
 			memset(buffer, 0, sizeof(buffer));
 
@@ -49,7 +49,7 @@ DEFINE_EXECUTOR_METHOD(upload_t, POST_METHOD, request, response)
 
 		self->current_size += size;
 
-		const char buffer[32];
+		char buffer[32];
 
 		memset(buffer, 0, sizeof(buffer));
 

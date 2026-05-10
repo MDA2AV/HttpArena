@@ -93,5 +93,4 @@ void parse_values(http_request_t request, int* a, int* b)
 	}
 }
 
-DEFINE_EXECUTOR(baseline_t)
 DEFINE_INITIALIZE_WEB_FRAMEWORK()
