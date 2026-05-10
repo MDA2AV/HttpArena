@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 
 	if (exception)
 	{
-		printf("%s\n", wf_get_error_message(exception));
+		fprintf(stderr, "%s\n", wf_get_error_message(exception));
 
 		wf_delete_web_framework_exception(exception);
 
@@ -35,7 +35,7 @@ int main(int argc, char** argv)
 
 	if (exception)
 	{
-		printf("%s\n", wf_get_error_message(exception));
+		fprintf(stderr, "%s\n", wf_get_error_message(exception));
 
 		wf_delete_config(config);
 		wf_delete_web_framework_exception(exception);
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
 
 	if (exception)
 	{
-		printf("%s\n", wf_get_error_message(exception));
+		fprintf(stderr, "%s\n", wf_get_error_message(exception));
 
 		wf_delete_config(config);
 		wf_delete_web_framework_exception(exception);
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 
 	if (exception)
 	{
-		printf("%s\n", wf_get_error_message(exception));
+		fprintf(stderr, "%s\n", wf_get_error_message(exception));
 
 		wf_delete_config(config);
 		wf_delete_web_framework(server);
