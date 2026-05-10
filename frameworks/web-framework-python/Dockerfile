@@ -4,7 +4,7 @@ RUN apt update
 RUN apt install -y uuid-dev cmake gcc g++ git unzip zip wget ninja-build python3 python3-venv python3-pip
 RUN python3 -m pip install build --break-system-packages
 
-COPY web-framework-benchmark/ /app
+COPY web_framework_benchmark/ /app
 
 WORKDIR /app
 
