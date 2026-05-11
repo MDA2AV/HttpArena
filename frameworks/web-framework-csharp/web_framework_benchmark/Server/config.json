@@ -23,7 +23,7 @@
       "useHTTPS": false
     },
     "resourcesThreads": 8,
-    "largeBodySizeThreshold": 5242880,
+    "largeBodySizeThreshold": 102400,
     "largeBodyPacketSize": 1048576
   },
   "ThreadPoolServer": {

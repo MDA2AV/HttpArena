@@ -12,7 +12,7 @@ namespace executor
 
 	void Upload::doPost(framework::HttpRequest& request, framework::HttpResponse& response)
 	{
-		constexpr size_t thresholdSize = 5242880;
+		constexpr size_t thresholdSize = 102400;
 
 		const framework::HttpRequest::HeadersMap& headers = request.getHeaders();
 		const std::string& temp = headers.at("Content-Length");

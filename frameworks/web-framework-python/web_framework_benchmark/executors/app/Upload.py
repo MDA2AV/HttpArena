@@ -5,7 +5,7 @@ class Upload(StatefulExecutor):
     def __init__(self):
         super().__init__()
 
-        self._threshold_size = 5242880
+        self._threshold_size = 102400
         self._current_size = 0
 
     def do_post(self, request, response):

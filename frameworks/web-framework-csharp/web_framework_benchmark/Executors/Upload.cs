@@ -4,17 +4,25 @@ using Framework;
 
 public class Upload : StatefulExecutor
 {
-	private int currentSize = 0;
+	private int currentSize;
+	private bool? isLargeData;
 
 	public override void DoPost(HttpRequest request, HttpResponse response)
 	{
-		const int thresholdSize = 5242880;
+		if (isLargeData == null)
+		{
+			const int thresholdSize = 102400;
 
-		IDictionary<string, string> headers = request.GetHeaders();
-		string temp = headers["Content-Length"];
-		int contentLength = int.Parse(temp);
+			currentSize = 0;
 
-		if (contentLength >= thresholdSize)
+			IDictionary<string, string> headers = request.GetHeaders();
+			string temp = headers["Content-Length"];
+			int contentLength = int.Parse(temp);
+
+			isLargeData = contentLength >= thresholdSize;
+		}
+
+		if ((bool)isLargeData)
 		{
 			var (data, last) = request.GetLargeData();
 

@@ -1,6 +1,6 @@
 #include <executors/executor.h>
 
-#define THRESHOLD_SIZE 5242880
+#define THRESHOLD_SIZE 102400
 
 typedef struct upload
 {
