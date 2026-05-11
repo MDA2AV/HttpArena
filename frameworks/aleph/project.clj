@@ -25,6 +25,7 @@
                                              io.netty/netty-transport-native-unix-common]]
                  [io.netty/netty-all "4.2.12.Final"]
                  [org.clojars.jj/tassu "1.0.4"]
+                 [hiccup "2.0.0"]
                  [org.clojars.jj/boa-sql "1.0.10"]
                  [org.clojars.jj/async-boa-sql "1.0.10"]
                  [org.clojars.jj/next-jdbc-adapter "1.0.10"]

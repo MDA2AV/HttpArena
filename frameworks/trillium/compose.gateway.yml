@@ -1,0 +1,52 @@
+services:
+  proxy:
+    build:
+      context: ./proxy
+    network_mode: host
+    cpuset: "0-7,64-71"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - PROXY_PORT=8443
+      - PROXY_UPSTREAM=https://localhost:9443
+      - STATIC_DIR=/data/static
+      - TLS_CERT=/certs/server.crt
+      - TLS_KEY=/certs/server.key
+      - RUST_LOG=info
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "8-31,72-95"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+      - STATIC_DIR=/data/static
+      - TLS_CERT=/certs/server.crt
+      - TLS_KEY=/certs/server.key
+      - TLS_PORT=9443
+      - RUST_LOG=info
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR}/static:/data/static:ro

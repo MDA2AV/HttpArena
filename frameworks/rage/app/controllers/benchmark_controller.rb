@@ -59,24 +59,7 @@ class BenchmarkController < RageController::API
       items = []
     end
 
-    result = { items: items, count: items.length }
-
-    if accept_encodings = request.headers['Accept-Encoding']
-      types = accept_encodings.split(',').map(&:strip)
-      if types.include? 'gzip'
-        sio = StringIO.new
-        gz = Zlib::GzipWriter.new(sio, 1)
-        gz.write JSON.generate(result)
-        gz.close
-        headers['Content-Encoding'] = 'gzip'
-        headers['Content-Type'] = 'application/json'
-        render plain: sio.string
-      else
-        render json: result
-      end
-    else
-      render json: result
-    end
+    render json: { items: items, count: items.length }
   end
 
   def async_db

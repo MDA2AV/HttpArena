@@ -403,7 +403,7 @@
     "dir": "rage",
     "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
     "repo": "https://github.com/rage-rb/rage",
-    "type": "tuned",
+    "type": "production",
     "engine": "iodine"
   },
   "rails": {

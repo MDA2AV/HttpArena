@@ -1,0 +1,30 @@
+{
+  "display_name": "trillium",
+  "language": "Rust",
+  "type": "tuned",
+  "engine": "trillium-http",
+  "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc.",
+  "repo": "https://github.com/trillium-rs/trillium",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "static",
+    "async-db",
+    "crud",
+    "api-4",
+    "api-16",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h3",
+    "static-h3",
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": ["jbr"]
+}
