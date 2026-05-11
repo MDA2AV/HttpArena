@@ -28,10 +28,11 @@ connection.
 
 ### One process, N event-loop threads
 
-A single PHP process is launched. The main thread reads the dataset and
-static files (so they live in shared read-only memory), constructs an
-`HttpServer` from `HttpServerConfig`, and registers exactly one PHP
-callback via `addHttpHandler`.
+A single PHP process is launched. The main thread reads the dataset
+into shared read-only memory, constructs an `HttpServer` from
+`HttpServerConfig`, mounts a `StaticHandler` for `/static/`, and
+registers a single PHP callback via `addHttpHandler`. Static files
+themselves are served from C — the PHP callback never sees them.
 
 The main thread then submits an `Async\ThreadPool` job for each CPU
 (`N = available_parallelism()`, overridable via `WORKERS=…`). The job
@@ -118,24 +119,32 @@ and H2 DATA frames stay efficient. Inbound `Content-Encoding: gzip`
 request bodies are decoded transparently with an anti-zip-bomb cap. The
 encoder is zlib-ng when available, system zlib otherwise.
 
-The `entry.php` in this framework does **not** drive compression
-manually for `/json/*` — the server middleware would handle it, we just
-haven't enabled it yet (see "Not yet subscribed" below).
+`entry.php` enables this middleware via
+`HttpServerConfig::setCompressionEnabled(true)`, so the `/json/*`
+responses are transparently compressed when the client advertises
+`Accept-Encoding: br|gzip` — that's what powers the `json-comp`
+profile.
 
 ### What `entry.php` actually contains
 
-A flat dispatcher that's intentionally short:
+A `StaticHandler` mount for `/static/` plus a flat PHP dispatcher:
 
 ```php
-$server->addHttpHandler(static function ($req, $res) use ($dataset, $datasetCount, $static) {
+$server->addStaticHandler(
+    (new StaticHandler('/static/', '/data/static'))
+        ->enablePrecompressed('br', 'gzip')
+        ->setEtagEnabled(true)
+        ->setOpenFileCache(1024, 60)
+);
+
+$server->addHttpHandler(static function ($req, $res) use ($dataset, $datasetCount) {
     $path = $req->getPath();
 
     if ($path === '/baseline11' || $path === '/baseline2') { ... sum ... }
     if ($path === '/pipeline')                              { ... 'ok' ... }
     if (str_starts_with($path, '/json/'))                   { ... slice + json_encode ... }
     if ($path === '/upload')                                { ... awaitBody ... }
-    if (str_starts_with($path, '/static/'))                 { ... preloaded buffer + AE chooser ... }
-    /* 404 */
+    /* /static/* is served by StaticHandler above; anything else → 404 */
 });
 ```
 
@@ -154,19 +163,24 @@ goes first because it's the hottest endpoint across `baseline`,
 ## Subscribed profiles
 
 ```
-baseline, pipelined, limited-conn, json, upload, baseline-h2, json-tls
+baseline, pipelined, limited-conn, json, json-comp, json-tls,
+upload, static, static-h2, baseline-h2
 ```
 
-All seven pass the HttpArena validation suite (26/26 checks) on the
-published `trueasync/php-true-async:0.7.0-alpha.5-php8.6` image.
+All ten pass the HttpArena validation suite (39/39 checks) on the
+published image.
+
+`static` / `static-h2` are served by the server's built-in C
+`StaticHandler` (`addStaticHandler` in `entry.php`), which does
+sendfile + per-request precompressed sidecar (`.br` / `.gz`) selection
+and an open-file cache — no PHP-level buffering.
+
+`json-comp` uses the server's transparent compression middleware
+(`setCompressionEnabled(true)` on the config), which negotiates
+brotli / gzip from `Accept-Encoding` automatically.
 
 ## Not yet subscribed (work-in-progress)
 
-- `static`, `static-h2`, `static-h3` — need a built-in static handler in
-  the server (production-tier rules forbid the user-land file cache /
-  manual `.gz`/`.br` lookup `entry.php` would otherwise rely on).
-- `json-comp` — server now ships transparent gzip/brotli (zlib-ng /
-  zlib) middleware; wiring it in `entry.php` is the next step.
 - `baseline-h2c`, `json-h2c` — HttpArena requires port 8082 to refuse
   HTTP/1.1, but `protocol_mask` in TrueAsync Server is currently
   per-server, not per-listener. Per-listener mask is on the roadmap.

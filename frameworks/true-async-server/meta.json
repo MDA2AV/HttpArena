@@ -12,8 +12,11 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
+    "json-tls",
     "upload",
-    "baseline-h2",
-    "json-tls"
+    "static",
+    "static-h2",
+    "baseline-h2"
   ]
 }

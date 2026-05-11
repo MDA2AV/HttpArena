@@ -20,6 +20,7 @@ use TrueAsync\HttpServer;
 use TrueAsync\HttpServerConfig;
 use TrueAsync\HttpRequest;
 use TrueAsync\HttpResponse;
+use TrueAsync\StaticHandler;
 use Async\ThreadPool;
 use function Async\spawn;
 use function Async\await_all_or_fail;
@@ -32,32 +33,7 @@ require __DIR__ . '/PostgreSQL.php';
 $datasetRaw   = json_decode(file_get_contents('/data/dataset.json'), true);
 $datasetCount = count($datasetRaw);
 
-$mimeTypes = [
-    'css'   => 'text/css',
-    'js'    => 'application/javascript',
-    'html'  => 'text/html',
-    'woff2' => 'font/woff2',
-    'svg'   => 'image/svg+xml',
-    'webp'  => 'image/webp',
-    'json'  => 'application/json',
-];
-
-$staticFiles = [];
 $staticDir = '/data/static';
-if (is_dir($staticDir)) {
-    foreach (scandir($staticDir) as $name) {
-        if ($name === '.' || $name === '..') continue;
-        if (str_ends_with($name, '.br') || str_ends_with($name, '.gz')) continue;
-        $base = $staticDir . '/' . $name;
-        $ext  = pathinfo($name, PATHINFO_EXTENSION);
-        $staticFiles['/static/' . $name] = [
-            'data' => file_get_contents($base),
-            'mime' => $mimeTypes[$ext] ?? 'application/octet-stream',
-            'br'   => file_exists($base . '.br') ? file_get_contents($base . '.br') : null,
-            'gz'   => file_exists($base . '.gz') ? file_get_contents($base . '.gz') : null,
-        ];
-    }
-}
 
 // --- Runtime knobs ---
 
@@ -77,7 +53,9 @@ $tlsAvailable = is_readable($certPath) && is_readable($keyPath);
 $config = (new HttpServerConfig())
     ->addListener('0.0.0.0', $port)
     ->setBacklog(2048)
-    ->setMaxBodySize(32 * 1024 * 1024);
+    ->setMaxBodySize(32 * 1024 * 1024)
+    // Transparent gzip/brotli middleware — needed for the json-comp profile.
+    ->setCompressionEnabled(true);
 
 if ($tlsAvailable) {
     // 8443: h2 + h1 over TLS (ALPN). 8081: h1 over TLS for the json-tls profile.
@@ -90,9 +68,20 @@ if ($tlsAvailable) {
 
 $server = new HttpServer($config);
 
+// Static-file delivery from C (sendfile + precompressed sidecar selection).
+// Powers the `static` and `static-h2` profiles.
+if (is_dir($staticDir)) {
+    $server->addStaticHandler(
+        (new StaticHandler('/static/', $staticDir))
+            ->enablePrecompressed('br', 'gzip')
+            ->setEtagEnabled(true)
+            ->setOpenFileCache(1024, 60)
+    );
+}
+
 $server->addHttpHandler(
     static function (HttpRequest $request, HttpResponse $response)
-        use ($datasetRaw, $datasetCount, $staticFiles): void
+        use ($datasetRaw, $datasetCount): void
     {
         $path = $request->getPath();
 
@@ -156,33 +145,8 @@ $server->addHttpHandler(
             return;
         }
 
-        if (str_starts_with($path, '/static/') && isset($staticFiles[$path])) {
-            $f = $staticFiles[$path];
-            $response->setStatusCode(200)
-                ->setHeader('Content-Type', $f['mime']);
-
-            // Parse Accept-Encoding properly: split on ',', honor q=0 (refusal).
-            $acceptsBr = false; $acceptsGz = false;
-            foreach (explode(',', $request->getHeader('Accept-Encoding') ?? '') as $part) {
-                $semi = strpos($part, ';');
-                $name = strtolower(trim($semi === false ? $part : substr($part, 0, $semi)));
-                if ($name !== 'br' && $name !== 'gzip') continue;
-                if ($semi !== false
-                    && preg_match('/(?:^|;)\s*q=0(?:\.0+)?\s*(?:;|$)/i', substr($part, $semi))) {
-                    continue;
-                }
-                if ($name === 'br') $acceptsBr = true; else $acceptsGz = true;
-            }
-
-            if ($acceptsBr && $f['br'] !== null) {
-                $response->setHeader('Content-Encoding', 'br')->setBody($f['br']);
-            } elseif ($acceptsGz && $f['gz'] !== null) {
-                $response->setHeader('Content-Encoding', 'gzip')->setBody($f['gz']);
-            } else {
-                $response->setBody($f['data']);
-            }
-            return;
-        }
+        // /static/* is handled by the StaticHandler registered above;
+        // anything reaching here under /static/ missed the file → 404.
 
         $response->setStatusCode(404)
             ->setHeader('Content-Type', 'text/plain')
