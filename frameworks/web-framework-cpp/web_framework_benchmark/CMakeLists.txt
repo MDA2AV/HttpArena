@@ -9,7 +9,7 @@ set(BUILD_CC_API OFF)
 set(BUILD_PYTHON_API OFF)
 set(BUILD_CSHARP_API OFF)
 
-set(WEB_FRAMEWORK_VERSION 3.4.1)
+set(WEB_FRAMEWORK_VERSION 3.4.2)
 
 project(web_framework_benchmark)
 
