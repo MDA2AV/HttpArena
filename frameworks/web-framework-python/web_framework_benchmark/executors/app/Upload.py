@@ -1,7 +1,7 @@
-from web_framework_api import HeavyOperationStatefulExecutor
+from web_framework_api import StatefulExecutor
 
 
-class Upload(HeavyOperationStatefulExecutor):
+class Upload(StatefulExecutor):
     def __init__(self):
         super().__init__()
 

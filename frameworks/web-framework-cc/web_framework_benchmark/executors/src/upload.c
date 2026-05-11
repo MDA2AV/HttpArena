@@ -7,7 +7,7 @@ typedef struct upload
 	int current_size;
 } upload_t;
 
-DEFINE_EXECUTOR(upload_t, HEAVY_OPERATION_STATEFUL_EXECUTOR)
+DEFINE_EXECUTOR(upload_t, STATEFUL_EXECUTOR)
 
 DEFINE_EXECUTOR_INIT(upload_t)
 {
