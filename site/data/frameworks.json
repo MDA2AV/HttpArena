@@ -122,6 +122,20 @@
     "type": "infrastructure",
     "engine": "caddy"
   },
+  "dart-io": {
+    "dir": "dart-io",
+    "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
+    "repo": "https://github.com/kartikey321/dart-sdk",
+    "type": "engine",
+    "engine": "dart:io"
+  },
+  "dart-zig": {
+    "dir": "dart-zig",
+    "description": "dart-zig custom Dart runtime on Linux io_uring, using the reusable dart-zig runtime and builder images, with the benchmark app source owned by HttpArena. Current integration targets baseline, pipelined, limited-conn, and json.",
+    "repo": "https://github.com/kartikey321/dart-sdk/tree/dart-zig/dart-zig",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "deno-websocket": {
     "dir": "deno-websocket",
     "description": "Deno WebSocket echo server",
@@ -189,7 +203,7 @@
     "dir": "fletch",
     "description": "Express-inspired HTTP framework for Dart with radix-tree routing, middleware chains, signed sessions, and built-in DI.",
     "repo": "https://github.com/kartikey321/fletch",
-    "type": "tuned",
+    "type": "production",
     "engine": "dart:io"
   },
   "frankenphp-trueasync": {
@@ -540,6 +554,22 @@
     "repo": "https://github.com/traefik/traefik",
     "type": "infrastructure",
     "engine": "traefik"
+  },
+  "trillium": {
+    "dir": "trillium",
+    "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, deadpool-postgres for async-db and crud.",
+    "repo": "https://github.com/trillium-rs/trillium",
+    "type": "production",
+    "engine": "trillium-http",
+    "variants": [
+      {
+        "dir": "trillium-tuned",
+        "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc.",
+        "repo": "https://github.com/trillium-rs/trillium",
+        "type": "tuned",
+        "engine": "trillium-http"
+      }
+    ]
   },
   "ultimate-express": {
     "dir": "ultimate-express",

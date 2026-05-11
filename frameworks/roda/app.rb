@@ -38,8 +38,6 @@ class App < Roda
   route do |r|
     r.root { 'ok' }
 
-    r.public
-
     r.is 'pipeline' do
       render_plain 'ok'
     end
@@ -101,6 +99,8 @@ class App < Roda
       end
       render_json JSON.generate({ items: items, count: items.length })
     end
+
+    r.public
   end
 
   private
