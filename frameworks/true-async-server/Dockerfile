@@ -10,7 +10,7 @@ RUN printf '%s\n' \
     > /etc/php.d/99-arena.ini
 
 WORKDIR /app
-COPY entry.php PostgreSQL.php /app/
+COPY entry.php PostgreSQL.php SQLite.php /app/
 
 EXPOSE 8080 8443
 

@@ -27,6 +27,7 @@ use function Async\await_all_or_fail;
 use function Async\available_parallelism;
 
 require __DIR__ . '/PostgreSQL.php';
+require __DIR__ . '/SQLite.php';
 
 // --- Preload at process start (read once, transferred to all workers) ---
 
@@ -145,6 +146,17 @@ $server->addHttpHandler(
             return;
         }
 
+        if ($path === '/sqlite-db') {
+            $query = $request->getQuery();
+            $min   = (float)($query['min'] ?? 10);
+            $max   = (float)($query['max'] ?? 50);
+            $limit = max(1, min(50, (int)($query['limit'] ?? 50)));
+            $response->setStatusCode(200)
+                ->setHeader('Content-Type', 'application/json')
+                ->setBody(SQLite::query($min, $max, $limit));
+            return;
+        }
+
         // /static/* is handled by the StaticHandler registered above;
         // anything reaching here under /static/ missed the file → 404.
 
@@ -171,6 +183,7 @@ for ($i = 0; $i < $workers; $i++) {
     // Each worker thread has its own PHP environment — re-require class files.
     $futures[] = $pool->submit(static function () use ($server): void {
         require __DIR__ . '/PostgreSQL.php';
+        require __DIR__ . '/SQLite.php';
         $server->start();
     });
 }

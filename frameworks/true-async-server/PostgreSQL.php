@@ -33,8 +33,14 @@ final class PostgreSQL
             ltrim($parts['path'] ?? '/benchmark', '/')
         );
 
-        $maxConn = (int)(getenv('DATABASE_MAX_CONN') ?: 256);
-        $minConn = (int)(getenv('DATABASE_MIN_CONN') ?: max(8, (int)($maxConn / 8)));
+        // PG sweet spot is ~4×CPU backends; more = lock/context contention.
+        // Cap total at min(DATABASE_MAX_CONN, 4×CPU), split per worker.
+        $cpus     = \Async\available_parallelism();
+        $workers  = max(1, (int)(getenv('WORKERS') ?: $cpus));
+        $envCap   = (int)(getenv('DATABASE_MAX_CONN') ?: 4 * $cpus);
+        $totalMax = min($envCap, 4 * $cpus);
+        $maxConn  = max(2, intdiv($totalMax, $workers));
+        $minConn  = (int)(getenv('DATABASE_MIN_CONN') ?: max(1, intdiv($maxConn, 2)));
 
         self::$pdo = new PDO(
             $dsn,
@@ -44,9 +50,10 @@ final class PostgreSQL
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::ATTR_POOL_ENABLED       => true,
-                PDO::ATTR_POOL_MIN           => $minConn,
-                PDO::ATTR_POOL_MAX           => $maxConn,
+                PDO::ATTR_POOL_ENABLED          => true,
+                PDO::ATTR_POOL_MIN              => $minConn,
+                PDO::ATTR_POOL_MAX              => $maxConn,
+                PDO::ATTR_POOL_STMT_CACHE_SIZE  => 32,
             ]
         );
 

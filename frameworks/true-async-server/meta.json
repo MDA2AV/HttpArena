@@ -17,6 +17,7 @@
     "upload",
     "static",
     "static-h2",
-    "baseline-h2"
+    "baseline-h2",
+    "async-db"
   ]
 }
