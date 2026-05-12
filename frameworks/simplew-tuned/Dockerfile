@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 
-COPY simplew.csproj ./
+COPY simplew-arena.csproj ./
 RUN dotnet restore
 
 COPY . .
@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=build /app .
 
 EXPOSE 8080 8081
-ENTRYPOINT ["dotnet", "simplew.dll"]
+ENTRYPOINT ["dotnet", "simplew-arena.dll"]
