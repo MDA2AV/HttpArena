@@ -26,6 +26,7 @@ services:
       DATABASE_MAX_CONN: "256"
     volumes:
       - ${DATA_DIR:-../../data}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR:-../../data}/benchmark.db:/data/benchmark.db:ro
       - ${DATA_DIR:-../../data}/static:/data/static:ro
       - ${CERTS_DIR:-../../certs}:/certs:ro
     healthcheck:

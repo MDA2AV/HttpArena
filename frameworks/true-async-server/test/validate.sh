@@ -212,7 +212,38 @@ echo "=== static files ==="
 
 check_status "GET /static/app.js 200"       "200" "$H1/static/app.js"
 check_status "GET /static/nonexistent 404"  "404" "$H1/static/nonexistent.txt"
-check_header "static Content-Type js"       "Content-Type" "application/javascript" "$H1/static/app.js"
+check_header "static Content-Type js"       "Content-Type" "\(text\|application\)/javascript" "$H1/static/app.js"
+
+echo "=== sqlite-db ==="
+
+# sqlite-db uses LIMIT 50 hardcoded; count varies by range hit, just verify
+# response shape and headers.
+sqlite_resp=$(curl -s --max-time 10 "$H1/sqlite-db?min=10&max=50" 2>/dev/null || true)
+sqlite_ok=$(python3 -c "
+import sys, json
+try:
+    d = json.loads(sys.argv[1])
+except Exception as e:
+    print('FAIL parse:', e); sys.exit(0)
+items = d.get('items', [])
+hr = all('rating' in i and 'score' in i['rating'] for i in items) if items else True
+ht = all(isinstance(i.get('tags'), list) for i in items) if items else True
+ha = all(isinstance(i.get('active'), bool) for i in items) if items else True
+if isinstance(d.get('count'), int) and hr and ht and ha:
+    print('PASS')
+else:
+    print(f'FAIL rating={hr} tags={ht} active={ha}')
+" "$sqlite_resp" 2>/dev/null || echo "FAIL python3 error")
+[[ "$sqlite_ok" == "PASS" ]] && ok "sqlite-db response shape" || fail "sqlite-db" "$sqlite_ok"
+
+check_header "sqlite-db Content-Type" "Content-Type" "application/json" \
+    "$H1/sqlite-db?min=10&max=50"
+
+empty_sqlite=$(curl -s --max-time 10 "$H1/sqlite-db?min=99999&max=99999" 2>/dev/null \
+    | python3 -c "import sys,json; print(json.load(sys.stdin).get('count',-1))" 2>/dev/null || echo "-1")
+[[ "$empty_sqlite" == "0" ]] \
+    && ok "sqlite-db empty range → count=0" \
+    || fail "sqlite-db empty range" "expected count=0 got $empty_sqlite"
 
 echo "=== async-db (PostgreSQL) ==="
 
