@@ -279,6 +279,55 @@ echo "=== static-h2 ==="
 check_status "h2 static app.js 200"     "200" -sk --http2 "$TLS/static/app.js"
 check_status "h2 static nonexist 404"   "404" -sk --http2 "$TLS/static/nonexistent.txt"
 
+# Regression: large file over h2 + TLS exercises the flow-control loop
+# past the initial h2 stream window (65535 B). Pre-fix the response
+# either crashed the worker (TLS write awaited from scheduler context)
+# or truncated to 65535/65536 B (no WINDOW_UPDATE → drain loop). 30
+# back-to-back fresh-connection runs catches both flake patterns. app.js
+# is 200 KiB; expected_size = file size from disk so the test scales if
+# the asset is regenerated.
+APP_JS_SIZE=$(curl -s --max-time 5 -o /dev/null -w "%{size_download}" "$H1/static/app.js" 2>/dev/null)
+ok_h2_big=0
+trunc_h2_big=0
+other_h2_big=0
+for _i in $(seq 1 30); do
+    s=$(curl -sk --http2 --max-time 5 -o /dev/null -w "%{size_download}" \
+            "$TLS/static/app.js" 2>/dev/null)
+    if [ "$s" = "$APP_JS_SIZE" ]; then
+        ok_h2_big=$((ok_h2_big + 1))
+    elif [ "$s" = "65535" ] || [ "$s" = "65536" ]; then
+        trunc_h2_big=$((trunc_h2_big + 1))
+    else
+        other_h2_big=$((other_h2_big + 1))
+    fi
+done
+# Tolerate at most 1 transient TCP/TLS handshake failure out of 30 — the
+# real regression is truncation, which must be zero.
+if [ "$trunc_h2_big" = "0" ] && [ "$other_h2_big" -le 1 ]; then
+    ok "h2 static large repeated (ok=$ok_h2_big trunc=$trunc_h2_big other=$other_h2_big)"
+else
+    fail "h2 static large repeated" \
+        "ok=$ok_h2_big trunc=$trunc_h2_big other=$other_h2_big (expected size=$APP_JS_SIZE)"
+fi
+
+# Concurrent h2 streams on a single connection — exercises window
+# bookkeeping under multiplexing, which is where the original truncation
+# bug clustered.
+docker_compose_files=""
+concur_out=$(curl -sk --http2 --max-time 15 \
+    -o /dev/null -w "%{http_code} %{size_download}\n" \
+    "$TLS/static/app.js" \
+    -o /dev/null -w "%{http_code} %{size_download}\n" \
+    "$TLS/static/components.css" \
+    -o /dev/null -w "%{http_code} %{size_download}\n" \
+    "$TLS/static/vendor.js" 2>/dev/null)
+concur_bad=$(echo "$concur_out" | awk '$1 != "200" || $2 == "0" {print}' | head -1)
+if [ -z "$concur_bad" ]; then
+    ok "h2 static concurrent streams ($(echo "$concur_out" | wc -l) responses)"
+else
+    fail "h2 static concurrent streams" "bad response: $concur_bad"
+fi
+
 echo "=== json-tls (HTTPS + HTTP/1.1 TLS) ==="
 
 check_header "json-tls Content-Type" "Content-Type" "application/json" -sk "$TLS/json/5?m=1"
