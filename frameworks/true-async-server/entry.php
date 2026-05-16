@@ -55,6 +55,10 @@ $config = (new HttpServerConfig())
     ->addListener('0.0.0.0', $port)
     ->setBacklog(2048)
     ->setMaxBodySize(32 * 1024 * 1024)
+    // Stream request bodies into per-request queue instead of buffering
+    // the whole Content-Length into req->body. Required for /upload to
+    // stay within RSS limits under concurrent 20 MiB POSTs (see issue #26).
+    ->setBodyStreamingEnabled(true)
     // Transparent gzip/brotli middleware — needed for the json-comp profile.
     ->setCompressionEnabled(true);
 
@@ -90,7 +94,14 @@ $server->addHttpHandler(
         if ($path === '/baseline11' || $path === '/baseline2') {
             $sum = array_sum($request->getQuery());
             if ($request->getMethod() === 'POST') {
-                $sum += (int)$request->awaitBody()->getBody();
+                // Streaming body (issue #26): drain chunks into one buffer
+                // before (int) cast. Bench body is small (<8 KiB) so the
+                // single-buffer concat stays cheap.
+                $body = '';
+                while (($c = $request->readBody()) !== null) {
+                    $body .= $c;
+                }
+                $sum += (int)$body;
             }
             $response->setStatusCode(200)
                 ->setHeader('Content-Type', 'text/plain')
@@ -129,9 +140,16 @@ $server->addHttpHandler(
         }
 
         if ($path === '/upload') {
+            // Streaming-body fast path (issue #26): never materialise the
+            // 20 MiB body into a single zend_string. Count chunks as they
+            // arrive, peak memory bounded by socket buffer + one chunk.
+            $bytes = 0;
+            while (($c = $request->readBody()) !== null) {
+                $bytes += strlen($c);
+            }
             $response->setStatusCode(200)
                 ->setHeader('Content-Type', 'text/plain')
-                ->setBody((string)strlen($request->awaitBody()->getBody()));
+                ->setBody((string)$bytes);
             return;
         }
 
