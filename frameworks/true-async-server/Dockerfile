@@ -1,4 +1,4 @@
-FROM trueasync/php-true-async:0.7.0-alpha.12-php8.6
+FROM trueasync/php-true-async:0.7.0-alpha.13-php8.6
 
 RUN printf '%s\n' \
       'opcache.jit=1255' \

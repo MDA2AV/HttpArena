@@ -10,7 +10,7 @@ connection.
 - **Source:** <https://github.com/true-async/server>
 - **Engine:** TrueAsync (PHP fork — <https://github.com/true-async/php-src>)
 - **Tier:** `tuned`
-- **Image:** `trueasync/php-true-async:0.7.0-alpha.5-php8.6`
+- **Image:** `trueasync/php-true-async:0.7.0-alpha.13-php8.6`
 
 ### Related repositories
 
