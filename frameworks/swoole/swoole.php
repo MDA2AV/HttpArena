@@ -5,7 +5,6 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 
 require __DIR__ . '/PostgreSQL.php';
-require __DIR__ . '/SQLite.php';
 
 $dataset = json_decode(file_get_contents('/data/dataset.json'), true);
 
@@ -44,7 +43,6 @@ $http->set([
 
 $http->on('workerStart', function (Server $server, int $workerId) {
     PostgreSQL::init();
-    SQLite::init();
 });
 
 $http->on('request', function (Request $request, Response $response) use ($dataset, $files) {
@@ -93,14 +91,6 @@ $http->on('request', function (Request $request, Response $response) use ($datas
         $max   = (int)($request->get['max'] ?? 50);
         $limit = max(1, min(50, (int)($request->get['limit'] ?? 50)));
         $response->end(PostgreSQL::query($min, $max, $limit));
-        return;
-    }
-
-    if ($path === '/sqlite-db') {
-        $response->header['Content-Type'] = 'application/json';
-        $min = (int)($request->get['min'] ?? 10);
-        $max = (int)($request->get['max'] ?? 50);
-        $response->end(SQLite::query($min, $max));
         return;
     }
 
