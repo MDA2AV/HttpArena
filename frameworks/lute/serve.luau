@@ -15,18 +15,9 @@ local datasetLen = 0
 local function buildJson(count: number, m: number): string
 	local items = table.create(count)
 	for i = 1, count do
-		local src = dataset[i]
-		items[i] = {
-			id = src.id,
-			name = src.name,
-			category = src.category,
-			price = src.price,
-			quantity = src.quantity,
-			active = src.active,
-			tags = src.tags,
-			rating = src.rating,
-			total = src.price * src.quantity * m,
-		}
+		local item = table.clone(dataset[i])
+		item.total = item.price * item.quantity * m
+		items[i] = item
 	end
 	return json.serialize({ count = count, items = items })
 end
