@@ -2,14 +2,13 @@
   (:require [clojure.core.cache :as cache]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [jj.majavat :as majavat]
-            [jj.majavat.renderer :as renderer]
             [jj.sql.async-boa :as boa]
             [jj.sql.boa.query.vertx-pg :as vertx-adapter]
             [jj.tassu :refer [GET POST PUT async-route]]
             [jsonista.core :as json]
             [ring-http-exchange.core :as server]
-            [ring-http-exchange.ssl :as ssl])
+            [ring-http-exchange.ssl :as ssl]
+            [selmer.parser :as selmer])
   (:import (io.vertx.core Vertx)
            (io.vertx.pgclient PgBuilder PgConnectOptions)
            (io.vertx.sqlclient PoolOptions)
@@ -61,7 +60,7 @@
 (def ^:private crud-create-query (boa/build-async-query adapter "sql/crud-create"))
 (def ^:private crud-update-query (boa/build-async-query adapter "sql/crud-update"))
 (def ^:private fortunes-query (boa/build-async-query adapter "sql/fortunes"))
-(def ^:private fortunes-render (majavat/build-html-renderer "fortunes.html"))
+(def ^:private ^:const fortunes-template "fortunes.html")
 
 
 (def ^:private ^:const extension-map
@@ -261,7 +260,7 @@
     pg-pool
     (fn [rows]
       (let [fortunes (sort-by :message (conj rows {:id 0 :message "Additional fortune added at request time."}))
-            body (fortunes-render {:fortunes fortunes})]
+            body (selmer/render-file fortunes-template {:fortunes fortunes})]
         (respond {:status 200 :headers html-headers :body body})))
     raise))
 
