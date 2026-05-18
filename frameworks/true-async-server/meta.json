@@ -15,9 +15,16 @@
     "json-comp",
     "json-tls",
     "upload",
+    "api-4",
+    "api-16",
     "static",
     "static-h2",
     "baseline-h2",
-    "async-db"
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3",
+    "async-db",
+    "fortunes"
   ]
 }

@@ -5,15 +5,17 @@ declare(strict_types=1);
 /*
  * HttpArena entry point for the TrueAsync HTTP server.
  *
- * Architecture:
+ * Architecture (post-bootloader API):
  *   - One PHP process. N worker threads (N = available_parallelism()).
- *   - Server + handler are built once in the main thread, then submitted
- *     to a ThreadPool. Each worker calls $server->start() on the same
- *     transferred object; SO_REUSEPORT lets the kernel load-balance
- *     accept()s across all threads.
- *   - Each worker has its own PDO connection pool (ext-async PDO::ATTR_POOL_*).
+ *   - $config->setWorkers(N)->setBootloader(...) — HttpServer::start()
+ *     spawns the worker pool itself, deep-copies the bootloader closure
+ *     into every worker, runs it once per worker before the task loop
+ *     (the right place for per-worker autoload / DB pool warm-up), then
+ *     transfers the server into each worker and awaits all of them.
+ *   - SO_REUSEPORT lets the kernel load-balance accept()s across all
+ *     worker threads.
  *
- * Override worker count with WORKERS env var.
+ * Override worker count with the WORKERS env var.
  */
 
 use TrueAsync\HttpServer;
@@ -21,13 +23,7 @@ use TrueAsync\HttpServerConfig;
 use TrueAsync\HttpRequest;
 use TrueAsync\HttpResponse;
 use TrueAsync\StaticHandler;
-use Async\ThreadPool;
-use function Async\spawn;
-use function Async\await_all_or_fail;
 use function Async\available_parallelism;
-
-require __DIR__ . '/PostgreSQL.php';
-require __DIR__ . '/SQLite.php';
 
 // --- Preload at process start (read once, transferred to all workers) ---
 
@@ -38,9 +34,12 @@ $staticDir = '/data/static';
 
 // --- Runtime knobs ---
 
-$port    = (int)(getenv('PORT') ?: 8080);
-$tlsPort = (int)(getenv('TLS_PORT') ?: 8443);
-$workers = (int)(getenv('WORKERS') ?: 0);
+$port      = (int)(getenv('PORT') ?: 8080);
+$tlsPort   = (int)(getenv('TLS_PORT') ?: 8443);
+$h2cPort   = (int)(getenv('H2C_PORT') ?: 8082);
+$h3Port    = (int)(getenv('H3_PORT') ?: $tlsPort);
+$h3Enabled = getenv('H3_DISABLE') !== '1';
+$workers   = (int)(getenv('WORKERS') ?: 0);
 if ($workers <= 0) {
     $workers = available_parallelism();
 }
@@ -49,18 +48,28 @@ $certPath     = '/certs/server.crt';
 $keyPath      = '/certs/server.key';
 $tlsAvailable = is_readable($certPath) && is_readable($keyPath);
 
-// --- Step 1: build the server (one instance, transferred into each thread) ---
+// --- Build the server config ---
 
 $config = (new HttpServerConfig())
     ->addListener('0.0.0.0', $port)
+    // Cleartext HTTP/2 prior-knowledge listener — powers baseline-h2c / json-h2c.
+    ->addHttp2Listener('0.0.0.0', $h2cPort, false)
     ->setBacklog(2048)
     ->setMaxBodySize(32 * 1024 * 1024)
     // Stream request bodies into per-request queue instead of buffering
     // the whole Content-Length into req->body. Required for /upload to
-    // stay within RSS limits under concurrent 20 MiB POSTs (see issue #26).
+    // stay within RSS limits under concurrent 20 MiB POSTs (issue #26).
     ->setBodyStreamingEnabled(true)
     // Transparent gzip/brotli middleware — needed for the json-comp profile.
-    ->setCompressionEnabled(true);
+    ->setCompressionEnabled(true)
+    // Built-in worker pool — HttpServer::start() spawns the pool itself.
+    ->setWorkers($workers)
+    // Run once per worker before its task loop. The class files contain
+    // declarations that must live in every worker's compiler tables.
+    ->setBootloader(static function (): void {
+        require __DIR__ . '/PostgreSQL.php';
+        require __DIR__ . '/SQLite.php';
+    });
 
 if ($tlsAvailable) {
     // 8443: h2 + h1 over TLS (ALPN). 8081: h1 over TLS for the json-tls profile.
@@ -69,7 +78,20 @@ if ($tlsAvailable) {
         ->addListener('0.0.0.0', 8081, true)
         ->setCertificate($certPath)
         ->setPrivateKey($keyPath);
+
+    // HTTP/3 over QUIC on the same UDP port — powers baseline-h3 / static-h3.
+    // Reuses the TLS cert/key. Requires --enable-http3; if missing, the worker
+    // start() will throw — set H3_DISABLE=1 to skip on builds without it.
+    if ($h3Enabled) {
+        $config->addHttp3Listener('0.0.0.0', $h3Port);
+    }
 }
+
+// Bootloader needs the class files visible in the parent too, otherwise
+// the per-worker snapshot of the handler closure cannot resolve the type
+// references when the handler is deep-copied alongside the server.
+require __DIR__ . '/PostgreSQL.php';
+require __DIR__ . '/SQLite.php';
 
 $server = new HttpServer($config);
 
@@ -122,7 +144,9 @@ $server->addHttpHandler(
                 $query = $request->getQuery();
                 $count = min((int)$tail, $datasetCount);
                 $mult  = (int)($query['m'] ?? 1);
-                if ($mult === 0) $mult = 1;
+                if ($mult === 0) {
+                    $mult = 1;
+                }
                 $items = [];
                 for ($i = 0; $i < $count; $i++) {
                     $item          = $datasetRaw[$i];
@@ -164,6 +188,26 @@ $server->addHttpHandler(
             return;
         }
 
+        if ($path === '/fortunes') {
+            $rows   = PostgreSQL::fortunes();
+            $rows[] = ['id' => 0, 'message' => 'Additional fortune added at request time.'];
+            usort($rows, static fn($a, $b) => strcmp($a['message'], $b['message']));
+
+            $html = '<!DOCTYPE html><html><head><title>Fortunes</title></head>'
+                  . '<body><table><tr><th>id</th><th>message</th></tr>';
+            foreach ($rows as $row) {
+                $html .= '<tr><td>' . $row['id'] . '</td><td>'
+                       . htmlspecialchars($row['message'], ENT_QUOTES | ENT_HTML5, 'UTF-8')
+                       . '</td></tr>';
+            }
+            $html .= '</table></body></html>';
+
+            $response->setStatusCode(200)
+                ->setHeader('Content-Type', 'text/html; charset=utf-8')
+                ->setBody($html);
+            return;
+        }
+
         if ($path === '/sqlite-db') {
             $query = $request->getQuery();
             $min   = (float)($query['min'] ?? 10);
@@ -184,8 +228,6 @@ $server->addHttpHandler(
     }
 );
 
-// --- Step 2: launch pool, run $server->start() in every thread ---
-
 fprintf(
     STDERR,
     "[true-async-server] %d workers · :%d%s · pid %d\n",
@@ -195,16 +237,6 @@ fprintf(
     getmypid()
 );
 
-$pool    = new ThreadPool($workers);
-$futures = [];
-for ($i = 0; $i < $workers; $i++) {
-    // Each worker thread has its own PHP environment — re-require class files.
-    $futures[] = $pool->submit(static function () use ($server): void {
-        require __DIR__ . '/PostgreSQL.php';
-        require __DIR__ . '/SQLite.php';
-        $server->start();
-    });
-}
-
-// Wait until all workers finish (i.e. until the process is stopped).
-spawn(static fn() => await_all_or_fail($futures));
+// HttpServer::start() spawns the pool, runs the bootloader on every
+// worker, transfers $server, and awaits all workers internally.
+$server->start();

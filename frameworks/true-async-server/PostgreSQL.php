@@ -17,6 +17,7 @@ final class PostgreSQL
     private const SQL =
         'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count '
         . 'FROM items WHERE price BETWEEN ? AND ? LIMIT ?';
+    private const FORTUNES_SQL = 'SELECT id, message FROM fortune';
 
     public static function init(): void
     {
@@ -94,6 +95,31 @@ final class PostgreSQL
             );
         } catch (\Throwable) {
             return '{"items":[],"count":0}';
+        }
+    }
+
+    /**
+     * @return list<array{id:int,message:string}>
+     */
+    public static function fortunes(): array
+    {
+        if (!self::$available) {
+            self::init();
+            if (!self::$available) {
+                return [];
+            }
+        }
+
+        try {
+            $stmt = self::$pdo->prepare(self::FORTUNES_SQL);
+            $stmt->execute();
+            $rows = [];
+            while ($row = $stmt->fetch()) {
+                $rows[] = ['id' => (int)$row['id'], 'message' => (string)$row['message']];
+            }
+            return $rows;
+        } catch (\Throwable) {
+            return [];
         }
     }
 }

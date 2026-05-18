@@ -173,5 +173,24 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "true-async-server",
+    "language": "PHP",
+    "rps": 1240,
+    "avg_latency": "2.83ms",
+    "p99_latency": "9.90ms",
+    "cpu": "0.0%",
+    "memory": "81MiB",
+    "connections": 64,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "11.51KB/s",
+    "reconnects": 0,
+    "status_2xx": 6400,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]

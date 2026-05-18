@@ -1,4 +1,4 @@
-FROM trueasync/php-true-async:0.7.0-alpha.14-php8.6
+FROM trueasync/php-true-async:0.7.0-alpha.15-php8.6
 
 RUN printf '%s\n' \
       'opcache.jit=1255' \
@@ -7,7 +7,8 @@ RUN printf '%s\n' \
       'opcache.max_accelerated_files=10000' \
       'opcache.validate_timestamps=0' \
       'memory_limit=1024M' \
-    > /etc/php.d/99-arena.ini
+    > /etc/php.d/99-arena.ini \
+ && rm -f /etc/php.d/xdebug.ini
 
 WORKDIR /app
 COPY entry.php PostgreSQL.php SQLite.php /app/
