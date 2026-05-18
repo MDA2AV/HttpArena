@@ -12,7 +12,7 @@ ENV RUBY_MN_THREADS=1
 ENV RACK_ENV=production
 # Negative values are fractions of CPU cores
 ENV WORKERS=-1
-ENV THREADS=4
+ENV THREADS=2
 
 WORKDIR /app
 
