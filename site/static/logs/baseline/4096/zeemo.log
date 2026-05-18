@@ -17,8 +17,8 @@ info: worker 14 listening on :8080
 info: worker 15 listening on :8080
 info: worker 16 listening on :8080
 info: worker 17 listening on :8080
-info: worker 19 listening on :8080
 info: worker 18 listening on :8080
+info: worker 19 listening on :8080
 info: worker 20 listening on :8080
 info: worker 21 listening on :8080
 info: worker 22 listening on :8080
@@ -61,6 +61,6 @@ info: worker 58 listening on :8080
 info: worker 59 listening on :8080
 info: worker 60 listening on :8080
 info: worker 61 listening on :8080
-info: worker 0 listening on :8080
 info: worker 62 listening on :8080
+info: worker 0 listening on :8080
 info: worker 63 listening on :8080

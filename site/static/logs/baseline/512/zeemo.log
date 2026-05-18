@@ -1,8 +1,8 @@
 info: loaded 50 dataset items
 info: spawning 64 worker(s) across cpus
 info: worker 1 listening on :8080
-info: worker 2 listening on :8080
 info: worker 3 listening on :8080
+info: worker 2 listening on :8080
 info: worker 4 listening on :8080
 info: worker 5 listening on :8080
 info: worker 6 listening on :8080
@@ -11,8 +11,8 @@ info: worker 8 listening on :8080
 info: worker 9 listening on :8080
 info: worker 10 listening on :8080
 info: worker 11 listening on :8080
-info: worker 13 listening on :8080
 info: worker 12 listening on :8080
+info: worker 13 listening on :8080
 info: worker 14 listening on :8080
 info: worker 15 listening on :8080
 info: worker 16 listening on :8080
@@ -39,11 +39,11 @@ info: worker 36 listening on :8080
 info: worker 37 listening on :8080
 info: worker 38 listening on :8080
 info: worker 39 listening on :8080
+info: worker 40 listening on :8080
 info: worker 41 listening on :8080
 info: worker 42 listening on :8080
 info: worker 43 listening on :8080
 info: worker 44 listening on :8080
-info: worker 40 listening on :8080
 info: worker 45 listening on :8080
 info: worker 46 listening on :8080
 info: worker 47 listening on :8080
@@ -59,8 +59,8 @@ info: worker 56 listening on :8080
 info: worker 57 listening on :8080
 info: worker 58 listening on :8080
 info: worker 59 listening on :8080
-info: worker 61 listening on :8080
-info: worker 0 listening on :8080
 info: worker 60 listening on :8080
+info: worker 61 listening on :8080
 info: worker 62 listening on :8080
+info: worker 0 listening on :8080
 info: worker 63 listening on :8080

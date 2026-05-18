@@ -3,8 +3,8 @@ info: spawning 64 worker(s) across cpus
 info: worker 1 listening on :8080
 info: worker 2 listening on :8080
 info: worker 3 listening on :8080
-info: worker 5 listening on :8080
 info: worker 4 listening on :8080
+info: worker 5 listening on :8080
 info: worker 6 listening on :8080
 info: worker 7 listening on :8080
 info: worker 8 listening on :8080
@@ -58,8 +58,8 @@ info: worker 55 listening on :8080
 info: worker 56 listening on :8080
 info: worker 57 listening on :8080
 info: worker 58 listening on :8080
-info: worker 60 listening on :8080
 info: worker 59 listening on :8080
+info: worker 60 listening on :8080
 info: worker 61 listening on :8080
 info: worker 62 listening on :8080
 info: worker 0 listening on :8080
