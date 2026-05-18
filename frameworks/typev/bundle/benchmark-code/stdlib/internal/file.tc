@@ -1,0 +1,71 @@
+/**
+ * Low-level async file I/O API.
+ *
+ * Uses fd-based pread/pwrite with explicit offsets.
+ * All read/write/fsync operations are async — the process suspends
+ * until the operation completes (other processes keep running).
+ *
+ * Portable open flags (combine with bitwise OR):
+ *   RDONLY=0x00, WRONLY=0x01, RDWR=0x02,
+ *   CREATE=0x10, TRUNCATE=0x20, APPEND=0x40, EXCL=0x80
+ *
+ * Return conventions:
+ *   - File descriptors: >= 0 on success, negative errno on error
+ *   - Byte counts: > 0 on success, 0 = EOF, negative errno on error
+ *   - Status codes: 0 on success, negative errno on error
+ */
+extern file from "stdfile" = {
+
+    /**
+     * Open a file.
+     * @param path  - file path
+     * @param flags - portable open flags (TV_FILE_* constants, combine with |)
+     * @param mode  - Unix permission bits (e.g. 0o644), ignored on Windows
+     * Returns the file descriptor, or negative errno on error.
+     */
+    fn file_open(path: string, flags: int, mode: int) -> int
+
+    /**
+     * Read from a file at a specific offset (pread).
+     * Does not advance any internal cursor — the offset is explicit.
+     * @param fd     - file descriptor
+     * @param buf    - buffer to read into
+     * @param len    - maximum bytes to read (clamped to buf.length)
+     * @param offset - byte offset in the file to read from
+     * Returns bytes read, 0 on EOF, or negative errno on error.
+     */
+    fn file_read(fd: int, buf: uint[], len: uint, offset: uint) -> int
+
+    /**
+     * Write to a file at a specific offset (pwrite).
+     * Does not advance any internal cursor — the offset is explicit.
+     * @param fd     - file descriptor
+     * @param buf    - buffer to write from
+     * @param len    - bytes to write (clamped to buf.length)
+     * @param offset - byte offset in the file to write at
+     * Returns bytes written, or negative errno on error.
+     */
+    fn file_write(fd: int, buf: uint[], len: uint, offset: uint) -> int
+
+    /**
+     * Close a file descriptor.
+     * @param fd - file descriptor
+     * Returns 0 on success, negative errno on error.
+     */
+    fn file_close(fd: int) -> int
+
+    /**
+     * Flush file data to disk (fsync).
+     * @param fd - file descriptor
+     * Returns 0 on success, negative errno on error.
+     */
+    fn file_fsync(fd: int) -> int
+
+    /**
+     * Get the size of an open file (fstat).
+     * @param fd - file descriptor
+     * Returns (size_in_bytes, error_code).
+     * On success: error_code = 0. On error: size = 0, error_code = negative errno.
+     */
+    fn file_stat(fd: int) -> (uint, int)
+}

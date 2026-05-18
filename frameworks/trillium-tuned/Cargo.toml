@@ -1,0 +1,39 @@
+[package]
+name = "httparena-trillium-tuned"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+trillium = "1.1"
+trillium-tokio = "0.6"
+trillium-router = "0.5"
+trillium-rustls = "0.11"
+trillium-quinn = "0.1"
+trillium-websockets = "0.8"
+trillium-compression = "0.2"
+trillium-logger = "0.4"
+
+swansong = "0.3.4"
+futures-lite = "2"
+serde = { version = "1", features = ["derive"] }
+sonic-rs = "0.5"
+querystrong = "0.4"
+
+deadpool-postgres = "0.14"
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
+serde_json = "1"
+
+dashmap = "6"
+log = "0.4"
+env_logger = "0.11"
+mimalloc = { version = "0.1", default-features = false }
+socket2 = { version = "0.5", features = ["all"] }
+num_cpus = "1"
+signal-hook = "0.3"
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "fat"
+panic = "abort"
+strip = true

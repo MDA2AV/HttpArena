@@ -1,0 +1,15 @@
+{
+  "display_name": "rack-iodine",
+  "language": "Ruby",
+  "type": "engine",
+  "engine": "iodine",
+  "description": "Iodine is a fast concurrent web application for Ruby",
+  "repo": "https://github.com/boazsegev/iodine",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}

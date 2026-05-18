@@ -1,0 +1,56 @@
+/**
+ * Standard I/O API — stdout, stderr, and stdin.
+ *
+ * All output functions write UTF-8 strings.
+ * Use string interpolation or .toString() to convert values before printing.
+ *
+ * Buffering: stdout is line-buffered by default, stderr is unbuffered.
+ * Call flush() / flush_stderr() to force output when needed.
+ */
+extern io from "stdio" = {
+
+    /**
+     * Print a string to stdout (no newline).
+     */
+    fn print_str(s: string) -> void
+
+    /**
+     * Print a string to stdout followed by a newline.
+     */
+    fn println_str(s: string) -> void
+
+    /**
+     * Print a string to stderr (no newline).
+     */
+    fn eprint_str(s: string) -> void
+
+    /**
+     * Print a string to stderr followed by a newline.
+     */
+    fn eprintln_str(s: string) -> void
+
+    /**
+     * Flush stdout. Forces any buffered output to be written.
+     */
+    fn flush() -> void
+
+    /**
+     * Flush stderr. Forces any buffered output to be written.
+     */
+    fn flush_stderr() -> void
+
+    /**
+     * Convert a byte array to a UTF-8 string.
+     * This is the inverse of string.bytes().
+     * @param buf - byte array containing UTF-8 encoded data
+     * Returns the string, or empty string if buf is null/empty.
+     */
+    fn string_from_bytes(buf: uint[]) -> string
+
+    /**
+     * Read a line from stdin (up to newline or EOF).
+     * Strips the trailing newline character.
+     * Returns the line, or empty string on EOF.
+     */
+    fn read_line() -> string
+}

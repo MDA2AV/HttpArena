@@ -1,21 +1,14 @@
-SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-SLF4J: Defaulting to no-operation (NOP) logger implementation
-SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
-Apr 27, 2026 10:31:01 AM robaho.net.httpserver.ServerImpl <init>
+May 17, 2026 6:09:20 PM robaho.net.httpserver.ServerImpl <init>
 INFO: [http:8080] server bound to /0.0.0.0:8080 with backlog 8192
-Apr 27, 2026 10:31:01 AM robaho.net.httpserver.ServerImpl start
-INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@5d0b0cb9 as executor
+May 17, 2026 6:09:20 PM robaho.net.httpserver.ServerImpl start
+INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@2fb25f4c as executor
 Server running on port 8080
-Apr 27, 2026 10:31:01 AM robaho.net.httpserver.ServerImpl <init>
+May 17, 2026 6:09:20 PM robaho.net.httpserver.ServerImpl <init>
 INFO: [https:8081] server bound to /0.0.0.0:8081 with backlog 8192
-Apr 27, 2026 10:31:01 AM robaho.net.httpserver.ServerImpl start
-INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@5d0b0cb9 as executor
+May 17, 2026 6:09:20 PM robaho.net.httpserver.ServerImpl start
+INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@3e3cd6fe as executor
 Server running on port 8081 (TLS)
-Apr 27, 2026 10:31:34 AM robaho.net.httpserver.HttpConnection close
-WARNING: closing connection: remote /127.0.0.1:18538 with 0 requests
-Apr 27, 2026 10:31:51 AM robaho.net.httpserver.HttpConnection close
-WARNING: closing connection: remote /127.0.0.1:18306 with 0 requests
-Apr 27, 2026 10:31:51 AM robaho.net.httpserver.HttpConnection close
-WARNING: closing connection: remote /127.0.0.1:18310 with 0 requests
-Apr 27, 2026 10:31:51 AM robaho.net.httpserver.HttpConnection close
-WARNING: closing connection: remote /127.0.0.1:18318 with 0 requests
+May 17, 2026 6:09:35 PM robaho.net.httpserver.HttpConnection close
+WARNING: closing connection: remote /127.0.0.1:34954 with 0 requests
+May 17, 2026 6:09:52 PM robaho.net.httpserver.HttpConnection close
+WARNING: closing connection: remote /127.0.0.1:46358 with 0 requests

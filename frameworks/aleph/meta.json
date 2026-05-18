@@ -22,6 +22,7 @@
     "sync-db",
     "static",
     "tcp-frag",
+    "fortunes",
     "crud"
   ]
 }

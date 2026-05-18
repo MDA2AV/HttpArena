@@ -1,0 +1,15 @@
+{
+  "display_name": "rack-falcon",
+  "language": "Ruby",
+  "type": "engine",
+  "engine": "falcon",
+  "description": "A high-performance web server for Ruby",
+  "repo": "https://github.com/socketry/falcon",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}

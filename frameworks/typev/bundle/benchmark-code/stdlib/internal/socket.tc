@@ -1,0 +1,237 @@
+/**
+ * Low-level socket API for Type-C.
+ *
+ * All sockets are non-blocking; async operations (accept, read, write,
+ * connect, recvfrom) behave like blocking calls from the caller's perspective.
+ *
+ * IP addresses are represented as uint in host byte order.
+ * Use parse_ipv4("127.0.0.1") to convert from string.
+ * Use 0 for INADDR_ANY (bind to all interfaces).
+ *
+ * Return conventions:
+ *   - File descriptors: >= 0 on success, < 0 on error
+ *   - Status codes: 0 on success, negative errno on error
+ *   - Byte counts: > 0 on success, 0 = connection closed, < 0 on error
+ */
+extern socket from "stdsocket" = {
+
+    // --- TCP ---
+
+    /**
+     * Create a TCP socket (IPv4, SOCK_STREAM).
+     * SO_REUSEADDR is enabled by default.
+     * Returns the file descriptor, or -1 on error.
+     */
+    fn socket_tcp() -> int
+
+    /**
+     * Bind a socket to an address and port.
+     * @param fd   - socket file descriptor
+     * @param ip   - IPv4 address in host byte order (0 = INADDR_ANY = all interfaces)
+     * @param port - port number
+     * Returns 0 on success, -1 on error.
+     */
+    fn socket_bind(fd: int, ip: uint, port: uint) -> int
+
+    /**
+     * Start listening for incoming connections.
+     * @param fd      - bound socket file descriptor
+     * @param backlog - maximum pending connection queue length
+     * Returns 0 on success, -1 on error.
+     */
+    fn socket_listen(fd: int, backlog: int) -> int
+
+    /**
+     * Accept an incoming connection. Blocks until a client connects.
+     * @param fd - listening socket file descriptor
+     * Returns the new client socket fd, or < 0 on error.
+     */
+    fn socket_accept(fd: int) -> int
+
+    /**
+     * Read data from a connected socket. Blocks until data is available.
+     * @param fd  - connected socket file descriptor
+     * @param buf - buffer to read into
+     * @param len - maximum bytes to read (clamped to buf.length)
+     * Returns bytes read (> 0), 0 if connection closed, or < 0 on error.
+     */
+    fn socket_read(fd: int, buf: uint[], len: uint) -> int
+
+    /**
+     * Write data to a connected socket. Blocks if the send buffer is full.
+     * @param fd  - connected socket file descriptor
+     * @param buf - buffer to write from
+     * @param len - bytes to write (clamped to buf.length)
+     * Returns bytes written (may be less than len), or < 0 on error.
+     */
+    fn socket_write(fd: int, buf: uint[], len: uint) -> int
+
+    /**
+     * Close a socket. Also works for UDP and Unix sockets.
+     * @param fd - socket file descriptor
+     * Returns 0 on success, -1 on error.
+     */
+    fn socket_close(fd: int) -> int
+
+    /**
+     * Set a socket option.
+     * @param fd  - socket file descriptor
+     * @param opt - option id: 0=SO_REUSEADDR, 1=SO_REUSEPORT, 2=SO_KEEPALIVE, 3=TCP_NODELAY
+     * @param val - option value (typically 0=disable, 1=enable)
+     * Returns 0 on success, -1 on error or unsupported option.
+     */
+    fn socket_setopt(fd: int, opt: int, val: int) -> int
+
+    /**
+     * Connect to a remote TCP server. Blocks until the connection is established.
+     * @param fd   - socket file descriptor (from socket_tcp)
+     * @param ip   - remote IPv4 address in host byte order
+     * @param port - remote port number
+     * Returns 0 on success, negative errno on error.
+     */
+    fn socket_connect(fd: int, ip: uint, port: uint) -> int
+
+    // --- Utilities ---
+
+    /**
+     * Parse an IPv4 address string to a uint in host byte order.
+     * Example: parse_ipv4("127.0.0.1") -> 0x7F000001
+     * Returns 0 on invalid input.
+     */
+    fn parse_ipv4(s: string) -> uint
+
+    // --- TCP extras ---
+
+    /**
+     * Shut down part of a full-duplex connection.
+     * @param fd  - connected socket file descriptor
+     * @param how - 0=stop reading, 1=stop writing, 2=stop both
+     * Returns 0 on success, negative errno on error.
+     */
+    fn socket_shutdown(fd: int, how: int) -> int
+
+    /**
+     * Get the remote address of a connected socket.
+     * @param fd - connected socket file descriptor
+     * Returns (ip, port) of the remote peer, or (0, 0) on error.
+     */
+    fn socket_getpeername(fd: int) -> (uint, uint)
+
+    /**
+     * Get the local address of a bound socket.
+     * Useful after binding to port 0 (OS-assigned port).
+     * @param fd - bound socket file descriptor
+     * Returns (ip, port) of the local side, or (0, 0) on error.
+     */
+    fn socket_getsockname(fd: int) -> (uint, uint)
+
+    // --- UDP ---
+
+    /**
+     * Create a UDP socket (IPv4, SOCK_DGRAM).
+     * Returns the file descriptor, or -1 on error.
+     */
+    fn socket_udp() -> int
+
+    /**
+     * Send a UDP datagram to a specific address.
+     * @param fd   - UDP socket file descriptor
+     * @param buf  - data to send
+     * @param len  - bytes to send (clamped to buf.length)
+     * @param ip   - destination IPv4 address in host byte order
+     * @param port - destination port number
+     * Returns bytes sent, or < 0 on error.
+     */
+    fn socket_sendto(fd: int, buf: uint[], len: uint, ip: uint, port: uint) -> int
+
+    /**
+     * Receive a UDP datagram. Blocks until data arrives.
+     * @param fd  - UDP socket file descriptor (must be bound)
+     * @param buf - buffer to receive into
+     * @param len - maximum bytes to receive (clamped to buf.length)
+     * Returns (bytes_received, sender_ip, sender_port).
+     * On error: bytes_received < 0 (negative errno), ip=0, port=0.
+     */
+    fn socket_recvfrom(fd: int, buf: uint[], len: uint) -> (int, uint, uint)
+
+    // --- Unix domain sockets ---
+
+    /**
+     * Create a Unix domain socket (SOCK_STREAM).
+     * Returns the file descriptor, or -1 if Unix sockets are not available.
+     * Use socket_has_unix() to check availability before calling.
+     */
+    fn socket_unix() -> int
+
+    /**
+     * Bind a Unix domain socket to a filesystem path.
+     * Removes any existing socket file at the path before binding.
+     * @param fd   - Unix socket file descriptor
+     * @param path - filesystem path (max ~104 chars depending on platform)
+     * Returns 0 on success, negative errno on error, -1 if not available.
+     */
+    fn socket_unix_bind(fd: int, path: string) -> int
+
+    /**
+     * Connect to a Unix domain socket. Blocks until connected.
+     * @param fd   - Unix socket file descriptor (from socket_unix)
+     * @param path - path of the target socket
+     * Returns 0 on success, negative errno on error, -1 if not available.
+     */
+    fn socket_unix_connect(fd: int, path: string) -> int
+
+    /**
+     * Check if Unix domain sockets are available on this platform.
+     * Always 1 on Linux/macOS/BSD. Runtime-detected on Windows (requires build 17063+).
+     * Returns 1 if available, 0 if not.
+     */
+    fn socket_has_unix() -> int
+
+    /**
+     * Receive data and immediately send a fixed response in a single call.
+     * For static-response request/response loops where the response body is
+     * the same every cycle.
+     *
+     * @param fd        - connected socket fd
+     * @param buf       - buffer to read into
+     * @param len       - max bytes to read (clamped to buf.length)
+     * @param resp      - response buffer to send on successful recv
+     * @param resp_len  - bytes of response to send (clamped to resp.length)
+     * Returns bytes received (>0), 0 on orderly close, < 0 on error.
+     */
+    fn socket_read_send(fd: int, buf: uint[], len: uint, resp: uint[], resp_len: uint) -> int
+
+    // --- Stream recv ---
+
+    /**
+     * Receive data into a byte array. The returned array is a normal byte[] —
+     * indexing, .length, slice all work.
+     *
+     * @param fd - connected socket fd
+     * Returns byte[] with received data (length = bytes read, 0 = closed).
+     * Returns empty byte[] (length = 0) on error or orderly close.
+     */
+    fn tcp_stream_recv(fd: int) -> byte[]
+
+    /**
+     * Optional: release a stream recv buffer early. Without this it is
+     * reclaimed automatically.
+     *
+     * Safe to call on any byte[], and safe to call more than once.
+     * After release, the array becomes empty (length = 0, data = null).
+     *
+     * @param buf - byte[] previously returned by tcp_stream_recv
+     */
+    fn tcp_stream_release(buf: byte[]) -> void
+
+    // --- HTTP helpers ---
+
+    /**
+     * Count complete HTTP requests in buf[0..n) by counting non-overlapping
+     * "\r\n\r\n" terminators.
+     * @param buf - buffer holding received request bytes
+     * @param n   - number of valid bytes in buf (clamped to buf.length)
+     * Returns the number of complete request terminators found.
+     */
+    fn count_http_terminators(buf: uint[], n: uint) -> uint
+}

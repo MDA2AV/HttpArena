@@ -1,0 +1,149 @@
+/**
+ * Low-level filesystem metadata API.
+ *
+ * Path-based operations — no file handles, no async IO.
+ * For file read/write, use the stdfile API (file.tc).
+ *
+ * Return conventions:
+ *   - Status codes: 0 on success, negative errno on error
+ *   - Boolean queries: 1=yes, 0=no
+ *   - String returns: empty string on error
+ */
+extern fs from "stdfs" = {
+
+    /**
+     * Check if a path exists (file or directory).
+     * Returns 1 if exists, 0 if not.
+     */
+    fn fs_exists(path: string) -> int
+
+    /**
+     * Delete a file (not a directory — use fs_rmdir for that).
+     * Returns 0 on success, negative errno on error.
+     */
+    fn fs_unlink(path: string) -> int
+
+    /**
+     * Create a directory.
+     * @param path - directory path
+     * @param mode - Unix permission bits (e.g. 0o755), ignored on Windows
+     * Returns 0 on success, negative errno on error.
+     */
+    fn fs_mkdir(path: string, mode: int) -> int
+
+    /**
+     * Remove an empty directory.
+     * Returns 0 on success, negative errno on error (e.g. -ENOTEMPTY).
+     */
+    fn fs_rmdir(path: string) -> int
+
+    /**
+     * Rename/move a file or directory.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn fs_rename(src: string, dest: string) -> int
+
+    /**
+     * Get file metadata by path.
+     * Returns (size_bytes, mode_bits, mtime_seconds).
+     * On error: size=-1, mode=0, mtime=0.
+     */
+    fn fs_stat_path(path: string) -> (int, int, int)
+
+    /**
+     * List directory contents (excludes "." and "..").
+     * Returns (entries, count).
+     * On error: entries=empty array, count=negative errno.
+     */
+    fn fs_listdir(path: string) -> (string[], int)
+
+    /**
+     * Create a symbolic link.
+     * @param target   - what the link points to
+     * @param linkpath - where to create the link
+     * Returns 0 on success, negative errno on error.
+     * Returns -ENOTSUP on Windows.
+     */
+    fn fs_symlink(target: string, linkpath: string) -> int
+
+    /**
+     * Read the target of a symbolic link.
+     * Returns the target path, or empty string on error.
+     */
+    fn fs_readlink(path: string) -> string
+
+    /**
+     * Resolve a path to its absolute, canonical form (resolves symlinks).
+     * Returns the resolved path, or empty string on error.
+     */
+    fn fs_realpath(path: string) -> string
+
+    /**
+     * Change file permissions.
+     * @param path - file path
+     * @param mode - Unix permission bits (e.g. 0o644)
+     * Returns 0 on success, negative errno on error.
+     * Returns -ENOTSUP on Windows.
+     */
+    fn fs_chmod(path: string, mode: int) -> int
+
+    /**
+     * Get the current working directory.
+     * Returns the path, or empty string on error.
+     */
+    fn fs_getcwd() -> string
+
+    /**
+     * Change the current working directory.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn fs_chdir(path: string) -> int
+
+    /**
+     * Copy a file. Preserves permissions on Unix.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn fs_copy(src: string, dest: string) -> int
+
+    /**
+     * Get the platform path separator ('/' on Unix, '\\' on Windows).
+     */
+    fn fs_get_separator() -> uint
+
+    /**
+     * Check if a path is a directory.
+     * Returns 1 if it is a directory, 0 otherwise.
+     */
+    fn fs_is_dir(path: string) -> int
+
+    /**
+     * Check if a path is a regular file.
+     * Returns 1 if it is a regular file, 0 otherwise.
+     */
+    fn fs_is_file(path: string) -> int
+
+    /**
+     * Join two path components, normalizing separators and ./.. segments.
+     */
+    fn fs_path_join(a: string, b: string) -> string
+
+    /**
+     * Normalize a path: resolve ./.. segments, collapse double separators.
+     */
+    fn fs_path_normalize(path: string) -> string
+
+    /**
+     * Get the directory portion of a path.
+     */
+    fn fs_path_dirname(path: string) -> string
+
+    /**
+     * Get the filename portion of a path (last segment).
+     */
+    fn fs_path_basename(path: string) -> string
+
+    /**
+     * Get the file extension (including the dot), or empty string if none.
+     */
+    fn fs_path_extension(path: string) -> string
+}

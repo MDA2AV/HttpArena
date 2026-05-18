@@ -12,7 +12,7 @@ class MethodGuard
     if KNOWN.include?(env['REQUEST_METHOD'])
       @app.call(env)
     else
-      [405, { 'content-type' => 'text/plain', 'server' => 'sinatra' }, ['Method Not Allowed']]
+      [405, { 'content-type' => 'text/plain' }, ['Method Not Allowed']]
     end
   end
 end

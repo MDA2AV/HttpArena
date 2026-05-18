@@ -2,7 +2,7 @@
   "display_name": "Fletch",
   "language": "Dart",
   "engine": "dart:io",
-  "type": "tuned",
+  "type": "production",
   "description": "Express-inspired HTTP framework for Dart with radix-tree routing, middleware chains, signed sessions, and built-in DI.",
   "repo": "https://github.com/kartikey321/fletch",
   "enabled": true,

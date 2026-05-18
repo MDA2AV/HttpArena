@@ -3,6 +3,7 @@
             [aleph.netty :as netty]
             [clojure.core.cache :as cache]
             [clojure.java.io :as io]
+            [hiccup2.core :as h]
             [clojure.string :as str]
             [jj.sql.async-boa :as async-boa]
             [jj.sql.boa.query.vertx-pg :as vertx-adapter]
@@ -23,6 +24,7 @@
 
 (def ^:private ^:const ct-json "application/json")
 (def ^:private ^:const ct-text "text/plain")
+(def ^:private ^:const ct-html "text/html; charset=utf-8")
 (def ^:private ^:const ct-octet "application/octet-stream")
 (def ^:private ^:const hdr-ct "Content-Type")
 (def ^:private ^:const hdr-server "Server")
@@ -30,6 +32,8 @@
 (def ^:private ^:const dot ".")
 (def ^:private ^:const not-found-body "Not found")
 (def ^:private ^:const empty-db-body "{\"items\":[],\"count\":0}")
+(def ^:private ^:const fortunes-error-body
+  "<!DOCTYPE html><html><body>db error</body></html>")
 (def ^:private ^:const dataset-path "/data/dataset.json")
 (def ^:private ^:const dataset-large-path "/data/dataset-large.json")
 (def ^:private ^:const param-min "min")
@@ -45,9 +49,27 @@
 
 (def ^:private json-headers {hdr-ct ct-json hdr-server server-name})
 (def ^:private text-headers {hdr-ct ct-text hdr-server server-name})
+(def ^:private html-headers {hdr-ct ct-html hdr-server server-name})
 (def ^:private crud-hit-headers {hdr-ct ct-json hdr-server server-name "X-Cache" "HIT"})
 (def ^:private crud-miss-headers {hdr-ct ct-json hdr-server server-name "X-Cache" "MISS"})
 (def ^:private empty-db-response {:status 200 :headers json-headers :body empty-db-body})
+
+(def ^:private runtime-fortune
+  {:id 0 :message "Additional fortune added at request time."})
+
+(defn render-fortunes
+  ^String [fortunes] (str
+                       (h/html {:mode :html}
+                               (h/raw "<!DOCTYPE html>")
+                               [:html
+                                [:head [:title "Fortunes"]]
+                                [:body
+                                 [:table
+                                  [:tr [:th "id"] [:th "message"]]
+                                  (for [f fortunes]
+                                    [:tr
+                                     [:td (:id f)]
+                                     [:td (:message f)]])]]])))
 
 (def ^:private ^:const extension-map
   {".css"   "text/css" ".js" "application/javascript" ".html" "text/html"
@@ -150,6 +172,7 @@
 (def ^:private crud-read-q (async-boa/build-async-query adapter "sql/crud-read"))
 (def ^:private crud-create-q (async-boa/build-async-query adapter "sql/crud-create"))
 (def ^:private crud-update-q (async-boa/build-async-query adapter "sql/crud-update"))
+(def ^:private fortunes-q (async-boa/build-async-query adapter "sql/fortunes"))
 
 (defn- build-ssl-context []
   (let [cert-path (or (System/getenv "TLS_CERT") tls-cert-default)
@@ -294,6 +317,24 @@
                                   (fn [_] (d/success! dfd {:status 404 :headers json-headers :body not-found-body})))
                    dfd))))))
 
+(defn- handle-fortunes [pg-pool _req]
+  (let [dfd (d/deferred)]
+    (fortunes-q
+      pg-pool {}
+      (fn [rows]
+        (let [base (mapv (fn [r] {:id (:id r) :message (:message r)}) rows)
+              all (conj base runtime-fortune)
+              sorted (sort-by :message all)
+              body (render-fortunes sorted)]
+          (d/success! dfd {:status  200
+                           :headers html-headers
+                           :body    body})))
+      (fn [_]
+        (d/success! dfd {:status  500
+                         :headers html-headers
+                         :body    fortunes-error-body})))
+    dfd))
+
 (defn- handle-static [req]
   (let [name (get-in req [:params :filename])
         path (str "/data" (:uri req))
@@ -315,6 +356,7 @@
                           (POST (fn [req] (handle-crud-create pg-pool req)))]
      "/crud/items/:id"   [(GET (fn [req] (handle-crud-read pg-pool req)))
                           (PUT (fn [req] (handle-crud-update pg-pool req)))]
+     "/fortunes"         [(GET (fn [req] (handle-fortunes pg-pool req)))]
      "/static/:filename" [(GET handle-static)]
      "/"                 [(GET (fn [_] (text-response server-name)))]}))
 

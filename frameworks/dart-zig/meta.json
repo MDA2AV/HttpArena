@@ -1,0 +1,18 @@
+{
+  "display_name": "dart-zig",
+  "language": "Dart",
+  "engine": "io_uring",
+  "type": "engine",
+  "description": "dart-zig custom Dart runtime on Linux io_uring, using the reusable dart-zig runtime and builder images, with the benchmark app source owned by HttpArena. Current integration targets baseline, pipelined, limited-conn, and json.",
+  "repo": "https://github.com/kartikey321/dart-sdk/tree/dart-zig/dart-zig",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json"
+  ],
+  "maintainers": [
+    "kartikey321"
+  ]
+}

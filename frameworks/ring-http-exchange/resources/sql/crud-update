@@ -1,1 +1,4 @@
-UPDATE items SET name = :name, price = :price, quantity = :quantity WHERE id = :id
+UPDATE items
+SET name = :name, price = :price, quantity = :quantity
+WHERE id = :id
+RETURNING id

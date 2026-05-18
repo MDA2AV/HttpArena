@@ -1,0 +1,211 @@
+// Dataset loading + the json profile response writer.
+
+from std.fs import readText
+from response import writeBytes, writeInt, digitCount
+
+// A loaded dataset; prefixes[i] is item i's JSON without its closing '}'.
+type Dataset = struct {
+    prefixes: byte[][],
+    prices: int[],
+    quantities: int[],
+    n: int
+}
+
+// JSON structural literals, byte-encoded once.
+let local const HDR_JSON: byte[] = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ".bytes()
+let local const J_CONN_KA: byte[] = "\r\nConnection: keep-alive\r\n\r\n".bytes()
+let local const J_CONN_CL: byte[] = "\r\nConnection: close\r\n\r\n".bytes()
+let local const J_OPEN: byte[] = "{\"items\":[".bytes()
+let local const J_TOTAL: byte[] = ",\"total\":".bytes()
+let local const J_COUNT: byte[] = "],\"count\":".bytes()
+
+// Decimal integer following `key` in data[start..end); 0 if not found.
+local fn fieldInt(data: byte[], start: uint, end: uint, key: byte[]) -> int {
+    let kl: uint = key.length
+    if kl == 0u || end < start + kl {
+        return 0
+    }
+    let limit: uint = end - kl
+    foreach i: uint in start, limit + 1u {
+        let hit: bool = true
+        foreach k: uint in 0u, kl {
+            if (data[i + k] as int) != (key[k] as int) {
+                hit = false
+                break
+            }
+        }
+        if hit {
+            let p: uint = i + kl
+            while p < end && (data[p] as int) == 32 {
+                p = p + 1u
+            }
+            let v: int = 0
+            while p < end {
+                let d: int = data[p] as int
+                if d < 48 || d > 57 {
+                    break
+                }
+                v = v * 10 + (d - 48)
+                p = p + 1u
+            }
+            return v
+        }
+    }
+    return 0
+}
+
+// Strip insignificant (out-of-string) whitespace from data[start..end) and
+// return the compacted bytes. 
+local fn compactItem(data: byte[], start: uint, end: uint) -> byte[] {
+    let out: byte[] = new byte[](end - start)
+    let w: uint = 0u
+    let inStr: bool = false
+    let escaped: bool = false
+    foreach p: uint in start, end {
+        let c: int = data[p] as int
+        if inStr {
+            out[w] = data[p]
+            w = w + 1u
+            if escaped {
+                // this byte was escaped by a preceding backslash — consume it
+                escaped = false
+            } else if c == 92 {
+                escaped = true
+            } else if c == 34 {
+                inStr = false
+            }
+        } else {
+            if c == 34 {
+                inStr = true
+                out[w] = data[p]
+                w = w + 1u
+            } else if c != 32 && c != 10 && c != 13 && c != 9 {
+                out[w] = data[p]
+                w = w + 1u
+            }
+        }
+    }
+    out.resize(w)
+    return out
+}
+
+// Read the dataset file and split the top-level JSON array into its objects.
+fn loadDataset(path: string) -> Dataset {
+    let ds: Dataset = {prefixes: [], prices: [], quantities: [], n: 0}
+    let (txt, st) = readText(path)
+    if st < 0 {
+        return ds
+    }
+    let data: byte[] = txt.bytes()
+    let len: uint = data.length
+    let priceKey: byte[] = "\"price\":".bytes()
+    let qtyKey: byte[] = "\"quantity\":".bytes()
+
+    // skip to the opening '['
+    let p: uint = 0u
+    while p < len && (data[p] as int) != 91 {
+        p = p + 1u
+    }
+    p = p + 1u
+
+    let count: int = 0
+    while p < len {
+        // skip whitespace and commas between items
+        while p < len {
+            let c: int = data[p] as int
+            if c == 32 || c == 10 || c == 13 || c == 9 || c == 44 {
+                p = p + 1u
+            } else {
+                break
+            }
+        }
+        if p >= len || (data[p] as int) == 93 {
+            break
+        }
+        // scan to the matching '}', string-aware
+        let itemStart: uint = p
+        let depth: int = 0
+        let inStr: bool = false
+        while p < len {
+            let c: int = data[p] as int
+            if inStr {
+                if c == 92 {
+                    p = p + 1u
+                } else if c == 34 {
+                    inStr = false
+                }
+            } else {
+                if c == 34 {
+                    inStr = true
+                } else if c == 123 {
+                    depth = depth + 1
+                } else if c == 125 {
+                    depth = depth - 1
+                }
+            }
+            p = p + 1u
+            if !inStr && depth == 0 {
+                break
+            }
+        }
+        let itemEnd: uint = p
+        // prefix = item minus the trailing '}', whitespace-compacted
+        ds.prefixes.push(compactItem(data, itemStart, itemEnd - 1u))
+        ds.prices.push(fieldInt(data, itemStart, itemEnd, priceKey))
+        ds.quantities.push(fieldInt(data, itemStart, itemEnd, qtyKey))
+        count = count + 1
+    }
+    ds.n = count
+    return ds
+}
+
+// Loaded once at module init; the container mounts it at /data/dataset.json.
+let const DATASET_PATH: string = "/data/dataset.json"
+let const DATASET: Dataset = loadDataset(DATASET_PATH)
+
+// /json/{count}?m=M -> {"items":[...],"count":N}; total = price*quantity*mult.
+fn writeJson(dst: byte[], pos: uint, count: int, mult: int, keepAlive: bool) -> uint {
+    let limit: int = if count > DATASET.n => DATASET.n else count
+
+    // pass 1: body length
+    let bodyLen: uint = J_OPEN.length
+    foreach i in 0, limit {
+        if i > 0 {
+            bodyLen = bodyLen + 1u
+        }
+        bodyLen = bodyLen + DATASET.prefixes[i as uint].length
+        bodyLen = bodyLen + J_TOTAL.length
+        bodyLen = bodyLen + digitCount(DATASET.prices[i as uint] * DATASET.quantities[i as uint] * mult)
+        bodyLen = bodyLen + 1u
+    }
+    bodyLen = bodyLen + J_COUNT.length
+    bodyLen = bodyLen + digitCount(limit)
+    bodyLen = bodyLen + 1u
+
+    // headers
+    let p: uint = writeBytes(dst, pos, HDR_JSON)
+    p = writeInt(dst, p, bodyLen as int)
+    if keepAlive {
+        p = writeBytes(dst, p, J_CONN_KA)
+    } else {
+        p = writeBytes(dst, p, J_CONN_CL)
+    }
+
+    // pass 2: body
+    p = writeBytes(dst, p, J_OPEN)
+    foreach i in 0, limit {
+        if i > 0 {
+            dst[p] = 44 as byte
+            p = p + 1u
+        }
+        p = writeBytes(dst, p, DATASET.prefixes[i as uint])
+        p = writeBytes(dst, p, J_TOTAL)
+        p = writeInt(dst, p, DATASET.prices[i as uint] * DATASET.quantities[i as uint] * mult)
+        dst[p] = 125 as byte
+        p = p + 1u
+    }
+    p = writeBytes(dst, p, J_COUNT)
+    p = writeInt(dst, p, limit)
+    dst[p] = 125 as byte
+    return p + 1u
+}

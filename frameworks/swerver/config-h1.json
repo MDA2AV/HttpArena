@@ -2,14 +2,19 @@
   "server": {
     "address": "0.0.0.0",
     "port": 8080,
-    "max_connections": 256,
+    "max_connections": 512,
     "static_root": "/data/static",
     "workers": 0,
     "disable_middleware": true
   },
+  "limits": {
+    "max_body_bytes": 22020096
+  },
   "buffer_pool": {
     "buffer_size": 65536,
-    "buffer_count": 512
+    "buffer_count": 1024,
+    "body_buffer_size": 22020096,
+    "body_buffer_count": 2
   },
   "http2": {
     "max_streams": 256,

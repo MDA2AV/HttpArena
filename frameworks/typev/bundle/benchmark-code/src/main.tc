@@ -1,0 +1,298 @@
+// typev HttpArena server — HTTP/1.1: pipelined, baseline, limited-conn, json.
+//
+// Each connection runs in its own process. /pipeline takes a zero-parse,
+// zero-alloc fast path (count fixed-length requests, blast canned responses
+// from a prebuilt batch); other routes use the http.tc parser with a
+// per-connection Req/Chunk reused so parsing also allocates nothing.
+
+from std.io import println
+from std.socket import tcp_listen, tcp_accept, tcp_read, tcp_write, tcp_close
+from http import parseRequest, newReq, newChunk
+from response import writePipeline, writeBaseline, PIPE_BATCH, PIPE_BATCH_N, RESP_LEN
+from dataset import writeJson
+from assets import serveStatic
+from ws import wsHandshake, wsServe, wsReject
+
+// Per-connection receive / output buffer capacities.
+let const BUFCAP: uint = 65536u
+let const OBUFCAP: uint = 65536u
+
+let const PORT: uint = 8080u
+
+// Write all `len` bytes of buf to fd, looping over partial sends. tcp_write
+// has no offset arg, so a short send is followed by shifting the unsent tail
+// to the front of buf and retrying. false on socket error.
+fn writeAll(fd: int, buf: byte[], len: uint) -> bool {
+    let remaining: uint = len
+    while remaining > 0u {
+        let w = tcp_write(fd, buf, remaining)
+        if w <= 0 {
+            return false
+        }
+        let n: uint = w as uint
+        if n >= remaining {
+            return true
+        }
+        let rest: uint = remaining - n
+        foreach k: uint in 0u, rest {
+            buf[k] = buf[n + k]
+        }
+        remaining = rest
+    }
+    return true
+}
+
+// Send `total` bytes straight out of the shared prebuilt PIPE_BATCH. A partial
+// send is finished via `scratch` — PIPE_BATCH is a const and must not shift.
+fn blastPipe(fd: int, scratch: byte[], total: uint) -> bool {
+    let w = tcp_write(fd, PIPE_BATCH, total)
+    if w < 0 {
+        return false
+    }
+    let sent: uint = w as uint
+    if sent >= total {
+        return true
+    }
+    let rest: uint = total - sent
+    foreach k: uint in 0u, rest {
+        scratch[k] = PIPE_BATCH[sent + k]
+    }
+    return writeAll(fd, scratch, rest)
+}
+
+// Stream-drain a Content-Length upload body: `cl` total body bytes, some of
+// which already sit in buf[bodyStart..curLen). Reads the rest 64KB at a time
+// (never buffering the whole body) and leaves any trailing next-request bytes
+// at buf[0..]. Returns (leftover length, false on socket error).
+fn drainUpload(fd: int, buf: byte[], bufcap: uint, bodyStart: uint, cl: uint, curLen: uint) -> (uint, bool) {
+    let inBuf: uint = curLen - bodyStart
+    if inBuf >= cl {
+        let tail: uint = inBuf - cl
+        foreach k: uint in 0u, tail {
+            buf[k] = buf[bodyStart + cl + k]
+        }
+        return (tail, true)
+    }
+    let need: uint = cl - inBuf
+    let tail: uint = 0u
+    let ok: bool = true
+    while need > 0u {
+        let got = tcp_read(fd, buf, bufcap)
+        if got <= 0 {
+            ok = false
+            need = 0u
+        } else {
+            let g: uint = got as uint
+            if g <= need {
+                need = need - g
+            } else {
+                tail = g - need
+                foreach k: uint in 0u, tail {
+                    buf[k] = buf[need + k]
+                }
+                need = 0u
+            }
+        }
+    }
+    return (tail, ok)
+}
+
+// Serve one connection.
+fn handle_client(fd: int) -> void {
+    let buf: byte[] = []
+    buf.resize(BUFCAP)
+    let tmp: byte[] = []
+    tmp.resize(BUFCAP)
+    let obuf: byte[] = []
+    obuf.resize(OBUFCAP)
+    // Parse scratch — created once, reused for every request.
+    let req = newReq()
+    let chunk = newChunk()
+    let len: uint = 0u
+    let running: bool = true
+    // Pipeline fast path: armed on the first /pipeline request; reqLen is its
+    // byte length, and every later /pipeline request is byte-identical.
+    let pipeMode: bool = false
+    let reqLen: uint = 0u
+
+    while running {
+        if pipeMode {
+            // FAST PATH — drain the socket, count whole requests, blast canned
+            // responses. `len` carries a request split across the recv edge.
+            let got: int = tcp_read(fd, buf, BUFCAP)
+            if got <= 0 {
+                running = false
+            } else {
+                let total: uint = len + (got as uint)
+                let count: uint = total / reqLen
+                len = total - count * reqLen
+                let remaining: uint = count
+                while remaining > 0u {
+                    let n: uint = if remaining > PIPE_BATCH_N => PIPE_BATCH_N else remaining
+                    if !blastPipe(fd, obuf, n * RESP_LEN) {
+                        running = false
+                        remaining = 0u
+                    } else {
+                        remaining = remaining - n
+                    }
+                }
+            }
+        } else {
+            // GENERAL PATH — incremental parse for baseline / json /
+            // limited-conn, and a /pipeline connection's first batch.
+            let got: int = 0
+            if len == 0u {
+                got = tcp_read(fd, buf, BUFCAP)
+            } else {
+                // leftover present — read into scratch, then append
+                got = tcp_read(fd, tmp, BUFCAP - len)
+                if got > 0 {
+                    let g: uint = got as uint
+                    foreach k: uint in 0u, g {
+                        buf[len + k] = tmp[k]
+                    }
+                }
+            }
+
+            if got <= 0 {
+                running = false
+            } else {
+                len = len + (got as uint)
+                let opos: uint = 0u
+                let closeAfter: bool = false
+                let parsing: bool = true
+                while parsing {
+                    parseRequest(buf, len, req, chunk)
+                    if !req.complete {
+                        parsing = false
+                    } else {
+                        if opos + 32768u > OBUFCAP {
+                            if !writeAll(fd, obuf, opos) {
+                                running = false
+                            }
+                            opos = 0u
+                        }
+                        if req.isStatic {
+                            // static responses stream directly — flush any
+                            // batched output first, then serve the asset
+                            if opos > 0u {
+                                if !writeAll(fd, obuf, opos) {
+                                    running = false
+                                }
+                                opos = 0u
+                            }
+                            if !serveStatic(fd, buf, req.pathStart, req.pathEnd, req.acceptBr, req.acceptGzip, req.keepAlive, obuf, OBUFCAP) {
+                                running = false
+                                parsing = false
+                            }
+                        } else if req.isUpload {
+                            // stream-drain the body, then ack the byte count
+                            let cl: uint = if req.contentLen > 0 => (req.contentLen as uint) else 0u
+                            let (newLen, ok) = drainUpload(fd, buf, BUFCAP, req.bodyStart, cl, len)
+                            len = newLen
+                            if ok {
+                                opos = writeBaseline(obuf, opos, cl as int, req.keepAlive)
+                            } else {
+                                running = false
+                                parsing = false
+                            }
+                        } else if req.isWs {
+                            // WebSocket: 101 handshake, then echo frames until
+                            // the peer closes. wsServe owns the connection.
+                            if opos > 0u {
+                                if !writeAll(fd, obuf, opos) {
+                                    running = false
+                                }
+                                opos = 0u
+                            }
+                            if running {
+                                if req.wsKeyEnd > req.wsKeyStart {
+                                    if wsHandshake(fd, buf, req.wsKeyStart, req.wsKeyEnd, obuf) {
+                                        wsServe(fd, buf, tmp, obuf, BUFCAP, OBUFCAP, req.consumed, len - req.consumed)
+                                    }
+                                } else {
+                                    wsReject(fd, obuf)
+                                }
+                            }
+                            running = false
+                            parsing = false
+                        } else if req.isJson {
+                            opos = writeJson(obuf, opos, req.jcount, req.jmult, req.keepAlive)
+                        } else if req.isBaseline {
+                            opos = writeBaseline(obuf, opos, req.result, req.keepAlive)
+                        } else {
+                            opos = writePipeline(obuf, opos, req.keepAlive)
+                        }
+                        // arm the fast path on the first /pipeline request
+                        if !pipeMode && req.isPipeline && req.consumed > 0u {
+                            pipeMode = true
+                            reqLen = req.consumed
+                        }
+                        if !req.keepAlive {
+                            closeAfter = true
+                        }
+                        // drop the consumed request, shift the leftover down
+                        let rem: uint = len - req.consumed
+                        foreach k: uint in 0u, rem {
+                            buf[k] = buf[req.consumed + k]
+                        }
+                        len = rem
+                        if closeAfter {
+                            parsing = false
+                        }
+                    }
+                }
+                if opos > 0u {
+                    if !writeAll(fd, obuf, opos) {
+                        running = false
+                    }
+                }
+                if closeAfter {
+                    running = false
+                }
+                if len >= BUFCAP {
+                    running = false
+                }
+            }
+        }
+    }
+
+    tcp_close(fd)
+}
+
+// Accept loop — one of N SO_REUSEPORT shards.
+fn accept_loop() -> void {
+    let server = tcp_listen(PORT, 4096)
+    if server < 0 {
+        return
+    }
+    while true {
+        let client = tcp_accept(server)
+        if client >= 0 {
+            spawn handle_client(client)
+        }
+    }
+}
+
+fn main() -> uint {
+    println("typev HttpArena server listening on :8080")
+
+    foreach i in 0, 3, 1 {
+        spawn accept_loop()
+    }
+
+    let server = tcp_listen(PORT, 4096)
+    if server < 0 {
+        println("Failed to start server")
+        return 1u
+    }
+
+    while true {
+        let client = tcp_accept(server)
+        if client >= 0 {
+            spawn handle_client(client)
+        }
+    }
+
+    return 0u
+}

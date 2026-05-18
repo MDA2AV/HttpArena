@@ -1,0 +1,5 @@
+Exec: /app/erts-17.0/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
+Root: /app
+/app
+=ESOCK WARNING MSG==== 18-May-2026::11:26:04.779242 ===
+[UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1

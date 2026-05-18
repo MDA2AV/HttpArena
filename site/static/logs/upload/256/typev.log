@@ -1,0 +1,3 @@
+typev: loaded '/app/output.tvbc' (v15, 48 functions, entry=47)
+typev: workers=64 (sysconf _SC_NPROCESSORS_ONLN=128, TV_WORKERS=64)
+typev HttpArena server listening on :8080

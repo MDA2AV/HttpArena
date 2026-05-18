@@ -1,0 +1,16 @@
+{
+    "name": "typev-http-arena",
+    "version": "1.0.0",
+    "author": "benchmark",
+    "dependencies": {
+        "@type-c/stdlib": "=0.0.1"
+    },
+    "description": "typev HttpArena framework entry — pipelined-16x",
+    "compiler": {
+        "target": "runnable",
+        "entry": "main.tc"
+    },
+    "dependenciesFolder": "./libs",
+    "sourceFolder": "./src",
+    "source": "./src"
+}

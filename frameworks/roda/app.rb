@@ -12,8 +12,6 @@ class Hash
 end
 
 class App < Roda
-  SERVER_NAME = 'roda'.freeze
-
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
   # Load dataset
   dataset_path = File.join DATA_DIR, 'dataset.json'
@@ -29,7 +27,6 @@ class App < Roda
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
 
   plugin :public, root: DATA_DIR, gzip: true, brotli: true
-  plugin :default_headers, 'Server' => SERVER_NAME
   plugin :request_headers
   plugin :plain_hash_response_headers
   plugin :halt
@@ -37,8 +34,6 @@ class App < Roda
 
   route do |r|
     r.root { 'ok' }
-
-    r.public
 
     r.is 'pipeline' do
       render_plain 'ok'
@@ -101,6 +96,8 @@ class App < Roda
       end
       render_json JSON.generate({ items: items, count: items.length })
     end
+
+    r.public
   end
 
   private

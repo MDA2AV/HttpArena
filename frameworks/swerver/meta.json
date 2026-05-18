@@ -10,8 +10,12 @@
     "baseline",
     "pipelined",
     "limited-conn",
+    "json",
+    "static",
     "baseline-h2",
-    "baseline-h3"
+    "static-h2",
+    "baseline-h3",
+    "static-h3"
   ],
   "maintainers": ["justinGrosvenor"]
 }
