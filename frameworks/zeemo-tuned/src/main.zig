@@ -54,8 +54,13 @@ pub fn main() !void {
         .port = 8080,
         // tuned-allowed knobs:
         .write_inline_bytes = 4 * 1024,
-        .parser_header_buf = 2048,
-        .parser_body_buf = 512,
+        // Sized for HttpArena's 20 MiB upload profile. The recv buffer
+        // (parser_header_buf) collects raw bytes — headers + body — so
+        // it has to be ≥ body size + headers room. Both buffers are
+        // page_allocator-backed and lazily faulted: ~22 MiB virtual per
+        // slot, near-zero RSS unless an upload actually lands.
+        .parser_header_buf = 22 * 1024 * 1024,
+        .parser_body_buf = 20 * 1024 * 1024,
         .big_buf_path_prefix = "/json/",
     });
     defer server.deinit();
@@ -64,6 +69,7 @@ pub fn main() !void {
     try server.post("/baseline11", baseline11);
     try server.get("/pipeline", pipeline);
     try server.get("/json/:count", jsonHandler);
+    try server.post("/upload", uploadHandler);
     try server.staticMount("/static/", "/data/static", zeemo.static.registerHandler());
 
     try server.run();
@@ -83,6 +89,13 @@ fn pipeline(_: *const zeemo.Request, res: *zeemo.Response) !void {
     try res.text("ok");
 }
 
+fn uploadHandler(req: *const zeemo.Request, res: *zeemo.Response) !void {
+    // HttpArena's `upload` profile sends a 20 MiB POST body and expects
+    // the byte count back. The parser accumulates the full body in
+    // `req.body` before we get here.
+    try res.printText("{d}", .{req.body.len});
+}
+
 fn jsonHandler(req: *const zeemo.Request, res: *zeemo.Response) !void {
     const count = try req.param("count", u8);
     const m = req.queryInt("m", i64) orelse 1;
@@ -96,8 +109,18 @@ fn jsonHandler(req: *const zeemo.Request, res: *zeemo.Response) !void {
         items[i] = DS.items[i];
         items[i].total = @as(i64, items[i].price) * @as(i64, items[i].quantity) * m;
     }
-    try res.json(.{
-        .items = items[0..count],
-        .count = @as(u32, count),
-    });
+    // json-comp profile sets Accept-Encoding: gzip — same handler, just
+    // gzip the body in place. json profile sends no Accept-Encoding and
+    // takes the plain branch.
+    if (req.accepts_gzip) {
+        try res.jsonGzipped(.{
+            .items = items[0..count],
+            .count = @as(u32, count),
+        });
+    } else {
+        try res.json(.{
+            .items = items[0..count],
+            .count = @as(u32, count),
+        });
+    }
 }

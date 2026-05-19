@@ -11,7 +11,9 @@
     "pipelined",
     "limited-conn",
     "json",
-    "static"
+    "json-comp",
+    "static",
+    "upload"
   ],
   "maintainers": ["skylightis666"]
 }
