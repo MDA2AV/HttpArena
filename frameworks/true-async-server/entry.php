@@ -37,8 +37,6 @@ $staticDir = '/data/static';
 $port      = (int)(getenv('PORT') ?: 8080);
 $tlsPort   = (int)(getenv('TLS_PORT') ?: 8443);
 $h2cPort   = (int)(getenv('H2C_PORT') ?: 8082);
-$h3Port    = (int)(getenv('H3_PORT') ?: $tlsPort);
-$h3Enabled = getenv('H3_DISABLE') !== '1';
 $workers   = (int)(getenv('WORKERS') ?: 0);
 if ($workers <= 0) {
     $workers = available_parallelism();
@@ -85,12 +83,10 @@ if ($tlsAvailable) {
         ->setCertificate($certPath)
         ->setPrivateKey($keyPath);
 
-    // HTTP/3 over QUIC on the same UDP port — powers baseline-h3 / static-h3.
-    // Reuses the TLS cert/key. Requires --enable-http3; if missing, the worker
-    // start() will throw — set H3_DISABLE=1 to skip on builds without it.
-    if ($h3Enabled) {
-        $config->addHttp3Listener('0.0.0.0', $h3Port);
-    }
+    // No HTTP/3 listener: meta.json subscribes to no h3 profile, so the
+    // QUIC UDP listener would be pure liability — an extra bind that races
+    // with the previous container's teardown on back-to-back profile runs
+    // and makes the server fail to come up ("did not come up" on limited-conn).
 }
 
 // Bootloader needs the class files visible in the parent too, otherwise
