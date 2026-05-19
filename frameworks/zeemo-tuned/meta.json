@@ -1,0 +1,17 @@
+{
+  "display_name": "zeemo-tuned",
+  "language": "Zig",
+  "engine": "zeemo",
+  "type": "tuned",
+  "description": "First Zig tuned entry. Built on the zeemo Zig HTTP library (io_uring transport, multishot accept, fork-workers with SO_REUSEPORT). JSON responses are serialized per request from native struct data via zeemo's comptime serializer — no pre-rendered fragments. Static files are loaded into memory at startup and pre-baked into the full HTTP response per encoding variant.",
+  "repo": "https://github.com/skylightis666/zeemo",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "static"
+  ],
+  "maintainers": ["skylightis666"]
+}
