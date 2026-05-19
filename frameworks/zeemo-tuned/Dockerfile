@@ -3,10 +3,9 @@ ARG ZIG_VERSION=0.16.0
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl xz-utils \
+        libssl-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
-# Architecture comes from `uname -m` so the image matches whatever the
-# Docker host is actually running (works for both `docker build` and
-# buildx, no TARGETARCH dependency).
+# Architecture comes from `uname -m` so the image matches the host arch.
 RUN set -eu; \
     ZIG_ARCH="$(uname -m)"; \
     case "${ZIG_ARCH}" in \
@@ -20,10 +19,16 @@ ENV PATH="/opt/zig:${PATH}"
 WORKDIR /src
 COPY build.zig build.zig.zon ./
 COPY src ./src
-RUN set -eu; \
-    zig build -Dtarget="$(uname -m)-linux-musl" --release=fast
+# Native build (glibc + dynamic libssl/libcrypto). musl-static would need a
+# from-source OpenSSL build; the runtime image carries libssl3 instead.
+RUN zig build --release=fast
 
-FROM scratch
+# Runtime: Ubuntu slim so libssl3 is present without extra setup. HttpArena
+# mounts /data (dataset + static) and /certs (TLS cert + key) when running.
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libssl3 ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /src/zig-out/bin/zeemo-tuned /zeemo-tuned
-EXPOSE 8080
+EXPOSE 8080 8081
 ENTRYPOINT ["/zeemo-tuned"]

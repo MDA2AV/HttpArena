@@ -62,6 +62,14 @@ pub fn main() !void {
         .parser_header_buf = 22 * 1024 * 1024,
         .parser_body_buf = 20 * 1024 * 1024,
         .big_buf_path_prefix = "/json/",
+        // json-tls profile: HTTPS on 8081, ALPN http/1.1, certs mounted
+        // by the runner at /certs.
+        .tls = .{
+            .cert_path = "/certs/server.crt",
+            .key_path = "/certs/server.key",
+            .port = 8081,
+            .alpn = "http/1.1",
+        },
     });
     defer server.deinit();
 
