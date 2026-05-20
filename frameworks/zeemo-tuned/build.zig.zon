@@ -33,8 +33,8 @@
     // internet connectivity.
     .dependencies = .{
         .zeemo = .{
-            .url = "https://github.com/skylightis666/zeemo/archive/42931b95377685ae65d63178b47bbf15c713ab75.tar.gz",
-            .hash = "zeemo-0.1.0-Mq5M4ScKAQB4v9_38qWeab32ZExwAb4pb2MlaKjKS4qW",
+            .url = "https://github.com/skylightis666/zeemo/archive/8b47c8e7f8387f7f05c08991df8f4efbd12580c8.tar.gz",
+            .hash = "zeemo-0.1.0-Mq5M4ebxAQCqKgmq_4VN2Hx4S4Gh7_1Z5WjRnVPW4PM7",
         },
     },
     .paths = .{
