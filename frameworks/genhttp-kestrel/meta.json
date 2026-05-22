@@ -21,7 +21,8 @@
     "static-h2",
     "static-h3",
     "api-4",
-    "api-16"
+    "api-16",
+    "crud"
   ],
   "maintainers": [
     "Kaliumhexacyanoferrat"

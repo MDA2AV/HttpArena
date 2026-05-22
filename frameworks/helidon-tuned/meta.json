@@ -18,6 +18,7 @@
         "baseline-h2",
         "static-h2",
         "echo-ws",
+        "echo-ws-pipeline",
         "unary-grpc",
         "unary-grpc-tls",
         "stream-grpc",

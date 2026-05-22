@@ -60,3 +60,5 @@ sealed class CrudWriteResponse
     public int Price { get; set; }
     public int Quantity { get; set; }
 }
+
+public sealed record Fortune(int Id, string Message);

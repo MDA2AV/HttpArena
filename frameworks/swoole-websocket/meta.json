@@ -7,6 +7,7 @@
   "repo": "https://github.com/swoole/swoole-src",
   "enabled": true,
   "tests": [
-    "echo-ws"
+    "echo-ws",
+    "echo-ws-pipeline"
   ]
 }

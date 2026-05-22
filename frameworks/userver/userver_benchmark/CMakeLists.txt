@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/controllers/*.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/bare/*.cpp
 )
 
 include(GNUInstallDirs)

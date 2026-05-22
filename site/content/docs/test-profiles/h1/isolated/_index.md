@@ -16,4 +16,5 @@ Single-endpoint benchmarks that measure framework performance on one task at a t
   {{< card link="static" title="Static Files" subtitle="Serves 20 static files — CSS, JS, HTML, fonts, images — over HTTP/1.1." icon="photograph" >}}
   {{< card link="pipelined" title="Pipelined (16x)" subtitle="16 requests sent back-to-back per connection, testing raw I/O and pipeline batching." icon="fast-forward" >}}
   {{< card link="crud" title="CRUD (REST API)" subtitle="Realistic REST API with paginated list, cached reads, create, and update against Postgres." icon="database" >}}
+  {{< card link="fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Reference-only — measures template-engine throughput, not part of the composite score." icon="document-text" >}}
 {{< /cards >}}

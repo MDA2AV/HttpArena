@@ -22,5 +22,29 @@
     "tpl_json": 99188,
     "tpl_async_db": 42509,
     "cpu_breakdown": "server: 656% 180MiB | proxy: 1815% 1.4GiB"
+  },
+  {
+    "framework": "trillium",
+    "language": "Rust",
+    "rps": 957,
+    "avg_latency": "652.97ms",
+    "p99_latency": "1.45s",
+    "cpu": "791.1%",
+    "memory": "2.9GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "132.22MB/s",
+    "reconnects": 0,
+    "status_2xx": 4826,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0,
+    "tpl_static": 1447,
+    "tpl_baseline": 965,
+    "tpl_json": 1689,
+    "tpl_async_db": 723,
+    "cpu_breakdown": "server: 717% 2.4GiB | proxy: 74% 461MiB"
   }
 ]

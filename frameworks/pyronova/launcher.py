@@ -26,9 +26,38 @@ def _cpu_count() -> int:
         return max(os.cpu_count() or 1, 1)
 
 
+def _numa_nodes() -> int:
+    """How many NUMA nodes does the kernel see? 1 on UMA systems
+    (laptops, Apple Silicon, single-socket AMD/Intel desktop),
+    2+ on multi-CCD Threadripper/EPYC and multi-socket boxes."""
+    try:
+        return max(
+            sum(1 for d in os.listdir("/sys/devices/system/node") if d.startswith("node")),
+            1,
+        )
+    except (FileNotFoundError, PermissionError):
+        return 1
+
+
 def main() -> int:
     total = _cpu_count()
     per_proc = max(total // 2, 1)
+    # IO workers sizing is NUMA-topology-aware. Two regimes:
+    #
+    # Multi-node (Threadripper PRO / EPYC / multi-socket Xeon): cap IO
+    # at `per_proc // 4` so the accept loops + hyper socket threads
+    # stay on a couple of CCDs. Letting IO spread across every CCD
+    # turns every `crossbeam_channel::recv` into an Infinity-Fabric
+    # round trip — Leo observed this as "baseline stops scaling past
+    # 26 cores on the 3995WX" in the Arena run.
+    #
+    # Single-node (laptops, Apple Silicon, most cloud VMs): IO == cores.
+    # The prior NUMA-only formula cost 32% throughput on an M5 Pro
+    # because IO threads starved with no matching compute benefit.
+    if _numa_nodes() > 1:
+        io_per_proc = min(max(per_proc // 4, 4), 16)
+    else:
+        io_per_proc = per_proc
 
     base_port = int(os.environ.get("PORT", "8080"))
     tls_cert = os.environ.get("TLS_CERT", "/certs/server.crt")
@@ -37,7 +66,17 @@ def main() -> int:
 
     env_common = dict(os.environ)
     env_common["PYRONOVA_WORKERS"] = str(per_proc)
-    env_common["PYRONOVA_IO_WORKERS"] = str(per_proc)
+    env_common["PYRONOVA_IO_WORKERS"] = str(io_per_proc)
+    # GIL-bridge sizing for gil=True routes under TPC. Default is 4 workers
+    # + 16×4=64 channel depth — correct for typical apps with 1-2 numpy
+    # routes. HttpArena's async-db / crud profiles hammer gil=True paths
+    # at 1024+ concurrency, so a 64-deep channel overflows immediately
+    # and every excess request 503s (PyronovaApp's bridge backpressure
+    # contract). Widen to 16 workers + 8192 capacity so the DB-heavy
+    # gcannon profiles see sustained throughput instead of a 503 storm.
+    # Verified locally at c=4096: 15k req/s steady, zero drops.
+    env_common.setdefault("PYRONOVA_GIL_BRIDGE_WORKERS", "16")
+    env_common.setdefault("PYRONOVA_GIL_BRIDGE_CAPACITY", "8192")
     # Metrics / access log off; benchmarks care about throughput, not logs.
     env_common.pop("PYRONOVA_LOG", None)
     env_common.pop("PYRONOVA_METRICS", None)

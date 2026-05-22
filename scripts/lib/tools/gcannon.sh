@@ -45,6 +45,13 @@ gcannon_build_args() {
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
+        fortunes)
+            # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
+            # No --raw rotation: every request is the same GET; the per-request
+            # variance lives inside the handler (sort + render).
+            args=("http://localhost:$PORT/fortunes"
+                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
+            ;;
         json)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"

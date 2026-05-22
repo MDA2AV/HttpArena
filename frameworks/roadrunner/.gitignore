@@ -1,0 +1,5 @@
+_build/
+_checkouts/
+.rebar3/
+*.beam
+*.swp

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require 'zlib'
 require 'pg'
 
@@ -17,10 +15,6 @@ class BenchmarkController < ActionController::API
   FileUtils.cp_r(File.join(DATA_DIR, 'static'), Rails.root.join('public', 'static'))
 
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
-
-  def pipeline
-    render plain: 'ok'
-  end
 
   def baseline11
     total = params[:a].to_i + params[:b].to_i
@@ -44,24 +38,7 @@ class BenchmarkController < ActionController::API
       d.merge(total: d[:price] * d[:quantity] * m)
     end
 
-    result = JSON.generate(items: items, count: items.length)
-
-    if accept_encodings = request.headers['Accept-Encoding']
-      types = accept_encodings.split(',').map(&:strip)
-      if types.include? 'gzip'
-        sio = StringIO.new
-        gz = Zlib::GzipWriter.new(sio, 1)
-        gz.write(result)
-        gz.close
-        response.headers['content-type'] = 'application/json'
-        response.headers['content-encoding'] = 'gzip'
-        send_data sio.string, disposition: :inline
-      else
-        render json: result
-      end
-    else
-      render json: result
-    end
+    render json: JSON.generate(items: items, count: items.length)
   end
 
   def async_db

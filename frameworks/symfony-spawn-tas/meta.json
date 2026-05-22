@@ -1,0 +1,25 @@
+{
+  "display_name": "symfony-spawn-tas",
+  "language": "PHP",
+  "type": "tuned",
+  "engine": "true-async-server",
+  "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and TrueAsyncServer.",
+  "repo": "https://github.com/yangusik/symfony-spawn",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "static",
+    "static-h2",
+    "baseline-h2",
+    "async-db"
+  ],
+  "maintainers": [
+    "YanGusik"
+  ]
+}

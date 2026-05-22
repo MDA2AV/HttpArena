@@ -1,0 +1,33 @@
+ooga fleck
+05/03/2026 18:08:44 [Info] Server started at ws://0.0.0.0:8080/ (actual port 8080) 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Warn] Data sent while closing or after close. Ignoring. 
+05/03/2026 18:09:06 [Info] Failed to send. Disconnecting. System.AggregateException: One or more errors occurred. (Unable to write data to the transport connection: Connection reset by peer.)
+ ---> System.IO.IOException: Unable to write data to the transport connection: Connection reset by peer.
+ ---> System.Net.Sockets.SocketException (104): Connection reset by peer
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.CreateException(SocketError error, Boolean forAsyncThrow)
+   at System.Threading.Tasks.TaskFactory`1.FromAsyncImpl(Func`3 beginMethod, Func`2 endFunction, Action`1 endAction, Object state, TaskCreationOptions creationOptions)
+   at Fleck.SocketWrapper.Send(Byte[] buffer, Action callback, Action`1 error)
+   at Fleck.Handlers.Hybi13Handler.ProcessFrame(FrameType frameType, Byte[] data, Action`1 onMessage, Action onClose, Action`1 onBinary, Action`1 onPing, Action`1 onPong)
+   at Fleck.Handlers.Hybi13Handler.ReceiveData(List`1 data, ReadState readState, Action`2 processFrame)
+   at System.Threading.Tasks.ContinuationTaskFromResultTask`1.InnerInvoke()
+   at System.Threading.ExecutionContext.RunFromThreadPoolDispatchLoop(Thread threadPoolThread, ExecutionContext executionContext, ContextCallback callback, Object state)
+   at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+   at System.Threading.PortableThreadPool.WorkerThread.WorkerThreadStart()
+   at System.Threading.Thread.StartCallback()
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskFactory`1.FromAsyncCoreLogic(IAsyncResult iar, Func`2 endFunction, Action`1 endAction, Task`1 promise, Boolean requiresSynchronization)
+   --- End of inner exception stack trace ---
+   at System.Threading.Tasks.TaskFactory`1.FromAsyncCoreLogic(IAsyncResult iar, Func`2 endFunction, Action`1 endAction, Task`1 promise, Boolean requiresSynchronization)
+   --- End of inner exception stack trace ---

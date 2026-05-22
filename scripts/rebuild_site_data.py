@@ -19,7 +19,6 @@ import json
 import os
 import subprocess
 import sys
-from datetime import date
 from pathlib import Path
 
 
@@ -211,7 +210,6 @@ def write_current_json(root: Path, site_data: Path) -> None:
     kernel = run(["uname", "-r"])
     docker_ver = run(["docker", "version", "--format", "{{.Server.Version}}"])
     docker_runtime = run(["docker", "info", "--format", "{{.DefaultRuntime}}"])
-    commit = run(["git", "-C", str(root), "rev-parse", "--short", "HEAD"])
 
     lo_mtu = None
     try:
@@ -225,8 +223,12 @@ def write_current_json(root: Path, site_data: Path) -> None:
     except Exception:
         pass
 
+    # date and commit were intentionally dropped — they churned on every
+    # /benchmark --save run and were the dominant source of merge conflicts
+    # between concurrent PRs. archive.sh re-derives commit from git directly
+    # at archive time; the displayed badge for the "current" round is hidden
+    # in round-selector.html when the field is absent.
     out: dict = {
-        "date": date.today().isoformat(),
         "cpu": cpu,
         "cores": cores,
         "threads": threads,
@@ -237,7 +239,6 @@ def write_current_json(root: Path, site_data: Path) -> None:
         "docker": docker_ver,
         "docker_runtime": docker_runtime,
         "governor": governor,
-        "commit": commit,
     }
     if ram_speed != "unknown":
         out["ram_speed"] = ram_speed

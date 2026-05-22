@@ -19,6 +19,7 @@
     "static",
     "async-db",
     "crud",
+    "fortunes",
     "baseline-h2",
     "static-h2",
     "baseline-h2c",

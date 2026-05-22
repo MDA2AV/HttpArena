@@ -1,0 +1,1811 @@
+Exec: /app/erts-17.0/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
+Root: /app
+/app
+=ESOCK WARNING MSG==== 18-May-2026::11:29:45.862834 ===
+[UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1
+=ERROR REPORT==== 18-May-2026::11:29:51.892083 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892134 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892238 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892232 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892188 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892265 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892154 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892209 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892206 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892153 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892287 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892280 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892306 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892293 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892392 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892312 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892314 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892394 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892357 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892389 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892351 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892374 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892428 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892386 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892453 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892438 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892172 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:51.892440 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242097 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242128 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242121 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242180 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242150 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242166 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242144 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242164 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242184 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242185 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242342 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242307 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242323 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242408 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242408 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242302 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242353 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242400 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242327 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242365 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242361 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242362 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242430 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242395 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242345 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242378 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242436 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242467 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:29:59.242555 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590145 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590139 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590120 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590137 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590179 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590131 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590203 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590093 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590268 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590260 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590301 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590243 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590272 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590352 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590356 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590375 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590254 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590358 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590410 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590309 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590149 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590446 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590356 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590443 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590334 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590394 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590393 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590461 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error
+=ERROR REPORT==== 18-May-2026::11:30:06.590460 ===
+    reason: {case_clause,{error,closed}}
+    msg: roadrunner handler crashed
+    handler: roadrunner_httparena_handler
+    stacktrace: [{roadrunner_httparena_handler,consume_body,2,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,75}]},
+                 {roadrunner_httparena_handler,upload_endpoint,1,
+                     [{file,"/src/src/roadrunner_httparena_handler.erl"},
+                      {line,65}]},
+                 {roadrunner_compress,call,2,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_compress.erl"},
+                      {line,76}]},
+                 {roadrunner_conn_loop,run_pipeline,4,
+                     [{file,
+                          "/src/_build/default/lib/roadrunner/src/roadrunner_conn_loop.erl"},
+                      {line,576}]},
+                 {proc_lib,init_p_do_apply,3,
+                     [{file,"proc_lib.erl"},{line,333}]}]
+    class: error

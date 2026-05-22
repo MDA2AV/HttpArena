@@ -68,7 +68,7 @@ html.dark .test-card-endpoint { color: #64748b; }
 </style>
 
 <div class="tests-section">
-<h2>26 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
+<h2>28 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
 <p class="tests-sub">Every framework is tested under diverse, realistic workloads — from raw throughput to JSON processing, gRPC unary calls, and WebSocket echo.</p>
 
 <div class="tests-proto">
@@ -123,6 +123,11 @@ html.dark .test-card-endpoint { color: #64748b; }
     <div class="test-card-title">CRUD (REST API)</div>
     <div class="test-card-desc">Realistic REST API with paginated list, cached reads, create, and update against Postgres.</div>
     <div class="test-card-endpoint">GET/POST/PUT /crud/items</div>
+  </a>
+  <a class="test-card" href="docs/test-profiles/h1/isolated/fortunes">
+    <div class="test-card-title">Fortunes (Templates) *</div>
+    <div class="test-card-desc">DB query + HTML template rendering with auto-escape. Reference-only — measures template-engine throughput.</div>
+    <div class="test-card-endpoint">GET /fortunes</div>
   </a>
 </div>
 </div>
@@ -239,6 +244,11 @@ html.dark .test-card-endpoint { color: #64748b; }
     <div class="test-card-title">Echo</div>
     <div class="test-card-desc">WebSocket echo throughput — upgrade, send pipelined text messages, receive echoes. Measures frame processing performance.</div>
     <div class="test-card-endpoint">WS /ws (echo)</div>
+  </a>
+  <a class="test-card" href="docs/test-profiles/ws/echo-pipeline">
+    <div class="test-card-title">Echo Pipelined</div>
+    <div class="test-card-desc">Same WebSocket echo with 16 messages in flight per connection — measures frame batching and read-buffer draining under burst load.</div>
+    <div class="test-card-endpoint">WS /ws (echo, p=16)</div>
   </a>
 </div>
 </div>

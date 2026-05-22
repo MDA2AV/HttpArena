@@ -16,6 +16,9 @@ menu:
     - name: Leaderboard
       pageRef: /leaderboard
       weight: 1
+    - name: Timeline
+      url: https://timeline.http-arena.com
+      weight: 1.5
     - name: Knowledge Base
       pageRef: /docs
       weight: 2

@@ -3,6 +3,8 @@ package com.httparena.spring.boot;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.catalina.connector.Connector;
+import org.apache.tomcat.util.net.SSLHostConfig;
+import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
@@ -21,6 +23,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 import org.sqlite.SQLiteDataSource;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -92,10 +95,31 @@ public class Application implements WebServerFactoryCustomizer<TomcatServletWebS
 		connector.setPort(8080);
 		connectorCustomizer.customize(connector);
 		factory.addAdditionalConnectors(connector);
+
+		String certPath = System.getenv().getOrDefault("TLS_CERT", "/certs/server.crt");
+		String keyPath = System.getenv().getOrDefault("TLS_KEY", "/certs/server.key");
+
+		if (new File(certPath).exists() && new File(keyPath).exists()) {
+			Connector tlsConnector = new Connector("HTTP/1.1");
+			tlsConnector.setPort(8081);
+			tlsConnector.setScheme("https");
+			tlsConnector.setSecure(true);
+			tlsConnector.setProperty("SSLEnabled", "true");
+
+			SSLHostConfig sslHostConfig = new SSLHostConfig();
+			SSLHostConfigCertificate certificate = new SSLHostConfigCertificate(sslHostConfig, SSLHostConfigCertificate.Type.UNDEFINED);
+			certificate.setCertificateFile(certPath);
+			certificate.setCertificateKeyFile(keyPath);
+			sslHostConfig.addCertificate(certificate);
+			tlsConnector.addSslHostConfig(sslHostConfig);
+
+			factory.addAdditionalConnectors(tlsConnector);
+		}
 	}
 
 	@Override
 	public void registerWebSocketHandlers(final WebSocketHandlerRegistry registry) {
 		registry.addHandler(new EchoWebSocketHandler(), "/ws");
 	}
+
 }

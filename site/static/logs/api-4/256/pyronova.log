@@ -1,21 +1,18 @@
 
-  Pyronova v2.0.2 [hybrid mode]
+  Pyronova v2.3.1 [TPC mode, hybrid-inline]
   Listening on http://0.0.0.0:8080
-  Sub-interpreters: 2 | IO threads: 2 (CPUs: 4)
-  Routes: 5 sub-interp + 2 GIL + 0 async
-  Script: /app/app.py
+  TPC threads: 2 (CPUs: 4, pinned)
+  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
 
 
-  Pyronova v2.0.2 [hybrid mode]
-  Listening on https://0.0.0.0:8081
-  Sub-interpreters: 2 | IO threads: 2 (CPUs: 4)
-  Routes: 5 sub-interp + 2 GIL + 0 async
-  Script: /app/app.py
+  Pyronova v2.3.1 [TPC mode, hybrid-inline]
+  Listening on http://0.0.0.0:8443
+  TPC threads: 2 (CPUs: 4, pinned)
+  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
 
 
-  Pyronova v2.0.2 [hybrid mode]
-  Listening on https://0.0.0.0:8443
-  Sub-interpreters: 2 | IO threads: 2 (CPUs: 4)
-  Routes: 5 sub-interp + 2 GIL + 0 async
-  Script: /app/app.py
+  Pyronova v2.3.1 [TPC mode, hybrid-inline]
+  Listening on http://0.0.0.0:8081
+  TPC threads: 2 (CPUs: 4, pinned)
+  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
 

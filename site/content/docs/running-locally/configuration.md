@@ -16,6 +16,7 @@ Defined in `scripts/lib/common.sh`. Override by exporting before you run the scr
 | `THREADS` | `64` | gcannon / wrk worker threads. |
 | `H2THREADS` | `64` | h2load worker threads (HTTP/2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
+| `SKIP_TUNE` | `false` | When `true`, skips kernel/hardware tuning (CPU governor, socket limits) that requires `sudo`. Useful for local development. |
 
 In `benchmark-lite.sh`, `THREADS` defaults to `max(nproc / 2, 1)` and `H2THREADS` / `H3THREADS` mirror `$THREADS`. Pass `--load-threads N` to override all three in one shot.
 
@@ -36,7 +37,7 @@ Every framework `Dockerfile` reads the same defaults from its env, so you rarely
 |---|---|---|
 | `LOADGEN_DOCKER` | `false` | When `true`, every load generator runs from its Docker image instead of the host binary. Builds missing images automatically from `docker/*.Dockerfile`. Forced `true` by `benchmark-lite.sh`. |
 | `GCANNON_MODE` | `native` | `native` or `docker`. Implied by `LOADGEN_DOCKER`. |
-| `GCANNON_CPUS` | `32-63,96-127` | CPU list the load generators run on. Native mode wraps calls in `taskset -c $GCANNON_CPUS`; docker mode passes it via `--cpuset-cpus`. `benchmark-lite.sh` sets this to `0-$((nproc-1))`. |
+| `GCANNON_CPUS` | dynamic | CPU list the load generators run on. Native mode wraps calls in `taskset -c $GCANNON_CPUS`; docker mode passes it via `--cpuset-cpus`. Defaults to the upper half of available cores on smaller machines to avoid resource contention with the server. |
 
 ## Tool binaries and images
 

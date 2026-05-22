@@ -7,6 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Services.AddMemoryCache();
+builder.Services.AddRazorPages();
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
@@ -83,6 +84,12 @@ app.MapGet("/crud/items", Handlers.CrudList);
 app.MapGet("/crud/items/{id:int}", Handlers.CrudRead);
 app.MapPost("/crud/items", Handlers.CrudCreate);
 app.MapPut("/crud/items/{id:int}", Handlers.CrudUpdate);
+
+// /fortunes is served by the Razor page at Pages/Fortunes.cshtml
+// (route "/fortunes" declared via the page's @page directive). MapRazorPages
+// wires up the MVC/Razor pipeline so the page model can render Razor markup
+// — the standard ASP.NET production path for HTML responses.
+app.MapRazorPages();
 
 app.MapStaticAssets();
 

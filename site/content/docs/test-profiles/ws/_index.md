@@ -7,4 +7,5 @@ WebSocket test profiles measure framework performance for real-time bidirectiona
 
 {{< cards >}}
   {{< card link="echo" title="Echo" subtitle="WebSocket echo throughput — upgrade, send messages, receive echoes." icon="globe-alt" >}}
+  {{< card link="echo-pipeline" title="Echo Pipelined (16x)" subtitle="WebSocket echo with 16 messages in flight per connection — measures frame batching and read-buffer draining." icon="fast-forward" >}}
 {{< /cards >}}

@@ -1,0 +1,9 @@
+/test/*
+/var/
+/vendor/
+/.env.local
+/.env.local.php
+/.env.*.local
+/public/bundles/
+/public/build/
+/node_modules/

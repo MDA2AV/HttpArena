@@ -8,6 +8,7 @@ require 'rage/all'
 Rage.configure do
   # use this to add settings that are constant across all environments
   config.public_file_server.enabled = true
+  config.middleware.use Rack::Deflater # enable gzip
 end
 
 require "rage/setup"

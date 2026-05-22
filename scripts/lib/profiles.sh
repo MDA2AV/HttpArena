@@ -22,6 +22,7 @@ declare -A PROFILES=(
     [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [crud]="1|200|1-31,65-95|4096|crud"
+    [fortunes]="1|0|0-31,64-95|1024|fortunes"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
     [baseline-h2c]="1|0|0-31,64-95|256,1024,4096|h2c"
@@ -36,6 +37,7 @@ declare -A PROFILES=(
     [gateway-h3]="1|0|0-31,64-95|64,256|gateway-h3"
     [production-stack]="1|0|0-31,64-95|256,1024|production-stack"
     [echo-ws]="1|0|0-31,64-95|512,4096,16384|ws-echo"
+    [echo-ws-pipeline]="16|0|0-31,64-95|512,4096,16384|ws-echo"
 )
 
 PROFILE_ORDER=(
@@ -43,6 +45,7 @@ PROFILE_ORDER=(
     json json-comp json-tls
     upload api-4 api-16
     static async-db crud
+    fortunes
     baseline-h2 static-h2
     baseline-h2c json-h2c
     baseline-h3 static-h3
@@ -50,7 +53,7 @@ PROFILE_ORDER=(
     production-stack
     unary-grpc unary-grpc-tls
     stream-grpc stream-grpc-tls
-    echo-ws
+    echo-ws echo-ws-pipeline
 )
 
 # ── Parsing + validation ────────────────────────────────────────────────────

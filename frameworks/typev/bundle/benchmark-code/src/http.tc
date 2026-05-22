@@ -1,0 +1,401 @@
+// HTTP/1.1 request parsing. parseRequest fills a caller-owned Req — created
+// once per connection and reused — so parsing allocates nothing per request.
+
+// A parsed request; `consumed` is its byte length in the buffer.
+type Req = struct {
+    complete: bool,
+    consumed: uint,
+    isPipeline: bool,
+    isBaseline: bool,
+    isJson: bool,
+    isStatic: bool,
+    isUpload: bool,
+    isPost: bool,
+    keepAlive: bool,
+    result: int,
+    jcount: int,
+    jmult: int,
+    pathStart: uint,
+    pathEnd: uint,
+    acceptBr: bool,
+    acceptGzip: bool,
+    contentLen: int,
+    bodyStart: uint,
+    isWs: bool,
+    wsKeyStart: uint,
+    wsKeyEnd: uint
+}
+
+// Result of decoding a chunked body.
+type Chunk = struct {
+    ok: bool,
+    value: int,
+    endPos: uint
+}
+
+// Allocate one Req / Chunk — a handler makes these once and reuses them.
+fn newReq() -> Req {
+    let r: Req = {complete: false, consumed: 0u, isPipeline: false, isBaseline: false, isJson: false, isStatic: false, isUpload: false, isPost: false, keepAlive: true, result: 0, jcount: 0, jmult: 0, pathStart: 0u, pathEnd: 0u, acceptBr: false, acceptGzip: false, contentLen: 0, bodyStart: 0u, isWs: false, wsKeyStart: 0u, wsKeyEnd: 0u}
+    return r
+}
+
+fn newChunk() -> Chunk {
+    let c: Chunk = {ok: false, value: 0, endPos: 0u}
+    return c
+}
+
+// Header-matching patterns, byte-encoded once at module init.
+let local const HDR_CONTENT_LENGTH: byte[] = "content-length".bytes()
+let local const HDR_TRANSFER_ENCODING: byte[] = "transfer-encoding".bytes()
+let local const HDR_CONNECTION: byte[] = "connection".bytes()
+let local const VAL_CHUNKED: byte[] = "chunked".bytes()
+let local const VAL_CLOSE: byte[] = "close".bytes()
+let local const HDR_ACCEPT_ENCODING: byte[] = "accept-encoding".bytes()
+let local const VAL_BR: byte[] = "br".bytes()
+let local const VAL_GZIP: byte[] = "gzip".bytes()
+let local const HDR_WS_KEY: byte[] = "sec-websocket-key".bytes()
+
+// Parse a decimal integer from buf[start..end), ignoring non-digit bytes.
+local fn parseDigits(buf: byte[], start: uint, end: uint) -> int {
+    let v: int = 0
+    let p: uint = start
+    while p < end {
+        let d: int = buf[p] as int
+        if d >= 48 && d <= 57 {
+            v = v * 10 + (d - 48)
+        }
+        p = p + 1u
+    }
+    return v
+}
+
+// Case-insensitive match of `name` against the header name at buf[ls..), `:`-terminated.
+local fn matchHeader(buf: byte[], ls: uint, le: uint, name: byte[]) -> bool {
+    let const nb = name
+    let nl: uint = nb.length
+    if ls + nl >= le {
+        return false
+    }
+    foreach k: uint in 0u, nl {
+        let c: int = buf[ls + k] as int
+        if c >= 65 && c <= 90 {
+            c = c + 32
+        }
+        if c != (nb[k] as int) {
+            return false
+        }
+    }
+    return (buf[ls + nl] as int) == 58
+}
+
+// Integer value of a header line (the part after ':').
+local fn headerNumber(buf: byte[], ls: uint, le: uint) -> int {
+    let p: uint = ls
+    while p < le && (buf[p] as int) != 58 {
+        p = p + 1u
+    }
+    p = p + 1u
+    return parseDigits(buf, p, le)
+}
+
+// Case-insensitive substring search for `lit` within buf[start..end).
+local fn containsCI(buf: byte[], start: uint, end: uint, lit: byte[]) -> bool {
+    let const lb = lit
+    let ll: uint = lb.length
+    if ll == 0u {
+        return true
+    }
+    if end < start + ll {
+        return false
+    }
+    let limit: uint = end - ll
+    foreach i: uint in start, limit + 1u {
+        let m: bool = true
+        foreach k: uint in 0u, ll {
+            let c: int = buf[i + k] as int
+            if c >= 65 && c <= 90 {
+                c = c + 32
+            }
+            if c != (lb[k] as int) {
+                m = false
+                break
+            }
+        }
+        if m {
+            return true
+        }
+    }
+    return false
+}
+
+// Decode a chunked body into `res` (reused); res.ok stays false if incomplete.
+local fn decodeChunked(buf: byte[], start: uint, len: uint, mut res: Chunk) -> void {
+    res.ok = false
+    res.value = 0
+    res.endPos = 0u
+    let p: uint = start
+    let acc: int = 0
+    while true {
+        if p >= len {
+            return
+        }
+        let size: int = 0
+        let any: bool = false
+        while p < len {
+            let c: int = buf[p] as int
+            let hv: int = -1
+            if c >= 48 && c <= 57 {
+                hv = c - 48
+            } else if c >= 97 && c <= 102 {
+                hv = c - 87
+            } else if c >= 65 && c <= 70 {
+                hv = c - 55
+            }
+            if hv < 0 {
+                break
+            }
+            size = size * 16 + hv
+            any = true
+            p = p + 1u
+        }
+        if !any {
+            return
+        }
+        if p + 1u >= len {
+            return
+        }
+        if (buf[p] as int) != 13 || (buf[p + 1u] as int) != 10 {
+            return
+        }
+        p = p + 2u
+        if size == 0 {
+            if p + 1u >= len {
+                return
+            }
+            res.ok = true
+            res.value = acc
+            res.endPos = p + 2u
+            return
+        }
+        let sz: uint = size as uint
+        if p + sz + 2u > len {
+            return
+        }
+        foreach q: uint in p, p + sz {
+            let d: int = buf[q] as int
+            if d >= 48 && d <= 57 {
+                acc = acc * 10 + (d - 48)
+            }
+        }
+        p = p + sz + 2u
+    }
+    return
+}
+
+// Parse one HTTP request from buf[0..len) into the reused `r` (`c` is chunked-
+// decode scratch); r.complete is left false if the request is incomplete.
+fn parseRequest(buf: byte[], len: uint, mut r: Req, mut c: Chunk) -> void {
+    r.complete = false
+    r.consumed = 0u
+    r.isPipeline = false
+    r.isBaseline = false
+    r.isJson = false
+    r.isStatic = false
+    r.isUpload = false
+    r.isPost = false
+    r.keepAlive = true
+    r.result = 0
+    r.jcount = 0
+    r.jmult = 0
+    r.pathStart = 0u
+    r.pathEnd = 0u
+    r.acceptBr = false
+    r.acceptGzip = false
+    r.contentLen = 0
+    r.bodyStart = 0u
+    r.isWs = false
+    r.wsKeyStart = 0u
+    r.wsKeyEnd = 0u
+    if len < 4u {
+        return
+    }
+
+    // end of headers ("\r\n\r\n")
+    let headerEnd: int = -1
+    foreach i: uint in 0u, len - 3u {
+        if (buf[i] as int) == 13 && (buf[i + 1u] as int) == 10 && (buf[i + 2u] as int) == 13 && (buf[i + 3u] as int) == 10 {
+            headerEnd = i as int
+            break
+        }
+    }
+    if headerEnd < 0 {
+        return
+    }
+    let he: uint = headerEnd as uint
+    let bodyStart: uint = he + 4u
+
+    // first space -> start of the request target ('/...')
+    let sp: uint = 0u
+    while sp < he && (buf[sp] as int) != 32 {
+        sp = sp + 1u
+    }
+    let pathStart: uint = sp + 1u
+
+    // method length == first-space position: POST is 4, GET is 3. Stored on
+    // the struct — a long-lived `let bool` from a comparison miscompiles -O.
+    r.isPost = sp == 4u
+
+    // route on the character after '/': 'p'(112)=pipeline, 'b'(98)=baseline
+    let rc: int = if pathStart + 1u < he => (buf[pathStart + 1u] as int) else 0
+    r.isPipeline = rc == 112
+    r.isBaseline = rc == 98
+    r.isJson = rc == 106
+    r.isStatic = rc == 115
+    r.isUpload = rc == 117
+    r.isWs = rc == 119
+
+    // request target = buf[pathStart .. pathEnd) — up to the next space
+    let pathEnd: uint = pathStart
+    while pathEnd < he && (buf[pathEnd] as int) != 32 {
+        pathEnd = pathEnd + 1u
+    }
+    r.pathStart = pathStart
+    r.pathEnd = pathEnd
+
+    // end of request line (first CR)
+    let lineEnd: uint = pathStart
+    while lineEnd < he && (buf[lineEnd] as int) != 13 {
+        lineEnd = lineEnd + 1u
+    }
+
+    // header scan
+    let contentLen: int = -1
+    let chunked: bool = false
+    let h: uint = lineEnd + 2u
+    while h < he {
+        let le: uint = h
+        while le < he && (buf[le] as int) != 13 {
+            le = le + 1u
+        }
+        if matchHeader(buf, h, le, HDR_CONTENT_LENGTH) {
+            contentLen = headerNumber(buf, h, le)
+        } else if matchHeader(buf, h, le, HDR_TRANSFER_ENCODING) {
+            if containsCI(buf, h, le, VAL_CHUNKED) {
+                chunked = true
+            }
+        } else if matchHeader(buf, h, le, HDR_CONNECTION) {
+            if containsCI(buf, h, le, VAL_CLOSE) {
+                r.keepAlive = false
+            }
+        } else if matchHeader(buf, h, le, HDR_ACCEPT_ENCODING) {
+            if containsCI(buf, h, le, VAL_BR) {
+                r.acceptBr = true
+            }
+            if containsCI(buf, h, le, VAL_GZIP) {
+                r.acceptGzip = true
+            }
+        } else if matchHeader(buf, h, le, HDR_WS_KEY) {
+            let vs: uint = h + HDR_WS_KEY.length + 1u
+            while vs < le && (buf[vs] as int) == 32 {
+                vs = vs + 1u
+            }
+            r.wsKeyStart = vs
+            r.wsKeyEnd = le
+        }
+        h = le + 2u
+    }
+
+    // upload: parsed headers are enough — handle_client streams the body
+    // (Content-Length framed; the benchmark never chunk-encodes uploads).
+    if r.isUpload {
+        r.complete = true
+        r.consumed = 0u
+        r.bodyStart = bodyStart
+        r.contentLen = contentLen
+        return
+    }
+
+    // body
+    let bodyVal: int = 0
+    let consumed: uint = bodyStart
+    if r.isPost {
+        if chunked {
+            decodeChunked(buf, bodyStart, len, c)
+            if !c.ok {
+                return
+            }
+            bodyVal = c.value
+            consumed = c.endPos
+        } else {
+            let cl: uint = if contentLen > 0 => (contentLen as uint) else 0u
+            if len < bodyStart + cl {
+                return
+            }
+            bodyVal = parseDigits(buf, bodyStart, bodyStart + cl)
+            consumed = bodyStart + cl
+        }
+    }
+
+    r.complete = true
+    r.consumed = consumed
+
+    if r.isBaseline {
+        // sum the first two digit-runs in the query (after '?')
+        let q: uint = pathStart
+        while q < lineEnd && (buf[q] as int) != 63 {
+            q = q + 1u
+        }
+        let sum: int = 0
+        let cnt: int = 0
+        let p: uint = q
+        while p < lineEnd && cnt < 2 {
+            let c2: int = buf[p] as int
+            if c2 >= 48 && c2 <= 57 {
+                let v: int = 0
+                while p < lineEnd {
+                    let d: int = buf[p] as int
+                    if d < 48 || d > 57 {
+                        break
+                    }
+                    v = v * 10 + (d - 48)
+                    p = p + 1u
+                }
+                sum = sum + v
+                cnt = cnt + 1
+            } else {
+                p = p + 1u
+            }
+        }
+        r.result = sum + bodyVal
+    }
+
+    if r.isJson {
+        // /json/{count}?m=M — count and m are the first two digit-runs
+        let cnt: int = 0
+        let p: uint = pathStart
+        while p < lineEnd && cnt < 2 {
+            let c3: int = buf[p] as int
+            if c3 >= 48 && c3 <= 57 {
+                let v: int = 0
+                while p < lineEnd {
+                    let d: int = buf[p] as int
+                    if d < 48 || d > 57 {
+                        break
+                    }
+                    v = v * 10 + (d - 48)
+                    p = p + 1u
+                }
+                if cnt == 0 {
+                    r.jcount = v
+                } else {
+                    r.jmult = v
+                }
+                cnt = cnt + 1
+            } else {
+                p = p + 1u
+            }
+        }
+    }
+
+    return
+}

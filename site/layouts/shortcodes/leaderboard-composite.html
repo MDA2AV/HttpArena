@@ -11,6 +11,7 @@
   (dict "id" "static" "label" "Static" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024 4096 6800) "scored" true "engineScored" false "infraScored" true)
   (dict "id" "async-db" "label" "Async DB" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" true "engineScored" false "infraScored" false)
   (dict "id" "crud" "label" "CRUD" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "fortunes" "label" "Fortunes" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" false "engineScored" false "infraScored" false)
   (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
   (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
   (dict "id" "baseline-h2c" "label" "Baseline h2c" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024 4096) "scored" true "engineScored" true "infraScored" false)
@@ -25,6 +26,7 @@
   (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
   (dict "id" "static-h3" "label" "Static" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
   (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "echo-ws-pipeline" "label" "Echo Pipelined" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true "infraScored" false)
 }}
 
 {{/* Build a clean JSON blob: array of {profile, framework, rps, language} entries */}}

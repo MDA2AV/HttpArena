@@ -1,0 +1,74 @@
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Falcon::Command::Host","object_id":896,"message":"Falcon Host v0.54.2 taking flight!\n- Configuration: falcon.rb\n- To terminate: Ctrl-C or kill 1\n- To reload: kill -HUP 1\n"}
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Container::Notify::Console","object_id":904,"message":{"status":"Initializing controller..."}}
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Falcon::Service::Server","object_id":920,"message":"Starting app on #<Async::HTTP::Endpoint http://0.0.0.0:8080/ {protocol: Async::HTTP::Protocol::HTTP11}>"}
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Service::Controller","object_id":928,"message":"Controller starting..."}
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Service::Controller","object_id":928,"message":"Starting container..."}
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Service::Controller","object_id":928,"message":"Waiting for startup..."}
+/app/vendor/bundle/ruby/4.0.0/gems/async-container-0.30.0/lib/async/container/notify/pipe.rb:68: warning: IO::Buffer is experimental and both the Ruby and C interface may change in the future!
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Service::Controller","object_id":928,"message":"Finished startup."}
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Container::Notify::Console","object_id":904,"message":{"ready":true,"size":65}}
+{"time":"2026-05-21T21:14:16+00:00","severity":"info","process_id":1,"fiber_id":888,"pid":1,"subject":"Async::Service::Controller","object_id":928,"message":"Controller started..."}

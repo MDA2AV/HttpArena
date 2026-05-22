@@ -1,5 +1,6 @@
 {{ $profiles := slice
   (dict "id" "echo-ws" "label" "Echo (WebSocket)" "conns" (slice 512 4096 16384) "desc" "WebSocket echo test — upgrade to WebSocket on <code>/ws</code>, then send one message at a time and wait for the echo before sending the next. Measures single-message round-trip throughput. Benchmarked with <code>gcannon --ws -p 1</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/ws/echo/' class='lb-desc-link'>Learn more &rarr;</a>")
+  (dict "id" "echo-ws-pipeline" "label" "Echo Pipelined (WebSocket)" "conns" (slice 512 4096 16384) "desc" "WebSocket echo test with pipelining — upgrade to WebSocket on <code>/ws</code>, then send 16 messages back-to-back per connection before waiting for the echoes. Measures batched round-trip throughput and how efficiently a framework drains the read buffer. Benchmarked with <code>gcannon --ws -p 16</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/ws/echo/' class='lb-desc-link'>Learn more &rarr;</a>")
 }}
 
 {{/* Build JSON data blob for round switching */}}
@@ -103,6 +104,7 @@ html.dark .lb-type-note-ws { color: #e2e8f0 !important; background: linear-gradi
       <div title="HTTP server engine">Engine</div>
       <div title="Number of concurrent connections" style="text-align:right">Conn</div>
       <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+      <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
       <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
       <div></div>
       <div class="lb-sortable" data-sort="cpu" title="Average CPU usage" style="text-align:right">CPU</div>

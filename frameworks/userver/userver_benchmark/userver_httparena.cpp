@@ -4,7 +4,9 @@
 
 #include <userver/clients/dns/component.hpp>
 
+#include <userver/components/fs_cache.hpp>
 #include <userver/server/middlewares/configuration.hpp>
+#include <userver/server/handlers/http_handler_static.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/storages/secdist/component.hpp>
 #include <userver/storages/secdist/provider_component.hpp>
@@ -14,9 +16,6 @@
 #include "controllers/baseline11/handler.hpp"
 #include "controllers/json/handler.hpp"
 #include "controllers/single_query/handler.hpp"
-
-#include "bare/simple_router.hpp"
-#include "bare/simple_server.hpp"
 
 namespace userver_httparena {
 
@@ -52,6 +51,8 @@ int Main(int argc, char* argv[])
             .Append<userver::components::Secdist>()
             .Append<userver::components::DefaultSecdistProvider>()
             .Append<userver::components::TestsuiteSupport>()
+            .Append<userver::components::FsCache>("fs-cache-static")
+            .Append<userver::server::handlers::HttpHandlerStatic>()
             .Append<userver::components::Postgres>("hello-world-db")
             // actual handlers
             .Append<plaintext::Handler>()
@@ -60,9 +61,6 @@ int Main(int argc, char* argv[])
             .Append<single_query::Handler>()
             // tracing tweaks
             .Append<NoopTracingManager>()
-            // bare (not used in the benchmark currently)
-            .Append<bare::SimpleRouter>()
-            .Append<bare::SimpleServer>()
             ;
     return userver::utils::DaemonMain(argc, argv, component_list);
 }

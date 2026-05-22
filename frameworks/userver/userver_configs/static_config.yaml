@@ -28,10 +28,6 @@ components_manager:
                 #handler-defaults:
                 #    set_tracing_headers: false
             server-name: userver
-        simple-router:
-        simple-server:
-            port: 8081
-            task_processor: main-task-processor
         logging:
             fs-task-processor: fs-task-processor
             loggers:
@@ -44,8 +40,8 @@ components_manager:
             fs-task-processor: fs-task-processor
 
         dynamic-config:                      # Dynamic config storage options, do nothing
+            updates-enabled: false
             fs-cache-path: ''
-            defaults-path: /app/dynamic_config_fallback.json
             fs-task-processor: fs-task-processor
 
         testsuite-support:
@@ -58,6 +54,17 @@ components_manager:
         noop-tracing-manager:
         tracing-manager-locator:
             component-name: noop-tracing-manager
+
+        fs-cache-static:
+            dir: /data/static/
+            update-period: 60s
+            fs-task-processor: fs-task-processor
+
+        handler-static:
+            fs-cache-component: fs-cache-static
+            path: /static/*
+            method: GET
+            task_processor: main-task-processor
 
         plaintext-handler:
             path: /pipeline
@@ -88,7 +95,7 @@ components_manager:
             connlimit_mode: manual
 
         single-query-handler:
-            path: /async-db
+            path: /single-query
             method: GET
             decompress_request: false
             task_processor: main-task-processor

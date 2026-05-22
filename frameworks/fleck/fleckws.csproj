@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>fleckws</RootNamespace>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Fleck" Version="1.2.0" />
+    </ItemGroup>
+    
+</Project>

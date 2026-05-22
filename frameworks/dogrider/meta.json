@@ -1,0 +1,16 @@
+{
+  "display_name": "dogrider",
+  "language": "C#",
+  "type": "production",
+  "engine": "zerg",
+  "description": "GenHTTP websockets with zerg backend",
+  "repo": "https://github.com/MDA2AV/dogrider",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}

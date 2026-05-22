@@ -1,5 +1,9 @@
 Rage.routes.draw do
-  get  '/pipeline',    to: 'benchmark#pipeline'
+  get  '/pipeline', to: ->(env) do
+    [200, {
+      'content-type' => 'text/plain'
+    }, ['ok']]
+  end
   get  '/baseline11',  to: 'benchmark#baseline_one'
   post '/baseline11',  to: 'benchmark#baseline_one'
   get  '/baseline2',   to: 'benchmark#baseline_two'

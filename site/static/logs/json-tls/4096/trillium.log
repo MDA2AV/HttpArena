@@ -1,0 +1,6 @@
+[2026-05-13T12:16:48Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-05-13T12:16:48Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-05-13T12:16:48Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-05-13T12:16:48Z ERROR trillium_server_common::running_config] acceptor error: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-05-13T12:16:56Z ERROR trillium_server_common::running_config] acceptor error: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-05-13T12:17:03Z ERROR trillium_server_common::running_config] acceptor error: Custom { kind: UnexpectedEof, error: "tls handshake eof" }

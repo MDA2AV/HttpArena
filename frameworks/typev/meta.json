@@ -1,0 +1,20 @@
+{
+  "display_name": "typev",
+  "language": "Type-C",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "TypeV bytecode VM running a Type-C HTTP server.",
+  "repo": "https://github.com/praisethemoon/type-project",
+  "enabled": true,
+  "tests": [
+    "pipelined",
+    "baseline",
+    "limited-conn",
+    "json",
+    "static",
+    "upload",
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": ["praisethemoon"]
+}

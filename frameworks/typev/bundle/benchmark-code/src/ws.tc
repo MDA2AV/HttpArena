@@ -1,0 +1,225 @@
+// ws.tc — WebSocket echo for the HttpArena `echo-ws` / `echo-ws-pipeline`
+// tests. Handles the RFC 6455 upgrade handshake (SHA-1 + base64) and a
+// frame echo loop: read masked client frames, echo them unmasked.
+
+from std.socket import tcp_write, tcp_read
+from std.internal.socket import socket
+from response import writeBytes
+
+let local const WS_101: byte[] = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ".bytes()
+let local const WS_CRLF2: byte[] = "\r\n\r\n".bytes()
+let local const WS_BAD: byte[] = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".bytes()
+
+// Write all `len` bytes of the mutable buffer `b` to fd; shift on a partial
+// send (b is caller scratch — shifting is fine). false on socket error.
+local fn wsSend(fd: int, b: byte[], len: uint) -> bool {
+    let remaining: uint = len
+    while remaining > 0u {
+        let w = tcp_write(fd, b, remaining)
+        if w <= 0 {
+            return false
+        }
+        let n: uint = w as uint
+        if n >= remaining {
+            return true
+        }
+        let rest: uint = remaining - n
+        foreach k: uint in 0u, rest {
+            b[k] = b[n + k]
+        }
+        remaining = rest
+    }
+    return true
+}
+
+// Sec-WebSocket-Accept = base64(SHA1(key + GUID)) — computed natively.
+local fn wsAccept(key: byte[], keyStart: uint, keyEnd: uint) -> byte[] {
+    let out: byte[] = new byte[](28)
+    socket.socket_ws_accept(key, keyStart, keyEnd - keyStart, out)
+    return out
+}
+
+// Send the 101 upgrade response; `scratch` is the caller's output buffer.
+fn wsHandshake(fd: int, buf: byte[], keyStart: uint, keyEnd: uint, scratch: byte[]) -> bool {
+    let accept: byte[] = wsAccept(buf, keyStart, keyEnd)
+    let p: uint = writeBytes(scratch, 0u, WS_101)
+    p = writeBytes(scratch, p, accept)
+    p = writeBytes(scratch, p, WS_CRLF2)
+    return wsSend(fd, scratch, p)
+}
+
+// Reject a non-upgrade GET /ws with 400.
+fn wsReject(fd: int, scratch: byte[]) -> void {
+    let p: uint = writeBytes(scratch, 0u, WS_BAD)
+    wsSend(fd, scratch, p)
+}
+
+// One parsed WS frame; `ok` is false if buf doesn't yet hold a whole frame.
+type WsFrame = struct {
+    ok: bool,
+    opcode: int,
+    masked: bool,
+    payloadOff: uint,
+    payloadLen: uint,
+    maskOff: uint,
+    frameLen: uint
+}
+
+// Parse one frame from buf[0..len) into `f`.
+local fn wsParseFrame(buf: byte[], len: uint, mut f: WsFrame) -> void {
+    f.ok = false
+    if len < 2u {
+        return
+    }
+    let b0: int = buf[0] as int
+    let b1: int = buf[1] as int
+    f.opcode = b0 & 15
+    f.masked = (b1 & 128) != 0
+    let len7: int = b1 & 127
+    let hdr: uint = 2u
+    let plen: uint = len7 as uint
+    if len7 == 126 {
+        if len < 4u {
+            return
+        }
+        plen = ((buf[2] as uint) << 8u) | (buf[3] as uint)
+        hdr = 4u
+    } else if len7 == 127 {
+        if len < 10u {
+            return
+        }
+        plen = 0u
+        foreach i: uint in 0u, 8u {
+            plen = (plen << 8u) | (buf[2u + i] as uint)
+        }
+        hdr = 10u
+    }
+    f.maskOff = hdr
+    if f.masked {
+        hdr = hdr + 4u
+    }
+    f.payloadOff = hdr
+    f.payloadLen = plen
+    f.frameLen = hdr + plen
+    if len < f.frameLen {
+        return
+    }
+    f.ok = true
+}
+
+// Build an unmasked server frame [FIN|opcode][len][payload] into dst at pos,
+// the payload copied from src[srcOff..srcOff+plen). Returns the new position.
+local fn wsBuildFrame(dst: byte[], pos: uint, opcode: int, src: byte[], srcOff: uint, plen: uint) -> uint {
+    let p: uint = pos
+    dst[p] = (128 | opcode) as byte
+    p = p + 1u
+    if plen < 126u {
+        dst[p] = plen as byte
+        p = p + 1u
+    } else if plen < 65536u {
+        dst[p] = 126 as byte
+        dst[p + 1u] = ((plen >> 8u) & 255u) as byte
+        dst[p + 2u] = (plen & 255u) as byte
+        p = p + 3u
+    } else {
+        dst[p] = 127 as byte
+        foreach i: uint in 0u, 8u {
+            dst[p + 1u + i] = ((plen >> (8u * (7u - i))) & 255u) as byte
+        }
+        p = p + 9u
+    }
+    foreach i: uint in 0u, plen {
+        dst[p + i] = src[srcOff + i]
+    }
+    return p + plen
+}
+
+// WebSocket echo loop. Runs until the peer closes or a socket error. `loLen`
+// bytes of already-received frame data sit at buf[loStart..loStart+loLen).
+fn wsServe(fd: int, buf: byte[], tmp: byte[], obuf: byte[], bcap: uint, ocap: uint, loStart: uint, loLen: uint) -> void {
+    foreach k: uint in 0u, loLen {
+        buf[k] = buf[loStart + k]
+    }
+    let len: uint = loLen
+    let opos: uint = 0u
+    let running: bool = true
+    let f: WsFrame = {ok: false, opcode: 0, masked: false, payloadOff: 0u, payloadLen: 0u, maskOff: 0u, frameLen: 0u}
+
+    while running {
+        // drain every complete frame currently buffered
+        let draining: bool = true
+        while draining {
+            wsParseFrame(buf, len, f)
+            if !f.ok {
+                draining = false
+            } else {
+                // unmask the payload in place
+                if f.masked {
+                    foreach i: uint in 0u, f.payloadLen {
+                        let mb: int = buf[f.maskOff + (i % 4u)] as int
+                        let pb: int = buf[f.payloadOff + i] as int
+                        buf[f.payloadOff + i] = ((pb ^ mb) & 255) as byte
+                    }
+                }
+                let need: uint = f.payloadLen + 10u
+                if f.opcode == 8 {
+                    // close — echo a close frame, then stop
+                    if opos + need > ocap {
+                        wsSend(fd, obuf, opos)
+                        opos = 0u
+                    }
+                    if need <= ocap {
+                        opos = wsBuildFrame(obuf, opos, 8, buf, f.payloadOff, f.payloadLen)
+                    }
+                    running = false
+                    draining = false
+                } else if need > ocap {
+                    // frame larger than the output buffer — give up
+                    running = false
+                    draining = false
+                } else {
+                    let echoOp: int = if f.opcode == 9 => 10 else f.opcode
+                    if opos + need > ocap {
+                        if !wsSend(fd, obuf, opos) {
+                            running = false
+                            draining = false
+                        }
+                        opos = 0u
+                    }
+                    if running {
+                        opos = wsBuildFrame(obuf, opos, echoOp, buf, f.payloadOff, f.payloadLen)
+                    }
+                }
+                // drop the consumed frame
+                let rem: uint = len - f.frameLen
+                foreach k: uint in 0u, rem {
+                    buf[k] = buf[f.frameLen + k]
+                }
+                len = rem
+            }
+        }
+        // flush echoes accumulated this pass before blocking on a read
+        if opos > 0u {
+            if !wsSend(fd, obuf, opos) {
+                running = false
+            }
+            opos = 0u
+        }
+        if running {
+            if len >= bcap {
+                running = false
+            } else {
+                let got: int = tcp_read(fd, tmp, bcap - len)
+                if got <= 0 {
+                    running = false
+                } else {
+                    let g: uint = got as uint
+                    foreach k: uint in 0u, g {
+                        buf[len + k] = tmp[k]
+                    }
+                    len = len + g
+                }
+            }
+        }
+    }
+}

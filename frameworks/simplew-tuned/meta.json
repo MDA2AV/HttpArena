@@ -1,0 +1,26 @@
+{
+  "display_name": "simplew-tuned",
+  "language": "C#",
+  "type": "tuned",
+  "engine": "simplew",
+  "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
+  "repo": "https://github.com/stratdev3/SimpleW",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "static",
+    "async-db",
+    "crud",
+    "api-4",
+    "api-16",
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": []
+}

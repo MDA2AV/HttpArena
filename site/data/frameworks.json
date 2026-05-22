@@ -122,12 +122,33 @@
     "type": "infrastructure",
     "engine": "caddy"
   },
+  "dart-io": {
+    "dir": "dart-io",
+    "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
+    "repo": "https://github.com/kartikey321/dart-sdk",
+    "type": "engine",
+    "engine": "dart:io"
+  },
+  "dart-zig": {
+    "dir": "dart-zig",
+    "description": "dart-zig custom Dart runtime on Linux io_uring, using the reusable dart-zig runtime and builder images, with the benchmark app source owned by HttpArena. Current integration targets baseline, pipelined, limited-conn, and json.",
+    "repo": "https://github.com/kartikey321/dart-sdk/tree/dart-zig/dart-zig",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "deno-websocket": {
     "dir": "deno-websocket",
     "description": "Deno WebSocket echo server",
     "repo": "https://github.com/denoland/deno",
     "type": "tuned",
     "engine": "deno"
+  },
+  "dogrider": {
+    "dir": "dogrider",
+    "description": "GenHTTP websockets with zerg backend",
+    "repo": "https://github.com/MDA2AV/dogrider",
+    "type": "production",
+    "engine": "zerg"
   },
   "elysia": {
     "dir": "elysia",
@@ -171,11 +192,18 @@
     "type": "production",
     "engine": "gunicorn"
   },
+  "fleck": {
+    "dir": "fleck",
+    "description": "C# websockets framework",
+    "repo": "https://github.com/statianzo/Fleck",
+    "type": "production",
+    "engine": "fleck"
+  },
   "Fletch": {
     "dir": "fletch",
     "description": "Express-inspired HTTP framework for Dart with radix-tree routing, middleware chains, signed sessions, and built-in DI.",
     "repo": "https://github.com/kartikey321/fletch",
-    "type": "tuned",
+    "type": "production",
     "engine": "dart:io"
   },
   "frankenphp-trueasync": {
@@ -385,18 +413,32 @@
       }
     ]
   },
+  "rack-falcon": {
+    "dir": "rack-falcon",
+    "description": "A high-performance web server for Ruby",
+    "repo": "https://github.com/socketry/falcon",
+    "type": "engine",
+    "engine": "falcon"
+  },
+  "rack-iodine": {
+    "dir": "rack-iodine",
+    "description": "Iodine is a fast concurrent web application for Ruby",
+    "repo": "https://github.com/boazsegev/iodine",
+    "type": "engine",
+    "engine": "iodine"
+  },
   "rage": {
     "dir": "rage",
     "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
     "repo": "https://github.com/rage-rb/rage",
-    "type": "tuned",
+    "type": "production",
     "engine": "iodine"
   },
   "rails": {
     "dir": "rails",
     "description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.",
     "repo": "https://github.com/rails/rails",
-    "type": "tuned",
+    "type": "production",
     "engine": "puma"
   },
   "ring-http-exchange": {
@@ -412,6 +454,13 @@
     "repo": "https://github.com/MDA2AV/ringzero",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "roadrunner": {
+    "dir": "roadrunner",
+    "description": "Roadrunner: pure-Erlang HTTP/1.1 + HTTP/2 + WebSocket server from the Arizona framework.",
+    "repo": "https://github.com/arizona-framework/roadrunner",
+    "type": "production",
+    "engine": "roadrunner"
   },
   "robyn": {
     "dir": "robyn",
@@ -441,18 +490,25 @@
     "type": "production",
     "engine": "kestrel"
   },
-  "simplew": {
-    "dir": "simplew",
-    "description": "SimpleW is Web server Library in .NET Core. Powerfully Simple and Blazingly Fast.",
+  "simplew-tuned": {
+    "dir": "simplew-tuned",
+    "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
     "repo": "https://github.com/stratdev3/SimpleW",
     "type": "tuned",
+    "engine": "simplew"
+  },
+  "simplew": {
+    "dir": "simplew",
+    "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
+    "repo": "https://github.com/stratdev3/SimpleW",
+    "type": "production",
     "engine": "simplew"
   },
   "sinatra": {
     "dir": "sinatra",
     "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
     "repo": "https://github.com/sinatra/sinatra",
-    "type": "tuned",
+    "type": "production",
     "engine": "puma"
   },
   "sisk": {
@@ -506,6 +562,20 @@
       }
     ]
   },
+  "symfony-spawn-franken": {
+    "dir": "symfony-spawn-franken",
+    "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and FrankenPHP.",
+    "repo": "https://github.com/yangusik/symfony-spawn",
+    "type": "tuned",
+    "engine": "frankenphp"
+  },
+  "symfony-spawn-tas": {
+    "dir": "symfony-spawn-tas",
+    "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and TrueAsyncServer.",
+    "repo": "https://github.com/yangusik/symfony-spawn",
+    "type": "tuned",
+    "engine": "true-async-server"
+  },
   "tonic-grpc": {
     "dir": "tonic-grpc",
     "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
@@ -520,6 +590,34 @@
     "type": "infrastructure",
     "engine": "traefik"
   },
+  "trillium-tuned": {
+    "dir": "trillium-tuned",
+    "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc.",
+    "repo": "https://github.com/trillium-rs/trillium",
+    "type": "tuned",
+    "engine": "trillium-http"
+  },
+  "trillium": {
+    "dir": "trillium",
+    "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, deadpool-postgres for async-db and crud.",
+    "repo": "https://github.com/trillium-rs/trillium",
+    "type": "production",
+    "engine": "trillium-http"
+  },
+  "true-async-server": {
+    "dir": "true-async-server",
+    "description": "Native PHP HTTP server built on the TrueAsync coroutine engine. Each connection runs as a cooperative coroutine; one OS thread per CPU listens via SO_REUSEPORT inside a single PHP process. PDO connection pool, OPcache JIT, no Caddy / FrankenPHP / FastCGI in front.",
+    "repo": "https://github.com/true-async/server",
+    "type": "tuned",
+    "engine": "true-async-server"
+  },
+  "typev": {
+    "dir": "typev",
+    "description": "TypeV bytecode VM running a Type-C HTTP server.",
+    "repo": "https://github.com/praisethemoon/type-project",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "ultimate-express": {
     "dir": "ultimate-express",
     "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
@@ -531,7 +629,7 @@
     "dir": "userver",
     "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
     "repo": "https://github.com/userver-framework/userver",
-    "type": "tuned",
+    "type": "production",
     "engine": "userver"
   },
   "uvicorn": {
@@ -561,5 +659,12 @@
     "repo": "https://github.com/c410-f3r/wtx",
     "type": "production",
     "engine": "wtx"
+  },
+  "zeemo": {
+    "dir": "zeemo",
+    "description": "Bare-metal Zig HTTP/1.1 server on io_uring. One reactor process per logical CPU via SO_REUSEPORT, hand-written incremental parser, registered provided-buffer rings.",
+    "repo": "https://github.com/skylightis666/zeemo",
+    "type": "engine",
+    "engine": "io_uring"
   }
 }

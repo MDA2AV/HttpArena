@@ -2,14 +2,14 @@
   "server": {
     "address": "0.0.0.0",
     "port": 8443,
-    "max_connections": 256,
+    "max_connections": 512,
     "static_root": "/data/static",
     "workers": 0,
     "disable_middleware": true
   },
   "buffer_pool": {
     "buffer_size": 65536,
-    "buffer_count": 512
+    "buffer_count": 1024
   },
   "tls": {
     "cert_path": "/certs/server.crt",

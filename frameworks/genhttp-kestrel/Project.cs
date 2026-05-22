@@ -1,7 +1,10 @@
-﻿using GenHTTP.Api.Content;
+﻿using System.IO.Compression;
+using GenHTTP.Api.Content;
+using GenHTTP.Modules.Compression;
 using GenHTTP.Modules.IO;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
+using GenHTTP.Modules.ServerCaching;
 using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
@@ -13,6 +16,9 @@ public static class Project
 {
     public static IHandlerBuilder Create()
     {
+        var crud = Layout.Create()
+                         .AddService<Crud>("items");
+
         var app = Layout.Create()
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
@@ -20,6 +26,7 @@ public static class Project
                         .AddService<Upload>("upload")
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
+                        .Add("crud", crud)
                         .AddStaticFiles()
                         .AddWebsocket();
 
@@ -30,7 +37,19 @@ public static class Project
     {
         if (Directory.Exists("/data/static"))
         {
-            app.Add("static", Resources.From(ResourceTree.FromDirectory("/data/static")));
+            var tree = ResourceTree.FromDirectory("/data/static");
+            
+            var compression = CompressedContent.Default()
+                                               .Level(CompressionLevel.Optimal);
+
+            var cache = ServerCache.TemporaryFiles()
+                                   .Invalidate(false);
+
+            var handler = Resources.From(tree) // serve static resources
+                                   .Add(compression) // compress them on-the-fly
+                                   .Add(cache); // cache the compressed results
+            
+            app.Add("static", handler);
         }
 
         return app;

@@ -1,0 +1,31 @@
+{
+  "display_name": "roadrunner",
+  "language": "Erlang",
+  "type": "production",
+  "engine": "roadrunner",
+  "description": "Roadrunner: pure-Erlang HTTP/1.1 + HTTP/2 + WebSocket server from the Arizona framework.",
+  "repo": "https://github.com/arizona-framework/roadrunner",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "async-db",
+    "api-4",
+    "api-16",
+    "static",
+    "fortunes",
+    "crud",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": ["williamthome"]
+}

@@ -3,7 +3,6 @@
 require 'bundler/setup'
 Bundler.require(:default)
 
-require 'zlib'
 require 'pg'
 
 class Hash
@@ -23,11 +22,9 @@ module Sinatra
 end
 
 class App < Sinatra::Base
-  SERVER_NAME = 'sinatra'.freeze
-
   configure do
     set :server, :puma
-    set :logging, false
+    set :logging, nil
     set :show_exceptions, false
 
     # Disable unused protections
@@ -90,19 +87,7 @@ class App < Sinatra::Base
       d.merge(total: (d[:price] * d[:quantity] * m))
     end
 
-    result = JSON.generate(items: items, count: items.length)
-
-    if accept_encodings = request.get_header('HTTP_ACCEPT_ENCODING')
-      if accept_encodings.include?('gzip')
-        sio = StringIO.new
-        gz = Zlib::GzipWriter.new(sio, 1)
-        gz.write(result)
-        gz.close
-        headers 'Content-Encoding' => 'gzip'
-        result = sio.string
-      end
-    end
-    render_json result
+    render_json JSON.generate(items: items, count: items.length)
   end
 
   post '/upload' do
@@ -141,12 +126,12 @@ class App < Sinatra::Base
   private
 
   def render_json(json)
-    headers 'server' => SERVER_NAME, 'content-type' => 'application/json'
+    headers 'content-type' => 'application/json'
     json
   end
 
   def render_plain(text)
-    headers 'server' => SERVER_NAME, 'content-type' => 'text/plain'
+    headers 'content-type' => 'text/plain'
     text
   end
 

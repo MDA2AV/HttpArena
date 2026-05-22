@@ -1,4 +1,4 @@
 Initializing...
-No of workers created: 64
+No of workers created: 34
 Slime server is running at http://0.0.0.0:8080
 ERROR @ path: [/json/1] for method [GET]: KeyError: 'm'
