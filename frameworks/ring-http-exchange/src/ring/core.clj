@@ -7,7 +7,7 @@
             [jj.sql.async-boa :as boa]
             [jj.sql.boa.query.vertx-pg :as vertx-adapter]
             [jj.tassu :refer [GET POST PUT async-route]]
-            [jsonista.core :as json]
+            [clojure.data.json :as json]
             [ring-http-exchange.core :as server]
             [ring-http-exchange.ssl :as ssl])
   (:import (io.vertx.core Vertx)
@@ -84,7 +84,7 @@
 
 (defn- load-json [path]
   (when (.exists (io/file path))
-    (json/read-value (slurp path) json/keyword-keys-object-mapper)))
+    (json/read-str (slurp path) :key-fn keyword)))
 
 (defn- process-item [item ^long m]
   (assoc item :total (* (:price item) (:quantity item) m)))
@@ -124,7 +124,7 @@
     (.toByteArray baos)))
 
 (defn- json-response [data]
-  {:status 200 :headers json-headers :body (json/write-value-as-string data)})
+  {:status 200 :headers json-headers :body (json/write-str data)})
 
 (defn- text-response [s]
   {:status 200 :headers text-headers :body (str s)})
@@ -148,7 +148,7 @@
    :price    (:price row)
    :quantity (:quantity row)
    :active   (:active row)
-   :tags     (json/read-value (str (:tags row)))
+   :tags     (json/read-str (str (:tags row)))
    :rating   {:score (:rating_score row) :count (:rating_count row)}})
 
 (defn- pem->keystore [^String cert-path ^String key-path]
@@ -233,8 +233,7 @@
         params (parse-qs (:query-string req))
         m (safe-parse-long (get params param-m) 1)
         items (map #(process-item % m) (subvec dataset 0 n))
-        body-bytes (json/write-value-as-bytes
-                     {:items items :count (clojure.core/count items)})]
+        body-bytes (.getBytes (json/write-str {:items items :count (clojure.core/count items)}) "UTF-8")]
     (respond
       (if (accepts-gzip? (:headers req))
         {:status 200 :headers json-gzip-headers :body (gzip-bytes body-bytes)}
@@ -245,16 +244,24 @@
     (respond (text-response (.transferTo in (OutputStream/nullOutputStream))))))
 
 (defn- handle-pg [pg-pool req respond _raise]
-  (let [params (parse-qs (:query-string req))
-        min-p (safe-parse-double (get params param-min) 10.0)
-        max-p (safe-parse-double (get params param-max) 50.0)
-        limit (safe-parse-long (get params param-limit) 50)]
-    (pg-query pg-pool {:min min-p :max max-p :limit limit}
-              (fn [rows]
-                (let [items (map transform-pg-row rows)]
-                  (respond (json-response {:items items :count (count items)}))))
-              (fn [_]
-                (respond (json-response {:items [] :count 0}))))))
+  (if (nil? pg-pool)
+    (respond (json-response {:items [] :count 0}))
+    (let [params (parse-qs (:query-string req))
+          min-p (safe-parse-long (get params param-min) 10)
+          max-p (safe-parse-long (get params param-max) 50)
+          limit (safe-parse-long (get params param-limit) 50)]
+      (try
+        (pg-query pg-pool {:min min-p :max max-p :limit limit}
+                  (fn [rows]
+                    (try
+                      (let [items (mapv transform-pg-row rows)]
+                        (respond (json-response {:items items :count (count items)})))
+                      (catch Throwable _
+                        (respond (json-response {:items [] :count 0})))))
+                  (fn [_]
+                    (respond (json-response {:items [] :count 0}))))
+        (catch Throwable _
+          (respond (json-response {:items [] :count 0})))))))
 
 (defn- handle-fortunes [pg-pool respond raise]
   (fortunes-query
@@ -289,7 +296,7 @@
    :price    (long (:price row))
    :quantity (long (:quantity row))
    :active   (:active row)
-   :tags     (json/read-value (str (:tags row)))
+   :tags     (json/read-str (str (:tags row)))
    :rating   {:score (long (:rating_score row)) :count (long (:rating_count row))}})
 
 (defn- handle-crud-list [pg-pool req respond raise]
@@ -316,14 +323,14 @@
         (crud-read-query pg-pool {:id id}
                          (fn [rows]
                            (if-let [row (first rows)]
-                             (let [json-str (json/write-value-as-string (transform-crud-row row))]
+                             (let [json-str (json/write-str (transform-crud-row row))]
                                (crud-cache-set id json-str)
                                (respond {:status 200 :headers crud-miss-headers :body json-str}))
                              (respond {:status 404 :headers json-headers :body not-found-body})))
                          raise)))))
 
 (defn- handle-crud-create [pg-pool req respond raise]
-  (let [body (json/read-value (:body req) json/keyword-keys-object-mapper)
+  (let [body (json/read-str (slurp (:body req)) :key-fn keyword)
         id (:id body)
         nm (or (:name body) "New Product")
         category (or (:category body) "test")
@@ -333,7 +340,7 @@
                        (fn [rows]
                          (respond {:status  201
                                    :headers json-headers
-                                   :body    (json/write-value-as-string
+                                   :body    (json/write-str
                                               {:id       (:id (first rows))
                                                :name     nm
                                                :category category
@@ -345,7 +352,7 @@
   (let [id (safe-parse-long (get-in req [:params :id]) nil)]
     (if (nil? id)
       (respond {:status 404 :headers json-headers :body not-found-body})
-      (let [body (json/read-value (:body req) json/keyword-keys-object-mapper)
+      (let [body (json/read-str (slurp (:body req)) :key-fn keyword)
             nm (or (:name body) "Updated")
             price (or (:price body) 0)
             quantity (or (:quantity body) 0)]
@@ -356,7 +363,7 @@
                                  (crud-cache-evict id)
                                  (respond {:status  200
                                            :headers json-headers
-                                           :body    (json/write-value-as-string
+                                           :body    (json/write-str
                                                       {:id       id
                                                        :name     nm
                                                        :price    price
