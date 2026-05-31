@@ -1,4 +1,4 @@
-FROM erlang:29.0-alpine AS build
+FROM erlang:29.0.1-alpine AS build
 RUN apk add --no-cache ca-certificates git
 WORKDIR /src
 COPY rebar.config ./
