@@ -9,11 +9,22 @@ start(_StartType, _StartArgs) ->
     _ = roadrunner_httparena_db:start_pool(),
     ok = roadrunner_httparena_crud:init(),
     Routes = roadrunner_httparena_handler:routes(),
+    %% Benchmark deployment tuning (adapt to the environment, allowed for
+    %% Production entries): roadrunner defaults to 150 concurrent connections
+    %% and rejects connections over the cap, but the HttpArena profiles drive
+    %% 512-16384 connections, so the default would throttle every high-conn
+    %% test. Size the connection cap above the largest profile. (The acceptor
+    %% pool is left at roadrunner's default of 10: a local sweep showed raising
+    %% it gives no throughput gain and costs memory, since acceptors only hand
+    %% accepted sockets to per-connection processes and share one listen
+    %% socket.)
+    MaxClients = 65536,
     HttpPort = application:get_env(roadrunner_httparena, http_port, 8080),
     {ok, _} = roadrunner:start_listener(httparena_http, #{
         port => HttpPort,
         routes => Routes,
         middlewares => [roadrunner_compress],
+        max_clients => MaxClients,
         %% 25 MB headroom for the upload profile (validator goes up to 20 MB).
         max_content_length => 26214400,
         %% Manual body buffering: handlers read the body themselves via
@@ -28,6 +39,7 @@ start(_StartType, _StartArgs) ->
         port => H2cPort,
         routes => Routes,
         middlewares => [roadrunner_compress],
+        max_clients => MaxClients,
         max_content_length => 26214400,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
@@ -42,6 +54,7 @@ start(_StartType, _StartArgs) ->
                 port => TlsPort,
                 routes => Routes,
                 middlewares => [roadrunner_compress],
+                max_clients => MaxClients,
                 max_content_length => 26214400,
                 tls => TlsOpts,
                 body_buffering => manual
@@ -51,6 +64,7 @@ start(_StartType, _StartArgs) ->
                 port => H2Port,
                 routes => Routes,
                 middlewares => [roadrunner_compress],
+                max_clients => MaxClients,
                 max_content_length => 26214400,
                 tls => TlsOpts,
                 %% Listener derives `alpn_preferred_protocols` from
