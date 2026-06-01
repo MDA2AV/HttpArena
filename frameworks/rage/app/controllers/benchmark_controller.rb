@@ -9,7 +9,7 @@ class Hash
   end
 end
 
-class BenchmarkController < RageController::API
+class BenchmarkController < ApplicationController
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
 
   dataset_path = File.join DATA_DIR, 'dataset.json'
@@ -23,8 +23,6 @@ class BenchmarkController < RageController::API
   def self.dataset_items = @dataset_items
 
   FileUtils.cp_r(File.join(DATA_DIR, 'static'), File.join(Rage.root, 'public', 'static'))
-
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'
 
   def baseline_one
     total = params[:a].to_i + params[:b].to_i
@@ -93,20 +91,5 @@ class BenchmarkController < RageController::API
 
   def not_found
     head 404
-  end
-
-  private
-
-  def self.get_async_db
-    @async_db ||= begin
-      return unless ENV['DATABASE_URL']
-      processors = Integer(::Concurrent.available_processor_count)
-      pool_size = (2 * Math.log(256 / processors)).floor
-      ConnectionPool.new(size: pool_size, timeout: 5) do
-        db = PG.connect(ENV['DATABASE_URL'])
-        db.prepare('select', PG_QUERY)
-        db
-      end
-    end
   end
 end
