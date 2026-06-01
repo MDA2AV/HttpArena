@@ -1,2 +1,1 @@
 [true-async-server] 64 workers · :8080 · tls :8443 · pid 1
-[true-async-server] worker thread exited cleanly
