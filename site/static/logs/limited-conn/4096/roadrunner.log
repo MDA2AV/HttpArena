@@ -1,9 +1,89 @@
-Exec: /app/erts-17.0/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
+Exec: /app/erts-17.0.1/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
 Root: /app
 /app
-=ESOCK WARNING MSG==== 27-May-2026::22:54:32.647841 ===
+=ESOCK WARNING MSG==== 01-Jun-2026::01:31:50.680484 ===
 [UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1
-=NOTICE REPORT==== 27-May-2026::22:54:38.609001 ===
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.539805 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.540423 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.540725 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.540905 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.543608 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.543940 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.544457 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.545065 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.547542 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.548401 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.548470 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.548575 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.549509 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.549704 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550000 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550048 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550492 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550629 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550747 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550830 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:31:56.550877 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response

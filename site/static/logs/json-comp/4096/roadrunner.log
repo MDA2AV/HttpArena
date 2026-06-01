@@ -1,5 +1,53 @@
-Exec: /app/erts-17.0/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
+Exec: /app/erts-17.0.1/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
 Root: /app
 /app
-=ESOCK WARNING MSG==== 27-May-2026::22:55:43.526670 ===
+=ESOCK WARNING MSG==== 01-Jun-2026::01:33:01.976675 ===
 [UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.142101 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.142720 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.146351 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.148592 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.148949 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.149436 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.149754 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.149968 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.151198 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.151540 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.152313 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 1-Jun-2026::01:33:15.152615 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
