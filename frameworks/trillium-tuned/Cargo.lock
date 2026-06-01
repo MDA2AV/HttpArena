@@ -504,6 +504,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-queue"
+version = "0.3.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f58bbc28f91df819d0aa2a2c00cd19754769c2fad90579b3592b1c9ba7a3115"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
 name = "crossbeam-utils"
 version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -633,6 +642,12 @@ name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
+
+[[package]]
+name = "either"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "encoding_rs"
@@ -1003,6 +1018,7 @@ dependencies = [
  "trillium",
  "trillium-askama",
  "trillium-compression",
+ "trillium-grpc",
  "trillium-logger",
  "trillium-quinn",
  "trillium-router",
@@ -1158,6 +1174,15 @@ name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
+
+[[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
 
 [[package]]
 name = "itoa"
@@ -1646,6 +1671,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "prost"
+version = "0.14.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2ea70524a2f82d518bce41317d0fae74151505651af45faf1ffbd6fd33f0568"
+dependencies = [
+ "bytes",
+ "prost-derive",
+]
+
+[[package]]
+name = "prost-derive"
+version = "0.14.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2636,6 +2684,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "trillium-client"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa5b4aa0d3bbe68026a9c090b7bed0a639a27cec404635fc34a9e6aa099c7790"
+dependencies = [
+ "crossbeam-queue",
+ "dashmap",
+ "encoding_rs",
+ "fieldwork",
+ "futures-lite",
+ "httparse",
+ "log",
+ "memchr",
+ "mime",
+ "trillium-http",
+ "trillium-macros",
+ "trillium-server-common",
+]
+
+[[package]]
 name = "trillium-compression"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2645,6 +2713,28 @@ dependencies = [
  "futures-lite",
  "log",
  "trillium",
+]
+
+[[package]]
+name = "trillium-grpc"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "108f779d7722ebd5e321640523316c2272588476b96b79be46673372c33ec524"
+dependencies = [
+ "async-channel",
+ "base64",
+ "bytes",
+ "flate2",
+ "futures-lite",
+ "log",
+ "pin-project-lite",
+ "prost",
+ "sync_wrapper",
+ "thiserror 2.0.18",
+ "trillium",
+ "trillium-client",
+ "trillium-http",
+ "trillium-server-common",
 ]
 
 [[package]]

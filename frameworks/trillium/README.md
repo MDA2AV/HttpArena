@@ -7,6 +7,7 @@ Trillium 1.x async Rust web framework on tokio.
 - **Language:** Rust 1.94
 - **Engine:** trillium-http (h1 + h2 prior-knowledge), trillium-quinn (h3)
 - **TLS:** trillium-rustls (h1 + h2 via ALPN), trillium-quinn for QUIC
+- **gRPC:** trillium-grpc (`benchmark.BenchmarkService` over h2c + h2/TLS)
 - **JSON:** sonic-rs
 - **DB:** deadpool-postgres + tokio-postgres
 - **Build:** Multi-stage, `debian:bookworm-slim` runtime, `-C target-cpu=native`
@@ -18,6 +19,8 @@ Trillium 1.x async Rust web framework on tokio.
 | 8080 | HTTP/1.1 cleartext + WebSocket | `/ws` upgrade |
 | 8081 | HTTP/1.1 + TLS | ALPN advertises `http/1.1` only |
 | 8443 | HTTP/1.1 + HTTP/2 + HTTP/3 | TLS via ALPN; QUIC via UDP |
+
+gRPC shares these listeners: `unary-grpc` / `stream-grpc` run over h2c prior-knowledge on 8080, and `unary-grpc-tls` / `stream-grpc-tls` over h2-via-ALPN on 8443.
 
 ## Endpoints
 
@@ -34,9 +37,19 @@ Trillium 1.x async Rust web framework on tokio.
 | `/crud/items/:id` | GET / PUT | Cached read (200 ms TTL) / update with cache invalidation |
 | `/ws` | GET (upgrade) | WebSocket echo |
 
+## gRPC — `benchmark.BenchmarkService`
+
+| RPC | Shape | Description |
+|-----|-------|-------------|
+| `GetSum` | unary | Returns `a + b` |
+| `StreamSum` | server-streaming | Emits `count` replies of `a + b` |
+| `CollectSum` | client-streaming | Sums `a + b` over all requests, one reply |
+| `EchoSum` | bidirectional | One `a + b` reply per request |
+
 ## Notes
 
 - Trillium serves h1.1, h2 (TLS+ALPN or prior-knowledge), and h3 from the same handler tree — endpoint code is protocol-agnostic.
+- The gRPC service is just another `Handler` in the tuple (`trillium-grpc`'s generated `BenchmarkServiceServer`), mounted first so its `/benchmark.BenchmarkService/*` paths are handled before compression/routing and all other requests pass through. The service module is checked in at `src/grpc/benchmark.rs`, generated from `proto/benchmark.proto`.
 - Compression is wired via `trillium-compression` middleware: gzip/brotli on demand per `Accept-Encoding`. No `Content-Encoding` is set when the client doesn't advertise one.
 - Static files are read from disk on every request (`trillium-static::files`).
 - Dataset (`/data/dataset.json`) is loaded once at startup; per-request totals are computed and the response is serialized fresh each request.

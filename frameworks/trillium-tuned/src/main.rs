@@ -1,11 +1,13 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+mod grpc;
 mod handlers;
 mod state;
 mod static_preload;
 
 use env_logger::Env;
+use grpc::{Benchmark, BenchmarkServiceServer};
 use handlers::{
     async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, fortunes,
     json_handler, pipeline, upload, ws_echo,
@@ -34,6 +36,7 @@ fn tuned_http_config() -> HttpConfig {
 
 fn build_handler(static_files: StaticPreload) -> impl Handler {
     (
+        BenchmarkServiceServer::new(Benchmark),
         Compression::new(),
         Router::new()
             .get("/pipeline", pipeline)

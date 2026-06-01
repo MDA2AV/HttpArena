@@ -1,10 +1,12 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+mod grpc;
 mod handlers;
 mod state;
 
 use env_logger::Env;
+use grpc::{Benchmark, BenchmarkServiceServer};
 use handlers::{
     async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, fortunes,
     json_handler, pipeline, upload, ws_echo,
@@ -23,6 +25,7 @@ use trillium_websockets::websocket;
 fn build_handler() -> impl Handler {
     let static_dir = env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
     (
+        BenchmarkServiceServer::new(Benchmark),
         Compression::new(),
         Router::new()
             .get("/pipeline", pipeline)
