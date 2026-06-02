@@ -110,14 +110,14 @@ class App < Sinatra::Base
 
     items = rows.map do |row|
       {
-        id: row['id'],
-        name: row['name'],
-        category: row['category'],
-        price: row['price'],
-        quantity: row['quantity'],
-        active: row['active'] == 1,
-        tags: JSON.parse(row['tags']),
-        rating: { score: row['rating_score'], count: row['rating_count'] }
+        id: row[:id],
+        name: row[:name],
+        category: row[:category],
+        price: row[:price],
+        quantity: row[:quantity],
+        active: row[:active] == 1,
+        tags: JSON.parse(row[:tags]),
+        rating: { score: row[:rating_score], count: row[:rating_count] }
       }
     end
     render_json JSON.generate(items: items, count: items.length)
@@ -141,6 +141,7 @@ class App < Sinatra::Base
       max_connections = ENV.fetch('MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
       ConnectionPool.new(size: max_connections, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
+        db.field_name_type = :symbol
         db.prepare('select', PG_QUERY)
         db
       end
