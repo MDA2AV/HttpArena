@@ -20,6 +20,7 @@ class ApplicationController < ActionController::API
       return unless ENV['DATABASE_URL']
       ConnectionPool.new(size: pool_size, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
+        db.field_name_type = :symbol
         db.prepare('select', SELECT_QUERY)
         db.prepare('crud_get', CRUD_GET_SQL)
         db.prepare('crud_list', CRUD_LIST_SQL)

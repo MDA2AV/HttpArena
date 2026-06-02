@@ -50,14 +50,14 @@ class BenchmarkController < ApplicationController
 
     items = rows.map do |r|
       {
-        id: r['id'],
-        name: r['name'],
-        category: r['category'],
-        price: r['price'],
-        quantity: r['quantity'],
-        active: r['active'] == 't',
-        tags: JSON.parse(r['tags']),
-        rating: { score: r['rating_score'], count: r['rating_count'] }
+        id: r[:id],
+        name: r[:name],
+        category: r[:category],
+        price: r[:price],
+        quantity: r[:quantity],
+        active: r[:active] == 't',
+        tags: JSON.parse(r[:tags]),
+        rating: { score: r[:rating_score], count: r[:rating_count] }
       }
     end
     render json: { items: items, count: items.length }
