@@ -794,10 +794,10 @@
   {
     "framework": "roda",
     "language": "Ruby",
-    "rps": 138915,
-    "avg_latency": "46.94ms",
-    "p99_latency": "46.94ms",
-    "cpu": "6562.4%",
+    "rps": 138832,
+    "avg_latency": "46.00ms",
+    "p99_latency": "46.00ms",
+    "cpu": "6480.3%",
     "memory": "6.5GiB",
     "connections": 6800,
     "threads": 64,
@@ -805,7 +805,7 @@
     "pipeline": 1,
     "bandwidth": "2.13GB",
     "reconnects": 0,
-    "status_2xx": 708389,
+    "status_2xx": 708027,
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
