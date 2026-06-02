@@ -331,7 +331,7 @@
     "dir": "ktor",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
     "repo": "https://github.com/ktorio/ktor",
-    "type": "tuned",
+    "type": "production",
     "engine": "netty"
   },
   "libreactorng": {

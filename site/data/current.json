@@ -5,7 +5,7 @@
   "threads_per_core": "2",
   "ram": "251Gi",
   "os": "Ubuntu 24.04.4 LTS",
-  "kernel": "6.17.0-29-generic",
+  "kernel": "6.17.0-22-generic",
   "docker": "29.3.0",
   "docker_runtime": "runc",
   "governor": "performance",
