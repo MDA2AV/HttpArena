@@ -1,7 +1,7 @@
 require 'zlib'
 require 'pg'
 
-class BenchmarkController < ActionController::API
+class BenchmarkController < ApplicationController
   mattr_accessor :dataset
 
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
@@ -13,8 +13,6 @@ class BenchmarkController < ActionController::API
   end
 
   FileUtils.cp_r(File.join(DATA_DIR, 'static'), Rails.root.join('public', 'static'))
-
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
 
   def baseline11
     total = params[:a].to_i + params[:b].to_i
@@ -76,19 +74,5 @@ class BenchmarkController < ActionController::API
 
   def not_found
     head 404
-  end
-
-  private
-
-  def self.get_async_db
-    @async_db ||= begin
-      return unless ENV['DATABASE_URL'].present?
-      max_connections = ENV.fetch('RAILS_MAX_THREADS', 4).to_i
-      ConnectionPool.new(size: max_connections, timeout: 5) do
-        db = PG.connect(ENV['DATABASE_URL'])
-        db.prepare('select', PG_QUERY)
-        db
-      end
-    end
   end
 end
