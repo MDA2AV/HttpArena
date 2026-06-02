@@ -138,6 +138,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "rails",
+    "language": "Ruby",
+    "rps": 61399,
+    "avg_latency": "64.18ms",
+    "p99_latency": "90.80ms",
+    "cpu": "4424.0%",
+    "memory": "4.3GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "27.38MB/s",
+    "input_bw": "5.27MB/s",
+    "reconnects": 3877,
+    "status_2xx": 920997,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ring-http-exchange",
     "language": "Clojure",
     "rps": 323609,
