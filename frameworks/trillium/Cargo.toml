@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-trillium = "1.3"
+trillium = "1"
 trillium-tokio = "0.6"
 trillium-router = "0.5"
 trillium-rustls = "0.11"

@@ -69,6 +69,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         .listeners()
         .bind_tcp(8080)?;
 
+    if let Ok(uds) = env::var("LISTEN_UDS") {
+        let _ = std::fs::remove_file(&uds);
+        builder = builder.bind_uds(uds)?;
+    }
+
     if let (Some(cert), Some(key)) = (cert.as_deref(), key.as_deref()) {
         builder = builder
             .bind_tls(8081, RustlsAcceptor::from_single_cert_no_h2(cert, key))?

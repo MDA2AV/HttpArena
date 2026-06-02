@@ -1,6 +1,7 @@
-# gateway-64 — stock Caddy (TLS + h2 on 8443) in front of the trillium server,
-# forwarding dynamic endpoints over a shared Unix domain socket (h1 keepalive).
-# The server gets no certs, so it comes up cleartext on 8080 + the UDS only.
+# gateway-64 — stock Caddy (TLS + h2 on 8443) in front of the trillium-tuned
+# server, forwarding dynamic endpoints over a shared Unix domain socket (h1
+# keepalive). The server gets no certs, so it comes up cleartext on 8080 + the
+# UDS only. n_workers auto-sizes to the server's cpuset via num_cpus.
 #
 # CPU split is the #1 tuning knob — start even 16/16 physical and sweep via
 # PROXY_CPUSET / SERVER_CPUSET. The TLS-terminating proxy is often the
