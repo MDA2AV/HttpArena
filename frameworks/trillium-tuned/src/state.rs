@@ -35,7 +35,7 @@ pub struct AppState {
 }
 
 pub struct CacheEntry {
-    pub body: Vec<u8>,
+    pub body: Arc<[u8]>,
     pub expires: Instant,
 }
 
