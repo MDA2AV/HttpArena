@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,15 +7,16 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  
+
   <ItemGroup>
 
-    <PackageReference Include="GenHTTP.Core" Version="11.0.0-preview.11" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.11" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.11" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.11" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.11" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.11" />
+    <PackageReference Include="GenHTTP.Core" Version="11.0.0-preview.12" />
+    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.12" />
+    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.12" />
+    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.0-preview.12" />
+    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.12" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.12" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.12" />
 
     <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.8" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />
@@ -23,5 +24,5 @@
     <PackageReference Include="Npgsql" Version="10.0.3" />
 
   </ItemGroup>
-  
+
 </Project>
