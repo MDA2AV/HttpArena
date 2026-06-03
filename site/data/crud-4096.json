@@ -278,6 +278,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "sinatra",
+    "language": "Ruby",
+    "rps": 64585,
+    "avg_latency": "61.16ms",
+    "p99_latency": "82.00ms",
+    "cpu": "2974.9%",
+    "memory": "3.9GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "20.10MB/s",
+    "input_bw": "5.54MB/s",
+    "reconnects": 4070,
+    "status_2xx": 968783,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "trillium",
     "language": "Rust",
     "rps": 444786,
