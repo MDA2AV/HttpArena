@@ -52,7 +52,18 @@ class App < Sinatra::Base
     set :public_folder, DATA_DIR
   end
 
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
+  CRUD_COLUMNS = 'id, name, category, price, quantity, active, tags, rating_score, rating_count'
+  SELECT_QUERY = "SELECT #{CRUD_COLUMNS} FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3".freeze
+  CRUD_GET_SQL =  "SELECT #{CRUD_COLUMNS} FROM items WHERE id = $1 LIMIT 1"
+  CRUD_LIST_SQL = "SELECT #{CRUD_COLUMNS} FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3"
+  CRUD_UPDATE_SQL = "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4"
+  CRUD_UPSERT_SQL = <<~SQL
+    INSERT INTO items
+    (#{CRUD_COLUMNS})
+    VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0)
+    ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5
+    RETURNING id
+  SQL
 
   get '/pipeline' do
     render_plain 'ok'
@@ -109,20 +120,105 @@ class App < Sinatra::Base
     end || []
 
     items = rows.map do |row|
-      {
-        id: row[:id],
-        name: row[:name],
-        category: row[:category],
-        price: row[:price],
-        quantity: row[:quantity],
-        active: row[:active] == 1,
-        tags: JSON.parse(row[:tags]),
-        rating: { score: row[:rating_score], count: row[:rating_count] }
-      }
+      map_row(row)
     end
     render_json JSON.generate(items: items, count: items.length)
   end
 
+  get '/crud/items' do
+    category = request.params['category'] || 'electronics'
+    page = (request.params['page'] || 1).to_i
+    limit = (request.params['limit'] || 10).to_i
+    offset = (page - 1) * limit
+
+    rows = self.class.get_async_db&.with do |connection|
+      connection.exec_prepared('crud_list', [category, limit, offset])
+    end || []
+
+    items = rows.map do |row|
+      map_row(row)
+    end
+    render_json JSON.generate({ items: items, total: items.length, page: page, limit: limit })
+  end
+
+  get '/crud/items/:id' do
+    id = params['id']
+    json = self.class.redis&.with do |connection|
+      connection.get(id.to_s)
+    end
+    if json
+      response['x-cache'] = 'HIT'
+      return render_json json
+    else
+      response['x-cache'] = 'MISS'
+    end
+
+    rows = self.class.get_async_db&.with do |connection|
+      connection.exec_prepared('crud_get', [id])
+    end || []
+
+    if row = rows.first
+      item = map_row(row)
+      json = JSON.generate(item)
+      self.class.redis&.with do |connection|
+        connection.set(id.to_s, json)
+      end
+      render_json json
+    else
+      not_found
+    end
+  end
+
+  post '/crud/items' do
+    params = JSON.parse(request.body.read)
+    id = params['id']
+    name = params['name'] || 'New Product'
+    category = params['category'] || 'electronics'
+    price = (params['price'] || 0).to_i
+    quantity = (params['quantity'] || 0).to_i
+
+    self.class.get_async_db&.with do |connection|
+      connection.exec_prepared('crud_upsert', [id, name, category, price, quantity])
+    end
+
+    self.class.redis&.with do |connection|
+      connection.del(id.to_s)
+    end
+
+    item = {
+      'id' => id,
+      'name' => name,
+      'category' => category,
+      'price' => price,
+      'quantity' => quantity
+    }
+
+    response.status = 201
+    render_json JSON.generate(item)
+  end
+
+  put '/crud/items/:id' do
+    id = params['id']
+    name = params['name'] || 'New Product'
+    price = (params['price'] || 0).to_i
+    quantity = (params['quantity'] || 0).to_i
+
+    row = self.class.get_async_db&.with do |connection|
+      connection.exec_prepared('crud_update', [name, price, quantity, id])
+    end || []
+
+    self.class.redis&.with do |connection|
+      connection.del(id.to_s)
+    end
+
+    item = {
+      'id' => id,
+      'name' => name,
+      'price' => price,
+      'quantity' => quantity
+    }
+    render_json JSON.generate(item)
+  end
   private
 
   def render_json(json)
@@ -135,16 +231,46 @@ class App < Sinatra::Base
     text
   end
 
+  def map_row(row)
+    mapped_row = {
+      id: row[:id],
+      name: row[:name],
+      category: row[:category],
+      price: row[:price],
+      quantity: row[:quantity],
+      active: row[:active] == 1,
+    }
+    mapped_row[:tags] = JSON.parse(row[:tags]) if row[:tags]
+    mapped_row[:rating] = { score: row[:rating_score], count: row[:rating_count] } if row[:rating_score] && row[:rating_count]
+    mapped_row
+  end
+
   def self.get_async_db
     @async_db ||= begin
       return unless ENV['DATABASE_URL']
-      max_connections = ENV.fetch('MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
-      ConnectionPool.new(size: max_connections, timeout: 5) do
+      ConnectionPool.new(size: pool_size, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
         db.field_name_type = :symbol
-        db.prepare('select', PG_QUERY)
+        db.prepare('select', SELECT_QUERY)
+        db.prepare('crud_get', CRUD_GET_SQL)
+        db.prepare('crud_list', CRUD_LIST_SQL)
+        db.prepare('crud_update', CRUD_UPDATE_SQL)
+        db.prepare('crud_upsert', CRUD_UPSERT_SQL)
         db
       end
     end
+  end
+
+  def self.redis
+    @redis ||= begin
+      return unless ENV['REDIS_URL']
+      ConnectionPool::Wrapper.new(size: pool_size, timeout: 10) do
+        Redis.new(url: ENV['REDIS_URL'])
+      end
+    end
+  end
+
+  def self.pool_size
+    ENV.fetch('MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
   end
 end
