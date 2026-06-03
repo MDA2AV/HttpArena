@@ -22,6 +22,6 @@ RUN bundle install --jobs=$(nproc)
 
 COPY . .
 
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8443
 
 CMD ["bundle", "exec", "puma", "-C", "puma.rb"]

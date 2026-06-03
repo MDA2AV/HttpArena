@@ -253,5 +253,4 @@ class App < Roda
       end
     end
   end
-
 end
