@@ -158,6 +158,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "rage",
+    "language": "Ruby",
+    "rps": 50866,
+    "avg_latency": "57.82ms",
+    "p99_latency": "1.59s",
+    "cpu": "6341.0%",
+    "memory": "10.4GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "21.01MB/s",
+    "input_bw": "4.37MB/s",
+    "reconnects": 3443,
+    "status_2xx": 762991,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 1396
+  },
+  {
     "framework": "rails",
     "language": "Ruby",
     "rps": 61399,
