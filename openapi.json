@@ -1,0 +1,854 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HTTP Arena API",
+    "version": "1.0.0",
+    "description": "Endpoint contract for HTTP Arena benchmark implementations.\n\nEach path corresponds to a test profile. Frameworks must implement the endpoints for every profile they subscribe to, following the production or tuned rules documented per operation. The validation script (`validate.sh`) runs these endpoints against a live server before any benchmark results are accepted.\n\nAll numeric fields are integers — no floats. JSON responses use lowercase field names. Endpoints that query Postgres always return HTTP 200 with an empty list rather than an error when no rows match or the database is unavailable.",
+    "contact": {
+      "name": "HTTP Arena on GitHub",
+      "url": "https://github.com/MDA2AV/HttpArena"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "externalDocs": {
+    "description": "Knowledge Base",
+    "url": "https://www.http-arena.com/docs/"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local framework server (default port used by all benchmark containers)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Baseline",
+      "description": "Primary throughput benchmark over persistent keep-alive connections. Exercises HTTP parsing, query string extraction, body reading (Content-Length and chunked), and response serialization.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/baseline/"
+      }
+    },
+    {
+      "name": "Upload",
+      "description": "Large request body ingestion benchmark. Measures body reading throughput with payloads rotating across 500 KB, 2 MB, 10 MB, and 20 MB.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/upload/"
+      }
+    },
+    {
+      "name": "Json",
+      "description": "JSON serialization benchmark. Loads a 50-item dataset at startup, computes derived fields per request, and serializes JSON responses.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/json-processing/"
+      }
+    },
+    {
+      "name": "AsyncDatabase",
+      "description": "Async Postgres benchmark. Exercises async I/O scheduling, connection pooling, and JSON serialization with live database queries against the `items` table.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/async-database/"
+      }
+    },
+    {
+      "name": "Crud",
+      "description": "Realistic REST API benchmark with paginated list, cached single-item read, create (upsert), and update with cache invalidation against Postgres.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/"
+      }
+    }
+  ],
+  "paths": {
+    "/baseline11": {
+      "get": {
+        "tags": [
+          "Baseline"
+        ],
+        "summary": "Sum two query parameters",
+        "description": "Returns `a + b` as plain text. Used in the primary throughput benchmark (connections: 512, 4096) and mixed API workload profiles (API-4, API-16).\n\n**Production:** Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults.\n\n**Tuned:** May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed.",
+        "operationId": "baselineGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "description": "First integer operand",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 13
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "description": "Second integer operand",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 42
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sum of `a` and `b`",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "example": 55
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Baseline"
+        ],
+        "summary": "Sum query parameters and plain-text body value",
+        "description": "Returns `a + b + body` as plain text. The load generator sends requests with both `Content-Length` and chunked `Transfer-Encoding` bodies; both must be handled correctly.\n\n**Production:** Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults.\n\n**Tuned:** May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed.",
+        "operationId": "baselinePost",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "description": "First integer operand",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 13
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "description": "Second integer operand",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 42
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Third integer operand as plain-text digits (e.g. `\"20\"`)",
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "20"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sum of `a`, `b`, and the body value",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32",
+                  "example": 75
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Upload binary body and return its byte count",
+        "description": "Reads the entire request body and returns the byte count as plain text. The benchmark rotates payloads across 500 KB, 2 MB, 10 MB, and 20 MB.\n\nThe byte count must be computed by reading the uploaded data. **Do not** return the `Content-Length` header value — this defeats the purpose of the test, which measures body ingestion throughput.\n\n**Production:** Must use the framework standard body reading API. Streaming is allowed if the framework supports it natively.\n\n**Tuned:** May use custom buffer sizes, direct socket reads, or bypass framework body parsing for maximum throughput.",
+        "operationId": "upload",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/upload/implementation/"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact number of bytes received in the request body",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int64",
+                  "example": 20971520
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/json/{count}": {
+      "get": {
+        "tags": [
+          "Json"
+        ],
+        "summary": "Process dataset items and serialize JSON",
+        "description": "Returns the first `count` items (1–50) from the pre-loaded dataset (`/data/dataset.json`), each with a computed `total` field (`price × quantity × m`). The `count` field in the response must equal the route parameter.\n\nThe benchmark rotates across seven `(count, m)` pairs: `(1,3)`, `(5,7)`, `(10,2)`, `(15,5)`, `(25,4)`, `(40,8)`, `(50,6)`. Different multipliers per template ensure every response body is unique — caching by path alone returns wrong totals.\n\n**Production:** Must use the framework standard JSON serialization. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline.\n\n**Tuned:** May use alternative JSON libraries (simd-json, sonic-json) and framework-specific optimizations. The JSON body must still be serialized per request from live data — pre-computed response caches are not allowed on either type.",
+        "operationId": "jsonGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/json-processing/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "count",
+            "in": "path",
+            "required": true,
+            "description": "Number of items to return (1–50)",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 50,
+              "example": 5
+            }
+          },
+          {
+            "name": "m",
+            "in": "query",
+            "required": false,
+            "description": "Integer multiplier used to compute each item's `total` as `price × quantity × m`. Defaults to 1 when absent.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "example": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Processed dataset items with computed totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonResponse"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": 1,
+                      "name": "Alpha Widget",
+                      "category": "electronics",
+                      "price": 328,
+                      "quantity": 15,
+                      "active": true,
+                      "tags": ["fast", "new"],
+                      "rating": { "score": 48, "count": 127 },
+                      "total": 14760
+                    }
+                  ],
+                  "count": 5
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/async-db": {
+      "get": {
+        "tags": [
+          "AsyncDatabase"
+        ],
+        "summary": "Query items from Postgres by price range",
+        "description": "Executes `SELECT ... FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3` asynchronously, restructures `rating_score`/`rating_count` columns into a nested `rating` object, and serializes the result as JSON.\n\nReturns `{\"items\":[],\"count\":0}` when no rows match or the database is unavailable (do not return an error response).\n\n**Production:** Must use an async PostgreSQL driver with standard connection pooling. Size the pool from the `DATABASE_MAX_CONN` environment variable (currently 256), not from CPU count.\n\n**Tuned:** May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults.",
+        "operationId": "asyncDbGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/async-database/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "min",
+            "in": "query",
+            "required": false,
+            "description": "Minimum price (inclusive). Defaults to 10.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10,
+              "example": 10
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "required": false,
+            "description": "Maximum price (inclusive). Defaults to 50.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "example": 50
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum number of items to return (1–50). Defaults to 50.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 50,
+              "example": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Items matching the price range, up to `limit`. Returns an empty list when no rows match.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatabaseResponse"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": 42,
+                      "name": "Alpha Widget 42",
+                      "category": "electronics",
+                      "price": 30,
+                      "quantity": 5,
+                      "active": true,
+                      "tags": ["fast", "new"],
+                      "rating": { "score": 42, "count": 127 }
+                    }
+                  ],
+                  "count": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crud/items": {
+      "get": {
+        "tags": [
+          "Crud"
+        ],
+        "summary": "List items with pagination",
+        "description": "Returns paginated items from Postgres filtered by `category`, ordered by `id`. Uses load-more semantics: `total` equals `items.length` (the number of items in this response), **not** the full filter row count.\n\nSQL: `SELECT ... FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3`\n\n**Production:** Must use a standard async Postgres driver with connection pooling. Cache-aside with 200 ms absolute TTL on single-item reads, invalidated on PUT. In-process cache (e.g. `IMemoryCache`, `HashMap`) is the default; multi-process runtimes may use the provided Redis sidecar (`REDIS_URL`).\n\n**Tuned:** May use custom pool sizes, prepared statements, multi-tier caches, or any cache backend including the Redis sidecar.",
+        "operationId": "itemsList",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "description": "Filter by category. Defaults to `\"electronics\"`.",
+            "schema": {
+              "type": "string",
+              "default": "electronics",
+              "example": "electronics"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "1-indexed page number. Defaults to 1.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1,
+              "minimum": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Items per page (max 50). Defaults to 10.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 50,
+              "example": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated item list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemPage"
+                },
+                "example": {
+                  "items": [
+                    {
+                      "id": 42,
+                      "name": "Alpha Widget 42",
+                      "category": "electronics",
+                      "price": 30,
+                      "quantity": 5,
+                      "active": true,
+                      "tags": ["fast", "new"],
+                      "rating": { "score": 42, "count": 127 }
+                    }
+                  ],
+                  "total": 10,
+                  "page": 1,
+                  "limit": 10
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Crud"
+        ],
+        "summary": "Create or upsert an item",
+        "description": "Inserts an item into Postgres using `ON CONFLICT (id) DO UPDATE` (upsert). Returns HTTP 201 with the created or upserted item.",
+        "operationId": "itemsCreate",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              },
+              "example": {
+                "id": 200001,
+                "name": "New Product",
+                "category": "test",
+                "price": 25,
+                "quantity": 10
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Item created or upserted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crud/items/{id}": {
+      "get": {
+        "tags": [
+          "Crud"
+        ],
+        "summary": "Get single item by ID (cached)",
+        "description": "Returns a single item by ID using cache-aside with a **200 ms** absolute TTL.\n\n- Cache miss: query Postgres, populate cache, return item with `X-Cache: MISS`\n- Cache hit: return cached item with `X-Cache: HIT`\n- Not found: return HTTP 404\n\nIn-process cache is the default. Multi-process runtimes (e.g. SO_REUSEPORT workers) may use the Redis sidecar at `REDIS_URL` for a shared cache; in that case cache the pre-serialized JSON body so HIT responses skip re-serialization.",
+        "operationId": "itemsGetById",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Item ID",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item found",
+            "headers": {
+              "X-Cache": {
+                "description": "`MISS` when the item was fetched from Postgres, `HIT` when served from cache",
+                "schema": {
+                  "type": "string",
+                  "enum": ["MISS", "HIT"]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                },
+                "example": {
+                  "id": 1,
+                  "name": "Alpha Widget 1",
+                  "category": "electronics",
+                  "price": 30,
+                  "quantity": 5,
+                  "active": true,
+                  "tags": ["fast", "new"],
+                  "rating": { "score": 42, "count": 127 }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Crud"
+        ],
+        "summary": "Update item and invalidate cache",
+        "description": "Updates the item in Postgres and **invalidates the cache entry** for the ID (in-process or Redis, whichever is in use). Returns 200 with the updated item, or 404 if the item does not exist.",
+        "operationId": "itemsUpdate",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Item ID",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 200001
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItemRequest"
+              },
+              "example": {
+                "name": "Updated Name",
+                "price": 30,
+                "quantity": 5
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Rating": {
+        "type": "object",
+        "description": "Aggregated item rating, restructured from the `rating_score` and `rating_count` columns in Postgres.",
+        "additionalProperties": false,
+        "required": ["score", "count"],
+        "properties": {
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "example": 48
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "example": 127
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "description": "A single item as stored in the Postgres `items` table. Used in async-db and CRUD responses.",
+        "additionalProperties": false,
+        "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Alpha Widget"
+          },
+          "category": {
+            "type": "string",
+            "example": "electronics"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 328
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 15
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["fast", "new"]
+          },
+          "rating": {
+            "$ref": "#/components/schemas/Rating"
+          }
+        }
+      },
+      "ProcessedItem": {
+        "type": "object",
+        "description": "An item from the JSON dataset with a per-request computed `total` field. Used only in `/json/{count}` responses.",
+        "additionalProperties": false,
+        "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating", "total"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Alpha Widget"
+          },
+          "category": {
+            "type": "string",
+            "example": "electronics"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 328
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 15
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["fast", "new"]
+          },
+          "rating": {
+            "$ref": "#/components/schemas/Rating"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Computed per request as `price × quantity × m`",
+            "example": 14760
+          }
+        }
+      },
+      "JsonResponse": {
+        "type": "object",
+        "description": "Response from `GET /json/{count}`. The `count` field must equal the route parameter and match `items.length`.",
+        "additionalProperties": false,
+        "required": ["items", "count"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcessedItem"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items returned. Must equal the `count` route parameter.",
+            "example": 5
+          }
+        }
+      },
+      "DatabaseResponse": {
+        "type": "object",
+        "description": "Response from `GET /async-db`. The `count` field must be dynamically computed from the number of returned rows, not hardcoded. Returns `{\"items\":[],\"count\":0}` when no rows match or the database is unavailable.",
+        "additionalProperties": false,
+        "required": ["items", "count"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items returned (equals `items.length`).",
+            "example": 20
+          }
+        }
+      },
+      "ItemPage": {
+        "type": "object",
+        "description": "Paginated response from `GET /crud/items`. Uses load-more semantics: `total` equals `items.length` (items in this response), not the full filter row count.",
+        "additionalProperties": false,
+        "required": ["items", "total", "page", "limit"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items in this response (equals `items.length`). Not the total row count for the filter.",
+            "example": 10
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          }
+        }
+      },
+      "CreateItemRequest": {
+        "type": "object",
+        "description": "Request body for `POST /crud/items`. All fields are required. The item is inserted with `ON CONFLICT (id) DO UPDATE` (upsert).",
+        "additionalProperties": false,
+        "required": ["id", "name", "category", "price", "quantity"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "example": 200001
+          },
+          "name": {
+            "type": "string",
+            "example": "New Product"
+          },
+          "category": {
+            "type": "string",
+            "example": "test"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 25
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          }
+        }
+      },
+      "UpdateItemRequest": {
+        "type": "object",
+        "description": "Request body for `PUT /crud/items/{id}`. Updates `name`, `price`, and `quantity`. The cache entry for the item ID is invalidated on success.",
+        "additionalProperties": false,
+        "required": ["name", "price", "quantity"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Updated Name"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 30
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 5
+          }
+        }
+      }
+    }
+  }
+}
