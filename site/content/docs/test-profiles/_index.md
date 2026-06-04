@@ -12,9 +12,14 @@ Each profile is run at multiple connection counts to show how frameworks scale u
 
 ## API Specification
 
-All benchmark endpoints are described in a machine-readable [OpenAPI 3.0 specification](/openapi.json). The spec covers every HTTP, gRPC, and WebSocket endpoint across all test profiles, including request/response schemas, status codes, production and tuned implementation rules, and links back to the relevant documentation pages.
+All benchmark endpoints are described in machine-readable OpenAPI 3.0 specifications. Each spec covers request/response schemas, status codes, production and tuned implementation rules, and links back to the relevant documentation pages.
 
-[**Browse the spec interactively →**](https://redocly.github.io/redoc/?url=https://www.http-arena.com/openapi.json)
+The endpoints are split across two files:
+
+| Spec | Profiles covered | |
+|------|-----------------|---|
+| [openapi.json](/openapi.json) | All HTTP/1.1, HTTP/2, HTTP/3, gRPC, and WebSocket profiles | [Browse](https://redocly.github.io/redoc/?url=https://www.http-arena.com/openapi.json) |
+| [openapi-gateway.json](/openapi-gateway.json) | Gateway profiles (production-stack) | [Browse](https://redocly.github.io/redoc/?url=https://www.http-arena.com/openapi-gateway.json) |
 
 ## Benchmark parameters
 
