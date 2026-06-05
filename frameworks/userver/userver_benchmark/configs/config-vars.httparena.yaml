@@ -1,0 +1,9 @@
+server-port: 8080
+tls-port: 8443
+json-tls-port: 8081
+tls-cert: /certs/server.crt
+tls-key: /certs/server.key
+
+static-data-dir: /data/static
+
+dataset-path: /data/dataset.json
