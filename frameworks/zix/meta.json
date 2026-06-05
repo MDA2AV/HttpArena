@@ -1,0 +1,19 @@
+{
+  "display_name": "zix",
+  "language": "Zig",
+  "type": "engine",
+  "engine": "zix",
+  "description": "Zig HTTP/1.1 server using the zix framework. Single epoll event loop drains accepts; a fixed worker pool serves one request per epoll event with EPOLLONESHOT keep-alive.",
+  "repo": "https://github.com/prothegee/zix",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "static",
+    "echo-ws"
+  ],
+  "maintainers": ["prothegee"]
+}
