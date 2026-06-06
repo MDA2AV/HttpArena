@@ -1,0 +1,14 @@
+{
+  "display_name": "ringzero-ws",
+  "language": "C",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Hand-rolled WebSocket echo server on raw io_uring (liburing) — no WebSocket library. Multishot accept + multishot recv into a provided buffer ring for zero-copy ingest, one ring per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking.",
+  "repo": "https://github.com/axboe/liburing",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": []
+}
