@@ -405,6 +405,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "tokio-uring-ws",
+    "language": "Rust",
+    "rps": 3636463,
+    "avg_latency": "4.47ms",
+    "p99_latency": "5.93ms",
+    "cpu": "6536.9%",
+    "memory": "661MiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "24.67MB/s",
+    "reconnects": 0,
+    "status_2xx": 18182317,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "tokio-ws",
     "language": "Rust",
     "rps": 4143535,

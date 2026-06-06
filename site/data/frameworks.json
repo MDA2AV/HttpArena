@@ -369,6 +369,13 @@
     "type": "engine",
     "engine": "may-minihttp"
   },
+  "minima-ws": {
+    "dir": "minima-ws",
+    "description": "Hand-rolled WebSocket echo on the Minima engine \u2014 a from-scratch C# multi-reactor io_uring server (direct io_uring syscalls via libc, multishot accept + multishot recv into a provided buffer ring, one ring per core with SO_REUSEPORT). The RFC 6455 handshake and the frame parser/masking/echo are written by hand on Minima's raw recv/send API; no WebSocket library.",
+    "repo": "",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "nginx": {
     "dir": "nginx",
     "description": "Nginx with a custom C handler module, compiled with -O3 -march=native.",
@@ -603,6 +610,13 @@
     "repo": "https://github.com/yangusik/symfony-spawn",
     "type": "tuned",
     "engine": "true-async-server"
+  },
+  "tokio-uring-ws": {
+    "dir": "tokio-uring-ws",
+    "description": "Hand-rolled WebSocket echo on tokio-uring \u2014 the io_uring-backed Rust runtime with a completion/owned-buffer API. One tokio-uring runtime per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking on tokio-uring's TcpStream. No WebSocket library.",
+    "repo": "https://github.com/tokio-rs/tokio-uring",
+    "type": "engine",
+    "engine": "io_uring"
   },
   "tokio-ws": {
     "dir": "tokio-ws",
