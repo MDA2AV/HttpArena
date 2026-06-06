@@ -597,6 +597,13 @@
     "type": "tuned",
     "engine": "true-async-server"
   },
+  "tokio-ws": {
+    "dir": "tokio-ws",
+    "description": "Hand-rolled WebSocket echo server on raw tokio \u2014 no WebSocket library. A current-thread runtime per core with SO_REUSEPORT sharding, a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and a manual frame parser/masking + echo write path.",
+    "repo": "https://github.com/tokio-rs/tokio",
+    "type": "engine",
+    "engine": "tokio"
+  },
   "tonic-grpc": {
     "dir": "tonic-grpc",
     "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
@@ -675,11 +682,20 @@
     "engine": "workerman"
   },
   "wtx": {
-    "dir": "wtx-http2",
-    "description": "WTX - HTTP/2 Framework Server",
+    "dir": "wtx-grpc",
+    "description": "WTX - gRPC Server",
     "repo": "https://github.com/c410-f3r/wtx",
     "type": "production",
-    "engine": "wtx"
+    "engine": "wtx",
+    "variants": [
+      {
+        "dir": "wtx-http2",
+        "description": "WTX - HTTP/2 Framework Server",
+        "repo": "https://github.com/c410-f3r/wtx",
+        "type": "production",
+        "engine": "wtx"
+      }
+    ]
   },
   "zeemo": {
     "dir": "zeemo",

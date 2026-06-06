@@ -247,6 +247,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "tokio-ws",
+    "language": "Rust",
+    "rps": 65856262,
+    "avg_latency": "123us",
+    "p99_latency": "238us",
+    "cpu": "6216.1%",
+    "memory": "42MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "439.66MB/s",
+    "reconnects": 0,
+    "status_2xx": 329281312,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "trillium",
     "language": "Rust",
     "rps": 4288939,
