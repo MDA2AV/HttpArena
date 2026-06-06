@@ -190,6 +190,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "ringzero-ws",
+    "language": "C",
+    "rps": 68438198,
+    "avg_latency": "954us",
+    "p99_latency": "1.42ms",
+    "cpu": "6160.2%",
+    "memory": "228MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "456.82MB/s",
+    "reconnects": 0,
+    "status_2xx": 342190992,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "roadrunner",
     "language": "Erlang",
     "rps": 2153769,

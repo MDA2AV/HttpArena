@@ -469,6 +469,13 @@
     "type": "production",
     "engine": "robaho-httpserver"
   },
+  "ringzero-ws": {
+    "dir": "ringzero-ws",
+    "description": "Hand-rolled WebSocket echo server on raw io_uring (liburing) \u2014 no WebSocket library. Multishot accept + multishot recv into a provided buffer ring for zero-copy ingest, one ring per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking.",
+    "repo": "https://github.com/axboe/liburing",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "ringzero": {
     "dir": "ringzero",
     "description": "Custom C HTTP server built on io_uring with a multi-reactor architecture. No epoll, no thread-per-connection.",
@@ -675,11 +682,20 @@
     "engine": "workerman"
   },
   "wtx": {
-    "dir": "wtx-http2",
-    "description": "WTX - HTTP/2 Framework Server",
+    "dir": "wtx-grpc",
+    "description": "WTX - gRPC Server",
     "repo": "https://github.com/c410-f3r/wtx",
     "type": "production",
-    "engine": "wtx"
+    "engine": "wtx",
+    "variants": [
+      {
+        "dir": "wtx-http2",
+        "description": "WTX - HTTP/2 Framework Server",
+        "repo": "https://github.com/c410-f3r/wtx",
+        "type": "production",
+        "engine": "wtx"
+      }
+    ]
   },
   "zeemo": {
     "dir": "zeemo",
