@@ -171,6 +171,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "minima-ws",
+    "language": "C#",
+    "rps": 62333664,
+    "avg_latency": "130us",
+    "p99_latency": "294us",
+    "cpu": "6245.8%",
+    "memory": "408MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "416.00MB/s",
+    "reconnects": 0,
+    "status_2xx": 311668320,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "node-websocket",
     "language": "JS",
     "rps": 3567410,
