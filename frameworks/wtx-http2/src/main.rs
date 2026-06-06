@@ -24,7 +24,7 @@ fn main() {
           ("/baseline2", get(endpoint_baseline2)),
           ("/json/{count}", get(endpoint_json)),
         )).unwrap();
-        let _rslt = ServerFrameworkBuilder::new(HttpRecvParams::with_permissive_params(), router)
+        let _rslt = ServerFrameworkBuilder::new(HttpRecvParams::with_permissive_params().set_linger(false), router)
           .with_conn_aux(move || Ok(ConnAux { dataset: dataset_thread.clone() }))
           .tokio(
             "0.0.0.0:8082",
