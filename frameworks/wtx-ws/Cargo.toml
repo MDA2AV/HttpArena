@@ -1,0 +1,14 @@
+[package]
+name = "httparena-wtx-ws"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { default-features = false, features = ["macros", "rt-multi-thread"], version = "1.0" }
+wtx = { default-features = false, features = ["crypto-ring", "optimizations", "optioned-server", "tokio", "web-socket-handshake"], version = "0.47" }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+panic = "abort"
