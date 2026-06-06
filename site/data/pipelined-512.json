@@ -1237,6 +1237,25 @@
     "status_5xx": 2
   },
   {
+    "framework": "tokio",
+    "language": "Rust",
+    "rps": 54824854,
+    "avg_latency": "148us",
+    "p99_latency": "272us",
+    "cpu": "6385.0%",
+    "memory": "46MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "3.37GB/s",
+    "reconnects": 0,
+    "status_2xx": 274124272,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "traefik",
     "language": "Go",
     "rps": 0,

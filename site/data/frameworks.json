@@ -625,6 +625,13 @@
     "type": "engine",
     "engine": "tokio"
   },
+  "tokio": {
+    "dir": "tokio",
+    "description": "Minimal HTTP/1.1 server on raw tokio \u2014 no HTTP framework. A hand-rolled request parser (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) on a tokio TcpStream, with one current-thread runtime per core and SO_REUSEPORT.",
+    "repo": "https://github.com/tokio-rs/tokio",
+    "type": "engine",
+    "engine": "tokio"
+  },
   "tonic-grpc": {
     "dir": "tonic-grpc",
     "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
