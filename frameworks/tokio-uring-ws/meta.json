@@ -1,0 +1,14 @@
+{
+  "display_name": "tokio-uring-ws",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Hand-rolled WebSocket echo on tokio-uring — the io_uring-backed Rust runtime with a completion/owned-buffer API. One tokio-uring runtime per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking on tokio-uring's TcpStream. No WebSocket library.",
+  "repo": "https://github.com/tokio-rs/tokio-uring",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": []
+}
