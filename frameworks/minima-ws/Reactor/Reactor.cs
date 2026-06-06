@@ -160,11 +160,11 @@ public sealed unsafe partial class Reactor
     {
         // Fast path: caller is the reactor thread (handler running inline from
         // an IVTS SetResult). Go straight to the buf_ring — no queue, no syscall.
-        /*if (Environment.CurrentManagedThreadId == _reactorThreadId)
+        if (Environment.CurrentManagedThreadId == _reactorThreadId)
         {
             ReturnBufferDirect(bid);
             return;
-        }*/
+        }
         SpinWait sw = default;
         while (!_returnQ.TryEnqueue(bid))
         {
@@ -176,14 +176,14 @@ public sealed unsafe partial class Reactor
     internal void EnqueueFlush(int fd)
     {
         // Fast path: caller is the reactor thread; write the SQE directly.
-        /*if (Environment.CurrentManagedThreadId == _reactorThreadId)
+        if (Environment.CurrentManagedThreadId == _reactorThreadId)
         {
             if (Connections.TryGetValue(fd, out var conn))
             {
                 SubmitSend(fd, conn.WriteBuffer, (uint)conn.WriteInFlight);
             }
             return;
-        }*/
+        }
         SpinWait sw = default;
         while (!_flushQ.TryEnqueue(fd))
         {
@@ -196,11 +196,11 @@ public sealed unsafe partial class Reactor
     // reactor (buf_ring + pool are reactor-owned), so off-reactor callers hand off.
     internal void EnqueueRecycle(Connection conn)
     {
-        /*if (Environment.CurrentManagedThreadId == _reactorThreadId)
+        if (Environment.CurrentManagedThreadId == _reactorThreadId)
         {
             Recycle(conn, conn.ClientFd);
             return;
-        }*/
+        }
         _recycleQ.Enqueue(conn);
         WakeFdWrite();
     }
