@@ -1237,6 +1237,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "tokio-uring",
+    "language": "Rust",
+    "rps": 48871257,
+    "avg_latency": "1.34ms",
+    "p99_latency": "2.12ms",
+    "cpu": "6569.8%",
+    "memory": "177MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "3.00GB/s",
+    "reconnects": 0,
+    "status_2xx": 244356288,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "traefik",
     "language": "Go",
     "rps": 0,
