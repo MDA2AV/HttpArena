@@ -1,0 +1,15 @@
+{
+  "display_name": "shrike-tokio",
+  "language": "C#",
+  "type": "engine",
+  "engine": "epoll",
+  "description": "An epoll engine with an IVTS-backed, RunContinuationsAsynchronously=true async handler loop, using Tokio's readiness model: the worker thread is a pure readiness notifier (epoll -> signal) and never touches the socket; the per-connection handler resumes on the thread pool and does its own recv(). Because only the handler touches the recv buffer, there is no driver/handler race. FlushAsync does a thread-safe send() directly, so an off-worker handler responds without a handoff. Per-worker SO_REUSEPORT, pooled connections, native slab buffers, hand-rolled HTTP/1.1.",
+  "repo": "",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}
