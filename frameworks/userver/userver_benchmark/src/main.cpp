@@ -38,7 +38,7 @@ class NoopTracingManager final : public userver::tracing::TracingManagerComponen
   void FillResponseWithTracingContext(const userver::tracing::Span&, userver::server::http::HttpResponse&) const final {
   }
 };
-}  // namespace userver_httparena
+}  // namespace userver_httparena 
 
 int main(int argc, char* argv[]) {
   auto component_list = userver::components::MinimalServerComponentList()
