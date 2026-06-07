@@ -369,9 +369,23 @@
     "type": "engine",
     "engine": "may-minihttp"
   },
+  "minima-sync": {
+    "dir": "minima-sync",
+    "description": "A synchronous single-issuer io_uring HTTP/1.1 server on Minima's io_uring bindings, NativeAOT-compiled. One pinned reactor thread per core (SO_REUSEPORT, SINGLE_ISSUER|DEFER_TASKRUN); multishot accept + single-shot recv into per-connection buffers (parse-in-place); responses serialized straight into the send buffer; recv/send alternate fully inline \u2014 no async, no thread pool, no GC on the hot path. JSON serialized per request from the model.",
+    "repo": "",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "minima-ws": {
     "dir": "minima-ws",
     "description": "Hand-rolled WebSocket echo on the Minima engine \u2014 a from-scratch C# multi-reactor io_uring server (direct io_uring syscalls via libc, multishot accept + multishot recv into a provided buffer ring, one ring per core with SO_REUSEPORT). The RFC 6455 handshake and the frame parser/masking/echo are written by hand on Minima's raw recv/send API; no WebSocket library.",
+    "repo": "",
+    "type": "engine",
+    "engine": "io_uring"
+  },
+  "minima": {
+    "dir": "minima",
+    "description": "Minima \u2014 a from-scratch C# multi-reactor io_uring HTTP/1.1 server. Per-reactor SO_REUSEPORT + multishot accept, multishot recv into a provided buffer ring, inline (RCA=false) continuations with a reactor-thread short-circuit on buffer return/flush/recycle. The engine is vendored unchanged; the request handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on its raw recv/send API. No HTTP framework.",
     "repo": "",
     "type": "engine",
     "engine": "io_uring"
