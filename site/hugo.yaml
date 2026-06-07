@@ -27,7 +27,7 @@ menu:
       url: https://mda2av.github.io/Http11Probe/
     - name: New Leaderboard
       weight: 4
-      url: /new-leaderboard/
+      url: https://www.http-arena.com/
     - name: Search
       weight: 5
       params:
