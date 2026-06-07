@@ -1,139 +1,15 @@
 
-  Pyronova v2.3.1 [TPC mode, hybrid-inline]
-  Listening on http://0.0.0.0:8443
-
-  TPC threads: 32 (CPUs: 64, pinned)
-  Pyronova v2.3.1 [TPC mode, hybrid-inline]
-  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
-
-  Listening on http://0.0.0.0:8081
-  TPC threads: 32 (CPUs: 64, pinned)
-  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
-
-
-  Pyronova v2.3.1 [TPC mode, hybrid-inline]
+  Pyronova v2.4.2 [TPC mode, hybrid-inline]
   Listening on http://0.0.0.0:8080
-  TPC threads: 32 (CPUs: 64, pinned)
+  TPC threads: 64 (CPUs: 64, pinned)
   Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
 
 Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.642848Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
 Traceback (most recent call last):
 Traceback (most recent call last):
 Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-Traceback (most recent call last):
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.647143Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.647248Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.647679Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.647813Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.648201Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.648843Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.648943Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.649072Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.649588Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.649916Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650092Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650153Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650213Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650504Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650579Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650682Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650743Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650888Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650940Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.650996Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:23.651045Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.982129Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-Traceback (most recent call last):
-Traceback (most recent call last):
 Traceback (most recent call last):
 Traceback (most recent call last):
 Traceback (most recent call last):
@@ -141,78 +17,67 @@ Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
 Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.559253Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.985393Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.560056Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.985483Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.985760Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 Traceback (most recent call last):
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.986132Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.560454Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.560622Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.560721Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
 Traceback (most recent call last):
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.986443Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.561269Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.986496Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.561384Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.986648Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.561931Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-Traceback (most recent call last):
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.562080Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-Traceback (most recent call last):
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.987167Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.987353Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.987606Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.562464Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
 Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.987796Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
 Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
+Traceback (most recent call last):
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.987998Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.562901Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988052Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988101Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988152Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.562962Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
   File "/app/app.py", line 140, in upload
@@ -220,72 +85,64 @@ OSError: body read: error reading a body from connection
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988284Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988335Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.563583Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988425Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988471Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:30.988517Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
 Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.324383Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.563814Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.563866Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.563918Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
 Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.324812Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.325184Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
+{"timestamp":"2026-06-07T12:31:10.564193Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.325566Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:10.564301Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.564354Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.564425Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.564476Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.564529Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.564590Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:10.564638Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
 Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.325854Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.326114Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.326478Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.326747Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.326952Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-  File "/app/app.py", line 140, in upload
-    size = req.stream.drain_count()
-OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.327144Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
-Traceback (most recent call last):
-Traceback (most recent call last):
-Traceback (most recent call last):
-Traceback (most recent call last):
-Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 Traceback (most recent call last):
@@ -296,17 +153,126 @@ Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.328740Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:17.903546Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.903625Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.903690Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.903781Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.903900Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.328823Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:17.904022Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.904077Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.904136Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
 Traceback (most recent call last):
 Traceback (most recent call last):
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.329182Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:17.904519Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+Traceback (most recent call last):
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.329243Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:17.904940Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905027Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905190Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905240Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905291Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905349Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905425Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:17.905484Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.246122Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.246519Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.246947Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.247737Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.250458Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.250998Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.251093Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.251160Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.251454Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+Traceback (most recent call last):
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
   File "/app/app.py", line 140, in upload
@@ -314,10 +280,52 @@ OSError: body read: error reading a body from connection
   File "/app/app.py", line 140, in upload
     size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.329406Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:25.252122Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.329468Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:25.252323Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.329587Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:25.252671Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
 OSError: body read: error reading a body from connection
-{"timestamp":"2026-05-01T10:39:38.329640Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+{"timestamp":"2026-06-07T12:31:25.252764Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.252822Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.252904Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+Traceback (most recent call last):
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253098Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253148Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253208Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253264Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+  File "/app/app.py", line 140, in upload
+    size = req.stream.drain_count()
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253369Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253481Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253533Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253585Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}
+OSError: body read: error reading a body from connection
+{"timestamp":"2026-06-07T12:31:25.253636Z","level":"ERROR","fields":{"message":"handler raised an exception","error":"OSError: body read: error reading a body from connection"},"target":"pyronova::server"}

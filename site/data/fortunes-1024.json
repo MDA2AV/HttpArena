@@ -76,6 +76,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "trillium",
+    "language": "Rust",
+    "rps": 170029,
+    "avg_latency": "3.43ms",
+    "p99_latency": "6.10ms",
+    "cpu": "4727.1%",
+    "memory": "289MiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "3.96GB/s",
+    "reconnects": 0,
+    "status_2xx": 850145,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "true-async-server",
     "language": "PHP",
     "rps": 88584,

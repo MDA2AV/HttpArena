@@ -94,6 +94,13 @@
     "type": "production",
     "engine": "kestrel"
   },
+  "bananabread": {
+    "dir": "bananabread",
+    "description": "Seagreen \u2014 a TypeScript port of GenHTTP \u2014 on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
+    "repo": "https://github.com/dotnet-web-stack/Seagreen",
+    "type": "production",
+    "engine": "seagreen"
+  },
   "bjoern": {
     "dir": "bjoern",
     "description": "A screamingly fast, ultra-lightweight WSGI server",
@@ -428,7 +435,7 @@
   "pyronova": {
     "dir": "pyronova",
     "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
-    "repo": "https://github.com/moomoo-tech/pyronova",
+    "repo": "https://github.com/leocaolab/pyronova",
     "type": "tuned",
     "engine": "pyronova"
   },
@@ -669,14 +676,14 @@
   },
   "trillium-tuned": {
     "dir": "trillium-tuned",
-    "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc.",
+    "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints.",
     "repo": "https://github.com/trillium-rs/trillium",
     "type": "tuned",
     "engine": "trillium-http"
   },
   "trillium": {
     "dir": "trillium",
-    "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, deadpool-postgres for async-db and crud.",
+    "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints, deadpool-postgres for async-db and crud.",
     "repo": "https://github.com/trillium-rs/trillium",
     "type": "production",
     "engine": "trillium-http"
@@ -716,6 +723,20 @@
     "type": "engine",
     "engine": "uvloop"
   },
+  "vanilla": {
+    "dir": "vanilla",
+    "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking epoll I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
+    "repo": "https://github.com/enghitalo/vanilla",
+    "type": "production",
+    "engine": "epoll"
+  },
+  "veb": {
+    "dir": "veb",
+    "description": "veb is the web framework in V's standard library (multi-threaded, built-in HTTP/1.1 server). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); async-db uses the stdlib db.pg channel-based ConnectionPool sized from DATABASE_MAX_CONN. Built with -prod on a pinned V 0.5.1. Note: the baseline profile is not subscribed because veb does not decode chunked request bodies.",
+    "repo": "https://github.com/vlang/v",
+    "type": "production",
+    "engine": "veb"
+  },
   "workerman-websocket": {
     "dir": "workerman-websocket",
     "description": "An asynchronous event driven PHP socket framework. Supports HTTP, Websocket, SSL and other custom protocols.",
@@ -752,5 +773,19 @@
     "repo": "https://github.com/skylightis666/zeemo",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "zix-grpc": {
+    "dir": "zix-grpc",
+    "description": "Zig gRPC h2c server using the zix framework. Single epoll event loop; worker pool handles one stream per slot. Implements GetSum (unary) and StreamSum (server-streaming).",
+    "repo": "https://github.com/prothegee/zix",
+    "type": "engine",
+    "engine": "zix"
+  },
+  "zix": {
+    "dir": "zix",
+    "description": "Zig HTTP/1.1 server using the zix framework. Single epoll event loop drains accepts; a fixed worker pool serves one request per epoll event with EPOLLONESHOT keep-alive.",
+    "repo": "https://github.com/prothegee/zix",
+    "type": "engine",
+    "engine": "zix"
   }
 }
