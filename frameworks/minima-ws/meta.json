@@ -1,0 +1,14 @@
+{
+  "display_name": "minima-ws",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Hand-rolled WebSocket echo on the Minima engine — a from-scratch C# multi-reactor io_uring server (direct io_uring syscalls via libc, multishot accept + multishot recv into a provided buffer ring, one ring per core with SO_REUSEPORT). The RFC 6455 handshake and the frame parser/masking/echo are written by hand on Minima's raw recv/send API; no WebSocket library.",
+  "repo": "",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": []
+}

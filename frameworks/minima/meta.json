@@ -1,0 +1,16 @@
+{
+  "display_name": "minima",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Minima — a from-scratch C# multi-reactor io_uring HTTP/1.1 server. Per-reactor SO_REUSEPORT + multishot accept, multishot recv into a provided buffer ring, inline (RCA=false) continuations with a reactor-thread short-circuit on buffer return/flush/recycle. The engine is vendored unchanged; the request handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on its raw recv/send API. No HTTP framework.",
+  "repo": "",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json"
+  ],
+  "maintainers": []
+}

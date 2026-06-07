@@ -10,7 +10,13 @@
     "baseline",
     "pipelined",
     "limited-conn",
-    "static"
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "async-db"
   ],
   "maintainers": ["botanegg"]
 }

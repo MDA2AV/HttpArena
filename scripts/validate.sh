@@ -93,7 +93,7 @@ if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-1
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
-    docker_args=(-d --name "$CONTAINER_NAME" -p "$PORT:8080"
+    docker_args=(-d --name "$CONTAINER_NAME" -p "$PORT:8080" --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 fi
 docker_args+=(-v "$DATA_DIR/dataset.json:/data/dataset.json:ro")
@@ -130,12 +130,12 @@ if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
-# Allow io_uring syscalls for frameworks that need them (blocked by default seccomp)
-ENGINE=$(python3 -c "import json; print(json.load(open('$META_FILE')).get('engine',''))" 2>/dev/null || true)
-if [ "$ENGINE" = "io_uring" ]; then
-    docker_args+=(--security-opt seccomp=unconfined)
-    docker_args+=(--ulimit memlock=-1:-1)
-fi
+# Note: --security-opt seccomp=unconfined is applied unconditionally in both
+# container-launch branches above. io_uring (and other syscalls some runtimes
+# rely on) are blocked by Docker's default seccomp profile, and a framework
+# shouldn't have to advertise engine=="io_uring" to be testable — many need it
+# transitively (e.g. an engine built on io_uring under another name). This
+# mirrors benchmark.sh, which always runs framework containers unconfined.
 
 # Start Postgres sidecar if async-db is needed
 if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
@@ -168,12 +168,15 @@ if has_test "crud"; then
 
     REDIS_CONTAINER="httparena-redis"
     REDIS_URL="redis://localhost:6379"
-    REDIS_CPUSET="${REDIS_CPUSET:-0,64}"
+    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
+    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
+    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
+    REDIS_CPUSET="${REDIS_CPUSET:-}"
 
-    echo "[redis] Starting Redis sidecar (cpuset=$REDIS_CPUSET)"
+    echo "[redis] Starting Redis sidecar${REDIS_CPUSET:+ (cpuset=$REDIS_CPUSET)}"
     docker rm -f "$REDIS_CONTAINER" 2>/dev/null || true
     docker run -d --rm --name "$REDIS_CONTAINER" --network host \
-        --cpuset-cpus="$REDIS_CPUSET" \
+        ${REDIS_CPUSET:+--cpuset-cpus="$REDIS_CPUSET"} \
         --ulimit memlock=-1:-1 \
         --ulimit nofile=1048576:1048576 \
         redis:7-alpine \

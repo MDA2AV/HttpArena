@@ -22,11 +22,15 @@ dependencies {
     implementation(ktorLibs.server.htmlBuilder)
 
     implementation(libs.exposed.core)
-    implementation(libs.exposed.r2dbc)
+    implementation(libs.exposed.jdbc)
     implementation(libs.exposed.json)
     implementation(libs.logback.classic)
     implementation(libs.postgresql)
-    implementation(libs.r2dbc.pool)
+    implementation(libs.hikaricp)
+    runtimeOnly(libs.netty.native.epoll)
+
+    testImplementation(kotlin("test"))
+    testImplementation(ktorLibs.server.testHost)
 }
 
 ktor {

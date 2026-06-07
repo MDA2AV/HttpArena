@@ -1,0 +1,432 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HTTP Arena Gateway API",
+    "version": "1.0.0",
+    "description": "Endpoint contract for HTTP Arena **gateway** benchmark profiles.\n\nThis spec covers the **production-stack** profile — a full production stack with an edge proxy, Redis cache, shared JWT authsvc, and framework server behind HTTPS/H2 on port 8443. The **gateway-h2** and **gateway-h3** profiles reuse the `/baseline2`, `/json/{count}`, `/async-db`, and `/static/*` endpoints from the main spec via a reverse proxy and have no additional endpoint contract here.\n\nAll numeric fields are integers — no floats. JSON responses use lowercase field names. Endpoints that query Postgres always return HTTP 200 with an empty list rather than an error when no rows match or the database is unavailable.\n\n**Port mapping:**\n- `8443` — HTTP/2+TLS (production-stack profile; ALPN `h2`)\n\nSee the [main API spec](/openapi.json) for all non-gateway benchmark endpoints.",
+    "contact": {
+      "name": "HTTP Arena on GitHub",
+      "url": "https://github.com/MDA2AV/HttpArena"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "externalDocs": {
+    "description": "Knowledge Base",
+    "url": "https://www.http-arena.com/docs/"
+  },
+  "x-tagGroups": [
+    {
+      "name": "Gateway",
+      "tags": ["Production Stack"]
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://localhost:8443",
+      "description": "HTTP/2+TLS — production-stack profile (ALPN: h2)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Production Stack",
+      "description": "Full production stack benchmark: four services (edge proxy, Redis cache, shared JWT authsvc, framework server) behind HTTPS/H2 on port 8443. `/api/*` endpoints require JWT Bearer auth verified by authsvc at the edge. `/public/*` endpoints are unauthenticated. Gateway H2 and Gateway H3 profiles reuse the existing `/baseline2`, `/json/{count}`, `/async-db`, and `/static/*` endpoints via a reverse proxy — no additional endpoint contract.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/"
+      }
+    }
+  ],
+  "paths": {
+    "/public/baseline": {
+      "get": {
+        "tags": [
+          "Production Stack"
+        ],
+        "summary": "Public baseline sum (production-stack profile)",
+        "description": "Unauthenticated sum endpoint used in the production-stack workload (10% of requests). Identical behavior to `/baseline11` — returns `a + b` as plain text. The `/public/` prefix separates it from JWT-protected `/api/` endpoints so the edge proxy can route without calling authsvc.",
+        "operationId": "publicBaselineGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "a",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32", "example": 13 }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32", "example": 42 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sum of `a` and `b`",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "integer", "format": "int32", "example": 55 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/json/{count}": {
+      "get": {
+        "tags": [
+          "Production Stack"
+        ],
+        "summary": "Public JSON processing (production-stack profile)",
+        "description": "Unauthenticated JSON endpoint used in the production-stack workload. Identical behavior to `/json/{count}` — returns the first `count` dataset items with computed `total` fields.",
+        "operationId": "publicJsonGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "count",
+            "in": "path",
+            "required": true,
+            "description": "Number of items to return (1–50)",
+            "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 50, "example": 5 }
+          },
+          {
+            "name": "m",
+            "in": "query",
+            "required": false,
+            "description": "Per-request multiplier for `total = price × quantity × m`. Defaults to 1.",
+            "schema": { "type": "integer", "format": "int32", "default": 1, "example": 3 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Processed dataset items",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JsonResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/items/{id}": {
+      "get": {
+        "tags": [
+          "Production Stack"
+        ],
+        "summary": "Read item with two-tier cache-aside (production-stack profile)",
+        "description": "JWT-authenticated item read. The edge proxy verifies the `Authorization: Bearer` token via authsvc before forwarding the request; the framework receives a trusted `X-User-Id` header and must **not** perform its own JWT verification.\n\nImplements two-tier cache-aside:\n1. Check L1 (in-process memory, key `item:{id}`)\n2. L1 miss → check L2 (Redis, `REDIS_URL`)\n3. L2 miss → `SELECT ... FROM items WHERE id = $1`\n4. Populate both tiers with TTL ≤ 1 second\n5. Return with `X-Cache: HIT` (L1 or L2 hit) or `X-Cache: MISS` (Postgres hit)",
+        "operationId": "apiItemsGet",
+        "security": [{ "BearerAuth": [] }],
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Item ID",
+            "schema": { "type": "integer", "format": "int32", "example": 42 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Item found",
+            "headers": {
+              "X-Cache": {
+                "description": "`HIT` when served from L1 or L2 cache, `MISS` when fetched from Postgres",
+                "schema": { "type": "string", "enum": ["MISS", "HIT"] }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Item" }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid JWT (rejected by authsvc at the edge)" },
+          "404": { "description": "Item not found" }
+        }
+      },
+      "post": {
+        "tags": [
+          "Production Stack"
+        ],
+        "summary": "Update item and invalidate cache (production-stack profile)",
+        "description": "JWT-authenticated item update. Updates `name`, `price`, and `quantity` in Postgres, then **invalidates cache key `item:{id}`** in both L1 and L2 so the next read sees fresh data. Returns `204 No Content` on success.\n\nNote: the method is POST (not PUT) because the production-stack workload uses POST for writes — this matches the load generator template.",
+        "operationId": "apiItemsPost",
+        "security": [{ "BearerAuth": [] }],
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Item ID to update",
+            "schema": { "type": "integer", "format": "int32", "example": 42 }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateItemRequest" },
+              "example": { "name": "Updated Name", "price": 30, "quantity": 5 }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Item updated and cache invalidated" },
+          "401": { "description": "Missing or invalid JWT" },
+          "404": { "description": "Item not found" }
+        }
+      }
+    },
+    "/api/me": {
+      "get": {
+        "tags": [
+          "Production Stack"
+        ],
+        "summary": "Get current user profile (production-stack profile)",
+        "description": "JWT-authenticated user profile read. The edge proxy sets `X-User-Id` from the verified JWT `sub` claim; the framework reads this header and performs a cache-aside lookup (`user:{id}`, TTL ≤ 30 seconds) against the `users` table.\n\nSQL on cache miss: `SELECT id, name, email, plan FROM users WHERE id = $1`",
+        "operationId": "apiMeGet",
+        "security": [{ "BearerAuth": [] }],
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+        },
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "headers": {
+              "X-Cache": {
+                "description": "`HIT` when served from cache, `MISS` when fetched from Postgres",
+                "schema": { "type": "string", "enum": ["MISS", "HIT"] }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/User" },
+                "example": {
+                  "id": 42,
+                  "name": "Alice Chen",
+                  "email": "alice@example.com",
+                  "plan": "pro"
+                }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid JWT" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "HMAC-SHA256 JWT verified by the shared authsvc sidecar on every `/api/*` request. The framework never parses or validates tokens itself — it receives a trusted `X-User-Id` header set by the edge proxy after successful verification. The pre-generated benchmark token embeds `{\"sub\":\"42\",\"name\":\"Alice Chen\",\"exp\":<future>}`."
+      }
+    },
+    "schemas": {
+      "Rating": {
+        "type": "object",
+        "description": "Aggregated item rating, restructured from the `rating_score` and `rating_count` columns in Postgres.",
+        "additionalProperties": false,
+        "required": ["score", "count"],
+        "properties": {
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "example": 48
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "example": 127
+          }
+        }
+      },
+      "Item": {
+        "type": "object",
+        "description": "A single item as stored in the Postgres `items` table. Used in async-db, CRUD, and production-stack responses.",
+        "additionalProperties": false,
+        "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Alpha Widget"
+          },
+          "category": {
+            "type": "string",
+            "example": "electronics"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 328
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 15
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["fast", "new"]
+          },
+          "rating": {
+            "$ref": "#/components/schemas/Rating"
+          }
+        }
+      },
+      "ProcessedItem": {
+        "type": "object",
+        "description": "An item from the JSON dataset with a per-request computed `total` field. Used only in `/json/{count}` and `/public/json/{count}` responses.",
+        "additionalProperties": false,
+        "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating", "total"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Alpha Widget"
+          },
+          "category": {
+            "type": "string",
+            "example": "electronics"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 328
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 15
+          },
+          "active": {
+            "type": "boolean",
+            "example": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["fast", "new"]
+          },
+          "rating": {
+            "$ref": "#/components/schemas/Rating"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Computed per request as `price × quantity × m`",
+            "example": 14760
+          }
+        }
+      },
+      "JsonResponse": {
+        "type": "object",
+        "description": "Response from `GET /json/{count}` and `GET /public/json/{count}`. The `count` field must equal the route parameter and match `items.length`.",
+        "additionalProperties": false,
+        "required": ["items", "count"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcessedItem"
+            }
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of items returned. Must equal the `count` route parameter.",
+            "example": 5
+          }
+        }
+      },
+      "UpdateItemRequest": {
+        "type": "object",
+        "description": "Request body for `PUT /crud/items/{id}` and `POST /api/items/{id}`. Updates `name`, `price`, and `quantity`. The cache entry for the item ID is invalidated on success.",
+        "additionalProperties": false,
+        "required": ["name", "price", "quantity"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Updated Name"
+          },
+          "price": {
+            "type": "integer",
+            "format": "int32",
+            "example": 30
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 5
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "description": "User profile from the `users` table. Returned by `GET /api/me` after a cache-aside lookup keyed on `user:{id}` (TTL ≤ 30 seconds).",
+        "additionalProperties": false,
+        "required": ["id", "name", "email", "plan"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32",
+            "example": 42
+          },
+          "name": {
+            "type": "string",
+            "example": "Alice Chen"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "alice@example.com"
+          },
+          "plan": {
+            "type": "string",
+            "example": "pro"
+          }
+        }
+      }
+    }
+  }
+}

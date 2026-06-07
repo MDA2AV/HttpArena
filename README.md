@@ -68,3 +68,27 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 ```json
 "maintainers": ["your-github-username"]
 ```
+
+## Add the badge
+
+Benchmarked on HttpArena? Add the badge to your project's README — it links to the live leaderboard and adapts to light & dark themes automatically.
+
+```md
+[![Benchmarked by HttpArena](https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg)](https://www.http-arena.com/leaderboard/)
+```
+
+Prefer HTML, e.g. to set the size:
+
+```html
+<a href="https://www.http-arena.com/leaderboard/">
+  <img src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" alt="Benchmarked by HttpArena" height="44">
+</a>
+```
+
+---
+
+<div align="left">
+  <a href="https://www.http-arena.com/leaderboard/">
+    <img alt="Benchmarked by HttpArena" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" width="235">
+  </a>
+</div>

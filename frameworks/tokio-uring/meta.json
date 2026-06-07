@@ -1,0 +1,15 @@
+{
+  "display_name": "tokio-uring",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Minimal HTTP/1.1 server on tokio-uring — the io_uring-backed Rust runtime with a completion/owned-buffer API. A hand-rolled request parser (Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads), one runtime per core with SO_REUSEPORT. No HTTP framework.",
+  "repo": "https://github.com/tokio-rs/tokio-uring",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}

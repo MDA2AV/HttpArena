@@ -16,6 +16,7 @@ ENTRYPOINT ["java", \
   "-XX:+UseNUMA", \
   "-XX:+AlwaysPreTouch", \
   "-XX:-OmitStackTraceInFastThrow", \
+  "-Dio.netty.transport.noNative=false", \
   "-Dio.netty.buffer.checkBounds=false", \
   "-Dio.netty.buffer.checkAccessible=false", \
   "-Dio.netty.allocator.maxOrder=10", \
