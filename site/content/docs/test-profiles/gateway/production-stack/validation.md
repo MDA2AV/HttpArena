@@ -15,7 +15,7 @@ weight: 2
 ### Public endpoints (no auth)
 4. **`/public/baseline?a=13&b=42`** — returns `55`
 5. **`/public/baseline?a=<random>&b=<random>`** — correct sum (anti-cheat)
-6. **`/public/json/25`** — 25 items with computed `total = price × quantity`
+6. **`/public/json/25`** — 25 items, each with the full schema (`id`, `name`, `category`, `price`, `quantity`, `active`, `tags`, `rating` with `score`+`count`) and computed `total = price × quantity`
 
 ### Auth wall — JWT required
 7. **`GET /api/items/1`** (no Authorization header) — **HTTP 401**

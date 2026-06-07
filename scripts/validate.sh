@@ -589,28 +589,34 @@ m = $jm
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = item['price'] * item['quantity'] * m
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
     if item.get('total', 0) != expected:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         json_count=$(echo "$json_result" | cut -d' ' -f1)
-        json_total=$(echo "$json_result" | cut -d' ' -f2)
+        json_valid=$(echo "$json_result" | cut -d' ' -f2)
         json_correct=$(echo "$json_result" | cut -d' ' -f3)
 
-        if [ "$json_count" = "$jcount" ] && [ "$json_total" = "True" ] && [ "$json_correct" = "True" ]; then
+        if [ "$json_count" = "$jcount" ] && [ "$json_valid" = "True" ] && [ "$json_correct" = "True" ]; then
             :
         else
-            fail_with_link "[GET /json/$jcount?m=$jm]: count=$json_count, has_total=$json_total, correct_totals=$json_correct" "$JSON_DOCS"
+            fail_with_link "[GET /json/$jcount?m=$jm]: count=$json_count, schema=$json_valid, correct_totals=$json_correct" "$JSON_DOCS"
             json_fail=true
         fi
     done
     if [ "$json_fail" = "false" ]; then
-        echo "  PASS [GET /json/{count}?m=X] (4 counts with multipliers verified)"
+        echo "  PASS [GET /json/{count}?m=X] (4 counts × multipliers + full item schema verified)"
         PASS=$((PASS + 1))
     fi
 
@@ -648,28 +654,34 @@ m = $jcm
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = item['price'] * item['quantity'] * m
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
     if item.get('total', 0) != expected:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         jc_count=$(echo "$jc_result" | cut -d' ' -f1)
-        jc_total=$(echo "$jc_result" | cut -d' ' -f2)
+        jc_valid=$(echo "$jc_result" | cut -d' ' -f2)
         jc_correct=$(echo "$jc_result" | cut -d' ' -f3)
 
-        if [ "$jc_count" = "$jccount" ] && [ "$jc_total" = "True" ] && [ "$jc_correct" = "True" ]; then
+        if [ "$jc_count" = "$jccount" ] && [ "$jc_valid" = "True" ] && [ "$jc_correct" = "True" ]; then
             :
         else
-            fail_with_link "[json-comp /json/$jccount?m=$jcm]: count=$jc_count, has_total=$jc_total, correct=$jc_correct" "$JSONCOMP_DOCS"
+            fail_with_link "[json-comp /json/$jccount?m=$jcm]: count=$jc_count, schema=$jc_valid, correct=$jc_correct" "$JSONCOMP_DOCS"
             jc_fail=true
         fi
     done
     if [ "$jc_fail" = "false" ]; then
-        echo "  PASS [json-comp response] (3 counts with multipliers, compressed)"
+        echo "  PASS [json-comp response] (3 counts × multipliers, compressed, full item schema)"
         PASS=$((PASS + 1))
     fi
 
@@ -711,28 +723,34 @@ m = $jtm
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = item['price'] * item['quantity'] * m
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
     if item.get('total', 0) != expected:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         jt_count=$(echo "$jt_result" | cut -d' ' -f1)
-        jt_total=$(echo "$jt_result" | cut -d' ' -f2)
+        jt_valid=$(echo "$jt_result" | cut -d' ' -f2)
         jt_correct=$(echo "$jt_result" | cut -d' ' -f3)
 
-        if [ "$jt_count" = "$jtcount" ] && [ "$jt_total" = "True" ] && [ "$jt_correct" = "True" ]; then
+        if [ "$jt_count" = "$jtcount" ] && [ "$jt_valid" = "True" ] && [ "$jt_correct" = "True" ]; then
             :
         else
-            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, has_total=$jt_total, correct=$jt_correct" "$JSONTLS_DOCS"
+            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, schema=$jt_valid, correct=$jt_correct" "$JSONTLS_DOCS"
             jt_fail=true
         fi
     done
     if [ "$jt_fail" = "false" ]; then
-        echo "  PASS [json-tls response] (3 (count, m) pairs over TLS)"
+        echo "  PASS [json-tls response] (3 (count, m) pairs over TLS, full item schema)"
         PASS=$((PASS + 1))
     fi
 
@@ -909,22 +927,39 @@ if has_test "json-h2c"; then
             "http://localhost:$H2C_PORT/json/$jcount?m=$jm" 2>/dev/null || true)
         parsed=$(echo "$resp" | python3 -c "
 import sys, json
+m = $jm
 d = json.load(sys.stdin)
 count = d.get('count', -1)
-items_n = len(d.get('items', []))
-print(f'{count} {items_n}')
-" 2>/dev/null || echo "-1 -1")
+items = d.get('items', [])
+items_n = len(items)
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
+correct_totals = True
+for item in items:
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
+    if item.get('total', 0) != expected:
+        correct_totals = False
+        break
+print(f'{count} {items_n} {valid} {correct_totals}')
+" 2>/dev/null || echo "-1 -1 False False")
         pc=$(echo "$parsed" | cut -d' ' -f1)
         pn=$(echo "$parsed" | cut -d' ' -f2)
-        if [ "$pc" = "$jcount" ] && [ "$pn" = "$jcount" ]; then
+        pv=$(echo "$parsed" | cut -d' ' -f3)
+        ptot=$(echo "$parsed" | cut -d' ' -f4)
+        if [ "$pc" = "$jcount" ] && [ "$pn" = "$jcount" ] && [ "$pv" = "True" ] && [ "$ptot" = "True" ]; then
             :
         else
-            fail_with_link "[GET /json/$jcount?m=$jm (h2c)]: count=$pc, items=$pn, expected $jcount" "$JSON_H2C_DOCS"
+            fail_with_link "[GET /json/$jcount?m=$jm (h2c)]: count=$pc, items=$pn, schema=$pv, correct_totals=$ptot, expected $jcount" "$JSON_H2C_DOCS"
             json_h2c_fail=true
         fi
     done
     if [ "$json_h2c_fail" = "false" ]; then
-        echo "  PASS [GET /json/{count}?m=X over h2c] (4 counts verified)"
+        echo "  PASS [GET /json/{count}?m=X over h2c] (4 counts × multipliers, full item schema + totals)"
         PASS=$((PASS + 1))
     fi
 fi
@@ -1329,31 +1364,37 @@ _validate_gateway() {
             -sk --http2 "https://localhost:$GW_PORT/static/nonexistent.txt"
 
         # 5. JSON endpoint — valid JSON with computed totals
-        local gw_json_response gw_json_result gw_json_count gw_json_total gw_json_correct
+        local gw_json_response gw_json_result gw_json_count gw_json_valid gw_json_correct
         gw_json_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/json/50" || true)
         gw_json_result=$(echo "$gw_json_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = round(item['price'] * item['quantity'], 2)
+    expected = round(item.get('price', 0) * item.get('quantity', 0), 2)
     if abs(item.get('total', 0) - expected) > 0.02:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         gw_json_count=$(echo "$gw_json_result" | cut -d' ' -f1)
-        gw_json_total=$(echo "$gw_json_result" | cut -d' ' -f2)
+        gw_json_valid=$(echo "$gw_json_result" | cut -d' ' -f2)
         gw_json_correct=$(echo "$gw_json_result" | cut -d' ' -f3)
 
-        if [ "$gw_json_count" = "50" ] && [ "$gw_json_total" = "True" ] && [ "$gw_json_correct" = "True" ]; then
-            echo "  PASS [gateway /json] (50 items, totals correct)"
+        if [ "$gw_json_count" = "50" ] && [ "$gw_json_valid" = "True" ] && [ "$gw_json_correct" = "True" ]; then
+            echo "  PASS [gateway /json] (50 items, full schema, totals correct)"
             PASS=$((PASS + 1))
         else
-            fail_with_link "[gateway /json]: count=$gw_json_count, has_total=$gw_json_total, correct=$gw_json_correct" "$gateway_docs"
+            fail_with_link "[gateway /json]: count=$gw_json_count, schema=$gw_json_valid, correct=$gw_json_correct" "$gateway_docs"
         fi
 
         check_header "gateway /json Content-Type" "Content-Type" "application/json" "$gateway_docs" \
@@ -1508,31 +1549,37 @@ _validate_production_stack() {
             -sk --http2 "https://localhost:$GW_PORT/public/baseline?a=$GW_A&b=$GW_B"
 
         # 4. Public JSON — no auth, no cache, returns count items with totals
-        local gw_json_response gw_json_result gw_json_count gw_json_total gw_json_correct
+        local gw_json_response gw_json_result gw_json_count gw_json_valid gw_json_correct
         gw_json_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/public/json/25" || true)
         gw_json_result=$(echo "$gw_json_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = round(item['price'] * item['quantity'], 2)
+    expected = round(item.get('price', 0) * item.get('quantity', 0), 2)
     if abs(item.get('total', 0) - expected) > 0.02:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         gw_json_count=$(echo "$gw_json_result" | cut -d' ' -f1)
-        gw_json_total=$(echo "$gw_json_result" | cut -d' ' -f2)
+        gw_json_valid=$(echo "$gw_json_result" | cut -d' ' -f2)
         gw_json_correct=$(echo "$gw_json_result" | cut -d' ' -f3)
 
-        if [ "$gw_json_count" = "25" ] && [ "$gw_json_total" = "True" ] && [ "$gw_json_correct" = "True" ]; then
-            echo "  PASS [$profile /public/json/25] (25 items, totals correct)"
+        if [ "$gw_json_count" = "25" ] && [ "$gw_json_valid" = "True" ] && [ "$gw_json_correct" = "True" ]; then
+            echo "  PASS [$profile /public/json/25] (25 items, full schema, totals correct)"
             PASS=$((PASS + 1))
         else
-            fail_with_link "[$profile /public/json/25]: count=$gw_json_count, has_total=$gw_json_total, correct=$gw_json_correct" "$docs_url"
+            fail_with_link "[$profile /public/json/25]: count=$gw_json_count, schema=$gw_json_valid, correct=$gw_json_correct" "$docs_url"
         fi
 
         # 5. Auth wall (GET) — /api/* without a cookie must return 401

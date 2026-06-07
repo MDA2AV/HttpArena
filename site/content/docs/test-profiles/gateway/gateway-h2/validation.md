@@ -44,7 +44,7 @@ Sends `GET /static/nonexistent.txt` over HTTP/2 and verifies the response is **H
 Sends `GET /json` over HTTP/2 and validates:
 
 - Response contains exactly **50 items**
-- Every item has a `total` field
+- Every item carries the full schema — `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
 - Each `total` is correctly computed as `price * quantity` (rounded to 2 decimal places)
 
 This is the same validation as the [JSON Processing test](../../h1/isolated/json-processing/validation), but routed through the proxy.
