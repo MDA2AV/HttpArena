@@ -1,0 +1,15 @@
+{
+  "display_name": "shrike-minima",
+  "language": "C#",
+  "type": "engine",
+  "engine": "epoll",
+  "description": "An epoll engine with an IVTS-backed, RunContinuationsAsynchronously=true async handler loop, using Minima's SPSC recv handoff: the worker recv's into pooled buffers and enqueues them on a per-connection single-producer/single-consumer ring; the handler resumes on the thread pool, dequeues the chunks into its own parse buffer, and returns the buffers. Worker and handler never share a buffer (no driver/handler race), and recv pipelines with parse. FlushAsync does a thread-safe send() directly, so an off-worker handler responds without a handoff. Per-worker SO_REUSEPORT, pooled connections, native slab buffers, hand-rolled HTTP/1.1.",
+  "repo": "",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}
