@@ -1193,6 +1193,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "vanilla",
+    "language": "V",
+    "rps": 347455,
+    "avg_latency": "67.36ms",
+    "p99_latency": "67.36ms",
+    "cpu": "2512.6%",
+    "memory": "91MiB",
+    "connections": 6800,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "20.61GB",
+    "reconnects": 0,
+    "status_2xx": 1772290,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "workerman",
     "language": "PHP",
     "rps": 285448,

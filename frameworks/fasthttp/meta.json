@@ -1,7 +1,7 @@
 {
   "display_name": "fasthttp",
   "language": "V",
-  "type": "production",
+  "type": "engine",
   "engine": "epoll",
   "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). Handlers return raw response bytes. JSON is built in a single allocation without per-request reflection (precomputed prefixes); async-db uses the stdlib db.pg ConnectionPool sized from DATABASE_MAX_CONN. Pinned V 0.5.1. baseline is not subscribed: the fasthttp server parses each recv() in one shot and does not reassemble TCP-fragmented requests, which baseline validation requires.",
   "repo": "https://github.com/vlang/v",

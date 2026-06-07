@@ -185,6 +185,13 @@
     "type": "production",
     "engine": "uvicorn"
   },
+  "fasthttp": {
+    "dir": "fasthttp",
+    "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). Handlers return raw response bytes. JSON is built in a single allocation without per-request reflection (precomputed prefixes); async-db uses the stdlib db.pg ConnectionPool sized from DATABASE_MAX_CONN. Pinned V 0.5.1. baseline is not subscribed: the fasthttp server parses each recv() in one shot and does not reassemble TCP-fragmented requests, which baseline validation requires.",
+    "repo": "https://github.com/vlang/v",
+    "type": "engine",
+    "engine": "epoll"
+  },
   "fastpysgi-asgi": {
     "dir": "fastpysgi-asgi",
     "description": "An ultra fast WSGI/ASGI server for Python",
@@ -424,6 +431,13 @@
     "repo": "https://github.com/php/php-src",
     "type": "production",
     "engine": "nginx"
+  },
+  "pico": {
+    "dir": "pico",
+    "description": "A raw V server on the picoev non-blocking event loop + picohttpparser (both stdlib). One process per core shares the listen socket via SO_REUSEPORT. JSON is serialized manually (precomputed prefixes, no per-request reflection). Pinned V 0.5.1. DB profiles are not subscribed: picoev is a single-threaded event loop and the stdlib db.pg driver is blocking, which would stall the loop. baseline is not subscribed: picoev parses each recv() in one shot and does not reassemble TCP-fragmented requests, which baseline validation requires.",
+    "repo": "https://github.com/vlang/v",
+    "type": "engine",
+    "engine": "picoev"
   },
   "pingora": {
     "dir": "pingora",
@@ -727,14 +741,14 @@
     "dir": "vanilla",
     "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking epoll I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
     "repo": "https://github.com/enghitalo/vanilla",
-    "type": "production",
+    "type": "engine",
     "engine": "epoll"
   },
   "veb": {
     "dir": "veb",
     "description": "veb is the web framework in V's standard library (multi-threaded, built-in HTTP/1.1 server). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); async-db uses the stdlib db.pg channel-based ConnectionPool sized from DATABASE_MAX_CONN. Built with -prod on a pinned V 0.5.1. Note: the baseline profile is not subscribed because veb does not decode chunked request bodies.",
     "repo": "https://github.com/vlang/v",
-    "type": "production",
+    "type": "engine",
     "engine": "veb"
   },
   "workerman-websocket": {

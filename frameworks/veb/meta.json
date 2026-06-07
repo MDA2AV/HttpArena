@@ -1,7 +1,7 @@
 {
   "display_name": "veb",
   "language": "V",
-  "type": "production",
+  "type": "engine",
   "engine": "veb",
   "description": "veb is the web framework in V's standard library (multi-threaded, built-in HTTP/1.1 server). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); async-db uses the stdlib db.pg channel-based ConnectionPool sized from DATABASE_MAX_CONN. Built with -prod on a pinned V 0.5.1. Note: the baseline profile is not subscribed because veb does not decode chunked request bodies.",
   "repo": "https://github.com/vlang/v",
