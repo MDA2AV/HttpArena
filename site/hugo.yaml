@@ -25,6 +25,9 @@ menu:
     - name: RFC Compliance
       weight: 3
       url: https://mda2av.github.io/Http11Probe/
+    - name: New Leaderboard
+      weight: 4
+      url: /new-leaderboard/
     - name: Search
       weight: 5
       params:
