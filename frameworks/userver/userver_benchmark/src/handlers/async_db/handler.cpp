@@ -10,15 +10,14 @@
 #include <userver/http/common_headers.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <userver/storages/postgres/component.hpp>
-#include <userver/storages/postgres/io/json_types.hpp>
 #include <userver/storages/postgres/result_set.hpp>
 
 namespace userver_httparena::async_db {
 namespace {
 struct ItemRow {
   int64_t id;
-  std::string name;
-  std::string category;
+  std::string_view name;
+  std::string_view category;
   int64_t price;
   int64_t quantity;
   bool active;
@@ -48,24 +47,23 @@ std::string Handler::HandleRequestThrow(const userver::server::http::HttpRequest
 
   // Matches
   // https://www.http-arena.com/docs/test-profiles/h1/isolated/async-database/implementation/
-  // kSlave falls back to master if no read replica is available
-  auto res = pg_->Execute(userver::storages::postgres::ClusterHostType::kSlave,
+  auto res = pg_->Execute(userver::storages::postgres::ClusterHostType::kSlaveOrMaster,
                           "SELECT id, name, category, price, quantity, active, tags, "
                           "rating_score, rating_count FROM items "
                           "WHERE price BETWEEN $1 AND $2 LIMIT $3",
                           min, max, limit);
 
-  const auto rows = res.AsContainer<std::vector<ItemRow> >(userver::storages::postgres::kRowTag);
+  auto items = res.AsSetOf<ItemRow>(userver::storages::postgres::kRowTag);
 
   userver::formats::json::StringBuilder sb;
   {
     userver::formats::json::StringBuilder::ObjectGuard root_guard(sb);
     sb.Key("count");
-    sb.WriteInt64(static_cast<int64_t>(rows.size()));
+    sb.WriteInt64(static_cast<int64_t>(items.Size()));
     sb.Key("items");
     {
       userver::formats::json::StringBuilder::ArrayGuard items_guard(sb);
-      for (const auto& row : rows) {
+      for (const auto& row : items) {
         userver::formats::json::StringBuilder::ObjectGuard item_guard(sb);
         sb.Key("id");
         sb.WriteInt64(row.id);

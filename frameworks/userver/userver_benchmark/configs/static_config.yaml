@@ -121,12 +121,13 @@ components_manager:
         hello-world-db:
             dbconnection#env: DATABASE_URL                      # HttpArena benchmark env
             dbconnection#fallback: postgresql://bench:bench@localhost:5432/benchmark?sslmode=disable  # local dev
-            min_pool_size: 64
+            min_pool_size#env: DATABASE_MAX_CONN                # pre-warm all connections at startup
+            min_pool_size#fallback: 256                          # local dev
             max_pool_size#env: DATABASE_MAX_CONN                # HttpArena benchmark env (set to 256)
             max_pool_size#fallback: 256                          # local dev
             # min == max: pre-warm all connections at startup for benchmark
             blocking_task_processor: fs-task-processor
-            max_queue_size: 512
-            connecting_limit: 15
+            max_queue_size: 4096
+            connecting_limit: 256
             ignore_unused_query_params: true
             connlimit_mode: manual

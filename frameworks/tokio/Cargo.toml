@@ -1,0 +1,14 @@
+[package]
+name = "httparena-tokio"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+socket2 = { version = "0.5", features = ["all"] }
+tokio = { version = "1", default-features = false, features = ["io-util", "net", "rt"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+panic = "abort"
