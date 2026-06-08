@@ -960,6 +960,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "userver",
+    "language": "C++",
+    "rps": 104248,
+    "avg_latency": "4.91ms",
+    "p99_latency": "11.00ms",
+    "cpu": "6490.2%",
+    "memory": "251MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "141.58MB/s",
+    "input_bw": "7.75MB/s",
+    "reconnects": 20801,
+    "status_2xx": 521241,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "uvicorn",
     "language": "Python",
     "rps": 271121,
