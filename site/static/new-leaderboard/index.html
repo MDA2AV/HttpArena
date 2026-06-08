@@ -291,6 +291,8 @@
   .cwrap::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px}
   .cwrap::-webkit-scrollbar-thumb:hover{background:var(--muted)}
   .cwrap::-webkit-scrollbar-track{background:transparent}
+  /* touch devices: let the table run full height so the PAGE gives the single vertical scroll (no nested scroll); horizontal finger-scroll stays */
+  @media (hover: none) and (pointer: coarse){ .cwrap{max-height:none} }
   /* synced horizontal scrollbar + jump-to-end button above the table */
   .cscroll-row{display:flex; align-items:stretch; gap:.4rem; margin-top:.5rem}
   .cscroll-row.endonly{justify-content:flex-end; margin-top:.1rem; margin-bottom:.35rem}
