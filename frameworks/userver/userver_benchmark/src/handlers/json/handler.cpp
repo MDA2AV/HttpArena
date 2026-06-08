@@ -3,10 +3,11 @@
 #include <charconv>
 #include <string>
 
-#include <userver/components/component_config.hpp>
 #include <userver/components/component_context.hpp>
-#include <userver/formats/json/string_builder.hpp>
+#include <userver/formats/json/value_builder.hpp>
 #include <userver/http/common_headers.hpp>
+
+#include <schemas/types.hpp>
 
 #include "dataset_provider.hpp"
 
@@ -33,30 +34,14 @@ std::string Handler::HandleRequestThrow(const userver::server::http::HttpRequest
     count = static_cast<int>(items.size());
   }
 
-  userver::formats::json::StringBuilder sb;
-  {
-    userver::formats::json::StringBuilder::ObjectGuard root_guard(sb);
-    sb.Key("count");
-    sb.WriteInt64(count);
-    sb.Key("items");
-    {
-      userver::formats::json::StringBuilder::ArrayGuard items_guard(sb);
-      for (int i = 0; i < count; ++i) {
-        const auto& item = items[i];
-        userver::formats::json::StringBuilder::ObjectGuard item_guard(sb);
-        sb.Key("id");
-        sb.WriteInt64(item.id);
-        sb.Key("price");
-        sb.WriteInt64(item.price);
-        sb.Key("quantity");
-        sb.WriteInt64(item.quantity);
-        sb.Key("total");
-        sb.WriteDouble(static_cast<double>(item.price) * item.quantity * m);
-      }
-    }
+  JsonResponse resp;
+  resp.count = count;
+  resp.items.assign(items.begin(), items.begin() + count);
+  for (auto& ri : resp.items) {
+    ri.total = static_cast<double>(ri.price) * ri.quantity * m;
   }
 
   request.GetHttpResponse().SetHeader(userver::http::headers::kContentType, "application/json");
-  return sb.GetString();
+  return userver::formats::json::ToString(userver::formats::json::ValueBuilder{resp}.ExtractValue());
 }
 }  // namespace userver_httparena::json

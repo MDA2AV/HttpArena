@@ -2,8 +2,6 @@
 
 #include <userver/server/handlers/http_handler_base.hpp>
 
-#include <cstdint>
-
 namespace userver_httparena {
 class DatasetProvider;
 
