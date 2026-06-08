@@ -260,7 +260,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "Fletch",
+    "framework": "fletch",
     "language": "Dart",
     "rps": 533687,
     "avg_latency": "931us",
@@ -800,7 +800,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "SlimeWeb",
+    "framework": "slimeweb",
     "language": "Python",
     "rps": 101416,
     "avg_latency": "4.64ms",
@@ -840,7 +840,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "Swoole",
+    "framework": "swoole",
     "language": "PHP",
     "rps": 508847,
     "avg_latency": "1.00ms",

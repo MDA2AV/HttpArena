@@ -1,5 +1,5 @@
 {
-  "display_name": "Fletch",
+  "display_name": "fletch",
   "language": "Dart",
   "engine": "dart:io",
   "type": "production",

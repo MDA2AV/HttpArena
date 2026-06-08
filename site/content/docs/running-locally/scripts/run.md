@@ -13,7 +13,7 @@ Run a framework's Docker container interactively for manual testing. Builds the 
 
 1. Builds the Docker image for the framework (or runs `build.sh` if one exists)
 2. Starts a Postgres sidecar container with the seeded benchmark database
-3. Mounts all data files unconditionally — datasets, static files, TLS certs
+3. Mounts all data files unconditionally - datasets, static files, TLS certs
 4. Sets `DATABASE_URL` and `DATABASE_MAX_CONN` environment variables
 5. Runs the container attached so logs stream to your terminal
 6. Cleans up all containers on exit (Ctrl+C or script termination)
@@ -28,7 +28,7 @@ Run a framework's Docker container interactively for manual testing. Builds the 
 
 ## Networking
 
-Uses `--network host` so the container binds directly to the host's network interfaces. No port mapping is needed — the framework listens on ports 8080 and 8443 directly.
+Uses `--network host` so the container binds directly to the host's network interfaces. No port mapping is needed - the framework listens on ports 8080 and 8443 directly.
 
 ## Example
 

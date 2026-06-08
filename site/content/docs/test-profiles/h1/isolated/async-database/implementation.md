@@ -4,7 +4,7 @@ title: Implementation Guidelines
 {{< type-rules production="Must use an async PostgreSQL driver with standard connection pooling. Size the pool from `DATABASE_MAX_CONN` (currently 256), not from CPU count." tuned="May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults." engine="No specific rules." >}}
 
 
-The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection — exercising async I/O scheduling, connection pooling, and async Postgres driver efficiency.
+The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection - exercising async I/O scheduling, connection pooling, and async Postgres driver efficiency.
 
 **This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
 
@@ -80,7 +80,7 @@ GET /async-db?min=10&max=50&limit=20 HTTP/1.1
 }
 ```
 
-All numeric fields (`price`, `quantity`, `rating.score`, `rating.count`) are integers — no floats anywhere. The `count` field must be dynamically computed from the number of returned items, not hardcoded.
+All numeric fields (`price`, `quantity`, `rating.score`, `rating.count`) are integers - no floats anywhere. The `count` field must be dynamically computed from the number of returned items, not hardcoded.
 
 When Postgres is unavailable or the query returns no rows, return:
 
@@ -103,7 +103,7 @@ The benchmark runner provides these environment variables to your container:
 - **Connection pool** - initialize a pool at startup. Size it from `DATABASE_MAX_CONN` (currently 256). Going higher than that will cause Postgres to reject connections under load
 - **Prepared statements** - prepare the query once per connection, reuse across requests
 - **Default parameters** - all three query parameters are integers. If `min` or `max` is missing, default to `10` and `50`. If `limit` is missing, default to `50`. Clamp `limit` to the range 1–50
-- **Integer types matter** - `price` and `rating_score` are `INTEGER` columns. Read them as `i32`/`int`/equivalent — using `f64`/`double` will fail with type-mismatch errors in strict drivers like `tokio-postgres`
+- **Integer types matter** - `price` and `rating_score` are `INTEGER` columns. Read them as `i32`/`int`/equivalent - using `f64`/`double` will fail with type-mismatch errors in strict drivers like `tokio-postgres`
 - **Tags are JSONB** - Postgres returns them as native JSON, no string parsing needed
 
 ## Important: environment variables and initialization

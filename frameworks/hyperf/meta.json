@@ -1,7 +1,7 @@
 {
   "display_name": "hyperf",
   "language": "PHP",
-  "engine": "Swoole",
+  "engine": "swoole",
   "type": "production",
   "description": "A coroutine framework that focuses on hyperspeed and flexibility. Building microservice or middleware with ease.",
   "repo": "https://github.com/hyperf/hyperf",

@@ -12,7 +12,7 @@ Each profile is run at multiple connection counts to show how frameworks scale u
 
 ## API Specification
 
-All benchmark endpoints are described in machine-readable OpenAPI 3.0 specifications. Each spec covers request/response schemas, status codes, production and tuned implementation rules, and links back to the relevant documentation pages.
+All benchmark endpoints are described in machine-readable OpenAPI 3.0 specifications. Each spec covers request/response schemas, status codes, standard and tuned implementation rules, and links back to the relevant documentation pages.
 
 The endpoints are split across two files:
 
@@ -23,19 +23,19 @@ The endpoints are split across two files:
 
 ## Benchmark parameters
 
-Five load generators are dispatched per profile — each one is built for a specific protocol + workload shape. See [Load Generators](../load-generators/) for per-tool details.
+Five load generators are dispatched per profile - each one is built for a specific protocol + workload shape. See [Load Generators](../load-generators/) for per-tool details.
 
 | Parameter | Value |
 |-----------|-------|
 | Load generators | `gcannon` (HTTP/1.1, upload, WebSocket), `wrk` (static + json-tls rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `ghz` (gRPC) |
 | Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`); `ghz` scales workers dynamically as `connections × 4` |
 | Duration | 5s default; `async-db` 10s; `api-4`, `api-16`, `crud` 15s (hardcoded in the profile dispatcher) |
-| Runs | 3 per (profile, connection count) — best RPS wins |
+| Runs | 3 per (profile, connection count) - best RPS wins |
 | Networking | Docker `--network host` for all containers (server + load generator + Postgres + Redis sidecars) |
 
 ## Data mounts
 
-Data files are **mounted automatically** by the benchmark runner — your Dockerfile does not need to include them. The following paths are available inside the container at runtime:
+Data files are **mounted automatically** by the benchmark runner - your Dockerfile does not need to include them. The following paths are available inside the container at runtime:
 
 | Path | Description |
 |------|-------------|
@@ -45,13 +45,13 @@ Data files are **mounted automatically** by the benchmark runner — your Docker
 
 ## Environment variables
 
-Set by the benchmark runner when the relevant profile runs — your process will see them via `os.environ` / `std::env::var` / equivalent.
+Set by the benchmark runner when the relevant profile runs - your process will see them via `os.environ` / `std::env::var` / equivalent.
 
 | Variable | Profiles | Value |
 |----------|----------|-------|
 | `DATABASE_URL` | `async-db`, `crud`, `api-4`, `api-16` | Postgres connection string (`postgres://bench:bench@127.0.0.1:5432/benchmark`) |
-| `DATABASE_MAX_CONN` | same as above | `256` — the Postgres sidecar's `max_connections`; size your pool ≤ this |
-| `REDIS_URL` | `crud` | `redis://127.0.0.1:6379` — multi-process frameworks can use Redis as a cross-process cache; single-heap frameworks (Go, ASP.NET, etc.) typically ignore it and keep their in-process cache |
+| `DATABASE_MAX_CONN` | same as above | `256` - the Postgres sidecar's `max_connections`; size your pool ≤ this |
+| `REDIS_URL` | `crud` | `redis://127.0.0.1:6379` - multi-process frameworks can use Redis as a cross-process cache; single-heap frameworks (Go, ASP.NET, etc.) typically ignore it and keep their in-process cache |
 
 Gateway and `production-stack` profiles are compose-orchestrated, so their services receive additional env (e.g. `JWT_SECRET` for the production-stack auth sidecar) via their `compose.*.yml` files rather than through the runner. See the per-profile pages under [Gateway](gateway/) for details.
 

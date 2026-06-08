@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework standard JSON serialization and a standard TLS stack (OpenSSL, BoringSSL, rustls, SChannel, JDK JSSE, etc.). No pre-serialized caches, no bypassing the framework response pipeline, no TLS session-ticket shortcuts that skip real handshakes." tuned="May use alternative JSON libraries, tuned TLS providers, and framework-specific optimizations. The JSON body must still be serialized per request from live data — pre-computed / pre-serialized response caches are not allowed on either type; they short-circuit the serialization workload the profile exists to measure." engine="No specific rules." >}}
+{{< type-rules production="Must use the framework standard JSON serialization and a standard TLS stack (OpenSSL, BoringSSL, rustls, SChannel, JDK JSSE, etc.). No pre-serialized caches, no bypassing the framework response pipeline, no TLS session-ticket shortcuts that skip real handshakes." tuned="May use alternative JSON libraries, tuned TLS providers, and framework-specific optimizations. The JSON body must still be serialized per request from live data - pre-computed / pre-serialized response caches are not allowed on either type; they short-circuit the serialization workload the profile exists to measure." engine="No specific rules." >}}
 
 The JSON over TLS profile is the [JSON Processing](../json-processing/implementation/) workload transported over HTTP/1.1 + TLS on a dedicated port. It measures how much of a framework's plaintext JSON throughput survives encryption.
 
@@ -11,17 +11,17 @@ The JSON over TLS profile is the [JSON Processing](../json-processing/implementa
 2. The framework listens on **port 8081** with HTTPS, serving HTTP/1.1 only (ALPN advertises `http/1.1`)
 3. On each `GET /json/{count}?m={multiplier}` request, the server returns the same response shape as the `json` profile: first `count` items with `total = price × quantity × m`, wrapped in `{items, count}`
 4. Returns `Content-Type: application/json`
-5. Client sends **no** `Accept-Encoding` header — compression is out of scope for this profile
+5. Client sends **no** `Accept-Encoding` header - compression is out of scope for this profile
 
 The load generator is **wrk** with a Lua rotation script (`requests/json-tls-rotate.lua`). gcannon is not used for this test because it doesn't support TLS.
 
 ## What it measures
 
 - Everything [JSON Processing](../json-processing/implementation/#what-it-measures) measures
-- **TLS handshake cost amortized over keep-alive** — connections are long-lived at 4096 concurrent
-- **Record framing overhead** — every HTTP request gets wrapped in one or more TLS records
-- **Symmetric cipher throughput** — AES-GCM / ChaCha20-Poly1305 on the hot path
-- **Certificate private-key operations** — RSA/ECDSA cost per new connection, mostly negligible with keep-alive but visible during ramp
+- **TLS handshake cost amortized over keep-alive** - connections are long-lived at 4096 concurrent
+- **Record framing overhead** - every HTTP request gets wrapped in one or more TLS records
+- **Symmetric cipher throughput** - AES-GCM / ChaCha20-Poly1305 on the hot path
+- **Certificate private-key operations** - RSA/ECDSA cost per new connection, mostly negligible with keep-alive but visible during ramp
 
 ## Port, ALPN, and certificates
 

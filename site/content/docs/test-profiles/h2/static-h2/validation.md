@@ -8,9 +8,9 @@ The following checks are executed by `validate.sh` for every framework subscribe
 
 Verifies correct `Content-Type` headers for representative file types over HTTPS with HTTP/2:
 
-- `GET /static/reset.css` — expects `Content-Type: text/css`
-- `GET /static/app.js` — expects `Content-Type: application/javascript`
-- `GET /static/manifest.json` — expects `Content-Type: application/json`
+- `GET /static/reset.css` - expects `Content-Type: text/css`
+- `GET /static/app.js` - expects `Content-Type: application/javascript`
+- `GET /static/manifest.json` - expects `Content-Type: application/json`
 
 Note: `text/javascript` is accepted as equivalent to `application/javascript` per RFC 9239.
 

@@ -49,5 +49,5 @@ Content-Type: text/plain
 
 ## Notes
 
-- HTTP/3 support is not universal — only frameworks with native QUIC support participate
-- HTTP/3 throughput is typically 4–6× lower than HTTP/2 on the same framework. This reflects the inherent CPU cost of QUIC (per-packet AEAD, no kernel TLS offload, userspace packet processing) — see the [h2load-h3 load generator docs](/docs/load-generators/h3/h2load-h3/) for details
+- HTTP/3 support is not universal - only frameworks with native QUIC support participate
+- HTTP/3 throughput is typically 4–6× lower than HTTP/2 on the same framework. This reflects the inherent CPU cost of QUIC (per-packet AEAD, no kernel TLS offload, userspace packet processing) - see the [h2load-h3 load generator docs](/docs/load-generators/h3/h2load-h3/) for details

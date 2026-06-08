@@ -14,7 +14,7 @@ Compare a framework's benchmark results against the published leaderboard data o
 | Parameter | Description |
 |-----------|-------------|
 | `<framework>` | Name of the framework to compare |
-| `[profile]` | Optional — compare only this test profile |
+| `[profile]` | Optional - compare only this test profile |
 
 ## What it does
 

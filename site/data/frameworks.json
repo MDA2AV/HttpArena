@@ -3,7 +3,8 @@
     "dir": "actix",
     "description": "Actix-web 4 with rustls for HTTP/2 support. Standard configuration: actix-files serves static content from disk per request, Compress middleware handles Accept-Encoding negotiation with gzip/brotli on-the-fly, deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN), serde_json per request. Compiled with -O3 and thin LTO.",
     "repo": "https://github.com/actix/actix-web",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "actix",
     "variants": [
       {
@@ -26,7 +27,8 @@
     "dir": "aleph",
     "description": "",
     "repo": "https://github.com/clj-commons/aleph",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "netty"
   },
   "apache": {
@@ -40,7 +42,8 @@
     "dir": "aspnet-minimal",
     "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "kestrel",
     "variants": [
       {
@@ -63,42 +66,48 @@
     "dir": "aspnet-minimal-aot",
     "description": "Minimal ASP.NET Core Native AOT server using .NET 10 with Kestrel and minimal API routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "Kestrel"
   },
   "aspnet-minimal-iouring": {
     "dir": "aspnet-minimal-iouring",
     "description": "ASP.NET Core minimal API with experimental io_uring socket engine (dotnet/runtime#124374). Replaces epoll with io_uring for socket I/O on Linux 6.1+.",
     "repo": "https://github.com/benaadams/runtime/tree/io_uring",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "io_uring"
   },
   "aspnet-minimal + caddy": {
     "dir": "aspnet-minimal_caddy",
     "description": "ASP.NET minimal API behind Caddy, serving HTTP/3 (QUIC) at the edge with h1 forwarding to Kestrel.",
     "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "kestrel"
   },
   "aspnet-minimal + nginx": {
     "dir": "aspnet-minimal_nginx",
     "description": "ASP.NET Core minimal API behind an Nginx reverse proxy. Nginx handles TLS termination and static files, proxying dynamic endpoints to Kestrel over HTTP/1.1.",
     "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "kestrel"
   },
   "aspnet-mvc": {
     "dir": "aspnet-mvc",
     "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and MVC routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "kestrel"
   },
   "bananabread": {
     "dir": "bananabread",
-    "description": "Seagreen \u2014 a TypeScript port of GenHTTP \u2014 on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
+    "description": "Seagreen - a TypeScript port of GenHTTP - on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
     "repo": "https://github.com/dotnet-web-stack/Seagreen",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "seagreen"
   },
   "bjoern": {
@@ -112,14 +121,16 @@
     "dir": "bottle",
     "description": "Fast, simple and lightweight WSGI micro web-framework for Python",
     "repo": "https://github.com/bottlepy/bottle",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "gunicorn"
   },
   "bun-websocket": {
     "dir": "bun-websocket",
     "description": "Bun WebSocket echo server",
     "repo": "https://github.com/oven-sh/bun",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "bun"
   },
   "caddy": {
@@ -147,28 +158,32 @@
     "dir": "deno-websocket",
     "description": "Deno WebSocket echo server",
     "repo": "https://github.com/denoland/deno",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "deno"
   },
   "dogrider": {
     "dir": "dogrider",
     "description": "GenHTTP websockets with zerg backend",
     "repo": "https://github.com/MDA2AV/dogrider",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "zerg"
   },
   "effinitive": {
     "dir": "effinitive",
-    "description": "Ultra-high-performance custom HTTP server for .NET 10 \u2014 built from scratch for maximum speed.",
+    "description": "Ultra-high-performance custom HTTP server for .NET 10 - built from scratch for maximum speed.",
     "repo": "https://github.com/HBartosch/Effinitive",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "effinitive"
   },
   "elysia": {
     "dir": "elysia",
     "description": "An ergonomic framework for Humans",
     "repo": "https://github.com/elysiajs/elysia",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "jsc"
   },
   "envoy": {
@@ -182,7 +197,8 @@
     "dir": "fastapi",
     "description": "FastAPI async web framework on Uvicorn (uvloop)",
     "repo": "https://github.com/fastapi/fastapi",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "uvicorn"
   },
   "fasthttp": {
@@ -210,77 +226,88 @@
     "dir": "fishcake",
     "description": "CodeGreen, a 1:1 Kotlin port of GenHTTP, on its internal Netty-based engine with kotlinx.serialization and JDBC (HikariCP).",
     "repo": "https://github.com/dotnet-web-stack/CodeGreen",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "codegreen"
   },
   "flask": {
     "dir": "flask",
     "description": "Flask web framework on Gunicorn with sync workers",
     "repo": "https://github.com/pallets/flask",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "gunicorn"
   },
   "fleck": {
     "dir": "fleck",
     "description": "C# websockets framework",
     "repo": "https://github.com/statianzo/Fleck",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "fleck"
   },
-  "Fletch": {
+  "fletch": {
     "dir": "fletch",
     "description": "Express-inspired HTTP framework for Dart with radix-tree routing, middleware chains, signed sessions, and built-in DI.",
     "repo": "https://github.com/kartikey321/fletch",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "dart:io"
   },
   "frankenphp-trueasync": {
     "dir": "frankenphp-trueasync",
     "description": "FrankenPHP with TrueAsync coroutine engine. Each HTTP request runs as a cooperative coroutine with PDO connection pooling, async I/O, and OPcache JIT. Built on Caddy with native HTTP/2 and HTTP/3 support.",
     "repo": "https://github.com/true-async/php-async",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "frankenphp"
   },
   "genhttp-11": {
     "dir": "genhttp-11",
     "description": "Lightweight, embeddable and modular C# web server.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "genhttp"
   },
   "genhttp-kestrel": {
     "dir": "genhttp-kestrel",
     "description": "Lightweight, embeddable and modular C# web server.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "kestrel"
   },
   "genhttp": {
     "dir": "genhttp",
     "description": "Lightweight, embeddable and modular C# web server.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "genhttp"
   },
   "go-fasthttp": {
     "dir": "go-fasthttp",
     "description": "High-performance Go HTTP server using fasthttp with zero-allocation design and buffer reuse.",
     "repo": "https://github.com/valyala/fasthttp",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "fasthttp"
   },
   "go-websocket": {
     "dir": "go-websocket",
     "description": "Go WebSocket echo server using gobwas/ws",
     "repo": "https://github.com/gobwas/ws",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "net/http"
   },
   "grpc-go": {
     "dir": "grpc-go",
     "description": "Go gRPC server using google.golang.org/grpc.",
     "repo": "https://github.com/grpc/grpc-go",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "grpc-go"
   },
   "h2o": {
@@ -292,7 +319,7 @@
     "variants": [
       {
         "dir": "h2o-h2c",
-        "description": "libh2o evloop with a dedicated h2c-only listener on port 8082. The accept callback calls h2o_http2_accept directly instead of h2o_accept, so the connection must begin with the HTTP/2 client preface \u2014 plain HTTP/1.1 clients are dropped at protocol negotiation. Handlers for /baseline2 (query sum) and /json/{count} (serialized via cJSON).",
+        "description": "libh2o evloop with a dedicated h2c-only listener on port 8082. The accept callback calls h2o_http2_accept directly instead of h2o_accept, so the connection must begin with the HTTP/2 client preface - plain HTTP/1.1 clients are dropped at protocol negotiation. Handlers for /baseline2 (query sum) and /json/{count} (serialized via cJSON).",
         "repo": "https://github.com/h2o/h2o",
         "type": "infrastructure",
         "engine": "h2o"
@@ -303,35 +330,40 @@
     "dir": "h2o-mruby",
     "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
     "repo": "https://github.com/h2o/h2o",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "h2o"
   },
   "helidon-production": {
     "dir": "helidon-production",
-    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.4.1 on Níma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
-    "type": "production",
-    "engine": "n\u00edma"
+    "type": "flagship",
+    "mode": "standard",
+    "engine": "níma"
   },
   "helidon-tuned": {
     "dir": "helidon-tuned",
-    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.4.1 on Níma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
-    "type": "tuned",
-    "engine": "n\u00edma"
+    "type": "flagship",
+    "mode": "tuned",
+    "engine": "níma"
   },
   "hono-bun": {
     "dir": "hono-bun",
-    "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
+    "description": "Ultrafast Web Standards framework running natively on Bun - no adapter overhead.",
     "repo": "https://github.com/honojs/hono",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "jsc"
   },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
     "repo": "https://github.com/hummingbird-project/hummingbird",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "hummingbird"
   },
   "hyper": {
@@ -345,19 +377,21 @@
     "dir": "hyperf",
     "description": "A coroutine framework that focuses on hyperspeed and flexibility. Building microservice or middleware with ease.",
     "repo": "https://github.com/hyperf/hyperf",
-    "type": "production",
-    "engine": "Swoole"
+    "type": "flagship",
+    "mode": "standard",
+    "engine": "swoole"
   },
   "ktor": {
     "dir": "ktor",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
     "repo": "https://github.com/ktorio/ktor",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "netty"
   },
   "libreactorng": {
     "dir": "libreactorng",
-    "description": "libreactorng \u2014 Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
+    "description": "libreactorng - Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
     "repo": "https://github.com/fredrikwidlund/libreactorng",
     "type": "engine",
     "engine": "io_uring"
@@ -366,14 +400,16 @@
     "dir": "lute",
     "description": "Lute standalone Luau runtime",
     "repo": "https://github.com/luau-lang/lute",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "lute"
   },
   "mark": {
     "dir": "mark",
     "description": "Mark is a high performance API micro framework based on workerman, helps you quickly write APIs with PHP.",
     "repo": "https://github.com/passwalls/mark",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "workerman"
   },
   "may-minihttp": {
@@ -385,21 +421,21 @@
   },
   "minima-sync": {
     "dir": "minima-sync",
-    "description": "A synchronous single-issuer io_uring HTTP/1.1 server on Minima's io_uring bindings, NativeAOT-compiled. One pinned reactor thread per core (SO_REUSEPORT, SINGLE_ISSUER|DEFER_TASKRUN); multishot accept + single-shot recv into per-connection buffers (parse-in-place); responses serialized straight into the send buffer; recv/send alternate fully inline \u2014 no async, no thread pool, no GC on the hot path. JSON serialized per request from the model.",
+    "description": "A synchronous single-issuer io_uring HTTP/1.1 server on Minima's io_uring bindings, NativeAOT-compiled. One pinned reactor thread per core (SO_REUSEPORT, SINGLE_ISSUER|DEFER_TASKRUN); multishot accept + single-shot recv into per-connection buffers (parse-in-place); responses serialized straight into the send buffer; recv/send alternate fully inline - no async, no thread pool, no GC on the hot path. JSON serialized per request from the model.",
     "repo": "",
     "type": "engine",
     "engine": "io_uring"
   },
   "minima-ws": {
     "dir": "minima-ws",
-    "description": "Hand-rolled WebSocket echo on the Minima engine \u2014 a from-scratch C# multi-reactor io_uring server (direct io_uring syscalls via libc, multishot accept + multishot recv into a provided buffer ring, one ring per core with SO_REUSEPORT). The RFC 6455 handshake and the frame parser/masking/echo are written by hand on Minima's raw recv/send API; no WebSocket library.",
+    "description": "Hand-rolled WebSocket echo on the Minima engine - a from-scratch C# multi-reactor io_uring server (direct io_uring syscalls via libc, multishot accept + multishot recv into a provided buffer ring, one ring per core with SO_REUSEPORT). The RFC 6455 handshake and the frame parser/masking/echo are written by hand on Minima's raw recv/send API; no WebSocket library.",
     "repo": "",
     "type": "engine",
     "engine": "io_uring"
   },
   "minima": {
     "dir": "minima",
-    "description": "Minima \u2014 a from-scratch C# multi-reactor io_uring HTTP/1.1 server. Per-reactor SO_REUSEPORT + multishot accept, multishot recv into a provided buffer ring, inline (RCA=false) continuations with a reactor-thread short-circuit on buffer return/flush/recycle. The engine is vendored unchanged; the request handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on its raw recv/send API. No HTTP framework.",
+    "description": "Minima - a from-scratch C# multi-reactor io_uring HTTP/1.1 server. Per-reactor SO_REUSEPORT + multishot accept, multishot recv into a provided buffer ring, inline (RCA=false) continuations with a reactor-thread short-circuit on buffer return/flush/recycle. The engine is vendored unchanged; the request handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on its raw recv/send API. No HTTP framework.",
     "repo": "",
     "type": "engine",
     "engine": "io_uring"
@@ -415,21 +451,24 @@
     "dir": "ngx-php",
     "description": "Embedded PHP scripting language module for nginx.",
     "repo": "https://github.com/rryqszq4/ngx-php",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "nginx"
   },
   "node-websocket": {
     "dir": "node-websocket",
     "description": "Node.js WebSocket echo server using ws package",
     "repo": "https://github.com/websockets/ws",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "v8"
   },
   "php-fpm": {
     "dir": "php",
     "description": "Plain PHP with PHP-FPM & nginx.",
     "repo": "https://github.com/php/php-src",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "nginx"
   },
   "pico": {
@@ -448,16 +487,18 @@
   },
   "pyronova": {
     "dir": "pyronova",
-    "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
+    "description": "Pyronova - Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
     "repo": "https://github.com/leocaolab/pyronova",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "pyronova"
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
     "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
     "repo": "https://github.com/quarkusio/quarkus",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "netty",
     "variants": [
       {
@@ -469,7 +510,7 @@
       },
       {
         "dir": "quarkus-jvm-h2c",
-        "description": "Standalone Vert.x 4.5 on JDK 25, shaded fat jar. One Vertx instance per CPU so each HttpServer binds its own listening socket with SO_REUSEPORT (Netty epoll native transport) \u2014 the kernel distributes accepts across cores. Quarkus proper is not used here: its package step filters classifier-carrying jars like netty-transport-native-epoll out of the runtime image, and without native transport SO_REUSEPORT is a no-op. The HTTP stack (Vert.x + Netty epoll) is identical to what quarkus-jvm uses underneath. HTTP/1.1 is rejected by the handler with 400 to keep the port h2c-only.",
+        "description": "Standalone Vert.x 4.5 on JDK 25, shaded fat jar. One Vertx instance per CPU so each HttpServer binds its own listening socket with SO_REUSEPORT (Netty epoll native transport) - the kernel distributes accepts across cores. Quarkus proper is not used here: its package step filters classifier-carrying jars like netty-transport-native-epoll out of the runtime image, and without native transport SO_REUSEPORT is a no-op. The HTTP stack (Vert.x + Netty epoll) is identical to what quarkus-jvm uses underneath. HTTP/1.1 is rejected by the handler with 400 to keep the port h2c-only.",
         "repo": "https://github.com/quarkusio/quarkus",
         "type": "tuned",
         "engine": "netty"
@@ -494,26 +535,29 @@
     "dir": "rage",
     "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
     "repo": "https://github.com/rage-rb/rage",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "iodine"
   },
   "rails": {
     "dir": "rails",
     "description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.",
     "repo": "https://github.com/rails/rails",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "puma"
   },
   "ring-http-exchange": {
     "dir": "ring-http-exchange",
     "description": "",
     "repo": "https://github.com/ruroru/ring-http-exchange",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "robaho-httpserver"
   },
   "ringzero-ws": {
     "dir": "ringzero-ws",
-    "description": "Hand-rolled WebSocket echo server on raw io_uring (liburing) \u2014 no WebSocket library. Multishot accept + multishot recv into a provided buffer ring for zero-copy ingest, one ring per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking.",
+    "description": "Hand-rolled WebSocket echo server on raw io_uring (liburing) - no WebSocket library. Multishot accept + multishot recv into a provided buffer ring for zero-copy ingest, one ring per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking.",
     "repo": "https://github.com/axboe/liburing",
     "type": "engine",
     "engine": "io_uring"
@@ -529,21 +573,24 @@
     "dir": "roadrunner",
     "description": "Roadrunner: pure-Erlang HTTP/1.1 + HTTP/2 + HTTP/3 + WebSocket server from the Arizona framework.",
     "repo": "https://github.com/arizona-framework/roadrunner",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "roadrunner"
   },
   "robyn": {
     "dir": "robyn",
     "description": "Robyn is a High-Performance Web Framework with a Rust runtime",
     "repo": "https://github.com/sparckles/Robyn",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "uvloop"
   },
   "roda": {
     "dir": "roda",
     "description": "Roda routing tree web toolkit",
     "repo": "https://github.com/jeremyevans/roda",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "puma"
   },
   "rust-epoll": {
@@ -557,56 +604,64 @@
     "dir": "servicestack",
     "description": "One framework to power them all. Write your HTTP APIs once and take advantage of end to end typed integrations for all popular Web, Mobile and Desktop platforms.",
     "repo": "https://github.com/ServiceStack/ServiceStack",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "kestrel"
   },
   "simplew-tuned": {
     "dir": "simplew-tuned",
     "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
     "repo": "https://github.com/stratdev3/SimpleW",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "simplew"
   },
   "simplew": {
     "dir": "simplew",
     "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
     "repo": "https://github.com/stratdev3/SimpleW",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "simplew"
   },
   "sinatra": {
     "dir": "sinatra",
     "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
     "repo": "https://github.com/sinatra/sinatra",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "puma"
   },
   "sisk": {
     "dir": "sisk",
     "description": "Sisk is a lightweight, agnostic, simple, and robust web development framework.",
     "repo": "https://github.com/sisk-http",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "sisk"
   },
-  "SlimeWeb": {
+  "slimeweb": {
     "dir": "slimeweb",
     "description": "SlimeWeb is a fast lightweight framework for python powered by rust",
     "repo": "https://github.com/ATOMMAX-2001/Slime/",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "hyper"
   },
   "spring-boot": {
     "dir": "spring-boot",
     "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
     "repo": "https://github.com/spring-projects/spring-boot",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "tomcat"
   },
   "spring-jvm-grpc": {
     "dir": "spring-jvm-grpc",
     "description": "Spring Boot gRPC server using grpc-spring-boot-starter with Netty transport on JDK 24.",
     "repo": "https://github.com/grpc-ecosystem/grpc-spring",
-    "type": "tuned",
+    "type": "flagship",
+    "mode": "tuned",
     "engine": "netty (grpc)"
   },
   "swerver": {
@@ -616,19 +671,20 @@
     "type": "engine",
     "engine": "swerver"
   },
-  "Swoole": {
+  "swoole": {
     "dir": "swoole",
     "description": "Swoole is an event-driven, asynchronous, coroutine-based concurrency library with high performance for PHP.",
     "repo": "https://github.com/swoole/swoole-src",
-    "type": "tuned",
-    "engine": "Swoole",
+    "type": "flagship",
+    "mode": "tuned",
+    "engine": "swoole",
     "variants": [
       {
         "dir": "swoole-websocket",
         "description": "Swoole is an event-driven, asynchronous, coroutine-based concurrency library with high performance for PHP.",
         "repo": "https://github.com/swoole/swoole-src",
         "type": "tuned",
-        "engine": "Swoole"
+        "engine": "swoole"
       }
     ]
   },
@@ -636,40 +692,42 @@
     "dir": "symfony-spawn-franken",
     "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and FrankenPHP.",
     "repo": "https://github.com/yangusik/symfony-spawn",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "frankenphp"
   },
   "symfony-spawn-tas": {
     "dir": "symfony-spawn-tas",
     "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and TrueAsyncServer.",
     "repo": "https://github.com/yangusik/symfony-spawn",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "true-async-server"
   },
   "tokio-uring-ws": {
     "dir": "tokio-uring-ws",
-    "description": "Hand-rolled WebSocket echo on tokio-uring \u2014 the io_uring-backed Rust runtime with a completion/owned-buffer API. One tokio-uring runtime per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking on tokio-uring's TcpStream. No WebSocket library.",
+    "description": "Hand-rolled WebSocket echo on tokio-uring - the io_uring-backed Rust runtime with a completion/owned-buffer API. One tokio-uring runtime per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking on tokio-uring's TcpStream. No WebSocket library.",
     "repo": "https://github.com/tokio-rs/tokio-uring",
     "type": "engine",
     "engine": "io_uring"
   },
   "tokio-uring": {
     "dir": "tokio-uring",
-    "description": "Minimal HTTP/1.1 server on tokio-uring \u2014 the io_uring-backed Rust runtime with a completion/owned-buffer API. A hand-rolled request parser (Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads), one runtime per core with SO_REUSEPORT. No HTTP framework.",
+    "description": "Minimal HTTP/1.1 server on tokio-uring - the io_uring-backed Rust runtime with a completion/owned-buffer API. A hand-rolled request parser (Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads), one runtime per core with SO_REUSEPORT. No HTTP framework.",
     "repo": "https://github.com/tokio-rs/tokio-uring",
     "type": "engine",
     "engine": "io_uring"
   },
   "tokio-ws": {
     "dir": "tokio-ws",
-    "description": "Hand-rolled WebSocket echo server on raw tokio \u2014 no WebSocket library. A current-thread runtime per core with SO_REUSEPORT sharding, a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and a manual frame parser/masking + echo write path.",
+    "description": "Hand-rolled WebSocket echo server on raw tokio - no WebSocket library. A current-thread runtime per core with SO_REUSEPORT sharding, a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and a manual frame parser/masking + echo write path.",
     "repo": "https://github.com/tokio-rs/tokio",
     "type": "engine",
     "engine": "tokio"
   },
   "tokio": {
     "dir": "tokio",
-    "description": "Minimal HTTP/1.1 server on raw tokio \u2014 no HTTP framework. A hand-rolled request parser (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) on a tokio TcpStream, with one current-thread runtime per core and SO_REUSEPORT.",
+    "description": "Minimal HTTP/1.1 server on raw tokio - no HTTP framework. A hand-rolled request parser (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) on a tokio TcpStream, with one current-thread runtime per core and SO_REUSEPORT.",
     "repo": "https://github.com/tokio-rs/tokio",
     "type": "engine",
     "engine": "tokio"
@@ -678,7 +736,8 @@
     "dir": "tonic-grpc",
     "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
     "repo": "https://github.com/hyperium/tonic",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "tonic"
   },
   "traefik": {
@@ -692,21 +751,24 @@
     "dir": "trillium-tuned",
     "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints.",
     "repo": "https://github.com/trillium-rs/trillium",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "trillium-http"
   },
   "trillium": {
     "dir": "trillium",
     "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints, deadpool-postgres for async-db and crud.",
     "repo": "https://github.com/trillium-rs/trillium",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "trillium-http"
   },
   "true-async-server": {
     "dir": "true-async-server",
     "description": "Native PHP HTTP server built on the TrueAsync coroutine engine. Each connection runs as a cooperative coroutine; one OS thread per CPU listens via SO_REUSEPORT inside a single PHP process. PDO connection pool, OPcache JIT, no Caddy / FrankenPHP / FastCGI in front.",
     "repo": "https://github.com/true-async/server",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "true-async-server"
   },
   "typev": {
@@ -720,14 +782,16 @@
     "dir": "ultimate-express",
     "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
     "repo": "https://github.com/dimdenGD/ultimate-express",
-    "type": "tuned",
+    "type": "emerging",
+    "mode": "tuned",
     "engine": "uwebsockets"
   },
   "userver": {
     "dir": "userver",
     "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
     "repo": "https://github.com/userver-framework/userver",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "userver"
   },
   "uvicorn": {
@@ -739,7 +803,7 @@
   },
   "vanilla": {
     "dir": "vanilla",
-    "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking epoll I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
+    "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking epoll I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) - no Redis required.",
     "repo": "https://github.com/enghitalo/vanilla",
     "type": "engine",
     "engine": "epoll"
@@ -755,21 +819,24 @@
     "dir": "workerman-websocket",
     "description": "An asynchronous event driven PHP socket framework. Supports HTTP, Websocket, SSL and other custom protocols.",
     "repo": "https://github.com/walkor/Workerman",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "workerman"
   },
   "workerman": {
     "dir": "workerman",
     "description": "An asynchronous event driven PHP socket framework. Supports HTTP, Websocket, SSL and other custom protocols.",
     "repo": "https://github.com/walkor/Workerman",
-    "type": "production",
+    "type": "flagship",
+    "mode": "standard",
     "engine": "workerman"
   },
   "wtx": {
     "dir": "wtx-grpc",
     "description": "WTX - gRPC Server",
     "repo": "https://github.com/c410-f3r/wtx",
-    "type": "production",
+    "type": "emerging",
+    "mode": "standard",
     "engine": "wtx",
     "variants": [
       {

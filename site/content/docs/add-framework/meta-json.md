@@ -9,7 +9,8 @@ Create a `meta.json` file in your framework directory:
   "display_name": "your-framework",
   "language": "Go",
   "engine": "net/http",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "description": "Short description of the framework and its key features.",
   "repo": "https://github.com/org/repo",
   "enabled": true,
@@ -25,7 +26,8 @@ Create a `meta.json` file in your framework directory:
 | `display_name` | Name shown on the leaderboard |
 | `language` | Programming language (e.g., `Go`, `Rust`, `C#`, `Java`) |
 | `engine` | HTTP server engine (e.g., `Kestrel`, `Tomcat`, `hyper`) |
-| `type` | `production` for standard framework usage, `tuned` for optimized/non-default configurations, `engine` for bare-metal implementations |
+| `type` | `flagship` or `emerging` for frameworks, `engine` for bare-metal implementations, `infrastructure` for reverse proxies / static-file servers |
+| `mode` | Frameworks only: `standard` (default - idiomatic, production-style usage) or `tuned` (non-default config / optimizations) |
 | `description` | Shown in the framework detail popup on the leaderboard |
 | `repo` | Link to the framework's source repository |
 | `enabled` | Set to `false` to skip this framework during benchmark runs |
@@ -65,4 +67,4 @@ Create a `meta.json` file in your framework directory:
 
 Only include profiles your framework supports. Frameworks missing a profile simply don't appear in that profile's leaderboard.
 
-Per-profile endpoint contracts, request/response shapes, and validation rules live under the [Test Profiles](/docs/test-profiles/) section — link to the specific profile's Implementation page from your PR description when adding a new framework.
+Per-profile endpoint contracts, request/response shapes, and validation rules live under the [Test Profiles](/docs/test-profiles/) section - link to the specific profile's Implementation page from your PR description when adding a new framework.

@@ -430,7 +430,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "Swoole",
+    "framework": "swoole",
     "language": "PHP",
     "rps": 1328208,
     "avg_latency": "20.74ms",

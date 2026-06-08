@@ -1061,7 +1061,7 @@
     "tpl_async_db": 126914
   },
   {
-    "framework": "SlimeWeb",
+    "framework": "slimeweb",
     "language": "Python",
     "rps": 14636,
     "avg_latency": "16.50ms",
@@ -1113,7 +1113,7 @@
     "tpl_async_db": 65319
   },
   {
-    "framework": "Swoole",
+    "framework": "swoole",
     "language": "PHP",
     "rps": 46045,
     "avg_latency": "4.12ms",
