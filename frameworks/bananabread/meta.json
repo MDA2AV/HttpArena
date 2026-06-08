@@ -1,0 +1,21 @@
+{
+  "display_name": "bananabread",
+  "language": "TypeScript",
+  "type": "production",
+  "engine": "seagreen",
+  "description": "Seagreen — a TypeScript port of GenHTTP — on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
+  "repo": "https://github.com/dotnet-web-stack/Seagreen",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "async-db",
+    "crud",
+    "api-4",
+    "api-16"
+  ],
+  "maintainers": []
+}

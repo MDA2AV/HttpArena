@@ -1,18 +1,6 @@
 
-  Pyronova v2.3.1 [TPC mode, hybrid-inline]
-  Listening on http://0.0.0.0:8081
-  TPC threads: 8 (CPUs: 16, pinned)
-  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
-
-
-
-  Pyronova v2.3.1 [TPC mode, hybrid-inline]
-  Pyronova v2.3.1 [TPC mode, hybrid-inline]
-  Listening on http://0.0.0.0:8443
+  Pyronova v2.4.2 [TPC mode, hybrid-inline]
   Listening on http://0.0.0.0:8080
-  TPC threads: 8 (CPUs: 16, pinned)
-  TPC threads: 8 (CPUs: 16, pinned)
-  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
-
+  TPC threads: 16 (CPUs: 16, pinned)
   Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
 

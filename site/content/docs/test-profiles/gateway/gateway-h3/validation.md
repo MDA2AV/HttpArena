@@ -19,7 +19,7 @@ Same set as [Gateway-64 validation](../gateway-h2/validation/):
 4. `/static/app.js` — `Content-Type: application/javascript`
 5. `/static/app.js` — non-zero response body
 6. `/static/nonexistent.txt` — HTTP 404
-7. `/json/50` — returns 50 items with computed `total` field per item
+7. `/json/50` — returns 50 items, each with the full schema (`id`, `name`, `category`, `price`, `quantity`, `active`, `tags`, `rating` with `score`+`count`) and a computed `total`
 8. `/json/50` — `Content-Type: application/json`
 9. `/async-db?min=10&max=50&limit=50` — returns 1–50 items with nested `rating`, `tags`, boolean `active`
 10. `/async-db` — `Content-Type: application/json`

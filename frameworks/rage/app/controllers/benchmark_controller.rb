@@ -27,7 +27,7 @@ class BenchmarkController < ApplicationController
   def baseline_one
     total = params[:a].to_i + params[:b].to_i
     if request.post?
-      rack_input = request.send(:rack_request).env["rack.input"]
+      rack_input = request.send(:rack_request).env[Rack::RACK_INPUT]
       rack_input.rewind
       body_str = rack_input.read.strip
       total += body_str.to_i
@@ -66,21 +66,21 @@ class BenchmarkController < ApplicationController
 
     items = rows.map do |r|
       {
-        id: r['id'],
-        name: r['name'],
-        category: r['category'],
-        price: r['price'],
-        quantity: r['quantity'],
-        active: r['active'] == 't',
-        tags: JSON.parse(r['tags']),
-        rating: { score: r['rating_score'], count: r['rating_count'] }
+        id: r[:id],
+        name: r[:name],
+        category: r[:category],
+        price: r[:price],
+        quantity: r[:quantity],
+        active: r[:active] == 't',
+        tags: JSON.parse(r[:tags]),
+        rating: { score: r[:rating_score], count: r[:rating_count] }
       }
     end
     render json: { items: items, count: items.length }
   end
 
   def upload
-    rack_input = request.send(:rack_request).env["rack.input"]
+    rack_input = request.send(:rack_request).env[Rack::RACK_INPUT]
     rack_input.rewind
     size = 0
     while (chunk = rack_input.read(65536))

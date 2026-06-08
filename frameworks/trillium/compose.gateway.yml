@@ -1,9 +1,16 @@
+# gateway-64 — stock Caddy (TLS + h2 on 8443) in front of the trillium server,
+# forwarding dynamic endpoints over a shared Unix domain socket (h1 keepalive).
+# The server gets no certs, so it comes up cleartext on 8080 + the UDS only.
+#
+# CPU split is the #1 tuning knob — start even 16/16 physical and sweep via
+# PROXY_CPUSET / SERVER_CPUSET. The TLS-terminating proxy is often the
+# bottleneck under multiplexed h2 load, so give it more if it saturates.
 services:
   proxy:
     build:
       context: ./proxy
     network_mode: host
-    cpuset: "0-7,64-71"
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
     ulimits:
       memlock: -1
       nofile:
@@ -11,16 +18,10 @@ services:
         hard: 1048576
     security_opt:
       - seccomp:unconfined
-    environment:
-      - PROXY_PORT=8443
-      - PROXY_UPSTREAM=https://localhost:9443
-      - STATIC_DIR=/data/static
-      - TLS_CERT=/certs/server.crt
-      - TLS_KEY=/certs/server.key
-      - RUST_LOG=info
     volumes:
       - ${CERTS_DIR}:/certs:ro
       - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
     depends_on:
       - server
 
@@ -29,7 +30,7 @@ services:
       context: .
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "8-31,72-95"
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
     ulimits:
       memlock: -1
       nofile:
@@ -38,15 +39,19 @@ services:
     security_opt:
       - seccomp:unconfined
     environment:
+      - LISTEN_UDS=/run/app/app.sock
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=256
       - DATASET_PATH=/data/dataset.json
       - STATIC_DIR=/data/static
-      - TLS_CERT=/certs/server.crt
-      - TLS_KEY=/certs/server.key
-      - TLS_PORT=9443
       - RUST_LOG=info
     volumes:
-      - ${CERTS_DIR}:/certs:ro
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
       - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
+
+# Shared rendezvous for the UDS. network_mode: host shares the net namespace
+# but not the filesystem, so the socket needs an explicit shared volume mounted
+# into both services at the same path.
+volumes:
+  appsock:

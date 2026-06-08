@@ -3,15 +3,18 @@
 //! - [`h1`] — `/pipeline`, `/baseline11`, `/baseline2`, `/json/:count`, `/upload`
 //! - [`db`] — `/async-db`
 //! - [`crud`] — `/crud/items` and `/crud/items/:id`
+//! - [`fortunes`] — `/fortunes`
 //! - [`ws`] — `/ws` echo
 
 mod crud;
 mod db;
+mod fortunes;
 mod h1;
 mod ws;
 
 pub use crud::{crud_create, crud_list, crud_read, crud_update};
 pub use db::async_db;
+pub use fortunes::fortunes;
 pub use h1::{baseline_any, baseline_get, json_handler, pipeline, upload};
 use querystrong::QueryStrong;
 use trillium::{Conn, KnownHeaderName, Status};

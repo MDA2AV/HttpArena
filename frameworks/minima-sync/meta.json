@@ -1,0 +1,16 @@
+{
+  "display_name": "minima-sync",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "A synchronous single-issuer io_uring HTTP/1.1 server on Minima's io_uring bindings, NativeAOT-compiled. One pinned reactor thread per core (SO_REUSEPORT, SINGLE_ISSUER|DEFER_TASKRUN); multishot accept + single-shot recv into per-connection buffers (parse-in-place); responses serialized straight into the send buffer; recv/send alternate fully inline — no async, no thread pool, no GC on the hot path. JSON serialized per request from the model.",
+  "repo": "",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json"
+  ],
+  "maintainers": []
+}

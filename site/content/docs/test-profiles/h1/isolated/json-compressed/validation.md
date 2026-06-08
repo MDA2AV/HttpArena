@@ -28,10 +28,10 @@ Three requests are sent with different counts and multipliers:
 For each response, after decompressing, the validator checks:
 
 1. `count` field equals the route count
-2. Every item in `items` has a `total` field
+2. Every item in `items` contains the full schema — `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
 3. `total == price * quantity * m` for every item (integer, exact)
 
-Any missing field or incorrect arithmetic is a failure. This confirms the server honors the `m` parameter and applies it per item.
+Any missing field or incorrect arithmetic is a failure. Partial payloads that omit fields are rejected. This confirms the server honors the `m` parameter and applies it per item.
 
 ### No Content-Encoding when Accept-Encoding is absent
 

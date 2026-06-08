@@ -4,15 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-trillium = "1.1"
+trillium = "1"
 trillium-tokio = "0.6"
 trillium-router = "0.5"
 trillium-rustls = "0.11"
 trillium-quinn = "0.1"
 trillium-websockets = "0.8"
-trillium-static = { version = "0.5", features = ["tokio"] }
-trillium-compression = "0.2"
-trillium-logger = "0.4"
+trillium-static = { version = "0.6", features = ["tokio"] }
+trillium-compression = "0.3"
+trillium-grpc = "0.2"
+trillium-askama = "0.5"
+askama = "0.16"
+trillium-logger = "0.5"
 
 swansong = "0.3.4"
 futures-lite = "2"
@@ -35,3 +38,4 @@ codegen-units = 1
 lto = "fat"
 panic = "abort"
 strip = true
+

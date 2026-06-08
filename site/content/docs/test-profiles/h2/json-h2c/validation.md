@@ -14,4 +14,4 @@ Response must include `Content-Type: application/json` (charset suffix permitted
 
 ## Correctness across four (count, m) pairs
 
-Sends four requests with `(count, m)` ∈ `{(12, 3), (22, 7), (31, 2), (50, 5)}` — deliberately distinct from the benchmark's seven rotation pairs so any caching-by-key strategy returns stale data. Each response's `count` field must equal the requested count, and `items.length` must equal the count.
+Sends four requests with `(count, m)` ∈ `{(12, 3), (22, 7), (31, 2), (50, 5)}` — deliberately distinct from the benchmark's seven rotation pairs so any caching-by-key strategy returns stale data. For each response: the `count` field must equal the requested count, `items.length` must equal the count, every item must carry the full schema (`id`, `name`, `category`, `price`, `quantity`, `active`, `tags` array, `rating` object with `score`+`count`, and `total`), and `total == price * quantity * m`. Partial payloads that omit fields are rejected.

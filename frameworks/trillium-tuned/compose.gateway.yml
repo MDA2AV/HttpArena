@@ -1,0 +1,58 @@
+# gateway-64 — stock Caddy (TLS + h2 on 8443) in front of the trillium-tuned
+# server, forwarding dynamic endpoints over a shared Unix domain socket (h1
+# keepalive). The server gets no certs, so it comes up cleartext on 8080 + the
+# UDS only. n_workers auto-sizes to the server's cpuset via num_cpus.
+#
+# CPU split is the #1 tuning knob — start even 16/16 physical and sweep via
+# PROXY_CPUSET / SERVER_CPUSET. The TLS-terminating proxy is often the
+# bottleneck under multiplexed h2 load, so give it more if it saturates.
+services:
+  proxy:
+    build:
+      context: ./proxy
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - LISTEN_UDS=/run/app/app.sock
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+      - STATIC_DIR=/data/static
+      - RUST_LOG=info
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
+
+# Shared rendezvous for the UDS. network_mode: host shares the net namespace
+# but not the filesystem, so the socket needs an explicit shared volume mounted
+# into both services at the same path.
+volumes:
+  appsock:

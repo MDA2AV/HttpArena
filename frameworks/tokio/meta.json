@@ -1,0 +1,15 @@
+{
+  "display_name": "tokio",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "tokio",
+  "description": "Minimal HTTP/1.1 server on raw tokio — no HTTP framework. A hand-rolled request parser (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) on a tokio TcpStream, with one current-thread runtime per core and SO_REUSEPORT.",
+  "repo": "https://github.com/tokio-rs/tokio",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}

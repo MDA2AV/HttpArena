@@ -1,0 +1,12 @@
+{
+  "display_name": "wtx",
+  "language": "Rust",
+  "type": "production",
+  "engine": "wtx",
+  "description": "WTX - gRPC Server",
+  "repo": "https://github.com/c410-f3r/wtx",
+  "enabled": true,
+  "tests": [
+    "unary-grpc"
+  ]
+}

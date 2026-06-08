@@ -1,7 +1,10 @@
 use dashmap::DashMap;
-use deadpool_postgres::{Config as PgConfig, ManagerConfig, Pool, RecyclingMethod, Runtime};
+use deadpool_postgres::{
+    Config as PgConfig, ManagerConfig, Pool, PoolConfig, RecyclingMethod, Runtime,
+};
 use serde::{Deserialize, Serialize};
 use std::{
+    env, fs,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -32,7 +35,7 @@ pub struct AppState {
 }
 
 pub struct CacheEntry {
-    pub body: Vec<u8>,
+    pub body: Arc<[u8]>,
     pub expires: Instant,
 }
 
@@ -40,24 +43,23 @@ pub const CRUD_CACHE_TTL: Duration = Duration::from_millis(200);
 
 impl AppState {
     pub fn init() -> Arc<Self> {
-        let dataset_path =
-            std::env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".into());
-        let dataset = std::fs::read(&dataset_path)
+        let dataset_path = env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".into());
+        let dataset = fs::read(&dataset_path)
             .ok()
             .and_then(|bytes| sonic_rs::from_slice(&bytes).ok())
             .unwrap_or_default();
 
-        let pg = std::env::var("DATABASE_URL").ok().and_then(|url| {
+        let pg = env::var("DATABASE_URL").ok().and_then(|url| {
             let mut cfg = PgConfig::new();
             cfg.url = Some(url);
             cfg.manager = Some(ManagerConfig {
                 recycling_method: RecyclingMethod::Fast,
             });
-            let max_size: usize = std::env::var("DATABASE_MAX_CONN")
+            let max_size: usize = env::var("DATABASE_MAX_CONN")
                 .ok()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(256);
-            cfg.pool = Some(deadpool_postgres::PoolConfig::new(max_size));
+            cfg.pool = Some(PoolConfig::new(max_size));
             cfg.create_pool(Some(Runtime::Tokio1), NoTls).ok()
         });
 

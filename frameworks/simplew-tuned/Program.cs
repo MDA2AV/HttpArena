@@ -82,6 +82,7 @@ void ConfigureRoutes(SimpleWServer server)
             options.Path = "/data/static";
             options.Prefix = "/static/";
             options.AutoIndex = false;
+            options.CompressedDiskCache = true; // read compressed files in disk (created them if they don't exists)
         });
     }
 

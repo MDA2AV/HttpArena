@@ -1,0 +1,14 @@
+[package]
+name = "httparena-tokio-uring"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio-uring = "0.5"
+socket2 = { version = "0.5", features = ["all"] }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+panic = "abort"

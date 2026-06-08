@@ -1,0 +1,133 @@
+# yaml
+config_vars: configs/config_vars.yaml
+components_manager:
+    event_thread_pool:
+        threads: 8
+    coro_pool:
+        initial_size: 10000              # Preallocate 10000 coroutines at startup.
+        max_size: 300000                 # Do not keep more than 300000 preallocated coroutines.
+        stack_size: 66560                # 64Kb for coroutine stack
+
+    task_processors:                    # Task processor is an executor for coroutine tasks
+        main-task-processor:            # Make a task processor for CPU-bound couroutine tasks.
+            thread_name: main-worker    # OS will show the threads of this task processor with 'main-worker' prefix.
+            worker_threads: 64
+            guess-cpu-limit: true
+
+        fs-task-processor:              # Make a separate task processor for filesystem bound tasks.
+            thread_name: fs-worker
+            worker_threads: 1
+
+    default_task_processor: main-task-processor
+
+    components:                         # Configuring components that were registered via component_list
+        server:
+            listener:
+                # TLS ports are disabled until upstream userver supports
+                # per-port TLS config (listener_impl.cpp: always uses ports[0])
+                ports:
+                    - port: $server-port
+# PORTS  for http2 and tls benchmarks
+#                    - port: $tls-port
+#                      tls:
+#                          cert: $tls-cert
+#                          private-key: $tls-key
+#                    - port: $json-tls-port
+#                      tls:
+#                          cert: $tls-cert
+#                          private-key: $tls-key
+                task_processor: main-task-processor
+                handler-defaults:
+                    set_tracing_headers: false
+                    max_request_size: 26214400
+                    max_headers_size: 65535
+            server-name: userver
+        logging:
+            fs-task-processor: fs-task-processor
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: ERROR
+                    overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
+
+        dns-client:
+            fs-task-processor: fs-task-processor
+
+        dynamic-config:                      # Dynamic config storage options, do nothing
+            updates-enabled: false
+            fs-cache-path: ''
+            fs-task-processor: fs-task-processor
+
+        testsuite-support:
+
+        noop-tracing-manager:
+        tracing-manager-locator:
+            component-name: noop-tracing-manager
+
+        fs-cache-static:
+            dir: $static-data-dir
+            update-period: 0                 # files are immutable during benchmark
+            fs-task-processor: fs-task-processor
+
+        handler-static:
+            fs-cache-component: fs-cache-static
+            path: /static/*
+            method: GET
+            task_processor: main-task-processor
+
+        plaintext-handler:
+            path: /pipeline
+            method: GET
+            decompress_request: false
+            task_processor: main-task-processor
+
+        baseline11-handler:
+            path: /baseline11
+            method: GET,POST
+            decompress_request: false
+            task_processor: main-task-processor
+
+        json-handler:
+            path: /json/{count}
+            method: GET
+            decompress_request: false
+            task_processor: main-task-processor
+            middlewares:
+                pipeline-builder: compression-pipeline-builder
+
+        upload-handler:
+            path: /upload
+            method: POST
+            decompress_request: false
+            task_processor: main-task-processor
+
+        async-db-handler:
+            path: /async-db
+            method: GET
+            decompress_request: false
+            task_processor: main-task-processor
+
+        baseline2-handler:
+            path: /baseline2
+            method: GET
+            decompress_request: false
+            task_processor: main-task-processor
+
+        compression-pipeline-builder:
+
+        dataset-provider:
+            dataset-path: $dataset-path
+
+        hello-world-db:
+            dbconnection#env: DATABASE_URL                      # HttpArena benchmark env
+            dbconnection#fallback: postgresql://bench:bench@localhost:5432/benchmark?sslmode=disable  # local dev
+            min_pool_size#env: DATABASE_MAX_CONN                # pre-warm all connections at startup
+            min_pool_size#fallback: 256                          # local dev
+            max_pool_size#env: DATABASE_MAX_CONN                # HttpArena benchmark env (set to 256)
+            max_pool_size#fallback: 256                          # local dev
+            # min == max: pre-warm all connections at startup for benchmark
+            blocking_task_processor: fs-task-processor
+            max_queue_size: 4096
+            connecting_limit: 256
+            ignore_unused_query_params: true
+            connlimit_mode: manual

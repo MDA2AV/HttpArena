@@ -96,15 +96,15 @@ class ItemsController < ApplicationController
 
   def map_row(row)
     mapped_row = {
-      id: row['id'],
-      name: row['name'],
-      category: row['category'],
-      price: row['price'],
-      quantity: row['quantity'],
-      active: row['active'] == 1,
+      id: row[:id],
+      name: row[:name],
+      category: row[:category],
+      price: row[:price],
+      quantity: row[:quantity],
+      active: row[:active] == 1,
     }
-    mapped_row[:tags] = JSON.parse(row['tags']) if row['tags']
-    mapped_row[:rating] = { score: row['rating_score'], count: row['rating_count'] } if row['rating_score'] && row['rating_count']
+    mapped_row[:tags] = JSON.parse(row[:tags]) if row.has_key?(:tags)
+    mapped_row[:rating] = { score: row[:rating_score], count: row[:rating_count] } if row.has_key?(:rating_score) && row.has_key?(:rating_count)
     mapped_row
   end
 end

@@ -136,11 +136,11 @@ pub async fn crud_read(conn: Conn) -> Conn {
         }
     };
 
-    let body = sonic_rs::to_vec(&row).unwrap_or_default();
+    let body: Arc<[u8]> = sonic_rs::to_vec(&row).unwrap_or_default().into();
     state.crud_cache.insert(
         id,
         CacheEntry {
-            body: body.clone(),
+            body: Arc::clone(&body),
             expires: Instant::now() + CRUD_CACHE_TTL,
         },
     );

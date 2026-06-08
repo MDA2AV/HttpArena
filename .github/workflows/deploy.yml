@@ -33,11 +33,24 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Build
+      - name: Generate new-leaderboard data
+        run: python3 scripts/gen_new_leaderboard_data.py
+
+      - name: Build Hugo site (archived under /old/)
         working-directory: site
         run: |
           hugo mod tidy
-          hugo --minify --baseURL "https://www.http-arena.com"
+          hugo --minify --baseURL "https://www.http-arena.com/old/" --destination old_build
+
+      - name: Assemble — new board at root, Hugo site under /old/
+        working-directory: site
+        run: |
+          rm -rf public && mkdir public
+          mv old_build public/old
+          cp public/old/new-leaderboard/index.html public/index.html
+          cp public/old/new-leaderboard/data.js public/data.js
+          cp public/old/new-leaderboard/docs.js public/docs.js
+          cp root/404.html public/404.html   # path-preserving redirects: old links -> /old/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
