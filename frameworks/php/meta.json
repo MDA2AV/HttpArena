@@ -1,7 +1,8 @@
 {
   "display_name": "php-fpm",
   "language": "PHP",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "nginx",
   "description": "Plain PHP with PHP-FPM & nginx.",
   "repo": "https://github.com/php/php-src",

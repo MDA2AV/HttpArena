@@ -1,7 +1,8 @@
 {
   "display_name": "sisk",
   "language": "C#",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "sisk",
   "description": "Sisk is a lightweight, agnostic, simple, and robust web development framework.",
   "repo": "https://github.com/sisk-http",

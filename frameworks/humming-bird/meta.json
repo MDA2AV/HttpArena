@@ -1,7 +1,8 @@
 {
   "display_name": "humming-bird",
   "language": "Swift",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "tuned",
   "engine": "hummingbird",
   "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
   "repo": "https://github.com/hummingbird-project/hummingbird",

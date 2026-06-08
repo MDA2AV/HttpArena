@@ -1,7 +1,8 @@
 {
   "display_name": "actix",
   "language": "Rust",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "actix",
   "description": "Actix-web 4 with rustls for HTTP/2 support. Standard configuration: actix-files serves static content from disk per request, Compress middleware handles Accept-Encoding negotiation with gzip/brotli on-the-fly, deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN), serde_json per request. Compiled with -O3 and thin LTO.",
   "repo": "https://github.com/actix/actix-web",

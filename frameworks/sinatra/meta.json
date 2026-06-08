@@ -1,7 +1,8 @@
 {
   "display_name": "sinatra",
   "language": "Ruby",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "puma",
   "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.",
   "repo": "https://github.com/sinatra/sinatra",

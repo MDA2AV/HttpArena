@@ -1,7 +1,8 @@
 {
   "display_name": "fleck",
   "language": "C#",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "fleck",
   "description": "C# websockets framework",
   "repo": "https://github.com/statianzo/Fleck",

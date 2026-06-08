@@ -1,7 +1,8 @@
 {
   "display_name": "effinitive",
   "language": "C#",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "effinitive",
   "description": "Ultra-high-performance custom HTTP server for .NET 10 — built from scratch for maximum speed.",
   "repo": "https://github.com/HBartosch/Effinitive",

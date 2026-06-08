@@ -45,9 +45,11 @@ def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
             "dir": fw_dir,
             "description": m.get("description", ""),
             "repo": m.get("repo", ""),
-            "type": m.get("type", "realistic"),
+            "type": m.get("type", "emerging"),
             "engine": m.get("engine", ""),
         }
+        if "mode" in m:
+            entry["mode"] = m["mode"]
         groups.setdefault(display, []).append(entry)
 
     out: dict[str, dict] = {}

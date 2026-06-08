@@ -1,7 +1,8 @@
 {
   "display_name": "node-websocket",
   "language": "JS",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "v8",
   "description": "Node.js WebSocket echo server using ws package",
   "repo": "https://github.com/websockets/ws",

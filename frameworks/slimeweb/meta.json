@@ -1,7 +1,8 @@
 {
   "display_name": "slimeweb",
   "language": "Python",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "hyper",
   "description": "SlimeWeb is a fast lightweight framework for python powered by rust",
   "repo": "https://github.com/ATOMMAX-2001/Slime/",

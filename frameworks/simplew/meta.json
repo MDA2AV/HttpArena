@@ -1,7 +1,8 @@
 {
   "display_name": "simplew",
   "language": "C#",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "simplew",
   "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
   "repo": "https://github.com/stratdev3/SimpleW",

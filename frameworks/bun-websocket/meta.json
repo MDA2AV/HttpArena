@@ -1,7 +1,8 @@
 {
   "display_name": "bun-websocket",
   "language": "TS",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "bun",
   "description": "Bun WebSocket echo server",
   "repo": "https://github.com/oven-sh/bun",

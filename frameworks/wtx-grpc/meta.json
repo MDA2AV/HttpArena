@@ -1,7 +1,8 @@
 {
   "display_name": "wtx",
   "language": "Rust",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "wtx",
   "description": "WTX - gRPC Server",
   "repo": "https://github.com/c410-f3r/wtx",

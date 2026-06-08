@@ -1,7 +1,8 @@
 {
   "display_name": "aspnet-minimal",
   "language": "C#",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "kestrel",
   "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
   "repo": "https://github.com/dotnet/aspnetcore",
