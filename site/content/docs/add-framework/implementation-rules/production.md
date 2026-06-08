@@ -1,9 +1,9 @@
 ---
-title: "$ Production"
+title: Standard
 weight: 1
 ---
 
-The most restrictive category. Production entries measure what the framework gives you out of the box, the way developers actually use it in real applications.
+Standard is the default mode for a framework entry (`mode: standard`). It measures what the framework gives you out of the box, the way developers actually use it in real applications - documented APIs, production-grade settings, and standard libraries.
 
 ## Use framework-level APIs
 
@@ -56,13 +56,13 @@ If the ecosystem has a well-established, production-grade library for a task (da
 
 ## Static files must be read from disk
 
-For static file tests, production entries must read files from disk on every request. No in-memory caching, no memory-mapped files, no pre-loaded file buffers.
+For static file tests, standard entries must read files from disk on every request. No in-memory caching, no memory-mapped files, no pre-loaded file buffers.
 
 ## Static file compression
 
-Compression of static files is optional but recommended for better results. All static file requests include `Accept-Encoding: br;q=1, gzip;q=0.8` — frameworks that compress will naturally benefit from reduced I/O.
+Compression of static files is optional but recommended for better results. All static file requests include `Accept-Encoding: br;q=1, gzip;q=0.8` - frameworks that compress will naturally benefit from reduced I/O.
 
-**Production rule:** compression must use the framework's standard middleware or built-in static file handler (e.g., Nginx `gzip on`/`gzip_static on`, ASP.NET response compression middleware, Express `compression()` middleware). No handmade compression code.
+**Standard rule:** compression must use the framework's standard middleware or built-in static file handler (e.g., Nginx `gzip on`/`gzip_static on`, ASP.NET response compression middleware, Express `compression()` middleware). No handmade compression code.
 
 Pre-compressed files (`.gz`, `.br`) are available on disk alongside the originals. Frameworks that support serving pre-compressed files as a documented, official feature (e.g., Nginx `gzip_static`/`brotli_static`, ASP.NET `MapStaticAssets`) may use them.
 

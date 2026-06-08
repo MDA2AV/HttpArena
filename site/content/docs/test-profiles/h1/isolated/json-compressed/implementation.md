@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework standard JSON serialization and the framework or engine's built-in response compression (middleware, filter, or equivalent). No pre-compressed caches, no bypassing the response pipeline." tuned="May use alternative JSON libraries, tuned compression libraries, and framework-specific optimizations as long as the output is valid gzip or brotli. The JSON body must still be serialized and compressed per request — pre-computed / pre-serialized / pre-compressed response caches are not allowed on either type; they defeat the serialization and compression workload the profile exists to measure." engine="No specific rules." >}}
+{{< type-rules production="Must use the framework standard JSON serialization and the framework or engine's built-in response compression (middleware, filter, or equivalent). No pre-compressed caches, no bypassing the response pipeline." tuned="May use alternative JSON libraries, tuned compression libraries, and framework-specific optimizations as long as the output is valid gzip or brotli. The JSON body must still be serialized and compressed per request - pre-computed / pre-serialized / pre-compressed response caches are not allowed on either type; they defeat the serialization and compression workload the profile exists to measure." engine="No specific rules." >}}
 
 The JSON Compressed profile is the same workload as [JSON Processing](../json-processing/implementation/) with one difference: the client sends `Accept-Encoding: gzip, br` and the server must return a compressed response with a matching `Content-Encoding` header.
 
@@ -14,16 +14,16 @@ The JSON Compressed profile is the same workload as [JSON Processing](../json-pr
    - Serializes to JSON
    - Compresses the response body with gzip or brotli
    - Returns `Content-Type: application/json` and `Content-Encoding: gzip` (or `br`)
-3. When the client does **not** send `Accept-Encoding`, the server **must not** set `Content-Encoding` — compression is per-request, driven by the client header
+3. When the client does **not** send `Accept-Encoding`, the server **must not** set `Content-Encoding` - compression is per-request, driven by the client header
 
 The benchmark round-robins across counts 25, 40, and 50 paired with multipliers 4, 8, and 6.
 
 ## What it measures
 
 - Everything [JSON Processing](../json-processing/implementation/#what-it-measures) measures
-- **Response compression throughput** — gzip or brotli encoding of the serialized body
-- **Content negotiation** — honoring `Accept-Encoding` per request
-- **Framework compression middleware overhead** — how cheaply the framework wires compression into the response pipeline
+- **Response compression throughput** - gzip or brotli encoding of the serialized body
+- **Content negotiation** - honoring `Accept-Encoding` per request
+- **Framework compression middleware overhead** - how cheaply the framework wires compression into the response pipeline
 
 ## Expected response
 
@@ -56,7 +56,7 @@ Decompressed body:
 }
 ```
 
-`total` is `price * quantity * m` — integer arithmetic, no rounding. For `GET /json/5?m=1`, `total` equals `price * quantity`; the multiplier is never implicitly 1.
+`total` is `price * quantity * m` - integer arithmetic, no rounding. For `GET /json/5?m=1`, `total` equals `price * quantity`; the multiplier is never implicitly 1.
 
 ## Parameters
 
@@ -83,13 +83,13 @@ For each framework, the server's actual bytes-per-response is computed from the 
 myBpr = observed_bandwidth / observed_rps
 ```
 
-The framework with the **smallest** `myBpr` across the field sets the reference — that's the compression winner. Every framework's effective rps is then scaled by the squared ratio of reference to actual:
+The framework with the **smallest** `myBpr` across the field sets the reference - that's the compression winner. Every framework's effective rps is then scaled by the squared ratio of reference to actual:
 
 ```
 effectiveRps = rps × (minBpr / myBpr)²
 ```
 
-The quadratic exponent is deliberate: **doubling the response size quarters the score**. A framework that serves twice the rps but ships 1.4× the bytes roughly breaks even; one that ships 2× the bytes pays 4× in score and needs to match 4× the rps just to stay level. The BW/req column on the leaderboard shows each framework's `myBpr` so you can see exactly what compression ratio the server picked (gzip at its chosen level, brotli, deflate — whatever `Accept-Encoding: gzip, br` returned).
+The quadratic exponent is deliberate: **doubling the response size quarters the score**. A framework that serves twice the rps but ships 1.4× the bytes roughly breaks even; one that ships 2× the bytes pays 4× in score and needs to match 4× the rps just to stay level. The BW/req column on the leaderboard shows each framework's `myBpr` so you can see exactly what compression ratio the server picked (gzip at its chosen level, brotli, deflate - whatever `Accept-Encoding: gzip, br` returned).
 
 ### Per-conn-count table (per-profile leaderboard)
 
@@ -104,11 +104,11 @@ On the [composite leaderboard](/leaderboards/composite/), the JSON Compressed co
 3. Apply the same `effectiveRps = avgRps × (minBpr / myBpr)²` formula.
 4. Normalize to 0–100.
 
-The resulting per-profile score feeds into the composite like every other profile — averaged across all scored profiles for that framework's type.
+The resulting per-profile score feeds into the composite like every other profile - averaged across all scored profiles for that framework's type.
 
 ### Consequences
 
 - **A framework that picks brotli can dominate even at lower rps**, provided the smaller bytes-per-response wins back more score than the rps gap costs. This reflects real-world bandwidth-constrained serving.
 - **Gzip-only frameworks are competitive when their compression level is aggressive enough** to keep `myBpr` near the brotli leader. The formula rewards ratio, not the specific encoding chosen.
-- **Pre-computed compressed payloads are out of the question for `production` type** — the type rules require the response pipeline to actually compress per-request. See [type rules](/docs/add-framework/meta-json/#type-rules).
+- **Pre-computed compressed payloads are out of the question for `production` type** - the type rules require the response pipeline to actually compress per-request. See [type rules](/docs/add-framework/meta-json/#type-rules).
 - **The best-conn-count panel on the profile tab can rank differently from the composite column**, because one picks the highest-scoring conn count and the other averages. Both are intentional: the profile tab answers "which framework wins at its best setting?"; the composite answers "which framework is most consistent across loads?".

@@ -4,7 +4,7 @@
 The "new leaderboard" is a standalone static page (plain HTML/CSS/JS, no Hugo
 templating). This script reads the same per-profile result files the Hugo
 leaderboard consumes and emits a single `window.LB_DATA = {...}` blob the page
-renders client-side — both the per-profile explorer and the composite ranking.
+renders client-side - both the per-profile explorer and the composite ranking.
 
 The composite mirrors the canonical board: it averages RPS over each profile's
 *scored* connection set, applies per-type profile eligibility, and carries the
@@ -41,7 +41,7 @@ CATALOG = [
     ]),
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,False),
-        ("json-comp", "JSON Compressed", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
+        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,False,False),
         ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False,False),
         ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False,True),
@@ -52,8 +52,8 @@ CATALOG = [
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("Multi-endpoint", [
-        ("api-4",  "API · 4 CPU",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,True,False),
-        ("api-16", "API · 16 CPU", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
+        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,True,False),
+        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
     ]),
     ("HTTP/2", [
         ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,False),
@@ -134,7 +134,7 @@ def load(name):
 
 # ── Knowledge Base (docs) ─────────────────────────────────────────────────
 # Pull the docs content into the standalone leaderboard so the Knowledge Base
-# is self-contained — no links into the Hugo site. This carries the same *data*,
+# is self-contained - no links into the Hugo site. This carries the same *data*,
 # not Hugo's rendering: frontmatter is stripped, Hugo shortcodes are reduced to
 # plain text (keeping their data), and the body is shown as preformatted text.
 # The sidebar tree mirrors the docs hierarchy, ordered like Hugo's default
@@ -199,7 +199,7 @@ _IDS = set()
 def _resolve(href, curdir, ids):
     """Return (kind, target, anchor); kind in {ext, doc, anchor}.
     Internal links resolve against the file's dir, then (fallback) the page's
-    own id-as-dir — matching the two relative-link dialects used in the docs."""
+    own id-as-dir - matching the two relative-link dialects used in the docs."""
     anchor = ""
     if "#" in href:
         href, anchor = href.split("#", 1)
@@ -383,7 +383,7 @@ def _md_to_html(body, curdir, ids):
 
 
 def _typerules(a, curdir, ids):
-    spec = [("production", "Production", "#22c55e"), ("tuned", "Tuned", "#eab308"), ("engine", "Engine", "#dc2626")]
+    spec = [("production", "Standard", "#22c55e"), ("tuned", "Tuned", "#eab308"), ("engine", "Engine", "#dc2626")]
     tabs = panels = ""
     for idx, (k, lbl, col) in enumerate(spec):
         act = " active" if idx == 0 else ""
@@ -489,8 +489,8 @@ def build_docs():
         did = cur if p.name == "_index.md" else rel.with_suffix("").as_posix()
         pages.append((p, did, cur))
     ids = {d for _, d, _ in pages}
-    # Second pass: render. Hugo resolves relative links with relref semantics —
-    # against the source file's directory, not the URL — so curdir is that dir.
+    # Second pass: render. Hugo resolves relative links with relref semantics -
+    # against the source file's directory, not the URL - so curdir is that dir.
     content = {}
     for p, did, cur in pages:
         title, _ = _frontmatter(p)
@@ -516,7 +516,8 @@ def main():
     langcolors = load("langcolors.json") or {}
     current = load("current.json") or {}
 
-    meta = {n: {"type": m.get("type", "production"),
+    meta = {n: {"type": m.get("type", "emerging"),
+                "mode": m.get("mode", "standard"),
                 "language": m.get("language", ""),
                 "repo": m.get("repo", ""),
                 "dir": m.get("dir", ""),
@@ -572,9 +573,9 @@ def main():
     docs_out.write_text("window.LB_DOCS = " + json.dumps(docs_content, separators=(",", ":")) + ";\n")
 
     n_rows = sum(len(v) for v in results.values())
-    print(f"wrote {OUT.relative_to(ROOT)} — {len(profiles)} profiles, "
+    print(f"wrote {OUT.relative_to(ROOT)} - {len(profiles)} profiles, "
           f"{len(results)} views, {n_rows} rows, {OUT.stat().st_size // 1024} KB")
-    print(f"wrote {docs_out.relative_to(ROOT)} — {len(docs_content)} docs pages, "
+    print(f"wrote {docs_out.relative_to(ROOT)} - {len(docs_content)} docs pages, "
           f"{docs_out.stat().st_size // 1024} KB")
 
 

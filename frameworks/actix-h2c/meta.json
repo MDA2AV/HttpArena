@@ -1,7 +1,8 @@
 {
   "display_name": "actix",
   "language": "Rust",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "actix",
   "description": "Actix-web 4 h2c-only listener on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
   "repo": "https://github.com/actix/actix-web",

@@ -1,7 +1,8 @@
 {
   "display_name": "grpc-go",
   "language": "Go",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "grpc-go",
   "description": "Go gRPC server using google.golang.org/grpc.",
   "repo": "https://github.com/grpc/grpc-go",

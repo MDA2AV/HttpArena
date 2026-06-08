@@ -1,7 +1,8 @@
 {
   "display_name": "fishcake",
   "language": "Kotlin",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "codegreen",
   "description": "CodeGreen, a 1:1 Kotlin port of GenHTTP, on its internal Netty-based engine with kotlinx.serialization and JDBC (HikariCP).",
   "repo": "https://github.com/dotnet-web-stack/CodeGreen",

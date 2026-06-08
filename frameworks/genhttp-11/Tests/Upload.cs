@@ -1,4 +1,6 @@
-﻿using GenHTTP.Modules.Reflection;
+﻿using System.Buffers;
+
+using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 
 namespace genhttp.Tests;
@@ -7,32 +9,29 @@ public class Upload
 {
 
     [ResourceMethod(Method.Post)]
-    public ValueTask<long> Compute(Stream input)
+    public async ValueTask<long> Compute(Stream input)
     {
-        if (input.CanSeek)
+        var pool = ArrayPool<byte>.Shared;
+
+        var buffer = pool.Rent(16384);
+
+        try
         {
-            // internal engine
-            return ValueTask.FromResult(input.Length);
+            long total = 0;
+
+            var read = 0;
+
+            while ((read = await input.ReadAsync(buffer)) > 0)
+            {
+                total += read;
+            }
+
+            return total;
         }
-
-        // kestrel
-        return ComputeManually(input);
-    }
-
-    private async ValueTask<long> ComputeManually(Stream input)
-    {
-        var buffer = new byte[8192];
-
-        long total = 0;
-
-        var read = 0;
-
-        while ((read = await input.ReadAsync(buffer)) > 0)
+        finally
         {
-            total += read;
+            pool.Return(buffer);
         }
-
-        return total;
     }
 
 }

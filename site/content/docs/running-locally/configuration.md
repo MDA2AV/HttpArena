@@ -24,10 +24,10 @@ In `benchmark-lite.sh`, `THREADS` defaults to `max(nproc / 2, 1)` and `H2THREADS
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc`, `stream-grpc` — prior-knowledge on the same socket). |
+| `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc`, `stream-grpc` - prior-knowledge on the same socket). |
 | `H2PORT` | `8443` | HTTPS / HTTP/2 over TLS (`baseline-h2`, `static-h2`, gateway + production-stack), HTTP/3 over QUIC (`baseline-h3`, `static-h3`, `gateway-h3`), and gRPC-TLS (`unary-grpc-tls`, `stream-grpc-tls`). |
 | `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS, used only by the `json-tls` profile (ALPN `http/1.1`). |
-| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for the `baseline-h2c` and `json-h2c` profiles. Must be a dedicated listener that refuses HTTP/1.1 — the validator checks this explicitly. |
+| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for the `baseline-h2c` and `json-h2c` profiles. Must be a dedicated listener that refuses HTTP/1.1 - the validator checks this explicitly. |
 
 Every framework `Dockerfile` reads the same defaults from its env, so you rarely need to change these.
 
@@ -41,7 +41,7 @@ Every framework `Dockerfile` reads the same defaults from its env, so you rarely
 
 ## Tool binaries and images
 
-Each load generator has a pair of variables — native binary name and docker image tag:
+Each load generator has a pair of variables - native binary name and docker image tag:
 
 | Native (`$TOOL`) | Docker (`$TOOL_IMAGE`) | Used for | Source |
 |---|---|---|---|
@@ -70,11 +70,11 @@ Profiles live in `scripts/lib/profiles.sh`. Format:
 pipeline | req_per_conn | cpu_limit | connections | endpoint
 ```
 
-- **pipeline** — gcannon `-p` value. `1` = sequential, `16` = pipelined.
-- **req_per_conn** — gcannon `-r` value. `0` = keep-alive forever; a positive number forces reconnect every N requests (exercises the accept path).
-- **cpu_limit** — cpuset written to the framework container's `--cpuset-cpus`. Blank = no pinning.
-- **connections** — comma-separated list; each value becomes a separate iteration.
-- **endpoint** — dispatch key. Tells `endpoint_tool()` which load generator to use and `gcannon_build_args()` (etc.) how to shape the request.
+- **pipeline** - gcannon `-p` value. `1` = sequential, `16` = pipelined.
+- **req_per_conn** - gcannon `-r` value. `0` = keep-alive forever; a positive number forces reconnect every N requests (exercises the accept path).
+- **cpu_limit** - cpuset written to the framework container's `--cpuset-cpus`. Blank = no pinning.
+- **connections** - comma-separated list; each value becomes a separate iteration.
+- **endpoint** - dispatch key. Tells `endpoint_tool()` which load generator to use and `gcannon_build_args()` (etc.) how to shape the request.
 
 `benchmark-lite.sh` overrides `PROFILES` and `PROFILE_ORDER` with a smaller subset and blanks the `cpu_limit` column; everything else parses identically.
 

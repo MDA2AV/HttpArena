@@ -25,4 +25,4 @@ h2load https://localhost:8443/baseline2?a=1&b=1 -c 256 -m 100 -t 128 -D 5s
 
 ## Why h2load?
 
-gcannon is HTTP/1.1 only (by design — it uses raw request templates and io_uring for maximum throughput). h2load handles TLS negotiation, ALPN, HPACK header compression, and HTTP/2 stream multiplexing natively.
+gcannon is HTTP/1.1 only (by design - it uses raw request templates and io_uring for maximum throughput). h2load handles TLS negotiation, ALPN, HPACK header compression, and HTTP/2 stream multiplexing natively.

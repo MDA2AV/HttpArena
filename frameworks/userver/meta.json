@@ -1,7 +1,8 @@
 {
   "display_name": "userver",
   "language": "C++",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "userver",
   "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
   "repo": "https://github.com/userver-framework/userver",

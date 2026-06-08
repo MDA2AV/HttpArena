@@ -2,7 +2,7 @@
 title: WebSocket
 ---
 
-HttpArena drives the `echo-ws` profile with **gcannon in `--ws` mode**. The same io_uring engine documented under [HTTP/1.1 → gcannon](../h1/gcannon/) is reused here — worker threads, per-thread provided-buffer rings, multishot receives, per-connection state — with a frame-aware send/recv loop layered on top. Using one tool across transports keeps the client-side ceiling, threading model, and CPU-pinning behavior consistent so differences in the measurement land on the server, not the generator.
+HttpArena drives the `echo-ws` profile with **gcannon in `--ws` mode**. The same io_uring engine documented under [HTTP/1.1 → gcannon](../h1/gcannon/) is reused here - worker threads, per-thread provided-buffer rings, multishot receives, per-connection state - with a frame-aware send/recv loop layered on top. Using one tool across transports keeps the client-side ceiling, threading model, and CPU-pinning behavior consistent so differences in the measurement land on the server, not the generator.
 
 ## Handshake
 
@@ -17,7 +17,7 @@ Once upgraded, each connection runs the steady-state loop:
 3. Wait for the server to echo it back (matched server-to-client frame)
 4. On receipt, increment the per-thread frame counter and immediately send the next frame
 
-Pipeline depth is 1 for the `echo-ws` profile — one message in flight per connection — so the measurement is effectively a back-to-back request/response loop rather than a batched burst. With thousands of concurrent connections each running this loop in parallel, the steady-state throughput reflects the server's ability to multiplex WebSocket frames across a large connection count without head-of-line blocking.
+Pipeline depth is 1 for the `echo-ws` profile - one message in flight per connection - so the measurement is effectively a back-to-back request/response loop rather than a batched burst. With thousands of concurrent connections each running this loop in parallel, the steady-state throughput reflects the server's ability to multiplex WebSocket frames across a large connection count without head-of-line blocking.
 
 Both text frames (opcode `0x1`) and binary frames (opcode `0x2`) are exercised against the server during validation; benchmark runs use the text shape for simplicity. Framing follows RFC 6455: masked from client to server, unmasked from server to client, FIN bit set on every frame (no fragmented messages in the benchmark path).
 
@@ -34,8 +34,8 @@ gcannon http://localhost:8080/ws --ws \
 | `--ws` | Switches gcannon from HTTP request mode into WebSocket echo mode |
 | `-c` | Total concurrent connections (distributed evenly across `-t` threads) |
 | `-t` | Worker threads (each owns an io_uring and a slice of connections; defaults to `$THREADS=64`) |
-| `-d` | Test duration — `5s` for `echo-ws` |
-| `-p` | Pipeline depth — fixed at `1` for `echo-ws` (one message in flight per connection) |
+| `-d` | Test duration - `5s` for `echo-ws` |
+| `-p` | Pipeline depth - fixed at `1` for `echo-ws` (one message in flight per connection) |
 
 The profile dispatcher (`scripts/lib/tools/gcannon.sh:ws-echo`) wires all of this automatically when you invoke `./scripts/benchmark.sh <framework> echo-ws`.
 
@@ -49,8 +49,8 @@ gcannon reports WebSocket results with the same layout as HTTP requests, except 
   WS frames: 2400000
 ```
 
-The parser (`gcannon_parse ws-echo`) records `frames received` as the `status_2xx` equivalent and divides by the measured duration to produce the headline RPS number shown on the [WebSocket leaderboard](/leaderboards/websocket/). One echo round-trip counts as one unit — the frames-received count from the client side, not frames-sent, because the metric is "how many echoes the framework completed," not "how many messages the benchmarker pushed into the socket."
+The parser (`gcannon_parse ws-echo`) records `frames received` as the `status_2xx` equivalent and divides by the measured duration to produce the headline RPS number shown on the [WebSocket leaderboard](/leaderboards/websocket/). One echo round-trip counts as one unit - the frames-received count from the client side, not frames-sent, because the metric is "how many echoes the framework completed," not "how many messages the benchmarker pushed into the socket."
 
 ## Why not a dedicated WebSocket tool
 
-The two common alternatives — `wrk2` with a Lua WebSocket plugin, or `artillery` — either can't saturate the server at 64-core scale (GC + per-connection Lua overhead becomes the bottleneck) or produce non-deterministic per-thread CPU pinning that makes cross-framework comparison unreliable. Reusing gcannon means the generator's tuning story is the same one already vetted against the HTTP/1.1 profiles, and the operator-side flags (`$GCANNON_CPUS`, cpuset pinning, provided buffer ring sizing) compose identically.
+The two common alternatives - `wrk2` with a Lua WebSocket plugin, or `artillery` - either can't saturate the server at 64-core scale (GC + per-connection Lua overhead becomes the bottleneck) or produce non-deterministic per-thread CPU pinning that makes cross-framework comparison unreliable. Reusing gcannon means the generator's tuning story is the same one already vetted against the HTTP/1.1 profiles, and the operator-side flags (`$GCANNON_CPUS`, cpuset pinning, provided buffer ring sizing) compose identically.

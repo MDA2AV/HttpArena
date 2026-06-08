@@ -1,7 +1,8 @@
 {
   "display_name": "ring-http-exchange",
   "language": "Clojure",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "robaho-httpserver",
   "description": "",
   "repo": "https://github.com/ruroru/ring-http-exchange",

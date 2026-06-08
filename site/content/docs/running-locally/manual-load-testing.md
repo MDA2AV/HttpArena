@@ -10,11 +10,11 @@ Sometimes you want to start a framework yourself, poke at individual endpoints, 
 - Iterating on a framework implementation and you want fast feedback without the full tuning / build pipeline.
 - Trying a different connection count, duration, or request template than any stock profile uses.
 - Debugging a single endpoint in isolation.
-- Running a load generator against a server that isn't in `frameworks/` at all — anything on `localhost` works.
+- Running a load generator against a server that isn't in `frameworks/` at all - anything on `localhost` works.
 
 If you want reproducible numbers that match the leaderboard, use `benchmark.sh`. This page is for the in-between.
 
-## Step 1 — start the server
+## Step 1 - start the server
 
 ### Option A: use `scripts/run.sh`
 
@@ -39,9 +39,9 @@ docker run -d --name httparena-postgres --network host \
 
 Any server on `localhost:8080` (or wherever) works. The load generators don't care what's on the other end.
 
-## Step 2 — build the load-generator images once
+## Step 2 - build the load-generator images once
 
-If you've run `benchmark-lite.sh` or `LOADGEN_DOCKER=true ./scripts/benchmark.sh ...` at least once, these already exist. Otherwise build them up front — it's a one-off cost:
+If you've run `benchmark-lite.sh` or `LOADGEN_DOCKER=true ./scripts/benchmark.sh ...` at least once, these already exist. Otherwise build them up front - it's a one-off cost:
 
 ```bash
 docker build -t gcannon:latest    -f docker/gcannon.Dockerfile    docker
@@ -51,19 +51,19 @@ docker build -t wrk:local         -f docker/wrk.Dockerfile        docker
 docker build -t ghz:local         -f docker/ghz.Dockerfile        docker
 ```
 
-The slow one is `h2load-h3:local` (compiles quictls + nghttp3 + ngtcp2 + nghttp2 --enable-http3 from source — 5–10 minutes). Everything else is under a minute.
+The slow one is `h2load-h3:local` (compiles quictls + nghttp3 + ngtcp2 + nghttp2 --enable-http3 from source - 5–10 minutes). Everything else is under a minute.
 
-## Step 3 — run a load generator
+## Step 3 - run a load generator
 
 Every image ships with the tool as its `ENTRYPOINT`, so `docker run <image> <tool-args>` works directly. Always use `--network host` so the container can reach `localhost`.
 
-A handy alias for brevity. The `memlock` and `seccomp` flags are **required** for gcannon — without them `io_uring_queue_init` returns `Operation not permitted` and gcannon exits silently with zero requests.
+A handy alias for brevity. The `memlock` and `seccomp` flags are **required** for gcannon - without them `io_uring_queue_init` returns `Operation not permitted` and gcannon exits silently with zero requests.
 
 ```bash
 DFLAGS='--rm --network host --ulimit nofile=1048576:1048576 --ulimit memlock=-1:-1 --security-opt seccomp=unconfined'
 ```
 
-### gcannon — HTTP/1.1, WebSocket, `--raw` templates
+### gcannon - HTTP/1.1, WebSocket, `--raw` templates
 
 ```bash
 # Baseline: 512 connections, 64 threads, 5s
@@ -96,13 +96,13 @@ Useful flags: `-r <N>` force-reconnect every N requests (`0` = keep-alive foreve
 Raw request files support `{RAND:min:max}` and `{SEQ:start}` placeholders that are substituted per-request at send time. Useful for CRUD benchmarks where each request should target a different database row:
 
 ```bash
-# Template with {RAND} — each request reads a random item
+# Template with {RAND} - each request reads a random item
 printf 'GET /crud/{RAND:1:100000} HTTP/1.1\r\nHost: localhost:8080\r\n\r\n' > /tmp/crud-read.raw
 
-# Template with {SEQ} — each request creates a unique item
+# Template with {SEQ} - each request creates a unique item
 printf 'POST /crud HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/json\r\nContent-Length: 72\r\n\r\n{"id":{SEQ:100001},"name":"Bench","category":"test","price":100,"qty":50}' > /tmp/crud-create.raw
 
-# Mix them — gcannon round-robins across templates
+# Mix them - gcannon round-robins across templates
 docker run $DFLAGS \
     -v /tmp:/requests:ro \
     gcannon:latest http://localhost:8080 \
@@ -112,7 +112,7 @@ docker run $DFLAGS \
 
 Values are zero-padded to a fixed width so `Content-Length` stays correct. `{RAND}` uses per-connection RNG (no contention), `{SEQ}` uses a global atomic counter (unique across all threads).
 
-### h2load — HTTP/2 and h2/h2c gRPC unary
+### h2load - HTTP/2 and h2/h2c gRPC unary
 
 ```bash
 # HTTP/2 over TLS, 256 connections, 100 streams/conn
@@ -132,7 +132,7 @@ docker run $DFLAGS \
 
 `-D` takes seconds (not `5s`), `-m` is the max concurrent streams per connection, `-t` is worker threads.
 
-### h2load-h3 — HTTP/3 over QUIC
+### h2load-h3 - HTTP/3 over QUIC
 
 Same binary family as h2load, same flags, plus `--alpn-list=h3`:
 
@@ -143,13 +143,13 @@ docker run $DFLAGS h2load-h3:local \
     -c 64 -m 64 -t 64 -D 5
 ```
 
-If h3 errors out with `connect error`, bump the host's UDP buffer sizes — the benchmark driver sets these to 7.5 MB but a plain shell doesn't inherit them:
+If h3 errors out with `connect error`, bump the host's UDP buffer sizes - the benchmark driver sets these to 7.5 MB but a plain shell doesn't inherit them:
 
 ```bash
 sudo sysctl -w net.core.rmem_max=7500000 net.core.wmem_max=7500000
 ```
 
-### wrk — static file rotation, json-tls
+### wrk - static file rotation, json-tls
 
 `wrk` needs the lua scripts from `requests/` for multi-URL rotation:
 
@@ -170,7 +170,7 @@ docker run $DFLAGS wrk:local \
     http://localhost:8080/baseline11?a=1\&b=1
 ```
 
-### ghz — gRPC streaming
+### ghz - gRPC streaming
 
 ghz needs the `.proto` file mounted in. It emits a big text summary by default; add `--format=json` for scriptable output.
 
@@ -206,7 +206,7 @@ The benchmark script pins the load generator to one half of the CPU topology via
 docker run $DFLAGS --cpuset-cpus=32-63,96-127 gcannon:latest ...
 ```
 
-On a laptop there's no point — the container will get more cores than the server has anyway. Just leave it off.
+On a laptop there's no point - the container will get more cores than the server has anyway. Just leave it off.
 
 ## Reusing the benchmark's request templates
 
@@ -227,7 +227,7 @@ Mount the directory read-only into any tool: `-v "$(pwd)/requests:/requests:ro"`
 
 ## Parsing the output
 
-The benchmark driver's parsers live in `scripts/lib/tools/*.sh` — `gcannon_parse`, `h2load_parse`, `h2load_h3_parse`, `wrk_parse`, `ghz_parse`. If you want to script on top of a manual run, source one of those modules:
+The benchmark driver's parsers live in `scripts/lib/tools/*.sh` - `gcannon_parse`, `h2load_parse`, `h2load_h3_parse`, `wrk_parse`, `ghz_parse`. If you want to script on top of a manual run, source one of those modules:
 
 ```bash
 source scripts/lib/common.sh

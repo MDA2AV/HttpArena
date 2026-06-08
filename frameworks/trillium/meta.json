@@ -1,7 +1,8 @@
 {
   "display_name": "trillium",
   "language": "Rust",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "trillium-http",
   "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints, deadpool-postgres for async-db and crud.",
   "repo": "https://github.com/trillium-rs/trillium",

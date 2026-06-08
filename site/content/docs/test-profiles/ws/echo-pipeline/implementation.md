@@ -7,7 +7,7 @@ title: Implementation Guidelines
 Measures WebSocket echo throughput with pipelining. Each connection upgrades via HTTP/1.1, then sends 16 text messages back-to-back before waiting for the echoes. Each echo counts as one completed response.
 
 **Connections:** 512, 4,096, 16,384
-**Pipeline:** 16 (16 messages in flight per connection — send batch, drain echoes, repeat)
+**Pipeline:** 16 (16 messages in flight per connection - send batch, drain echoes, repeat)
 
 ## Workload
 

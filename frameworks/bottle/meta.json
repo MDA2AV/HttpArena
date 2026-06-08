@@ -1,7 +1,8 @@
 {
   "display_name": "bottle",
   "language": "Python",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "tuned",
   "engine": "gunicorn",
   "description": "Fast, simple and lightweight WSGI micro web-framework for Python",
   "repo": "https://github.com/bottlepy/bottle",

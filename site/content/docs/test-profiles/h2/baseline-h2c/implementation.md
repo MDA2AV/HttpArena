@@ -3,7 +3,7 @@ title: Implementation Guidelines
 ---
 {{< type-rules production="Must use the framework standard HTTP/2 cleartext (h2c) configuration. No custom ALPN settings or TLS cipher tuning (TLS isn't used on this port)." tuned="May tune HTTP/2 stream limits, window sizes, and connection parameters." engine="No specific rules. Ranked separately from frameworks." >}}
 
-Same `/baseline2?a=…&b=…` sum endpoint as the HTTP/2-TLS baseline, served as HTTP/2 **cleartext** — no TLS, h2 framing from the first byte. This matches the deployment pattern behind TLS-terminating load balancers (ALB → backend, nginx → app server) and inside service meshes where mTLS is handled by sidecars.
+Same `/baseline2?a=…&b=…` sum endpoint as the HTTP/2-TLS baseline, served as HTTP/2 **cleartext** - no TLS, h2 framing from the first byte. This matches the deployment pattern behind TLS-terminating load balancers (ALB → backend, nginx → app server) and inside service meshes where mTLS is handled by sidecars.
 
 **Port:** 8082
 **Connections:** 256, 1,024, 4,096
@@ -12,17 +12,17 @@ Same `/baseline2?a=…&b=…` sum endpoint as the HTTP/2-TLS baseline, served as
 
 ## Workload
 
-`GET /baseline2?a=1&b=1` sent over HTTP/2 cleartext. h2load opens multiple connections, each multiplexing up to 100 concurrent streams. The first bytes on every connection are the h2 preface — there is no HTTP/1.1 Upgrade dance and no ALPN (no TLS).
+`GET /baseline2?a=1&b=1` sent over HTTP/2 cleartext. h2load opens multiple connections, each multiplexing up to 100 concurrent streams. The first bytes on every connection are the h2 preface - there is no HTTP/1.1 Upgrade dance and no ALPN (no TLS).
 
 ## What it measures
 
 - HTTP/2 framing + HPACK + multiplexing *without* TLS overhead
-- Protocol implementation cost in isolation — the delta against `baseline-h2` is roughly the TLS cost
+- Protocol implementation cost in isolation - the delta against `baseline-h2` is roughly the TLS cost
 - How cleanly the framework refuses non-h2 traffic on a port declared h2c-only
 
 ## The port must be h2c-only
 
-Validation explicitly checks that port 8082 refuses plain HTTP/1.1 requests. A server that dual-serves h1 and h2c on the same port would let the benchmark measure whichever protocol the client picked — useless for ranking. Frameworks that want to expose h1 too must do it on a **different** port.
+Validation explicitly checks that port 8082 refuses plain HTTP/1.1 requests. A server that dual-serves h1 and h2c on the same port would let the benchmark measure whichever protocol the client picked - useless for ranking. Frameworks that want to expose h1 too must do it on a **different** port.
 
 ## Expected request/response
 

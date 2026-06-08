@@ -1,7 +1,8 @@
 {
   "display_name": "aleph",
   "language": "Clojure",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "netty",
   "description": "",
   "repo": "https://github.com/clj-commons/aleph",

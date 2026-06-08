@@ -3,7 +3,7 @@ weight: 3
 title: Gateway
 ---
 
-Gateway test profiles benchmark multi-service deployments — proxy + server, with optional auth sidecars, caches, and databases. Unlike isolated tests that measure a single framework container, gateway tests measure the **end-to-end throughput of the entire stack** as a unit.
+Gateway test profiles benchmark multi-service deployments - proxy + server, with optional auth sidecars, caches, and databases. Unlike isolated tests that measure a single framework container, gateway tests measure the **end-to-end throughput of the entire stack** as a unit.
 
 All gateway tests use Docker Compose for orchestration, pin services to specific CPU cores via `cpuset`, and give entries full control over their architecture within a fixed 64-CPU budget.
 

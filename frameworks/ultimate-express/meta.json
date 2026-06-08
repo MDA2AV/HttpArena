@@ -1,7 +1,8 @@
 {
   "display_name": "ultimate-express",
   "language": "JS",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "uwebsockets",
   "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
   "repo": "https://github.com/dimdenGD/ultimate-express",

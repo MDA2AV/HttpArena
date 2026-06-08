@@ -1,7 +1,8 @@
 {
   "display_name": "lute",
   "language": "Luau",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "lute",
   "description": "Lute standalone Luau runtime",
   "repo": "https://github.com/luau-lang/lute",

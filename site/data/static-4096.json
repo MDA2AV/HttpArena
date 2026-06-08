@@ -344,7 +344,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "Fletch",
+    "framework": "fletch",
     "language": "Dart",
     "rps": 488635,
     "avg_latency": "8.44ms",
@@ -386,18 +386,18 @@
   {
     "framework": "genhttp",
     "language": "C#",
-    "rps": 249569,
-    "avg_latency": "17.45ms",
-    "p99_latency": "17.45ms",
-    "cpu": "5728.3%",
-    "memory": "1.6GiB",
+    "rps": 247996,
+    "avg_latency": "15.88ms",
+    "p99_latency": "15.88ms",
+    "cpu": "5844.5%",
+    "memory": "1.3GiB",
     "connections": 4096,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
-    "bandwidth": "4.47GB",
+    "bandwidth": "4.44GB",
     "reconnects": 0,
-    "status_2xx": 1272815,
+    "status_2xx": 1264678,
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
@@ -405,18 +405,18 @@
   {
     "framework": "genhttp-11",
     "language": "C#",
-    "rps": 834583,
-    "avg_latency": "5.30ms",
-    "p99_latency": "5.30ms",
-    "cpu": "5989.3%",
-    "memory": "416MiB",
+    "rps": 844181,
+    "avg_latency": "5.28ms",
+    "p99_latency": "5.28ms",
+    "cpu": "6144.9%",
+    "memory": "544MiB",
     "connections": 4096,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
-    "bandwidth": "12.76GB",
+    "bandwidth": "12.91GB",
     "reconnects": 0,
-    "status_2xx": 4255789,
+    "status_2xx": 4304713,
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
@@ -944,7 +944,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "SlimeWeb",
+    "framework": "slimeweb",
     "language": "Python",
     "rps": 33833,
     "avg_latency": "107.79ms",
@@ -1002,7 +1002,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "Swoole",
+    "framework": "swoole",
     "language": "PHP",
     "rps": 1111770,
     "avg_latency": "3.81ms",

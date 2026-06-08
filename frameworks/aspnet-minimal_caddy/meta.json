@@ -1,7 +1,8 @@
 {
   "display_name": "aspnet-minimal + caddy",
   "language": "C#",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "kestrel",
   "description": "ASP.NET minimal API behind Caddy, serving HTTP/3 (QUIC) at the edge with h1 forwarding to Kestrel.",
   "repo": "https://github.com/dotnet/aspnetcore",

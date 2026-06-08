@@ -1,7 +1,8 @@
 {
   "display_name": "robyn",
   "language": "Python",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "uvloop",
   "description": "Robyn is a High-Performance Web Framework with a Rust runtime",
   "repo": "https://github.com/sparckles/Robyn",

@@ -1,7 +1,8 @@
 {
   "display_name": "quarkus-jvm",
   "language": "Java",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "tuned",
   "engine": "netty",
   "description": "Standalone Vert.x 4.5 on JDK 25, shaded fat jar. One Vertx instance per CPU so each HttpServer binds its own listening socket with SO_REUSEPORT (Netty epoll native transport) — the kernel distributes accepts across cores. Quarkus proper is not used here: its package step filters classifier-carrying jars like netty-transport-native-epoll out of the runtime image, and without native transport SO_REUSEPORT is a no-op. The HTTP stack (Vert.x + Netty epoll) is identical to what quarkus-jvm uses underneath. HTTP/1.1 is rejected by the handler with 400 to keep the port h2c-only.",
   "repo": "https://github.com/quarkusio/quarkus",

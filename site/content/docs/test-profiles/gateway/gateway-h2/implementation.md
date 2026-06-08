@@ -1,13 +1,13 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must ship exactly two services — one reverse proxy and one application server. The proxy must be a widely-used, production-grade server (Nginx, Caddy, Envoy, HAProxy, Traefik, etc.). No custom proxy implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, connection pooling). May tune the proxy-to-server protocol (h2c, Unix sockets, etc.). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom proxy implementations. Ranked separately from frameworks." >}}
+{{< type-rules production="Must ship exactly two services - one reverse proxy and one application server. The proxy must be a widely-used, production-grade server (Nginx, Caddy, Envoy, HAProxy, Traefik, etc.). No custom proxy implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, connection pooling). May tune the proxy-to-server protocol (h2c, Unix sockets, etc.). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom proxy implementations. Ranked separately from frameworks." >}}
 
 The Gateway-64 test benchmarks a **proxy + server combination** as a unit. The load generator sends TLS-encrypted HTTP/2 requests to port 8443; the proxy terminates TLS, serves `/static/*` directly from disk, and forwards dynamic endpoints to the application server over the entry's choice of internal protocol.
 
 ## Architecture
 
-Exactly two services — nothing else. One proxy, one server. Splitting dynamic endpoints across multiple servers, adding a caching layer, load-balancing across replicas, or running a single combined service are all **not allowed** for this test. The shape is fixed so entries compete on proxy choice, proxy tuning, proxy-to-server protocol, and CPU split — not on architectural creativity.
+Exactly two services - nothing else. One proxy, one server. Splitting dynamic endpoints across multiple servers, adding a caching layer, load-balancing across replicas, or running a single combined service are all **not allowed** for this test. The shape is fixed so entries compete on proxy choice, proxy tuning, proxy-to-server protocol, and CPU split - not on architectural creativity.
 
 ```
                     TLS (h2)              proxy → server
@@ -89,14 +89,14 @@ services:
 
 In this split:
 
-- **Proxy** (Nginx) gets 8 physical cores (16 logical: `0-7,64-71`) — terminates TLS, serves `/static/*` directly from `/data/static/`, forwards dynamic endpoints to the server on localhost.
-- **Server** gets 24 physical cores (48 logical: `8-31,72-95`) — listens on an internal port (e.g. `8080` plain HTTP/1.1 or h2c) and handles `/baseline2`, `/json`, `/async-db`.
+- **Proxy** (Nginx) gets 8 physical cores (16 logical: `0-7,64-71`) - terminates TLS, serves `/static/*` directly from `/data/static/`, forwards dynamic endpoints to the server on localhost.
+- **Server** gets 24 physical cores (48 logical: `8-31,72-95`) - listens on an internal port (e.g. `8080` plain HTTP/1.1 or h2c) and handles `/baseline2`, `/json`, `/async-db`.
 
 Total: 16 + 48 = 64 logical CPUs.
 
 ### Environment variables
 
-The benchmark script exports three environment variables before every compose command. Your compose file **must** use these — do not hardcode paths.
+The benchmark script exports three environment variables before every compose command. Your compose file **must** use these - do not hardcode paths.
 
 | Variable | Value |
 |---|---|
@@ -122,7 +122,7 @@ The proxy-to-server transport is the entry's choice and one of the most importan
 
 | Protocol | Pros | Cons |
 |---|---|---|
-| **HTTP/1.1 over TCP** | Simplest to configure, universally supported | No multiplexing — one request per connection at a time |
+| **HTTP/1.1 over TCP** | Simplest to configure, universally supported | No multiplexing - one request per connection at a time |
 | **HTTP/1.1 + keepalive pool** | Reuses connections, avoids handshake per request | Still no multiplexing |
 | **h2c (HTTP/2 cleartext)** | Multiplexing without the TLS cost of a second hop | Not all frameworks support h2c |
 | **Unix domain sockets** | Lowest latency, no TCP stack overhead | Server must listen on a UDS |
@@ -131,11 +131,11 @@ The benchmark measures end-to-end throughput from the load generator's perspecti
 
 ## CPU allocation
 
-The test uses **64 logical CPUs** — 32 physical cores (0–31) plus their SMT siblings (64–95). The entry's `compose.gateway.yml` defines how these are split between proxy and server using the `cpuset` directive. The split is the entry's choice — give the proxy as little or as much as you want, as long as the total across both services equals exactly 64 logical CPUs.
+The test uses **64 logical CPUs** - 32 physical cores (0–31) plus their SMT siblings (64–95). The entry's `compose.gateway.yml` defines how these are split between proxy and server using the `cpuset` directive. The split is the entry's choice - give the proxy as little or as much as you want, as long as the total across both services equals exactly 64 logical CPUs.
 
 ### CPU topology rules
 
-CPUs are allocated in **physical core pairs** — each allocation includes both the physical core and its SMT sibling. This avoids two services sharing a physical core and ensures consistent per-service performance.
+CPUs are allocated in **physical core pairs** - each allocation includes both the physical core and its SMT sibling. This avoids two services sharing a physical core and ensures consistent per-service performance.
 
 | Proxy cpuset | Server cpuset | Split |
 |---|---|---|
@@ -152,30 +152,30 @@ Each physical core has two logical CPUs: the core itself and its SMT (HyperThrea
 - Physical core 15 → logical CPUs **15** and **79**
 - Physical core 31 → logical CPUs **31** and **95**
 
-When you allocate cores, you must always allocate **both siblings** to the same service. Two threads sharing a physical core compete for ALU, cache, and branch predictor — splitting siblings across services causes unpredictable cross-service interference.
+When you allocate cores, you must always allocate **both siblings** to the same service. Two threads sharing a physical core compete for ALU, cache, and branch predictor - splitting siblings across services causes unpredictable cross-service interference.
 
-**Correct** — proxy gets physical cores 0–7 (16 logical CPUs):
+**Correct** - proxy gets physical cores 0–7 (16 logical CPUs):
 ```
 cpuset: "0-7,64-71"
 ```
 
-**Incorrect** — splits a physical core across services:
+**Incorrect** - splits a physical core across services:
 ```
 proxy:  cpuset: "0-3"         # gets core 3 without its sibling (67)
 server: cpuset: "4-31,64-95"  # gets sibling 67 without core 3
 ```
 
-**Incorrect** — doesn't allocate all 64 CPUs:
+**Incorrect** - doesn't allocate all 64 CPUs:
 ```
 proxy:  cpuset: "0-3,64-67"     # 8 CPUs
-server: cpuset: "4-15,68-79"    # 24 CPUs — 32 CPUs wasted
+server: cpuset: "4-15,68-79"    # 24 CPUs - 32 CPUs wasted
 ```
 
 ### Choosing the split
 
-- **Lightweight proxy** (plain forwarding, little static traffic) — 2–4 physical cores is usually enough
-- **TLS-terminating proxy with heavy static** — 4–8 physical cores. TLS handshakes and static I/O compete for CPU at high connection counts.
-- **Even split** — 16+16 physical cores is a good starting point if you don't know which side is the bottleneck
+- **Lightweight proxy** (plain forwarding, little static traffic) - 2–4 physical cores is usually enough
+- **TLS-terminating proxy with heavy static** - 4–8 physical cores. TLS handshakes and static I/O compete for CPU at high connection counts.
+- **Even split** - 16+16 physical cores is a good starting point if you don't know which side is the bottleneck
 
 ## meta.json
 
@@ -183,7 +183,8 @@ server: cpuset: "4-15,68-79"    # 24 CPUs — 32 CPUs wasted
 {
   "display_name": "my-framework + nginx",
   "language": "C#",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "kestrel",
   "description": "ASP.NET minimal API behind Nginx reverse proxy.",
   "repo": "https://github.com/dotnet/aspnetcore",
@@ -191,7 +192,7 @@ server: cpuset: "4-15,68-79"    # 24 CPUs — 32 CPUs wasted
 }
 ```
 
-The `tests` array only needs `gateway-64` for gateway-only entries. Frameworks that also participate in other tests can subscribe to both — the standard `Dockerfile` is used for non-gateway tests and `compose.gateway.yml` for `gateway-64`.
+The `tests` array only needs `gateway-64` for gateway-only entries. Frameworks that also participate in other tests can subscribe to both - the standard `Dockerfile` is used for non-gateway tests and `compose.gateway.yml` for `gateway-64`.
 
 ## Directory structure
 
@@ -211,8 +212,8 @@ The load generator ([h2load](https://nghttp2.org/documentation/h2load-howto.html
 
 | Category | URIs | Count | Weight | Handled by |
 |---|---|---|---|---|
-| Static files | `/static/reset.css`, `components.css`, `app.js`, `vendor.js`, `header.html`, `hero.webp` — a mix of CSS, JS, HTML, and an image for `sendfile`-path coverage | 6 | 30% | Proxy |
-| JSON | `/json/{count}` with `count ∈ {1, 5, 10, 15, 25, 40, 50}` — 7 payload sizes, same set as the h1-isolated JSON profile | 7 | 35% | Server |
+| Static files | `/static/reset.css`, `components.css`, `app.js`, `vendor.js`, `header.html`, `hero.webp` - a mix of CSS, JS, HTML, and an image for `sendfile`-path coverage | 6 | 30% | Proxy |
+| JSON | `/json/{count}` with `count ∈ {1, 5, 10, 15, 25, 40, 50}` - 7 payload sizes, same set as the h1-isolated JSON profile | 7 | 35% | Server |
 | Baseline | `/baseline2?a=N&b=M` with 4 distinct parameter combinations to defeat URI-keyed caches | 4 | 20% | Server |
 | Async DB | `/async-db?min=10&max=50&limit=N` with `limit ∈ {10, 25, 50}` | 3 | 15% | Server |
 
@@ -222,13 +223,13 @@ The leaderboard shows a colored breakdown of how many requests each category han
 
 ## What it measures
 
-- **Reverse proxy overhead** — how much throughput is lost by adding a proxy layer vs. direct server access
-- **TLS termination efficiency** — the proxy's cost to terminate HTTPS/h2 at high connection counts
-- **HTTP/2 multiplexing through a proxy** — whether the proxy can efficiently forward multiplexed streams
-- **Static file serving from the proxy** — disk I/O, precompressed asset selection, kernel `sendfile` usage
-- **Mixed workload throughput** — static I/O (proxy) vs. compute (server JSON) vs. database (server async-db) all competing for the same 64-CPU budget
-- **Proxy-to-server protocol choice** — HTTP/1.1, h2c, or Unix domain sockets
-- **CPU split** — how the entry balances proxy and server workload on a fixed CPU budget
+- **Reverse proxy overhead** - how much throughput is lost by adding a proxy layer vs. direct server access
+- **TLS termination efficiency** - the proxy's cost to terminate HTTPS/h2 at high connection counts
+- **HTTP/2 multiplexing through a proxy** - whether the proxy can efficiently forward multiplexed streams
+- **Static file serving from the proxy** - disk I/O, precompressed asset selection, kernel `sendfile` usage
+- **Mixed workload throughput** - static I/O (proxy) vs. compute (server JSON) vs. database (server async-db) all competing for the same 64-CPU budget
+- **Proxy-to-server protocol choice** - HTTP/1.1, h2c, or Unix domain sockets
+- **CPU split** - how the entry balances proxy and server workload on a fixed CPU budget
 
 ## Parameters
 

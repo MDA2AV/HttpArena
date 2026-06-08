@@ -1,7 +1,8 @@
 {
   "display_name": "h2o-mruby",
   "language": "Ruby",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "tuned",
   "engine": "h2o",
   "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
   "repo": "https://github.com/h2o/h2o",

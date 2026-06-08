@@ -135,18 +135,18 @@
   {
     "framework": "genhttp-11",
     "language": "C#",
-    "rps": 4568791,
-    "avg_latency": "781us",
-    "p99_latency": "2.30ms",
-    "cpu": "5890.0%",
+    "rps": 4557385,
+    "avg_latency": "1.49ms",
+    "p99_latency": "3.22ms",
+    "cpu": "6049.5%",
     "memory": "1.1GiB",
     "connections": 4096,
     "threads": 64,
     "duration": "5s",
     "pipeline": 16,
-    "bandwidth": "30.60MB/s",
+    "bandwidth": "30.47MB/s",
     "reconnects": 0,
-    "status_2xx": 22843959,
+    "status_2xx": 22786926,
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
@@ -285,7 +285,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "Swoole",
+    "framework": "swoole",
     "language": "PHP",
     "rps": 3778342,
     "avg_latency": "17.33ms",
