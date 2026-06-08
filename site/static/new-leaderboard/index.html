@@ -285,9 +285,12 @@
 
 
   /* ── Composite matrix ────────────────────────────────────── */
-  .cwrap{display:block; width:100%; overflow-x:hidden; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem}
-  /* touch devices: allow finger-slide horizontal scrolling of the table (desktop keeps overflow-x hidden + the synced bars) */
-  @media (hover: none) and (pointer: coarse){ .cwrap{overflow-x:auto; -webkit-overflow-scrolling:touch} }
+  /* table scrolls natively in both axes (bar drag, wheel, trackpad and finger all work); its own horizontal bar is hidden so only the synced bar shows */
+  .cwrap{display:block; width:100%; overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 210px); border:1px solid var(--line); border-radius:10px; margin-top:.15rem; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
+  .cwrap::-webkit-scrollbar{width:10px; height:0}
+  .cwrap::-webkit-scrollbar-thumb{background:var(--line); border-radius:6px}
+  .cwrap::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+  .cwrap::-webkit-scrollbar-track{background:transparent}
   /* synced horizontal scrollbar + jump-to-end button above the table */
   .cscroll-row{display:flex; align-items:stretch; gap:.4rem; margin-top:.5rem}
   .cscroll-row.endonly{justify-content:flex-end; margin-top:.1rem; margin-bottom:.35rem}
