@@ -1095,6 +1095,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "Swoole",
+    "language": "PHP",
+    "rps": 946517,
+    "avg_latency": "3.97ms",
+    "p99_latency": "16.40ms",
+    "cpu": "6427.0%",
+    "memory": "414.8MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "3.25GB/s",
+    "input_bw": "45.13MB/s",
+    "reconnects": 187640,
+    "status_2xx": 4732588,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "symfony-spawn-franken",
     "language": "PHP",
     "rps": 134310,
