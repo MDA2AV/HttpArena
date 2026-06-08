@@ -98,21 +98,21 @@
   .nav-scope, .nav-item, .nav-grp-h, .nav-subgrp-h{transition:background .12s ease, color .12s ease, box-shadow .12s ease, transform .12s ease}
   .nav-scope{padding:.38rem .6rem .38rem 1.1rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-size:.84rem; font-weight:500}
   .nav-scope:hover{background:var(--panel-2); color:var(--text); transform:translateX(2px)}
-  .nav-scope.active{background:var(--accent-weak); color:var(--accent); font-weight:600; box-shadow:inset 2px 0 0 var(--accent)}
+  .nav-scope.active{background:var(--panel-2); color:var(--text); font-weight:600; box-shadow:inset 2px 0 0 var(--text-2)}
 
   .nav-item{display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.4rem .6rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-size:.85rem; font-weight:500}
   .nav-item:hover{background:var(--panel-2); color:var(--text); transform:translateX(2px)}
-  .nav-item.active{background:var(--accent-weak); color:var(--accent); font-weight:600; box-shadow:inset 2px 0 0 var(--accent)}
+  .nav-item.active{background:var(--panel-2); color:var(--text); font-weight:600; box-shadow:inset 2px 0 0 var(--text-2)}
   .nav-item .n{font-size:.68rem; color:var(--muted); font-variant-numeric:tabular-nums}
   .nav-item:hover .n{color:var(--text-2)}
-  .nav-item.active .n{color:var(--accent)}
+  .nav-item.active .n{color:var(--text-2)}
 
   .nav-grp-h{display:flex; align-items:center; justify-content:space-between; gap:.4rem; padding:.44rem .55rem; border-radius:7px; cursor:pointer; color:var(--text); font-weight:650; font-size:.86rem; user-select:none}
   .nav-grp-h:hover{background:var(--panel-2)}
   .nav-grp-t{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .nav-ico{display:inline-flex; align-items:center; justify-content:center; flex:none; color:var(--muted); transition:color .12s ease}
   .nav-ico svg{width:15px; height:15px}
-  .nav-grp-h:hover .nav-ico, .nav-grp.open>.nav-grp-h .nav-ico{color:var(--accent)}
+  .nav-grp-h:hover .nav-ico, .nav-grp.open>.nav-grp-h .nav-ico{color:var(--text)}
   .nav-grp.lvl0>.nav-grp-h{font-size:.9rem; padding:.5rem .55rem}
   .nav-subgrp-h{display:flex; align-items:center; gap:.4rem; padding:.34rem .55rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-weight:600; font-size:.78rem; user-select:none}
   .nav-subgrp-h:hover{background:var(--panel-2); color:var(--text)}
@@ -126,7 +126,7 @@
   .nav-grp-link{flex:1; min-width:0; color:inherit; font:inherit; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .nav-grp-link:hover{text-decoration:underline}
   a.nav-item{text-decoration:none}
-  .nav-grp-link.active{color:var(--accent)}
+  .nav-grp-link.active{color:var(--text); font-weight:600}
   /* ── Knowledge Base prose ── */
   .doc-wrap{max-width:880px; animation:docIn .26s cubic-bezier(.2,.6,.2,1)}
   @keyframes docIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
@@ -178,7 +178,7 @@
   .main.cmfull{max-width:none}
   .phead{display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap}
   .phead h1{margin:0; font-size:1.7rem; font-weight:750; letter-spacing:-.02em}
-  .phead .cat{font-size:.74rem; font-weight:650; color:var(--accent); letter-spacing:.04em; text-transform:uppercase}
+  .phead .cat{font-size:.74rem; font-weight:650; color:var(--text-2); letter-spacing:.04em; text-transform:uppercase}
   .phead p{margin:.3rem 0 0; color:var(--text-2); font-size:.9rem; max-width:54ch}
   .phead p a{color:var(--accent)}
 
@@ -319,7 +319,7 @@
   .cm td.pc.lead .crps{font-weight:700}
   .cm td.pc.nc{opacity:.4}
   /* flexible trailing column absorbs leftover width (keeps the box filled) */
-  .cm .spacer{width:100%; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
+  .cm .spacer{width:auto; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
   .cm .sticky{position:sticky}
   .cm thead th.sticky{z-index:5}
   .cm tbody td.sticky{z-index:2}
