@@ -126,9 +126,9 @@ class App < Sinatra::Base
   end
 
   get '/crud/items' do
-    category = request.params['category'] || 'electronics'
-    page = (request.params['page'] || 1).to_i
-    limit = (request.params['limit'] || 10).to_i
+    category = params['category'] || 'electronics'
+    page = (params['page'] || 1).to_i
+    limit = (params['limit'] || 10).to_i
     offset = (page - 1) * limit
 
     rows = self.class.get_async_db&.with do |connection|
@@ -170,7 +170,6 @@ class App < Sinatra::Base
   end
 
   post '/crud/items' do
-    params = JSON.parse(request.body.read)
     id = params['id']
     name = params['name'] || 'New Product'
     category = params['category'] || 'electronics'
