@@ -230,8 +230,7 @@ class App < Roda
   def self.get_async_db
     @async_db ||= begin
       return unless ENV['DATABASE_URL']
-      max_connections = ENV.fetch('MAX_THREADS', 4).to_i
-      ConnectionPool.new(size: max_connections, timeout: 5) do
+      ConnectionPool.new(size: pool_size, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
         db.field_name_type = :symbol
         db.prepare('select', SELECT_QUERY)
@@ -247,11 +246,13 @@ class App < Roda
   def self.redis
     @redis ||= begin
       return unless ENV['REDIS_URL']
-      max_connections = ENV.fetch('MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
-      ConnectionPool::Wrapper.new(size: max_connections, timeout: 10) do
+      ConnectionPool::Wrapper.new(size: pool_size, timeout: 10) do
         Redis.new(url: ENV['REDIS_URL'])
       end
     end
   end
 
+  def self.pool_size
+    ENV.fetch('MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
+  end
 end
