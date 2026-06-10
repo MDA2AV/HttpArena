@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1.7
 #
-# zix. Zig HTTP/1.1 server using the zix library.
-# EPOLL dispatch: single accept loop + worker pool, EPOLLONESHOT per connection.
+# zix. Zig HTTP/1.1 server on the zix.Http1 raw engine (no std.http).
+# Shared-nothing EPOLL: each worker runs its own SO_REUSEPORT accept plus
+# level-triggered epoll loop. Engine-owned WebSocket echo, large-body drain.
 # Built statically against musl so the runtime image is a single binary on scratch.
 
 FROM debian:bookworm-slim AS build
@@ -23,11 +24,13 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix 0.2.x at a pinned commit, separate layer so source-only rebuilds
-# skip the download. Strip the top-level directory produced by GitHub's archive.
+# Vendor zix 0.3.x, separate layer so source-only rebuilds skip the download.
+# Strip the top-level directory produced by GitHub's archive. The Http1 raw
+# engine work this image needs (engine-owned WebSocket serve + large-body
+# drain) must be present on the 0.3.x branch.
 RUN mkdir -p /src/vendor/zix && \
-    curl -fsSL https://github.com/prothegee/zix/archive/refs/heads/0.2.x.tar.gz \
-        | tar -xz --strip-components=1 -C /src/vendor/zix 
+    curl -fsSL https://github.com/prothegee/zix/archive/refs/heads/0.3.x.tar.gz \
+        | tar -xz --strip-components=1 -C /src/vendor/zix
 
 WORKDIR /src
 COPY build.zig build.zig.zon ./
