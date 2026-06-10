@@ -20,7 +20,9 @@ public class TestController : ControllerBase
     {
         using var reader = new StreamReader(Request.Body);
 
-        return Content((a + b + int.Parse(await reader.ReadToEndAsync()).ToString()), "text/plain");
+        var c = int.Parse(await reader.ReadToEndAsync());
+
+        return Content((a + b + c).ToString(), "text/plain");
     }
 
     [HttpGet("/baseline2")]
