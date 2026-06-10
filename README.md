@@ -85,6 +85,14 @@ Prefer HTML, e.g. to set the size:
 </a>
 ```
 
+Another badge variants:
+- Http/1.1: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h1.svg`
+- Http/2: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h2.svg`
+- Http/3: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h3.svg`
+- Gateway: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-gateway.svg`
+- WebSocket: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg`
+- gRPC: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg`
+
 ---
 
 <div align="left">
@@ -92,3 +100,43 @@ Prefer HTML, e.g. to set the size:
     <img alt="Benchmarked by HttpArena" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" width="235">
   </a>
 </div>
+
+<br>
+
+
+<table>
+  <tr>
+    <td align="">
+      <a href="https://www.http-arena.com/#sort=rps:-1&type=flagship&tuned=0">
+        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h1.svg" width="235">
+      </a>
+    </td>
+    <td align="">
+      <a href="https://www.http-arena.com/#scope=h2&type=flagship&tuned=0">
+        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h2.svg" width="235">
+      </a>
+    </td>
+    <td align="">
+      <a href="https://www.http-arena.com/#scope=h3&type=flagship&tuned=0">
+        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h3.svg" width="235">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="">
+      <a href="https://www.http-arena.com/#scope=gw&type=flagship&tuned=0">
+        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-gateway.svg" width="235">
+      </a>
+    </td>
+    <td align="">
+      <a href="https://www.http-arena.com/#scope=grpc&type=flagship&tuned=0">
+        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg" width="235">
+      </a>
+    </td>
+    <td align="">
+      <a href="https://www.http-arena.com/#scope=ws&type=flagship&tuned=0">
+        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg" width="235">
+      </a>
+    </td>
+  </tr>
+</table>
