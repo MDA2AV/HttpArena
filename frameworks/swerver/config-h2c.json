@@ -16,6 +16,7 @@
   },
   "http2": {
     "max_streams": 256,
-    "initial_window_size": 1048576
+    "initial_window_size": 1048576,
+    "h2c_only": true
   }
 }
