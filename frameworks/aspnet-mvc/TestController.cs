@@ -66,44 +66,6 @@ public class TestController : ControllerBase
         return Ok(new { items, count });
     }
 
-    [HttpGet("/db")]
-    public IActionResult Database([FromQuery] int min = 10, [FromQuery] int max = 50)
-    {
-        if (AppData.DbPool == null)
-            return Problem("DB not available");
-
-        var conn = AppData.DbPool.Rent();
-        try
-        {
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN @min AND @max LIMIT 50";
-            cmd.Parameters.AddWithValue("@min", min);
-            cmd.Parameters.AddWithValue("@max", max);
-            using var reader = cmd.ExecuteReader();
-
-            var items = new List<object>();
-            while (reader.Read())
-            {
-                items.Add(new
-                {
-                    id = reader.GetInt32(0),
-                    name = reader.GetString(1),
-                    category = reader.GetString(2),
-                    price = reader.GetInt32(3),
-                    quantity = reader.GetInt32(4),
-                    active = reader.GetInt32(5) == 1,
-                    tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                    rating = new { score = reader.GetInt32(7), count = reader.GetInt32(8) },
-                });
-            }
-            return Ok(new { items, count = items.Count });
-        }
-        finally
-        {
-            AppData.DbPool.Return(conn);
-        }
-    }
-
     [HttpGet("/async-db")]
     public async Task<IActionResult> AsyncDatabase([FromQuery] int min = 10, [FromQuery] int max = 50, [FromQuery] int limit = 50)
     {

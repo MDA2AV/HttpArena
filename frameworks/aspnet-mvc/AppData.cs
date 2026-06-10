@@ -1,7 +1,6 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Npgsql;
+using StackExchange.Redis;
 
 static class AppData
 {
@@ -13,14 +12,19 @@ static class AppData
 
     public static List<DatasetItem>? DatasetItems;
 
-    public static SqlitePool? DbPool;
     public static NpgsqlDataSource? PgDataSource;
+
+    // Optional Redis cache for the crud profile. When REDIS_URL is set,
+    // crud handlers use Redis as a shared cache; otherwise they use the
+    // in-process IMemoryCache. Mirrors hono-bun's pattern so frameworks
+    // can be compared apples-to-apples on the same cache topology.
+    public static IDatabase? RedisDb;
 
     public static void Load()
     {
         LoadDataset();
-        OpenDatabase();
         OpenPgPool();
+        OpenRedis();
     }
 
     static void LoadDataset()
@@ -36,49 +40,31 @@ static class AppData
         if (string.IsNullOrEmpty(dbUrl)) return;
         try
         {
-            // Parse postgres:// URI into Npgsql connection string
             var uri = new Uri(dbUrl);
             var userInfo = uri.UserInfo.Split(':');
-            var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size=256;Minimum Pool Size=64;Multiplexing=true;No Reset On Close=true;Max Auto Prepare=4;Auto Prepare Min Usages=1";
+            var maxConn = int.TryParse(Environment.GetEnvironmentVariable("DATABASE_MAX_CONN"), out var p) && p > 0 ? p : 256;
+            var minConn = Math.Min(64, maxConn);
+            var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size={maxConn};Minimum Pool Size={minConn};Multiplexing=true;No Reset On Close=true;Max Auto Prepare=20;Auto Prepare Min Usages=1";
             var builder = new NpgsqlDataSourceBuilder(connStr);
             PgDataSource = builder.Build();
         }
         catch { }
     }
 
-    static void OpenDatabase()
+    static void OpenRedis()
     {
-        var path = "/data/benchmark.db";
-        if (!File.Exists(path)) return;
-        DbPool = new SqlitePool($"Data Source={path};Mode=ReadOnly", Environment.ProcessorCount);
-    }
-}
-
-sealed class SqlitePool
-{
-    private readonly ConcurrentBag<SqliteConnection> _connections = new();
-
-    public SqlitePool(string connectionString, int size)
-    {
-        for (int i = 0; i < size; i++)
+        var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL");
+        if (string.IsNullOrEmpty(redisUrl)) return;
+        try
         {
-            var conn = new SqliteConnection(connectionString);
-            conn.Open();
-            using var pragma = conn.CreateCommand();
-            pragma.CommandText = "PRAGMA mmap_size=268435456";
-            pragma.ExecuteNonQuery();
-            _connections.Add(conn);
+            // REDIS_URL is "redis://host:port" — convert to StackExchange's
+            // "host:port" configuration string.
+            var uri = new Uri(redisUrl);
+            var config = ConfigurationOptions.Parse($"{uri.Host}:{uri.Port}");
+            config.AbortOnConnectFail = false;
+            var muxer = ConnectionMultiplexer.Connect(config);
+            RedisDb = muxer.GetDatabase();
         }
+        catch { }
     }
-
-    public SqliteConnection Rent()
-    {
-        SqliteConnection? conn;
-        var spin = new SpinWait();
-        while (!_connections.TryTake(out conn))
-            spin.SpinOnce();
-        return conn;
-    }
-
-    public void Return(SqliteConnection conn) => _connections.Add(conn);
 }

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
-
 using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,11 +24,17 @@ builder.WebHost.ConfigureKestrel(options =>
             lo.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
             lo.UseHttps(X509Certificate2.CreateFromPemFile(certPath, keyPath));
         });
+
+        options.ListenAnyIP(8081, lo =>
+        {
+            lo.Protocols = HttpProtocols.Http1;
+            lo.UseHttps(X509Certificate2.CreateFromPemFile(certPath, keyPath));
+        });
     }
 });
 
 builder.Services.AddResponseCompression()
-                .AddControllers();
+       .AddControllers();
 
 var app = builder.Build();
 
