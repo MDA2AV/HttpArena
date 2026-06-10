@@ -64,7 +64,7 @@ sealed class CrudWriteResponse
 
 public sealed record Fortune(int Id, string Message);
 
-record CrudItemInput(int Id, string? Name, string? Category, int Price, int Quantity);
+public record CrudItemInput(int Id, string? Name, string? Category, int Price, int Quantity);
 
 [JsonSerializable(typeof(ResponseDto<ProcessedItem>))]
 [JsonSerializable(typeof(ResponseDto<DbResponseItemDto>))]

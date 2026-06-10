@@ -59,10 +59,12 @@ public sealed class CrudController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    public async Task<IResult> Read(int id, IMemoryCache cache, HttpContext ctx)
+    public async Task<IResult> Read(int id)
     {
         if (AppData.PgDataSource is null)
             return TypedResults.Problem("DB not available");
+
+        var cache = HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
 
         var cacheKey = $"crud:{id}";
 
@@ -71,7 +73,7 @@ public sealed class CrudController : ControllerBase
             var cachedJson = await AppData.RedisDb.StringGetAsync(cacheKey);
             if (cachedJson.HasValue)
             {
-                ctx.Response.Headers["X-Cache"] = "HIT";
+                HttpContext.Response.Headers["X-Cache"] = "HIT";
                 return Results.Content((string)cachedJson!, "application/json");
             }
 
@@ -80,13 +82,13 @@ public sealed class CrudController : ControllerBase
 
             var json = JsonSerializer.Serialize(item, AppJsonContext.Default.DbResponseItemDto);
             await AppData.RedisDb.StringSetAsync(cacheKey, json, TimeSpan.FromMilliseconds(200));
-            ctx.Response.Headers["X-Cache"] = "MISS";
+            HttpContext.Response.Headers["X-Cache"] = "MISS";
             return Results.Content(json, "application/json");
         }
 
         if (cache.TryGetValue(cacheKey, out DbResponseItemDto? cached))
         {
-            ctx.Response.Headers["X-Cache"] = "HIT";
+            HttpContext.Response.Headers["X-Cache"] = "HIT";
             return TypedResults.Json(cached, AppJsonContext.Default.DbResponseItemDto);
         }
 
@@ -94,21 +96,15 @@ public sealed class CrudController : ControllerBase
         if (dto is null) return TypedResults.NotFound();
 
         cache.Set(cacheKey, dto, _crudCacheOpts);
-        ctx.Response.Headers["X-Cache"] = "MISS";
+        HttpContext.Response.Headers["X-Cache"] = "MISS";
         return TypedResults.Json(dto, AppJsonContext.Default.DbResponseItemDto);
     }
 
     [HttpPost]
-    public async Task<IResult> Create(HttpRequest req)
+    public async Task<IResult> Create([FromBody] CrudItemInput input)
     {
         if (AppData.PgDataSource is null)
             return TypedResults.Problem("DB not available");
-
-        using var sr = new StreamReader(req.Body);
-        var body = await sr.ReadToEndAsync();
-        var input = JsonSerializer.Deserialize<CrudItemInput>(body, _crudJsonOpts);
-        if (input is null)
-            return TypedResults.BadRequest();
 
         await using var cmd = AppData.PgDataSource.CreateCommand(
             "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) " +
@@ -128,18 +124,12 @@ public sealed class CrudController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IResult> Update(int id, HttpRequest req, IMemoryCache cache)
+    public async Task<IResult> Update(int id, [FromBody] CrudItemInput input)
     {
         if (AppData.PgDataSource is null)
             return TypedResults.Problem("DB not available");
 
-        using var sr = new StreamReader(req.Body);
-
-        var body = await sr.ReadToEndAsync();
-        var input = JsonSerializer.Deserialize<CrudItemInput>(body, _crudJsonOpts);
-
-        if (input is null)
-            return TypedResults.BadRequest();
+        var cache = HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
 
         await using var cmd = AppData.PgDataSource.CreateCommand(
             "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4");
