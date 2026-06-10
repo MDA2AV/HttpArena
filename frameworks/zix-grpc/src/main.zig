@@ -9,7 +9,21 @@ const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Grpc.DispatchModel = .EPOLL;
 const KERNEL_BACKLOG: u31 = 1024 * 16;
 const WORKERS: usize = 0;
+
+/// 0 selects the engine default EPOLL pool (max(10, cpu*2)). Each worker owns one connection
+/// while it is active. After the Phase 1 syscall cuts the unary path is CPU-bound, not
+/// connection-bound: a modest cpu-relative pool tops out throughput, while an oversized pool
+/// (thread-per-connection) thrashes the scheduler and collapses it. So keep the default.
 const POOL_SIZE: usize = 0;
+
+/// Advertise enough concurrent streams that a client opening many in parallel (h2load uses
+/// -m 100) is never refused at startup. Must be >= the load generator's stream count or those
+/// streams get REFUSED_STREAM. Per-stream buffers are tiny (below), so a wide table is cheap.
+const MAX_STREAMS: usize = 128;
+
+/// gRPC sum messages are a few bytes. A small per-stream body buffer keeps the wide stream
+/// table affordable in memory (MAX_STREAMS * MAX_BODY per connection).
+const MAX_BODY: usize = 4 * 1024;
 
 // --------------------------------------------------------- //
 
@@ -92,6 +106,8 @@ pub fn main(process: std.process.Init) !void {
         .kernel_backlog = KERNEL_BACKLOG,
         .workers = WORKERS,
         .pool_size = POOL_SIZE,
+        .max_streams = MAX_STREAMS,
+        .max_body = MAX_BODY,
     });
     defer server.deinit();
 
