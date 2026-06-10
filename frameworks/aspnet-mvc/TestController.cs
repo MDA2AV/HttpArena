@@ -10,17 +10,24 @@ public class TestController : ControllerBase
     public string Pipeline() => "ok";
 
     [HttpGet("/baseline11")]
-    public int Sum([FromQuery] int a, [FromQuery] int b) => a + b;
+    public IActionResult Sum([FromQuery] int a, [FromQuery] int b)
+    {
+        return Content((a + b).ToString(), "text/plain");
+    }
 
     [HttpPost("/baseline11")]
-    public async Task<int> SumBody([FromQuery] int a, [FromQuery] int b)
+    public async Task<IActionResult> SumBody([FromQuery] int a, [FromQuery] int b)
     {
         using var reader = new StreamReader(Request.Body);
-        return a + b + int.Parse(await reader.ReadToEndAsync());
+
+        return Content((a + b + await reader.ReadToEndAsync()), "text/plain");
     }
 
     [HttpGet("/baseline2")]
-    public int Baseline2([FromQuery] int a, [FromQuery] int b) => a + b;
+    public IActionResult Baseline2([FromQuery] int a, [FromQuery] int b)
+    {
+        return Content((a + b).ToString(), "text/plain");
+    }
 
     [HttpPost("/upload")]
     public async Task<IActionResult> Upload()
