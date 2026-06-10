@@ -215,12 +215,35 @@ fn handleJson(ctx: *router.HandlerContext) response_mod.Response {
     const tail = std.fmt.bufPrint(buf[off..], "]}}", .{}) catch return jsonError();
     off += tail.len;
 
+    return finishJson(ctx, buf[0..off]);
+}
+
+// json-comp profile: gzip the JSON body when the client offers gzip. The
+// single-threaded event loop per worker (fork model) makes a process-global
+// scratch buffer safe — each forked process has its own copy.
+var gzip_out: [65536]u8 = undefined;
+
+fn finishJson(ctx: *router.HandlerContext, body: []const u8) response_mod.Response {
+    if (ctx.request.getHeader("accept-encoding")) |ae| {
+        if (std.mem.indexOf(u8, ae, "gzip") != null) {
+            if (swerver.compress.gzipCompress(body, &gzip_out)) |clen| {
+                return .{
+                    .status = 200,
+                    .headers = &[_]response_mod.Header{
+                        .{ .name = "Content-Type", .value = "application/json" },
+                        .{ .name = "Content-Encoding", .value = "gzip" },
+                    },
+                    .body = .{ .bytes = gzip_out[0..clen] },
+                };
+            }
+        }
+    }
     return .{
         .status = 200,
         .headers = &[_]response_mod.Header{
             .{ .name = "Content-Type", .value = "application/json" },
         },
-        .body = .{ .bytes = buf[0..off] },
+        .body = .{ .bytes = body },
     };
 }
 
@@ -286,7 +309,6 @@ pub fn main(init: std.process.Init) !void {
             srv.deinit();
             allocator.destroy(srv);
         }
-        srv.config_path = args.config_path;
         try srv.run(null);
     }
 }
