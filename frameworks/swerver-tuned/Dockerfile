@@ -22,7 +22,7 @@ RUN set -eux; \
 
 # Clone swerver library
 WORKDIR /src
-RUN git clone --depth 1 --branch pg-client \
+RUN git clone --depth 1 --branch v0.1.0-alpha.17 \
         https://github.com/justinGrosvenor/swerver.git .
 
 # Symlink OpenSSL for Zig's linker
