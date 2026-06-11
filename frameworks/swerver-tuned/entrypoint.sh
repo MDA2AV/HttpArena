@@ -17,8 +17,30 @@ if [ -n "${DATABASE_URL:-}" ]; then
     echo "entrypoint: postgres enabled for h1 ($pg_url)"
 fi
 
+# Start the h1 instance FIRST. When it serves the DB profiles, let its PG
+# pools connect while h1 is the only process running — before the other three
+# protocol instances start and saturate the (often 2-4) CPUs of a CI runner.
+# Connect + SCRAM-handshake work needs CPU; with the full 4-instance x nproc
+# footprint already competing, a freshly-warming worker is starved and the
+# first DB request 503s (NotConnected). Warming the pool in the clear first
+# avoids that without lowering worker counts.
 /usr/local/bin/swerver --config /etc/swerver/config-h1.json &
 H1_PID=$!
+
+if [ -n "${DATABASE_URL:-}" ]; then
+    # Wait until the PG pool is serving (async-db 200), bounded ~10s so a
+    # missing DB can't hang startup, and short enough that the other
+    # instances are up before the harness reaches the h2/h3 profiles.
+    for i in $(seq 1 40); do
+        code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 \
+            "http://localhost:8080/async-db?min=10&max=50&limit=1" 2>/dev/null || echo 000)
+        if [ "$code" = "200" ]; then
+            echo "entrypoint: h1 PG pool warm after ${i} poll(s)"
+            break
+        fi
+        sleep 0.25
+    done
+fi
 
 /usr/local/bin/swerver --config /etc/swerver/config-h2c.json &
 H2C_PID=$!

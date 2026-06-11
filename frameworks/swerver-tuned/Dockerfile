@@ -22,7 +22,7 @@ RUN set -eux; \
 
 # Clone swerver library
 WORKDIR /src
-RUN git clone --depth 1 --branch v0.1.0-alpha.19 \
+RUN git clone --depth 1 --branch v0.1.0-alpha.18 \
         https://github.com/justinGrosvenor/swerver.git .
 
 # Symlink OpenSSL for Zig's linker
@@ -40,7 +40,7 @@ RUN zig build --summary all
 FROM debian:trixie-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates libssl3 jq \
+        ca-certificates libssl3 jq curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /src/httparena/zig-out/bin/swerver-httparena /usr/local/bin/swerver
