@@ -110,6 +110,12 @@ fn getU32(path: []const u8, name: []const u8, dflt: u32) u32 {
     return std.fmt.parseInt(u32, v, 10) catch dflt;
 }
 
+/// A JSONB column read in binary result format is a 1-byte version header
+/// (0x01) followed by the JSON text. Drop the header to recover valid JSON.
+fn jsonbText(raw: []const u8) []const u8 {
+    return if (raw.len > 0 and raw[0] == 0x01) raw[1..] else raw;
+}
+
 // ── /async-db ───────────────────────────────────────────────────────────────
 //
 // Per the spec: GET /async-db?min&max&limit runs ONE range query
@@ -172,7 +178,11 @@ fn onAsyncDb(rctx: *pg_api.ResumeContext) response_mod.Response {
             .price = row.int4(3) catch return dbFailed(),
             .quantity = row.int4(4) catch return dbFailed(),
             .active = row.boolean(5) catch return dbFailed(),
-            .tags = row.text(6) catch return dbFailed(),
+            // tags is JSONB; the client receives columns in binary format, and
+            // JSONB binary is a 1-byte version prefix (0x01) followed by the
+            // JSON text. Strip the prefix so the embedded value is valid JSON
+            // (without this the rendered response is malformed at "tags":).
+            .tags = jsonbText(row.text(6) catch return dbFailed()),
             .score = row.int4(7) catch return dbFailed(),
             .rating_count = row.int4(8) catch return dbFailed(),
         };
