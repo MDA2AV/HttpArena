@@ -76,6 +76,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "swerver-tuned",
+    "language": "Zig",
+    "rps": 289571,
+    "avg_latency": "1.72ms",
+    "p99_latency": "5.54ms",
+    "cpu": "4069.7%",
+    "memory": "1.1GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "6.69GB/s",
+    "reconnects": 0,
+    "status_2xx": 1447855,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "trillium",
     "language": "Rust",
     "rps": 170029,

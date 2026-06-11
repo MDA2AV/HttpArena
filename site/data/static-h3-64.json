@@ -213,6 +213,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "swerver-tuned",
+    "language": "Zig",
+    "rps": 386832,
+    "avg_latency": "288us",
+    "p99_latency": "681us",
+    "cpu": "3342.6%",
+    "memory": "1.0GiB",
+    "connections": 64,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "5.90GB/s",
+    "reconnects": 0,
+    "status_2xx": 1938033,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "symfony-spawn-franken",
     "language": "PHP",
     "rps": 64730,
