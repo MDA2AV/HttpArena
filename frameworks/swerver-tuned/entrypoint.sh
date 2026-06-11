@@ -28,17 +28,26 @@ fi
 H1_PID=$!
 
 if [ -n "${DATABASE_URL:-}" ]; then
-    # Wait until the PG pool is serving (async-db 200), bounded ~10s so a
-    # missing DB can't hang startup, and short enough that the other
-    # instances are up before the harness reaches the h2/h3 profiles.
-    for i in $(seq 1 40); do
+    # Warm EVERY h1 worker's PG pool, not just one. Each worker is a separate
+    # SO_REUSEPORT process with its own pool; a single 200 only proves the one
+    # worker that happened to accept it. Each curl is a fresh connection, so
+    # the kernel spreads them across workers — keep polling until a run of
+    # consecutive 200s (high confidence all pools are ready) before starting
+    # the other instances. Bounded (~120 polls) so a missing DB can't hang.
+    streak=0; need=25
+    for i in $(seq 1 120); do
         code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 \
             "http://localhost:8080/async-db?min=10&max=50&limit=1" 2>/dev/null || echo 000)
         if [ "$code" = "200" ]; then
-            echo "entrypoint: h1 PG pool warm after ${i} poll(s)"
-            break
+            streak=$((streak + 1))
+            if [ "$streak" -ge "$need" ]; then
+                echo "entrypoint: PG pools warm ($need consecutive, after $i polls)"
+                break
+            fi
+        else
+            streak=0
+            sleep 0.1
         fi
-        sleep 0.25
     done
 fi
 
