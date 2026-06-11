@@ -1,0 +1,29 @@
+{
+  "display_name": "swerver-tuned",
+  "language": "Zig",
+  "type": "emerging",
+  "mode": "tuned",
+  "engine": "swerver",
+  "description": "swerver in tuned mode: pre-encoded response registry OFF (no pre-computed bodies), with precompressed .br/.gz static serving and an in-memory static file cache, plus the native async PostgreSQL client (pipelined, prepared-statement cache, park/resume) for async-db and fortunes. Single-threaded event loop per worker, SO_REUSEPORT fork fan-out, io_uring backend.",
+  "repo": "https://github.com/justinGrosvenor/swerver",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-tls",
+    "upload",
+    "static",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "json-comp",
+    "baseline-h3",
+    "static-h3",
+    "async-db",
+    "fortunes"
+  ],
+  "maintainers": ["justinGrosvenor"]
+}
