@@ -15,12 +15,29 @@ set -e
 if [ -n "${DATABASE_URL:-}" ]; then
     PGPASSWORD=$(echo "$DATABASE_URL" | sed -E 's#^[a-z]+://[^:/]+:([^@]+)@.*#\1#')
     export PGPASSWORD
-    pg_base=$(echo "$DATABASE_URL" | sed -E 's#^([a-z]+://[^:/]+):[^@]+@#\1@#; s#\?.*##')
+    # Strip the password (swerver takes it from PGPASSWORD) and force IPv4:
+    # getaddrinfo("localhost") returns ::1 first on IPv6-preferring hosts and
+    # the sidecar may not accept there — 127.0.0.1 always works.
+    pg_base=$(echo "$DATABASE_URL" | sed -E 's#^([a-z]+://[^:/]+):[^@]+@[^:/]+#\1@127.0.0.1#; s#\?.*##')
     pg_url="${pg_base}?sslmode=disable"
-    jq --arg url "$pg_url" \
-        '.postgres = {url: $url, password_env: "PGPASSWORD", pool_size_per_worker: 4}' \
+
+    # Scale the per-worker pool so workers × pool_size stays under Postgres'
+    # max_connections. workers:0 means swerver runs `nproc` workers, each with
+    # its OWN pool — on a big host (e.g. the self-hosted CI runner with ~128
+    # threads) nproc×4 = 512 > the sidecar's 256, so most pools fail to connect
+    # and DB requests routed (SO_REUSEPORT) to a starved worker 503 "database
+    # not configured". Size pool = (max_conn − reserve) / nproc, clamped 1..4
+    # (swerver rejects pool_size_per_worker > 4 — config.zig validateConfig).
+    MAXC="${DATABASE_MAX_CONN:-256}"
+    NCPU=$(nproc 2>/dev/null || echo 4)
+    POOL=$(( (MAXC - 24) / NCPU ))
+    [ "$POOL" -lt 1 ] && POOL=1
+    [ "$POOL" -gt 4 ] && POOL=4
+
+    jq --arg url "$pg_url" --argjson pool "$POOL" \
+        '.postgres = {url: $url, password_env: "PGPASSWORD", pool_size_per_worker: $pool}' \
         /etc/swerver/config-multi.json > /tmp/config-multi.json && mv /tmp/config-multi.json /etc/swerver/config-multi.json
-    echo "entrypoint: postgres enabled ($pg_url)"
+    echo "entrypoint: postgres enabled ($pg_url) pool_size_per_worker=$POOL (nproc=$NCPU, max_conn=$MAXC)"
 fi
 
 /usr/local/bin/swerver --config /etc/swerver/config-multi.json &
@@ -36,7 +53,7 @@ if [ -n "${DATABASE_URL:-}" ]; then
     streak=0; need=25
     for i in $(seq 1 120); do
         code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 \
-            "http://localhost:8080/async-db?min=10&max=50&limit=1" 2>/dev/null || echo 000)
+            "http://127.0.0.1:8080/async-db?min=10&max=50&limit=1" 2>/dev/null || echo 000)
         if [ "$code" = "200" ]; then
             streak=$((streak + 1))
             if [ "$streak" -ge "$need" ]; then
