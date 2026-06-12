@@ -40,18 +40,42 @@ internal sealed unsafe partial class HttpSession
     private bool _dbFirstRow;
     private int _dbRows;
 
+    // /upload streams its body: bytes are counted as they arrive, never buffered whole.
+    public long PendingUploadRemaining;
+    private long _uploadTotal;
+    private bool _uploadClose;
+
     public void ResumeFeed() => Pump();
 
     public void Feed(ReadOnlySpan<byte> data)
     {
+        // While draining a large upload, count the bytes and drop them - the body is never buffered.
+        if (PendingUploadRemaining > 0)
+        {
+            int take = (int)Math.Min(PendingUploadRemaining, (long)data.Length);
+            PendingUploadRemaining -= take;
+            if (PendingUploadRemaining > 0) return;   // more body still to come; nothing buffered
+            FinishUpload();                           // last byte counted - write the byte-count response
+            data = data[take..];                      // any remainder is the start of the next request
+            if (data.IsEmpty) return;
+        }
         AppendCarry(data);
         Pump();
+    }
+
+    // The streamed upload's body is fully counted; emit the 200 with the total byte count.
+    private void FinishUpload()
+    {
+        Span<byte> num = stackalloc byte[20];
+        Utf8Formatter.TryFormat(_uploadTotal, num, out int n);
+        WriteResp(num[..n], _uploadClose);
+        if (_uploadClose) WantClose = true;
     }
 
     private void Pump()
     {
         int pos = 0;
-        while (!PendingDb
+        while (!PendingDb && PendingUploadRemaining == 0
                && TryOne(_carry.AsSpan(pos, _carryLen - pos), out int consumed, out bool close))
         {
             pos += consumed;
@@ -92,6 +116,11 @@ internal sealed unsafe partial class HttpSession
             int sp2 = rest.IndexOf((byte)' ');
             target = sp2 >= 0 ? rest[..sp2] : rest;
         }
+
+        // A POST /upload body is streamed (counted), not buffered - detect it before reading the body.
+        int qix = target.IndexOf((byte)'?');
+        bool isUpload = method.SequenceEqual("POST"u8)
+            && (qix >= 0 ? target[..qix] : target).SequenceEqual("/upload"u8);
 
         int contentLength = -1;
         bool chunked = false;
@@ -139,6 +168,18 @@ internal sealed unsafe partial class HttpSession
         }
         else if (contentLength > 0)
         {
+            if (isUpload && buf.Length < bodyStart + contentLength)
+            {
+                // Stream it: count the body bytes already here, then drain the rest across reads so
+                // memory stays bounded regardless of upload size (genhttp does the same). Defer the
+                // close and the response until the body is fully counted.
+                _uploadTotal = contentLength;
+                PendingUploadRemaining = contentLength - (buf.Length - bodyStart);
+                _uploadClose = close;
+                close = false;
+                consumed = buf.Length;
+                return true;
+            }
             if (buf.Length < bodyStart + contentLength) return false;
             body = buf.Slice(bodyStart, contentLength);
             bodyLen = contentLength;
