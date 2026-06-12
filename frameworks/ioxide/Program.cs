@@ -47,7 +47,7 @@ internal static class Program
         // capped at the buffer size - bigger buffers mean far fewer slices (CQEs + returns) for the
         // same bytes. recvKb * ringEntries is the reserved recv memory per reactor.
         int recvKb = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RECV_KB"), out int rk) && rk > 0 ? rk : 16;
-        int ringEntries = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RING_ENTRIES"), out int re) && re > 0 ? re : 1024;
+        int ringEntries = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RING_ENTRIES"), out int re) && re > 0 ? re : 256;
 
         var config = new ServerConfig
         {
