@@ -21,7 +21,7 @@ internal sealed unsafe partial class HttpSession
     private int _crudId;
     private string _crudCategory = "";
     private int _crudPage = 1, _crudLimit = 10;
-    private byte[] _crudBody = new byte[1024];
+    private byte[] _crudBody = [];
     private int _crudBodyLen;
 
     // -- routing (synchronous, in Respond) --------------------------------
@@ -49,7 +49,7 @@ internal sealed unsafe partial class HttpSession
 
     private void StashBody(ReadOnlySpan<byte> body)
     {
-        if (_crudBody.Length < body.Length) _crudBody = new byte[Math.Max(body.Length, _crudBody.Length * 2)];
+        if (_crudBody.Length < body.Length) _crudBody = new byte[Math.Max(body.Length, 1024)];
         body.CopyTo(_crudBody);
         _crudBodyLen = body.Length;
     }
@@ -82,7 +82,7 @@ internal sealed unsafe partial class HttpSession
     public string CrudCountSql() => $"SELECT count(*) FROM items WHERE category = '{Esc(_crudCategory)}'";
 
     public string CrudListSql() =>
-        $"SELECT {ItemCols} FROM items WHERE category = '{Esc(_crudCategory)}' " +
+        $"SELECT {ItemCols}, count(*) OVER() AS total FROM items WHERE category = '{Esc(_crudCategory)}' " +
         $"ORDER BY id LIMIT {_crudLimit} OFFSET {(_crudPage - 1) * _crudLimit}";
 
     public string CrudItemSql() => $"SELECT {ItemCols} FROM items WHERE id = {_crudId}";
@@ -135,9 +135,9 @@ internal sealed unsafe partial class HttpSession
     private int _crudRows;
     private long _crudTotal;
 
-    public void BeginCrudList(long total)
+    public void BeginCrudList()
     {
-        _crudTotal = total;
+        _crudTotal = 0;   // captured from the first row's count(*) OVER()
         AppendOut("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "u8);
         _crudClOff = OutLen;
         AppendOut("00000000\r\n"u8);
@@ -151,7 +151,15 @@ internal sealed unsafe partial class HttpSession
 
     public void AppendCrudRow(PgRow row)
     {
-        if (!_crudFirstRow) AppendOut(","u8);
+        if (!_crudFirstRow)
+        {
+            AppendOut(","u8);
+        }
+        else
+        {
+            Utf8Parser.TryParse(row.Field(9), out long t, out _);   // count(*) OVER() AS total
+            _crudTotal = t;
+        }
         _crudFirstRow = false;
         _crudRows++;
         AppendItem(row);
@@ -168,7 +176,7 @@ internal sealed unsafe partial class HttpSession
 
     // -- single item (cache-aside) ----------------------------------------
 
-    private byte[] _itemJson = new byte[4096];
+    private byte[] _itemJson = [];
     private int _itemJsonLen;
     public bool CrudItemFound { get; private set; }
 

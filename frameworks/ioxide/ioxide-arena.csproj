@@ -13,11 +13,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ioxide" Version="0.0.2" />
-        <PackageReference Include="ioxide.pg" Version="0.0.2" />
-        <PackageReference Include="ioxide.file" Version="0.0.2" />
-        <PackageReference Include="ioxide.tls" Version="0.0.2" />
-        <PackageReference Include="ioxide.redis" Version="0.0.2" />
+        <PackageReference Include="ioxide" Version="0.0.3" />
+        <PackageReference Include="ioxide.pg" Version="0.0.3" />
+        <PackageReference Include="ioxide.file" Version="0.0.3" />
+        <PackageReference Include="ioxide.tls" Version="0.0.3" />
+        <PackageReference Include="ioxide.redis" Version="0.0.3" />
     </ItemGroup>
 
 </Project>

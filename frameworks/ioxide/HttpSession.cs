@@ -16,6 +16,7 @@ internal sealed unsafe partial class HttpSession
 {
     private readonly Dataset _ds;
     private readonly StaticAssets? _assets;
+    private readonly Precompressed? _precompressed;
     private byte[] _carry = new byte[2048];
     private int _carryLen;
 
@@ -23,10 +24,11 @@ internal sealed unsafe partial class HttpSession
     public int OutLen;
     public bool WantClose;
 
-    public HttpSession(Dataset ds, StaticAssets? assets)
+    public HttpSession(Dataset ds, StaticAssets? assets, Precompressed? precompressed)
     {
         _ds = ds;
         _assets = assets;
+        _precompressed = precompressed;
     }
 
     // /async-db parks the parser here; the handler runs the query and resumes.
@@ -70,6 +72,7 @@ internal sealed unsafe partial class HttpSession
         consumed = 0;
         close = false;
         bool acceptBr = false;
+        bool acceptGzip = false;
 
         int he = buf.IndexOf("\r\n\r\n"u8);
         if (he < 0) return false;
@@ -114,9 +117,10 @@ internal sealed unsafe partial class HttpSession
                 {
                     close = true;
                 }
-                else if (CiEq(name, "accept-encoding"u8) && CiContains(val, "br"u8))
+                else if (CiEq(name, "accept-encoding"u8))
                 {
-                    acceptBr = true;
+                    if (CiContains(val, "br"u8)) acceptBr = true;
+                    if (CiContains(val, "gzip"u8)) acceptGzip = true;
                 }
             }
             if (nl < 0) break;
@@ -147,12 +151,12 @@ internal sealed unsafe partial class HttpSession
             total = bodyStart;
         }
 
-        Respond(method, target, body, bodyLen, bodyInt, close, acceptBr);
+        Respond(method, target, body, bodyLen, bodyInt, close, acceptBr, acceptGzip);
         consumed = total;
         return true;
     }
 
-    private void Respond(ReadOnlySpan<byte> method, ReadOnlySpan<byte> target, ReadOnlySpan<byte> body, int bodyLen, long bodyInt, bool close, bool acceptBr)
+    private void Respond(ReadOnlySpan<byte> method, ReadOnlySpan<byte> target, ReadOnlySpan<byte> body, int bodyLen, long bodyInt, bool close, bool acceptBr, bool acceptGzip)
     {
         int q = target.IndexOf((byte)'?');
         ReadOnlySpan<byte> path = q >= 0 ? target[..q] : target;
@@ -177,9 +181,15 @@ internal sealed unsafe partial class HttpSession
         }
         else if (path.StartsWith("/static/"u8))
         {
-            // Baked snapshots: the full response (headers + body) is precomputed
-            // per file by ioxide.file - append it verbatim.
-            if (_assets != null && _assets.TryGet(path[7..], out AssetCache.Asset asset) && asset.Response != 0)
+            // Content negotiation is HTTP, so it lives here: serve the best precompressed
+            // variant the client accepts (br > gzip), else ioxide.file's identity baked response,
+            // else 404. Precompressed responses already carry Content-Encoding and Vary.
+            byte[]? pre = _precompressed?.Negotiate(path[7..], acceptBr, acceptGzip);
+            if (pre != null)
+            {
+                AppendOut(pre);
+            }
+            else if (_assets != null && _assets.TryGet(path[7..], out AssetCache.Asset asset) && asset.Response != 0)
             {
                 AppendOut(new ReadOnlySpan<byte>((void*)asset.Response, asset.ResponseLength));
             }
@@ -223,11 +233,13 @@ internal sealed unsafe partial class HttpSession
         AppendOut(body);
     }
 
-    private byte[] _jsonScratch = new byte[16 * 1024];
-    private byte[] _brotli = new byte[16 * 1024];
+    private byte[]? _jsonScratch;
+    private byte[]? _brotli;
 
     private void JsonResp(int count, long m, bool close, bool acceptBr)
     {
+        _jsonScratch ??= new byte[16 * 1024];   // allocated on first /json, not per connection
+
         // Build the body first (into the scratch) so headers carry an exact length.
         byte[] savedOut = Out;
         int savedLen = OutLen;
@@ -246,6 +258,7 @@ internal sealed unsafe partial class HttpSession
             // json-comp: per-request brotli (fast quality) - never compressed
             // without Accept-Encoding, per the anti-cheat check.
             int max = BrotliEncoder.GetMaxCompressedLength(bodyLen);
+            _brotli ??= new byte[16 * 1024];
             if (_brotli.Length < max)
                 Array.Resize(ref _brotli, Math.Max(max, _brotli.Length * 2));
             BrotliEncoder.TryCompress(_jsonScratch.AsSpan(0, bodyLen), _brotli, out int written,

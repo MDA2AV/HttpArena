@@ -15,7 +15,7 @@ pipelining, fragmented reads) is hand-written on the raw recv/send API - no HTTP
 | baseline / pipelined / limited-conn | hand-rolled parser with a per-connection carry buffer |
 | json / json-comp | dataset parsed to a model at startup, serialized field-by-field per request; json-comp brotli-encodes per request when the client sends `Accept-Encoding: br` |
 | json-tls | json over TLS on :8081 via `ioxide.tls` (kTLS TX offload) when `/certs` is mounted |
-| static | `ioxide.file` baked snapshots: each file's full response (headers + body) precomputed in native memory, appended verbatim |
+| static | `ioxide.file` baked identity snapshots (full response precomputed in native memory). Content negotiation is HTTP, so it lives in the entry (`Precompressed.cs`): `.br`/`.gz` siblings are baked once at startup with the base content-type + `Content-Encoding` + `Vary`, and chosen per request by `Accept-Encoding` (br > gzip > identity) |
 | upload | POST body drained against Content-Length, byte count returned |
 | async-db | `ioxide.pg`: pooled ring-native Postgres connections per reactor, SCRAM-SHA-256, rows streamed straight from the driver's receive buffer into the response |
 | crud | `ioxide.pg` for list/get/upsert/update + `ioxide.redis` cache-aside on single-item reads (X-Cache MISS/HIT, 1s TTL, invalidated on PUT). Redis is shared across reactors, so reads stay consistent under shared-nothing |

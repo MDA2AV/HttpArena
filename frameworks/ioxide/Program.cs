@@ -25,9 +25,12 @@ internal static class Program
 {
     private static int Main()
     {
-        int reactors = Environment.ProcessorCount;
+        // One reactor per core, capped at 64 so a hyperthreaded box (ProcessorCount counts logical
+        // CPUs, e.g. 128 on 64 cores + SMT) doesn't oversubscribe. IOXIDE_REACTORS overrides.
+        int reactors = Math.Min(Environment.ProcessorCount, 64);
         if (int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_REACTORS"), out int r) && r > 0)
             reactors = r;
+        Console.WriteLine($"[ioxide] ProcessorCount={Environment.ProcessorCount}, reactors={reactors}");
 
         ushort port = 8080;
         if (ushort.TryParse(Environment.GetEnvironmentVariable("IOXIDE_PORT"), out ushort p) && p > 0)
@@ -57,6 +60,8 @@ internal static class Program
         StaticAssets? assets = Directory.Exists(staticRoot)
             ? new StaticAssets(staticRoot, maxCachedFileBytes: 1 << 20)
             : null;
+        // Precompressed variants are baked here (HTTP), not in ioxide.file.
+        Precompressed? precompressed = Directory.Exists(staticRoot) ? new Precompressed(staticRoot) : null;
 
         // Postgres: DATABASE_URL=postgres://user:pass@host:port/db (validation/benchmark sidecar).
         PgOptions? pg = null;
@@ -93,12 +98,12 @@ internal static class Program
         }
 
         Console.WriteLine($"[ioxide] {config.ReactorCount} reactors on :{config.Port} " +
-                          $"(dataset={dataset.Count} items, static={(assets?.Count ?? 0)} files, " +
+                          $"(dataset={dataset.Count} items, static={(assets?.Count ?? 0)} files ({(precompressed?.Count ?? 0)} precompressed), " +
                           $"pg={(pg != null ? $"{pg.Host}:{pg.Port}/{pg.Database} pool={pg.PoolSize}" : "off")}, " +
                           $"tls={(tls ? "8081 (ktls tx)" : "off")}, " +
                           $"redis={(redis != null ? $"{redis.Host}:{redis.Port}" : "off")})");
 
-        Handler.Init(config, dataset, assets, pg != null, tls, redis != null);
+        Handler.Init(config, dataset, assets, precompressed, pg != null, tls, redis != null);
 
         var threads = new Thread[config.ReactorCount];
         for (int i = 0; i < config.ReactorCount; i++)
@@ -147,15 +152,17 @@ internal static class Handler
     private static int _slab = 16 * 1024;
     private static Dataset _ds = Dataset.Empty;
     private static StaticAssets? _assets;
+    private static Precompressed? _precompressed;
     private static bool _hasPg;
     private static bool _hasTls;
     private static bool _hasRedis;
 
-    public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, bool hasPg, bool hasTls, bool hasRedis)
+    public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasRedis)
     {
         _slab = config.WriteSlabSize;
         _ds = ds;
         _assets = assets;
+        _precompressed = precompressed;
         _hasPg = hasPg;
         _hasTls = hasTls;
         _hasRedis = hasRedis;
@@ -163,7 +170,7 @@ internal static class Handler
 
     public static async Task HandleAsync(Reactor reactor, Connection conn)
     {
-        var s = new HttpSession(_ds, _assets);
+        var s = new HttpSession(_ds, _assets, _precompressed);
         PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
         RedisPool? cache = _hasRedis ? reactor.GetService<RedisPool>() : null;
         PgRowHandler rowSink = s.AppendDbRow;       // async-db rows
@@ -222,10 +229,8 @@ internal static class Handler
                     else switch (kind)
                     {
                         case CrudKind.List:
-                            PgResult count = await pool.QueryAsync(s.CrudCountSql());
-                            long total = long.TryParse(count.Value, out long t) ? t : 0;
-                            s.BeginCrudList(total);
-                            await pool.QueryRowsAsync(s.CrudListSql(), listSink);
+                            s.BeginCrudList();
+                            await pool.QueryRowsAsync(s.CrudListSql(), listSink);   // total rides in via count(*) OVER()
                             s.EndCrudList();
                             break;
 
