@@ -59,41 +59,6 @@ fn appendHtmlEscaped(buf: []u8, start: usize, text: []const u8) ?usize {
     return w;
 }
 
-/// Append a JSON-escaped string body (no surrounding quotes).
-fn appendJsonEscaped(buf: []u8, start: usize, text: []const u8) ?usize {
-    var w = start;
-    for (text) |c| {
-        switch (c) {
-            '"' => {
-                w = appendBytes(buf, w, "\\\"") orelse return null;
-            },
-            '\\' => {
-                w = appendBytes(buf, w, "\\\\") orelse return null;
-            },
-            '\n' => {
-                w = appendBytes(buf, w, "\\n") orelse return null;
-            },
-            '\r' => {
-                w = appendBytes(buf, w, "\\r") orelse return null;
-            },
-            '\t' => {
-                w = appendBytes(buf, w, "\\t") orelse return null;
-            },
-            else => {
-                if (c < 0x20) {
-                    var esc: [6]u8 = undefined;
-                    const s = std.fmt.bufPrint(&esc, "\\u{x:0>4}", .{c}) catch return null;
-                    w = appendBytes(buf, w, s) orelse return null;
-                } else {
-                    if (w == buf.len) return null;
-                    buf[w] = c;
-                    w += 1;
-                }
-            },
-        }
-    }
-    return w;
-}
 
 fn getParam(path: []const u8, name: []const u8) ?[]const u8 {
     const q = std.mem.indexOfScalar(u8, path, '?') orelse return null;
@@ -150,6 +115,8 @@ fn handleAsyncDb(ctx: *router.HandlerContext) response_mod.Response {
     ) catch dbUnavailable();
 }
 
+const Rating = struct { score: i32, count: i32 };
+
 const Item = struct {
     id: i32,
     name: []const u8,
@@ -157,20 +124,27 @@ const Item = struct {
     price: i32,
     quantity: i32,
     active: bool,
-    tags: []const u8, // JSONB rendered as text → already a JSON array literal
-    score: i32,
-    rating_count: i32,
+    tags: std.json.Value,
+    rating: Rating,
 };
 
 fn onAsyncDb(rctx: *pg_api.ResumeContext) response_mod.Response {
     const res = rctx.result catch return dbFailed();
+    const arena = rctx.arena.allocator();
 
-    // Rows borrow the result frames — valid for the life of this continuation.
+    // Map each row to an Item and let std.json encode the whole result — no
+    // hand-formatting. Rows borrow the result frames for this continuation.
     var items: [ASYNC_MAX]Item = undefined;
     var n: usize = 0;
     var rows = res.rows();
     while (rows.next()) |row| {
         if (n == ASYNC_MAX) return dbFailed();
+        // tags is JSONB: binary is a 1-byte version prefix (0x01) + JSON text.
+        // Strip the prefix and parse it into a JSON value so it re-encodes as a
+        // real array rather than an escaped string.
+        const tags_text = jsonbText(row.text(6) catch return dbFailed());
+        const tags = std.json.parseFromSliceLeaky(std.json.Value, arena, tags_text, .{}) catch
+            return dbFailed();
         items[n] = .{
             .id = row.int4(0) catch return dbFailed(),
             .name = row.text(1) catch return dbFailed(),
@@ -178,46 +152,22 @@ fn onAsyncDb(rctx: *pg_api.ResumeContext) response_mod.Response {
             .price = row.int4(3) catch return dbFailed(),
             .quantity = row.int4(4) catch return dbFailed(),
             .active = row.boolean(5) catch return dbFailed(),
-            // tags is JSONB; the client receives columns in binary format, and
-            // JSONB binary is a 1-byte version prefix (0x01) followed by the
-            // JSON text. Strip the prefix so the embedded value is valid JSON
-            // (without this the rendered response is malformed at "tags":).
-            .tags = jsonbText(row.text(6) catch return dbFailed()),
-            .score = row.int4(7) catch return dbFailed(),
-            .rating_count = row.int4(8) catch return dbFailed(),
+            .tags = tags,
+            .rating = .{
+                .score = row.int4(7) catch return dbFailed(),
+                .count = row.int4(8) catch return dbFailed(),
+            },
         };
         n += 1;
     }
 
-    const buf = rctx.response_buf;
-    var w: usize = 0;
-    w = appendBytes(buf, w, "{\"items\":[") orelse return dbFailed();
-    for (items[0..n], 0..) |it, idx| {
-        if (idx != 0) w = appendBytes(buf, w, ",") orelse return dbFailed();
-        var pre: [48]u8 = undefined;
-        const pre_str = std.fmt.bufPrint(&pre, "{{\"id\":{d},\"name\":\"", .{it.id}) catch return dbFailed();
-        w = appendBytes(buf, w, pre_str) orelse return dbFailed();
-        w = appendJsonEscaped(buf, w, it.name) orelse return dbFailed();
-        w = appendBytes(buf, w, "\",\"category\":\"") orelse return dbFailed();
-        w = appendJsonEscaped(buf, w, it.category) orelse return dbFailed();
-        var mid: [96]u8 = undefined;
-        const mid_str = std.fmt.bufPrint(&mid, "\",\"price\":{d},\"quantity\":{d},\"active\":{s},\"tags\":", .{
-            it.price, it.quantity, if (it.active) @as([]const u8, "true") else "false",
-        }) catch return dbFailed();
-        w = appendBytes(buf, w, mid_str) orelse return dbFailed();
-        w = appendBytes(buf, w, it.tags) orelse return dbFailed();
-        var tail: [64]u8 = undefined;
-        const tail_str = std.fmt.bufPrint(&tail, ",\"rating\":{{\"score\":{d},\"count\":{d}}}}}", .{ it.score, it.rating_count }) catch return dbFailed();
-        w = appendBytes(buf, w, tail_str) orelse return dbFailed();
-    }
-    var tailb: [24]u8 = undefined;
-    const tail_str2 = std.fmt.bufPrint(&tailb, "],\"count\":{d}}}", .{n}) catch return dbFailed();
-    w = appendBytes(buf, w, tail_str2) orelse return dbFailed();
-
+    var w = std.Io.Writer.fixed(rctx.response_buf);
+    std.json.Stringify.value(.{ .items = items[0..n], .count = n }, .{}, &w) catch
+        return dbFailed();
     return .{
         .status = 200,
         .headers = &[_]response_mod.Header{.{ .name = "Content-Type", .value = "application/json" }},
-        .body = .{ .bytes = buf[0..w] },
+        .body = .{ .bytes = w.buffered() },
     };
 }
 
