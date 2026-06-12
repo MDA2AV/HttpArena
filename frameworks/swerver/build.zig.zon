@@ -1,6 +1,6 @@
 .{
     .name = .swerver_httparena,
-    .version = "0.1.0-alpha.10",
+    .version = "0.1.0-alpha.15",
     .fingerprint = 0xd44040f91e2c7045,
     .minimum_zig_version = "0.16.0",
     .paths = .{

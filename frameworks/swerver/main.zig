@@ -7,12 +7,32 @@ const clock = swerver.runtime.clock;
 
 // ── Dataset ──────────────────────────────────────────────────────
 
+const Rating = struct { score: i64 = 0, count: i64 = 0 };
+
+// Shape parsed from dataset.json (the validator requires the full item
+// schema: active, tags, rating in addition to the scalar fields).
+const ParseItem = struct {
+    id: i64,
+    name: []const u8,
+    category: []const u8,
+    price: i64,
+    quantity: i64,
+    active: bool = false,
+    tags: []const []const u8 = &.{},
+    rating: Rating = .{},
+};
+
 const DatasetItem = struct {
     id: i64,
     name: []const u8,
     category: []const u8,
     price: i64,
     quantity: i64,
+    active: bool,
+    // tags rendered once as a JSON array string (e.g. ["a","b"]) into a
+    // static pool, so handleJson can emit it directly.
+    tags_text: []const u8,
+    rating: Rating,
 };
 
 const MAX_ITEMS = 64;
@@ -34,7 +54,7 @@ fn loadDataset() void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const items = std.json.parseFromSliceLeaky(
-        []DatasetItem,
+        []ParseItem,
         arena.allocator(),
         raw[0..n],
         .{ .ignore_unknown_fields = true },
@@ -42,28 +62,48 @@ fn loadDataset() void {
 
     const count = @min(items.len, MAX_ITEMS);
     for (items[0..count], 0..) |item, i| {
-        dataset_items[i] = .{
-            .id = item.id,
-            .name = item.name,
-            .category = item.category,
-            .price = item.price,
-            .quantity = item.quantity,
-        };
-    }
-    dataset_len = count;
-
-    // Copy string data to static storage so it outlives the arena.
-    for (dataset_items[0..dataset_len]) |*item| {
+        // Copy name/category and render tags into static pools so they
+        // outlive the parse arena.
         const ns = name_pool_off;
         @memcpy(name_pool[ns .. ns + item.name.len], item.name);
-        item.name = name_pool[ns .. ns + item.name.len];
         name_pool_off += item.name.len;
 
         const cs = cat_pool_off;
         @memcpy(cat_pool[cs .. cs + item.category.len], item.category);
-        item.category = cat_pool[cs .. cs + item.category.len];
         cat_pool_off += item.category.len;
+
+        const ts = tags_pool_off;
+        var to = ts;
+        tags_pool[to] = '[';
+        to += 1;
+        for (item.tags, 0..) |tag, ti| {
+            if (ti > 0) {
+                tags_pool[to] = ',';
+                to += 1;
+            }
+            tags_pool[to] = '"';
+            to += 1;
+            @memcpy(tags_pool[to .. to + tag.len], tag);
+            to += tag.len;
+            tags_pool[to] = '"';
+            to += 1;
+        }
+        tags_pool[to] = ']';
+        to += 1;
+        tags_pool_off = to;
+
+        dataset_items[i] = .{
+            .id = item.id,
+            .name = name_pool[ns .. ns + item.name.len],
+            .category = cat_pool[cs .. cs + item.category.len],
+            .price = item.price,
+            .quantity = item.quantity,
+            .active = item.active,
+            .tags_text = tags_pool[ts..to],
+            .rating = item.rating,
+        };
     }
+    dataset_len = count;
 }
 
 // Flat string pools for dataset names/categories (outlive the parse arena).
@@ -71,6 +111,8 @@ var name_pool: [1024]u8 = undefined;
 var name_pool_off: usize = 0;
 var cat_pool: [1024]u8 = undefined;
 var cat_pool_off: usize = 0;
+var tags_pool: [8192]u8 = undefined;
+var tags_pool_off: usize = 0;
 
 // ── Handlers ─────────────────────────────────────────────────────
 
@@ -193,7 +235,11 @@ fn handleJson(ctx: *router.HandlerContext) response_mod.Response {
         }
     }
 
-    var buf = ctx.response_buf;
+    // Build into a process-global buffer rather than ctx.response_buf (8 KiB):
+    // the full item schema (active/tags/rating) pushes /json/50 past 8 KiB.
+    // Safe because the response is encoded into the connection write buffer
+    // synchronously before the next request runs (single-threaded per worker).
+    const buf = json_buf[0..];
     var off: usize = 0;
 
     const header = std.fmt.bufPrint(buf[off..], "{{\"count\":{d},\"items\":[", .{count}) catch
@@ -206,8 +252,8 @@ fn handleJson(ctx: *router.HandlerContext) response_mod.Response {
             off += 1;
         }
         const total = item.price * item.quantity * m;
-        const entry = std.fmt.bufPrint(buf[off..], "{{\"id\":{d},\"name\":\"{s}\",\"category\":\"{s}\",\"price\":{d},\"quantity\":{d},\"total\":{d}}}", .{
-            item.id, item.name, item.category, item.price, item.quantity, total,
+        const entry = std.fmt.bufPrint(buf[off..], "{{\"id\":{d},\"name\":\"{s}\",\"category\":\"{s}\",\"price\":{d},\"quantity\":{d},\"active\":{},\"tags\":{s},\"rating\":{{\"score\":{d},\"count\":{d}}},\"total\":{d}}}", .{
+            item.id, item.name, item.category, item.price, item.quantity, item.active, item.tags_text, item.rating.score, item.rating.count, total,
         }) catch return jsonError();
         off += entry.len;
     }
@@ -215,12 +261,36 @@ fn handleJson(ctx: *router.HandlerContext) response_mod.Response {
     const tail = std.fmt.bufPrint(buf[off..], "]}}", .{}) catch return jsonError();
     off += tail.len;
 
+    return finishJson(ctx, buf[0..off]);
+}
+
+// json-comp profile: gzip the JSON body when the client offers gzip. The
+// single-threaded event loop per worker (fork model) makes a process-global
+// scratch buffer safe — each forked process has its own copy.
+var gzip_out: [65536]u8 = undefined;
+var json_buf: [65536]u8 = undefined;
+
+fn finishJson(ctx: *router.HandlerContext, body: []const u8) response_mod.Response {
+    if (ctx.request.getHeader("accept-encoding")) |ae| {
+        if (std.mem.indexOf(u8, ae, "gzip") != null) {
+            if (swerver.compress.gzipCompress(body, &gzip_out)) |clen| {
+                return .{
+                    .status = 200,
+                    .headers = &[_]response_mod.Header{
+                        .{ .name = "Content-Type", .value = "application/json" },
+                        .{ .name = "Content-Encoding", .value = "gzip" },
+                    },
+                    .body = .{ .bytes = gzip_out[0..clen] },
+                };
+            }
+        }
+    }
     return .{
         .status = 200,
         .headers = &[_]response_mod.Header{
             .{ .name = "Content-Type", .value = "application/json" },
         },
-        .body = .{ .bytes = buf[0..off] },
+        .body = .{ .bytes = body },
     };
 }
 
@@ -286,7 +356,6 @@ pub fn main(init: std.process.Init) !void {
             srv.deinit();
             allocator.destroy(srv);
         }
-        srv.config_path = args.config_path;
         try srv.run(null);
     }
 }

@@ -114,6 +114,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "swerver",
+    "language": "Zig",
+    "rps": 13427937,
+    "avg_latency": "4.13ms",
+    "p99_latency": "4.13ms",
+    "cpu": "4511.3%",
+    "memory": "2.9GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.02GB/s",
+    "reconnects": 0,
+    "status_2xx": 67811082,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "true-async-server",
     "language": "PHP",
     "rps": 3991541,
