@@ -5,6 +5,8 @@ using ioxide.pg;
 using ioxide.file;
 using ioxide.tls;
 using ioxide.redis;
+using StackExchange.Redis;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace IoxideArena;
 
@@ -97,13 +99,27 @@ internal static class Program
             };
         }
 
+        // Crud cache backend (CRUD_CACHE): inproc (default) = one shared IMemoryCache, fully
+        // in-process and inline on the reactor (no network, no thread pool); ioxide = ioxide.redis
+        // (per-reactor, pipelined, on the ring); stackexchange = StackExchange.Redis (one shared
+        // multiplexer, off-ring). The Redis backends need REDIS_URL; without it they fall back to inproc.
+        string cacheBackend = Environment.GetEnvironmentVariable("CRUD_CACHE") ?? "inproc";
+        if ((cacheBackend == "ioxide" || cacheBackend == "stackexchange") && redis == null)
+        {
+            cacheBackend = "inproc";
+        }
+        IMemoryCache? memCache = cacheBackend == "inproc" ? new MemoryCache(new MemoryCacheOptions()) : null;
+        ConnectionMultiplexer? mux = cacheBackend == "stackexchange"
+            ? ConnectionMultiplexer.Connect($"{redis!.Host}:{redis.Port}")
+            : null;
+
         Console.WriteLine($"[ioxide] {config.ReactorCount} reactors on :{config.Port} " +
                           $"(dataset={dataset.Count} items, static={(assets?.Count ?? 0)} files ({(precompressed?.Count ?? 0)} precompressed), " +
                           $"pg={(pg != null ? $"{pg.Host}:{pg.Port}/{pg.Database} pool={pg.PoolSize}" : "off")}, " +
                           $"tls={(tls ? "8081 (ktls tx)" : "off")}, " +
-                          $"redis={(redis != null ? $"{redis.Host}:{redis.Port}" : "off")})");
+                          $"cache={(pg != null ? cacheBackend : "off")})");
 
-        Handler.Init(config, dataset, assets, precompressed, pg != null, tls, redis != null);
+        Handler.Init(config, dataset, assets, precompressed, pg != null, tls, pg != null);
 
         var threads = new Thread[config.ReactorCount];
         for (int i = 0; i < config.ReactorCount; i++)
@@ -116,14 +132,18 @@ internal static class Program
                 if (pgOptions != null)
                 {
                     PgPool.Start(rr, pgOptions);
+                    // Crud cache, shared across reactors (inproc/stackexchange) or per-reactor (ioxide).
+                    ICrudCache cache = cacheBackend switch
+                    {
+                        "ioxide"        => new IoxideRedisCache(RedisPool.Start(rr, redisOptions!)),
+                        "stackexchange" => new StackExchangeCache(mux!.GetDatabase()),
+                        _               => new InProcCache(memCache!),
+                    };
+                    rr.AddService<ICrudCache>(cache);
                 }
                 if (tls)
                 {
                     TlsService.Start(rr, new TlsOptions { CertificatePath = certPath, KeyPath = keyPath });
-                }
-                if (redisOptions != null)
-                {
-                    RedisPool.Start(rr, redisOptions);
                 }
             };
             reactor.Handle = Handler.HandleAsync;
@@ -155,9 +175,9 @@ internal static class Handler
     private static Precompressed? _precompressed;
     private static bool _hasPg;
     private static bool _hasTls;
-    private static bool _hasRedis;
+    private static bool _hasCache;
 
-    public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasRedis)
+    public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasCache)
     {
         _slab = config.WriteSlabSize;
         _ds = ds;
@@ -165,14 +185,14 @@ internal static class Handler
         _precompressed = precompressed;
         _hasPg = hasPg;
         _hasTls = hasTls;
-        _hasRedis = hasRedis;
+        _hasCache = hasCache;
     }
 
     public static async Task HandleAsync(Reactor reactor, Connection conn)
     {
         var s = new HttpSession(_ds, _assets, _precompressed);
         PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
-        RedisPool? cache = _hasRedis ? reactor.GetService<RedisPool>() : null;
+        ICrudCache? cache = _hasCache ? reactor.GetService<ICrudCache>() : null;
         PgRowHandler rowSink = s.AppendDbRow;       // async-db rows
         PgRowHandler listSink = s.AppendCrudRow;    // crud list rows
         PgRowHandler itemSink = s.CaptureCrudItem;  // crud single item
@@ -230,7 +250,7 @@ internal static class Handler
                     {
                         case CrudKind.List:
                             s.BeginCrudList();
-                            await pool.QueryRowsAsync(s.CrudListSql(), listSink);   // total rides in via count(*) OVER()
+                            await s.SubmitCrudList(pool, listSink);
                             s.EndCrudList();
                             break;
 
@@ -244,7 +264,7 @@ internal static class Handler
                             else
                             {
                                 s.ResetCrudItem();
-                                await pool.QueryRowsAsync(s.CrudItemSql(), itemSink);
+                                await s.SubmitCrudItem(pool, itemSink);
                                 if (s.CrudItemFound)
                                 {
                                     if (cache != null)
@@ -259,12 +279,12 @@ internal static class Handler
                             break;
 
                         case CrudKind.Create:
-                            await pool.QueryAsync(s.CrudInsertSql());
+                            await s.SubmitCrudInsert(pool);
                             s.WriteCrudStatus("HTTP/1.1 201 Created\r\nContent-Length: 0\r\n"u8);
                             break;
 
                         case CrudKind.Update:
-                            await pool.QueryAsync(s.CrudUpdateSql());
+                            await s.SubmitCrudUpdate(pool);
                             if (cache != null) await cache.DelAsync(s.CacheKey());
                             s.WriteCrudStatus("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n"u8);
                             break;

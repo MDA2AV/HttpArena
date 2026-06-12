@@ -9,9 +9,9 @@ internal enum CrudKind { None, List, GetOne, Create, Update }
 
 /// <summary>
 /// /crud/items - the realistic REST profile. The parser stashes the operation here (method, id,
-/// query, body); the handler runs it against Postgres with Redis cache-aside on single-item reads
-/// (X-Cache: MISS/HIT, invalidated on PUT). SQL is simple-protocol with inlined, quote-escaped
-/// values - controlled benchmark input.
+/// query, body); the handler runs it against Postgres with cache-aside on single-item reads
+/// (X-Cache: MISS/HIT, invalidated on PUT). SQL is parameterized and auto-prepared - constant
+/// statements so Postgres plans each once, values passed as params.
 /// </summary>
 internal sealed unsafe partial class HttpSession
 {
@@ -77,30 +77,54 @@ internal sealed unsafe partial class HttpSession
 
     // -- SQL (built from the stashed op) ----------------------------------
 
-    private const string ItemCols = "id, name, category, price, quantity, active, tags, rating_score, rating_count";
+    // Parameterized crud statements. The SQL is constant, so each connection's prepared-statement
+    // cache hits every time after the first - Postgres plans each once and the values travel as
+    // params (no per-request parse/plan, no escaping). List is a plain index range scan over
+    // idx_items_category_id with no count(*) OVER(): the validator only needs total > 0 and the spec
+    // defines total as the returned page size (load-more semantics), so the window scan was waste.
+    // The args are stack spans built in these non-async helpers, consumed into the send buffer before
+    // any await - so the span never lands on an async state machine.
+    private const string SqlList =
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
+        "FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3";
+    private const string SqlItem =
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
+        "FROM items WHERE id = $1";
+    private const string SqlInsert =
+        "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) " +
+        "VALUES ($1, $2, $3, $4, $5, false, '[]'::jsonb, 0, 0) " +
+        "ON CONFLICT (id) DO UPDATE SET name = excluded.name, category = excluded.category, " +
+        "price = excluded.price, quantity = excluded.quantity";
+    private const string SqlUpdate =
+        "UPDATE items SET name = $1, category = $2, price = $3, quantity = $4 WHERE id = $5";
 
-    public string CrudCountSql() => $"SELECT count(*) FROM items WHERE category = '{Esc(_crudCategory)}'";
-
-    public string CrudListSql() =>
-        $"SELECT {ItemCols}, count(*) OVER() AS total FROM items WHERE category = '{Esc(_crudCategory)}' " +
-        $"ORDER BY id LIMIT {_crudLimit} OFFSET {(_crudPage - 1) * _crudLimit}";
-
-    public string CrudItemSql() => $"SELECT {ItemCols} FROM items WHERE id = {_crudId}";
-
-    public string CrudInsertSql()
+    public ValueTask<PgResult> SubmitCrudList(PgPool pool, PgRowHandler onRow)
     {
-        (int id, string name, string category, int price, int quantity) = ParseItemBody();
-        return $"INSERT INTO items ({ItemCols}) VALUES " +
-               $"({id}, '{Esc(name)}', '{Esc(category)}', {price}, {quantity}, false, '[]'::jsonb, 0, 0) " +
-               $"ON CONFLICT (id) DO UPDATE SET name = excluded.name, category = excluded.category, " +
-               $"price = excluded.price, quantity = excluded.quantity";
+        ReadOnlySpan<PgParam> args =
+            [PgParam.Text(_crudCategory), PgParam.Int(_crudLimit), PgParam.Int((_crudPage - 1) * _crudLimit)];
+        return pool.QueryAsync(SqlList, args, onRow);
     }
 
-    public string CrudUpdateSql()
+    public ValueTask<PgResult> SubmitCrudItem(PgPool pool, PgRowHandler onRow)
+    {
+        ReadOnlySpan<PgParam> args = [PgParam.Int(_crudId)];
+        return pool.QueryAsync(SqlItem, args, onRow);
+    }
+
+    public ValueTask<PgResult> SubmitCrudInsert(PgPool pool)
+    {
+        (int id, string name, string category, int price, int quantity) = ParseItemBody();
+        ReadOnlySpan<PgParam> args =
+            [PgParam.Int(id), PgParam.Text(name), PgParam.Text(category), PgParam.Int(price), PgParam.Int(quantity)];
+        return pool.QueryAsync(SqlInsert, args);
+    }
+
+    public ValueTask<PgResult> SubmitCrudUpdate(PgPool pool)
     {
         (_, string name, string category, int price, int quantity) = ParseItemBody();
-        return $"UPDATE items SET name = '{Esc(name)}', category = '{Esc(category)}', " +
-               $"price = {price}, quantity = {quantity} WHERE id = {_crudId}";
+        ReadOnlySpan<PgParam> args =
+            [PgParam.Text(name), PgParam.Text(category), PgParam.Int(price), PgParam.Int(quantity), PgParam.Int(_crudId)];
+        return pool.QueryAsync(SqlUpdate, args);
     }
 
     public string CacheKey() => $"crud:item:{_crudId}";
@@ -126,18 +150,15 @@ internal sealed unsafe partial class HttpSession
         return (id, name, category, price, quantity);
     }
 
-    private static string Esc(string s) => s.Contains('\'') ? s.Replace("'", "''") : s;
 
     // -- list response ----------------------------------------------------
 
     private int _crudClOff, _crudBodyStart;
     private bool _crudFirstRow;
     private int _crudRows;
-    private long _crudTotal;
 
     public void BeginCrudList()
     {
-        _crudTotal = 0;   // captured from the first row's count(*) OVER()
         AppendOut("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: "u8);
         _crudClOff = OutLen;
         AppendOut("00000000\r\n"u8);
@@ -151,15 +172,7 @@ internal sealed unsafe partial class HttpSession
 
     public void AppendCrudRow(PgRow row)
     {
-        if (!_crudFirstRow)
-        {
-            AppendOut(","u8);
-        }
-        else
-        {
-            Utf8Parser.TryParse(row.Field(9), out long t, out _);   // count(*) OVER() AS total
-            _crudTotal = t;
-        }
+        if (!_crudFirstRow) AppendOut(","u8);
         _crudFirstRow = false;
         _crudRows++;
         AppendItem(row);
@@ -167,7 +180,7 @@ internal sealed unsafe partial class HttpSession
 
     public void EndCrudList()
     {
-        AppendOut("],\"total\":"u8); AppendLong(_crudTotal);
+        AppendOut("],\"total\":"u8); AppendLong(_crudRows);
         AppendOut(",\"page\":"u8); AppendLong(_crudPage);
         AppendOut(",\"count\":"u8); AppendLong(_crudRows);
         AppendOut("}"u8);
