@@ -43,14 +43,20 @@ internal static class Program
         string keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
         bool tls = File.Exists(certPath) && File.Exists(keyPath);
 
+        // Recv buffer ring, env-tunable: the upload profile moves large bodies, so each recv slice is
+        // capped at the buffer size - bigger buffers mean far fewer slices (CQEs + returns) for the
+        // same bytes. recvKb * ringEntries is the reserved recv memory per reactor.
+        int recvKb = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RECV_KB"), out int rk) && rk > 0 ? rk : 16;
+        int ringEntries = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RING_ENTRIES"), out int re) && re > 0 ? re : 1024;
+
         var config = new ServerConfig
         {
             Port              = port,
             ExtraPorts        = tls ? [(ushort)8081] : [],
             ReactorCount      = reactors,
             Incremental       = false,
-            RecvBufferSize    = 16 * 1024,
-            BufferRingEntries = 1024,
+            RecvBufferSize    = recvKb * 1024,
+            BufferRingEntries = ringEntries,
         };
 
         var dsPath = Environment.GetEnvironmentVariable("IOXIDE_DATASET") ?? "/data/dataset.json";
