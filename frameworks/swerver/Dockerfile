@@ -22,7 +22,7 @@ RUN set -eux; \
 
 # Clone swerver library
 WORKDIR /src
-RUN git clone --depth 1 --branch v0.1.0-alpha.10 \
+RUN git clone --depth 1 --branch v0.1.0-alpha.15 \
         https://github.com/justinGrosvenor/swerver.git .
 
 # Symlink OpenSSL for Zig's linker
@@ -45,11 +45,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=build /src/httparena/zig-out/bin/swerver-httparena /usr/local/bin/swerver
 COPY config-h1.json /etc/swerver/config-h1.json
+COPY config-h2c.json /etc/swerver/config-h2c.json
 COPY config-tls.json /etc/swerver/config-tls.json
 COPY config-tls-h1.json /etc/swerver/config-tls-h1.json
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-EXPOSE 8080 8081 8443/tcp 8443/udp
+EXPOSE 8080 8081 8082 8443/tcp 8443/udp
 
 CMD ["/usr/local/bin/entrypoint.sh"]
