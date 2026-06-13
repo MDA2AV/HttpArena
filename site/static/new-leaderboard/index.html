@@ -71,8 +71,6 @@
   .icon-btn{display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--text-2); cursor:pointer; font-size:.9rem}
   .icon-btn:hover{color:var(--text); border-color:var(--accent)}
   .icon-btn svg{width:17px; height:17px}
-  .top-link{display:inline-flex; align-items:center; padding:.3rem .55rem; font-size:.82rem; font-weight:500; color:var(--text-2); text-decoration:none; white-space:nowrap}
-  .top-link:hover{color:var(--text); background:var(--panel-2)}
   .type-filter{display:flex; gap:.25rem; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:3px; flex:none}
   .type-filter button{border:0; background:transparent; color:var(--muted); cursor:pointer; font:inherit; font-size:.8rem; font-weight:650; padding:.36rem .72rem; border-radius:7px; white-space:nowrap; transition:all .12s ease}
   .type-filter button:hover{color:var(--text)}
@@ -387,7 +385,7 @@
   <header class="top">
     <div class="brand">
       <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><b>Http</b>Arena</a>
-      <a class="top-link" href="https://timeline.http-arena.com" target="_blank" rel="noopener">Timeline</a>
+      <a class="icon-btn" href="https://timeline.http-arena.com" target="_blank" rel="noopener" title="Timeline" aria-label="Timeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a>
       <a class="icon-btn" href="https://mda2av.github.io/Http11Probe/" target="_blank" rel="noopener" title="RFC Compliance" aria-label="RFC Compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></a>
     </div>
     <div class="type-filter" id="typeFilter">
