@@ -18,8 +18,10 @@ frameworks/fletch/.dart_tool/
 !frameworks/hyperf/bin/
 frameworks/zix/.zig-cache
 frameworks/zix/zig-out
+frameworks/zix/vendor
 frameworks/zix-grpc/.zig-cache
 frameworks/zix-grpc/zig-out
+frameworks/zix-grpc/vendor
 
 # IDE settings
 *.user

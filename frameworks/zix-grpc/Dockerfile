@@ -24,11 +24,11 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix 0.2.x at a pinned commit, separate layer so source-only rebuilds
-# skip the download. Strip the top-level directory produced by GitHub's archive.
+# Vendor zix 0.3.x, separate layer so source-only rebuilds skip the download.
+# Strip the top-level directory produced by GitHub's archive.
 RUN mkdir -p /src/vendor/zix && \
-    curl -fsSL https://github.com/prothegee/zix/archive/refs/heads/0.2.x.tar.gz \
-        | tar -xz --strip-components=1 -C /src/vendor/zix 
+    curl -fsSL https://github.com/prothegee/zix/archive/refs/heads/0.3.x.tar.gz \
+        | tar -xz --strip-components=1 -C /src/vendor/zix
 
 WORKDIR /src
 COPY build.zig build.zig.zon ./
