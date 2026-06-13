@@ -46,8 +46,9 @@
   a{color:inherit;text-decoration:none}
 
   .top{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap; row-gap:.5rem; padding:.72rem 1.5rem; background:var(--header-bg); backdrop-filter:blur(14px) saturate(1.6); -webkit-backdrop-filter:blur(14px) saturate(1.6); border-bottom:1px solid var(--line); box-shadow:0 6px 20px -12px rgba(20,22,40,.25)}
-  .brand{white-space:nowrap; width:calc(264px - .85rem)}  /* span the sidebar so the type filter aligns with the content column */
-  .brand-name{font-weight:750; font-size:1.06rem; letter-spacing:-.02em; color:var(--text)}
+  .brand{white-space:nowrap; width:calc(264px - .85rem); display:flex; align-items:center; gap:.55rem}  /* spans the sidebar width (type filter aligns with the content column); holds the home link + Timeline/RFC */
+  .brand-name{font-weight:750; font-size:1.06rem; letter-spacing:-.02em; color:var(--text); text-decoration:none; cursor:pointer; flex:none}
+  .brand-name:hover{opacity:.82}
   .brand-name b{color:var(--accent)}
   .round{position:relative; flex:none}
   .round-btn{display:flex; align-items:center; gap:.5rem; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:.28rem .55rem; cursor:pointer; font:inherit; color:var(--text); transition:border-color .12s ease}
@@ -72,7 +73,6 @@
   .icon-btn svg{width:17px; height:17px}
   .top-link{display:inline-flex; align-items:center; padding:.3rem .55rem; font-size:.82rem; font-weight:500; color:var(--text-2); text-decoration:none; white-space:nowrap}
   .top-link:hover{color:var(--text); background:var(--panel-2)}
-  .brand-row{display:flex; align-items:center; gap:.65rem}
   .type-filter{display:flex; gap:.25rem; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:3px; flex:none}
   .type-filter button{border:0; background:transparent; color:var(--muted); cursor:pointer; font:inherit; font-size:.8rem; font-weight:650; padding:.36rem .72rem; border-radius:7px; white-space:nowrap; transition:all .12s ease}
   .type-filter button:hover{color:var(--text)}
@@ -385,8 +385,8 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand-row">
-      <div class="brand"><span class="brand-name"><b>Http</b>Arena</span></div>
+    <div class="brand">
+      <a class="brand-name" href="#" id="brandHome" aria-label="HttpArena home"><b>Http</b>Arena</a>
       <a class="top-link" href="https://timeline.http-arena.com" target="_blank" rel="noopener">Timeline</a>
       <a class="icon-btn" href="https://mda2av.github.io/Http11Probe/" target="_blank" rel="noopener" title="RFC Compliance" aria-label="RFC Compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></a>
     </div>
@@ -1155,6 +1155,7 @@
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
   initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); hw(); buildNav(); renderHead(); render();
+  (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
 })();
