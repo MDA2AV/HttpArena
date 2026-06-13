@@ -53,12 +53,12 @@ wrk_parse() {
     # "Requests/sec: 1283707.14"
     echo "rps=$(echo "$output" | grep -oP 'Requests/sec:\s+\K[\d.]+' | cut -d. -f1 || echo 0)"
 
-    # "Latency   3.70ms    8.37ms 279.91ms   96.41%" — avg at $2, p99 proxied by stdev
-    # wrk doesn't expose p99 directly; we use avg as both to match h2load behavior.
-    local avg
-    avg=$(echo "$output" | grep "Latency" | head -1 | awk '{print $2}')
-    echo "avg_lat=$avg"
-    echo "p99_lat=$avg"
+    # "Latency   3.70ms    8.37ms 279.91ms   96.41%" — avg=$2, stdev=$3, max=$4.
+    # wrk exposes no percentiles without --latency, so use max ($4) as the tail.
+    local lat
+    lat=$(echo "$output" | grep "Latency" | head -1)
+    echo "avg_lat=$(echo "$lat" | awk '{print $2}')"
+    echo "p99_lat=$(echo "$lat" | awk '{print $4}')"
 
     echo "reconnects=0"
     echo "bandwidth=$(echo "$output" | grep -oP 'Transfer/sec:\s+\K\S+' | head -1 || echo 0)"
