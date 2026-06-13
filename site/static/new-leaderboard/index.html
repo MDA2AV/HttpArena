@@ -109,6 +109,7 @@
 
   .nav-grp-h{display:flex; align-items:center; justify-content:space-between; gap:.4rem; padding:.44rem .55rem; border-radius:7px; cursor:pointer; color:var(--text); font-weight:650; font-size:.86rem; user-select:none}
   .nav-grp-h:hover{background:var(--panel-2)}
+  .nav-grp-h.active{background:var(--panel-2); box-shadow:inset 2px 0 0 var(--text-2)}
   .nav-grp-t{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .nav-ico{display:inline-flex; align-items:center; justify-content:center; flex:none; color:var(--muted); transition:color .12s ease}
   .nav-ico svg{width:15px; height:15px}
@@ -615,9 +616,14 @@
   function docsGroup(node){
     var isRoot=node.u==='';
     var grp=document.createElement('div'); grp.className='nav-grp'+(isRoot?' lvl0':'')+(expanded.has(node.u)?' open':'');
-    var gh=document.createElement('div'); gh.className='nav-grp-h';
+    var gh=document.createElement('div'); gh.className='nav-grp-h'+(!isRoot&&state.view==='doc'&&state.doc===node.u?' active':'');
     gh.innerHTML=(isRoot?navIco('kb')+'<span class="nav-grp-t">'+esc(node.t)+'</span>':'<span>'+esc(node.t)+'</span>')+'<span class="caret">▸</span>';
-    gh.onclick=function(){ toggleGrp(grp,node.u); };
+    // Clicking a section opens it and shows its overview page (the _index content, e.g. Test Profiles'
+    // API Specification); clicking again (when open) collapses it. Root + content-less sections just toggle.
+    gh.onclick=function(){
+      if(isRoot || expanded.has(node.u) || !(LB_DOCS && LB_DOCS[node.u]!==undefined)){ toggleGrp(grp,node.u); }
+      else { pickDoc(node.u); }
+    };
     grp.appendChild(gh);
     var body=navBody();
     node.c.forEach(function(ch){ body.firstChild.appendChild(ch.c&&ch.c.length ? docsGroup(ch) : docsLeaf(ch)); });

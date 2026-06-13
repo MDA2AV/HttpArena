@@ -50,6 +50,7 @@ jobs:
           cp public/old/new-leaderboard/index.html public/index.html
           cp public/old/new-leaderboard/data.js public/data.js
           cp public/old/new-leaderboard/docs.js public/docs.js
+          for f in openapi.json openapi-gateway.json; do [ -f "public/old/$f" ] && cp "public/old/$f" "public/$f"; done   # OpenAPI specs linked from the docs, served at root
           cp root/404.html public/404.html   # path-preserving redirects: old links -> /old/
 
       - name: Upload artifact
