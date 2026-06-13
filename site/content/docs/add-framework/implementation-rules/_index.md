@@ -9,10 +9,11 @@ Every entry has a **type** (what it is) and, for frameworks, a **mode** (how it 
 
 - **Flagship** - a mature framework backed by an active development team, with a solid ecosystem (libraries, middleware, tooling) and an established community around it. Full-featured, and covers a complete test category (e.g. all HTTP/1.1 profiles).
 - **Emerging** - a genuine framework that does not yet meet the full flagship bar: newer, more minimal, or only partial coverage.
+- **Experimental** - very new, unproven work that has not proved itself yet and may have bugs. Ranked alongside frameworks, but hidden by default on the leaderboard (opt-in via the type filter).
 - **Engine** - a bare-metal HTTP implementation (raw sockets, custom parser, low-level I/O). Not a framework; ranked separately.
 - **Infrastructure** - a reverse proxy or static-file server (nginx, h2o) used without an application framework layer.
 
-Flagship vs Emerging reflects maturity, not how the code is written - pick your best fit and it may be adjusted on review.
+Flagship, Emerging and Experimental reflect maturity, not how the code is written - pick your best fit and it may be adjusted on review.
 
 ## Mode
 

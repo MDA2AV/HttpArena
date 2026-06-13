@@ -77,10 +77,12 @@
   .type-filter button.on{box-shadow:var(--shadow)}
   .type-filter button[data-type="flagship"].on{background:rgba(46,158,106,.15); color:#1b7a4e}
   .type-filter button[data-type="emerging"].on{background:rgba(59,115,196,.16); color:#2b5694}
+  .type-filter button[data-type="experimental"].on{background:rgba(217,142,43,.16); color:#8a5a12}
   .type-filter button[data-type="engine"].on{background:rgba(203,95,81,.15); color:#b0463a}
   .type-filter button[data-type="infrastructure"].on{background:rgba(47,147,168,.18); color:#277482}
   html[data-theme="dark"] .type-filter button[data-type="flagship"].on{background:rgba(46,158,106,.24); color:#5cc596}
   html[data-theme="dark"] .type-filter button[data-type="emerging"].on{background:rgba(59,115,196,.30); color:#9bbdec}
+  html[data-theme="dark"] .type-filter button[data-type="experimental"].on{background:rgba(217,142,43,.28); color:#e8b066}
   html[data-theme="dark"] .type-filter button[data-type="engine"].on{background:rgba(203,95,81,.24); color:#e89384}
   html[data-theme="dark"] .type-filter button[data-type="infrastructure"].on{background:rgba(47,147,168,.24); color:#6cc3d2}
 
@@ -242,13 +244,14 @@
   .badge{font-size:.6rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:.1rem .34rem; border-radius:5px; white-space:nowrap; flex:none}
   /* type as a small colored square (no label) in tables; fixed lang slot keeps names aligned. .badge stays for the modal */
   .tsq{width:10px; height:10px; border-radius:3px; flex:none; display:inline-block}
-  .tsq-flagship{background:#2e9e6a} .tsq-emerging{background:#3b73c4} .tsq-engine{background:#cb5f51} .tsq-infrastructure{background:#2f93a8}
+  .tsq-flagship{background:#2e9e6a} .tsq-emerging{background:#3b73c4} .tsq-experimental{background:#d98e2b} .tsq-engine{background:#cb5f51} .tsq-infrastructure{background:#2f93a8}
   /* 'tuned' mode cue - yellow ring around the type square / badge */
   .tsq.tuned, .badge.tuned{position:relative}
   .tsq.tuned::after, .badge.tuned::after{content:""; position:absolute; top:0; bottom:0; right:calc(100% + 2px); width:4px; background:#c89a3c}
   .fw .lang, .cm .fwcell .lang{width:3rem; flex:none; overflow:hidden; text-overflow:ellipsis}
   .b-flagship{background:rgba(46,158,106,.13); color:#1b7a4e} html[data-theme="dark"] .b-flagship{color:#5cc596}
   .b-emerging{background:rgba(59,115,196,.14); color:#2b5694} html[data-theme="dark"] .b-emerging{color:#9bbdec}
+  .b-experimental{background:rgba(217,142,43,.14); color:#8a5a12} html[data-theme="dark"] .b-experimental{color:#e8b066}
   .b-engine{background:rgba(203,95,81,.13); color:#b0463a} html[data-theme="dark"] .b-engine{color:#e89384}
   .b-infrastructure{background:rgba(47,147,168,.14); color:#277482} html[data-theme="dark"] .b-infrastructure{color:#6cc3d2}
 
@@ -391,6 +394,7 @@
     <div class="type-filter" id="typeFilter">
       <button data-type="flagship" data-tip="Mature framework with an active development team, a solid ecosystem, and an established community around it; covers a complete test category.">Flagship</button>
       <button data-type="emerging" data-tip="A real framework that doesn’t yet meet the full flagship bar - younger, minimal, or partial coverage.">Emerging</button>
+      <button data-type="experimental" data-tip="Very new, unproven work that may still have bugs. Ranked with frameworks but hidden until you select it.">Experimental</button>
       <button data-type="engine" data-tip="Bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.">Engine</button>
       <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o).">Infra</button>
       <span class="tf-div" aria-hidden="true"></span>
@@ -486,10 +490,11 @@
     if(pos.length && !pos.some(hit)) return false;
     return true;
   }
-  function typeAbbr(t){ return {flagship:'flagship', emerging:'emerging', engine:'engine', infrastructure:'infra'}[t] || t; }
+  function typeAbbr(t){ return {flagship:'flagship', emerging:'emerging', experimental:'experimental', engine:'engine', infrastructure:'infra'}[t] || t; }
   var TYPE_TIP={
     flagship:'Flagship - mature framework with an active development team, a solid ecosystem, and an established community around it; covers a complete test category.',
     emerging:'Emerging - a real framework that doesn’t yet meet the full flagship bar (younger, minimal, or partial coverage).',
+    experimental:'Experimental - very new, unproven work that may still have bugs. Ranked with frameworks but hidden until selected.',
     engine:'Engine - bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.',
     infrastructure:'Infrastructure - reverse proxies and static-file servers (e.g. nginx, h2o).'
   };
@@ -1147,7 +1152,7 @@
     if(e.target.closest('a')) return;
     var row=e.target.closest('[data-fw-row]'); if(row) openModal(row.getAttribute('data-fw-row'));
   });
-  try{ var _vt=['flagship','emerging','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
+  try{ var _vt=['flagship','emerging','experimental','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
   document.getElementById('typeFilter').addEventListener('click', function(e){ var b=e.target.closest('button[data-type]'); if(!b) return; toggleType(b.getAttribute('data-type')); });
   try{ var _st=localStorage.getItem('lb-showtuned'); if(_st!==null) state.showTuned=_st==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
