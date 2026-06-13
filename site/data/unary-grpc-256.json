@@ -154,5 +154,24 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "zix-grpc",
+    "language": "Zig",
+    "rps": 7041146,
+    "avg_latency": "2.29ms",
+    "p99_latency": "2.29ms",
+    "cpu": "3801.9%",
+    "memory": "346MiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "447.62MB/s",
+    "reconnects": 0,
+    "status_2xx": 35557792,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
