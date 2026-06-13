@@ -304,25 +304,6 @@
     "status_5xx": 0
   },
   {
-    "framework": "Swoole",
-    "language": "PHP",
-    "rps": 3557596,
-    "avg_latency": "72.32ms",
-    "p99_latency": "136.10ms",
-    "cpu": "6262.9%",
-    "memory": "354MiB",
-    "connections": 16384,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 16,
-    "bandwidth": "24.43MB/s",
-    "reconnects": 0,
-    "status_2xx": 17787982,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
     "framework": "tokio-uring-ws",
     "language": "Rust",
     "rps": 54829427,
