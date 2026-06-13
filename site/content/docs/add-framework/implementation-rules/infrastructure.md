@@ -1,6 +1,6 @@
 ---
 title: Infrastructure
-weight: 4
+weight: 3
 ---
 
 Infrastructure entries (`type: infrastructure`) are reverse proxies and static-file servers - nginx, h2o, Caddy and the like - run without an application framework layer. Like engines, they are not frameworks and are ranked separately.
