@@ -1,3 +1,5 @@
+//! HttpArena: zix-grpc
+//! zix version: 0.3.0
 const std = @import("std");
 const zix = @import("zix");
 
