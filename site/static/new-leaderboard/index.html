@@ -631,8 +631,11 @@
     // Clicking a section opens it and shows its overview page (the _index content, e.g. Test Profiles'
     // API Specification); clicking again (when open) collapses it. Root + content-less sections just toggle.
     gh.onclick=function(){
-      if(isRoot || expanded.has(node.u) || !(LB_DOCS && LB_DOCS[node.u]!==undefined)){ toggleGrp(grp,node.u); }
-      else { pickDoc(node.u); }
+      // navigate to the section's overview page unless we're already on it (then toggle).
+      // covers: collapsed -> open + show; expanded-but-elsewhere -> show (stay open); on-page -> collapse.
+      var onPage=(state.view==='doc' && state.doc===node.u);
+      if(!isRoot && !onPage && LB_DOCS && LB_DOCS[node.u]!==undefined){ pickDoc(node.u); }
+      else { toggleGrp(grp,node.u); }
     };
     grp.appendChild(gh);
     var body=navBody();
