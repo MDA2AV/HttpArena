@@ -81,6 +81,17 @@ def merge_results(results_dir: Path, site_data: Path) -> None:
       * Deduplicate by framework name, keeping the highest rps
       * Sort alphabetically by framework name
     """
+    # Drop result rows for framework names that no longer exist (e.g. a renamed
+    # framework) so stale entries don't linger across runs. frameworks.json was
+    # just rebuilt from meta.json, so its keys are the current framework names.
+    valid_names: set[str] = set()
+    fj = site_data / "frameworks.json"
+    if fj.exists():
+        try:
+            valid_names = set(json.load(open(fj)).keys())
+        except Exception:
+            valid_names = set()
+
     for profile_dir in sorted(results_dir.iterdir()):
         if not profile_dir.is_dir():
             continue
@@ -119,6 +130,11 @@ def merge_results(results_dir: Path, site_data: Path) -> None:
                     by_name[name] = e
 
             final = sorted(by_name.values(), key=lambda e: e.get("framework", "").lower())
+            if valid_names:
+                stale = sorted({e.get("framework", "") for e in final if e.get("framework", "") not in valid_names})
+                if stale:
+                    print(f"[purged stale] {data_file.name}: {stale}", file=sys.stderr)
+                final = [e for e in final if e.get("framework", "") in valid_names]
             data_file.write_text(json.dumps(final, indent=2))
             print(f"[updated] {data_file}")
 

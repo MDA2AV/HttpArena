@@ -48,7 +48,7 @@ CATALOG = [
     ]),
     ("Database", [
         ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,False,False),
-        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [512,4096], [4096],  True,False,False),
+        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False,False),
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("Multi-endpoint", [
