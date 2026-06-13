@@ -178,7 +178,7 @@
     "dir": "effinitive",
     "description": "Ultra-high-performance custom HTTP server for .NET 10 \u2014 built from scratch for maximum speed.",
     "repo": "https://github.com/HBartosch/Effinitive",
-    "type": "emerging",
+    "type": "experimental",
     "engine": "effinitive",
     "mode": "standard"
   },
@@ -493,7 +493,7 @@
     "dir": "pyronova",
     "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
     "repo": "https://github.com/leocaolab/pyronova",
-    "type": "emerging",
+    "type": "experimental",
     "engine": "pyronova",
     "mode": "tuned"
   },
