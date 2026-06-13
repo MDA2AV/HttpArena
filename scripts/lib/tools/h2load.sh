@@ -218,7 +218,7 @@ h2load_parse() {
         echo "avg_lat=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
             | awk '/time for request:/{print $6}' | head -1)"
         echo "p99_lat=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | awk '/time for request:/{print $6}' | head -1)"
+            | awk '/time for request:/{print $5}' | head -1)"
 
         echo "reconnects=0"
         echo "bandwidth=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
@@ -248,10 +248,10 @@ h2load_parse() {
     echo "rps=$(awk -v ok="$ok" -v dur="$duration_secs" \
         'BEGIN { if (dur+0 > 0) printf "%d", ok/dur; else print 0 }' 2>/dev/null || echo 0)"
 
-    # Latency — h2 mode uses "time for request:" one-liner,
-    # h3 (not used here) uses a tabular "request :" row.
+    # Latency — h2 mode uses "time for request:" one-liner: min/max/mean/sd, no
+    # percentiles. avg = mean ($6). h2load has no p99, so use max ($5) as the tail.
     echo "avg_lat=$(echo "$output" | awk '/time for request:/{print $6}' | head -1)"
-    echo "p99_lat=$(echo "$output" | awk '/time for request:/{print $6}' | head -1)"
+    echo "p99_lat=$(echo "$output" | awk '/time for request:/{print $5}' | head -1)"
 
     echo "reconnects=0"
     echo "bandwidth=$(echo "$output" | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' | head -1 || echo 0)"
