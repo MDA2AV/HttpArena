@@ -4,6 +4,7 @@ const swerver = @import("swerver");
 const router = swerver.router;
 const response_mod = swerver.response;
 const clock = swerver.runtime.clock;
+const db_routes = @import("db_routes.zig");
 
 // ── Dataset ──────────────────────────────────────────────────────
 
@@ -29,10 +30,22 @@ const DatasetItem = struct {
     price: i64,
     quantity: i64,
     active: bool,
-    // tags rendered once as a JSON array string (e.g. ["a","b"]) into a
-    // static pool, so handleJson can emit it directly.
-    tags_text: []const u8,
+    tags: []const []const u8,
     rating: Rating,
+};
+
+/// The /json response item: a dataset item plus the per-request computed
+/// `total`. Handed to std.json for serialization — no hand-formatting.
+const JsonItem = struct {
+    id: i64,
+    name: []const u8,
+    category: []const u8,
+    price: i64,
+    quantity: i64,
+    active: bool,
+    tags: []const []const u8,
+    rating: Rating,
+    total: i64,
 };
 
 const MAX_ITEMS = 64;
@@ -72,25 +85,16 @@ fn loadDataset() void {
         @memcpy(cat_pool[cs .. cs + item.category.len], item.category);
         cat_pool_off += item.category.len;
 
-        const ts = tags_pool_off;
-        var to = ts;
-        tags_pool[to] = '[';
-        to += 1;
-        for (item.tags, 0..) |tag, ti| {
-            if (ti > 0) {
-                tags_pool[to] = ',';
-                to += 1;
-            }
-            tags_pool[to] = '"';
-            to += 1;
-            @memcpy(tags_pool[to .. to + tag.len], tag);
-            to += tag.len;
-            tags_pool[to] = '"';
-            to += 1;
+        // Copy each tag string into the byte pool and collect the slices so
+        // the item holds a real []const []const u8 that std.json can encode.
+        const tags_start = tag_slice_off;
+        for (item.tags) |tag| {
+            const s = tags_pool_off;
+            @memcpy(tags_pool[s .. s + tag.len], tag);
+            tags_pool_off += tag.len;
+            tag_slices[tag_slice_off] = tags_pool[s .. s + tag.len];
+            tag_slice_off += 1;
         }
-        tags_pool[to] = ']';
-        to += 1;
-        tags_pool_off = to;
 
         dataset_items[i] = .{
             .id = item.id,
@@ -99,20 +103,22 @@ fn loadDataset() void {
             .price = item.price,
             .quantity = item.quantity,
             .active = item.active,
-            .tags_text = tags_pool[ts..to],
+            .tags = tag_slices[tags_start..tag_slice_off],
             .rating = item.rating,
         };
     }
     dataset_len = count;
 }
 
-// Flat string pools for dataset names/categories (outlive the parse arena).
+// Flat pools for dataset strings (outlive the parse arena).
 var name_pool: [1024]u8 = undefined;
 var name_pool_off: usize = 0;
 var cat_pool: [1024]u8 = undefined;
 var cat_pool_off: usize = 0;
 var tags_pool: [8192]u8 = undefined;
 var tags_pool_off: usize = 0;
+var tag_slices: [512][]const u8 = undefined;
+var tag_slice_off: usize = 0;
 
 // ── Handlers ─────────────────────────────────────────────────────
 
@@ -235,45 +241,33 @@ fn handleJson(ctx: *router.HandlerContext) response_mod.Response {
         }
     }
 
-    // Build into a process-global buffer rather than ctx.response_buf (8 KiB):
-    // the full item schema (active/tags/rating) pushes /json/50 past 8 KiB.
-    // Safe because the response is encoded into the connection write buffer
-    // synchronously before the next request runs (single-threaded per worker).
-    const buf = json_buf[0..];
-    var off: usize = 0;
-
-    const header = std.fmt.bufPrint(buf[off..], "{{\"count\":{d},\"items\":[", .{count}) catch
-        return jsonError();
-    off += header.len;
-
+    // Assemble the payload as real structs and let std.json encode it — no
+    // hand-formatting. `total` is the per-request price * quantity * m.
+    var items: [MAX_ITEMS]JsonItem = undefined;
     for (dataset_items[0..count], 0..) |item, i| {
-        if (i > 0) {
-            buf[off] = ',';
-            off += 1;
-        }
-        const total = item.price * item.quantity * m;
-        const entry = std.fmt.bufPrint(buf[off..], "{{\"id\":{d},\"name\":\"{s}\",\"category\":\"{s}\",\"price\":{d},\"quantity\":{d},\"active\":{},\"tags\":{s},\"rating\":{{\"score\":{d},\"count\":{d}}},\"total\":{d}}}", .{
-            item.id, item.name, item.category, item.price, item.quantity, item.active, item.tags_text, item.rating.score, item.rating.count, total,
-        }) catch return jsonError();
-        off += entry.len;
+        items[i] = .{
+            .id = item.id,
+            .name = item.name,
+            .category = item.category,
+            .price = item.price,
+            .quantity = item.quantity,
+            .active = item.active,
+            .tags = item.tags,
+            .rating = item.rating,
+            .total = item.price * item.quantity * m,
+        };
     }
 
-    const tail = std.fmt.bufPrint(buf[off..], "]}}", .{}) catch return jsonError();
-    off += tail.len;
+    const payload = .{ .count = count, .items = items[0..count] };
 
-    return finishJson(ctx, buf[0..off]);
-}
-
-// json-comp profile: gzip the JSON body when the client offers gzip. The
-// single-threaded event loop per worker (fork model) makes a process-global
-// scratch buffer safe — each forked process has its own copy.
-var gzip_out: [65536]u8 = undefined;
-var json_buf: [65536]u8 = undefined;
-
-fn finishJson(ctx: *router.HandlerContext, body: []const u8) response_mod.Response {
+    // json-comp profile: gzip when the client offers it. Serialize once with
+    // std.json into a process-global buffer (per-worker safe under the fork
+    // model), then compress.
     if (ctx.request.getHeader("accept-encoding")) |ae| {
         if (std.mem.indexOf(u8, ae, "gzip") != null) {
-            if (swerver.compress.gzipCompress(body, &gzip_out)) |clen| {
+            var w = std.Io.Writer.fixed(json_buf[0..]);
+            std.json.Stringify.value(payload, .{}, &w) catch return jsonError();
+            if (swerver.compress.gzipCompress(w.buffered(), &gzip_out)) |clen| {
                 return .{
                     .status = 200,
                     .headers = &[_]response_mod.Header{
@@ -285,14 +279,16 @@ fn finishJson(ctx: *router.HandlerContext, body: []const u8) response_mod.Respon
             }
         }
     }
-    return .{
-        .status = 200,
-        .headers = &[_]response_mod.Header{
-            .{ .name = "Content-Type", .value = "application/json" },
-        },
-        .body = .{ .bytes = body },
-    };
+
+    // Plain JSON: ctx.jsonValue serializes the struct — the idiomatic way to
+    // return JSON from a swerver handler, no hand-formatting.
+    return ctx.jsonValue(200, payload);
 }
+
+// Process-global scratch for the gzipped json-comp variant. Per-worker safe
+// under the fork model — each forked process has its own copy.
+var gzip_out: [65536]u8 = undefined;
+var json_buf: [65536]u8 = undefined;
 
 fn jsonError() response_mod.Response {
     return .{
@@ -342,6 +338,7 @@ pub fn main(init: std.process.Init) !void {
     try app_router.post("/baseline2", handleBaseline);
     try app_router.get("/json/:count", handleJson);
     try app_router.postDiscard("/upload", handleUpload);
+    try db_routes.register(&app_router);
 
     if (cfg.workers != 1) {
         var master = try swerver.Master.init(allocator, cfg, app_router, null);

@@ -3,7 +3,7 @@
   "language": "Zig",
   "type": "engine",
   "engine": "swerver",
-  "description": "Single-threaded event loop per worker with SO_REUSEPORT fork fan-out, native HTTP/1.1 + HTTP/2 + HTTP/3 (QUIC), kqueue/epoll/io_uring backends.",
+  "description": "swerver as an engine: no pre-computed response bodies (pre-encoded registry off), JSON serialized per request through the framework's std.json-based ctx.jsonValue, static files served from an in-memory cache with precompressed .br/.gz negotiation, and the native async PostgreSQL client (pipelined, prepared-statement cache, park/resume) for async-db and fortunes. Single-threaded event loop per worker, SO_REUSEPORT fork fan-out, one multi-listener process for the four protocol ports, native HTTP/1.1 + HTTP/2 + HTTP/3 (QUIC), kqueue/epoll/io_uring backends.",
   "repo": "https://github.com/justinGrosvenor/swerver",
   "enabled": true,
   "tests": [
@@ -20,7 +20,9 @@
     "json-h2c",
     "json-comp",
     "baseline-h3",
-    "static-h3"
+    "static-h3",
+    "async-db",
+    "fortunes"
   ],
   "maintainers": ["justinGrosvenor"]
 }
