@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.InteropServices;
 using ioxide;
 using ioxide.utils;
 using ioxide.pg;
@@ -25,8 +26,20 @@ namespace IoxideArena;
 /// </summary>
 internal static class Program
 {
+    // Held for the process lifetime so the registrations aren't garbage-collected.
+    private static PosixSignalRegistration? _sigTerm;
+    private static PosixSignalRegistration? _sigInt;
+
     private static int Main()
     {
+        // Exit promptly on `docker stop` (SIGTERM) instead of lingering until SIGKILL. The bench
+        // harness restarts the framework per profile but keeps ONE Postgres for the whole run, so a
+        // slow teardown leaves this server's ~PoolSize*reactors backends occupying connection slots
+        // while the next profile's server eagerly opens its own pool against the same Postgres.
+        // Exiting at once closes our sockets so Postgres reaps those backends before the handoff.
+        _sigTerm = PosixSignalRegistration.Create(PosixSignal.SIGTERM, ctx => { ctx.Cancel = true; Environment.Exit(0); });
+        _sigInt  = PosixSignalRegistration.Create(PosixSignal.SIGINT,  ctx => { ctx.Cancel = true; Environment.Exit(0); });
+
         // One reactor per core, capped at 64 so a hyperthreaded box (ProcessorCount counts logical
         // CPUs, e.g. 128 on 64 cores + SMT) doesn't oversubscribe. IOXIDE_REACTORS overrides.
         int reactors = Math.Min(Environment.ProcessorCount, 64);
