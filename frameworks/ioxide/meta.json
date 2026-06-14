@@ -1,0 +1,24 @@
+{
+  "display_name": "ioxide",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static rides ioxide.file's baked asset snapshots.",
+  "repo": "https://github.com/MDA2AV/ioxide",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "static",
+    "upload",
+    "async-db",
+    "crud",
+    "api-4",
+    "api-16"
+  ],
+  "maintainers": []
+}
