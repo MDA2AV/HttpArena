@@ -26,6 +26,8 @@ frameworks/zix-grpc/vendor
 # IDE settings
 *.user
 .vs/
+.vscode/
+.zed/
 
 # Ignore node modules anywhere in the repo
 node_modules/

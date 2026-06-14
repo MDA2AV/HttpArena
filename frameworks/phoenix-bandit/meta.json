@@ -1,0 +1,28 @@
+{
+  "display_name": "phoenix-bandit",
+  "language": "Elixir",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "bandit",
+  "description": "High-performance Elixir framework using Phoenix and Bandit HTTP server, leveraging Erlang/OTP for concurrent networking and asynchronous database operations.",
+  "repo": "https://github.com/phoenixframework/phoenix",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "crud",
+    "static",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "baseline-h2",
+    "static-h2",
+    "json-h2"
+  ]
+}
