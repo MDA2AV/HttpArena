@@ -28,12 +28,17 @@ internal sealed class IoxideRedisCache(RedisPool pool) : ICrudCache
 /// </summary>
 internal sealed class InProcCache(IMemoryCache cache) : ICrudCache
 {
+    // Single-item entries expire 200 ms after write, matching genhttp-11's IMemoryCache so the
+    // crud comparison is apples-to-apples. (The seconds arg is honored only by the Redis backends.)
+    private static readonly MemoryCacheEntryOptions Options =
+        new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(200) };
+
     public ValueTask<string?> GetAsync(string key)
         => new(cache.TryGetValue(key, out string? value) ? value : null);
 
     public ValueTask SetExAsync(string key, string value, int seconds)
     {
-        cache.Set(key, value, TimeSpan.FromSeconds(seconds));
+        cache.Set(key, value, Options);
         return ValueTask.CompletedTask;
     }
 
