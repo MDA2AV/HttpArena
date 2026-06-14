@@ -22,6 +22,9 @@ frameworks/zix/vendor
 frameworks/zix-grpc/.zig-cache
 frameworks/zix-grpc/zig-out
 frameworks/zix-grpc/vendor
+frameworks/zix-ws/.zig-cache
+frameworks/zix-ws/zig-out
+frameworks/zix-ws/vendor
 
 # IDE settings
 *.user
