@@ -1,5 +1,18 @@
 //! HttpArena: zix-grpc
-//! zix version: 0.3.0
+//! zix version: 0.4.x-rc1
+//!
+//! zix HttpArena gRPC (h2c) entry point.
+//!
+//! Intent: demonstrate zix.Grpc (EPOLL dispatch model) against the HttpArena
+//! gRPC benchmark suite (unary, server-streaming).
+//!
+//! Design choices:
+//! - GetSum: unary SumRequest{a, b} -> SumReply{a + b}. The compute is a single
+//!   add and the reply is a few bytes, well below the response-cache crossover,
+//!   so caching would cost more than it saves and stays off here.
+//! - StreamSum: server-streaming, count replies of a + b + i.
+//! - max_streams is wide enough that a client opening many parallel streams is
+//!   never refused at startup.
 const std = @import("std");
 const zix = @import("zix");
 
