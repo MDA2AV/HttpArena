@@ -1,8 +1,10 @@
-# vanilla
+# vanilla-epoll
 
 [vanilla](https://github.com/enghitalo/vanilla) is a minimalist, high-performance
-HTTP server written in [V](https://vlang.io) — multi-threaded, non-blocking
-epoll I/O, lock-free, copy-free, with `SO_REUSEPORT`.
+HTTP server written in [V](https://vlang.io) — multi-threaded, non-blocking,
+lock-free, copy-free, with `SO_REUSEPORT`. This entry runs the **epoll** I/O
+backend (`io_multiplexing: .epoll`); see `vanilla-io_uring` for the io_uring
+backend.
 
 ## Implemented profiles
 
