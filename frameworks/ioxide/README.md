@@ -19,7 +19,7 @@ pipelining, fragmented reads) is hand-written on the raw recv/send API - no HTTP
 | upload | POST body drained against Content-Length, byte count returned |
 | async-db | `ioxide.pg`: pooled ring-native Postgres connections per reactor, SCRAM-SHA-256, rows streamed straight from the driver's receive buffer into the response |
 | crud | `ioxide.pg` for list/get/upsert/update + `ioxide.redis` cache-aside on single-item reads (X-Cache MISS/HIT, 1s TTL, invalidated on PUT). Redis is shared across reactors, so reads stay consistent under shared-nothing |
-| api-4 / api-16 | the baseline + json + async-db endpoints under a CPU budget; `Environment.ProcessorCount` honors the cgroup quota, so reactor count matches the budget |
+| api-4 / api-16 | the baseline + json + async-db endpoints under a CPU budget; `Environment.ProcessorCount` honors the cpuset, so reactor count matches the budget (api-4 = 4 reactors on 2 SMT cores, api-16 = 16 on 8) |
 
 ## Env
 

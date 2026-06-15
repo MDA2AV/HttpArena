@@ -34,7 +34,7 @@ Always specify `-f <framework>`. Results are automatically compared against the 
 | Workload | `json`, `json-comp`, `json-tls`, `upload`, `static` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, 20 MB body ingestion, 20-file static asset serving |
 | Database | `async-db`, `crud` | Async Postgres sequential scan; realistic REST API with cached reads, list, upsert, update, and optional Redis cache |
 | Templates | `fortunes` * | DB query + HTML template render (TechEmpower-style Fortunes). Reference-only — measures template-engine throughput, not part of the composite score |
-| Multi-endpoint | `api-4`, `api-16` | Mixed baseline + JSON + async-db at CPU-budget cliffs (4 and 16 CPUs) |
+| Multi-endpoint | `api-4`, `api-16` | Mixed baseline + JSON + async-db at CPU-budget cliffs (4 and 16 logical CPUs, i.e. 2 and 8 full SMT cores) |
 | H/2 | `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c` | Baseline + static over TLS with h2 stream multiplexing; baseline + JSON over cleartext h2 (prior-knowledge, port 8082) |
 | H/3 | `baseline-h3`, `static-h3` | Baseline and static over QUIC with TLS 1.3 |
 | gRPC | `unary-grpc`, `unary-grpc-tls`, `stream-grpc`, `stream-grpc-tls` | Unary and server-streaming gRPC over plaintext HTTP/2 and TLS |

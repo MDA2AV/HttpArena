@@ -313,6 +313,23 @@ internal static class Handler
                     else s.ResumeFeed();
                 }
 
+                // Baked static responses go straight to the wire (not through Out) - no extra copy,
+                // and Out never grows to the largest asset, so per-connection memory stays flat
+                // under load. Sent before Out, which preserves order (Direct is only set when it was
+                // the first response of the batch).
+                if (s.HasDirect)
+                {
+                    int dsent = 0;
+                    while (dsent < s.DirectLen)
+                    {
+                        int dchunk = Math.Min(s.DirectLen - dsent, _slab);
+                        WriteDirect(conn, s, dsent, dchunk);
+                        await conn.FlushAsync();
+                        dsent += dchunk;
+                    }
+                    s.ClearDirect();
+                }
+
                 int sent = 0;
                 while (sent < s.OutLen)
                 {
@@ -347,6 +364,15 @@ internal static class Handler
             tls?.Dispose();
             conn.DecRef();
         }
+    }
+
+    // Copy one slab-sized slice of the direct (baked static) response into the connection's write
+    // slab - managed precompressed buffer or native identity response. Kept in a sync unsafe helper
+    // so the native pointer never crosses an await in the async handler.
+    private static unsafe void WriteDirect(Connection conn, HttpSession s, int off, int len)
+    {
+        if (s.DirectBytes != null) conn.Write(s.DirectBytes.AsSpan(off, len));
+        else conn.Write(new ReadOnlySpan<byte>((void*)(s.DirectPtr + off), len));
     }
 
     private static unsafe void FeedSlices(HttpSession s, Connection conn, TlsSession? tls, in RecvSnapshot snap)

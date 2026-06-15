@@ -70,22 +70,65 @@ struct CrudCreate {
 	quantity int
 }
 
-fn handle(req_buffer []u8, _fd int, mut sh Shared) ![]u8 {
+// ws appends a string's bytes to `out` with no allocation (push_many copies
+// straight from the string's backing storage into the connection write buffer).
+@[inline]
+fn ws(mut out []u8, s string) {
+	unsafe { out.push_many(s.str, s.len) }
+}
+
+// wi appends the decimal digits of a non-negative integer to `out`, no
+// allocation (itoa into a stack scratch, emitted most-significant-first).
+@[direct_array_access]
+fn wi(mut out []u8, n i64) {
+	if n == 0 {
+		out << u8(`0`)
+		return
+	}
+	mut x := n
+	mut tmp := [20]u8{}
+	mut i := 0
+	for x > 0 {
+		tmp[i] = u8(`0`) + u8(x % 10)
+		x /= 10
+		i++
+	}
+	for i > 0 {
+		i--
+		out << tmp[i]
+	}
+}
+
+// write_resp appends a complete HTTP/1.1 response (status line + headers + body)
+// straight into the connection's persistent write buffer — no intermediate
+// strings.Builder, no body→response copy, no per-request heap allocation. This
+// is the zero-alloc twin of `ok()`; the latter survives only for the DB paths
+// that are allocation-bound anyway.
+fn write_resp(mut out []u8, ctype string, body string) {
+	ws(mut out, 'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: ')
+	ws(mut out, ctype)
+	ws(mut out, '\r\nContent-Length: ')
+	wi(mut out, i64(body.len))
+	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n')
+	ws(mut out, body)
+}
+
+fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
 	req := request_parser.decode_http_request(req_buffer)!
 	method := unsafe { tos(&req.buffer[req.method.start], req.method.len) }
 	target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
 	route := target.all_before('?')
 
 	if route == '/pipeline' {
-		return ok('text/plain', 'ok')
+		write_resp(mut out, 'text/plain', 'ok')
 	} else if route == '/baseline11' {
 		mut sum := qint(req, 'a') + qint(req, 'b')
 		if method == 'POST' {
 			sum += body_int(req)
 		}
-		return ok('text/plain', sum.str())
+		write_resp(mut out, 'text/plain', sum.str())
 	} else if route == '/upload' {
-		return ok('text/plain', req.body.len.str())
+		write_resp(mut out, 'text/plain', req.body.len.str())
 	} else if route.starts_with('/json/') {
 		count := clamp_count(route[6..].i64(), sh.dataset.len)
 		mut m := qint(req, 'm')
@@ -94,32 +137,37 @@ fn handle(req_buffer []u8, _fd int, mut sh Shared) ![]u8 {
 		}
 		if accepts_gzip(req) {
 			// json-comp profile: gzip the body and set Content-Encoding.
-			return ok_gzip('application/json', sh.json_body(count, m))
+			sh.write_json_gzip(mut out, count, m)
+		} else {
+			sh.write_json_response(mut out, count, m)
 		}
-		return sh.json_response(count, m)
 	} else if route == '/async-db' {
-		return ok('application/json', sh.async_db(qint(req, 'min'), qint(req, 'max'),
+		write_resp(mut out, 'application/json', sh.async_db(qint(req, 'min'), qint(req, 'max'),
 			qint(req, 'limit')))
 	} else if route == '/fortunes' {
-		return ok('text/html; charset=utf-8', sh.fortunes())
+		write_resp(mut out, 'text/html; charset=utf-8', sh.fortunes())
 	} else if route.starts_with('/static/') {
 		if f := sh.assets[route[8..]] {
-			return f.response
+			out << f.response
+		} else {
+			out << not_found
 		}
-		return not_found
 	} else if route == '/crud/items' {
 		if method == 'POST' {
-			return sh.crud_create(req)
+			out << sh.crud_create(req)
+		} else {
+			out << sh.crud_list(qstr(req, 'category'), qint(req, 'page'), qint(req, 'limit'))
 		}
-		return sh.crud_list(qstr(req, 'category'), qint(req, 'page'), qint(req, 'limit'))
 	} else if route.starts_with('/crud/items/') {
 		id := route[12..].int()
 		if method == 'PUT' {
-			return sh.crud_update(id, req)
+			out << sh.crud_update(id, req)
+		} else {
+			out << sh.crud_get(id)
 		}
-		return sh.crud_get(id)
+	} else {
+		out << not_found
 	}
-	return not_found
 }
 
 // crud_list returns a paginated, category-filtered page of items.
@@ -245,7 +293,7 @@ const bad_request = 'HTTP/1.1 400 Bad Request\r\nServer: vanilla\r\nContent-Leng
 // single allocation — no per-request reflection and no body→response copy.
 // Only `total` (price*quantity*m) varies per request; the rest is a precomputed
 // prefix. Content-Length is computed up front so everything lands in one buffer.
-fn (sh &Shared) json_response(count int, m i64) []u8 {
+fn (sh &Shared) write_json_response(mut out []u8, count int, m i64) {
 	mut clen := 21 + digits(i64(count)) // len('{"items":[') + len('],"count":') + '}' + count digits
 	if count > 0 {
 		clen += count - 1 // item separators
@@ -254,22 +302,36 @@ fn (sh &Shared) json_response(count int, m i64) []u8 {
 		t := sh.dataset[i].price * sh.dataset[i].quantity * m
 		clen += sh.prefixes[i].len + digits(t) + 1 // prefix + total + '}'
 	}
-	mut sb := strings.new_builder(clen + 96)
-	sb.write_string('HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: application/json\r\nContent-Length: ')
-	sb.write_decimal(i64(clen))
-	sb.write_string('\r\nConnection: keep-alive\r\n\r\n{"items":[')
+	ws(mut out, 'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: application/json\r\nContent-Length: ')
+	wi(mut out, i64(clen))
+	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n{"items":[')
 	for i in 0 .. count {
 		if i > 0 {
-			sb.write_u8(`,`)
+			out << `,`
 		}
-		sb.write_string(sh.prefixes[i])
-		sb.write_decimal(sh.dataset[i].price * sh.dataset[i].quantity * m)
-		sb.write_u8(`}`)
+		ws(mut out, sh.prefixes[i])
+		wi(mut out, sh.dataset[i].price * sh.dataset[i].quantity * m)
+		out << `}`
 	}
-	sb.write_string('],"count":')
-	sb.write_decimal(i64(count))
-	sb.write_u8(`}`)
-	return sb
+	ws(mut out, '],"count":')
+	wi(mut out, i64(count))
+	out << `}`
+}
+
+// write_json_gzip is the json-comp path: build the body, gzip it, and append
+// headers + compressed bytes into `out`. gzip needs a contiguous input, so this
+// path still allocates the body — but json-comp is compression-bound, not
+// allocation-bound, and the response no longer round-trips through a Builder.
+fn (sh &Shared) write_json_gzip(mut out []u8, count int, m i64) {
+	body := sh.json_body(count, m)
+	gz := gzip.compress(body.bytes()) or {
+		write_resp(mut out, 'application/json', body)
+		return
+	}
+	ws(mut out, 'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Encoding: gzip\r\nContent-Type: application/json\r\nContent-Length: ')
+	wi(mut out, i64(gz.len))
+	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n')
+	unsafe { out.push_many(gz.data, gz.len) }
 }
 
 // json_body builds just the /json body string (used for the gzip path).
@@ -486,19 +548,6 @@ fn ok_xcache(ctype string, body string, cache string) []u8 {
 	return sb
 }
 
-// ok_gzip gzip-compresses the body and sets Content-Encoding: gzip.
-fn ok_gzip(ctype string, body string) []u8 {
-	gz := gzip.compress(body.bytes()) or { return ok(ctype, body) }
-	mut sb := strings.new_builder(gz.len + 128)
-	sb.write_string('HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Encoding: gzip\r\nContent-Type: ')
-	sb.write_string(ctype)
-	sb.write_string('\r\nContent-Length: ')
-	sb.write_decimal(i64(gz.len))
-	sb.write_string('\r\nConnection: keep-alive\r\n\r\n')
-	unsafe { sb.write_ptr(gz.data, gz.len) }
-	return sb
-}
-
 // accepts_gzip reports whether the request advertises gzip in Accept-Encoding.
 fn accepts_gzip(req request_parser.HttpRequest) bool {
 	ae := req.get_header_value_slice('Accept-Encoding') or { return false }
@@ -595,8 +644,8 @@ fn main() {
 		limits:          http_server.Limits{
 			max_request_bytes: 32 * 1024 * 1024 // accept the 20 MiB upload bodies
 		}
-		request_handler: fn [mut sh] (req_buffer []u8, fd int) ![]u8 {
-			return handle(req_buffer, fd, mut sh)
+		request_handler: fn [mut sh] (req_buffer []u8, fd int, mut out []u8) ! {
+			handle(req_buffer, fd, mut out, mut sh)!
 		}
 	})!
 	server.run()

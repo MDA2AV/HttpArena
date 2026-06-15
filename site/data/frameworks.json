@@ -400,6 +400,13 @@
     "engine": "swoole",
     "mode": "standard"
   },
+  "ioxide": {
+    "dir": "ioxide",
+    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static rides ioxide.file's baked asset snapshots.",
+    "repo": "https://github.com/MDA2AV/ioxide",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "ktor": {
     "dir": "ktor",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
@@ -823,12 +830,19 @@
     "type": "engine",
     "engine": "uvloop"
   },
-  "vanilla": {
-    "dir": "vanilla",
+  "vanilla-epoll": {
+    "dir": "vanilla-epoll",
     "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking epoll I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
     "repo": "https://github.com/enghitalo/vanilla",
     "type": "engine",
     "engine": "epoll"
+  },
+  "vanilla-io_uring": {
+    "dir": "vanilla-io_uring",
+    "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking io_uring I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
+    "repo": "https://github.com/enghitalo/vanilla",
+    "type": "engine",
+    "engine": "io_uring"
   },
   "veb": {
     "dir": "veb",
