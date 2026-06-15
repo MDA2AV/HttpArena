@@ -29,7 +29,8 @@ ENV PATH="/opt/zig:${PATH}"
 # engine work this image needs (large-body drain plus the per-worker response
 # cache used by the /json endpoint) must be present on the 0.4.x-rc2 branch.
 RUN mkdir -p /src/vendor/zix && \
-    curl -fsSL https://github.com/prothegee/zix/archive/refs/heads/0.4.x-rc2.tar.gz \
+    curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors \
+        https://github.com/prothegee/zix/archive/refs/heads/0.4.x-rc2.tar.gz \
         | tar -xz --strip-components=1 -C /src/vendor/zix
 
 WORKDIR /src
