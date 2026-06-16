@@ -64,6 +64,6 @@ RUN set -eu; \
     zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}" --release=fast
 
 FROM alpine:3.20
-COPY --from=build /src/zig-out/bin/zix /zix
+COPY --from=build /src/zig-out/bin/zix-ws /zix-ws
 EXPOSE 8080
-ENTRYPOINT ["/zix"]
+ENTRYPOINT ["/zix-ws"]

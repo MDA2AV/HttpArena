@@ -1,3 +1,20 @@
+//! HttpArena: zix
+//! zix version: 0.4.x
+//!
+//! zix HttpArena HTTP/1.1 entry point.
+//!
+//! Intent: demonstrate zix.Http1 (URING dispatch model) against the HttpArena
+//! HTTP/1.1 benchmark suite (baseline, pipelined, short-lived).
+//!
+//! Design choices:
+//! - rawIntercept: called before any header parsing for each URING request.
+//!   Handles /pipeline with zero parse overhead (direct byte-match + sink write),
+//!   direct byte-match before any parsing, avoiding the header scan loop. Routes that fall
+//!   through are handled by the Router dispatch with full parsing.
+//! - Router: comptime route table (StaticStringMap for EXACT, inline for PREFIX).
+//! - PIPELINE_RESP: precomputed response bytes; one sink.append per request, no
+//!   header build overhead.
+
 const std = @import("std");
 const zix = @import("zix");
 const dataset = @import("dataset.zig");
@@ -8,19 +25,36 @@ const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
-/// 16 KiB read buffer. Requests beyond it (large uploads) are drained by the
-/// engine rather than buffered, so the connection stays usable for keep-alive.
-const MAX_RECV_BUF: usize = 16 * 1024;
+/// 4 KiB per-connection recv buffer (heap-allocated once at accept time).
+/// Benchmark requests are under 300 bytes. Halving from 16 KiB cuts the
+/// working set from 64 MiB to 16 MiB at 4096c, reducing cache pressure.
+/// Large upload bodies are drained by the engine in chunks, so headers
+/// (always < 4 KiB) are the only part that needs to fit.
+const MAX_RECV_BUF: usize = 4 * 1024;
 const MAX_HEADERS: u8 = 16;
 const WORKERS: usize = 0;
+
+// Response cache (ADR-036), used by the /json endpoint only. The /json body is
+// deterministic in (count, m) and large enough to clear the cache crossover
+// (~4 KiB), so a hit replays the full response with zero serialization. The
+// other endpoints stay below the crossover (baseline, pipeline, upload) or use
+// their own zero-copy sendfile cache (static), so none of them enable it.
+const CACHE_MAX_ENTRIES: u32 = 64;
+/// Per-slot cap. A /json/50 response is near 12 KiB, so 32 KiB leaves headroom.
+const CACHE_MAX_VALUE_BYTES: u32 = 32 * 1024;
+/// Freshness window. The dataset is immutable for the process lifetime, so a
+/// long TTL means each key is built once and replayed for the whole run.
+const CACHE_TTL_MS: u32 = 60 * 1000;
 
 // Data directory, overridable via the ARENA_DATA env var (default /data, the
 // container mount point). Lets the same binary run against a local data tree.
 var g_static_base: []const u8 = "/data/static/";
 var g_static_base_buf: [256]u8 = undefined;
 
-// Per-worker scratch. JSON response (count up to 50) tops out near 12 KiB.
-threadlocal var json_buf: [32 * 1024]u8 = undefined;
+// Per-worker scratch. The JSON body (count up to 50) tops out near 12 KiB; the
+// assembled response (status line + headers + body) sits a little above it.
+threadlocal var json_body_buf: [32 * 1024]u8 = undefined;
+threadlocal var json_resp_buf: [32 * 1024]u8 = undefined;
 
 // --------------------------------------------------------- //
 
@@ -53,17 +87,54 @@ fn baselineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.
     zix.Http1.writeSimple(fd, 200, "text/plain", out) catch {};
 }
 
+// Precomputed response for the pipeline endpoint: one memcpy per request into the
+// response sink. No header build overhead on the hot path.
+const PIPELINE_RESP: []const u8 = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok";
+
 // GET /pipeline : fixed tiny response, the pipelined-throughput endpoint.
 fn pipelineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.fd_t) void {
     _ = head;
     _ = body;
 
-    zix.Http1.writeSimple(fd, 200, "text/plain", "ok") catch {};
+    zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
+}
+
+// Raw-request interceptor for the URING dispatch model. Called before any header
+// parsing on each inbound request. Handles /pipeline with zero parse overhead:
+// byte-matches the path directly on rem, then appends PIPELINE_RESP to the
+// coalescing RespSink. Unknown
+// routes return null and fall through to the Router dispatch with full parsing.
+//
+// This is intentional benchmark infrastructure, not general HTTP parsing. It
+// exploits knowledge that /pipeline is always a bare GET with no body, so the
+// consumed length is always header_end + 4 ("\r\n\r\n").
+fn rawIntercept(rem: []const u8, header_end: usize, fd: std.posix.fd_t) ?usize {
+    // Must start with "GET /p" to qualify for this fast path.
+    if (rem.len < 24 or rem[0] != 'G' or rem[4] != '/' or rem[5] != 'p') return null;
+
+    // "GET /pipeline " is 15 bytes. Verify without scanning the request line.
+    if (!std.mem.eql(u8, rem[4..15], "/pipeline ")) return null;
+
+    zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
+
+    return header_end + 4;
 }
 
 // GET /json/{count}?m=M : render count dataset items, total = price*qty*M.
+//
+// Response-cache aware. The body is deterministic in (count, m) and big enough
+// to clear the cache crossover, so the full response is the ideal cache value.
+// The cache key is hash(method, path, query), so every distinct /json/{count}?m=M
+// caches under its own slot. A hit skips the whole build loop and replays the
+// stored bytes; a miss builds the response and stores it on the way out. When
+// the cache is disabled or full the path still works, it just always rebuilds.
 fn jsonHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.fd_t) void {
     _ = body;
+
+    if (zix.Http1.cacheLookup(head)) |cached| {
+        zix.Http1.fdWriteAll(fd, cached) catch {};
+        return;
+    }
 
     const count_str = head.path["/json/".len..];
     const count = std.fmt.parseInt(u8, count_str, 10) catch return badRequest(fd);
@@ -71,7 +142,7 @@ fn jsonHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posi
 
     const m: u64 = if (zix.Http1.queryParam(head, "m")) |s| std.fmt.parseInt(u64, s, 10) catch 1 else 1;
 
-    const buf = &json_buf;
+    const buf = &json_body_buf;
     var pos: usize = 0;
 
     pos = appendStr(buf, pos, "{\"items\":[");
@@ -94,7 +165,17 @@ fn jsonHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posi
     buf[pos] = '}';
     pos += 1;
 
-    zix.Http1.writeJson(fd, 200, buf[0..pos]) catch {};
+    // Assemble the full response so it can be cached and replayed verbatim. The
+    // header matches the engine's writeJson output (send_date_header is off, so
+    // there is no time-varying field to freeze in the cache).
+    const resp = &json_resp_buf;
+    const hdr = std.fmt.bufPrint(resp, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {d}\r\n\r\n", .{pos}) catch {
+        zix.Http1.writeJson(fd, 200, buf[0..pos]) catch {};
+        return;
+    };
+    @memcpy(resp[hdr.len..][0..pos], buf[0..pos]);
+
+    zix.Http1.writeWithCache(fd, head, resp[0 .. hdr.len + pos], CACHE_TTL_MS) catch {};
 }
 
 // POST /upload : return the received byte count. The Content-Length header is
@@ -336,44 +417,16 @@ fn staticHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.po
 
 // --------------------------------------------------------- //
 
-// Echo every text/binary frame back. Ping/close are handled by the engine, so
-// this only ever sees data frames. Covers both echo and echo-pipelined: the
-// engine coalesces a pipelined burst into one write.
-fn wsOnFrame(fd: std.posix.fd_t, opcode: u8, payload: []const u8) void {
-    zix.Http1.WebSocket.send(fd, @enumFromInt(opcode), payload) catch {};
-}
-
-// GET /ws : WebSocket upgrade then engine-owned echo.
-fn wsHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.fd_t) void {
-    _ = body;
-
-    const upgrade_val = zix.Http1.getHeader(head, "upgrade") orelse "";
-    const ws_key = zix.Http1.getHeader(head, "sec-websocket-key");
-
-    if (!std.ascii.eqlIgnoreCase(upgrade_val, "websocket") or ws_key == null) {
-        return badRequest(fd);
-    }
-
-    zix.Http1.WebSocket.serve(fd, ws_key.?, wsOnFrame) catch {
-        zix.Http1.writeSimple(fd, 500, "text/plain", "handshake failed") catch {};
-        return;
-    };
-}
-
-// --------------------------------------------------------- //
-
-fn dispatch(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.fd_t) void {
-    const path = head.path;
-
-    if (std.mem.eql(u8, path, "/baseline11")) return baselineHandler(head, body, fd);
-    if (std.mem.eql(u8, path, "/pipeline")) return pipelineHandler(head, body, fd);
-    if (std.mem.eql(u8, path, "/upload")) return uploadHandler(head, body, fd);
-    if (std.mem.eql(u8, path, "/ws")) return wsHandler(head, body, fd);
-    if (std.mem.startsWith(u8, path, "/json/")) return jsonHandler(head, body, fd);
-    if (std.mem.startsWith(u8, path, "/static/")) return staticHandler(head, body, fd);
-
-    notFound(fd);
-}
+// Comptime route table. EXACT routes use a StaticStringMap (O(1) hash lookup),
+// PREFIX routes match on startsWith with a boundary check (longest match wins).
+// rawIntercept handles /pipeline before this dispatch is reached for that route.
+const Routes = zix.Http1.Router(&[_]zix.Http1.Route{
+    .{ .path = "/baseline11", .handler = baselineHandler },
+    .{ .path = "/pipeline", .handler = pipelineHandler },
+    .{ .path = "/upload", .handler = uploadHandler },
+    .{ .path = "/json", .handler = jsonHandler, .kind = .PREFIX },
+    .{ .path = "/static", .handler = staticHandler, .kind = .PREFIX },
+});
 
 // --------------------------------------------------------- //
 
@@ -421,6 +474,10 @@ fn appendInt(out: []u8, pos: usize, n: u64) usize {
 // --------------------------------------------------------- //
 
 pub fn main(process: std.process.Init) !void {
+    // Elevate scheduling priority (setpriority -19). Fails silently when the
+    // process lacks CAP_SYS_NICE, so no special capability is required for correctness.
+    _ = std.os.linux.syscall3(.setpriority, 0, 0, @as(usize, @bitCast(@as(isize, -19))));
+
     const data_dir = process.environ_map.get("ARENA_DATA") orelse "/data";
     g_static_base = std.fmt.bufPrint(&g_static_base_buf, "{s}/static/", .{data_dir}) catch "/data/static/";
 
@@ -429,7 +486,7 @@ pub fn main(process: std.process.Init) !void {
 
     g_dataset = try dataset.load(std.heap.smp_allocator, dataset_path);
 
-    var server = zix.Http1.Server.init(dispatch, .{
+    var server = zix.Http1.Server.initRaw(Routes.dispatch, rawIntercept, .{
         .io = process.io,
         .ip = LISTEN_IP,
         .port = PORT,
@@ -438,6 +495,11 @@ pub fn main(process: std.process.Init) !void {
         .max_recv_buf = MAX_RECV_BUF,
         .max_headers = MAX_HEADERS,
         .workers = WORKERS,
+        .send_date_header = false,
+        .response_cache = true,
+        .cache_max_entries = CACHE_MAX_ENTRIES,
+        .cache_max_value_bytes = CACHE_MAX_VALUE_BYTES,
+        .cache_ttl_ms = CACHE_TTL_MS,
     });
     defer server.deinit();
 

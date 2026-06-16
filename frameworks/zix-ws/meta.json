@@ -1,0 +1,14 @@
+{
+  "display_name": "zix-ws",
+  "language": "Zig",
+  "type": "engine",
+  "engine": "zix",
+  "description": "Zig WebSocket echo server on the zix.Http1 raw engine (no std.http). Shared-nothing: each worker runs its own SO_REUSEPORT multishot accept plus io_uring completion loop and owns its connections. The WebSocket upgrade and echo are engine-owned, frames echoed on readiness with a pipelined burst coalesced into one write.",
+  "repo": "https://codeberg.org/prothegee/zix",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": ["prothegee"]
+}
