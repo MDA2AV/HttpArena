@@ -1,15 +1,16 @@
 # syntax=docker/dockerfile:1.7
 #
 # zix. Zig HTTP/1.1 server on the zix.Http1 raw engine (no std.http).
-# Shared-nothing EPOLL: each worker runs its own SO_REUSEPORT accept plus
-# level-triggered epoll loop. Per-worker response cache (/json), large-body drain.
-# WebSocket echo lives in the separate zix-ws framework.
+# Shared-nothing io_uring: each worker runs its own SO_REUSEPORT multishot
+# accept plus an io_uring completion loop (per-connection recv, batched send).
+# Per-worker response cache (/json), large-body drain. WebSocket echo lives in
+# the separate zix-ws framework.
 # Built statically against musl, x86_64 tuned to the x86_64_v3 baseline (AVX2,
 # matches the AMD Zen 2 benchmark host, stays below the AVX-512 it lacks). The
 # runtime image is the single static binary on Alpine.
 
 FROM alpine:3.20 AS build
-ARG RETRY=6
+ARG RETRY=3
 ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG ZIG_VERSION=0.16.0

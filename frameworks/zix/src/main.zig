@@ -3,11 +3,11 @@
 //!
 //! zix HttpArena HTTP/1.1 entry point.
 //!
-//! Intent: demonstrate zix.Http1 (EPOLL dispatch model) against the HttpArena
+//! Intent: demonstrate zix.Http1 (URING dispatch model) against the HttpArena
 //! HTTP/1.1 benchmark suite (baseline, pipelined, short-lived).
 //!
 //! Design choices:
-//! - rawIntercept: called before any header parsing for each EPOLL request.
+//! - rawIntercept: called before any header parsing for each URING request.
 //!   Handles /pipeline with zero parse overhead (direct byte-match + sink write),
 //!   direct byte-match before any parsing, avoiding the header scan loop. Routes that fall
 //!   through are handled by the Router dispatch with full parsing.
@@ -23,7 +23,7 @@ const dataset = @import("dataset.zig");
 
 const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
+const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 /// 4 KiB per-connection recv buffer (heap-allocated once at accept time).
 /// Benchmark requests are under 300 bytes. Halving from 16 KiB cuts the
@@ -99,7 +99,7 @@ fn pipelineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.
     zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
 }
 
-// Raw-request interceptor for the EPOLL dispatch model. Called before any header
+// Raw-request interceptor for the URING dispatch model. Called before any header
 // parsing on each inbound request. Handles /pipeline with zero parse overhead:
 // byte-matches the path directly on rem, then appends PIPELINE_RESP to the
 // coalescing RespSink. Unknown
