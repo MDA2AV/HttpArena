@@ -1,5 +1,5 @@
 //! HttpArena: zix-ws
-//! zix version: 0.4.x-rc2
+//! zix version: 0.4.x
 //!
 //! zix HttpArena WebSocket entry point.
 //!
