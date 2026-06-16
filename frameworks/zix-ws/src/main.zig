@@ -20,7 +20,7 @@ const zix = @import("zix");
 
 const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
+const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 const MAX_RECV_BUF: usize = 4 * 1024;
 const WS_RECV_BUF: usize = 32 * 1024;
