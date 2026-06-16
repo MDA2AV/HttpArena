@@ -59,20 +59,20 @@
   {
     "framework": "zix-grpc",
     "language": "Zig",
-    "rps": 8331000,
-    "avg_latency": "143.74ms",
-    "p99_latency": "812.02ms",
-    "cpu": "44.3%",
-    "memory": "90MiB",
+    "rps": 8468000,
+    "avg_latency": "146.13ms",
+    "p99_latency": "385.19ms",
+    "cpu": "37.9%",
+    "memory": "141MiB",
     "connections": 64,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
     "bandwidth": "0",
     "reconnects": 0,
-    "status_2xx": 8331,
+    "status_2xx": 8468,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 144
+    "status_5xx": 0
   }
 ]

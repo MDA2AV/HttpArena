@@ -901,8 +901,8 @@
   },
   "zix-grpc": {
     "dir": "zix-grpc",
-    "description": "Zig gRPC h2c server using the zix framework. Single epoll event loop; worker pool handles one stream per slot. Implements GetSum (unary) and StreamSum (server-streaming).",
-    "repo": "https://github.com/prothegee/zix",
+    "description": "Zig gRPC h2c server using the zix network backend library. Shared-nothing io_uring: each worker owns its own ring and listener, multiplexing streams per connection. Implements GetSum (unary) and StreamSum (server-streaming).",
+    "repo": "https://codeberg.org/prothegee/zix",
     "type": "engine",
     "engine": "zix"
   },
