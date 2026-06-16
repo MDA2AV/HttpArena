@@ -23,7 +23,7 @@ const dataset = @import("dataset.zig");
 
 const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
+const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 /// 4 KiB per-connection recv buffer (heap-allocated once at accept time).
 /// Benchmark requests are under 300 bytes. Halving from 16 KiB cuts the
