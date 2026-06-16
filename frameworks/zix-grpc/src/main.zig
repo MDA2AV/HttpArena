@@ -1,5 +1,5 @@
 //! HttpArena: zix-grpc
-//! zix version: 0.4.x-rc2
+//! zix version: 0.4.x
 //!
 //! zix HttpArena gRPC (h2c) entry point.
 //!
