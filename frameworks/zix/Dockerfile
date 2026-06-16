@@ -36,11 +36,11 @@ ENV PATH="/opt/zig:${PATH}"
 RUN set -eu; \
     mkdir -p /src/vendor/zix; \
     curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors \
-        https://github.com/prothegee/zix/archive/refs/heads/${ZIX_VERSION}.tar.gz \
+        "https://github.com/prothegee/zix/archive/refs/heads/${ZIX_VERSION}.tar.gz" \
         -o /tmp/zix.tar.gz \
     || { echo "FAILED: attempt ${RETRY} times from github" >&2; \
         curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors \
-        https://codeberg.org/prothegee/zix/archive/${ZIX_VERSION}.tar.gz \
+        "https://codeberg.org/prothegee/zix/archive/${ZIX_VERSION}.tar.gz" \
         -o /tmp/zix.tar.gz \
     || { echo "FAILED: attempt ${RETRY} times from codeberg" >&2; exit 1; }; }; \
     tar -xz --strip-components=1 -C /src/vendor/zix -f /tmp/zix.tar.gz; \
