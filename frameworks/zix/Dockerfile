@@ -10,7 +10,7 @@
 # runtime image is the single static binary on Alpine.
 
 FROM alpine:3.20 AS build
-ARG RETRY=3
+ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG ZIG_VERSION=0.16.0
