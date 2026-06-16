@@ -9,12 +9,12 @@
 # runtime image is the single static binary on Alpine.
 
 FROM alpine:3.20 AS build
-ARG RETRY=3
+ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG ZIG_VERSION=0.16.0
 ARG ZIX_VERSION=0.4.x-rc2
-RUN apk add --no-cache ca-certificates curl xz tar
+RUN apk add --no-cache ca-certificates git curl xz tar
 
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
@@ -27,23 +27,29 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix 0.4.x-rc2, separate layer so source-only rebuilds skip the download.
-# Strip the top-level directory produced by the archive. The engine-owned
-# WebSocket serve plus the per-event write coalescing this image needs must be
-# present on the 0.4.x-rc2 branch. Fetch from GitHub first, fall back to the
-# Codeberg if GitHub is unreachable.
+# Vendor zix 0.4.x-rc2, separate layer so source-only rebuilds skip the clone.
+# The Http1 raw engine work this image needs (large-body drain plus the per-worker
+# response cache used by the /json endpoint) must be present on the 0.4.x-rc2
+# branch. A shallow git clone over github.com is used instead of the archive
+# tarball: the archive endpoint redirects to codeload.github.com, which the
+# benchmark runner cannot resolve. git clone talks to github.com directly.
+# Codeberg is the fallback when github.com is unreachable. RETRY and RETRY_DELAY
+# bound the per-source attempts.
 RUN set -eu; \
-    mkdir -p /src/vendor/zix; \
-    curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors \
-        https://github.com/prothegee/zix/archive/refs/heads/${ZIX_VERSION}.tar.gz \
-        -o /tmp/zix.tar.gz \
-    || { echo "FAILED: attempt ${RETRY} times from github" >&2; \
-        curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors \
-        https://codeberg.org/prothegee/zix/archive/${ZIX_VERSION}.tar.gz \
-        -o /tmp/zix.tar.gz \
-    || { echo "FAILED: attempt ${RETRY} times from codeberg" >&2; exit 1; }; }; \
-    tar -xz --strip-components=1 -C /src/vendor/zix -f /tmp/zix.tar.gz; \
-    rm -f /tmp/zix.tar.gz
+    clone() { \
+        attempt=0; \
+        while [ "${attempt}" -lt "${RETRY}" ]; do \
+            git clone --depth 1 --branch "${ZIX_VERSION}" "$1" /src/vendor/zix && return 0; \
+            rm -rf /src/vendor/zix; \
+            attempt=$((attempt + 1)); \
+            sleep "${RETRY_DELAY}"; \
+        done; \
+        return 1; \
+    }; \
+    clone "https://github.com/prothegee/zix.git" \
+    || { echo "FAILED: git clone ${RETRY} times from github" >&2; \
+        clone "https://codeberg.org/prothegee/zix.git" \
+    || { echo "FAILED: git clone ${RETRY} times from codeberg" >&2; exit 1; }; }
 
 WORKDIR /src
 COPY build.zig build.zig.zon ./
