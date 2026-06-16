@@ -7,13 +7,13 @@
 # matches the AMD Zen 2 benchmark host, stays below the AVX-512 it lacks). The
 # runtime image is the single static binary on Alpine.
 
-FROM debian:bookworm-slim AS build
-ARG ZIG_VERSION=0.16.0
+FROM alpine:3.20 AS build
+ARG RETRY=3
 ARG TARGETARCH
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl xz-utils \
-    && rm -rf /var/lib/apt/lists/*
+ARG RETRY_DELAY=3
+ARG ZIG_VERSION=0.16.0
+ARG ZIX_VERSION=0.4.x-rc2
+RUN apk add --no-cache ca-certificates curl xz tar
 
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
@@ -26,11 +26,23 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix 0.4.x-rc1, separate layer so source-only rebuilds skip the download.
-# Strip the top-level directory produced by GitHub's archive.
-RUN mkdir -p /src/vendor/zix && \
-    curl -fsSL https://github.com/prothegee/zix/archive/refs/heads/0.4.x-rc1.tar.gz \
-        | tar -xz --strip-components=1 -C /src/vendor/zix
+# Vendor zix 0.4.x-rc2, separate layer so source-only rebuilds skip the download.
+# Strip the top-level directory produced by the archive. The gRPC h2c engine
+# (zix.Grpc unary plus server-streaming) this image needs must be present on the
+# 0.4.x-rc2 branch. Fetch from GitHub first, fall back to the Codeberg if GitHub
+# is unreachable.
+RUN set -eu; \
+    mkdir -p /src/vendor/zix; \
+    curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors \
+        https://github.com/prothegee/zix/archive/refs/heads/${ZIX_VERSION}.tar.gz \
+        -o /tmp/zix.tar.gz \
+    || { echo "FAILED: attempt ${RETRY} times from github" >&2; \
+        curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors \
+        https://codeberg.org/prothegee/zix/archive/${ZIX_VERSION}.tar.gz \
+        -o /tmp/zix.tar.gz \
+    || { echo "FAILED: attempt ${RETRY} times from codeberg" >&2; exit 1; }; }; \
+    tar -xz --strip-components=1 -C /src/vendor/zix -f /tmp/zix.tar.gz; \
+    rm -f /tmp/zix.tar.gz
 
 WORKDIR /src
 COPY build.zig build.zig.zon ./
