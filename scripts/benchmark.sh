@@ -219,6 +219,25 @@ run_one() {
 
     banner "$FRAMEWORK / $profile / ${CONNS}c (tool=$tool)"
 
+    # Reset Postgres before each DB profile so it sees the same clean,
+    # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
+    # Postgres is started once and shared across the whole run, so otherwise the
+    # previous profile's warm buffers / planner stats / table bloat bleed into
+    # this one. That contamination is severe: after async-db's seq-scan load
+    # leaves every page resident, crud's cached-read backends all become
+    # runnable at once and Postgres spins ~120 cores on snapshot/buffer
+    # contention, collapsing crud from ~680k to ~210k rps. The first DB profile
+    # already has a fresh server from the upfront postgres_start, so skip it.
+    case "$endpoint" in
+        async-db|crud|api-4|api-16|fortunes)
+            if [ "${PG_DIRTY:-false}" = true ]; then
+                info "resetting postgres for a clean per-profile baseline"
+                postgres_start
+            fi
+            PG_DIRTY=true
+            ;;
+    esac
+
     # Compose-orchestrated profiles (gateway-*, production-stack) use
     # a multi-container stack instead of a single framework container.
     local is_gateway=false

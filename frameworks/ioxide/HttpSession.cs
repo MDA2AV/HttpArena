@@ -24,6 +24,18 @@ internal sealed unsafe partial class HttpSession
     public int OutLen;
     public bool WantClose;
 
+    // A baked static response sent straight to the connection, bypassing Out. This avoids copying
+    // the (up to ~66 KB) asset into the per-connection Out buffer and stops Out from ballooning to
+    // the largest asset under load (which was inflating CPU + memory on the static profile). Set
+    // only when it's the first response of a batch (OutLen == 0); otherwise the asset rides Out so
+    // pipelined ordering is preserved. Either a managed buffer (precompressed) or a native span
+    // (ioxide.file's identity baked response).
+    public byte[]? DirectBytes;
+    public nint DirectPtr;
+    public int DirectLen;
+    public bool HasDirect => DirectLen > 0;
+    public void ClearDirect() { DirectBytes = null; DirectPtr = 0; DirectLen = 0; }
+
     public HttpSession(Dataset ds, StaticAssets? assets, Precompressed? precompressed)
     {
         _ds = ds;
@@ -228,11 +240,13 @@ internal sealed unsafe partial class HttpSession
             byte[]? pre = _precompressed?.Negotiate(path[7..], acceptBr, acceptGzip);
             if (pre != null)
             {
-                AppendOut(pre);
+                if (OutLen == 0 && !HasDirect) { DirectBytes = pre; DirectLen = pre.Length; }
+                else AppendOut(pre);
             }
             else if (_assets != null && _assets.TryGet(path[7..], out AssetCache.Asset asset) && asset.Response != 0)
             {
-                AppendOut(new ReadOnlySpan<byte>((void*)asset.Response, asset.ResponseLength));
+                if (OutLen == 0 && !HasDirect) { DirectPtr = asset.Response; DirectLen = asset.ResponseLength; }
+                else AppendOut(new ReadOnlySpan<byte>((void*)asset.Response, asset.ResponseLength));
             }
             else
             {
