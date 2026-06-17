@@ -5,6 +5,7 @@
     <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ServerGarbageCollection>true</ServerGarbageCollection>
 
     <!-- GenHTTP checkout that carries the ioxide io_uring engine (PR #860, branch
@@ -20,6 +21,11 @@
     <ProjectReference Include="$(GenHttpSrc)/Modules/IO/GenHTTP.Modules.IO.csproj" />
     <ProjectReference Include="$(GenHttpSrc)/Modules/Layouting/GenHTTP.Modules.Layouting.csproj" />
     <ProjectReference Include="$(GenHttpSrc)/Modules/Webservices/GenHTTP.Modules.Webservices.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/Compression/GenHTTP.Modules.Compression.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/Files/GenHTTP.Modules.Files.csproj" />
+    <PackageReference Include="ioxide.pg" Version="0.0.7" />
+    <PackageReference Include="ioxide.tls" Version="0.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 
 </Project>
