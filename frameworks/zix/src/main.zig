@@ -22,7 +22,7 @@ const dataset = @import("dataset.zig");
 
 const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
+const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 /// Per-machine tuning profile (ADR-041 increment 5). The dev box is 12 threads
 /// / 32 GB (lean, memory-bound), the competition box is 64 cores / 251 GB
