@@ -20,7 +20,7 @@ const zix = @import("zix");
 const PORT: u16 = 8080;
 /// Required for ipv4 and ipv6
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Grpc.DispatchModel = .EPOLL;
+const DISPATCH_MODEL: zix.Grpc.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 1024 * 16;
 const WORKERS: usize = 0;
 
