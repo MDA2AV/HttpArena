@@ -21,6 +21,7 @@ HTTP/1.1 only (the engine does not yet do TLS, HTTP/2 or WebSocket):
 
 ## Build note
 
-Requires a .NET SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator references
-`Microsoft.CodeAnalysis 5.3`); the `mcr.microsoft.com/dotnet/sdk:10.0` image used by the
-Dockerfile provides it.
+This entry targets **.NET 11** (`net11.0`), matching the GenHTTP `ioxide-engine` branch it
+builds from. Requires the .NET 11 SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator
+references `Microsoft.CodeAnalysis 5.3`); the `mcr.microsoft.com/dotnet/sdk:11.0.100-preview.5`
+image used by the Dockerfile provides both.

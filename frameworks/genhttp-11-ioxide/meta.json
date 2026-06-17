@@ -4,7 +4,7 @@
   "type": "emerging",
   "mode": "tuned",
   "engine": "io_uring",
-  "description": "GenHTTP 11 running on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP ioxide-engine branch (PR #860). HTTP/1.1 only.",
+  "description": "GenHTTP 11 on .NET 11 running on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP ioxide-engine branch (PR #860). HTTP/1.1 only.",
   "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP/pull/860",
   "enabled": true,
   "tests": [

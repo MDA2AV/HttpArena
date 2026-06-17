@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ServerGarbageCollection>true</ServerGarbageCollection>
@@ -10,7 +10,8 @@
     <!-- GenHTTP checkout that carries the ioxide io_uring engine (PR #860, branch
          ioxide-engine). The Dockerfile clones it to /src/genhttp; override with
          -p:GenHttpSrc=/path/to/GenHTTP for a local build. The engine project pulls
-         ioxide (0.0.5) + Glyph11 + GenHTTP.Api/Engine.Shared transitively. -->
+         ioxide + Glyph11 + GenHTTP.Api/Engine.Shared transitively. The cloned branch
+         must target net11.0 to match this entry (see README build note). -->
     <GenHttpSrc Condition="'$(GenHttpSrc)' == ''">/src/genhttp</GenHttpSrc>
   </PropertyGroup>
 
