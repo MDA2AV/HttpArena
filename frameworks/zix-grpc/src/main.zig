@@ -1,5 +1,4 @@
 //! HttpArena: zix-grpc
-//! zix version: 0.4.x
 //!
 //! zix HttpArena gRPC (h2c) entry point.
 //!
@@ -21,7 +20,7 @@ const zix = @import("zix");
 const PORT: u16 = 8080;
 /// Required for ipv4 and ipv6
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Grpc.DispatchModel = .URING;
+const DISPATCH_MODEL: zix.Grpc.DispatchModel = .EPOLL;
 const KERNEL_BACKLOG: u31 = 1024 * 16;
 const WORKERS: usize = 0;
 
