@@ -3,7 +3,7 @@
   "language": "Zig",
   "type": "engine",
   "engine": "zix",
-  "description": "Zig gRPC h2c server using the zix network backend library. Shared-nothing io_uring: each worker owns its own ring and listener, multiplexing streams per connection. Implements GetSum (unary) and StreamSum (server-streaming).",
+  "description": "Zig gRPC server (h2c) on the zix.Grpc engine built on zix.Http2 (no std.http). Shared-nothing by design: each worker owns its own SO_REUSEPORT listener, io_uring completion ring, and connections, with no shared state or locking across cores, multiplexing HTTP/2 streams per connection. Replies use comptime-cached HPACK blocks. Implements GetSum (unary) and StreamSum (server-streaming).",
   "repo": "https://codeberg.org/prothegee/zix",
   "enabled": true,
   "tests": [
