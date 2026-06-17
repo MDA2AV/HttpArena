@@ -19,7 +19,7 @@ const zix = @import("zix");
 
 const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
+const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 
 /// Per-machine tuning profile (ADR-041 increment 5): .lean for the 12-thread /
