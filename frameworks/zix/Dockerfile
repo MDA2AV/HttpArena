@@ -5,7 +5,7 @@ ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG ZIG_VERSION=0.16.0
-ARG ZIX_VERSION=0.4.x
+ARG ZIX_VERSION=0.4.x-rc3
 RUN apk add --no-cache ca-certificates curl git tar xz
 
 RUN set -eu; \
@@ -19,9 +19,9 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix 0.4.x, separate layer so source-only rebuilds skip the fetch.
+# Vendor zix X.Y.Z, separate layer so source-only rebuilds skip the fetch.
 # The Http1 raw engine work this image needs (large-body drain plus the per-worker
-# response cache used by the /json endpoint) must be present on the 0.4.x branch.
+# response cache used by the /json endpoint) must be present on the X.Y.Z branch.
 # Four ordered attempts before giving up: curl the archive tarball from github then
 # codeberg, then a shallow git clone from github then codeberg. The github archive
 # redirects to codeload.github.com (which the benchmark runner may not resolve), so
