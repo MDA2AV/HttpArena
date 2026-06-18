@@ -21,19 +21,8 @@ defmodule PhoenixBanditWeb.CrudController do
 
   def list(conn, params) do
     category = Map.get(params, "category", "electronics")
-
-    page =
-      params
-      |> Map.get("page", "1")
-      |> String.to_integer()
-      |> max(1)
-
-    limit =
-      params
-      |> Map.get("limit", "10")
-      |> String.to_integer()
-      |> max(1)
-      |> min(50)
+    page = params |> Map.get("page", "1") |> String.to_integer() |> max(1)
+    limit = params |> Map.get("limit", "10") |> String.to_integer() |> max(1) |> min(50)
 
     offset = (page - 1) * limit
 
@@ -66,7 +55,8 @@ defmodule PhoenixBanditWeb.CrudController do
 
             conn
             |> put_resp_header("x-cache", " MISS")
-            |> json(item)
+            |> put_resp_content_type("application/json")
+            |> send_resp(200, encoded_json)
 
           _error ->
             conn

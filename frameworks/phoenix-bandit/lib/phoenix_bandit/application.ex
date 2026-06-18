@@ -7,13 +7,8 @@ defmodule PhoenixBandit.Application do
 
   @impl true
   def start(_type, _args) do
-    :ets.new(:items_cache, [
-      :set,
-      :public,
-      :named_table,
-      read_concurrency: true,
-      write_concurrency: true
-    ])
+    load_dataset()
+    init_items_ets_cache()
 
     children = [
       {DNSCluster, query: Application.get_env(:phoenix_bandit, :dns_cluster_query) || :ignore},
@@ -37,5 +32,32 @@ defmodule PhoenixBandit.Application do
   def config_change(changed, _new, removed) do
     PhoenixBanditWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp load_dataset do
+    data_dir = System.get_env("DATA_DIR", "/data")
+    dataset_path = Path.expand(Path.join(data_dir, "dataset.json"))
+
+    dataset_items =
+      case File.read(dataset_path) do
+        {:ok, contents} ->
+          Jason.decode!(contents)
+
+        {:error, reason} ->
+          IO.puts("Failed to read dataset at #{dataset_path}: #{inspect(reason)}")
+          []
+      end
+
+    :persistent_term.put(:benchmark_dataset, dataset_items)
+  end
+
+  defp init_items_ets_cache do
+    :ets.new(:items_cache, [
+      :set,
+      :public,
+      :named_table,
+      read_concurrency: true,
+      write_concurrency: true
+    ])
   end
 end

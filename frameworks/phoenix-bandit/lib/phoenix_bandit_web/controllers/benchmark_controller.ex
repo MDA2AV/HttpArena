@@ -1,7 +1,7 @@
 defmodule PhoenixBanditWeb.BenchmarkController do
   use PhoenixBanditWeb, :controller
 
-  @data_dir System.get_env("DATA_DIR", "/data")
+  @compile {:inline, clamp_int: 3, sum_params: 1}
 
   def pipeline(conn, _params) do
     conn
@@ -28,47 +28,39 @@ defmodule PhoenixBanditWeb.BenchmarkController do
   end
 
   def json_count(conn, %{"count" => count} = params) do
-    case load_dataset() do
-      {:ok, dataset} ->
-        count = count |> String.to_integer() |> clamp_int(0, length(dataset))
-        m = params |> Map.get("m", "1") |> String.to_integer()
+    dataset_items = get_dataset()
+    dataset_len = length(dataset_items)
 
-        result = %{
-          count: count,
-          items:
-            dataset
-            |> Enum.take(count)
-            |> Enum.map(fn d ->
-              %{
-                id: d["id"],
-                name: d["name"],
-                category: d["category"],
-                price: d["price"],
-                quantity: d["quantity"],
-                active: d["active"],
-                tags: d["tags"],
-                rating: d["rating"],
-                total: d["price"] * d["quantity"] * m
-              }
-            end)
-        }
+    count = count |> String.to_integer() |> clamp_int(0, dataset_len)
+    m = params |> Map.get("m", "1") |> String.to_integer()
 
-        respond_dataset(conn, result)
+    result = %{
+      count: count,
+      items:
+        dataset_items
+        |> Enum.take(count)
+        |> Enum.map(fn d ->
+          %{
+            id: d["id"],
+            name: d["name"],
+            category: d["category"],
+            price: d["price"],
+            quantity: d["quantity"],
+            active: d["active"],
+            tags: d["tags"],
+            rating: d["rating"],
+            total: d["price"] * d["quantity"] * m
+          }
+        end)
+    }
 
-      {:error, _reason} ->
-        send_resp(conn, 500, "dataset not found")
-    end
+    respond_dataset(conn, result)
   end
 
   def async_db(conn, params) do
     min_val = params |> Map.get("min", "10") |> String.to_integer()
     max_val = params |> Map.get("max", "50") |> String.to_integer()
-
-    limit =
-      params
-      |> Map.get("limit", "50")
-      |> String.to_integer()
-      |> clamp_int(1, 100)
+    limit = params |> Map.get("limit", "50") |> String.to_integer() |> clamp_int(1, 100)
 
     sql = """
     SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count
@@ -78,7 +70,7 @@ defmodule PhoenixBanditWeb.BenchmarkController do
     """
 
     case Postgrex.query(PhoenixBandit.DB.connection(), sql, [min_val, max_val, limit]) do
-      {:ok, %Postgrex.Result{rows: rows}} ->
+      {:ok, %Postgrex.Result{rows: rows, num_rows: num_rows}} ->
         items =
           Enum.map(rows, fn [
                               id,
@@ -106,7 +98,7 @@ defmodule PhoenixBanditWeb.BenchmarkController do
             }
           end)
 
-        json(conn, %{count: length(items), items: items})
+        json(conn, %{count: num_rows, items: items})
 
       _ ->
         json(conn, %{count: 0, items: []})
@@ -136,6 +128,10 @@ defmodule PhoenixBanditWeb.BenchmarkController do
     end
   end
 
+  defp get_dataset do
+    :persistent_term.get(:benchmark_dataset, [])
+  end
+
   defp sum_params(params) do
     Enum.reduce(Map.values(params), 0, fn value, acc ->
       acc + String.to_integer(value)
@@ -146,13 +142,12 @@ defmodule PhoenixBanditWeb.BenchmarkController do
 
   defp respond_dataset(conn, result) do
     payload = Jason.encode!(result)
+    conn = put_resp_content_type(conn, "application/json")
 
     case get_req_header(conn, "accept-encoding") do
       [encoding | _] ->
         type =
           encoding |> String.split(",", parts: 2) |> hd()
-
-        conn = put_resp_content_type(conn, "application/json")
 
         cond do
           # Gzip compression is automatically handled by Bandit
@@ -173,18 +168,7 @@ defmodule PhoenixBanditWeb.BenchmarkController do
         end
 
       _ ->
-        json(conn, result)
-    end
-  end
-
-  defp load_dataset do
-    dataset_path = Path.expand(Path.join(@data_dir, "dataset.json"))
-
-    with {:ok, contents} <- File.read(dataset_path),
-         {:ok, dataset} <- Jason.decode(contents) do
-      {:ok, dataset}
-    else
-      {:error, _} -> {:error, :not_found}
+        send_resp(conn, 200, payload)
     end
   end
 
