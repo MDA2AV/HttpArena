@@ -70,6 +70,8 @@ internal static class Program
             Incremental       = false,
             RecvBufferSize    = recvKb * 1024,
             BufferRingEntries = ringEntries,
+            // 128 KB so a static response fits one slab and the handler sends it without chunk-flushing.
+            WriteSlabSize     = 128 * 1024,
         };
 
         var dsPath = Environment.GetEnvironmentVariable("IOXIDE_DATASET") ?? "/data/dataset.json";
