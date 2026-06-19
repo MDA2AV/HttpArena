@@ -1,13 +1,12 @@
 //! HttpArena: zix
-//! zix version: 0.4.x
 //!
 //! zix HttpArena HTTP/1.1 entry point.
 //!
-//! Intent: demonstrate zix.Http1 (URING dispatch model) against the HttpArena
+//! Intent: demonstrate zix.Http1 (EPOLL dispatch model) against the HttpArena
 //! HTTP/1.1 benchmark suite (baseline, pipelined, short-lived).
 //!
 //! Design choices:
-//! - rawIntercept: called before any header parsing for each URING request.
+//! - rawIntercept: called before any header parsing for each EPOLL request.
 //!   Handles /pipeline with zero parse overhead (direct byte-match + sink write),
 //!   direct byte-match before any parsing, avoiding the header scan loop. Routes that fall
 //!   through are handled by the Router dispatch with full parsing.
@@ -23,14 +22,25 @@ const dataset = @import("dataset.zig");
 
 const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
-const DISPATCH_MODEL: zix.Http1.DispatchModel = .EPOLL;
+const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
-/// 4 KiB per-connection recv buffer (heap-allocated once at accept time).
-/// Benchmark requests are under 300 bytes. Halving from 16 KiB cuts the
-/// working set from 64 MiB to 16 MiB at 4096c, reducing cache pressure.
-/// Large upload bodies are drained by the engine in chunks, so headers
-/// (always < 4 KiB) are the only part that needs to fit.
-const MAX_RECV_BUF: usize = 4 * 1024;
+/// Per-machine tuning profile (ADR-041 increment 5). The dev box is 12 threads
+/// / 32 GB (lean, memory-bound), the competition box is 64 cores / 251 GB
+/// (throughput, RAM-abundant). Only the recv buffer differs: workers auto-scale
+/// (WORKERS = 0), and the backlog and cache are already sized for both. Select
+/// .throughput for the 64-core deployment.
+const Profile = enum { lean, throughput };
+const PROFILE: Profile = .lean;
+
+/// Per-connection recv buffer, heap-allocated once at accept time. .lean keeps
+/// 4 KiB to hold the working set small (benchmark requests are under 300 bytes,
+/// and large upload bodies are drained by the engine in chunks, so only headers,
+/// always < 4 KiB, must fit). .throughput raises it to 16 KiB for deeper
+/// pipelined batches per recv, which the RAM-abundant box absorbs.
+const MAX_RECV_BUF: usize = switch (PROFILE) {
+    .lean => 4 * 1024,
+    .throughput => 16 * 1024,
+};
 const MAX_HEADERS: u8 = 16;
 const WORKERS: usize = 0;
 
@@ -99,7 +109,7 @@ fn pipelineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.
     zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
 }
 
-// Raw-request interceptor for the URING dispatch model. Called before any header
+// Raw-request interceptor for the EPOLL dispatch model. Called before any header
 // parsing on each inbound request. Handles /pipeline with zero parse overhead:
 // byte-matches the path directly on rem, then appends PIPELINE_RESP to the
 // coalescing RespSink. Unknown

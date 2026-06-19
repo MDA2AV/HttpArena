@@ -1,5 +1,4 @@
 //! HttpArena: zix-ws
-//! zix version: 0.4.x
 //!
 //! zix HttpArena WebSocket entry point.
 //!
@@ -22,7 +21,18 @@ const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
-const MAX_RECV_BUF: usize = 4 * 1024;
+
+/// Per-machine tuning profile (ADR-041 increment 5): .lean for the 12-thread /
+/// 32 GB dev box, .throughput for the 64-core / 251 GB competition box. Only the
+/// HTTP handshake recv buffer differs (the WS frame buffer is already 32 KiB).
+/// Select .throughput for the 64-core deployment.
+const Profile = enum { lean, throughput };
+const PROFILE: Profile = .lean;
+
+const MAX_RECV_BUF: usize = switch (PROFILE) {
+    .lean => 4 * 1024,
+    .throughput => 16 * 1024,
+};
 const WS_RECV_BUF: usize = 32 * 1024;
 const MAX_HEADERS: u8 = 16;
 const WORKERS: usize = 0;
