@@ -1,7 +1,7 @@
 # ioxide
 
 [ioxide](https://github.com/MDA2AV/ioxide) - a shared-nothing io_uring runtime for .NET -
-consumed as its published NuGet packages (`ioxide`, `ioxide.pg`, `ioxide.file` 0.0.5), not
+consumed as its published NuGet packages (`ioxide`, `ioxide.pg`, `ioxide.file` 0.0.8), not
 vendored. One ring per reactor thread: SO_REUSEPORT + multishot accept, multishot recv into a
 provided buffer ring, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing).
 
