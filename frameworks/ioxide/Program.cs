@@ -146,30 +146,37 @@ internal static class Program
             var reactor = new Reactor(i, config);
             var pgOptions = pg;
             var redisOptions = redis;
-            reactor.OnStart = rr =>
+            
+            reactor.OnStart = reactorInstance =>
             {
                 if (pgOptions != null)
                 {
-                    PgPool.Start(rr, pgOptions);
+                    PgPool.Start(reactorInstance, pgOptions);
+                    
                     // Crud cache, shared across reactors (inproc/stackexchange) or per-reactor (ioxide).
                     ICrudCache cache = cacheBackend switch
                     {
-                        "ioxide"        => new IoxideRedisCache(RedisPool.Start(rr, redisOptions!)),
+                        "ioxide"        => new IoxideRedisCache(RedisPool.Start(reactorInstance, redisOptions!)),
                         "stackexchange" => new StackExchangeCache(mux!.GetDatabase()),
                         _               => new InProcCache(memCache!),
                     };
-                    rr.AddService<ICrudCache>(cache);
+                    reactorInstance.AddService<ICrudCache>(cache);
                 }
                 if (tls)
                 {
-                    TlsService.Start(rr, new TlsOptions { CertificatePath = certPath, KeyPath = keyPath });
+                    TlsService.Start(reactorInstance, new TlsOptions { CertificatePath = certPath, KeyPath = keyPath });
                 }
             };
+            
             reactor.Handle = Handler.HandleAsync;
             threads[i] = new Thread(reactor.Run) { Name = $"reactor-{i}", IsBackground = false };
             threads[i].Start();
         }
-        foreach (var t in threads) t.Join();
+        foreach (var t in threads)
+        {
+            t.Join();
+        }
+        
         return 0;
     }
 
@@ -180,218 +187,11 @@ internal static class Program
         foreach (var addr in Dns.GetHostAddresses(host))
         {
             if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            {
                 return addr.ToString();
+            }
         }
+        
         return "127.0.0.1";
-    }
-}
-
-internal static class Handler
-{
-    private static int _slab = 16 * 1024;
-    private static Dataset _ds = Dataset.Empty;
-    private static StaticAssets? _assets;
-    private static Precompressed? _precompressed;
-    private static bool _hasPg;
-    private static bool _hasTls;
-    private static bool _hasCache;
-
-    public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasCache)
-    {
-        _slab = config.WriteSlabSize;
-        _ds = ds;
-        _assets = assets;
-        _precompressed = precompressed;
-        _hasPg = hasPg;
-        _hasTls = hasTls;
-        _hasCache = hasCache;
-    }
-
-    public static async Task HandleAsync(Reactor reactor, Connection conn)
-    {
-        var s = new HttpSession(_ds, _assets, _precompressed);
-        PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
-        ICrudCache? cache = _hasCache ? reactor.GetService<ICrudCache>() : null;
-        PgRowHandler rowSink = s.AppendDbRow;       // async-db rows
-        PgRowHandler listSink = s.AppendCrudRow;    // crud list rows
-        PgRowHandler itemSink = s.CaptureCrudItem;  // crud single item
-        TlsSession? tls = null;
-
-        try
-        {
-            if (_hasTls && conn.ListenerPort == 8081)
-            {
-                // Handshake over the ring, then kTLS TX: outbound writes below are
-                // plaintext and the kernel produces the records. Inbound stays
-                // userspace: each slice decrypts through the session. The client's
-                // first request can ride in with its Finished, so feed it here -
-                // the send-first loop below answers it before blocking on a read.
-                tls = await reactor.GetService<TlsService>().AcceptAsync(conn);
-                s.Feed(tls.DrainPlaintext());
-            }
-
-            // Send-first: respond to whatever is already parsed (a request bundled
-            // with the TLS handshake, or a prior read) before parking on the next
-            // read. A read-first loop would deadlock on the bundled-request case.
-            while (true)
-            {
-                // /async-db parks the parser: run the query (inline on this reactor's
-                // ring via ioxide.pg), stream rows into Out, then resume the carry -
-                // pipelined requests behind it are served in order.
-                while (s.PendingDb)
-                {
-                    s.PendingDb = false;
-                    if (pool != null)
-                    {
-                        s.BeginDbResponse();
-                        await pool.QueryRowsAsync(s.PendingDbSql(), rowSink);
-                        s.EndDbResponse();
-                    }
-                    else
-                    {
-                        s.WriteDbUnavailable();
-                    }
-
-                    if (s.PendingDbClose) s.WantClose = true;
-                    else s.ResumeFeed();
-                }
-
-                while (s.PendingCrud != CrudKind.None)
-                {
-                    CrudKind kind = s.PendingCrud;
-                    s.PendingCrud = CrudKind.None;
-
-                    if (pool == null)
-                    {
-                        s.WriteCrudUnavailable();
-                    }
-                    else switch (kind)
-                    {
-                        case CrudKind.List:
-                            s.BeginCrudList();
-                            await s.SubmitCrudList(pool, listSink);
-                            s.EndCrudList();
-                            break;
-
-                        case CrudKind.GetOne:
-                            string key = s.CacheKey();
-                            string? cached = cache != null ? await cache.GetAsync(key) : null;
-                            if (cached != null)
-                            {
-                                s.WriteCrudItemResponse(System.Text.Encoding.UTF8.GetBytes(cached), cacheHit: true);
-                            }
-                            else
-                            {
-                                s.ResetCrudItem();
-                                await s.SubmitCrudItem(pool, itemSink);
-                                if (s.CrudItemFound)
-                                {
-                                    if (cache != null)
-                                        await cache.SetExAsync(key, System.Text.Encoding.UTF8.GetString(s.CrudItemBody()), 1);
-                                    s.WriteCrudItemResponse(s.CrudItemBody(), cacheHit: false);
-                                }
-                                else
-                                {
-                                    s.WriteCrud404();
-                                }
-                            }
-                            break;
-
-                        case CrudKind.Create:
-                            await s.SubmitCrudInsert(pool);
-                            s.WriteCrudStatus("HTTP/1.1 201 Created\r\nContent-Length: 0\r\n"u8);
-                            break;
-
-                        case CrudKind.Update:
-                            await s.SubmitCrudUpdate(pool);
-                            if (cache != null) await cache.DelAsync(s.CacheKey());
-                            s.WriteCrudStatus("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n"u8);
-                            break;
-                    }
-
-                    if (s.PendingCrudClose) s.WantClose = true;
-                    else s.ResumeFeed();
-                }
-
-                // Baked static responses go straight to the wire (not through Out) - no extra copy,
-                // and Out never grows to the largest asset, so per-connection memory stays flat
-                // under load. Sent before Out, which preserves order (Direct is only set when it was
-                // the first response of the batch).
-                if (s.HasDirect)
-                {
-                    int dsent = 0;
-                    while (dsent < s.DirectLen)
-                    {
-                        int dchunk = Math.Min(s.DirectLen - dsent, _slab);
-                        WriteDirect(conn, s, dsent, dchunk);
-                        await conn.FlushAsync();
-                        dsent += dchunk;
-                    }
-                    s.ClearDirect();
-                }
-
-                int sent = 0;
-                while (sent < s.OutLen)
-                {
-                    int chunk = Math.Min(s.OutLen - sent, _slab);
-                    conn.Write(s.Out.AsSpan(sent, chunk));
-                    await conn.FlushAsync();
-                    sent += chunk;
-                }
-                s.OutLen = 0;
-
-                if (s.WantClose || (tls?.Closed ?? false))
-                    return;
-
-                RecvSnapshot snap = await conn.ReadAsync();
-                FeedSlices(s, conn, tls, snap);
-                if (snap.IsClosed)
-                {
-                    s.WantClose = true;
-                }
-                else
-                {
-                    conn.ResetRead();
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[r{reactor.Id}] http handler crash fd={conn.ClientFd}: {ex}");
-        }
-        finally
-        {
-            tls?.Dispose();
-            conn.DecRef();
-        }
-    }
-
-    // Copy one slab-sized slice of the direct (baked static) response into the connection's write
-    // slab - managed precompressed buffer or native identity response. Kept in a sync unsafe helper
-    // so the native pointer never crosses an await in the async handler.
-    private static unsafe void WriteDirect(Connection conn, HttpSession s, int off, int len)
-    {
-        if (s.DirectBytes != null) conn.Write(s.DirectBytes.AsSpan(off, len));
-        else conn.Write(new ReadOnlySpan<byte>((void*)(s.DirectPtr + off), len));
-    }
-
-    private static unsafe void FeedSlices(HttpSession s, Connection conn, TlsSession? tls, in RecvSnapshot snap)
-    {
-        while (conn.TryGetItem(snap, out SpscRecvRing.Item item))
-        {
-            if (!item.HasBuffer)
-            {
-                continue;
-            }
-            if (tls != null)
-            {
-                s.Feed(tls.Decrypt(item.Ptr, item.Len));
-            }
-            else
-            {
-                s.Feed(item.AsSpan());
-            }
-            conn.ReturnBuffer(in item);
-        }
     }
 }

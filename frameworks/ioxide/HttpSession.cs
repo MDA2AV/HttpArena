@@ -66,10 +66,16 @@ internal sealed unsafe partial class HttpSession
         {
             int take = (int)Math.Min(PendingUploadRemaining, (long)data.Length);
             PendingUploadRemaining -= take;
-            if (PendingUploadRemaining > 0) return;   // more body still to come; nothing buffered
+            if (PendingUploadRemaining > 0)
+            {
+                return; // more body still to come; nothing buffered
+            }
             FinishUpload();                           // last byte counted - write the byte-count response
             data = data[take..];                      // any remainder is the start of the next request
-            if (data.IsEmpty) return;
+            if (data.IsEmpty)
+            {
+                return;
+            }
         }
         AppendCarry(data);
         Pump();
@@ -81,7 +87,11 @@ internal sealed unsafe partial class HttpSession
         Span<byte> num = stackalloc byte[20];
         Utf8Formatter.TryFormat(_uploadTotal, num, out int n);
         WriteResp(num[..n], _uploadClose);
-        if (_uploadClose) WantClose = true;
+        
+        if (_uploadClose)
+        {
+            WantClose = true;
+        }
     }
 
     private void Pump()
@@ -91,12 +101,18 @@ internal sealed unsafe partial class HttpSession
                && TryOne(_carry.AsSpan(pos, _carryLen - pos), out int consumed, out bool close))
         {
             pos += consumed;
-            if (close && !PendingDb) { WantClose = true; break; }
+            if (close && !PendingDb)
+            {
+                WantClose = true; break;
+            }
         }
         if (pos > 0)
         {
             int rem = _carryLen - pos;
-            if (rem > 0) Array.Copy(_carry, pos, _carry, 0, rem);
+            if (rem > 0)
+            {
+                Array.Copy(_carry, pos, _carry, 0, rem);
+            }
             _carryLen = rem;
         }
     }
