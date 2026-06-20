@@ -274,6 +274,14 @@
     "engine": "frankenphp",
     "mode": "tuned"
   },
+  "genhttp-11-ioxide": {
+    "dir": "genhttp-11-ioxide",
+    "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP ioxide-engine branch (PR #860). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP/pull/860",
+    "type": "emerging",
+    "engine": "io_uring",
+    "mode": "tuned"
+  },
   "genhttp-11": {
     "dir": "genhttp-11",
     "description": "Lightweight, embeddable and modular C# web server.",

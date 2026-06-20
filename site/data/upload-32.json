@@ -399,6 +399,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp-11-ioxide",
+    "language": "C#",
+    "rps": 2112,
+    "avg_latency": "15.13ms",
+    "p99_latency": "82.40ms",
+    "cpu": "1928.2%",
+    "memory": "749MiB",
+    "connections": 32,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "272.77KB/s",
+    "input_bw": "16.75GB/s",
+    "reconnects": 2113,
+    "status_2xx": 10564,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "genhttp-kestrel",
     "language": "C#",
     "rps": 1267,
