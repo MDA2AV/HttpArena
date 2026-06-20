@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Features>runtime-async=on</Features>
+    <!--<Features>runtime-async=on</Features>-->
     <ServerGarbageCollection>true</ServerGarbageCollection>
 
     <!-- GenHTTP checkout that carries the ioxide io_uring engine (PR #860, branch

@@ -42,7 +42,7 @@ if (tls)
 // mounted, so the high-connection profiles keep the small per-connection buffer.
 int? writeSlab = null;
 var staticRoot = Environment.GetEnvironmentVariable("IOXIDE_STATIC") ?? "/data/static";
-if (Directory.Exists(staticRoot))
+/*if (Directory.Exists(staticRoot))
 {
     long largest = 0;
     foreach (var file in Directory.EnumerateFiles(staticRoot, "*", SearchOption.AllDirectories))
@@ -50,15 +50,16 @@ if (Directory.Exists(staticRoot))
         largest = Math.Max(largest, new FileInfo(file).Length);
     }
     writeSlab = (int)largest + 128 * 1024;
-}
+}*/
+
+writeSlab = 64 * 1024;
 
 var host = Host.Create(
         c => c with
         {
             ReactorCount = reactors, 
             ExtraPorts = tls ? [Tls.Port] : c.ExtraPorts,
-            WriteSlabSize = writeSlab ?? c.WriteSlabSize,
-            BufferRingEntries = 256
+            WriteSlabSize = writeSlab ?? c.WriteSlabSize
         },
         onReactorStart,
         connectionFactory)
