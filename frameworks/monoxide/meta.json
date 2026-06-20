@@ -1,0 +1,19 @@
+{
+  "display_name": "monoxide",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Monoxide — an ioxide-native HTTP/1.1 web framework. Shared-nothing per-reactor: requests are parsed off the io_uring recv rings with Glyph11 and responses written straight into the write slab (no Stream, no Pipe), on the published ioxide 0.0.10 engine. Routing, keep-alive, pipelining, chunked bodies, and response framing are the framework's; the arena entry is just the route map. Static rides ioxide.file's baked snapshots with br/gz Accept-Encoding negotiation.",
+  "repo": "https://github.com/MDA2AV/Monoxide",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "static"
+  ],
+  "maintainers": []
+}

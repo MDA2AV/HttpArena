@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <RootNamespace>MonoxideArena</RootNamespace>
+    <AssemblyName>monoxide-arena</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Monoxide (the framework). The Dockerfile clones it to /src/monoxide, where this project
+         reference resolves; override with -p:MonoxideSrc=/path/to/Monoxide for a local build.
+         Monoxide pulls ioxide + Glyph11 + ioxide.file (static) from nuget.org transitively. -->
+    <MonoxideSrc Condition="'$(MonoxideSrc)' == ''">/src/monoxide</MonoxideSrc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MonoxideSrc)/Monoxide/Monoxide.csproj" />
+  </ItemGroup>
+
+</Project>
