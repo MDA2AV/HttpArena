@@ -24,8 +24,8 @@
     <ProjectReference Include="$(GenHttpSrc)/Modules/Webservices/GenHTTP.Modules.Webservices.csproj" />
     <ProjectReference Include="$(GenHttpSrc)/Modules/Compression/GenHTTP.Modules.Compression.csproj" />
     <ProjectReference Include="$(GenHttpSrc)/Modules/IoxideFiles/GenHTTP.Modules.IoxideFiles.csproj" />
-    <PackageReference Include="ioxide.pg" Version="0.0.8" />
-    <PackageReference Include="ioxide.tls" Version="0.0.8" />
+    <PackageReference Include="ioxide.pg" Version="0.0.9" />
+    <PackageReference Include="ioxide.tls" Version="0.0.9" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 
