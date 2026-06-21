@@ -9,7 +9,19 @@ builder.Logging.ClearProviders();
 
 // Only difference from aspnet-minimal: run on the ioxide io_uring transport.
 // Default reactor count = Environment.ProcessorCount (one ring per thread).
-builder.WebHost.UseIoxide();
+var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
+var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
+var hasCert = File.Exists(certPath) && File.Exists(keyPath);
+
+builder.WebHost.UseIoxide(o =>
+{
+    // kTLS termination in the transport for the json-tls profile (HTTP/1.1 over TLS on 8081). No
+    // UseHttps() below — the transport runs the TLS 1.3 handshake and the kernel does the record crypto.
+    if (hasCert)
+    {
+        o.UseTls(certPath, keyPath, new[] { 8081 });
+    }
+});
 
 builder.Services.AddMemoryCache();
 builder.Services.AddRazorPages();
@@ -31,10 +43,18 @@ builder.WebHost.ConfigureKestrel(options =>
         lo.Protocols = HttpProtocols.Http2;
     });
 
-    // NOTE: TLS listeners (8443/8081) and HTTP/3 are intentionally omitted. The ioxide
-    // Kestrel transport doesn't serve HTTP-over-TLS reliably yet — the TLS handshake
-    // completes, but the SslStream<->pipe path (especially HTTP/2-over-TLS) is a tracked
-    // follow-up. See README. Re-add these listeners + the json-tls/h2/h3 tests once fixed.
+    // HTTP/1.1-over-TLS (json-tls), terminated by the ioxide transport via kTLS — wired above by
+    // UseTls(...8081). No UseHttps() here: Kestrel sees a plaintext, already-TLS connection.
+    if (hasCert)
+    {
+        options.ListenAnyIP(8081, lo =>
+        {
+            lo.Protocols = HttpProtocols.Http1;
+        });
+    }
+
+    // NOTE: HTTP/2-over-TLS (8443) and HTTP/3 are still omitted — h2-over-TLS needs dynamic ALPN
+    // exposed by ioxide.tls (a tracked follow-up). See README.
 });
 
 builder.Services.AddResponseCompression();

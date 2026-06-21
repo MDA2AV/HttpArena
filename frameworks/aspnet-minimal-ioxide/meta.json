@@ -4,7 +4,7 @@
   "type": "flagship",
   "mode": "tuned",
   "engine": "io_uring",
-  "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal — only the Kestrel transport differs. TLS (json-tls, h2-over-TLS) and HTTP/3 are not yet enabled: the ioxide transport's HTTP-over-TLS path is a tracked follow-up.",
+  "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal — only the Kestrel transport differs. HTTP/1.1-over-TLS (json-tls) is terminated in the transport via kTLS (ioxide.tls). HTTP/2-over-TLS and HTTP/3 are not yet enabled (a tracked follow-up).",
   "repo": "https://github.com/MDA2AV/ioxide",
   "enabled": true,
   "tests": [
@@ -13,6 +13,7 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "api-4",
     "api-16",
