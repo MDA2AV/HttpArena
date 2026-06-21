@@ -2,12 +2,14 @@
 
 Minimal ASP.NET Core HTTP server using .NET 11 with Kestrel on the **ioxide io_uring transport** and minimal API routing. Identical to `aspnet-minimal` — the only code difference is `builder.WebHost.UseIoxide()`.
 
+> **Scope:** plaintext HTTP/1.1 (8080) and cleartext HTTP/2 (8082) only. **TLS (json-tls, HTTP/2-over-TLS) and HTTP/3 are not enabled yet** — the ioxide transport's HTTP-over-TLS path (SslStream over the connection pipes) is a tracked follow-up. The TLS handshake completes, but HTTP requests over TLS don't serve reliably. Re-add the 8443/8081 listeners + the `json-tls`/`*-h2`/`*-h3` tests once that's fixed.
+
 ## Stack
 
 - **Language:** C# / .NET 11
 - **Framework:** ASP.NET Core Minimal APIs
 - **Engine:** Kestrel on the ioxide io_uring transport (`ioxide.Kestrel`, `UseIoxide()`, default reactor count)
-- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0-preview` runtime (Debian 12) with `libmsquic` installed for HTTP/3
+- **Build:** Framework-dependent publish, `mcr.microsoft.com/dotnet/aspnet:11.0-preview` runtime (Debian 12)
 
 ## Endpoints
 

@@ -5,17 +5,11 @@ COPY data/static/ wwwroot/static/
 RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:11.0-preview
-
-ADD https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb /packages-microsoft-prod.deb
-
-RUN dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends libmsquic \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 COPY --from=build /app/out .
-EXPOSE 8080 8081 8082 8443/tcp 8443/udp
+
+# Plaintext h1 (8080) + cleartext h2 (8082). TLS (8443/8081) and HTTP/3 are not enabled —
+# see the README: HTTP-over-TLS on the ioxide transport is a tracked follow-up.
+EXPOSE 8080 8082
 
 ENTRYPOINT ["dotnet", "aspnet-minimal-ioxide.dll"]

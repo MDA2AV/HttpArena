@@ -1,5 +1,3 @@
-using System.Security.Cryptography.X509Certificates;
-
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Caching.Memory;
@@ -16,10 +14,6 @@ builder.WebHost.UseIoxide();
 builder.Services.AddMemoryCache();
 builder.Services.AddRazorPages();
 
-var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
-var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
-var hasCert = File.Exists(certPath) && File.Exists(keyPath);
-
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.Http2.MaxStreamsPerConnection = 256;
@@ -32,31 +26,15 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 
     // h2c prior-knowledge listener for the baseline-h2c / json-h2c profiles.
-    // Protocols = Http2 with no UseHttps() gives Kestrel cleartext HTTP/2
-    // from the first byte. Clients that try HTTP/1.1 on this port get
-    // rejected, which is what validate.sh's h2c anti-cheat requires.
     options.ListenAnyIP(8082, lo =>
     {
         lo.Protocols = HttpProtocols.Http2;
     });
 
-    if (hasCert)
-    {
-        options.ListenAnyIP(8443, lo =>
-        {
-            lo.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
-            lo.UseHttps(X509Certificate2.CreateFromPemFile(certPath, keyPath));
-        });
-
-        // HTTP/1.1-only TLS listener for the json-tls profile. Kestrel
-        // advertises http/1.1 via ALPN so HTTP/1.1-only clients (wrk) negotiate
-        // correctly and never upgrade to h2.
-        options.ListenAnyIP(8081, lo =>
-        {
-            lo.Protocols = HttpProtocols.Http1;
-            lo.UseHttps(X509Certificate2.CreateFromPemFile(certPath, keyPath));
-        });
-    }
+    // NOTE: TLS listeners (8443/8081) and HTTP/3 are intentionally omitted. The ioxide
+    // Kestrel transport doesn't serve HTTP-over-TLS reliably yet — the TLS handshake
+    // completes, but the SslStream<->pipe path (especially HTTP/2-over-TLS) is a tracked
+    // follow-up. See README. Re-add these listeners + the json-tls/h2/h3 tests once fixed.
 });
 
 builder.Services.AddResponseCompression();
