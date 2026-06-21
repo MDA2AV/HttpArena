@@ -1,0 +1,32 @@
+{
+  "display_name": "aspnet-minimal-ioxide",
+  "language": "C#",
+  "type": "flagship",
+  "mode": "tuned",
+  "engine": "io_uring",
+  "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Identical app to aspnet-minimal — only the Kestrel transport differs.",
+  "repo": "https://github.com/MDA2AV/ioxide",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "async-db",
+    "crud",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ioxide io_uring Kestrel transport (UseIoxide). Resolved from nuget.org; the local
+         feed in nuget.config covers it until ioxide.Kestrel 0.0.13 is published there. -->
+    <PackageReference Include="ioxide.Kestrel" Version="0.0.13" />
+    <PackageReference Include="Npgsql" Version="10.0.2" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.22" />
+  </ItemGroup>
+</Project>
