@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using ioxide.pg;
-using StackExchange.Redis;
 
 static class AppData
 {
@@ -19,14 +18,10 @@ static class AppData
     public static PgOptions? PgOptions;
     public static bool PgEnabled => PgOptions is not null;
 
-    // Optional Redis cache for the crud profile (REDIS_URL); otherwise the in-process IMemoryCache.
-    public static IDatabase? RedisDb;
-
     public static void Load()
     {
         LoadDataset();
         ConfigurePg();
-        OpenRedis();
     }
 
     static void LoadDataset()
@@ -70,21 +65,5 @@ static class AppData
             if (addr.AddressFamily == AddressFamily.InterNetwork)
                 return addr.ToString();
         return "127.0.0.1";
-    }
-
-    static void OpenRedis()
-    {
-        var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL");
-        if (string.IsNullOrEmpty(redisUrl)) return;
-        try
-        {
-            // REDIS_URL is "redis://host:port" — convert to StackExchange's "host:port".
-            var uri = new Uri(redisUrl);
-            var config = ConfigurationOptions.Parse($"{uri.Host}:{uri.Port}");
-            config.AbortOnConnectFail = false;
-            var muxer = ConnectionMultiplexer.Connect(config);
-            RedisDb = muxer.GetDatabase();
-        }
-        catch { }
     }
 }

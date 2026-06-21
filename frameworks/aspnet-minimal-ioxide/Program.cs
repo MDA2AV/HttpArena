@@ -16,6 +16,9 @@ var hasCert = File.Exists(certPath) && File.Exists(keyPath);
 
 builder.WebHost.UseIoxide(o =>
 {
+    // 64 KB per-connection write slab so larger responses (fortunes, json) fit without growing it.
+    o.ConfigureServer = cfg => cfg with { WriteSlabSize = 64 * 1024 };
+
     // kTLS termination in the transport for the json-tls profile (HTTP/1.1 over TLS on 8081). No
     // UseHttps() below — the transport runs the TLS 1.3 handshake and the kernel does the record crypto.
     if (hasCert)

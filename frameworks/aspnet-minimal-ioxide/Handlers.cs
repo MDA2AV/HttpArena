@@ -184,31 +184,13 @@ static class Handlers
         return Results.Empty;
     }
 
-    // GET /crud/items/{id} — single item, cached (Redis or IMemoryCache) with 200ms TTL.
+    // GET /crud/items/{id} — single item, cached in-process (IMemoryCache) with 200ms TTL.
     public static async Task<IResult> CrudRead(int id, IMemoryCache cache, HttpContext ctx)
     {
         if (!AppData.PgEnabled)
             return TypedResults.Problem("DB not available");
 
         var cacheKey = $"crud:{id}";
-
-        if (AppData.RedisDb is not null)
-        {
-            var cachedJson = await AppData.RedisDb.StringGetAsync(cacheKey);
-            if (cachedJson.HasValue)
-            {
-                ctx.Response.Headers["X-Cache"] = "HIT";
-                return Results.Content((string)cachedJson!, "application/json");
-            }
-
-            var item = await FetchItemByIdAsync(ctx, id);
-            if (item is null) return TypedResults.NotFound();
-
-            var json = JsonSerializer.Serialize(item, AppJsonContext.Default.DbResponseItemDto);
-            await AppData.RedisDb.StringSetAsync(cacheKey, json, TimeSpan.FromMilliseconds(200));
-            ctx.Response.Headers["X-Cache"] = "MISS";
-            return Results.Content(json, "application/json");
-        }
 
         if (cache.TryGetValue(cacheKey, out DbResponseItemDto? cached))
         {
@@ -302,11 +284,7 @@ static class Handlers
 
         if (affected == 0) return TypedResults.NotFound();
 
-        var cacheKey = $"crud:{id}";
-        if (AppData.RedisDb is not null)
-            await AppData.RedisDb.KeyDeleteAsync(cacheKey);
-        else
-            cache.Remove(cacheKey);
+        cache.Remove($"crud:{id}");
         return TypedResults.Json(
             new CrudWriteResponse { Id = id, Name = input.Name, Price = input.Price, Quantity = input.Quantity },
             AppJsonContext.Default.CrudWriteResponse);
