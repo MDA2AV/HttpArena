@@ -28,19 +28,9 @@ builder.Services.AddRazorPages();
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.Http2.MaxStreamsPerConnection = 256;
-    options.Limits.Http2.InitialConnectionWindowSize = 2 * 1024 * 1024;
-    options.Limits.Http2.InitialStreamWindowSize = 1024 * 1024;
-
     options.ListenAnyIP(8080, lo =>
     {
         lo.Protocols = HttpProtocols.Http1;
-    });
-
-    // h2c prior-knowledge listener for the baseline-h2c / json-h2c profiles.
-    options.ListenAnyIP(8082, lo =>
-    {
-        lo.Protocols = HttpProtocols.Http2;
     });
 
     // HTTP/1.1-over-TLS (json-tls), terminated by the ioxide transport via kTLS — wired above by
@@ -53,8 +43,7 @@ builder.WebHost.ConfigureKestrel(options =>
         });
     }
 
-    // NOTE: HTTP/2-over-TLS (8443) and HTTP/3 are still omitted — h2-over-TLS needs dynamic ALPN
-    // exposed by ioxide.tls (a tracked follow-up). See README.
+    // HTTP/1.1 only: cleartext h2c (8082), HTTP/2-over-TLS (8443), and HTTP/3 are intentionally omitted.
 });
 
 builder.Services.AddResponseCompression();
