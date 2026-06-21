@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Caching.Memory;
 
 using ioxide.Kestrel;
+using ioxide.pg;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -21,6 +22,16 @@ builder.WebHost.UseIoxide(o =>
     {
         o.UseTls(certPath, keyPath, new[] { 8081 });
     }
+
+    // Open a per-reactor ioxide.pg pool so DB queries run on the connection's reactor (thread-per-core).
+    // AppData.Load() below sets PgOptions before the host starts; OnReactorStart fires when reactors start.
+    o.OnReactorStart = r =>
+    {
+        if (AppData.PgOptions is not null)
+        {
+            PgPool.Start(r, AppData.PgOptions);
+        }
+    };
 });
 
 builder.Services.AddMemoryCache();

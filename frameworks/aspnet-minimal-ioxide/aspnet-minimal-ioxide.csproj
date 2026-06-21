@@ -6,9 +6,9 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
   <ItemGroup>
-    <!-- ioxide io_uring Kestrel transport (UseIoxide), with kTLS termination for json-tls. -->
-    <PackageReference Include="ioxide.Kestrel" Version="0.0.15" />
-    <PackageReference Include="Npgsql" Version="10.0.2" />
+    <!-- ioxide io_uring Kestrel transport (UseIoxide), kTLS for json-tls, ioxide.pg for on-reactor DB. -->
+    <PackageReference Include="ioxide.Kestrel" Version="0.0.16" />
+    <PackageReference Include="ioxide.pg" Version="0.0.16" />
     <PackageReference Include="StackExchange.Redis" Version="2.8.22" />
   </ItemGroup>
 </Project>

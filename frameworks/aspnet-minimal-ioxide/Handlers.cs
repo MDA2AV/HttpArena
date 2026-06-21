@@ -1,9 +1,13 @@
-using System.Text.Json;
 using System.Buffers;
+using System.Buffers.Text;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Caching.Memory;
-using StackExchange.Redis;
+using ioxide.pg;
+using ioxide.Kestrel;
 
 
 [JsonSerializable(typeof(ResponseDto<ProcessedItem>))]
@@ -19,9 +23,6 @@ partial class AppJsonContext : JsonSerializerContext { }
 
 static class Handlers
 {
-    // Returning `string` makes ASP.NET minimal APIs set Content-Type to
-    // text/plain automatically. Returning `int` defaults to JSON and
-    // serializes the bare number — which violates the baseline contract.
     public static string Sum(int a, int b) => (a + b).ToString();
 
     public static async ValueTask<string> SumBody(int a, int b, HttpRequest req)
@@ -86,53 +87,65 @@ static class Handlers
         return TypedResults.Json(new ResponseDto<ProcessedItem>(items, count), AppJsonContext.Default.ResponseDtoProcessedItem);
     }
 
-    public static async Task<Results<JsonHttpResult<ResponseDto<DbResponseItemDto>>, ProblemHttpResult>> AsyncDatabase(HttpRequest req)
+    // ── ioxide.pg row mapping ───────────────────────────────────────────
+    // ioxide.pg returns text columns as ReadOnlySpan<byte> by index. PgRow is a ref struct valid only inside
+    // the callback, so the DTO is materialized here.
+    static DbResponseItemDto MapItem(in PgRow row) => new DbResponseItemDto
     {
-        if (AppData.PgDataSource == null)
+        Id       = ParseInt(row.Field(0)),
+        Name     = Encoding.UTF8.GetString(row.Field(1)),
+        Category = Encoding.UTF8.GetString(row.Field(2)),
+        Price    = (int)ParseDouble(row.Field(3)),
+        Quantity = ParseInt(row.Field(4)),
+        Active   = row.Field(5).SequenceEqual("t"u8),
+        Tags     = JsonSerializer.Deserialize(row.Field(6), AppJsonContext.Default.ListString)!,
+        Rating   = new RatingInfo { Score = (int)ParseDouble(row.Field(7)), Count = ParseInt(row.Field(8)) }
+    };
+
+    static int ParseInt(ReadOnlySpan<byte> s) => Utf8Parser.TryParse(s, out int v, out _) ? v : 0;
+    static double ParseDouble(ReadOnlySpan<byte> s) => Utf8Parser.TryParse(s, out double v, out _) ? v : 0;
+    static int AffectedRows(string tag)
+    {
+        int sp = tag.LastIndexOf(' ');
+        return sp >= 0 && int.TryParse(tag.AsSpan(sp + 1), out var n) ? n : 0;
+    }
+
+    // GET /async-db — price-range query, on the connection's reactor via ioxide.pg.
+    public static async Task<IResult> AsyncDatabase(HttpContext ctx)
+    {
+        if (!AppData.PgEnabled)
             return TypedResults.Problem("DB not available");
 
-        // Query Parsing
+        var query = ctx.Request.Query;
         double min = 10, max = 50;
         int limit = 50;
-        var query = req.Query;
         if (query.TryGetValue("min", out var minVal) && double.TryParse(minVal, out var pmin)) min = pmin;
         if (query.TryGetValue("max", out var maxVal) && double.TryParse(maxVal, out var pmax)) max = pmax;
         if (query.TryGetValue("limit", out var limVal) && int.TryParse(limVal, out var plim)) limit = Math.Clamp(plim, 1, 50);
 
-        await using var cmd = AppData.PgDataSource.CreateCommand(
-            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
-        
-        cmd.Parameters.AddWithValue(min);
-        cmd.Parameters.AddWithValue(max);
-        cmd.Parameters.AddWithValue(limit);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-
-        var items = new List<DbResponseItemDto>(limit);
-
-        while (await reader.ReadAsync())
+        var items = await ctx.OnReactor(async r =>
         {
-            items.Add(new DbResponseItemDto
+            var pool = r.GetService<PgPool>();
+            var list = new List<DbResponseItemDto>(limit);
+            var args = new[]
             {
-                Id = reader.GetInt32(0),
-                Name = reader.GetString(1),
-                Category = reader.GetString(2),
-                Price = (int)reader.GetDouble(3),
-                Quantity = reader.GetInt32(4),
-                Active = reader.GetBoolean(5),
-                Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-                Rating = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
-            });
-        }
-
-        return TypedResults.Json(new ResponseDto<DbResponseItemDto>(items, items.Count), AppJsonContext.Default.ResponseDtoDbResponseItemDto);
+                PgParam.Text(min.ToString(CultureInfo.InvariantCulture)),
+                PgParam.Text(max.ToString(CultureInfo.InvariantCulture)),
+                PgParam.Int(limit),
+            };
+            await pool.QueryAsync(
+                "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
+                args, row => list.Add(MapItem(row)));
+            return list;
+        });
+        // Write the body in-handler. Returning TypedResults.Json here yields an empty body: after an
+        // OnReactor query the minimal-API result-execution step writes nothing for these wrapper types,
+        // whereas WriteAsJsonAsync in-handler streams reliably via the source-gen JsonTypeInfo.
+        await ctx.Response.WriteAsJsonAsync(new ResponseDto<DbResponseItemDto>(items, items.Count), AppJsonContext.Default.ResponseDtoDbResponseItemDto);
+        return Results.Empty;
     }
 
     // ── CRUD handlers ──────────────────────────────────────────────────
-    //
-    // Realistic REST API with paginated list, cached single-item read,
-    // create, and update. Cache-aside on single-item reads with 200ms TTL,
-    // invalidated on PUT. List queries always hit Postgres.
 
     private static readonly MemoryCacheEntryOptions _crudCacheOpts =
         new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(200) };
@@ -141,12 +154,12 @@ static class Handlers
         new(JsonSerializerDefaults.Web);
 
     // GET /crud/items?category=X&page=N&limit=M — paginated list (always DB, never cached)
-    public static async Task<IResult> CrudList(HttpRequest req)
+    public static async Task<IResult> CrudList(HttpContext ctx)
     {
-        if (AppData.PgDataSource is null)
+        if (!AppData.PgEnabled)
             return TypedResults.Problem("DB not available");
 
-        var query = req.Query;
+        var query = ctx.Request.Query;
         var category = query["category"].ToString();
         if (string.IsNullOrEmpty(category)) category = "electronics";
         int.TryParse(query["page"], out var page);
@@ -155,46 +168,26 @@ static class Handlers
         if (limit < 1 || limit > 50) limit = 10;
         var offset = (page - 1) * limit;
 
-        // Single data query. The previous COUNT(*) pass was 90%+ of PG CPU
-        // because concurrent writes kept the visibility map dirty, forcing
-        // heap fetches on every index-only scan. "Load more" pagination
-        // (return page size, no total) is a realistic alternative that
-        // removes that dominant cost.
-        await using var cmd = AppData.PgDataSource.CreateCommand(
-            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
-            "FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3");
-        cmd.Parameters.AddWithValue(category);
-        cmd.Parameters.AddWithValue(limit);
-        cmd.Parameters.AddWithValue(offset);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        var items = new List<DbResponseItemDto>();
-        while (await reader.ReadAsync())
+        var items = await ctx.OnReactor(async r =>
         {
-            items.Add(new DbResponseItemDto
-            {
-                Id       = reader.GetInt32(0),
-                Name     = reader.GetString(1),
-                Category = reader.GetString(2),
-                Price    = reader.GetInt32(3),
-                Quantity = reader.GetInt32(4),
-                Active   = reader.GetBoolean(5),
-                Tags     = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-                Rating   = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
-            });
-        }
-
-        return TypedResults.Json(new CrudListResponse { Items = items, Total = items.Count, Page = page, Limit = limit },
+            var pool = r.GetService<PgPool>();
+            var list = new List<DbResponseItemDto>();
+            var args = new[] { PgParam.Text(category), PgParam.Int(limit), PgParam.Int(offset) };
+            await pool.QueryAsync(
+                "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3",
+                args, row => list.Add(MapItem(row)));
+            return list;
+        });
+        // In-handler write (see AsyncDatabase): returning the IResult drops the body for this wrapper type.
+        await ctx.Response.WriteAsJsonAsync(new CrudListResponse { Items = items, Total = items.Count, Page = page, Limit = limit },
             AppJsonContext.Default.CrudListResponse);
+        return Results.Empty;
     }
 
-    // GET /crud/items/{id} — single item, cached with 200ms TTL.
-    // Redis when REDIS_URL is set (cache stores pre-serialized JSON string so
-    // HIT path skips a Serialize+Deserialize round trip); else in-process
-    // IMemoryCache (caches the typed DTO).
+    // GET /crud/items/{id} — single item, cached (Redis or IMemoryCache) with 200ms TTL.
     public static async Task<IResult> CrudRead(int id, IMemoryCache cache, HttpContext ctx)
     {
-        if (AppData.PgDataSource is null)
+        if (!AppData.PgEnabled)
             return TypedResults.Problem("DB not available");
 
         var cacheKey = $"crud:{id}";
@@ -208,7 +201,7 @@ static class Handlers
                 return Results.Content((string)cachedJson!, "application/json");
             }
 
-            var item = await FetchItemByIdAsync(id);
+            var item = await FetchItemByIdAsync(ctx, id);
             if (item is null) return TypedResults.NotFound();
 
             var json = JsonSerializer.Serialize(item, AppJsonContext.Default.DbResponseItemDto);
@@ -223,7 +216,7 @@ static class Handlers
             return TypedResults.Json(cached, AppJsonContext.Default.DbResponseItemDto);
         }
 
-        var dto = await FetchItemByIdAsync(id);
+        var dto = await FetchItemByIdAsync(ctx, id);
         if (dto is null) return TypedResults.NotFound();
 
         cache.Set(cacheKey, dto, _crudCacheOpts);
@@ -231,33 +224,25 @@ static class Handlers
         return TypedResults.Json(dto, AppJsonContext.Default.DbResponseItemDto);
     }
 
-    private static async Task<DbResponseItemDto?> FetchItemByIdAsync(int id)
+    // Single-item fetch on the connection's reactor.
+    private static Task<DbResponseItemDto?> FetchItemByIdAsync(HttpContext ctx, int id)
     {
-        await using var cmd = AppData.PgDataSource!.CreateCommand(
-            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
-            "FROM items WHERE id = $1 LIMIT 1");
-        cmd.Parameters.AddWithValue(id);
-
-        await using var reader = await cmd.ExecuteReaderAsync();
-        if (!await reader.ReadAsync()) return null;
-
-        return new DbResponseItemDto
+        return ctx.OnReactor(async r =>
         {
-            Id       = reader.GetInt32(0),
-            Name     = reader.GetString(1),
-            Category = reader.GetString(2),
-            Price    = reader.GetInt32(3),
-            Quantity = reader.GetInt32(4),
-            Active   = reader.GetBoolean(5),
-            Tags     = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-            Rating   = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
-        };
+            var pool = r.GetService<PgPool>();
+            DbResponseItemDto? dto = null;
+            var args = new[] { PgParam.Int(id) };
+            await pool.QueryAsync(
+                "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE id = $1 LIMIT 1",
+                args, row => dto = MapItem(row));
+            return dto;
+        });
     }
 
     // POST /crud/items — create item, return 201
-    public static async Task<IResult> CrudCreate(HttpRequest req)
+    public static async Task<IResult> CrudCreate(HttpRequest req, HttpContext ctx)
     {
-        if (AppData.PgDataSource is null)
+        if (!AppData.PgEnabled)
             return TypedResults.Problem("DB not available");
 
         using var sr = new StreamReader(req.Body);
@@ -266,27 +251,33 @@ static class Handlers
         if (input is null)
             return TypedResults.BadRequest();
 
-        await using var cmd = AppData.PgDataSource.CreateCommand(
-            "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) " +
-            "VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0) " +
-            "ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 " +
-            "RETURNING id");
-        cmd.Parameters.AddWithValue(input.Id);
-        cmd.Parameters.AddWithValue(input.Name ?? "New Product");
-        cmd.Parameters.AddWithValue(input.Category ?? "test");
-        cmd.Parameters.AddWithValue(input.Price);
-        cmd.Parameters.AddWithValue(input.Quantity);
+        var newId = await ctx.OnReactor(async r =>
+        {
+            var pool = r.GetService<PgPool>();
+            var args = new[]
+            {
+                PgParam.Int(input.Id),
+                PgParam.Text(input.Name ?? "New Product"),
+                PgParam.Text(input.Category ?? "test"),
+                PgParam.Int(input.Price),
+                PgParam.Int(input.Quantity),
+            };
+            var result = await pool.QueryAsync(
+                "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) " +
+                "VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0) " +
+                "ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 RETURNING id", args);
+            return int.TryParse(result.Value, out var v) ? v : input.Id;
+        });
 
-        var newId = (int)(await cmd.ExecuteScalarAsync())!;
         return TypedResults.Json(
             new CrudWriteResponse { Id = newId, Name = input.Name, Category = input.Category, Price = input.Price, Quantity = input.Quantity },
             AppJsonContext.Default.CrudWriteResponse, statusCode: 201);
     }
 
     // PUT /crud/items/{id} — update item, invalidate cache
-    public static async Task<IResult> CrudUpdate(int id, HttpRequest req, IMemoryCache cache)
+    public static async Task<IResult> CrudUpdate(int id, HttpRequest req, IMemoryCache cache, HttpContext ctx)
     {
-        if (AppData.PgDataSource is null)
+        if (!AppData.PgEnabled)
             return TypedResults.Problem("DB not available");
 
         using var sr = new StreamReader(req.Body);
@@ -295,14 +286,20 @@ static class Handlers
         if (input is null)
             return TypedResults.BadRequest();
 
-        await using var cmd = AppData.PgDataSource.CreateCommand(
-            "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4");
-        cmd.Parameters.AddWithValue(input.Name ?? "Updated");
-        cmd.Parameters.AddWithValue(input.Price);
-        cmd.Parameters.AddWithValue(input.Quantity);
-        cmd.Parameters.AddWithValue(id);
+        var affected = await ctx.OnReactor(async r =>
+        {
+            var pool = r.GetService<PgPool>();
+            var args = new[]
+            {
+                PgParam.Text(input.Name ?? "Updated"),
+                PgParam.Int(input.Price),
+                PgParam.Int(input.Quantity),
+                PgParam.Int(id),
+            };
+            var result = await pool.QueryAsync("UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4", args);
+            return AffectedRows(result.CommandTag);
+        });
 
-        var affected = await cmd.ExecuteNonQueryAsync();
         if (affected == 0) return TypedResults.NotFound();
 
         var cacheKey = $"crud:{id}";
