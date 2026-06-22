@@ -22,5 +22,29 @@
     "tpl_items": 493727,
     "tpl_me": 98745,
     "cpu_breakdown": "cache: 15% 8MiB | server: 1342% 512MiB | authsvc: 696% 595MiB | edge: 2787% 1.3GiB"
+  },
+  {
+    "framework": "sark",
+    "language": "Rust",
+    "rps": 17789,
+    "avg_latency": "185.68ms",
+    "p99_latency": "4.30s",
+    "cpu": "293.5%",
+    "memory": "1.1GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "269.12MB/s",
+    "reconnects": 0,
+    "status_2xx": 90191,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 10602,
+    "tpl_static": 27057,
+    "tpl_baseline": 9019,
+    "tpl_items": 45095,
+    "tpl_me": 9019,
+    "cpu_breakdown": "edge: 201% 574MiB | cache: 17% 5MiB | authsvc: 25% 31MiB | server: 50% 534MiB"
   }
 ]
