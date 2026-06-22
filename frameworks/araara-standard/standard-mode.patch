@@ -5,7 +5,7 @@ index 19f8884..8c6f61a 100644
 @@ -759,11 +759,14 @@ let gc_tuning () =
        max_overhead = 1000;
      }
- 
+
 +let is_standard_mode () = Sys.getenv_opt "HCS_ARENA_MODE" = Some "standard"
 +
  let base_config =
