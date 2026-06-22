@@ -114,6 +114,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sark",
+    "language": "Rust",
+    "rps": 2358636,
+    "avg_latency": "13.70ms",
+    "p99_latency": "878.41ms",
+    "cpu": "5145.4%",
+    "memory": "10.9GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "7.85GB/s",
+    "reconnects": 0,
+    "status_2xx": 11911116,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "swerver",
     "language": "Zig",
     "rps": 4673017,
