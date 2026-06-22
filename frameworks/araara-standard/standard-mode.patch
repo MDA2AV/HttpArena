@@ -19,16 +19,3 @@ index 19f8884..8c6f61a 100644
        max_connections = 200000;
        reuse_port = true;
        (* Stream large request bodies instead of buffering them whole: /upload
-@@ -911,8 +914,10 @@ let command =
-   let open Climate.Arg_parser in
-   let+ domains =
-     named_with_default [ "d"; "domains"; "cpus" ] int
--      ~default:(physical_core_count ())
--      ~doc:"Number of server domains (default: physical core count)"
-+      ~default:(if is_standard_mode () then 1 else physical_core_count ())
-+      ~doc:
-+        "Number of server domains (default: 1 in standard mode, physical core \
-+         count in tuned mode)"
-   and+ dataset_path =
-     named_with_default [ "dataset" ] string ~default:"/data/dataset.json"
-       ~doc:"Path to dataset.json"
