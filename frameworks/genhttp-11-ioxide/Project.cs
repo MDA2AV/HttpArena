@@ -5,6 +5,7 @@ using GenHTTP.Modules.IoxideFiles;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
 using GenHTTP.Modules.Webservices;
+using GenHTTP.Modules.Websockets;
 
 using genhttp.Infrastructure;
 using genhttp.Tests;
@@ -41,7 +42,9 @@ public static class Project
                      .Add("crud", crud);
         }
 
-        return app.AddStaticFiles();
+        return app
+            .AddStaticFiles()
+            .AddWebsocket();
     }
 
     private static LayoutBuilder AddStaticFiles(this LayoutBuilder app)
@@ -56,6 +59,15 @@ public static class Project
         }
 
         return app;
+    }
+    
+    private static LayoutBuilder AddWebsocket(this LayoutBuilder app)
+    {
+        var websocket = Websocket.Imperative()
+            .DoNotAllocateFrameData()
+            .Handler(new EchoHandler());
+
+        return app.Add("ws", websocket);
     }
 
 }

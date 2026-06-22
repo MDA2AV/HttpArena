@@ -22,6 +22,7 @@
     <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.19" />
     <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.19" />
     <PackageReference Include="GenHTTP.Modules.IoxideFiles" Version="11.0.0-preview.19" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.19" />
     <PackageReference Include="ioxide.pg" Version="0.0.12" />
     <PackageReference Include="ioxide.tls" Version="0.0.12" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
