@@ -11,7 +11,7 @@ index 19f8884..8c6f61a 100644
  let base_config =
 -  Hcs.Server.
 +  let open Hcs.Server in
-+  if is_standard_mode () then default_config
++  if is_standard_mode () then { default_config with reuse_port = true }
 +  else
      {
        default_config with

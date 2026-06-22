@@ -10,6 +10,7 @@ such as protocol, port, TLS, and the upload profile's accepted body size.
 
 It still uses all detected physical cores, matching the tuned entry and the
 HttpArena benchmark machine.
+`SO_REUSEPORT` remains enabled so each domain can bind the required ports.
 
 The Dockerfile applies `standard-mode.patch` to the cloned HCS release before
 building so this behavior is available while the tuned entry can stay pinned to
