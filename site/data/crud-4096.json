@@ -58,6 +58,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "aspnet-minimal-ioxide",
+    "language": "C#",
+    "rps": 555136,
+    "avg_latency": "7.11ms",
+    "p99_latency": "36.00ms",
+    "cpu": "4442.9%",
+    "memory": "2.0GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "234.60MB/s",
+    "input_bw": "47.65MB/s",
+    "reconnects": 39672,
+    "status_2xx": 8327042,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "fishcake",
     "language": "Kotlin",
     "rps": 450035,

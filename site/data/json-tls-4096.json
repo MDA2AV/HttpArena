@@ -57,6 +57,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "aspnet-minimal-ioxide",
+    "language": "C#",
+    "rps": 738079,
+    "avg_latency": "5.69ms",
+    "p99_latency": "64.53ms",
+    "cpu": "6106.9%",
+    "memory": "2.3GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "2.54GB",
+    "reconnects": 0,
+    "status_2xx": 3764048,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "blackbull",
     "language": "Python",
     "rps": 168570,

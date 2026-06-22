@@ -82,6 +82,14 @@
     "engine": "io_uring",
     "mode": "tuned"
   },
+  "aspnet-minimal-ioxide": {
+    "dir": "aspnet-minimal-ioxide",
+    "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal \u2014 only the Kestrel transport differs. HTTP/1.1 only: plaintext plus HTTP/1.1-over-TLS (json-tls) terminated in the transport via kTLS (ioxide.tls). HTTP/2 and HTTP/3 are not enabled.",
+    "repo": "https://github.com/MDA2AV/ioxide",
+    "type": "flagship",
+    "engine": "io_uring",
+    "mode": "tuned"
+  },
   "aspnet-minimal + caddy": {
     "dir": "aspnet-minimal_caddy",
     "description": "ASP.NET minimal API behind Caddy, serving HTTP/3 (QUIC) at the edge with h1 forwarding to Kestrel.",
