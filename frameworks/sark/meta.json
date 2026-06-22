@@ -1,0 +1,25 @@
+{
+  "display_name": "sark",
+  "language": "Rust",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "io_uring",
+  "description": "sark is a Rust HTTP framework on the dope io_uring runtime: zero-copy header parsing, thread-per-core, type-safe routing via proc-macros, cartel-pg for Postgres. No serde, no tokio, no Arc/atomic.",
+  "repo": "https://github.com/dope-rs/dope",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "static",
+    "async-db",
+    "crud",
+    "fortunes",
+    "api-4",
+    "api-16"
+  ],
+  "maintainers": ["inq"]
+}

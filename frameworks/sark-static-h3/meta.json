@@ -1,0 +1,13 @@
+{
+  "display_name": "sark",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "sark static-file serving over HTTP/3 (QUIC) on the dope io_uring runtime: native QUIC endpoint as a dope Manifold, shin TLS 1.3, QPACK, precompressed br/gzip sidecars. Thread-per-core, no tokio, no Arc/atomic.",
+  "repo": "https://github.com/dope-rs/dope",
+  "enabled": true,
+  "tests": [
+    "static-h3"
+  ],
+  "maintainers": ["inq"]
+}

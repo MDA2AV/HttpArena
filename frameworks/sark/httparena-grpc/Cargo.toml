@@ -1,0 +1,18 @@
+[package]
+name = "httparena-grpc"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+dope.workspace = true
+dope-gen.workspace = true
+sark-grpc.workspace = true
+prost.workspace = true
+httparena-sark = { path = "../httparena" }
+
+[build-dependencies]
+sark-grpc-build.workspace = true
+
+[[bin]]
+name = "httparena-sark-grpc"
+path = "src/main.rs"
