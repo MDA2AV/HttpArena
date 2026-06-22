@@ -1195,6 +1195,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sark",
+    "language": "Rust",
+    "rps": 40248355,
+    "avg_latency": "202us",
+    "p99_latency": "399us",
+    "cpu": "6644.8%",
+    "memory": "10.5GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "4.38GB/s",
+    "reconnects": 0,
+    "status_2xx": 201241776,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "servicestack",
     "language": "C#",
     "rps": 14268,
