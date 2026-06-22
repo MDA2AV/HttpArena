@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Features>runtime-async=on</Features>
+        <!--<Features>runtime-async=on</Features>-->
         <RootNamespace>IoxideArena</RootNamespace>
         <AssemblyName>ioxide-arena</AssemblyName>
         <ServerGarbageCollection>true</ServerGarbageCollection>
