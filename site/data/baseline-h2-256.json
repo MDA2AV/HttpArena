@@ -310,6 +310,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "phoenix-bandit",
+    "language": "Elixir",
+    "rps": 215380,
+    "avg_latency": "115.48ms",
+    "p99_latency": "196.98ms",
+    "cpu": "6528.9%",
+    "memory": "813MiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "10.35MB/s",
+    "reconnects": 0,
+    "status_2xx": 1087674,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "php-fpm",
     "language": "PHP",
     "rps": 246315,

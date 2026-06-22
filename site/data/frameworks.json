@@ -505,6 +505,14 @@
     "engine": "v8",
     "mode": "tuned"
   },
+  "phoenix-bandit": {
+    "dir": "phoenix-bandit",
+    "description": "High-performance Elixir framework using Phoenix and Bandit HTTP server, leveraging Erlang/OTP for concurrent networking and asynchronous database operations.",
+    "repo": "https://github.com/phoenixframework/phoenix",
+    "type": "flagship",
+    "engine": "bandit",
+    "mode": "standard"
+  },
   "php-fpm": {
     "dir": "php",
     "description": "Plain PHP with PHP-FPM & nginx.",
