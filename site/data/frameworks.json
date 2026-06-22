@@ -482,6 +482,14 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "mq-bridge": {
+    "dir": "mq-bridge-websocket",
+    "description": "mq-bridge WebSocket echo server. A websocket->response route echoes each inbound text/binary frame back on the same connection via the direct WebSocket response path.",
+    "repo": "https://github.com/marcomq/mq-bridge",
+    "type": "emerging",
+    "engine": "mq-bridge",
+    "mode": "standard"
+  },
   "nginx": {
     "dir": "nginx",
     "description": "Nginx with a custom C handler module, compiled with -O3 -march=native.",
