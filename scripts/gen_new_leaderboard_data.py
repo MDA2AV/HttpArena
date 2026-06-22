@@ -42,17 +42,17 @@ CATALOG = [
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,False),
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
-        ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,False,False),
+        ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,False),
         ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False,False),
         ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False,True),
     ]),
     ("Database", [
-        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,False,False),
+        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True,False),
         ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False,False),
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("Multi-endpoint", [
-        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,True,False),
+        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False,False),
         ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
     ]),
     ("HTTP/2", [
