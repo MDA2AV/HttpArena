@@ -23,8 +23,8 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: benchmark
-  cancel-in-progress: false
+  group: benchmark-pr-${{ inputs.pr }}
+  cancel-in-progress: true
 
 jobs:
   runner-busy:
