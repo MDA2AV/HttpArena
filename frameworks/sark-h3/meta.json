@@ -8,7 +8,8 @@
   "repo": "https://github.com/dope-rs/dope",
   "enabled": true,
   "tests": [
-    "baseline-h3"
+    "baseline-h3",
+    "static-h3"
   ],
   "maintainers": [
     "inq"
