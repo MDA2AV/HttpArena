@@ -20,16 +20,16 @@ impl Boot {
             .and_then(|v| v.parse::<usize>().ok())
             .filter(|&n| n > 0)
             .unwrap_or(allowed.len());
-        let core = std::env::var("SARK_HTTPARENA_CPU_CORE")
-            .ok()
-            .and_then(|v| v.parse::<usize>().ok())
-            .unwrap_or(0);
-        let max_conn = std::env::var("SARK_HTTPARENA_MAX_CONN")
+        let total_max_conn = std::env::var("SARK_HTTPARENA_MAX_CONN")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or(16384);
-        let cpus: Vec<u16> = allowed.into_iter().skip(core).take(count).collect();
+            .unwrap_or(16384usize);
+        let cpus: Vec<u16> = allowed.into_iter().take(count).collect();
         let cpus = if cpus.is_empty() { vec![0] } else { cpus };
+        let max_conn = total_max_conn
+            .div_ceil(cpus.len())
+            .saturating_mul(2)
+            .clamp(1024, total_max_conn.max(1024));
         Self {
             bind,
             cpus,
