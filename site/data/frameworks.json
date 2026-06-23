@@ -670,6 +670,93 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "sark": {
+    "dir": "sark",
+    "description": "sark is a Rust HTTP framework on the dope io_uring runtime: zero-copy header parsing, thread-per-core, type-safe routing via proc-macros, cartel-pg for Postgres. No serde, no tokio, no Arc/atomic.",
+    "repo": "https://github.com/dope-rs/dope",
+    "type": "emerging",
+    "engine": "io_uring",
+    "mode": "standard",
+    "variants": [
+      {
+        "dir": "sark-gateway",
+        "description": "sark behind a stock Caddy edge (TLS + h2/h3) \u2014 gateway profiles. Caddy terminates TLS and serves static from disk; sark serves dynamic endpoints over TCP. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-grpc",
+        "description": "sark gRPC server (unary + streaming) over plaintext HTTP/2 on the dope io_uring runtime: thread-per-core, reuseport, hand-rolled h2 + prost codec. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-grpc-tls",
+        "description": "sark gRPC over TLS 1.3 (ALPN h2) on the dope io_uring runtime: thread-per-core, reuseport, prost codec + shin TLS with self-signed Ed25519. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-h2",
+        "description": "sark HTTP/2 over TLS 1.3 (ALPN h2) on the dope io_uring runtime: thread-per-core, reuseport, hand-rolled h2/HPACK + shin TLS with self-signed Ed25519. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-h2c",
+        "description": "sark HTTP/2 cleartext (h2c, prior-knowledge) server on the dope io_uring runtime: thread-per-core, reuseport, hand-rolled HPACK/h2 framing. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-h3",
+        "description": "sark HTTP/3 over QUIC on the dope io_uring runtime: native QUIC endpoint as a dope Manifold, shin TLS 1.3 with self-signed Ed25519 X.509 cert, QPACK. Thread-per-core, no tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-json-tls",
+        "description": "sark HTTP/1.1 over TLS 1.3 (json-tls) on the dope io_uring runtime: thread-per-core, reuseport, shin TLS with self-signed Ed25519 cert. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-production",
+        "description": "sark production stack \u2014 nginx edge (TLS + JWT auth_request) + redis cache + shared authsvc in front of the sark io_uring server. Cache-aside, stateless JWT. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-static-h2",
+        "description": "sark static-file serving over HTTP/2 TLS (ALPN h2) on the dope io_uring runtime: thread-per-core, reuseport, hand-rolled h2 + shin TLS. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-static-h3",
+        "description": "sark static-file serving over HTTP/3 (QUIC) on the dope io_uring runtime: native QUIC endpoint as a dope Manifold, shin TLS 1.3, QPACK, precompressed br/gzip sidecars. Thread-per-core, no tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "sark-websocket",
+        "description": "sark WebSocket echo server on the dope io_uring runtime: thread-per-core, reuseport, zero-copy frame parsing. No tokio, no Arc/atomic.",
+        "repo": "https://github.com/dope-rs/dope",
+        "type": "engine",
+        "engine": "io_uring"
+      }
+    ]
+  },
   "servicestack": {
     "dir": "servicestack",
     "description": "One framework to power them all. Write your HTTP APIs once and take advantage of end to end typed integrations for all popular Web, Mobile and Desktop platforms.",

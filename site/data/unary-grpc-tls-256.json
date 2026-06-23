@@ -117,6 +117,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sark",
+    "language": "Rust",
+    "rps": 370563,
+    "avg_latency": "10.57ms",
+    "p99_latency": "1.33s",
+    "cpu": "138.6%",
+    "memory": "46.0GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "13.16MB/s",
+    "reconnects": 0,
+    "status_2xx": 1863936,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "trillium",
     "language": "Rust",
     "rps": 509210,

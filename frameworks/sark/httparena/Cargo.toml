@@ -1,0 +1,54 @@
+[package]
+name = "httparena-sark"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+dope.workspace = true
+dope-gen.workspace = true
+dope-extra.workspace = true
+dope-tls.workspace = true
+dope-quic.workspace = true
+o3.workspace = true
+sark.workspace = true
+sark-core.workspace = true
+sark-gen.workspace = true
+sark-ws.workspace = true
+sark-h2.workspace = true
+sark-h3.workspace = true
+cartel-pg.workspace = true
+cartel-redis.workspace = true
+cartel-gen.workspace = true
+tent.workspace = true
+shin.workspace = true
+http.workspace = true
+rcgen.workspace = true
+pin-project.workspace = true
+
+[lib]
+name = "httparena_sark"
+path = "src/lib.rs"
+
+[[bin]]
+name = "httparena-sark"
+path = "src/main.rs"
+
+[[bin]]
+name = "httparena-sark-ws"
+path = "src/ws_main.rs"
+
+[[bin]]
+name = "httparena-sark-h2c"
+path = "src/h2c_main.rs"
+
+[[bin]]
+name = "httparena-sark-json-tls"
+path = "src/json_tls_main.rs"
+
+[[bin]]
+name = "httparena-sark-h2"
+path = "src/h2_tls_main.rs"
+
+[[bin]]
+name = "httparena-sark-h3"
+path = "src/h3_main.rs"

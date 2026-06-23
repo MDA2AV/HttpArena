@@ -1,0 +1,33 @@
+services:
+  proxy:
+    build:
+      context: ./proxy
+    network_mode: host
+    cpuset: "${GATEWAY_PROXY_CPUS:-0-1}"
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+  server:
+    build:
+      context: ../sark
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${GATEWAY_SERVER_CPUS:-2}"
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    environment:
+      - SARK_HTTPARENA_BIND=0.0.0.0:8080
+      - SARK_HTTPARENA_CPU_CORE=${GATEWAY_SERVER_CPU_CORE:-2}
+      - SARK_HTTPARENA_CPU_COUNT=${GATEWAY_SERVER_CPU_COUNT:-1}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=${DATABASE_MAX_CONN:-32}
+      - SARK_HTTPARENA_PER_IP_CAP=0
