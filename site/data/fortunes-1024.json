@@ -38,6 +38,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 49991,
+    "avg_latency": "19.90ms",
+    "p99_latency": "43.10ms",
+    "cpu": "5612.1%",
+    "memory": "11.9GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.43GB/s",
+    "reconnects": 0,
+    "status_2xx": 249959,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ring-http-exchange",
     "language": "Clojure",
     "rps": 66355,

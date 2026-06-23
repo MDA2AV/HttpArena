@@ -772,6 +772,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 646754,
+    "avg_latency": "783us",
+    "p99_latency": "4.89ms",
+    "cpu": "6255.2%",
+    "memory": "4.7GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "40.70MB/s",
+    "input_bw": "49.96MB/s",
+    "reconnects": 323270,
+    "status_2xx": 3233772,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "libreactorng",
     "language": "C",
     "rps": 2569884,

@@ -171,6 +171,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 11253401,
+    "avg_latency": "727us",
+    "p99_latency": "1.93ms",
+    "cpu": "3375.7%",
+    "memory": "9.8GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "75.11MB/s",
+    "reconnects": 0,
+    "status_2xx": 56267007,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "minima-ws",
     "language": "C#",
     "rps": 62333664,

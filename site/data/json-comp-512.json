@@ -580,6 +580,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 203733,
+    "avg_latency": "2.49ms",
+    "p99_latency": "9.63ms",
+    "cpu": "6273.9%",
+    "memory": "4.0GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "269.48MB/s",
+    "input_bw": "15.16MB/s",
+    "reconnects": 40804,
+    "status_2xx": 1018665,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "mq-bridge",
     "language": "Rust",
     "rps": 78928,

@@ -423,6 +423,14 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "ktor-ghost": {
+    "dir": "ktor-ghost",
+    "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, Ghost Serializer, JDK 21.",
+    "repo": "https://github.com/ktorio/ktor",
+    "type": "flagship",
+    "engine": "netty",
+    "mode": "tuned"
+  },
   "ktor": {
     "dir": "ktor",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
