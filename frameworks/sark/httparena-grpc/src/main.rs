@@ -37,6 +37,7 @@ fn main() -> io::Result<()> {
     let boot = Boot::from_env(if tls_on { 8443 } else { 8080 });
     let cfg = Cfg {
         bind: boot.bind,
+        readiness: Some(std::net::SocketAddr::from(([0, 0, 0, 0], 8080))),
         max_conn: boot.max_conn,
         backlog: 4096,
         grpc: Config::default(),
