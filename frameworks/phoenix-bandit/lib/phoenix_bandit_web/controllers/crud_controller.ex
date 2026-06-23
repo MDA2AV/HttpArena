@@ -21,8 +21,8 @@ defmodule PhoenixBanditWeb.CrudController do
 
   def list(conn, params) do
     category = Map.get(params, "category", "electronics")
-    page = params |> Map.get("page", "1") |> String.to_integer() |> max(1)
-    limit = params |> Map.get("limit", "10") |> String.to_integer() |> max(1) |> min(50)
+    page = params |> Map.get("page", "1") |> String.to_integer()
+    limit = params |> Map.get("limit", "10") |> String.to_integer()
 
     offset = (page - 1) * limit
 
@@ -80,12 +80,20 @@ defmodule PhoenixBanditWeb.CrudController do
            price,
            quantity
          ]) do
-      {:ok, %Postgrex.Result{rows: [row]}} ->
+      {:ok, %Postgrex.Result{num_rows: 1}} ->
         :ets.delete(:items_cache, to_string(id))
+
+        item = %{
+          id: id,
+          name: name,
+          category: category,
+          price: price,
+          quantity: quantity
+        }
 
         conn
         |> put_status(:created)
-        |> json(row_to_item(row))
+        |> json(item)
 
       _error ->
         send_resp(conn, 500, "")
@@ -104,10 +112,17 @@ defmodule PhoenixBanditWeb.CrudController do
            quantity,
            item_id
          ]) do
-      {:ok, %Postgrex.Result{rows: [row]}} ->
+      {:ok, %Postgrex.Result{num_rows: 1}} ->
         :ets.delete(:items_cache, id)
 
-        json(conn, row_to_item(row))
+        item = %{
+          id: item_id,
+          name: name,
+          price: price,
+          quantity: quantity
+        }
+
+        json(conn, item)
 
       {:ok, %Postgrex.Result{num_rows: 0}} ->
         send_resp(conn, 404, "")
