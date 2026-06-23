@@ -4,7 +4,6 @@ pub mod dataset;
 pub mod h2bench;
 pub mod json;
 pub mod model;
-pub mod static_files;
 
 pub mod tls {
     use shin::sig::SigningKey;
