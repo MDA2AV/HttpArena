@@ -5,14 +5,14 @@ use std::net::SocketAddr;
 use dope::launcher::{Ctx, Launcher};
 use dope::{DriverCfg, DriverConfig, Executor};
 use dope_quic::{Conn, ConnConfig, ConnHandle, Endpoint, Handler, StreamEvent, transport_params};
-use httparena_sark::static_files::StaticEntry;
+use sark::fs::ServeDir;
 use sark_core::http::Field;
 use sark_h3::{Event, Role, StreamId};
 use sark_h3::dope::Session;
 
 struct H3Handler {
     sessions: HashMap<ConnHandle, Session>,
-    statics: &'static HashMap<&'static str, StaticEntry>,
+    serve: &'static ServeDir,
 }
 
 impl H3Handler {
@@ -29,31 +29,52 @@ impl H3Handler {
         stream_id: StreamId,
         path: &[u8],
         accept_encoding: &[u8],
-        statics: &'static HashMap<&'static str, StaticEntry>,
+        serve: &'static ServeDir,
     ) {
         let seg = match path.iter().position(|&b| b == b'?') {
             Some(q) => &path[..q],
             None => path,
         };
         if let Some(file) = seg.strip_prefix(b"/static/") {
-            match std::str::from_utf8(file).ok().and_then(|k| statics.get(k)) {
-                Some(e) => {
-                    let (body, encoding) = e.select(accept_encoding);
-                    Self::write_response(
-                        session,
-                        stream_id,
-                        b"200",
-                        e.content_type.as_bytes(),
-                        encoding.as_bytes(),
-                        body,
-                    );
-                }
-                None => Self::write_response(session, stream_id, b"404", b"text/plain", b"", b""),
-            }
+            let response = serve.serve(file, accept_encoding);
+            let status = response.status();
+            let mut status_buf = [0u8; 3];
+            let code = status.as_u16();
+            status_buf[0] = b'0' + (code / 100 % 10) as u8;
+            status_buf[1] = b'0' + (code / 10 % 10) as u8;
+            status_buf[2] = b'0' + (code % 10) as u8;
+            let ctype = response
+                .headers()
+                .get("content-type")
+                .map(|v| v.as_bytes())
+                .unwrap_or(b"application/octet-stream");
+            let encoding = Self::wire_header_value(response.wire_headers(), b"content-encoding");
+            Self::write_response(
+                session,
+                stream_id,
+                &status_buf,
+                ctype,
+                encoding,
+                response.body(),
+            );
             return;
         }
         let (status, ctype, body) = httparena_sark::h2bench::BenchHandler::route(path);
         Self::write_response(session, stream_id, status, ctype, b"", &body[..]);
+    }
+
+    fn wire_header_value<'a>(wire: &'a [u8], name: &[u8]) -> &'a [u8] {
+        for line in wire.split(|&b| b == b'\n') {
+            let line = line.strip_suffix(b"\r").unwrap_or(line);
+            let Some(colon) = line.iter().position(|&b| b == b':') else {
+                continue;
+            };
+            let (hname, rest) = line.split_at(colon);
+            if hname.eq_ignore_ascii_case(name) {
+                return rest[1..].trim_ascii_start();
+            }
+        }
+        b""
     }
 
     fn write_response(
@@ -96,7 +117,7 @@ impl Handler for H3Handler {
     }
 
     fn on_stream_event(&mut self, conn: &mut Conn, handle: ConnHandle, event: StreamEvent) {
-        let statics = self.statics;
+        let serve = self.serve;
         self.ensure_session(conn, handle);
         let session = self.sessions.get_mut(&handle).expect("session ensured");
         if session.on_quic_stream_event(conn, event).is_err() {
@@ -122,7 +143,7 @@ impl Handler for H3Handler {
                     .find(|f| f.name == b"accept-encoding")
                     .map(|f| f.value.clone())
                     .unwrap_or_default();
-                Self::serve(session, stream_id, &path, &accept_encoding, statics);
+                Self::serve(session, stream_id, &path, &accept_encoding, serve);
             }
         }
         session.flush(conn);
@@ -146,11 +167,7 @@ const RETRY_SECRET: [u8; 32] = [
     0x48, 0xaa, 0x0f, 0xd6, 0x39, 0x7c, 0xe1, 0x54, 0x86, 0x2b, 0x9d, 0x10, 0xcf, 0x63, 0x74, 0xb8,
 ];
 
-fn run_thread(
-    ctx: Ctx,
-    bind: SocketAddr,
-    statics: &'static HashMap<&'static str, StaticEntry>,
-) -> io::Result<()> {
+fn run_thread(ctx: Ctx, bind: SocketAddr, serve: &'static ServeDir) -> io::Result<()> {
     let driver_cfg = DriverCfg::for_quic_udp(4096, 2048).with_cpu_id(Some(ctx.cpu));
     let mut exec = Executor::new(driver_cfg)?;
 
@@ -179,7 +196,7 @@ fn run_thread(
 
     let handler = H3Handler {
         sessions: HashMap::new(),
-        statics,
+        serve,
     };
     let endpoint = {
         let drv = exec.driver_mut();
@@ -193,7 +210,38 @@ fn run_thread(
 fn main() -> io::Result<()> {
     let boot = httparena_sark::boot::Boot::from_env(8443);
     let static_dir = std::env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
-    let statics = StaticEntry::load(&static_dir);
+    let serve: &'static ServeDir = Box::leak(Box::new(
+        ServeDir::new(static_dir).precompressed_br().precompressed_gzip(),
+    ));
     let bind = boot.bind;
-    Launcher::new(boot.cpus).run(|ctx: Ctx| run_thread(ctx, bind, statics))
+
+    let total = boot.cpus.len();
+    let h2_core_count = if total <= 1 {
+        total
+    } else {
+        2usize.min(total - 1)
+    };
+    let h2_cpus: std::collections::HashSet<u16> =
+        boot.cpus.iter().take(h2_core_count).copied().collect();
+
+    let h2_cfg = sark_h2::server::Cfg {
+        bind,
+        max_conn: boot.max_conn,
+        backlog: 4096,
+    };
+    let tls = httparena_sark::tls::config(vec![b"h2".to_vec()]);
+
+    Launcher::new(boot.cpus.clone()).run(move |ctx: Ctx| {
+        if h2_cpus.contains(&ctx.cpu) {
+            sark_h2::server::serve_tls(
+                httparena_sark::h2bench::BenchHandler::with_serve(serve).advertise_h3(true),
+                h2_cfg.clone(),
+                tls.clone(),
+                ctx,
+                None,
+            )
+        } else {
+            run_thread(ctx, bind, serve)
+        }
+    })
 }

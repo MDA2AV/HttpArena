@@ -1,26 +1,34 @@
-use std::collections::HashMap;
-
 use o3::buffer::Owned;
+use sark::fs::ServeDir;
 use sark_h2::ServerRole;
 use sark_h2::conn::{Conn, Event};
 use sark_h2::hpack::Header;
 
 use crate::json::JsonOut;
-use crate::static_files::StaticEntry;
 
 pub struct BenchHandler {
-    statics: Option<&'static HashMap<&'static str, StaticEntry>>,
+    serve: Option<&'static ServeDir>,
+    advertise_h3: bool,
 }
 
 impl BenchHandler {
     pub fn new() -> Self {
-        Self { statics: None }
+        Self {
+            serve: None,
+            advertise_h3: false,
+        }
     }
 
-    pub fn with_statics(statics: &'static HashMap<&'static str, StaticEntry>) -> Self {
+    pub fn with_serve(serve: &'static ServeDir) -> Self {
         Self {
-            statics: Some(statics),
+            serve: Some(serve),
+            advertise_h3: false,
         }
+    }
+
+    pub fn advertise_h3(mut self, on: bool) -> Self {
+        self.advertise_h3 = on;
+        self
     }
 
     pub fn route(path: &[u8]) -> (&'static [u8], &'static [u8], Owned) {
@@ -36,11 +44,37 @@ impl BenchHandler {
         if let Some(rest) = seg.strip_prefix(b"/json/") {
             let count = Self::parse_u64(rest) as usize;
             let m = Self::query_u64(query, b"m");
-            return (b"200", b"application/json", JsonOut::items_body(count, m));
+            return (b"200", b"application/json", JsonOut::items_standard(count, m));
         }
         let mut body = Owned::with_capacity(24);
         body.extend_from_slice(br#"{"error":"not found"}"#);
         (b"404", b"application/json", body)
+    }
+
+    fn status_bytes(code: u16) -> &'static [u8] {
+        match code {
+            200 => b"200",
+            404 => b"404",
+            500 => b"500",
+            _ => b"200",
+        }
+    }
+
+    fn wire_header_value<'a>(wire: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
+        for line in wire.split(|&b| b == b'\n') {
+            let line = line.strip_suffix(b"\r").unwrap_or(line);
+            if line.is_empty() {
+                continue;
+            }
+            let Some(colon) = line.iter().position(|&b| b == b':') else {
+                continue;
+            };
+            let key = line[..colon].trim_ascii();
+            if key.eq_ignore_ascii_case(name) {
+                return Some(line[colon + 1..].trim_ascii());
+            }
+        }
+        None
     }
 
     fn send(
@@ -50,23 +84,33 @@ impl BenchHandler {
         ctype: &[u8],
         content_encoding: &[u8],
         body: &[u8],
+        advertise_h3: bool,
     ) {
         let encoded = !content_encoding.is_empty() && content_encoding != b"identity";
-        let resp_full = [
-            Header {
-                name: b":status",
-                value: status,
-            },
-            Header {
-                name: b"content-type",
-                value: ctype,
-            },
-            Header {
+        let mut resp_buf = [Header {
+            name: b":status",
+            value: status,
+        }; 4];
+        resp_buf[1] = Header {
+            name: b"content-type",
+            value: ctype,
+        };
+        let mut n = 2;
+        if encoded {
+            resp_buf[n] = Header {
                 name: b"content-encoding",
                 value: content_encoding,
-            },
-        ];
-        let resp: &[Header] = if encoded { &resp_full } else { &resp_full[..2] };
+            };
+            n += 1;
+        }
+        if advertise_h3 {
+            resp_buf[n] = Header {
+                name: b"alt-svc",
+                value: b"h3=\":8443\"; ma=86400",
+            };
+            n += 1;
+        }
+        let resp: &[Header] = &resp_buf[..n];
         if conn
             .send_response(stream_id, resp, body.is_empty())
             .is_err()
@@ -137,31 +181,54 @@ impl sark_h2::server::Handler for BenchHandler {
             None => path,
         };
         if let Some(file) = seg.strip_prefix(b"/static/") {
-            let entry = self
-                .statics
-                .and_then(|m| std::str::from_utf8(file).ok().and_then(|k| m.get(k)));
-            match entry {
-                Some(e) => {
+            match self.serve {
+                Some(serve) => {
                     let ae = headers
                         .iter()
                         .find(|h| h.name == b"accept-encoding")
                         .map(|h| h.value.as_slice())
                         .unwrap_or(b"");
-                    let (body, encoding) = e.select(ae);
+                    let resp = serve.serve(file, ae);
+                    let status = Self::status_bytes(resp.status().as_u16());
+                    let ctype = resp
+                        .headers()
+                        .get("content-type")
+                        .map(|v| v.as_bytes())
+                        .unwrap_or(b"application/octet-stream");
+                    let encoding =
+                        Self::wire_header_value(resp.wire_headers(), b"content-encoding")
+                            .unwrap_or(b"");
                     Self::send(
                         conn,
                         stream_id,
-                        b"200",
-                        e.content_type.as_bytes(),
-                        encoding.as_bytes(),
-                        body,
+                        status,
+                        ctype,
+                        encoding,
+                        resp.body(),
+                        self.advertise_h3,
                     );
                 }
-                None => Self::send(conn, stream_id, b"404", b"text/plain", b"", b""),
+                None => Self::send(
+                    conn,
+                    stream_id,
+                    b"404",
+                    b"text/plain",
+                    b"",
+                    b"",
+                    self.advertise_h3,
+                ),
             }
             return;
         }
         let (status, ctype, body) = Self::route(path);
-        Self::send(conn, stream_id, status, ctype, b"", &body);
+        Self::send(
+            conn,
+            stream_id,
+            status,
+            ctype,
+            b"",
+            &body,
+            self.advertise_h3,
+        );
     }
 }

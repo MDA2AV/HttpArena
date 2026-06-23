@@ -3,6 +3,7 @@ use std::io;
 use dope::launcher::{Ctx, Launcher};
 use httparena_sark::boot::Boot;
 use httparena_sark::h2bench::BenchHandler;
+use sark::fs::ServeDir;
 use sark_h2::server::{Cfg, serve_tls};
 
 fn main() -> io::Result<()> {
@@ -14,10 +15,14 @@ fn main() -> io::Result<()> {
     };
     let tls = httparena_sark::tls::config(vec![b"h2".to_vec()]);
     let static_dir = std::env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
-    let statics = httparena_sark::static_files::StaticEntry::load(&static_dir);
+    let serve: &'static ServeDir = Box::leak(Box::new(
+        ServeDir::new(&static_dir)
+            .precompressed_br()
+            .precompressed_gzip(),
+    ));
     Launcher::new(boot.cpus).run(|ctx: Ctx| {
         serve_tls(
-            BenchHandler::with_statics(statics),
+            BenchHandler::with_serve(serve),
             cfg.clone(),
             tls.clone(),
             ctx,

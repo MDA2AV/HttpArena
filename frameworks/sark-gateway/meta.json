@@ -1,7 +1,8 @@
 {
   "display_name": "sark",
   "language": "Rust",
-  "type": "engine",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "io_uring",
   "description": "sark behind a stock Caddy edge (TLS + h2/h3) \u2014 gateway profiles. Caddy terminates TLS and serves static from disk; sark serves dynamic endpoints over TCP. No tokio, no Arc/atomic.",
   "repo": "https://github.com/dope-rs/dope",
@@ -10,5 +11,7 @@
     "gateway-64",
     "gateway-h3"
   ],
-  "maintainers": ["inq"]
+  "maintainers": [
+    "inq"
+  ]
 }

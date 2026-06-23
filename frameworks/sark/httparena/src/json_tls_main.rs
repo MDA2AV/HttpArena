@@ -59,7 +59,7 @@ struct JsonRequest {
 fn json_endpoint(req: JsonRequest, _state: &()) -> JsonResponse {
     JsonResponse {
         status: StatusCode::OK,
-        body: JsonOut::items_body(req.count as usize, req.m),
+        body: JsonOut::items_standard(req.count as usize, req.m),
     }
 }
 
