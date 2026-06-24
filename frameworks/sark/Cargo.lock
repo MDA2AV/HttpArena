@@ -123,18 +123,18 @@ checksum = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593"
 
 [[package]]
 name = "cartel-core"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62977c8fb74c6a081d7c03df05701794398e25ed3222546d3eea5ec72e0d385f"
+checksum = "9f7a2233a372db37fa1fb73d624450f907250a444bc72434798819f3a0e6b6e8"
 dependencies = [
  "dope",
 ]
 
 [[package]]
 name = "cartel-gen"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd9cad117a41fe43cc23e75abec06b002193f9bd191cccc2d05b74a76849dd9"
+checksum = "d4c2f7827a01c8c25a32e9589265c7ecbc84a4e2e6ed048e0bca996c71bd2373"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -143,9 +143,9 @@ dependencies = [
 
 [[package]]
 name = "cartel-pg"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5af71700d823745f9b2f8a6a4ac08a06e1d0587f037931cffe9382cf5b6c273e"
+checksum = "d5220a3f4d87cfc726a82c9e321d078f6159a0e600d3c1cc4c74d904e45f6ff8"
 dependencies = [
  "base64",
  "cartel-core",
@@ -161,9 +161,9 @@ dependencies = [
 
 [[package]]
 name = "cartel-redis"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a4fcfd3f65b47376f5e6a8c2be29cdba458f0b500da9cee6a05ff8e10dbf2cc"
+checksum = "b45158d2b63f68fa8be52870db816f2dade262e17d5be42f0131508226a43868"
 dependencies = [
  "cartel-core",
  "dope",
@@ -267,9 +267,9 @@ dependencies = [
 
 [[package]]
 name = "dope"
-version = "0.3.2"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54841705771182788e576a6c90003fad12c67ce7f102edf80a0ffb07503e6524"
+checksum = "baac2b37af2f8e98ef406cc1768877ead75240a730dd03e6b897e84732f23444"
 dependencies = [
  "io-uring",
  "libc",
@@ -279,9 +279,9 @@ dependencies = [
 
 [[package]]
 name = "dope-extra"
-version = "0.3.2"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe28d0e8381bc7397ff5f7f500ab973b8c4e3f83520f9d5a3677e515eb82b6a3"
+checksum = "b7347f381c6eeb56df575f39d5832450b3027cda2d773abba370e3ab49acda44"
 dependencies = [
  "dope",
  "libc",
@@ -290,9 +290,9 @@ dependencies = [
 
 [[package]]
 name = "dope-gen"
-version = "0.3.2"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f647178d5bedb0cca01c1a83b2a09029bfd619c03d7a7db542f34bdec0a8dc23"
+checksum = "db13c044d6d3e27d20a36a54914f6f5ec8d97203864e29dddb1e6c6a4a2fd222"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -301,9 +301,9 @@ dependencies = [
 
 [[package]]
 name = "dope-quic"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3885a36d3d47626e62649abd0267b1d13870e1e4f53027823db192966d55f9d"
+checksum = "f7714aacb1dfed92e4ba9f3366a73b8d15085921fe42c84ef0ca2d475242233c"
 dependencies = [
  "dope",
  "dope-gen",
@@ -316,9 +316,9 @@ dependencies = [
 
 [[package]]
 name = "dope-tls"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a7c0fd79cb46abdd10dfd7638549cb78c33dedd74619fb12533986a9725bb89"
+checksum = "c6ce39e8af2bd5cbcf41ca3dec55d85b8f5076b7df9eed691fa2da31e2bba355"
 dependencies = [
  "dope",
  "libc",
@@ -353,7 +353,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -917,7 +917,7 @@ dependencies = [
  "getrandom 0.2.17",
  "libc",
  "untrusted 0.9.0",
- "windows-sys",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -939,7 +939,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -959,9 +959,9 @@ checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
 name = "sark"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "780968664667cd04e068f80b8231f2230091ed6dcb5fbb2888ce357c9df7c364"
+checksum = "4c197f45f0fe72899e6a35bf57dff1357ac1582dbbcdcb5734c156f224098862"
 dependencies = [
  "dope",
  "dope-extra",
@@ -980,9 +980,9 @@ dependencies = [
 
 [[package]]
 name = "sark-core"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7c2c6323b0912a387872ac56816abf618460ee4b09da50068ef553342e805f1"
+checksum = "5e0bb59e459417b7b8c007dc297775d167b371ca17d2bb987197c8715c6b8647"
 dependencies = [
  "http",
  "httparse",
@@ -997,9 +997,9 @@ dependencies = [
 
 [[package]]
 name = "sark-gen"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c0d49d5acdcd2990c197fc49780b85825bd333d00f5bc1e2e83064b5cae130b"
+checksum = "8d07e118534ea5252444391d66c29bc24f4611dd8876d7a67beaf25b28e114d0"
 dependencies = [
  "dope",
  "o3",
@@ -1010,9 +1010,9 @@ dependencies = [
 
 [[package]]
 name = "sark-grpc"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0eebcec932905192c7f3f6f2869ba3d5eb3a72cc26afa1ce4663308e0e7d4823"
+checksum = "f36f363c0c06d04c52140cf22cfd7fc6cff6e845f303487511c20e3f862e55ac"
 dependencies = [
  "dope",
  "dope-extra",
@@ -1027,18 +1027,18 @@ dependencies = [
 
 [[package]]
 name = "sark-grpc-build"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc5dbf00bfd8831d72b995c70b07091865ac32c0eeca89d019bb08c17cad9ce3"
+checksum = "01c4a4de19a115f6883c2a27f8b94eb120e644c7f53d608bfa570619ae78f49e"
 dependencies = [
  "prost-build",
 ]
 
 [[package]]
 name = "sark-h2"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97c7d13b8238b85820e5ea3990592f124e2971a91d8fb9c7acc4c07fee23ed4c"
+checksum = "a9c96b2d306bebd0b8973dbab94fc0b289a9b8ede0368b9443b9736dc2f1d8c8"
 dependencies = [
  "dope",
  "dope-extra",
@@ -1052,9 +1052,9 @@ dependencies = [
 
 [[package]]
 name = "sark-h3"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aece88a78b1f3c234831a59a7ab3480b45c458b5eace0b08f371e8392517224a"
+checksum = "1557bc991676badaea7da99401c5407400fa76d2e82545611916bde15eaab543"
 dependencies = [
  "dope-quic",
  "sark",
@@ -1063,9 +1063,9 @@ dependencies = [
 
 [[package]]
 name = "sark-json"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "039e275bad65280821b270dc2102452652488845114529714a77c9e274f10354"
+checksum = "ea2faf78dc31e06f83e338a70a01264430061b5071b7e387b89502a5ce633794"
 dependencies = [
  "http",
  "o3",
@@ -1074,9 +1074,9 @@ dependencies = [
 
 [[package]]
 name = "sark-ws"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4572bd6a65fdecd25ee90d6c5ac810c7a75804fb2065948502b6aabec7af3c7f"
+checksum = "6fcc1d0546df89e0b4f8052041014c9890143f7f6e37cdb0dd4ba052540d046f"
 dependencies = [
  "dope",
  "dope-extra",
@@ -1154,9 +1154,9 @@ dependencies = [
 
 [[package]]
 name = "shin"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bec7f6ceecc666e3eaa24a6abafef71deed4e4c1427ed03ebf40d613a4c1158"
+checksum = "f0b21d2e2065583b7ce4bd647cf610ef2b3c372180736128c0d8485997a5d297"
 dependencies = [
  "ring",
  "subtle",
@@ -1216,7 +1216,7 @@ dependencies = [
  "fastrand",
  "once_cell",
  "rustix",
- "windows-sys",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1380,12 +1380,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows-link"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+
+[[package]]
 name = "windows-sys"
 version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
 dependencies = [
  "windows-targets",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.61.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
+dependencies = [
+ "windows-link",
 ]
 
 [[package]]
