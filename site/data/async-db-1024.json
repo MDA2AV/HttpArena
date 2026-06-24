@@ -598,6 +598,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 113590,
+    "avg_latency": "8.61ms",
+    "p99_latency": "11.20ms",
+    "cpu": "5318.7%",
+    "memory": "12.2GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "429.45MB/s",
+    "input_bw": "7.58MB/s",
+    "reconnects": 44999,
+    "status_2xx": 1135907,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "mark",
     "language": "PHP",
     "rps": 205266,

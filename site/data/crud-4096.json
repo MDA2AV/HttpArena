@@ -200,6 +200,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 187905,
+    "avg_latency": "21.80ms",
+    "p99_latency": "38.50ms",
+    "cpu": "5354.4%",
+    "memory": "5.7GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "57.73MB/s",
+    "input_bw": "16.13MB/s",
+    "reconnects": 11435,
+    "status_2xx": 2818580,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "phoenix-bandit",
     "language": "Elixir",
     "rps": 340472,

@@ -308,6 +308,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor-ghost",
+    "language": "Kotlin",
+    "rps": 973072,
+    "avg_latency": "4.16ms",
+    "p99_latency": "9.46ms",
+    "cpu": "3435.1%",
+    "memory": "3.4GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "6.59MB/s",
+    "reconnects": 0,
+    "status_2xx": 4865362,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "lute",
     "language": "Luau",
     "rps": 2999367,

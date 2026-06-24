@@ -1,0 +1,23 @@
+[versions]
+exposed = "1.2.0"
+kotlin = "2.3.21"
+
+[libraries]
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.15" }
+netty-native-epoll = { module = "io.netty:netty-transport-native-epoll", version = "4.2.14.Final" }
+
+# Ghost Serializer
+ghost-serialization = { module = "com.ghostserializer:ghost-serialization", version = "1.2.2" }
+ghost-compiler = { module = "com.ghostserializer:ghost-compiler", version = "1.2.2" }
+
+# Database
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
+hikaricp = { module = "com.zaxxer:HikariCP", version = "6.2.1" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-ksp = { id = "com.google.devtools.ksp", version = "2.3.9" }
