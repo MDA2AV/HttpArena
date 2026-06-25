@@ -38,17 +38,5 @@ name = "httparena-sark-ws"
 path = "src/ws_main.rs"
 
 [[bin]]
-name = "httparena-sark-h2c"
-path = "src/h2c_main.rs"
-
-[[bin]]
-name = "httparena-sark-json-tls"
-path = "src/json_tls_main.rs"
-
-[[bin]]
-name = "httparena-sark-h2"
-path = "src/h2_tls_main.rs"
-
-[[bin]]
 name = "httparena-sark-h3"
 path = "src/h3_main.rs"

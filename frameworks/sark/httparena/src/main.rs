@@ -1,3 +1,35 @@
+// Unified multi-protocol dispatcher — Phase 1 (distinct ports, NO demux).
+//
+// One binary, one `Executor` per core, serving the four distinct-port TCP
+// protocols as separate `#[manifold]` listeners that SHARE one provided pool:
+//   - h1        on 8080  (Identity)
+//   - json-tls  on 8081  (h1 over TLS)
+//   - h2c       on 8082  (Identity)
+//   - h2        on 8443  (TLS)
+//
+// This collapses four leaderboard entries (sark / sark-json-tls / sark-h2c /
+// sark-h2) into one. ws / grpc / grpc-tls / gateway / production / h3 are NOT in
+// Phase 1 — they need first-byte / per-stream demux (Phase 2).
+//
+// We do NOT call sark's `serve()` / `serve_tls()` wrappers: each builds its own
+// `Executor` (→ its own per-thread provided pool), which is exactly the memory
+// multiplication this merge removes. Instead we inline the three steps every
+// wrapper performs — build the Executor once, then call `Listener::open_in`
+// four times against the one `exec.driver_mut()` — mirroring `main.rs` and
+// `json_tls_main.rs`.
+//
+// Manifold-ID namespace (must be unique within the one Dispatcher; the derive
+// macro emits a compile-time uniqueness check):
+//   0  pg        Connector  (FORCED: `cartel_pg::PgHolding` is `Connector<0,..>`)
+//   1  p8080     h1 listener
+//   2  json_tls  json-tls (h1+TLS) listener
+//   3  timer     Timer      (FORCED: `sark::timer::SARK_TIMER_ID == 3`)
+//   4  h2c       h2c listener
+//   5  p8443     h2 (TLS) listener
+//   6  date_h1   Updater    (drives the h1 app's date Stamp)
+//   7  date_tls  Updater    (drives the json-tls app's date Stamp)
+//   8  redis     Connector  (id is user-chosen; free)
+
 use std::io;
 use std::marker::PhantomData;
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -9,32 +41,39 @@ use dope::launcher::{self, Launcher};
 use dope::manifold::connector::Connector;
 use dope::manifold::connector::source::Static;
 use dope::manifold::env::Bundle;
-use dope::manifold::listener::{Listener, config};
-use dope::runtime::profile::Production;
+use dope::manifold::listener::{Application, Listener, config};
+use dope::runtime::profile::{Production, Throughput};
 use dope::transport::Tcp;
 use dope::wire::Identity;
 use dope::{DriverCfg, DriverConfig, Executor};
-use dope_extra::Trigger;
+use dope_tls::{Endpoint, Tls};
 use http::StatusCode;
 use httparena_sark::boot::Boot;
 use httparena_sark::cache::ItemCache;
 use httparena_sark::dataset::DATASET;
+use httparena_sark::h2bench::BenchHandler;
+use httparena_sark::json::JsonOut;
 use httparena_sark::model::{Db, Fortune, ItemRow};
 use o3::buffer::{Owned, Shared};
 use sark::date::{DateHost, Updater};
 use sark::fs::ServeDir;
 use sark::json::{Encode, Json, JsonDecode, JsonEncode};
 use sark::request::BodyLen;
-use sark::timer::TimerHost;
-use sark::{Application, ServerCfg};
-use sark_core::http::Response;
-use sark_core::http::LocalFrameBytes;
+use sark::timer::{SARK_TIMER_ID, TimerHost};
+use sark::ServerCfg;
 use sark_core::http::compress::Gzip;
+use sark_core::http::{LocalFrameBytes, Response};
+use sark_h2::server::App as H2App;
 
-type Env = Bundle<Tcp, Identity, Production>;
-type PgClient<'d> = PgHolding<'d, Db, Static<Tcp>, Env>;
-type PgConnector = Connector<0, cartel_pg::Session<Db>, Static<Tcp>, Env>;
-type RedisConnector = Connector<4, cartel_redis::Session, Static<Tcp>, Env>;
+// ===== Env aliases =====
+type IdProd = Bundle<Tcp, Identity, Production>; // h1 (carries the DB/cache workload)
+type TlsProd = Bundle<Tcp, Tls, Production>; // json-tls (h1 over TLS)
+type IdThru = Bundle<Tcp, Identity, Throughput>; // h2c
+type TlsThru = Bundle<Tcp, Tls, Throughput>; // h2 (TLS)
+
+type PgClient<'d> = PgHolding<'d, Db, Static<Tcp>, IdProd>;
+type PgConnector = Connector<0, cartel_pg::Session<Db>, Static<Tcp>, IdProd>;
+type RedisConnector = Connector<8, cartel_redis::Session, Static<Tcp>, IdProd>;
 type RedisClient<'d> = dope::fiber::Holding<'d, RedisConnector>;
 
 #[derive(Clone)]
@@ -661,30 +700,116 @@ sark_gen::define_route! {
     }
 }
 
-#[pin_project::pin_project]
+// ===== json-tls (8081) route set — sync, no DB. Mirrors json_tls_main.rs. =====
+
+#[sark_gen::response(raw)]
+#[header("content-type", "text/plain")]
+struct TlsBaselineResponse {
+    status: StatusCode,
+    body: Owned,
+}
+
+#[sark_gen::request(ordered)]
+struct TlsBaselineGet {
+    #[query("a", default = "0")]
+    a: u64,
+    #[query("b", default = "0")]
+    b: u64,
+}
+
+#[sark_gen::handler]
+fn tls_baseline_get(req: TlsBaselineGet, _state: &()) -> TlsBaselineResponse {
+    TlsBaselineResponse {
+        status: StatusCode::OK,
+        body: JsonOut::sum_body(req.a, req.b),
+    }
+}
+
+#[sark_gen::response(raw)]
+#[header("content-type", "application/json")]
+struct TlsJsonResponse {
+    status: StatusCode,
+    body: Owned,
+}
+
+#[sark_gen::request(ordered)]
+struct TlsJsonRequest {
+    #[path("count", default = "1")]
+    count: u64,
+    #[query("m", default = "1")]
+    m: u64,
+}
+
+#[sark_gen::handler]
+fn tls_json_endpoint(req: TlsJsonRequest, _state: &()) -> TlsJsonResponse {
+    TlsJsonResponse {
+        status: StatusCode::OK,
+        body: JsonOut::items_standard(req.count as usize, req.m),
+    }
+}
+
+sark_gen::define_route! {
+    TlsApp: () => {
+        GET "/baseline2" => tls_baseline_get,
+        GET "/json/:count" => tls_json_endpoint,
+    }
+}
+
+// ===== The unified Dispatcher: four listeners + date/timer/pg/redis. =====
+
+#[pin_project::pin_project(!Unpin)]
 #[derive(dope_gen::Dispatcher)]
-struct Dispatcher<'d, P>
+struct Unified<'d, H1, TA>
 where
-    P: Application<Conn = sark::dispatch::conn_state::ConnState, Wire = dope::wire::Identity>
+    H1: Application<Conn = sark::dispatch::conn_state::ConnState, Wire = Identity>
         + DateHost
         + TimerHost<'d>,
+    TA: Application<Wire = Tls> + DateHost + TimerHost<'d>,
 {
+    // 1 — h1 (8080), the DB/cache workload; date_h1/timer/pg/redis hang off it.
     #[pin]
     #[manifold(optional)]
-    http: Option<Listener<1, P, Env>>,
+    p8080: Option<Listener<1, H1, IdProd>>,
+    // 2 — json-tls (8081), h1 over TLS.
+    #[pin]
+    #[manifold(optional)]
+    json_tls: Option<Listener<2, TA, TlsProd>>,
+    // 4 — h2c (8082), prior-knowledge cleartext HTTP/2.
+    #[pin]
+    #[manifold(optional)]
+    h2c: Option<Listener<4, H2App<BenchHandler, Identity>, IdThru>>,
+    // 5 — h2 (8443), HTTP/2 over TLS.
+    #[pin]
+    #[manifold(optional)]
+    p8443: Option<Listener<5, H2App<BenchHandler, Tls>, TlsThru>>,
+    // 6 — date Updater for the h1 app's Stamp.
     #[pin]
     #[manifold]
-    date: Updater<2>,
+    date_h1: Updater<6>,
+    // 7 — date Updater for the json-tls app's Stamp.
+    #[pin]
+    #[manifold]
+    date_tls: Updater<7>,
+    // 0 — pg Connector (id forced to 0 by cartel_pg::PgHolding).
     #[pin]
     #[manifold]
     pg: PgConnector,
+    // 3 — Timer (id forced to 3 by sark::timer::SARK_TIMER_ID); shared by both h1-family apps.
     #[pin]
     #[manifold]
-    timer: dope::manifold::timer::Timer<{ sark::timer::SARK_TIMER_ID }>,
+    timer: dope::manifold::timer::Timer<{ SARK_TIMER_ID }>,
+    // 8 — redis Connector (id user-chosen).
     #[pin]
     #[manifold(optional)]
     redis: Option<RedisConnector>,
     _ph: PhantomData<&'d ()>,
+}
+
+struct PortArgs {
+    h1_bind: SocketAddr,
+    json_tls_bind: SocketAddr,
+    h2c_bind: SocketAddr,
+    h2_bind: SocketAddr,
 }
 
 struct PgArgs {
@@ -695,21 +820,34 @@ struct PgArgs {
     serve: &'static ServeDir,
 }
 
+fn listener_cfg(bind: SocketAddr, max_conn: usize) -> config::Config<Tcp> {
+    config::Config::<Tcp> {
+        max_conn,
+        bind,
+        backlog: 4096,
+        stream_opts: Default::default(),
+        listener_opts: dope::transport::config::tcp::ListenerOpts {
+            reuseport: dope::transport::config::SocketToggle::Enabled,
+            per_ip_cap: Some((max_conn / 2) as u32),
+            ..Default::default()
+        },
+    }
+}
+
 fn run_thread(
     pg: PgArgs,
+    ports: PortArgs,
     cfg: ServerCfg,
     ctx: launcher::Ctx,
-    shutdown: Option<&Trigger>,
 ) -> io::Result<()> {
+    // One Executor per core → one Driver → ONE provided recv pool shared by all
+    // four listeners. This is the whole memory point of the merge.
     let driver_cfg =
         DriverCfg::for_tcp_profile::<Production>(cfg.max_conn).with_cpu_id(Some(ctx.cpu));
     let mut exec = Executor::new(driver_cfg)?;
 
     let pg_conn = {
         let driver = exec.driver_mut();
-        if let Some(trigger) = shutdown {
-            trigger.register(driver);
-        }
         Connector::new(
             cartel_pg::Session::new(pg.config),
             Static::<Tcp>::new(vec![pg.addr], Duration::from_millis(500)),
@@ -726,9 +864,14 @@ fn run_thread(
             driver,
         )
     });
-    let mut app = core::pin::pin!(Dispatcher::<_> {
-        http: None::<Listener<1, _, Env>>,
-        date: Updater::<2>::new(),
+
+    let mut app = core::pin::pin!(Unified::<'_, _, _> {
+        p8080: None::<Listener<1, _, IdProd>>,
+        json_tls: None::<Listener<2, _, TlsProd>>,
+        h2c: None::<Listener<4, H2App<BenchHandler, Identity>, IdThru>>,
+        p8443: None::<Listener<5, H2App<BenchHandler, Tls>, TlsThru>>,
+        date_h1: Updater::<6>::new(),
+        date_tls: Updater::<7>::new(),
         pg: pg_conn,
         timer: dope::manifold::timer::Timer::new(),
         redis: redis_conn,
@@ -745,35 +888,80 @@ fn run_thread(
         cache,
         serve: pg.serve,
     }));
-    let server = http_arena::new(app_state);
-    let listener_cfg = config::Config::<Tcp> {
-        max_conn: cfg.max_conn,
-        bind: cfg.bind,
-        backlog: cfg.backlog,
-        stream_opts: dope::transport::config::tcp::StreamOpts::default(),
-        listener_opts: dope::transport::config::tcp::ListenerOpts {
-            reuseport: dope::transport::config::SocketToggle::Enabled,
-            ..Default::default()
-        },
-    };
+
+    // ---- 8080: h1 (Identity) ----
     let mut http = {
         let driver = exec.driver_mut();
-        Listener::<1, _, Env>::open_in(server, listener_cfg, driver)?
+        Listener::<1, _, IdProd>::open_in(
+            http_arena::new::<Identity>(app_state),
+            listener_cfg(ports.h1_bind, cfg.max_conn),
+            driver,
+        )?
     };
-    let stamp = {
+    let h1_stamp = {
         let handler = http.handler_mut();
+        if !handler.is_timer_bound() {
+            handler.bind_timer(timer_borrow.clone());
+        }
+        std::ptr::NonNull::from(handler.date_stamp())
+    };
+
+    // ---- 8081: json-tls (h1 over TLS) ----
+    let mut json_tls = {
+        let driver = exec.driver_mut();
+        Listener::<2, _, TlsProd>::open_in(
+            tls_app::new::<Tls>(&()),
+            listener_cfg(ports.json_tls_bind, cfg.max_conn),
+            driver,
+        )?
+    };
+    json_tls.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+        vec![b"http/1.1".to_vec()],
+    ))));
+    let tls_stamp = {
+        let handler = json_tls.handler_mut();
         if !handler.is_timer_bound() {
             handler.bind_timer(timer_borrow);
         }
         std::ptr::NonNull::from(handler.date_stamp())
     };
+
+    // ---- 8082: h2c (prior-knowledge cleartext HTTP/2) ----
+    let h2c = {
+        let driver = exec.driver_mut();
+        Listener::<4, H2App<BenchHandler, Identity>, IdThru>::open_in(
+            H2App::new(BenchHandler::new()),
+            listener_cfg(ports.h2c_bind, cfg.max_conn),
+            driver,
+        )?
+    };
+
+    // ---- 8443: h2 (HTTP/2 over TLS), with static file serving + h3 advert ----
+    let mut h2 = {
+        let driver = exec.driver_mut();
+        Listener::<5, H2App<BenchHandler, Tls>, TlsThru>::open_in(
+            H2App::new(BenchHandler::with_serve(pg.serve).advertise_h3(true)),
+            listener_cfg(ports.h2_bind, cfg.max_conn),
+            driver,
+        )?
+    };
+    h2.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+        vec![b"h2".to_vec()],
+    ))));
+
     let mut init = app.as_mut().project();
-    init.date.as_mut().get_mut().bind(stamp);
-    init.http.set(Some(http));
+    init.date_h1.as_mut().get_mut().bind(h1_stamp);
+    init.date_tls.as_mut().get_mut().bind(tls_stamp);
+    init.p8080.set(Some(http));
+    init.json_tls.set(Some(json_tls));
+    init.h2c.set(Some(h2c));
+    init.p8443.set(Some(h2));
     exec.run(app.as_mut())
 }
 
 fn main() -> io::Result<()> {
+    // h1 default port 8080; cpus/max_conn derived once and shared across the
+    // four listeners (they all run on the one Executor per core).
     let boot = Boot::from_env(8080);
     let core_count = boot.cpus.len();
     let pg_pool: usize = (std::env::var("DATABASE_MAX_CONN")
@@ -794,6 +982,15 @@ fn main() -> io::Result<()> {
             .precompressed_gzip(),
     ));
 
+    // h1 bind tracks boot (env-overridable); the other three use fixed default
+    // ports, matching the per-bin defaults (json_tls_main's ready_bind pattern).
+    let ports = PortArgs {
+        h1_bind: boot.bind,
+        json_tls_bind: SocketAddr::from(([0, 0, 0, 0], 8081)),
+        h2c_bind: SocketAddr::from(([0, 0, 0, 0], 8082)),
+        h2_bind: SocketAddr::from(([0, 0, 0, 0], 8443)),
+    };
+
     let cfg = ServerCfg {
         bind: boot.bind,
         max_conn: boot.max_conn,
@@ -808,7 +1005,13 @@ fn main() -> io::Result<()> {
             redis_addr,
             serve,
         };
-        run_thread(pg, cfg.clone(), ctx, None)
+        let ports = PortArgs {
+            h1_bind: ports.h1_bind,
+            json_tls_bind: ports.json_tls_bind,
+            h2c_bind: ports.h2c_bind,
+            h2_bind: ports.h2_bind,
+        };
+        run_thread(pg, ports, cfg.clone(), ctx)
     })
 }
 

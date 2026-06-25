@@ -18,7 +18,12 @@
     "crud",
     "fortunes",
     "api-4",
-    "api-16"
+    "api-16",
+    "json-tls",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h2",
+    "static-h2"
   ],
   "maintainers": [
     "inq"
