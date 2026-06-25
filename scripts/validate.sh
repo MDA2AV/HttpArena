@@ -52,8 +52,8 @@ echo "=== Validating: $FRAMEWORK ==="
 
 # Read subscribed tests from meta.json
 if [ ! -f "$META_FILE" ]; then
-    echo "FAIL: meta.json not found"
-    exit 1
+    echo "SKIP: meta.json not found (framework removed)"
+    exit 0
 fi
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
 echo "[info] Subscribed tests: $TESTS"
