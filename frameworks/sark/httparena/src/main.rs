@@ -1,34 +1,3 @@
-// Unified multi-protocol dispatcher — Phase 1 (distinct ports, NO demux).
-//
-// One binary, one `Executor` per core, serving the four distinct-port TCP
-// protocols as separate `#[manifold]` listeners that SHARE one provided pool:
-//   - h1        on 8080  (Identity)
-//   - json-tls  on 8081  (h1 over TLS)
-//   - h2c       on 8082  (Identity)
-//   - h2        on 8443  (TLS)
-//
-// This collapses four leaderboard entries (sark / sark-json-tls / sark-h2c /
-// sark-h2) into one. ws / grpc / grpc-tls / gateway / production / h3 are NOT in
-// Phase 1 — they need first-byte / per-stream demux (Phase 2).
-//
-// We do NOT call sark's `serve()` / `serve_tls()` wrappers: each builds its own
-// `Executor` (→ its own per-thread provided pool), which is exactly the memory
-// multiplication this merge removes. Instead we inline the three steps every
-// wrapper performs — build the Executor once, then call `Listener::open_in`
-// four times against the one `exec.driver_mut()` — mirroring `main.rs` and
-// `json_tls_main.rs`.
-//
-// Manifold-ID namespace (must be unique within the one Dispatcher; the derive
-// macro emits a compile-time uniqueness check):
-//   0  pg        Connector  (FORCED: `cartel_pg::PgHolding` is `Connector<0,..>`)
-//   1  p8080     h1 listener
-//   2  json_tls  json-tls (h1+TLS) listener
-//   3  timer     Timer      (FORCED: `sark::timer::SARK_TIMER_ID == 3`)
-//   4  h2c       h2c listener
-//   5  p8443     h2 (TLS) listener
-//   6  date_h1   Updater    (drives the h1 app's date Stamp)
-//   7  date_tls  Updater    (drives the json-tls app's date Stamp)
-//   8  redis     Connector  (id is user-chosen; free)
 
 use std::io;
 use std::marker::PhantomData;
@@ -65,16 +34,20 @@ use sark_core::http::compress::Gzip;
 use sark_core::http::{LocalFrameBytes, Response};
 use sark_h2::server::App as H2App;
 
-// ===== Env aliases =====
-type IdProd = Bundle<Tcp, Identity, Production>; // h1 (carries the DB/cache workload)
-type TlsProd = Bundle<Tcp, Tls, Production>; // json-tls (h1 over TLS)
-type IdThru = Bundle<Tcp, Identity, Throughput>; // h2c
-type TlsThru = Bundle<Tcp, Tls, Throughput>; // h2 (TLS)
+type IdProd = Bundle<Tcp, Identity, Production>;
+type TlsProd = Bundle<Tcp, Tls, Production>;
+type IdThru = Bundle<Tcp, Identity, Throughput>;
+type TlsThru = Bundle<Tcp, Tls, Throughput>;
 
 type PgClient<'d> = PgHolding<'d, Db, Static<Tcp>, IdProd>;
 type PgConnector = Connector<0, cartel_pg::Session<Db>, Static<Tcp>, IdProd>;
 type RedisConnector = Connector<8, cartel_redis::Session, Static<Tcp>, IdProd>;
 type RedisClient<'d> = dope::fiber::Holding<'d, RedisConnector>;
+
+const FILES_ID: u8 = 9;
+const FILES_SLOTS: usize = 256;
+type FilesManifold = dope::manifold::file::Files<FILES_ID, FILES_SLOTS>;
+type FilesClient<'d> = dope::fiber::Holding<'d, FilesManifold>;
 
 #[derive(Clone)]
 struct AppState<'d> {
@@ -82,6 +55,15 @@ struct AppState<'d> {
     redis: Option<RedisClient<'d>>,
     cache: &'static ItemCache,
     serve: &'static ServeDir,
+    files: FilesClient<'d>,
+    driver: *mut dope::Driver,
+}
+
+impl AppState<'_> {
+    fn driver(&self) -> &mut dope::Driver {
+        // SAFETY: thread-per-core; the per-core Driver outlives every fiber and no other
+        unsafe { &mut *self.driver }
+    }
 }
 
 struct CacheKey(Owned);
@@ -626,10 +608,16 @@ struct StaticFileRequest {
 }
 
 #[sark_gen::handler]
-fn static_endpoint(req: StaticFileRequest, state: &AppState<'_>) -> Response {
+async fn static_endpoint(req: StaticFileRequest, state: &AppState<'_>) -> Response {
     state
         .serve
-        .serve(req.file.as_bytes(), req.accept_encoding.as_bytes())
+        .serve_async(
+            state.files,
+            state.driver(),
+            req.file.as_bytes(),
+            req.accept_encoding.as_bytes(),
+        )
+        .await
 }
 
 #[sark_gen::request(ordered)]
@@ -691,7 +679,7 @@ sark_gen::define_route! {
         POST "/crud/items" => async crud_create,
         PUT "/crud/items/:id" => async crud_update,
         POST "/upload" => upload_endpoint,
-        GET "/static/:file" => static_endpoint,
+        GET "/static/:file" => async static_endpoint,
         GET "/public/baseline" => baseline_get,
         GET "/public/json/:count" => json_endpoint,
         GET "/api/items/:id" => async crud_get,
@@ -700,7 +688,6 @@ sark_gen::define_route! {
     }
 }
 
-// ===== json-tls (8081) route set — sync, no DB. Mirrors json_tls_main.rs. =====
 
 #[sark_gen::response(raw)]
 #[header("content-type", "text/plain")]
@@ -755,7 +742,6 @@ sark_gen::define_route! {
     }
 }
 
-// ===== The unified Dispatcher: four listeners + date/timer/pg/redis. =====
 
 #[pin_project::pin_project(!Unpin)]
 #[derive(dope_gen::Dispatcher)]
@@ -766,42 +752,36 @@ where
         + TimerHost<'d>,
     TA: Application<Wire = Tls> + DateHost + TimerHost<'d>,
 {
-    // 1 — h1 (8080), the DB/cache workload; date_h1/timer/pg/redis hang off it.
     #[pin]
     #[manifold(optional)]
     p8080: Option<Listener<1, H1, IdProd>>,
-    // 2 — json-tls (8081), h1 over TLS.
     #[pin]
     #[manifold(optional)]
     json_tls: Option<Listener<2, TA, TlsProd>>,
-    // 4 — h2c (8082), prior-knowledge cleartext HTTP/2.
     #[pin]
     #[manifold(optional)]
     h2c: Option<Listener<4, H2App<BenchHandler, Identity>, IdThru>>,
-    // 5 — h2 (8443), HTTP/2 over TLS.
     #[pin]
     #[manifold(optional)]
     p8443: Option<Listener<5, H2App<BenchHandler, Tls>, TlsThru>>,
-    // 6 — date Updater for the h1 app's Stamp.
     #[pin]
     #[manifold]
     date_h1: Updater<6>,
-    // 7 — date Updater for the json-tls app's Stamp.
     #[pin]
     #[manifold]
     date_tls: Updater<7>,
-    // 0 — pg Connector (id forced to 0 by cartel_pg::PgHolding).
     #[pin]
     #[manifold]
     pg: PgConnector,
-    // 3 — Timer (id forced to 3 by sark::timer::SARK_TIMER_ID); shared by both h1-family apps.
     #[pin]
     #[manifold]
     timer: dope::manifold::timer::Timer<{ SARK_TIMER_ID }>,
-    // 8 — redis Connector (id user-chosen).
     #[pin]
     #[manifold(optional)]
     redis: Option<RedisConnector>,
+    #[pin]
+    #[manifold]
+    files: FilesManifold,
     _ph: PhantomData<&'d ()>,
 }
 
@@ -840,8 +820,6 @@ fn run_thread(
     cfg: ServerCfg,
     ctx: launcher::Ctx,
 ) -> io::Result<()> {
-    // One Executor per core → one Driver → ONE provided recv pool shared by all
-    // four listeners. This is the whole memory point of the merge.
     let driver_cfg =
         DriverCfg::for_tcp_profile::<Production>(cfg.max_conn).with_cpu_id(Some(ctx.cpu));
     let mut exec = Executor::new(driver_cfg)?;
@@ -875,11 +853,14 @@ fn run_thread(
         pg: pg_conn,
         timer: dope::manifold::timer::Timer::new(),
         redis: redis_conn,
+        files: FilesManifold::default(),
         _ph: PhantomData,
     });
     let client = app.as_mut().pg_handle();
     let redis_client = app.as_mut().redis_handle();
     let timer_borrow = app.as_mut().timer_handle();
+    let files_client = app.as_mut().files_handle();
+    let driver_ptr: *mut dope::Driver = exec.driver_mut();
 
     let cache: &'static ItemCache = Box::leak(Box::new(ItemCache::new(Duration::from_millis(200))));
     let app_state: &AppState<'_> = Box::leak(Box::new(AppState {
@@ -887,9 +868,10 @@ fn run_thread(
         redis: redis_client,
         cache,
         serve: pg.serve,
+        files: files_client,
+        driver: driver_ptr,
     }));
 
-    // ---- 8080: h1 (Identity) ----
     let mut http = {
         let driver = exec.driver_mut();
         Listener::<1, _, IdProd>::open_in(
@@ -906,7 +888,6 @@ fn run_thread(
         std::ptr::NonNull::from(handler.date_stamp())
     };
 
-    // ---- 8081: json-tls (h1 over TLS) ----
     let mut json_tls = {
         let driver = exec.driver_mut();
         Listener::<2, _, TlsProd>::open_in(
@@ -926,7 +907,6 @@ fn run_thread(
         std::ptr::NonNull::from(handler.date_stamp())
     };
 
-    // ---- 8082: h2c (prior-knowledge cleartext HTTP/2) ----
     let h2c = {
         let driver = exec.driver_mut();
         Listener::<4, H2App<BenchHandler, Identity>, IdThru>::open_in(
@@ -936,7 +916,6 @@ fn run_thread(
         )?
     };
 
-    // ---- 8443: h2 (HTTP/2 over TLS), with static file serving + h3 advert ----
     let mut h2 = {
         let driver = exec.driver_mut();
         Listener::<5, H2App<BenchHandler, Tls>, TlsThru>::open_in(
@@ -960,8 +939,6 @@ fn run_thread(
 }
 
 fn main() -> io::Result<()> {
-    // h1 default port 8080; cpus/max_conn derived once and shared across the
-    // four listeners (they all run on the one Executor per core).
     let boot = Boot::from_env(8080);
     let core_count = boot.cpus.len();
     let pg_pool: usize = (std::env::var("DATABASE_MAX_CONN")
@@ -982,8 +959,6 @@ fn main() -> io::Result<()> {
             .precompressed_gzip(),
     ));
 
-    // h1 bind tracks boot (env-overridable); the other three use fixed default
-    // ports, matching the per-bin defaults (json_tls_main's ready_bind pattern).
     let ports = PortArgs {
         h1_bind: boot.bind,
         json_tls_bind: SocketAddr::from(([0, 0, 0, 0], 8081)),
