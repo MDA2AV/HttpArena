@@ -1,0 +1,2 @@
+[iris-ha-gw] listening on :8080 dataset=/data/dataset.json(50 items) static=/data/static(ok)
+[iris-gw] reuseport CBPF: cpu-affine steering (128)
