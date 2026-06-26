@@ -16,6 +16,8 @@ sark-gen.workspace = true
 sark-ws.workspace = true
 sark-h2.workspace = true
 sark-h3.workspace = true
+sark-grpc.workspace = true
+prost.workspace = true
 cartel-pg.workspace = true
 cartel-redis.workspace = true
 cartel-gen.workspace = true
@@ -24,6 +26,9 @@ shin.workspace = true
 http.workspace = true
 rcgen.workspace = true
 pin-project.workspace = true
+
+[build-dependencies]
+sark-grpc-build.workspace = true
 
 [lib]
 name = "httparena_sark"

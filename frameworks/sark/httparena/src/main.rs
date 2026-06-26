@@ -1,4 +1,3 @@
-
 use std::io;
 use std::marker::PhantomData;
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -20,24 +19,41 @@ use http::StatusCode;
 use httparena_sark::boot::Boot;
 use httparena_sark::cache::ItemCache;
 use httparena_sark::dataset::DATASET;
+use httparena_sark::demux8080::{Demux8080App, Demux8080Conn};
+use httparena_sark::grpcbench::{BenchSvc, benchmark_service_routes};
 use httparena_sark::h2bench::BenchHandler;
 use httparena_sark::json::JsonOut;
 use httparena_sark::model::{Db, Fortune, ItemRow};
 use o3::buffer::{Owned, Shared};
+use sark::ServerCfg;
 use sark::date::{DateHost, Updater};
 use sark::fs::ServeDir;
 use sark::json::{Encode, Json, JsonDecode, JsonEncode, Writer};
 use sark::request::BodyLen;
 use sark::timer::{DEFAULT_HEAD_TIMEOUT, SARK_TIMER_ID, TimerHost};
-use sark::ServerCfg;
 use sark_core::http::compress::Gzip;
 use sark_core::http::{LocalFrameBytes, Response};
+use sark_grpc::server::App as GrpcApp;
 use sark_h2::server::App as H2App;
+use sark_ws::server::{App as WsApp, Message as WsMessage, Response as WsResponse};
 
 type IdProd = Bundle<Tcp, Identity, Production>;
 type TlsProd = Bundle<Tcp, Tls, Production>;
 type IdThru = Bundle<Tcp, Identity, Throughput>;
 type TlsThru = Bundle<Tcp, Tls, Throughput>;
+
+type WsEcho = for<'a, 'b, 'c> fn(WsMessage<'a>, &'b mut WsResponse<'c>);
+
+fn ws_echo(msg: WsMessage<'_>, response: &mut WsResponse<'_>) {
+    match msg {
+        WsMessage::Text(s) => {
+            response.text(s);
+        }
+        WsMessage::Binary(b) => {
+            response.binary(b);
+        }
+    }
+}
 
 type PgClient<'d> = PgHolding<'d, Db, Static<Tcp>, IdProd>;
 type PgConnector = Connector<0, cartel_pg::Session<Db>, Static<Tcp>, IdProd>;
@@ -101,7 +117,11 @@ fn u64_owned(n: u64) -> Owned {
 fn accepts_gzip(accept_encoding: &[u8]) -> bool {
     accept_encoding.split(|&b| b == b',').any(|part| {
         let part = part.trim_ascii();
-        let coding = part.split(|&b| b == b';').next().unwrap_or(b"").trim_ascii();
+        let coding = part
+            .split(|&b| b == b';')
+            .next()
+            .unwrap_or(b"")
+            .trim_ascii();
         coding.eq_ignore_ascii_case(b"gzip")
     })
 }
@@ -501,27 +521,29 @@ struct CrudCreateRequest {
 
 #[sark_gen::handler]
 async fn crud_create(req: CrudCreateRequest, state: &AppState<'_>) -> Response {
-    let (id, name, category, price, quantity) = match CreateBody::decode_json(req.payload.into_bytes())
-    {
-        Ok(b) => (
-            b.id as i32,
-            b.name,
-            b.category,
-            b.price as i32,
-            b.quantity as i32,
-        ),
-        Err(_) => (
-            0,
-            LocalFrameBytes::from_slice(b""),
-            LocalFrameBytes::from_slice(b""),
-            0,
-            0,
-        ),
-    };
+    let (id, name, category, price, quantity) =
+        match CreateBody::decode_json(req.payload.into_bytes()) {
+            Ok(b) => (
+                b.id as i32,
+                b.name,
+                b.category,
+                b.price as i32,
+                b.quantity as i32,
+            ),
+            Err(_) => (
+                0,
+                LocalFrameBytes::from_slice(b""),
+                LocalFrameBytes::from_slice(b""),
+                0,
+                0,
+            ),
+        };
     let _ = ItemRow::create(
         &state.pg,
         id,
-        std::str::from_utf8(name.as_bytes()).unwrap_or("").to_owned(),
+        std::str::from_utf8(name.as_bytes())
+            .unwrap_or("")
+            .to_owned(),
         std::str::from_utf8(category.as_bytes())
             .unwrap_or("")
             .to_owned(),
@@ -563,7 +585,9 @@ async fn crud_update(req: CrudUpdateRequest, state: &AppState<'_>) -> Response {
     let _ = ItemRow::update_fields(
         &state.pg,
         id,
-        std::str::from_utf8(name.as_bytes()).unwrap_or("").to_owned(),
+        std::str::from_utf8(name.as_bytes())
+            .unwrap_or("")
+            .to_owned(),
         price,
         quantity,
     )
@@ -692,7 +716,6 @@ sark_gen::define_route! {
     }
 }
 
-
 #[sark_gen::response(raw)]
 #[header("content-type", "text/plain")]
 struct TlsBaselineResponse {
@@ -746,19 +769,16 @@ sark_gen::define_route! {
     }
 }
 
-
 #[pin_project::pin_project(!Unpin)]
 #[derive(dope_gen::Dispatcher)]
-struct Unified<'d, H1, TA>
+struct Unified<'d, D, TA>
 where
-    H1: Application<Conn = sark::dispatch::conn_state::ConnState, Wire = Identity>
-        + DateHost
-        + TimerHost<'d>,
+    D: Application<Conn = Demux8080Conn, Wire = Identity> + DateHost + TimerHost<'d>,
     TA: Application<Wire = Tls> + DateHost + TimerHost<'d>,
 {
     #[pin]
     #[manifold(optional)]
-    p8080: Option<Listener<1, H1, IdProd>>,
+    p8080: Option<Listener<1, D, IdProd>>,
     #[pin]
     #[manifold(optional)]
     json_tls: Option<Listener<2, TA, TlsProd>>,
@@ -818,12 +838,7 @@ fn listener_cfg(bind: SocketAddr, max_conn: usize) -> config::Config<Tcp> {
     }
 }
 
-fn run_thread(
-    pg: PgArgs,
-    ports: PortArgs,
-    cfg: ServerCfg,
-    ctx: launcher::Ctx,
-) -> io::Result<()> {
+fn run_thread(pg: PgArgs, ports: PortArgs, cfg: ServerCfg, ctx: launcher::Ctx) -> io::Result<()> {
     let driver_cfg =
         DriverCfg::for_tcp_profile::<Production>(cfg.max_conn).with_cpu_id(Some(ctx.cpu));
     let mut exec = Executor::new(driver_cfg)?;
@@ -880,11 +895,10 @@ fn run_thread(
 
     let mut http = {
         let driver = exec.driver_mut();
-        Listener::<1, _, IdProd>::open_in(
-            http_arena::new::<Identity>(app_state),
-            listener_cfg(ports.h1_bind, cfg.max_conn),
-            driver,
-        )?
+        let ws_app = WsApp::new(ws_echo as WsEcho, "/ws", 16 * 1024 * 1024);
+        let grpc_app = GrpcApp::new(benchmark_service_routes(BenchSvc));
+        let demux = Demux8080App::new(http_arena::new::<Identity>(app_state), ws_app, grpc_app);
+        Listener::<1, _, IdProd>::open_in(demux, listener_cfg(ports.h1_bind, cfg.max_conn), driver)?
     };
     let h1_stamp = {
         let handler = http.handler_mut();

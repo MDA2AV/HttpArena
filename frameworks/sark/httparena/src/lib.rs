@@ -2,6 +2,8 @@ pub mod boot;
 pub mod cache;
 pub mod dataset;
 pub mod demux;
+pub mod demux8080;
+pub mod grpcbench;
 pub mod h2bench;
 pub mod json;
 pub mod model;
