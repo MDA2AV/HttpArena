@@ -26,9 +26,9 @@ use httparena_sark::model::{Db, Fortune, ItemRow};
 use o3::buffer::{Owned, Shared};
 use sark::date::{DateHost, Updater};
 use sark::fs::ServeDir;
-use sark::json::{Encode, Json, JsonDecode, JsonEncode};
+use sark::json::{Encode, Json, JsonDecode, JsonEncode, Writer};
 use sark::request::BodyLen;
-use sark::timer::{SARK_TIMER_ID, TimerHost};
+use sark::timer::{DEFAULT_HEAD_TIMEOUT, SARK_TIMER_ID, TimerHost};
 use sark::ServerCfg;
 use sark_core::http::compress::Gzip;
 use sark_core::http::{LocalFrameBytes, Response};
@@ -72,7 +72,9 @@ impl CacheKey {
     fn item(id: i32) -> Self {
         let mut key = Owned::with_capacity(16);
         key.extend_from_slice(b"item:");
-        Encode::extend_u64(&mut key, id as u64);
+        let mut w = Writer::new(&mut key, Encode::u64_len(id as u64));
+        w.put_u64(id as u64);
+        w.finish();
         Self(key)
     }
 
@@ -90,7 +92,9 @@ fn parse_body_u64(s: &[u8]) -> u64 {
 
 fn u64_owned(n: u64) -> Owned {
     let mut body = Owned::with_capacity(20);
-    Encode::extend_u64(&mut body, n);
+    let mut w = Writer::new(&mut body, Encode::u64_len(n));
+    w.put_u64(n);
+    w.finish();
     body
 }
 
@@ -760,10 +764,10 @@ where
     json_tls: Option<Listener<2, TA, TlsProd>>,
     #[pin]
     #[manifold(optional)]
-    h2c: Option<Listener<4, H2App<BenchHandler, Identity>, IdThru>>,
+    h2c: Option<Listener<4, H2App<'d, BenchHandler, Identity>, IdThru>>,
     #[pin]
     #[manifold(optional)]
-    p8443: Option<Listener<5, H2App<BenchHandler, Tls>, TlsThru>>,
+    p8443: Option<Listener<5, H2App<'d, BenchHandler, Tls>, TlsThru>>,
     #[pin]
     #[manifold]
     date_h1: Updater<6>,
@@ -843,11 +847,13 @@ fn run_thread(
         )
     });
 
+    let h2c_handler = BenchHandler::new();
+    let h2_handler = BenchHandler::with_serve(pg.serve).advertise_h3(true);
     let mut app = core::pin::pin!(Unified::<'_, _, _> {
         p8080: None::<Listener<1, _, IdProd>>,
         json_tls: None::<Listener<2, _, TlsProd>>,
-        h2c: None::<Listener<4, H2App<BenchHandler, Identity>, IdThru>>,
-        p8443: None::<Listener<5, H2App<BenchHandler, Tls>, TlsThru>>,
+        h2c: None::<Listener<4, H2App<'_, BenchHandler, Identity>, IdThru>>,
+        p8443: None::<Listener<5, H2App<'_, BenchHandler, Tls>, TlsThru>>,
         date_h1: Updater::<6>::new(),
         date_tls: Updater::<7>::new(),
         pg: pg_conn,
@@ -883,7 +889,7 @@ fn run_thread(
     let h1_stamp = {
         let handler = http.handler_mut();
         if !handler.is_timer_bound() {
-            handler.bind_timer(timer_borrow.clone());
+            handler.bind_timer(timer_borrow.clone(), DEFAULT_HEAD_TIMEOUT);
         }
         std::ptr::NonNull::from(handler.date_stamp())
     };
@@ -902,15 +908,15 @@ fn run_thread(
     let tls_stamp = {
         let handler = json_tls.handler_mut();
         if !handler.is_timer_bound() {
-            handler.bind_timer(timer_borrow);
+            handler.bind_timer(timer_borrow, DEFAULT_HEAD_TIMEOUT);
         }
         std::ptr::NonNull::from(handler.date_stamp())
     };
 
     let h2c = {
         let driver = exec.driver_mut();
-        Listener::<4, H2App<BenchHandler, Identity>, IdThru>::open_in(
-            H2App::new(BenchHandler::new()),
+        Listener::<4, H2App<'_, BenchHandler, Identity>, IdThru>::open_in(
+            H2App::new(&h2c_handler),
             listener_cfg(ports.h2c_bind, cfg.max_conn),
             driver,
         )?
@@ -918,8 +924,8 @@ fn run_thread(
 
     let mut h2 = {
         let driver = exec.driver_mut();
-        Listener::<5, H2App<BenchHandler, Tls>, TlsThru>::open_in(
-            H2App::new(BenchHandler::with_serve(pg.serve).advertise_h3(true)),
+        Listener::<5, H2App<'_, BenchHandler, Tls>, TlsThru>::open_in(
+            H2App::new(&h2_handler),
             listener_cfg(ports.h2_bind, cfg.max_conn),
             driver,
         )?
@@ -970,6 +976,7 @@ fn main() -> io::Result<()> {
         bind: boot.bind,
         max_conn: boot.max_conn,
         backlog: boot.max_conn as i32,
+        head_timeout: DEFAULT_HEAD_TIMEOUT,
     };
 
     Launcher::new(boot.cpus).run(move |ctx| {

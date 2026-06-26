@@ -1,8 +1,10 @@
-use o3::buffer::Owned;
+use std::future::{Ready, ready};
+
+use dope::fiber::Fiber;
+use o3::buffer::{Owned, Shared};
 use sark::fs::ServeDir;
-use sark_h2::ServerRole;
-use sark_h2::conn::{Conn, Event};
-use sark_h2::hpack::Header;
+use sark_h2::hpack::OwnedHeader;
+use sark_h2::server::{Handler, Request, Response};
 
 use crate::json::JsonOut;
 
@@ -77,54 +79,58 @@ impl BenchHandler {
         None
     }
 
-    fn send(
-        conn: &mut Conn<ServerRole>,
-        stream_id: sark_h2::StreamId,
-        status: &[u8],
-        ctype: &[u8],
-        content_encoding: &[u8],
-        body: &[u8],
-        advertise_h3: bool,
-    ) {
+    fn build(&self, status: &[u8], ctype: &[u8], content_encoding: &[u8], body: Shared) -> Response {
         let encoded = !content_encoding.is_empty() && content_encoding != b"identity";
-        let mut resp_buf = [Header {
-            name: b":status",
-            value: status,
-        }; 4];
-        resp_buf[1] = Header {
-            name: b"content-type",
-            value: ctype,
-        };
-        let mut n = 2;
+        let mut headers = Vec::with_capacity(4);
+        headers.push(OwnedHeader::new(b":status", status));
+        headers.push(OwnedHeader::new(b"content-type", ctype));
         if encoded {
-            resp_buf[n] = Header {
-                name: b"content-encoding",
-                value: content_encoding,
+            headers.push(OwnedHeader::new(b"content-encoding", content_encoding));
+        }
+        if self.advertise_h3 {
+            headers.push(OwnedHeader::new(b"alt-svc", b"h3=\":8443\"; ma=86400"));
+        }
+        Response::new(headers, body)
+    }
+
+    fn respond(&self, req: &Request) -> Response {
+        let path = req
+            .headers
+            .iter()
+            .find(|h| h.name == b":path")
+            .map(|h| h.value.as_slice())
+            .unwrap_or(b"/");
+        let seg = match path.iter().position(|&b| b == b'?') {
+            Some(q) => &path[..q],
+            None => path,
+        };
+        if let Some(file) = seg.strip_prefix(b"/static/") {
+            return match self.serve {
+                Some(serve) => {
+                    let ae = req
+                        .headers
+                        .iter()
+                        .find(|h| h.name == b"accept-encoding")
+                        .map(|h| h.value.as_slice())
+                        .unwrap_or(b"");
+                    let resp = serve.serve(file, ae);
+                    let status = Self::status_bytes(resp.status().as_u16());
+                    let ctype = resp
+                        .headers()
+                        .get("content-type")
+                        .map(|v| v.as_bytes())
+                        .unwrap_or(b"application/octet-stream");
+                    let encoding =
+                        Self::wire_header_value(resp.wire_headers(), b"content-encoding")
+                            .unwrap_or(b"");
+                    let body = Shared::from(resp.body().to_vec());
+                    self.build(status, ctype, encoding, body)
+                }
+                None => self.build(b"404", b"text/plain", b"", Shared::from(Vec::new())),
             };
-            n += 1;
         }
-        if advertise_h3 {
-            resp_buf[n] = Header {
-                name: b"alt-svc",
-                value: b"h3=\":8443\"; ma=86400",
-            };
-            n += 1;
-        }
-        let resp: &[Header] = &resp_buf[..n];
-        if conn
-            .send_response(stream_id, resp, body.is_empty())
-            .is_err()
-        {
-            return;
-        }
-        let mut off = 0;
-        while off < body.len() {
-            match conn.send_data(stream_id, &body[off..], true) {
-                Ok(0) => break,
-                Ok(n) => off += n,
-                Err(_) => break,
-            }
-        }
+        let (status, ctype, body) = Self::route(path);
+        self.build(status, ctype, b"", body.freeze())
     }
 
     fn query_u64(query: &[u8], key: &[u8]) -> u64 {
@@ -157,78 +163,10 @@ impl Default for BenchHandler {
     }
 }
 
-impl sark_h2::server::Handler for BenchHandler {
-    fn on_event(&mut self, event: Event, conn: &mut Conn<ServerRole>) {
-        let Event::Headers {
-            stream_id,
-            headers,
-            trailing,
-            ..
-        } = event
-        else {
-            return;
-        };
-        if trailing {
-            return;
-        }
-        let path = headers
-            .iter()
-            .find(|h| h.name == b":path")
-            .map(|h| h.value.as_slice())
-            .unwrap_or(b"/");
-        let seg = match path.iter().position(|&b| b == b'?') {
-            Some(q) => &path[..q],
-            None => path,
-        };
-        if let Some(file) = seg.strip_prefix(b"/static/") {
-            match self.serve {
-                Some(serve) => {
-                    let ae = headers
-                        .iter()
-                        .find(|h| h.name == b"accept-encoding")
-                        .map(|h| h.value.as_slice())
-                        .unwrap_or(b"");
-                    let resp = serve.serve(file, ae);
-                    let status = Self::status_bytes(resp.status().as_u16());
-                    let ctype = resp
-                        .headers()
-                        .get("content-type")
-                        .map(|v| v.as_bytes())
-                        .unwrap_or(b"application/octet-stream");
-                    let encoding =
-                        Self::wire_header_value(resp.wire_headers(), b"content-encoding")
-                            .unwrap_or(b"");
-                    Self::send(
-                        conn,
-                        stream_id,
-                        status,
-                        ctype,
-                        encoding,
-                        resp.body(),
-                        self.advertise_h3,
-                    );
-                }
-                None => Self::send(
-                    conn,
-                    stream_id,
-                    b"404",
-                    b"text/plain",
-                    b"",
-                    b"",
-                    self.advertise_h3,
-                ),
-            }
-            return;
-        }
-        let (status, ctype, body) = Self::route(path);
-        Self::send(
-            conn,
-            stream_id,
-            status,
-            ctype,
-            b"",
-            &body,
-            self.advertise_h3,
-        );
+impl Handler for BenchHandler {
+    type Fut<'h> = Ready<Response>;
+
+    fn on_request<'h>(&'h self, req: Request) -> Fiber<'h, Self::Fut<'h>> {
+        Fiber::new(ready(self.respond(&req)))
     }
 }
