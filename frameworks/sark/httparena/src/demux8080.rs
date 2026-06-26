@@ -2,6 +2,7 @@ use std::cell::Cell;
 
 use dope::Driver;
 use dope::manifold::Outcome;
+use dope::manifold::listener::recv::ExtendOutcome;
 use dope::manifold::listener::{Application, Aux, State};
 use dope::transport::link::Slot;
 use dope::transport::wire::{Identity, RecvChunk};
@@ -144,8 +145,13 @@ where
         let buffered = take_buffer(&mut slot.state.conn);
         match lane {
             Lane::H1 => {
-                slot.state.conn = Demux8080Conn::H1(H1ConnState::default());
-                h1_outcome(self.h1.on_chunk_proj(slot, &buffered, aux, driver, proj_h1))
+                let mut state = H1ConnState::default();
+                let overrun = matches!(state.recv.extend_accum(&buffered), ExtendOutcome::Overrun);
+                slot.state.conn = Demux8080Conn::H1(state);
+                if overrun {
+                    return Outcome::Overrun;
+                }
+                h1_outcome(self.h1.on_chunk_proj(slot, &[], aux, driver, proj_h1))
             }
             Lane::Ws => {
                 slot.state.conn = Demux8080Conn::Ws(WsConnState::default());
