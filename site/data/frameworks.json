@@ -423,6 +423,13 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "iris": {
+    "dir": "iris",
+    "description": "Thread-per-core C++ HTTP/1.1 gateway on epoll/SO_REUSEPORT with a hand-written incremental parser. Zero-allocation steady state: fixed per-connection buffers, precomputed response templates, per-request JSON serialization from the mounted dataset, and static assets served via precompressed .br/.gz negotiation with Linux sendfile from sealed memfd responses.",
+    "repo": "https://github.com/Cobra007-star-source/IRIS",
+    "type": "engine",
+    "engine": "epoll"
+  },
   "ktor-ghost": {
     "dir": "ktor-ghost",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, Ghost Serializer, JDK 21.",

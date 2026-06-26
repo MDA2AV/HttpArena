@@ -752,6 +752,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "iris",
+    "language": "C++",
+    "rps": 2858197,
+    "avg_latency": "1.31ms",
+    "p99_latency": "2.01ms",
+    "cpu": "5756.3%",
+    "memory": "202MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "318.80MB/s",
+    "input_bw": "220.79MB/s",
+    "reconnects": 1428683,
+    "status_2xx": 14290985,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ktor",
     "language": "Kotlin",
     "rps": 665691,
