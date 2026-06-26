@@ -461,6 +461,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sark",
+    "language": "Rust",
+    "rps": 4179366,
+    "avg_latency": "121us",
+    "p99_latency": "258us",
+    "cpu": "6316.3%",
+    "memory": "1.1GiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "27.89MB/s",
+    "reconnects": 0,
+    "status_2xx": 20896833,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "simplew",
     "language": "C#",
     "rps": 1995279,

@@ -465,6 +465,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "sark",
+    "language": "Rust",
+    "rps": 817307,
+    "avg_latency": "8.39ms",
+    "p99_latency": "77.80ms",
+    "cpu": "5575.1%",
+    "memory": "2.0GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "12.54GB/s",
+    "reconnects": 0,
+    "status_2xx": 4127404,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "spring-boot",
     "language": "Java",
     "rps": 30063,
