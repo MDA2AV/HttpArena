@@ -3,7 +3,7 @@
   "language": "C++",
   "type": "engine",
   "engine": "epoll",
-  "description": "Thread-per-core C++ HTTP/1.1 gateway on epoll/SO_REUSEPORT with a hand-written incremental parser. Zero-allocation steady state: fixed per-connection buffers, precomputed response templates, per-request JSON serialization from the mounted dataset, and static assets served via precompressed .br/.gz negotiation with Linux sendfile from sealed memfd responses.",
+  "description": "Thread-per-core C++ HTTP/1.1 gateway on epoll/SO_REUSEPORT with a hand-written incremental parser. Zero-allocation steady state: fixed per-connection buffers, precomputed response templates, per-request JSON serialization from the mounted dataset, static assets served via precompressed .br/.gz negotiation with Linux sendfile from sealed memfd responses, streaming POST /upload body counting, OpenSSL TLS on :8081 for json-tls, and async libpq for async-db.",
   "repo": "https://github.com/Cobra007-star-source/IRIS",
   "enabled": true,
   "tests": [
@@ -11,7 +11,10 @@
     "pipelined",
     "limited-conn",
     "json",
-    "static"
+    "json-tls",
+    "static",
+    "upload",
+    "async-db"
   ],
   "maintainers": ["Cobra007-star-source"]
 }
