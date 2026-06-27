@@ -9,33 +9,61 @@ use dope::launcher::{self, Launcher};
 use dope::manifold::connector::Connector;
 use dope::manifold::connector::source::Static;
 use dope::manifold::env::Bundle;
-use dope::manifold::listener::{Listener, config};
-use dope::runtime::profile::Production;
+use dope::manifold::listener::{Application, Listener, config};
+use dope::runtime::profile::{Production, Throughput};
 use dope::transport::Tcp;
 use dope::wire::Identity;
 use dope::{DriverCfg, DriverConfig, Executor};
-use dope_extra::Trigger;
+use dope_tls::{Endpoint, Tls};
 use http::StatusCode;
 use httparena_sark::boot::Boot;
 use httparena_sark::cache::ItemCache;
 use httparena_sark::dataset::DATASET;
+use httparena_sark::demux8080::{Demux8080App, Demux8080Conn};
+use httparena_sark::grpcbench::{BenchSvc, benchmark_service_routes};
+use httparena_sark::h2bench::BenchHandler;
+use httparena_sark::json::JsonOut;
 use httparena_sark::model::{Db, Fortune, ItemRow};
 use o3::buffer::{Owned, Shared};
+use sark::ServerCfg;
 use sark::date::{DateHost, Updater};
 use sark::fs::ServeDir;
-use sark::json::{Encode, Json, JsonDecode, JsonEncode};
+use sark::json::{Encode, Json, JsonDecode, JsonEncode, Writer};
 use sark::request::BodyLen;
-use sark::timer::TimerHost;
-use sark::{Application, ServerCfg};
-use sark_core::http::Response;
-use sark_core::http::LocalFrameBytes;
+use sark::timer::{DEFAULT_HEAD_TIMEOUT, SARK_TIMER_ID, TimerHost};
 use sark_core::http::compress::Gzip;
+use sark_core::http::{LocalFrameBytes, Response};
+use sark_grpc::server::App as GrpcApp;
+use sark_h2::server::App as H2App;
+use sark_ws::server::{App as WsApp, Message as WsMessage, Response as WsResponse};
 
-type Env = Bundle<Tcp, Identity, Production>;
-type PgClient<'d> = PgHolding<'d, Db, Static<Tcp>, Env>;
-type PgConnector = Connector<0, cartel_pg::Session<Db>, Static<Tcp>, Env>;
-type RedisConnector = Connector<4, cartel_redis::Session, Static<Tcp>, Env>;
+type IdProd = Bundle<Tcp, Identity, Production>;
+type TlsProd = Bundle<Tcp, Tls, Production>;
+type IdThru = Bundle<Tcp, Identity, Throughput>;
+type TlsThru = Bundle<Tcp, Tls, Throughput>;
+
+type WsEcho = for<'a, 'b, 'c> fn(WsMessage<'a>, &'b mut WsResponse<'c>);
+
+fn ws_echo(msg: WsMessage<'_>, response: &mut WsResponse<'_>) {
+    match msg {
+        WsMessage::Text(s) => {
+            response.text(s);
+        }
+        WsMessage::Binary(b) => {
+            response.binary(b);
+        }
+    }
+}
+
+type PgClient<'d> = PgHolding<'d, Db, Static<Tcp>, IdProd>;
+type PgConnector = Connector<0, cartel_pg::Session<Db>, Static<Tcp>, IdProd>;
+type RedisConnector = Connector<8, cartel_redis::Session, Static<Tcp>, IdProd>;
 type RedisClient<'d> = dope::fiber::Holding<'d, RedisConnector>;
+
+const FILES_ID: u8 = 9;
+const FILES_SLOTS: usize = 256;
+type FilesManifold = dope::manifold::file::Files<FILES_ID, FILES_SLOTS>;
+type FilesClient<'d> = dope::fiber::Holding<'d, FilesManifold>;
 
 #[derive(Clone)]
 struct AppState<'d> {
@@ -43,6 +71,15 @@ struct AppState<'d> {
     redis: Option<RedisClient<'d>>,
     cache: &'static ItemCache,
     serve: &'static ServeDir,
+    files: FilesClient<'d>,
+    driver: *mut dope::Driver,
+}
+
+impl AppState<'_> {
+    fn driver(&self) -> &mut dope::Driver {
+        // SAFETY: thread-per-core; the per-core Driver outlives every fiber and no other
+        unsafe { &mut *self.driver }
+    }
 }
 
 struct CacheKey(Owned);
@@ -51,7 +88,9 @@ impl CacheKey {
     fn item(id: i32) -> Self {
         let mut key = Owned::with_capacity(16);
         key.extend_from_slice(b"item:");
-        Encode::extend_u64(&mut key, id as u64);
+        let mut w = Writer::new(&mut key, Encode::u64_len(id as u64));
+        w.put_u64(id as u64);
+        w.finish();
         Self(key)
     }
 
@@ -69,14 +108,20 @@ fn parse_body_u64(s: &[u8]) -> u64 {
 
 fn u64_owned(n: u64) -> Owned {
     let mut body = Owned::with_capacity(20);
-    Encode::extend_u64(&mut body, n);
+    let mut w = Writer::new(&mut body, Encode::u64_len(n));
+    w.put_u64(n);
+    w.finish();
     body
 }
 
 fn accepts_gzip(accept_encoding: &[u8]) -> bool {
     accept_encoding.split(|&b| b == b',').any(|part| {
         let part = part.trim_ascii();
-        let coding = part.split(|&b| b == b';').next().unwrap_or(b"").trim_ascii();
+        let coding = part
+            .split(|&b| b == b';')
+            .next()
+            .unwrap_or(b"")
+            .trim_ascii();
         coding.eq_ignore_ascii_case(b"gzip")
     })
 }
@@ -476,27 +521,29 @@ struct CrudCreateRequest {
 
 #[sark_gen::handler]
 async fn crud_create(req: CrudCreateRequest, state: &AppState<'_>) -> Response {
-    let (id, name, category, price, quantity) = match CreateBody::decode_json(req.payload.into_bytes())
-    {
-        Ok(b) => (
-            b.id as i32,
-            b.name,
-            b.category,
-            b.price as i32,
-            b.quantity as i32,
-        ),
-        Err(_) => (
-            0,
-            LocalFrameBytes::from_slice(b""),
-            LocalFrameBytes::from_slice(b""),
-            0,
-            0,
-        ),
-    };
+    let (id, name, category, price, quantity) =
+        match CreateBody::decode_json(req.payload.into_bytes()) {
+            Ok(b) => (
+                b.id as i32,
+                b.name,
+                b.category,
+                b.price as i32,
+                b.quantity as i32,
+            ),
+            Err(_) => (
+                0,
+                LocalFrameBytes::from_slice(b""),
+                LocalFrameBytes::from_slice(b""),
+                0,
+                0,
+            ),
+        };
     let _ = ItemRow::create(
         &state.pg,
         id,
-        std::str::from_utf8(name.as_bytes()).unwrap_or("").to_owned(),
+        std::str::from_utf8(name.as_bytes())
+            .unwrap_or("")
+            .to_owned(),
         std::str::from_utf8(category.as_bytes())
             .unwrap_or("")
             .to_owned(),
@@ -538,7 +585,9 @@ async fn crud_update(req: CrudUpdateRequest, state: &AppState<'_>) -> Response {
     let _ = ItemRow::update_fields(
         &state.pg,
         id,
-        std::str::from_utf8(name.as_bytes()).unwrap_or("").to_owned(),
+        std::str::from_utf8(name.as_bytes())
+            .unwrap_or("")
+            .to_owned(),
         price,
         quantity,
     )
@@ -587,10 +636,16 @@ struct StaticFileRequest {
 }
 
 #[sark_gen::handler]
-fn static_endpoint(req: StaticFileRequest, state: &AppState<'_>) -> Response {
+async fn static_endpoint(req: StaticFileRequest, state: &AppState<'_>) -> Response {
     state
         .serve
-        .serve(req.file.as_bytes(), req.accept_encoding.as_bytes())
+        .serve_async(
+            state.files,
+            state.driver(),
+            req.file.as_bytes(),
+            req.accept_encoding.as_bytes(),
+        )
+        .await
 }
 
 #[sark_gen::request(ordered)]
@@ -652,7 +707,7 @@ sark_gen::define_route! {
         POST "/crud/items" => async crud_create,
         PUT "/crud/items/:id" => async crud_update,
         POST "/upload" => upload_endpoint,
-        GET "/static/:file" => static_endpoint,
+        GET "/static/:file" => async static_endpoint,
         GET "/public/baseline" => baseline_get,
         GET "/public/json/:count" => json_endpoint,
         GET "/api/items/:id" => async crud_get,
@@ -661,30 +716,104 @@ sark_gen::define_route! {
     }
 }
 
-#[pin_project::pin_project]
+#[sark_gen::response(raw)]
+#[header("content-type", "text/plain")]
+struct TlsBaselineResponse {
+    status: StatusCode,
+    body: Owned,
+}
+
+#[sark_gen::request(ordered)]
+struct TlsBaselineGet {
+    #[query("a", default = "0")]
+    a: u64,
+    #[query("b", default = "0")]
+    b: u64,
+}
+
+#[sark_gen::handler]
+fn tls_baseline_get(req: TlsBaselineGet, _state: &()) -> TlsBaselineResponse {
+    TlsBaselineResponse {
+        status: StatusCode::OK,
+        body: JsonOut::sum_body(req.a, req.b),
+    }
+}
+
+#[sark_gen::response(raw)]
+#[header("content-type", "application/json")]
+struct TlsJsonResponse {
+    status: StatusCode,
+    body: Owned,
+}
+
+#[sark_gen::request(ordered)]
+struct TlsJsonRequest {
+    #[path("count", default = "1")]
+    count: u64,
+    #[query("m", default = "1")]
+    m: u64,
+}
+
+#[sark_gen::handler]
+fn tls_json_endpoint(req: TlsJsonRequest, _state: &()) -> TlsJsonResponse {
+    TlsJsonResponse {
+        status: StatusCode::OK,
+        body: JsonOut::items_standard(req.count as usize, req.m),
+    }
+}
+
+sark_gen::define_route! {
+    TlsApp: () => {
+        GET "/baseline2" => tls_baseline_get,
+        GET "/json/:count" => tls_json_endpoint,
+    }
+}
+
+#[pin_project::pin_project(!Unpin)]
 #[derive(dope_gen::Dispatcher)]
-struct Dispatcher<'d, P>
+struct Unified<'d, D, TA>
 where
-    P: Application<Conn = sark::dispatch::conn_state::ConnState, Wire = dope::wire::Identity>
-        + DateHost
-        + TimerHost<'d>,
+    D: Application<Conn = Demux8080Conn, Wire = Identity> + DateHost + TimerHost<'d>,
+    TA: Application<Wire = Tls> + DateHost + TimerHost<'d>,
 {
     #[pin]
     #[manifold(optional)]
-    http: Option<Listener<1, P, Env>>,
+    p8080: Option<Listener<1, D, IdProd>>,
+    #[pin]
+    #[manifold(optional)]
+    json_tls: Option<Listener<2, TA, TlsProd>>,
+    #[pin]
+    #[manifold(optional)]
+    h2c: Option<Listener<4, H2App<'d, BenchHandler, Identity>, IdThru>>,
+    #[pin]
+    #[manifold(optional)]
+    p8443: Option<Listener<5, H2App<'d, BenchHandler, Tls>, TlsThru>>,
     #[pin]
     #[manifold]
-    date: Updater<2>,
+    date_h1: Updater<6>,
+    #[pin]
+    #[manifold]
+    date_tls: Updater<7>,
     #[pin]
     #[manifold]
     pg: PgConnector,
     #[pin]
     #[manifold]
-    timer: dope::manifold::timer::Timer<{ sark::timer::SARK_TIMER_ID }>,
+    timer: dope::manifold::timer::Timer<{ SARK_TIMER_ID }>,
     #[pin]
     #[manifold(optional)]
     redis: Option<RedisConnector>,
+    #[pin]
+    #[manifold]
+    files: FilesManifold,
     _ph: PhantomData<&'d ()>,
+}
+
+struct PortArgs {
+    h1_bind: SocketAddr,
+    json_tls_bind: SocketAddr,
+    h2c_bind: SocketAddr,
+    h2_bind: SocketAddr,
 }
 
 struct PgArgs {
@@ -695,21 +824,27 @@ struct PgArgs {
     serve: &'static ServeDir,
 }
 
-fn run_thread(
-    pg: PgArgs,
-    cfg: ServerCfg,
-    ctx: launcher::Ctx,
-    shutdown: Option<&Trigger>,
-) -> io::Result<()> {
+fn listener_cfg(bind: SocketAddr, max_conn: usize) -> config::Config<Tcp> {
+    config::Config::<Tcp> {
+        max_conn,
+        bind,
+        backlog: 4096,
+        stream_opts: Default::default(),
+        listener_opts: dope::transport::config::tcp::ListenerOpts {
+            reuseport: dope::transport::config::SocketToggle::Enabled,
+            per_ip_cap: Some((max_conn / 2) as u32),
+            ..Default::default()
+        },
+    }
+}
+
+fn run_thread(pg: PgArgs, ports: PortArgs, cfg: ServerCfg, ctx: launcher::Ctx) -> io::Result<()> {
     let driver_cfg =
         DriverCfg::for_tcp_profile::<Production>(cfg.max_conn).with_cpu_id(Some(ctx.cpu));
     let mut exec = Executor::new(driver_cfg)?;
 
     let pg_conn = {
         let driver = exec.driver_mut();
-        if let Some(trigger) = shutdown {
-            trigger.register(driver);
-        }
         Connector::new(
             cartel_pg::Session::new(pg.config),
             Static::<Tcp>::new(vec![pg.addr], Duration::from_millis(500)),
@@ -726,17 +861,27 @@ fn run_thread(
             driver,
         )
     });
-    let mut app = core::pin::pin!(Dispatcher::<_> {
-        http: None::<Listener<1, _, Env>>,
-        date: Updater::<2>::new(),
+
+    let h2c_handler = BenchHandler::new();
+    let h2_handler = BenchHandler::with_serve(pg.serve).advertise_h3(true);
+    let mut app = core::pin::pin!(Unified::<'_, _, _> {
+        p8080: None::<Listener<1, _, IdProd>>,
+        json_tls: None::<Listener<2, _, TlsProd>>,
+        h2c: None::<Listener<4, H2App<'_, BenchHandler, Identity>, IdThru>>,
+        p8443: None::<Listener<5, H2App<'_, BenchHandler, Tls>, TlsThru>>,
+        date_h1: Updater::<6>::new(),
+        date_tls: Updater::<7>::new(),
         pg: pg_conn,
         timer: dope::manifold::timer::Timer::new(),
         redis: redis_conn,
+        files: FilesManifold::default(),
         _ph: PhantomData,
     });
     let client = app.as_mut().pg_handle();
     let redis_client = app.as_mut().redis_handle();
     let timer_borrow = app.as_mut().timer_handle();
+    let files_client = app.as_mut().files_handle();
+    let driver_ptr: *mut dope::Driver = exec.driver_mut();
 
     let cache: &'static ItemCache = Box::leak(Box::new(ItemCache::new(Duration::from_millis(200))));
     let app_state: &AppState<'_> = Box::leak(Box::new(AppState {
@@ -744,32 +889,72 @@ fn run_thread(
         redis: redis_client,
         cache,
         serve: pg.serve,
+        files: files_client,
+        driver: driver_ptr,
     }));
-    let server = http_arena::new(app_state);
-    let listener_cfg = config::Config::<Tcp> {
-        max_conn: cfg.max_conn,
-        bind: cfg.bind,
-        backlog: cfg.backlog,
-        stream_opts: dope::transport::config::tcp::StreamOpts::default(),
-        listener_opts: dope::transport::config::tcp::ListenerOpts {
-            reuseport: dope::transport::config::SocketToggle::Enabled,
-            ..Default::default()
-        },
-    };
+
     let mut http = {
         let driver = exec.driver_mut();
-        Listener::<1, _, Env>::open_in(server, listener_cfg, driver)?
+        let ws_app = WsApp::new(ws_echo as WsEcho, "/ws", 16 * 1024 * 1024);
+        let grpc_app = GrpcApp::new(benchmark_service_routes(BenchSvc));
+        let demux = Demux8080App::new(http_arena::new::<Identity>(app_state), ws_app, grpc_app);
+        Listener::<1, _, IdProd>::open_in(demux, listener_cfg(ports.h1_bind, cfg.max_conn), driver)?
     };
-    let stamp = {
+    let h1_stamp = {
         let handler = http.handler_mut();
         if !handler.is_timer_bound() {
-            handler.bind_timer(timer_borrow);
+            handler.bind_timer(timer_borrow.clone(), DEFAULT_HEAD_TIMEOUT);
         }
         std::ptr::NonNull::from(handler.date_stamp())
     };
+
+    let mut json_tls = {
+        let driver = exec.driver_mut();
+        Listener::<2, _, TlsProd>::open_in(
+            tls_app::new::<Tls>(&()),
+            listener_cfg(ports.json_tls_bind, cfg.max_conn),
+            driver,
+        )?
+    };
+    json_tls.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+        vec![b"http/1.1".to_vec()],
+    ))));
+    let tls_stamp = {
+        let handler = json_tls.handler_mut();
+        if !handler.is_timer_bound() {
+            handler.bind_timer(timer_borrow, DEFAULT_HEAD_TIMEOUT);
+        }
+        std::ptr::NonNull::from(handler.date_stamp())
+    };
+
+    let h2c = {
+        let driver = exec.driver_mut();
+        Listener::<4, H2App<'_, BenchHandler, Identity>, IdThru>::open_in(
+            H2App::new(&h2c_handler),
+            listener_cfg(ports.h2c_bind, cfg.max_conn),
+            driver,
+        )?
+    };
+
+    let mut h2 = {
+        let driver = exec.driver_mut();
+        Listener::<5, H2App<'_, BenchHandler, Tls>, TlsThru>::open_in(
+            H2App::new(&h2_handler),
+            listener_cfg(ports.h2_bind, cfg.max_conn),
+            driver,
+        )?
+    };
+    h2.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+        vec![b"h2".to_vec()],
+    ))));
+
     let mut init = app.as_mut().project();
-    init.date.as_mut().get_mut().bind(stamp);
-    init.http.set(Some(http));
+    init.date_h1.as_mut().get_mut().bind(h1_stamp);
+    init.date_tls.as_mut().get_mut().bind(tls_stamp);
+    init.p8080.set(Some(http));
+    init.json_tls.set(Some(json_tls));
+    init.h2c.set(Some(h2c));
+    init.p8443.set(Some(h2));
     exec.run(app.as_mut())
 }
 
@@ -794,10 +979,18 @@ fn main() -> io::Result<()> {
             .precompressed_gzip(),
     ));
 
+    let ports = PortArgs {
+        h1_bind: boot.bind,
+        json_tls_bind: SocketAddr::from(([0, 0, 0, 0], 8081)),
+        h2c_bind: SocketAddr::from(([0, 0, 0, 0], 8082)),
+        h2_bind: SocketAddr::from(([0, 0, 0, 0], 8443)),
+    };
+
     let cfg = ServerCfg {
         bind: boot.bind,
         max_conn: boot.max_conn,
         backlog: boot.max_conn as i32,
+        head_timeout: DEFAULT_HEAD_TIMEOUT,
     };
 
     Launcher::new(boot.cpus).run(move |ctx| {
@@ -808,7 +1001,13 @@ fn main() -> io::Result<()> {
             redis_addr,
             serve,
         };
-        run_thread(pg, cfg.clone(), ctx, None)
+        let ports = PortArgs {
+            h1_bind: ports.h1_bind,
+            json_tls_bind: ports.json_tls_bind,
+            h2c_bind: ports.h2c_bind,
+            h2_bind: ports.h2_bind,
+        };
+        run_thread(pg, ports, cfg.clone(), ctx)
     })
 }
 

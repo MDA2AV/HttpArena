@@ -5,74 +5,85 @@
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
@@ -81,41 +92,30 @@
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
@@ -124,13 +124,9 @@
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
@@ -138,9 +134,7 @@
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
@@ -149,39 +143,25 @@
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
@@ -189,22 +169,16 @@
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
-[socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
+[socket] SO_REUSEPORT enabled for load balancing
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
@@ -212,10 +186,6 @@
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
 [socket] Binding to 0.0.0.0:8080
-[socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
@@ -226,19 +196,44 @@
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
-[socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
@@ -248,10 +243,15 @@
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
+[socket] Binding to 0.0.0.0:8080
 [socket] SO_REUSEPORT enabled for load balancing
 [socket] SO_REUSEPORT enabled for load balancing
 listening on http://localhost:8080/ (io_uring)

@@ -2,35 +2,8 @@ use std::io;
 
 use dope::launcher::{Ctx, Launcher};
 use httparena_sark::boot::Boot;
+use httparena_sark::grpcbench::{BenchSvc, benchmark_service_routes};
 use sark_grpc::server::{Cfg, Config, serve, serve_tls};
-use sark_grpc::{StreamingRequest, StreamingResponse, UnaryRequest, UnaryResponse};
-
-include!(concat!(env!("OUT_DIR"), "/benchmark.rs"));
-
-struct BenchSvc;
-
-impl BenchmarkServiceService for BenchSvc {
-    fn get_sum(&mut self, request: UnaryRequest<SumRequest>) -> UnaryResponse<SumReply> {
-        UnaryResponse::new(SumReply {
-            result: request.message.a.wrapping_add(request.message.b),
-        })
-    }
-
-    fn stream_sum(
-        &mut self,
-        request: StreamingRequest<StreamRequest>,
-    ) -> StreamingResponse<SumReply> {
-        let mut replies = Vec::new();
-        for msg in &request.messages {
-            let sum = msg.a.wrapping_add(msg.b);
-            let count = msg.count.max(0) as usize;
-            for _ in 0..count {
-                replies.push(SumReply { result: sum });
-            }
-        }
-        StreamingResponse::new(replies)
-    }
-}
 
 fn main() -> io::Result<()> {
     let tls_on = std::env::var("SARK_GRPC_TLS").ok().as_deref() == Some("1");

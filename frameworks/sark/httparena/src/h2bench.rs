@@ -1,8 +1,11 @@
-use o3::buffer::Owned;
+use std::future::{Ready, ready};
+
+use dope::fiber::Fiber;
+use o3::buffer::{Owned, Shared};
 use sark::fs::ServeDir;
-use sark_h2::ServerRole;
-use sark_h2::conn::{Conn, Event};
-use sark_h2::hpack::Header;
+use sark_core::http::head::header_lines;
+use sark_h2::hpack::OwnedHeader;
+use sark_h2::server::{Handler, Request, Response};
 
 use crate::json::JsonOut;
 
@@ -44,7 +47,11 @@ impl BenchHandler {
         if let Some(rest) = seg.strip_prefix(b"/json/") {
             let count = Self::parse_u64(rest) as usize;
             let m = Self::query_u64(query, b"m");
-            return (b"200", b"application/json", JsonOut::items_standard(count, m));
+            return (
+                b"200",
+                b"application/json",
+                JsonOut::items_standard(count, m),
+            );
         }
         let mut body = Owned::with_capacity(24);
         body.extend_from_slice(br#"{"error":"not found"}"#);
@@ -61,70 +68,101 @@ impl BenchHandler {
     }
 
     fn wire_header_value<'a>(wire: &'a [u8], name: &[u8]) -> Option<&'a [u8]> {
-        for line in wire.split(|&b| b == b'\n') {
-            let line = line.strip_suffix(b"\r").unwrap_or(line);
-            if line.is_empty() {
-                continue;
-            }
-            let Some(colon) = line.iter().position(|&b| b == b':') else {
-                continue;
-            };
-            let key = line[..colon].trim_ascii();
-            if key.eq_ignore_ascii_case(name) {
-                return Some(line[colon + 1..].trim_ascii());
-            }
-        }
-        None
+        header_lines(wire).find_map(|(key, value)| key.eq_ignore_ascii_case(name).then_some(value))
     }
 
-    fn send(
-        conn: &mut Conn<ServerRole>,
-        stream_id: sark_h2::StreamId,
+    fn build(
+        &self,
         status: &[u8],
         ctype: &[u8],
         content_encoding: &[u8],
-        body: &[u8],
-        advertise_h3: bool,
-    ) {
+        body: Shared,
+    ) -> Response {
         let encoded = !content_encoding.is_empty() && content_encoding != b"identity";
-        let mut resp_buf = [Header {
-            name: b":status",
-            value: status,
-        }; 4];
-        resp_buf[1] = Header {
-            name: b"content-type",
-            value: ctype,
-        };
-        let mut n = 2;
+        let mut headers = Vec::with_capacity(4);
+        headers.push(OwnedHeader::new(b":status", status));
+        headers.push(OwnedHeader::new(b"content-type", ctype));
         if encoded {
-            resp_buf[n] = Header {
-                name: b"content-encoding",
-                value: content_encoding,
-            };
-            n += 1;
+            headers.push(OwnedHeader::new(b"content-encoding", content_encoding));
         }
-        if advertise_h3 {
-            resp_buf[n] = Header {
-                name: b"alt-svc",
-                value: b"h3=\":8443\"; ma=86400",
-            };
-            n += 1;
+        if self.advertise_h3 {
+            headers.push(OwnedHeader::new(b"alt-svc", b"h3=\":8443\"; ma=86400"));
         }
-        let resp: &[Header] = &resp_buf[..n];
-        if conn
-            .send_response(stream_id, resp, body.is_empty())
-            .is_err()
-        {
-            return;
+        Response::new(headers, body)
+    }
+
+    fn grpc_status_bytes(code: u8) -> &'static [u8] {
+        const TABLE: [&[u8]; 17] = [
+            b"0", b"1", b"2", b"3", b"4", b"5", b"6", b"7", b"8", b"9", b"10", b"11", b"12", b"13",
+            b"14", b"15", b"16",
+        ];
+        TABLE.get(code as usize).copied().unwrap_or(b"2")
+    }
+
+    fn grpc_reply(&self, path: &[u8], body: &[u8]) -> Response {
+        let (frames, status) = crate::grpcbench::dispatch(path, body);
+        let headers = vec![
+            OwnedHeader::new(b":status", b"200"),
+            OwnedHeader::new(b"content-type", b"application/grpc"),
+        ];
+        let mut response = Response::new(headers, Shared::from(frames));
+        response.trailers.push(OwnedHeader::new(
+            b"grpc-status",
+            Self::grpc_status_bytes(status.code().as_u8()),
+        ));
+        let message = status.message();
+        if !message.is_empty() {
+            response
+                .trailers
+                .push(OwnedHeader::new(b"grpc-message", message.as_bytes()));
         }
-        let mut off = 0;
-        while off < body.len() {
-            match conn.send_data(stream_id, &body[off..], true) {
-                Ok(0) => break,
-                Ok(n) => off += n,
-                Err(_) => break,
+        response
+    }
+
+    fn respond(&self, req: &Request) -> Response {
+        let mut path: &[u8] = b"/";
+        let mut ctype: &[u8] = b"";
+        for h in &req.headers {
+            if h.name == b":path" {
+                path = h.value.as_slice();
+            } else if h.name == b"content-type" {
+                ctype = h.value.as_slice();
             }
         }
+        if ctype.starts_with(b"application/grpc") {
+            return self.grpc_reply(path, &req.body);
+        }
+        let seg = match path.iter().position(|&b| b == b'?') {
+            Some(q) => &path[..q],
+            None => path,
+        };
+        if let Some(file) = seg.strip_prefix(b"/static/") {
+            return match self.serve {
+                Some(serve) => {
+                    let ae = req
+                        .headers
+                        .iter()
+                        .find(|h| h.name == b"accept-encoding")
+                        .map(|h| h.value.as_slice())
+                        .unwrap_or(b"");
+                    let resp = serve.serve(file, ae);
+                    let status = Self::status_bytes(resp.status().as_u16());
+                    let ctype = resp
+                        .headers()
+                        .get("content-type")
+                        .map(|v| v.as_bytes())
+                        .unwrap_or(b"application/octet-stream");
+                    let encoding =
+                        Self::wire_header_value(resp.wire_headers(), b"content-encoding")
+                            .unwrap_or(b"");
+                    let body = Shared::from(resp.body().to_vec());
+                    self.build(status, ctype, encoding, body)
+                }
+                None => self.build(b"404", b"text/plain", b"", Shared::from(Vec::new())),
+            };
+        }
+        let (status, ctype, body) = Self::route(path);
+        self.build(status, ctype, b"", body.freeze())
     }
 
     fn query_u64(query: &[u8], key: &[u8]) -> u64 {
@@ -157,78 +195,70 @@ impl Default for BenchHandler {
     }
 }
 
-impl sark_h2::server::Handler for BenchHandler {
-    fn on_event(&mut self, event: Event, conn: &mut Conn<ServerRole>) {
-        let Event::Headers {
-            stream_id,
-            headers,
-            trailing,
-            ..
-        } = event
-        else {
-            return;
+impl Handler for BenchHandler {
+    type Fut<'h> = Ready<Response>;
+
+    fn on_request<'h>(&'h self, req: Request) -> Fiber<'h, Self::Fut<'h>> {
+        Fiber::new(ready(self.respond(&req)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use prost::Message;
+    use sark_grpc::frame::{Deframer, MessageFrame};
+
+    use crate::grpcbench::{SumReply, SumRequest};
+
+    fn header(name: &[u8], value: &[u8]) -> OwnedHeader {
+        OwnedHeader::new(name, value)
+    }
+
+    #[test]
+    fn grpc_request_yields_framed_reply_with_status_trailer() {
+        let mut payload = Vec::new();
+        SumRequest { a: 20, b: 22 }.encode(&mut payload).unwrap();
+        let mut body = Vec::new();
+        MessageFrame::encode(false, &payload, &mut body).unwrap();
+
+        let handler = BenchHandler::new();
+        let response = handler.grpc_reply(b"/benchmark.BenchmarkService/GetSum", &body);
+        assert!(
+            response
+                .headers
+                .iter()
+                .any(|h| h.name == b"content-type" && h.value == b"application/grpc")
+        );
+        assert!(
+            response
+                .trailers
+                .iter()
+                .any(|h| h.name == b"grpc-status" && h.value == b"0")
+        );
+
+        let mut deframer = Deframer::new(1 << 20);
+        let mut messages = Vec::new();
+        deframer
+            .push(response.body.as_ref(), &mut messages)
+            .unwrap();
+        assert_eq!(messages.len(), 1);
+        let reply = SumReply::decode(messages[0].payload.as_slice()).unwrap();
+        assert_eq!(reply.result, 42);
+    }
+
+    #[test]
+    fn non_grpc_request_falls_through() {
+        let req = Request {
+            headers: vec![header(b":path", b"/baseline2")],
+            body: Vec::new(),
         };
-        if trailing {
-            return;
-        }
-        let path = headers
-            .iter()
-            .find(|h| h.name == b":path")
-            .map(|h| h.value.as_slice())
-            .unwrap_or(b"/");
-        let seg = match path.iter().position(|&b| b == b'?') {
-            Some(q) => &path[..q],
-            None => path,
-        };
-        if let Some(file) = seg.strip_prefix(b"/static/") {
-            match self.serve {
-                Some(serve) => {
-                    let ae = headers
-                        .iter()
-                        .find(|h| h.name == b"accept-encoding")
-                        .map(|h| h.value.as_slice())
-                        .unwrap_or(b"");
-                    let resp = serve.serve(file, ae);
-                    let status = Self::status_bytes(resp.status().as_u16());
-                    let ctype = resp
-                        .headers()
-                        .get("content-type")
-                        .map(|v| v.as_bytes())
-                        .unwrap_or(b"application/octet-stream");
-                    let encoding =
-                        Self::wire_header_value(resp.wire_headers(), b"content-encoding")
-                            .unwrap_or(b"");
-                    Self::send(
-                        conn,
-                        stream_id,
-                        status,
-                        ctype,
-                        encoding,
-                        resp.body(),
-                        self.advertise_h3,
-                    );
-                }
-                None => Self::send(
-                    conn,
-                    stream_id,
-                    b"404",
-                    b"text/plain",
-                    b"",
-                    b"",
-                    self.advertise_h3,
-                ),
-            }
-            return;
-        }
-        let (status, ctype, body) = Self::route(path);
-        Self::send(
-            conn,
-            stream_id,
-            status,
-            ctype,
-            b"",
-            &body,
-            self.advertise_h3,
+        let response = BenchHandler::new().respond(&req);
+        assert!(
+            response
+                .headers
+                .iter()
+                .any(|h| h.name == b"content-type" && h.value != b"application/grpc")
         );
     }
 }

@@ -47,9 +47,13 @@ mut:
 
 fn handle(req fasthttp.HttpRequest) !fasthttp.HttpResponse {
 	mut sh := unsafe { &Shared(req.user_data) }
-	method := req.buffer[req.method.start..req.method.start + req.method.len].bytestr()
-	target := req.buffer[req.path.start..req.path.start + req.path.len].bytestr()
-	route := target.all_before('?')
+	// Route on zero-copy tos() views into the request buffer — no per-request
+	// bytestr()/all_before() heap allocation (each was a copy under the default GC,
+	// i.e. collection pressure on every request).
+	method := unsafe { tos(&req.buffer[req.method.start], req.method.len) }
+	target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
+	qpos := target.index_u8(`?`)
+	route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
 
 	if route == '/pipeline' {
 		return resp('text/plain', 'ok'.bytes())
@@ -62,13 +66,14 @@ fn handle(req fasthttp.HttpRequest) !fasthttp.HttpResponse {
 	} else if route == '/upload' {
 		return resp('text/plain', req.body.len.str().bytes())
 	} else if route.starts_with('/json/') {
-		count := clamp_count(route[6..].i64(), sh.dataset.len)
+		count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
 		mut m := qint(target, 'm')
 		if m == 0 {
 			m = 1
 		}
 		return fasthttp.HttpResponse{
-			content: sh.json_response(count, m)
+			content:       sh.json_response(count, m)
+			content_owned: true
 		}
 	} else if route == '/async-db' {
 		return resp('application/json', sh.async_db(qint(target, 'min'), qint(target, 'max'), qint(target,
@@ -86,9 +91,29 @@ fn resp(ctype string, body []u8) fasthttp.HttpResponse {
 	sb.write_decimal(i64(body.len))
 	sb.write_string('\r\nConnection: keep-alive\r\n\r\n')
 	unsafe { sb.write_ptr(body.data, body.len) }
+	// content_owned: true → the backend takes the builder's buffer as-is and frees it
+	// after sending, instead of cloning it (take_or_clone_content). That removes one
+	// heap allocation per response (the clone) — halving response-path allocation
+	// under the default GC.
 	return fasthttp.HttpResponse{
-		content: sb
+		content:       sb
+		content_owned: true
 	}
+}
+
+// parse_u_at reads a non-negative integer from `s` starting at byte `start`, stopping
+// at the first non-digit — no substring allocation (route[6..].i64() copies first).
+@[direct_array_access]
+fn parse_u_at(s string, start int) i64 {
+	mut n := i64(0)
+	for i := start; i < s.len; i++ {
+		c := s[i]
+		if c < `0` || c > `9` {
+			break
+		}
+		n = n * 10 + i64(c - `0`)
+	}
+	return n
 }
 
 // json_response builds the full /json response in a single allocation (no

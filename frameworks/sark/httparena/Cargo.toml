@@ -16,6 +16,8 @@ sark-gen.workspace = true
 sark-ws.workspace = true
 sark-h2.workspace = true
 sark-h3.workspace = true
+sark-grpc.workspace = true
+prost.workspace = true
 cartel-pg.workspace = true
 cartel-redis.workspace = true
 cartel-gen.workspace = true
@@ -24,6 +26,9 @@ shin.workspace = true
 http.workspace = true
 rcgen.workspace = true
 pin-project.workspace = true
+
+[build-dependencies]
+sark-grpc-build.workspace = true
 
 [lib]
 name = "httparena_sark"
@@ -36,18 +41,6 @@ path = "src/main.rs"
 [[bin]]
 name = "httparena-sark-ws"
 path = "src/ws_main.rs"
-
-[[bin]]
-name = "httparena-sark-h2c"
-path = "src/h2c_main.rs"
-
-[[bin]]
-name = "httparena-sark-json-tls"
-path = "src/json_tls_main.rs"
-
-[[bin]]
-name = "httparena-sark-h2"
-path = "src/h2_tls_main.rs"
 
 [[bin]]
 name = "httparena-sark-h3"

@@ -7,8 +7,8 @@ use dope::{DriverCfg, DriverConfig, Executor};
 use dope_quic::{Conn, ConnConfig, ConnHandle, Endpoint, Handler, StreamEvent, transport_params};
 use sark::fs::ServeDir;
 use sark_core::http::Field;
-use sark_h3::{Event, Role, StreamId};
 use sark_h3::dope::Session;
+use sark_h3::{Event, Role, StreamId};
 
 struct H3Handler {
     sessions: HashMap<ConnHandle, Session>,
@@ -211,7 +211,9 @@ fn main() -> io::Result<()> {
     let boot = httparena_sark::boot::Boot::from_env(8443);
     let static_dir = std::env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
     let serve: &'static ServeDir = Box::leak(Box::new(
-        ServeDir::new(static_dir).precompressed_br().precompressed_gzip(),
+        ServeDir::new(static_dir)
+            .precompressed_br()
+            .precompressed_gzip(),
     ));
     let bind = boot.bind;
 

@@ -105,6 +105,13 @@ fn wi(mut out []u8, n i64) {
 	unsafe { out.push_many(&tmp[i], 20 - i) }
 }
 
+// wb appends a byte slice (e.g. a precomputed const response) into `out` with a
+// single bulk copy — no allocation.
+@[inline]
+fn wb(mut out []u8, b []u8) {
+	unsafe { out.push_many(b.data, b.len) }
+}
+
 // write_resp appends a complete HTTP/1.1 response (status line + headers + body)
 // straight into the connection's persistent write buffer — no intermediate
 // strings.Builder, no body→response copy, no per-request heap allocation. This
@@ -112,6 +119,21 @@ fn wi(mut out []u8, n i64) {
 // that are allocation-bound anyway.
 fn write_resp(mut out []u8, ctype string, body string) {
 	ws(mut out, 'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: ')
+	ws(mut out, ctype)
+	ws(mut out, '\r\nContent-Length: ')
+	wi(mut out, i64(body.len))
+	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n')
+	ws(mut out, body)
+}
+
+// write_ok_xcache writes a complete 200 JSON response carrying an X-Cache: HIT|MISS
+// header straight into `out` — the zero-alloc twin of ok_xcache(): no per-call
+// strings.Builder and no body→out copy. (write_resp above is the same for the
+// no-X-Cache paths, so crud_list/crud_update reuse it.) Byte-identical to ok_xcache().
+fn write_ok_xcache(mut out []u8, ctype string, body string, cache string) {
+	ws(mut out, 'HTTP/1.1 200 OK\r\nServer: vanilla\r\nX-Cache: ')
+	ws(mut out, cache)
+	ws(mut out, '\r\nContent-Type: ')
 	ws(mut out, ctype)
 	ws(mut out, '\r\nContent-Length: ')
 	wi(mut out, i64(body.len))
@@ -164,16 +186,17 @@ fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
 		}
 	} else if route == '/crud/items' {
 		if method == 'POST' {
-			out << sh.crud_create(req)
+			sh.write_crud_create(mut out, req)
 		} else {
-			out << sh.crud_list(qstr(req, qk_category), qint(req, qk_page), qint(req, qk_limit))
+			sh.write_crud_list(mut out, qstr(req, qk_category), qint(req, qk_page), qint(req,
+				qk_limit))
 		}
 	} else if route.starts_with('/crud/items/') {
 		id := int(parse_u_at(route, 12))
 		if method == 'PUT' {
-			out << sh.crud_update(id, req)
+			sh.write_crud_update(mut out, id, req)
 		} else {
-			out << sh.crud_get(id)
+			sh.write_crud_get(mut out, id)
 		}
 	} else {
 		out << not_found
@@ -181,7 +204,7 @@ fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
 }
 
 // crud_list returns a paginated, category-filtered page of items.
-fn (mut sh Shared) crud_list(category string, page i64, limit i64) []u8 {
+fn (mut sh Shared) write_crud_list(mut out []u8, category string, page i64, limit i64) {
 	mut p := page
 	if p < 1 {
 		p = 1
@@ -201,7 +224,10 @@ fn (mut sh Shared) crud_list(category string, page i64, limit i64) []u8 {
 		category,
 		lim.str(),
 		offset.str(),
-	]) or { return ok('application/json', '{"items":[],"total":0,"page":1}') }
+	]) or {
+		write_resp(mut out, 'application/json', '{"items":[],"total":0,"page":1}')
+		return
+	}
 	trows := db.exec_param_many('SELECT count(*) FROM items WHERE category = \$1', [
 		category,
 	]) or { [] }
@@ -210,6 +236,10 @@ fn (mut sh Shared) crud_list(category string, page i64, limit i64) []u8 {
 	for row in rows {
 		items << row_to_item(row)
 	}
+	// Build the JSON body once (json.encode of the items array is the correctness
+	// reference), then write the full response straight into `out` via write_resp —
+	// no second strings.Builder for the response head and no body→out copy (ok() did
+	// both). Byte-identical to the previous ok('application/json', sb.str()).
 	mut sb := strings.new_builder(items.len * 200 + 64)
 	sb.write_string('{"items":')
 	sb.write_string(json.encode(items))
@@ -218,36 +248,47 @@ fn (mut sh Shared) crud_list(category string, page i64, limit i64) []u8 {
 	sb.write_string(',"page":')
 	sb.write_decimal(p)
 	sb.write_u8(`}`)
-	return ok('application/json', sb.str())
+	write_resp(mut out, 'application/json', sb.str())
 }
 
-// crud_get returns a single item, using a cache-aside in-memory cache and
-// reporting the result via the X-Cache header (MISS on first read, HIT after).
-fn (mut sh Shared) crud_get(id int) []u8 {
+// write_crud_get writes a single item straight into `out`, using a cache-aside
+// in-memory cache and the X-Cache header (MISS on first read, HIT after). The
+// hot path is the HIT: it now writes the cached body + headers directly into the
+// connection buffer with zero per-request allocation (ok_xcache built a throwaway
+// strings.Builder per hit, then the caller copied it into out).
+fn (mut sh Shared) write_crud_get(mut out []u8, id int) {
 	sh.cache_mu.@rlock()
 	cached := sh.cache[id] or { '' }
 	sh.cache_mu.runlock()
 	if cached.len > 0 {
-		return ok_xcache('application/json', cached, 'HIT')
+		write_ok_xcache(mut out, 'application/json', cached, 'HIT')
+		return
 	}
 	mut db := sh.db
 	rows := db.exec_param_many('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE id = \$1', [
 		id.str(),
-	]) or { return not_found }
+	]) or {
+		wb(mut out, not_found)
+		return
+	}
 	if rows.len == 0 {
-		return not_found
+		wb(mut out, not_found)
+		return
 	}
 	body := json.encode(row_to_item(rows[0]))
 	sh.cache_mu.@lock()
 	sh.cache[id] = body
 	sh.cache_mu.unlock()
-	return ok_xcache('application/json', body, 'MISS')
+	write_ok_xcache(mut out, 'application/json', body, 'MISS')
 }
 
 // crud_create inserts a new item from the JSON body and returns 201.
-fn (mut sh Shared) crud_create(req request_parser.HttpRequest) []u8 {
+fn (mut sh Shared) write_crud_create(mut out []u8, req request_parser.HttpRequest) {
 	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
-	c := json.decode(CrudCreate, raw) or { return bad_request }
+	c := json.decode(CrudCreate, raw) or {
+		wb(mut out, bad_request)
+		return
+	}
 	mut db := sh.db
 	db.exec_param_many("INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) VALUES (\$1, \$2, \$3, \$4, \$5, true, '[]', 0, 0) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price, quantity = EXCLUDED.quantity", [
 		c.id.str(),
@@ -255,14 +296,21 @@ fn (mut sh Shared) crud_create(req request_parser.HttpRequest) []u8 {
 		c.category,
 		c.price.str(),
 		c.quantity.str(),
-	]) or { return bad_request }
-	return created
+	]) or {
+		wb(mut out, bad_request)
+		return
+	}
+	wb(mut out, created)
 }
 
-// crud_update updates an item and invalidates its cache entry.
-fn (mut sh Shared) crud_update(id int, req request_parser.HttpRequest) []u8 {
+// write_crud_update updates an item, invalidates its cache entry, and writes the
+// response straight into `out`.
+fn (mut sh Shared) write_crud_update(mut out []u8, id int, req request_parser.HttpRequest) {
 	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
-	c := json.decode(CrudCreate, raw) or { return bad_request }
+	c := json.decode(CrudCreate, raw) or {
+		wb(mut out, bad_request)
+		return
+	}
 	mut db := sh.db
 	db.exec_param_many('UPDATE items SET name = \$2, category = \$3, price = \$4, quantity = \$5 WHERE id = \$1', [
 		id.str(),
@@ -270,11 +318,14 @@ fn (mut sh Shared) crud_update(id int, req request_parser.HttpRequest) []u8 {
 		c.category,
 		c.price.str(),
 		c.quantity.str(),
-	]) or { return bad_request }
+	]) or {
+		wb(mut out, bad_request)
+		return
+	}
 	sh.cache_mu.@lock()
 	sh.cache.delete(id)
 	sh.cache_mu.unlock()
-	return ok('application/json', '{"status":"ok"}')
+	write_resp(mut out, 'application/json', '{"status":"ok"}')
 }
 
 fn row_to_item(row pg.Row) DbItem {
@@ -602,32 +653,6 @@ fn strconv_hex(s string) int {
 		n = n * 16 + d
 	}
 	return n
-}
-
-// ok builds a complete HTTP/1.1 response with the given content type.
-fn ok(ctype string, body string) []u8 {
-	mut sb := strings.new_builder(body.len + 96)
-	sb.write_string('HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: ')
-	sb.write_string(ctype)
-	sb.write_string('\r\nContent-Length: ')
-	sb.write_decimal(i64(body.len))
-	sb.write_string('\r\nConnection: keep-alive\r\n\r\n')
-	sb.write_string(body)
-	return sb
-}
-
-// ok_xcache builds a JSON response carrying an X-Cache: HIT|MISS header.
-fn ok_xcache(ctype string, body string, cache string) []u8 {
-	mut sb := strings.new_builder(body.len + 96)
-	sb.write_string('HTTP/1.1 200 OK\r\nServer: vanilla\r\nX-Cache: ')
-	sb.write_string(cache)
-	sb.write_string('\r\nContent-Type: ')
-	sb.write_string(ctype)
-	sb.write_string('\r\nContent-Length: ')
-	sb.write_decimal(i64(body.len))
-	sb.write_string('\r\nConnection: keep-alive\r\n\r\n')
-	sb.write_string(body)
-	return sb
 }
 
 // accepts_gzip reports whether the request advertises gzip in Accept-Encoding.

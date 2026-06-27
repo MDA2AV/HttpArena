@@ -7,11 +7,7 @@ edition.workspace = true
 dope.workspace = true
 dope-gen.workspace = true
 sark-grpc.workspace = true
-prost.workspace = true
 httparena-sark = { path = "../httparena" }
-
-[build-dependencies]
-sark-grpc-build.workspace = true
 
 [[bin]]
 name = "httparena-sark-grpc"

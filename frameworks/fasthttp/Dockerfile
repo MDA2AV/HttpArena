@@ -5,13 +5,16 @@ RUN apt-get -qq update && \
         ca-certificates git build-essential libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Pinned, reproducible V at master commit c0624b274 (built from source). No release
+# Pinned, reproducible V at master commit cd213a17c (built from source). No release
 # tag carries the modern stdlib this framework needs: the pooled Go-style `db.pg`
 # (vlang/v#27265) and the single-element-array-push codegen fix (vlang/v#27470, which
-# is why 0.5.1 was previously pinned). `make` bootstraps via the matching vc; if a much
-# later rebuild ever fails to bootstrap, pin vlang/vc to the commit cut for this V.
+# is why 0.5.1 was previously pinned). This commit also carries the Boehm GC
+# free-space-divisor fix (vlang/v#27560, fixes vlang/v#27555) that recovers the
+# default-GC throughput regression introduced in the c0624b2..6c4d26f range. `make`
+# bootstraps via the matching vc; if a much later rebuild ever fails to bootstrap,
+# pin vlang/vc to the commit cut for this V.
 RUN git clone https://github.com/vlang/v /opt/v && \
-    cd /opt/v && git checkout c0624b274 && \
+    cd /opt/v && git checkout cd213a17c && \
     make && ln -s /opt/v/v /usr/local/bin/v
 
 WORKDIR /app
