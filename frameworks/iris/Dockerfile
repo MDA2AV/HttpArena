@@ -5,7 +5,7 @@
 FROM ubuntu:24.04 AS build
 
 ARG IRIS_REPO=https://github.com/Cobra007-star-source/IRIS.git
-ARG IRIS_REF=v0.3.1-ha
+ARG IRIS_REF=v0.3.2-ha
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
