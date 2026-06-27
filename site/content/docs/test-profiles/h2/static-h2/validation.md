@@ -21,3 +21,11 @@ Requests `GET /static/reset.css` over HTTP/2 and verifies the response size is g
 ## 404 for nonexistent file
 
 Sends `GET /static/nonexistent.txt` over HTTP/2 and verifies the server returns **HTTP 404**.
+
+## Static freshness (no pre-caching)
+
+The same anti-pre-cache probe as the [HTTP/1.1 static validation](../../h1/isolated/static/validation) also runs over HTTP/2 on port 8443: it rewrites `reset.css` (and its `.gz`/`.br` siblings) on disk mid-run and polls each `Accept-Encoding` until the response reflects the change or the `STATIC_FRESHNESS_GRACE` window (default **30s**) elapses. `engine` and `infrastructure` types are **exempt** (skipped).
+
+It runs here **only for entries subscribed to `static-h2` but not `static`** — when a framework also subscribes to the HTTP/1.1 `static` test, that test's freshness check already covers it, so the HTTP/2 probe is not repeated.
+
+**PASS** if every served encoding reflects the change within the window. **FAIL** if any stays stale after it.
