@@ -17,6 +17,7 @@ use actix_files::Files;
 use actix_web::http::header::{ContentType, HeaderValue, SERVER};
 use actix_web::middleware::Compress;
 use actix_web::{web, App, HttpResponse, HttpServer};
+use dashmap::DashMap;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as PgPool, RecyclingMethod};
 use futures_util::StreamExt;
 use rustls::ServerConfig;
@@ -24,6 +25,10 @@ use serde::{Deserialize, Serialize};
 use std::io;
 
 static SERVER_HDR: HeaderValue = HeaderValue::from_static("actix");
+
+// In-memory cache-aside store for the crud read path: item id -> rendered JSON
+// body. Populated on GET miss, invalidated on update. No Redis required.
+type CrudCache = DashMap<i64, Vec<u8>>;
 
 #[derive(Deserialize)]
 struct BaselineQuery {
@@ -85,6 +90,31 @@ struct ProcessedItem {
 struct JsonResponse {
     items: Vec<ProcessedItem>,
     count: usize,
+}
+
+// CRUD request bodies / query.
+#[derive(Deserialize)]
+struct CrudListQuery {
+    category: Option<String>,
+    page: Option<i64>,
+    limit: Option<i64>,
+}
+
+#[derive(Deserialize)]
+struct CrudCreate {
+    id: i64,
+    name: String,
+    category: String,
+    price: i32,
+    quantity: i32,
+}
+
+#[derive(Deserialize)]
+struct CrudUpdate {
+    name: String,
+    category: String,
+    price: i32,
+    quantity: i32,
 }
 
 struct AppState {
@@ -230,29 +260,219 @@ async fn pgdb_endpoint(
                 .body(r#"{"items":[],"count":0}"#);
         }
     };
-    let items: Vec<serde_json::Value> = rows
-        .iter()
-        .map(|row| {
-            serde_json::json!({
-                "id": row.get::<_, i32>(0) as i64,
-                "name": row.get::<_, &str>(1),
-                "category": row.get::<_, &str>(2),
-                "price": row.get::<_, i32>(3),
-                "quantity": row.get::<_, i32>(4),
-                "active": row.get::<_, bool>(5),
-                "tags": row.get::<_, serde_json::Value>(6),
-                "rating": {
-                    "score": row.get::<_, i32>(7),
-                    "count": row.get::<_, i32>(8) as i64,
-                }
-            })
-        })
-        .collect();
+    let items: Vec<serde_json::Value> = rows.iter().map(row_to_item).collect();
     let result = serde_json::json!({"items": items, "count": items.len()});
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
         .content_type(ContentType::json())
         .body(result.to_string())
+}
+
+// ───── CRUD (/crud/items) ─────
+//
+// List + read + create + update over the same `items` table the async-db
+// endpoint uses. Reads go through an in-memory cache-aside (X-Cache MISS/HIT),
+// invalidated on update — no Redis required.
+
+const CRUD_COLS: &str =
+    "id, name, category, price, quantity, active, tags, rating_score, rating_count";
+
+fn row_to_item(row: &tokio_postgres::Row) -> serde_json::Value {
+    serde_json::json!({
+        "id": row.get::<_, i32>(0) as i64,
+        "name": row.get::<_, &str>(1),
+        "category": row.get::<_, &str>(2),
+        "price": row.get::<_, i32>(3),
+        "quantity": row.get::<_, i32>(4),
+        "active": row.get::<_, bool>(5),
+        "tags": row.get::<_, serde_json::Value>(6),
+        "rating": {
+            "score": row.get::<_, i32>(7),
+            "count": row.get::<_, i32>(8) as i64,
+        }
+    })
+}
+
+fn json_body(body: Vec<u8>) -> HttpResponse {
+    HttpResponse::Ok()
+        .insert_header((SERVER, SERVER_HDR.clone()))
+        .content_type(ContentType::json())
+        .body(body)
+}
+
+async fn crud_list(
+    query: web::Query<CrudListQuery>,
+    pool: web::Data<Option<PgPool>>,
+) -> HttpResponse {
+    let pool = match pool.as_ref() {
+        Some(p) => p,
+        None => return json_body(br#"{"items":[],"total":0,"page":1}"#.to_vec()),
+    };
+    let category = query.category.clone().unwrap_or_default();
+    let page = query.page.unwrap_or(1).max(1);
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
+    let offset = (page - 1) * limit;
+
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let list_sql =
+        format!("SELECT {CRUD_COLS} FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3");
+    let stmt = match client.prepare_cached(&list_sql).await {
+        Ok(s) => s,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let rows = match client.query(&stmt, &[&category, &limit, &offset]).await {
+        Ok(r) => r,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let items: Vec<serde_json::Value> = rows.iter().map(row_to_item).collect();
+
+    let count_stmt = match client
+        .prepare_cached("SELECT COUNT(*) FROM items WHERE category = $1")
+        .await
+    {
+        Ok(s) => s,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let total: i64 = client
+        .query_one(&count_stmt, &[&category])
+        .await
+        .map(|r| r.get::<_, i64>(0))
+        .unwrap_or(0);
+
+    let body = serde_json::json!({ "items": items, "total": total, "page": page });
+    json_body(body.to_string().into_bytes())
+}
+
+async fn crud_get(
+    id: web::Path<i64>,
+    pool: web::Data<Option<PgPool>>,
+    cache: web::Data<CrudCache>,
+) -> HttpResponse {
+    let id = id.into_inner();
+    if let Some(cached) = cache.get(&id) {
+        return HttpResponse::Ok()
+            .insert_header((SERVER, SERVER_HDR.clone()))
+            .insert_header(("X-Cache", "HIT"))
+            .content_type(ContentType::json())
+            .body(cached.value().clone());
+    }
+    let pool = match pool.as_ref() {
+        Some(p) => p,
+        None => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let sql = format!("SELECT {CRUD_COLS} FROM items WHERE id = $1");
+    let stmt = match client.prepare_cached(&sql).await {
+        Ok(s) => s,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    match client.query_opt(&stmt, &[&(id as i32)]).await {
+        Ok(Some(row)) => {
+            let body = row_to_item(&row).to_string().into_bytes();
+            cache.insert(id, body.clone());
+            HttpResponse::Ok()
+                .insert_header((SERVER, SERVER_HDR.clone()))
+                .insert_header(("X-Cache", "MISS"))
+                .content_type(ContentType::json())
+                .body(body)
+        }
+        Ok(None) => HttpResponse::NotFound()
+            .insert_header((SERVER, SERVER_HDR.clone()))
+            .finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+async fn crud_create(
+    item: web::Json<CrudCreate>,
+    pool: web::Data<Option<PgPool>>,
+    cache: web::Data<CrudCache>,
+) -> HttpResponse {
+    let pool = match pool.as_ref() {
+        Some(p) => p,
+        None => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let stmt = match client
+        .prepare_cached(
+            "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) \
+             VALUES ($1, $2, $3, $4, $5, false, '[]'::jsonb, 0, 0) \
+             ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, \
+             price = EXCLUDED.price, quantity = EXCLUDED.quantity",
+        )
+        .await
+    {
+        Ok(s) => s,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    match client
+        .execute(
+            &stmt,
+            &[&(item.id as i32), &item.name, &item.category, &item.price, &item.quantity],
+        )
+        .await
+    {
+        Ok(_) => {
+            cache.remove(&item.id);
+            HttpResponse::Created()
+                .insert_header((SERVER, SERVER_HDR.clone()))
+                .finish()
+        }
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+async fn crud_update(
+    id: web::Path<i64>,
+    item: web::Json<CrudUpdate>,
+    pool: web::Data<Option<PgPool>>,
+    cache: web::Data<CrudCache>,
+) -> HttpResponse {
+    let id = id.into_inner();
+    let pool = match pool.as_ref() {
+        Some(p) => p,
+        None => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return HttpResponse::ServiceUnavailable().finish(),
+    };
+    let stmt = match client
+        .prepare_cached(
+            "UPDATE items SET name = $2, category = $3, price = $4, quantity = $5 WHERE id = $1",
+        )
+        .await
+    {
+        Ok(s) => s,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+    let updated = client
+        .execute(
+            &stmt,
+            &[&(id as i32), &item.name, &item.category, &item.price, &item.quantity],
+        )
+        .await
+        .unwrap_or(0);
+    // Invalidate the cached read so the next GET re-fetches from the DB (X-Cache: MISS).
+    cache.remove(&id);
+    if updated > 0 {
+        HttpResponse::Ok()
+            .insert_header((SERVER, SERVER_HDR.clone()))
+            .finish()
+    } else {
+        HttpResponse::NotFound()
+            .insert_header((SERVER, SERVER_HDR.clone()))
+            .finish()
+    }
 }
 
 fn load_tls_config() -> Option<ServerConfig> {
@@ -264,14 +484,13 @@ fn load_tls_config() -> Option<ServerConfig> {
         .filter_map(|r| r.ok())
         .collect();
     let key = rustls_pemfile::private_key(&mut io::BufReader::new(key_file)).ok()??;
-    let mut config = ServerConfig::builder()
+    let config = ServerConfig::builder()
         .with_no_client_auth()
         .with_single_cert(certs, key)
         .ok()?;
-    // ALPN protocol identifier for HTTP/2. Required to negotiate H2 over TLS;
-    // rustls doesn't pick a default. This is the minimum configuration to
-    // enable HTTP/2, not "custom TLS tuning".
-    config.alpn_protocols = vec![b"h2".to_vec()];
+    // actix-web always enables ALPN "h2" and "http/1.1" on a rustls listener, so
+    // the same config serves baseline-h2/static-h2 (negotiating h2 on :8443) and
+    // json-tls (negotiating http/1.1 on :8081). No manual alpn_protocols needed.
     Some(config)
 }
 
@@ -279,6 +498,7 @@ fn load_tls_config() -> Option<ServerConfig> {
 async fn main() -> io::Result<()> {
     let dataset = load_dataset();
     let state = web::Data::new(AppState { dataset });
+    let crud_cache: web::Data<CrudCache> = web::Data::new(DashMap::new());
 
     let pg_pool: Option<PgPool> = std::env::var("DATABASE_URL").ok().and_then(|url| {
         let pg_config: tokio_postgres::Config = url.parse().ok()?;
@@ -296,21 +516,23 @@ async fn main() -> io::Result<()> {
         PgPool::builder(mgr).max_size(pool_size).build().ok()
     });
 
-    let tls_config = load_tls_config();
     let workers = cgroup_cpus();
 
     let mut server = HttpServer::new({
         let state = state.clone();
         let pg_pool = pg_pool.clone();
+        let crud_cache = crud_cache.clone();
         move || {
             App::new()
                 // Compress middleware performs on-the-fly response compression
                 // based on the request's Accept-Encoding. Framework-standard —
-                // no handmade gzip/brotli, no pre-compressed caches.
+                // no handmade gzip/brotli. It skips responses that already carry
+                // a Content-Encoding (i.e. the pre-compressed static files below).
                 .wrap(Compress::default())
                 .app_data(state.clone())
                 .app_data(web::PayloadConfig::new(25 * 1024 * 1024))
                 .app_data(web::Data::new(pg_pool.clone()))
+                .app_data(crud_cache.clone())
                 .route("/pipeline", web::get().to(pipeline))
                 .route("/baseline11", web::get().to(baseline11_get))
                 .route("/baseline11", web::post().to(baseline11_post))
@@ -318,18 +540,31 @@ async fn main() -> io::Result<()> {
                 .route("/upload", web::post().to(upload))
                 .route("/async-db", web::get().to(pgdb_endpoint))
                 .route("/json/{count}", web::get().to(json_endpoint))
-                // actix-files Files service reads from disk per request.
-                // Combined with the Compress middleware above, identity files
-                // are served from disk and compressed on the wire when the
-                // client advertises gzip/brotli in Accept-Encoding.
-                .service(Files::new("/static", "/data/static"))
+                .route("/crud/items", web::get().to(crud_list))
+                .route("/crud/items", web::post().to(crud_create))
+                .route("/crud/items/{id}", web::get().to(crud_get))
+                .route("/crud/items/{id}", web::put().to(crud_update))
+                // actix-files serves from disk per request. `try_compressed()`
+                // selects a pre-compressed .br/.gz sibling by Accept-Encoding
+                // (framework API — no hand-rolled suffix lookup), falling back to
+                // the identity file when no variant exists. Reading per request
+                // keeps it freshness-compliant (no permanent in-memory cache).
+                .service(
+                    Files::new("/static", "/data/static").try_compressed(),
+                )
         }
     })
     .workers(workers)
     .bind("0.0.0.0:8080")?;
 
-    if let Some(tls_cfg) = tls_config {
+    // TLS listeners. :8443 carries h2 (baseline-h2/static-h2); :8081 carries
+    // HTTP/1.1-over-TLS (json-tls). Both use the same cert + ALPN (h2,http/1.1);
+    // the client picks the protocol.
+    if let Some(tls_cfg) = load_tls_config() {
         server = server.bind_rustls_0_23("0.0.0.0:8443", tls_cfg)?;
+    }
+    if let Some(tls_cfg) = load_tls_config() {
+        server = server.bind_rustls_0_23("0.0.0.0:8081", tls_cfg)?;
     }
 
     server.run().await
