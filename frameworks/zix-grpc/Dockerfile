@@ -5,8 +5,8 @@ ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG ZIG_VERSION=0.16.0
-ARG ZIX_VERSION=0.4.x-rc3
-RUN apk add --no-cache ca-certificates curl git tar xz
+ARG ZIX_VERSION=0.5.x-rc1
+RUN apk add --no-cache ca-certificates curl git tar xz openssl
 
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
@@ -19,15 +19,11 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix X.Y.Z, separate layer so source-only rebuilds skip the fetch.
-# The Http1 raw engine work this image needs (large-body drain plus the per-worker
-# response cache used by the /json endpoint) must be present on the X.Y.Z branch.
-# Four ordered attempts before giving up: curl the archive tarball from github then
-# codeberg, then a shallow git clone from github then codeberg. The github archive
-# redirects to codeload.github.com (which the benchmark runner may not resolve), so
-# curl can fall through to the codeberg tarball, and git clone talks to github.com
-# and codeberg.org directly as the deeper fallback. RETRY and RETRY_DELAY bound
-# every attempt.
+# Vendor zix ${ZIX_VERSION} in its own layer so source-only rebuilds skip the fetch. Tries curl
+# tarball then git clone, github before codeberg. RETRY / RETRY_DELAY bound every attempt.
+#
+# Add +aes+pclmul: x86_64_v3 omits AES-NI / PCLMUL, so zix TLS would compile the ~40x slower
+# software AES-GCM. Every x86_64_v3 CPU has them, so it is safe.
 RUN set -eu; \
     fetch() { \
         rm -rf /src/vendor/zix; mkdir -p /src/vendor/zix; \
@@ -61,9 +57,17 @@ RUN set -eu; \
         amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3 ;; \
         arm64) ZIG_TARGET=aarch64-linux-musl; ZIG_CPU=baseline ;; \
     esac; \
-    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}" --release=fast
+    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}+aes+pclmul+adx" --release=fast
+
+# Self-signed Ed25519 cert generated at image build, baked at /etc/zix-tls. Ed25519 handshake
+RUN set -eu; \
+    mkdir -p /etc/zix-tls; \
+    openssl genpkey -algorithm ED25519 -out /etc/zix-tls/server.key; \
+    openssl req -new -x509 -key /etc/zix-tls/server.key -out /etc/zix-tls/server.crt \
+        -days 3650 -subj "/CN=localhost"
 
 FROM alpine:3.20
 COPY --from=build /src/zig-out/bin/zix-grpc /zix-grpc
+COPY --from=build /etc/zix-tls /etc/zix-tls
 EXPOSE 8080
 ENTRYPOINT ["/zix-grpc"]
