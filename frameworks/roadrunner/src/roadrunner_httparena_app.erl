@@ -13,6 +13,12 @@ start(_StartType, _StartArgs) ->
     {ok, _} = roadrunner:start_listener(httparena_http, #{
         port => HttpPort,
         routes => Routes,
+        %% High-concurrency profiles offer thousands of connections; lift the
+        %% conservative core defaults (max_clients 150, num_acceptors 10) so the
+        %% listener keeps every offered connection live instead of capping and
+        %% forcing the load generator into a reconnect storm.
+        max_clients => 32768,
+        num_acceptors => 100,
         middlewares => [roadrunner_compress],
         %% 25 MB headroom for the upload profile (validator goes up to 20 MB).
         max_content_length => 26214400,
@@ -27,6 +33,8 @@ start(_StartType, _StartArgs) ->
     {ok, _} = roadrunner:start_listener(httparena_h2c, #{
         port => H2cPort,
         routes => Routes,
+        max_clients => 32768,
+        num_acceptors => 100,
         middlewares => [roadrunner_compress],
         max_content_length => 26214400,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
@@ -41,6 +49,8 @@ start(_StartType, _StartArgs) ->
             {ok, _} = roadrunner:start_listener(httparena_tls, #{
                 port => TlsPort,
                 routes => Routes,
+                max_clients => 32768,
+                num_acceptors => 100,
                 middlewares => [roadrunner_compress],
                 max_content_length => 26214400,
                 tls => TlsOpts,
@@ -50,6 +60,8 @@ start(_StartType, _StartArgs) ->
             {ok, _} = roadrunner:start_listener(httparena_h2, #{
                 port => H2Port,
                 routes => Routes,
+                max_clients => 32768,
+                num_acceptors => 100,
                 middlewares => [roadrunner_compress],
                 max_content_length => 26214400,
                 tls => TlsOpts,
