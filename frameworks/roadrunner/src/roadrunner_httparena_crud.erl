@@ -34,12 +34,16 @@ list(Req) ->
      ORDER BY id
      LIMIT $2 OFFSET $3
     """,
-    {Items, Total} =
+    CountSql = ~"SELECT COUNT(*) FROM items WHERE category = $1",
+    Items =
         case roadrunner_httparena_db:query(ListSql, [Cat, Limit, Offset]) of
-            {ok, _, Rows} ->
-                {[roadrunner_httparena_items:row_to_json(R) || R <- Rows], length(Rows)};
-            _ ->
-                {[], 0}
+            {ok, _, Rows} -> [roadrunner_httparena_items:row_to_json(R) || R <- Rows];
+            _ -> []
+        end,
+    Total =
+        case roadrunner_httparena_db:query(CountSql, [Cat]) of
+            {ok, _, [{N}]} -> N;
+            _ -> 0
         end,
     Body = #{~"items" => Items, ~"total" => Total, ~"page" => Page},
     {roadrunner_resp:json(200, Body), Req}.
