@@ -1,64 +1,64 @@
-taskset: failed to set pid 54's affinity: Invalid argument
 taskset: failed to set pid 60's affinity: Invalid argument
-taskset: failed to set pid 62's affinity: Invalid argument
-taskset: failed to set pid 63's affinity: Invalid argument
 taskset: failed to set pid 64's affinity: Invalid argument
+taskset: failed to set pid 65's affinity: Invalid argument
 taskset: failed to set pid 66's affinity: Invalid argument
-taskset: failed to set pid 68's affinity: Invalid argument
-taskset: failed to set pid 70's affinity: Invalid argument
 taskset: failed to set pid 71's affinity: Invalid argument
+taskset: failed to set pid 73's affinity: Invalid argument
 taskset: failed to set pid 74's affinity: Invalid argument
-taskset: failed to set pid 76's affinitytaskset: : Invalid argument
-failed to set pid 57's affinity: Invalid argument
+taskset: failed to set pid 75's affinity: Invalid argument
+taskset: failed to set pid 76's affinity: Invalid argument
 taskset: failed to set pid 77's affinity: Invalid argument
 taskset: failed to set pid 78's affinity: Invalid argument
+taskset: failed to set pid 79's affinity: Invalid argument
+taskset: failed to set pid 81's affinity: Invalid argument
 taskset: failed to set pid 80's affinity: Invalid argument
-taskset: failed to set pid 83's affinity: Invalid argument
-taskset: failed to set pid 86's affinity: Invalid argument
+taskset: failed to set pid 82's affinity: Invalid argument
+taskset: failed to set pid 85's affinity: Invalid argument
+taskset: failed to set pid 84's affinity: Invalid argument
 taskset: failed to set pid 89's affinity: Invalid argument
-taskset: failed to set pid 90's affinity: Invalid argument
-taskset: failed to set pid 91's affinity: Invalid argument
-taskset: failed to set pid 92's affinity: Invalid argument
-taskset: failed to set pid 93's affinity: Invalid argument
-taskset: failed to set pid 94's affinity: Invalid argument
-taskset: failed to set pid 98's affinitytaskset: : Invalid argument
-failed to set pid 97's affinity: Invalid argument
-taskset: taskset: failed to set pid 96's affinityfailed to set pid 99's affinity: Invalid argument
+taskset: taskset: failed to set pid 87's affinityfailed to set pid 90's affinity: Invalid argument
 : Invalid argument
+taskset: failed to set pid 92's affinity: Invalid argument
+taskset: failed to set pid 94's affinity: Invalid argument
+taskset: failed to set pid 95's affinity: Invalid argument
+taskset: failed to set pid 96's affinity: Invalid argument
+taskset: failed to set pid 97's affinity: Invalid argument
+taskset: failed to set pid 98's affinity: Invalid argument
+taskset: failed to set pid 99's affinity: Invalid argument
 taskset: failed to set pid 100's affinity: Invalid argument
 taskset: failed to set pid 101's affinity: Invalid argument
+taskset: failed to set pid 102's affinity: Invalid argument
 taskset: failed to set pid 103's affinity: Invalid argument
 taskset: failed to set pid 104's affinity: Invalid argument
-taskset: failed to set pid 102's affinity: Invalid argument
-taskset: failed to set pid 148's affinity: Invalid argument
-taskset: failed to set pid 150's affinity: Invalid argument
-taskset: failed to set pid 152's affinity: Invalid argument
 taskset: failed to set pid 154's affinity: Invalid argument
-taskset: taskset: failed to set pid 158's affinityfailed to set pid 147's affinity: Invalid argument
-: Invalid argument
-taskset: failed to set pid 160's affinity: Invalid argument
+taskset: failed to set pid 155's affinity: Invalid argument
+taskset: failed to set pid 158's affinity: Invalid argument
+taskset: failed to set pid 159's affinity: Invalid argument
+taskset: failed to set pid 161's affinity: Invalid argument
+taskset: failed to set pid 162's affinity: Invalid argument
+taskset: failed to set pid 163's affinity: Invalid argument
+taskset: failed to set pid 165's affinity: Invalid argument
+taskset: failed to set pid 167's affinity: Invalid argument
 taskset: failed to set pid 168's affinity: Invalid argument
-taskset: failed to set pid 169's affinity: Invalid argument
 taskset: failed to set pid 171's affinity: Invalid argument
-taskset: failed to set pid 173's affinity: Invalid argument
-taskset: failed to set pid 174's affinity: Invalid argument
-taskset: failed to set pid 175's affinity: Invalid argument
+taskset: failed to set pid 176's affinity: Invalid argument
 taskset: failed to set pid 177's affinity: Invalid argument
-taskset: failed to set pid 181's affinity: Invalid argument
+taskset: failed to set pid 178's affinity: Invalid argument
 taskset: failed to set pid 183's affinity: Invalid argument
-taskset: failed to set pid 184's affinity: Invalid argument
-taskset: failed to set pid 187's affinity: Invalid argument
+taskset: failed to set pid 181's affinity: Invalid argument
 taskset: failed to set pid 186's affinity: Invalid argument
+taskset: failed to set pid 187's affinity: Invalid argument
+taskset: failed to set pid 185's affinity: Invalid argument
 taskset: failed to set pid 189's affinity: Invalid argument
 taskset: failed to set pid 188's affinity: Invalid argument
 taskset: failed to set pid 190's affinity: Invalid argument
 taskset: failed to set pid 191's affinity: Invalid argument
 taskset: failed to set pid 192's affinity: Invalid argument
-taskset: failed to set pid 193's affinity: Invalid argument
 taskset: failed to set pid 194's affinity: Invalid argument
+taskset: failed to set pid 193's affinity: Invalid argument
 taskset: failed to set pid 195's affinity: Invalid argument
 taskset: failed to set pid 196's affinity: Invalid argument
 taskset: failed to set pid 197's affinity: Invalid argument
 taskset: failed to set pid 198's affinity: Invalid argument
-taskset: failed to set pid 199's affinity: Invalid argument
 taskset: failed to set pid 200's affinity: Invalid argument
+taskset: failed to set pid 199's affinity: Invalid argument

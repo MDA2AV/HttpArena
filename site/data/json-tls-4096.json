@@ -1,5 +1,24 @@
 [
   {
+    "framework": "actix",
+    "language": "Rust",
+    "rps": 1157219,
+    "avg_latency": "3.56ms",
+    "p99_latency": "64.52ms",
+    "cpu": "6580.5%",
+    "memory": "229MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "3.93GB",
+    "reconnects": 0,
+    "status_2xx": 5897923,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "aleph",
     "language": "Clojure",
     "rps": 595255,

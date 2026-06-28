@@ -7,6 +7,7 @@ edition = "2021"
 actix-web = { version = "4", features = ["rustls-0_23", "compress-brotli", "compress-gzip"] }
 actix-files = "0.6"
 actix-rt = "2"
+dashmap = "6"
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 rustls-pemfile = "2"
 serde = { version = "1", features = ["derive"] }
@@ -15,6 +16,19 @@ num_cpus = "1"
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
 futures-util = "0.3"
+
+# actix-files `Files::try_compressed()` (PR #2615) serves pre-compressed .br/.gz
+# static variants from disk per request via the framework API, but is unreleased
+# (latest crates.io actix-files is 0.6.10). Pin the whole actix-web workspace to a
+# single git rev so actix-files and actix-web resolve to ONE actix-web version —
+# otherwise actix-files' `version = "4"` dep pulls a second crates.io actix-web and
+# `Files` fails the `HttpServiceFactory` bound on our `App`.
+[patch.crates-io]
+actix-web = { git = "https://github.com/actix/actix-web", rev = "67490f9e75d3262446449481c510e5ab36c9bcfa" }
+actix-files = { git = "https://github.com/actix/actix-web", rev = "67490f9e75d3262446449481c510e5ab36c9bcfa" }
+actix-http = { git = "https://github.com/actix/actix-web", rev = "67490f9e75d3262446449481c510e5ab36c9bcfa" }
+actix-router = { git = "https://github.com/actix/actix-web", rev = "67490f9e75d3262446449481c510e5ab36c9bcfa" }
+actix-web-codegen = { git = "https://github.com/actix/actix-web", rev = "67490f9e75d3262446449481c510e5ab36c9bcfa" }
 
 [profile.release]
 opt-level = 3

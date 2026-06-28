@@ -160,7 +160,13 @@ fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
 		}
 		write_resp(mut out, 'text/plain', sum.str())
 	} else if route == '/upload' {
-		write_resp(mut out, 'text/plain', req.body.len.str())
+		// Answer by the declared Content-Length, not req.body.len: large bodies are
+		// STREAMED (drained off the socket, head-only passed to the handler) by the
+		// lib's body-drain, so req.body is empty for them. Falls back to the buffered
+		// body length when Content-Length is absent (e.g. chunked). Mirrors vanilla-epoll.
+		cl := req.content_length()
+		n := if cl >= 0 { cl } else { req.body.len }
+		write_resp(mut out, 'text/plain', n.str())
 	} else if route.starts_with('/json/') {
 		count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
 		mut m := qint(req, qk_m)

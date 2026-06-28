@@ -772,6 +772,18 @@ fn (mut w WorkerCtx) render_crud_get(mut out []u8, res pg_async.Result, id int) 
 }
 
 fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut ac core.AsyncCtx, req request_parser.HttpRequest) core.AsyncStep {
+	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
+	if c := parse_crud_body_fast(body, true) {
+		w.reset_params()
+		w.push_int(c.id)
+		w.push_bytes(c.name)
+		w.push_bytes(c.category)
+		w.push_int(c.price)
+		w.push_int(c.quantity)
+		return w.park(mut out, mut ac,
+			"INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) VALUES (\$1, \$2, \$3, \$4, \$5, true, '[]', 0, 0) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price, quantity = EXCLUDED.quantity",
+			w.params_buf, k_crud_create, 0, 0, service_unavailable)
+	}
 	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
 	c := json.decode(CrudCreate, raw) or {
 		wb(mut out, bad_request)
@@ -789,6 +801,18 @@ fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut ac core.AsyncCtx, req r
 }
 
 fn (mut w WorkerCtx) start_crud_update(mut out []u8, mut ac core.AsyncCtx, id int, req request_parser.HttpRequest) core.AsyncStep {
+	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
+	if c := parse_crud_body_fast(body, false) {
+		w.reset_params()
+		w.push_int(i64(id))
+		w.push_bytes(c.name)
+		w.push_bytes(c.category)
+		w.push_int(c.price)
+		w.push_int(c.quantity)
+		return w.park(mut out, mut ac,
+			'UPDATE items SET name = \$2, category = \$3, price = \$4, quantity = \$5 WHERE id = \$1',
+			w.params_buf, k_crud_update, id, 0, service_unavailable)
+	}
 	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
 	c := json.decode(CrudCreate, raw) or {
 		wb(mut out, bad_request)
@@ -1090,6 +1114,120 @@ fn parse_hex_slice(buf []u8, start int, length int) int {
 fn accepts_gzip(req request_parser.HttpRequest) bool {
 	ae := req.get_header_value_slice('Accept-Encoding') or { return false }
 	return unsafe { tos(&req.buffer[ae.start], ae.len) }.contains('gzip')
+}
+
+struct CrudFastBody {
+	id       i64
+	name     []u8
+	category []u8
+	price    i64
+	quantity i64
+}
+
+@[inline]
+fn is_json_ws(c u8) bool {
+	return c == ` ` || c == `\n` || c == `\r` || c == `\t`
+}
+
+@[direct_array_access]
+fn has_key_at(buf []u8, at int, key string) bool {
+	if at + key.len > buf.len {
+		return false
+	}
+	for i in 0 .. key.len {
+		if buf[at + i] != key[i] {
+			return false
+		}
+	}
+	return true
+}
+
+@[direct_array_access]
+fn json_value_start(buf []u8, key string) ?int {
+	for i := 0; i < buf.len; i++ {
+		if !has_key_at(buf, i, key) {
+			continue
+		}
+		mut j := i + key.len
+		for j < buf.len && is_json_ws(buf[j]) {
+			j++
+		}
+		if j >= buf.len || buf[j] != `:` {
+			continue
+		}
+		j++
+		for j < buf.len && is_json_ws(buf[j]) {
+			j++
+		}
+		if j < buf.len {
+			return j
+		}
+		return none
+	}
+	return none
+}
+
+@[direct_array_access]
+fn json_string_field_borrowed(buf []u8, key string) ?[]u8 {
+	start := json_value_start(buf, key) or { return none }
+	if start >= buf.len || buf[start] != `"` {
+		return none
+	}
+	mut i := start + 1
+	for i < buf.len {
+		c := buf[i]
+		if c == `\\` {
+			// Keep fast-path strict and allocation-free; escaped strings fall back to json.decode.
+			return none
+		}
+		if c == `"` {
+			return buf[start + 1..i]
+		}
+		i++
+	}
+	return none
+}
+
+@[direct_array_access]
+fn json_i64_field(buf []u8, key string) ?i64 {
+	mut i := json_value_start(buf, key) or { return none }
+	if i >= buf.len {
+		return none
+	}
+	mut neg := false
+	if buf[i] == `-` {
+		neg = true
+		i++
+	}
+	if i >= buf.len || buf[i] < `0` || buf[i] > `9` {
+		return none
+	}
+	mut n := i64(0)
+	for i < buf.len {
+		c := buf[i]
+		if c < `0` || c > `9` {
+			break
+		}
+		n = n * 10 + i64(c - `0`)
+		i++
+	}
+	return if neg { -n } else { n }
+}
+
+@[direct_array_access]
+fn parse_crud_body_fast(body []u8, need_id bool) ?CrudFastBody {
+	name := json_string_field_borrowed(body, '"name"') or { return none }
+	category := json_string_field_borrowed(body, '"category"') or { return none }
+	price := json_i64_field(body, '"price"') or { return none }
+	quantity := json_i64_field(body, '"quantity"') or { return none }
+	id := if need_id { json_i64_field(body, '"id"') or { return none } } else { i64(0) }
+	return CrudFastBody{
+		id:       id
+		name:     name
+		category: category
+		price:    price
+		quantity: quantity
+	}
 }
 
 fn content_type(name string) string {

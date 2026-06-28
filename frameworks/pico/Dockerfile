@@ -5,11 +5,11 @@ RUN apt-get -qq update && \
         ca-certificates git build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Pinned, reproducible V at master commit 6c4d26f1f (built from source), keeping the
+# Pinned, reproducible V at master commit cef604a26 (built from source), keeping the
 # V frameworks on one toolchain. `make` bootstraps via the matching vc; if a much
 # later rebuild ever fails to bootstrap, pin vlang/vc to the commit cut for this V.
 RUN git clone https://github.com/vlang/v /opt/v && \
-    cd /opt/v && git checkout 6c4d26f1f && \
+    cd /opt/v && git checkout cef604a26 && \
     make && ln -s /opt/v/v /usr/local/bin/v
 
 WORKDIR /app
