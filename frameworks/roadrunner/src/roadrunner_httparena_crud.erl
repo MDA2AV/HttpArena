@@ -65,8 +65,15 @@ get(Req) ->
 
 %% Cache stores the already-encoded JSON body, so a cache hit ships the
 %% bytes verbatim instead of re-encoding the item map every request.
+%% `roadrunner_resp` exposes no raw-body JSON builder, so assemble the
+%% buffered-response triple directly.
 json_body(Body) ->
-    roadrunner_resp:with_length(200, ~"application/json", Body).
+    {200,
+        [
+            {~"content-type", ~"application/json"},
+            {~"content-length", integer_to_binary(byte_size(Body))}
+        ],
+        Body}.
 
 create(Req) ->
     {ok, Body, Req2} = roadrunner_req:read_body(Req),
