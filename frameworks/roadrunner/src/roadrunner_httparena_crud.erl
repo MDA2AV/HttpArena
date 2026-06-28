@@ -26,22 +26,13 @@ list(Req) ->
     Page = max(1, qs_int(~"page", Qs, 1)),
     Limit = clamp(qs_int(~"limit", Qs, 10), 1, 50),
     Offset = (Page - 1) * Limit,
-    ListSql = ~"""
-    SELECT id, name, category, price, quantity, active, tags,
-           rating_score, rating_count
-      FROM items
-     WHERE category = $1
-     ORDER BY id
-     LIMIT $2 OFFSET $3
-    """,
-    CountSql = ~"SELECT COUNT(*) FROM items WHERE category = $1",
     Items =
-        case roadrunner_httparena_db:query(ListSql, [Cat, Limit, Offset]) of
+        case roadrunner_httparena_db:query(list, [Cat, Limit, Offset]) of
             {ok, _, Rows} -> [roadrunner_httparena_items:row_to_json(R) || R <- Rows];
             _ -> []
         end,
     Total =
-        case roadrunner_httparena_db:query(CountSql, [Cat]) of
+        case roadrunner_httparena_db:query(count, [Cat]) of
             {ok, _, [{N}]} -> N;
             _ -> 0
         end,
@@ -54,7 +45,7 @@ get(Req) ->
         [{Id, Body}] ->
             {cached_json(Body, ~"HIT"), Req};
         [] ->
-            case roadrunner_httparena_db:query(read_sql(), [Id]) of
+            case roadrunner_httparena_db:query(read, [Id]) of
                 {ok, _, [Row]} ->
                     Item = roadrunner_httparena_items:row_to_json(Row),
                     Body = iolist_to_binary(json:encode(Item)),
@@ -80,17 +71,7 @@ create(Req) ->
         ~"price" := Price,
         ~"quantity" := Quantity
     } = json:decode(Body),
-    Sql = ~"""
-    INSERT INTO items (id, name, category, price, quantity,
-                       active, tags, rating_score, rating_count)
-    VALUES ($1, $2, $3, $4, $5, true, '[]'::jsonb, 0, 0)
-    ON CONFLICT (id) DO UPDATE
-       SET name = EXCLUDED.name,
-           category = EXCLUDED.category,
-           price = EXCLUDED.price,
-           quantity = EXCLUDED.quantity
-    """,
-    case roadrunner_httparena_db:query(Sql, [Id, Name, Category, Price, Quantity]) of
+    case roadrunner_httparena_db:query(create, [Id, Name, Category, Price, Quantity]) of
         {ok, 1} ->
             ets:delete(?CACHE, Id),
             {roadrunner_resp:status(201), Req2};
@@ -107,12 +88,7 @@ update(Req) ->
         ~"price" := Price,
         ~"quantity" := Quantity
     } = json:decode(Body),
-    Sql = ~"""
-    UPDATE items
-       SET name = $2, category = $3, price = $4, quantity = $5
-     WHERE id = $1
-    """,
-    case roadrunner_httparena_db:query(Sql, [Id, Name, Category, Price, Quantity]) of
+    case roadrunner_httparena_db:query(update, [Id, Name, Category, Price, Quantity]) of
         {ok, 1} ->
             ets:delete(?CACHE, Id),
             {roadrunner_resp:status(200), Req2};
@@ -121,14 +97,6 @@ update(Req) ->
         _ ->
             {roadrunner_resp:internal_error(), Req2}
     end.
-
-read_sql() ->
-    ~"""
-    SELECT id, name, category, price, quantity, active, tags,
-           rating_score, rating_count
-      FROM items
-     WHERE id = $1
-    """.
 
 id_from_path(Req) ->
     binary_to_integer(maps:get(~"id", roadrunner_req:bindings(Req))).

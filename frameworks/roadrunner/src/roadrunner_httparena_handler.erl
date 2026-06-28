@@ -83,14 +83,8 @@ async_db_endpoint(Req) ->
     Min = qs_int(~"min", Req, 10),
     Max = qs_int(~"max", Req, 50),
     Limit = clamp(qs_int(~"limit", Req, 50), 1, 50),
-    Sql = ~"""
-    SELECT id, name, category, price, quantity, active, tags,
-           rating_score, rating_count
-      FROM items
-     WHERE price BETWEEN $1 AND $2 LIMIT $3
-    """,
     {Items, Count} =
-        case roadrunner_httparena_db:query(Sql, [Min, Max, Limit]) of
+        case roadrunner_httparena_db:query(async_db, [Min, Max, Limit]) of
             {ok, _Cols, Rows} ->
                 lists:mapfoldl(
                     fun(R, N) -> {roadrunner_httparena_items:row_to_json(R), N + 1} end, 0, Rows
@@ -107,7 +101,7 @@ clamp(N, _Lo, _Hi) -> N.
 
 fortunes_endpoint(Req) ->
     Rows =
-        case roadrunner_httparena_db:query(~"SELECT id, message FROM fortune", []) of
+        case roadrunner_httparena_db:query(fortunes, []) of
             {ok, _Cols, R} -> R;
             _ -> []
         end,
