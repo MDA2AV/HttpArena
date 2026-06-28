@@ -1,20 +1,15 @@
 -module(roadrunner_httparena_db).
 
--export([start_pool/0, connect/1, query/2]).
+-export([start_pool/0, query/2]).
 
-%% `connect/1` is invoked by pooler via the `start_mfa` MFA tuple, not a
-%% static call, so xref cannot see the reference.
--ignore_xref([{connect, 1}]).
-
--define(POOL, httparena_pg).
-%% Max time a request waits for a pooled connection before giving up. The
-%% pool serves the offered load with short waits, so this is a safety ceiling.
--define(CHECKOUT_TIMEOUT, 5000).
+%% Connections live in a persistent_term tuple, addressed lock-free per
+%% request (no central checkout broker, so nothing serializes the pool).
+-define(CONNS_KEY, {?MODULE, conns}).
 
 %% Every SQL the adapter runs, keyed by an atom name. Each statement is
-%% parsed once per pooled connection at connect time (named after its key),
-%% so the hot path runs `epgsql:prepared_query/3` against a cached
-%% `#statement{}` record instead of re-parsing on every request.
+%% parsed once per connection at connect time (named after its key), so the
+%% hot path runs `epgsql:prepared_query/3` against a cached `#statement{}`
+%% record instead of re-parsing on every request.
 statements() ->
     #{
         read => ~"""
@@ -64,34 +59,24 @@ start_pool() ->
         Url ->
             ConnMap = parse_url(Url),
             Size = pool_size(),
-            PoolConfig = [
-                {name, ?POOL},
-                {init_count, Size},
-                {max_count, Size},
-                %% Block-and-queue checkout (FIFO): under the high-concurrency
-                %% profiles the offered connections far outnumber the pool, so
-                %% callers wait for a free member instead of failing. queue_max
-                %% must exceed the in-flight DB request count (default is 50).
-                {queue_max, 8192},
-                {start_mfa, {?MODULE, connect, [ConnMap]}}
-            ],
-            {ok, _Pid} = pooler:new_pool(PoolConfig),
+            Conns = list_to_tuple([connect(ConnMap) || _ <- lists:seq(1, Size)]),
+            persistent_term:put(?CONNS_KEY, Conns),
             ok
     end.
 
-%% Pooler member start: open a connection and parse every statement on it
-%% (the prepared statement must exist on each backend connection). The
-%% resulting `#statement{}` metadata is connection-independent, so we cache
-%% one per name in `persistent_term`; concurrent connects racing to put the
-%% same value is harmless.
--spec connect(epgsql:connect_opts()) -> {ok, epgsql:connection()}.
+%% Open a connection and parse every statement on it (the prepared
+%% statement must exist on each backend connection). The resulting
+%% `#statement{}` metadata is connection-independent, so we cache one per
+%% name in `persistent_term`; concurrent connects racing to put the same
+%% value is harmless.
+-spec connect(epgsql:connect_opts()) -> epgsql:connection().
 connect(ConnMap) ->
     {ok, Conn} = epgsql:connect(ConnMap),
     ok = maps:foreach(
         fun(Name, Sql) -> prepare(Conn, Name, Sql) end,
         statements()
     ),
-    {ok, Conn}.
+    Conn.
 
 prepare(Conn, Name, Sql) ->
     {ok, Stmt} = epgsql:parse(Conn, atom_to_list(Name), Sql, []),
@@ -101,19 +86,17 @@ prepare(Conn, Name, Sql) ->
         _ -> ok
     end.
 
+%% Pick a connection at random and run the prepared statement on it
+%% directly. epgsql serializes commands per connection (its gen_server
+%% mailbox), so concurrent callers queue on the chosen connection instead
+%% of funneling through one checkout broker — no broker bottleneck and no
+%% `no_members` refusals under high concurrency.
 -spec query(atom(), [term()]) ->
     {ok, list(), list()} | {ok, non_neg_integer()} | {error, term()}.
 query(Name, Params) ->
-    case pooler:take_member(?POOL, ?CHECKOUT_TIMEOUT) of
-        Conn when is_pid(Conn) ->
-            try
-                epgsql:prepared_query(Conn, persistent_term:get({?MODULE, stmt, Name}), Params)
-            after
-                pooler:return_member(?POOL, Conn, ok)
-            end;
-        error_no_members ->
-            {error, no_members}
-    end.
+    Conns = persistent_term:get(?CONNS_KEY),
+    Conn = element(rand:uniform(tuple_size(Conns)), Conns),
+    epgsql:prepared_query(Conn, persistent_term:get({?MODULE, stmt, Name}), Params).
 
 parse_url(Url) ->
     Parsed = uri_string:parse(Url),
