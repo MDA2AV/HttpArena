@@ -19,7 +19,6 @@ start(_StartType, _StartArgs) ->
         %% forcing the load generator into a reconnect storm.
         max_clients => 32768,
         num_acceptors => 100,
-        middlewares => [roadrunner_compress],
         %% 25 MB headroom for the upload profile (validator goes up to 20 MB).
         max_content_length => 26214400,
         %% Manual body buffering: handlers read the body themselves via
@@ -35,7 +34,6 @@ start(_StartType, _StartArgs) ->
         routes => Routes,
         max_clients => 32768,
         num_acceptors => 100,
-        middlewares => [roadrunner_compress],
         max_content_length => 26214400,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
@@ -51,7 +49,6 @@ start(_StartType, _StartArgs) ->
                 routes => Routes,
                 max_clients => 32768,
                 num_acceptors => 100,
-                middlewares => [roadrunner_compress],
                 max_content_length => 26214400,
                 tls => TlsOpts,
                 body_buffering => manual
@@ -62,7 +59,6 @@ start(_StartType, _StartArgs) ->
                 routes => Routes,
                 max_clients => 32768,
                 num_acceptors => 100,
-                middlewares => [roadrunner_compress],
                 max_content_length => 26214400,
                 tls => TlsOpts,
                 %% Listener derives `alpn_preferred_protocols` from

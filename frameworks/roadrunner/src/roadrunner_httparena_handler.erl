@@ -10,14 +10,19 @@ routes() ->
         {~"/baseline11", ?MODULE, undefined},
         {~"/baseline2", ?MODULE, undefined},
         {~"/pipeline", ?MODULE, undefined},
-        {~"/json/:count", ?MODULE, undefined},
+        #{path => ~"/json/:count", handler => ?MODULE, middlewares => [roadrunner_compress]},
         {~"/upload", ?MODULE, undefined},
         {~"/async-db", ?MODULE, undefined},
-        {~"/fortunes", ?MODULE, undefined},
+        #{path => ~"/fortunes", handler => ?MODULE, middlewares => [roadrunner_compress]},
         {~"/crud/items", ?MODULE, undefined},
         {~"/crud/items/:id", ?MODULE, undefined},
         {~"/ws", ?MODULE, undefined},
-        {~"/static/*path", roadrunner_static, #{dir => static_dir(), cache_ttl_ms => 1000}}
+        #{
+            path => ~"/static/*path",
+            handler => roadrunner_static,
+            state => #{dir => static_dir(), cache_ttl_ms => 1000},
+            middlewares => [roadrunner_compress]
+        }
     ].
 
 static_dir() ->
