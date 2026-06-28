@@ -51,37 +51,46 @@ list(Req) ->
 get(Req) ->
     Id = id_from_path(Req),
     case ets:lookup(?CACHE, Id) of
-        [{Id, Item}] ->
-            Resp = roadrunner_resp:json(200, Item),
-            {roadrunner_resp:add_header(Resp, ~"x-cache", ~"HIT"), Req};
+        [{Id, Body}] ->
+            {cached_json(Body, ~"HIT"), Req};
         [] ->
             case roadrunner_httparena_db:query(read_sql(), [Id]) of
                 {ok, _, [Row]} ->
                     Item = roadrunner_httparena_items:row_to_json(Row),
-                    ets:insert(?CACHE, {Id, Item}),
-                    Resp = roadrunner_resp:json(200, Item),
-                    {roadrunner_resp:add_header(Resp, ~"x-cache", ~"MISS"), Req};
+                    Body = iolist_to_binary(json:encode(Item)),
+                    ets:insert(?CACHE, {Id, Body}),
+                    {cached_json(Body, ~"MISS"), Req};
                 _ ->
                     {roadrunner_resp:not_found(), Req}
             end
     end.
 
+%% Cache stores the already-encoded JSON body, so a cache hit ships the
+%% bytes verbatim instead of re-encoding the item map every request;
+%% `roadrunner_resp:body/4` folds in the `x-cache` marker in one call.
+cached_json(Body, CacheStatus) ->
+    roadrunner_resp:body(200, ~"application/json", [{~"x-cache", CacheStatus}], Body).
+
 create(Req) ->
     {ok, Body, Req2} = roadrunner_req:read_body(Req),
-    Input = json:decode(Body),
-    Id = maps:get(~"id", Input),
+    #{
+        ~"id" := Id,
+        ~"name" := Name,
+        ~"category" := Category,
+        ~"price" := Price,
+        ~"quantity" := Quantity
+    } = json:decode(Body),
     Sql = ~"""
     INSERT INTO items (id, name, category, price, quantity,
                        active, tags, rating_score, rating_count)
     VALUES ($1, $2, $3, $4, $5, true, '[]'::jsonb, 0, 0)
+    ON CONFLICT (id) DO UPDATE
+       SET name = EXCLUDED.name,
+           category = EXCLUDED.category,
+           price = EXCLUDED.price,
+           quantity = EXCLUDED.quantity
     """,
-    case roadrunner_httparena_db:query(Sql, [
-        Id,
-        maps:get(~"name", Input),
-        maps:get(~"category", Input),
-        maps:get(~"price", Input),
-        maps:get(~"quantity", Input)
-    ]) of
+    case roadrunner_httparena_db:query(Sql, [Id, Name, Category, Price, Quantity]) of
         {ok, 1} ->
             ets:delete(?CACHE, Id),
             {roadrunner_resp:status(201), Req2};
@@ -92,19 +101,18 @@ create(Req) ->
 update(Req) ->
     Id = id_from_path(Req),
     {ok, Body, Req2} = roadrunner_req:read_body(Req),
-    Input = json:decode(Body),
+    #{
+        ~"name" := Name,
+        ~"category" := Category,
+        ~"price" := Price,
+        ~"quantity" := Quantity
+    } = json:decode(Body),
     Sql = ~"""
     UPDATE items
        SET name = $2, category = $3, price = $4, quantity = $5
      WHERE id = $1
     """,
-    case roadrunner_httparena_db:query(Sql, [
-        Id,
-        maps:get(~"name", Input),
-        maps:get(~"category", Input),
-        maps:get(~"price", Input),
-        maps:get(~"quantity", Input)
-    ]) of
+    case roadrunner_httparena_db:query(Sql, [Id, Name, Category, Price, Quantity]) of
         {ok, 1} ->
             ets:delete(?CACHE, Id),
             {roadrunner_resp:status(200), Req2};
