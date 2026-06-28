@@ -35,6 +35,10 @@ start(_StartType, _StartArgs) ->
         max_clients => 32768,
         num_acceptors => 100,
         max_content_length => 26214400,
+        %% Cap concurrent streams per connection: with `max_clients` lifted
+        %% high, an unbounded stream count multiplies per-stream buffers into
+        %% runaway memory on the h2c profiles.
+        max_concurrent_streams => 16,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
@@ -61,6 +65,7 @@ start(_StartType, _StartArgs) ->
                 num_acceptors => 100,
                 max_content_length => 26214400,
                 tls => TlsOpts,
+                max_concurrent_streams => 16,
                 %% Listener derives `alpn_preferred_protocols` from
                 %% this list — `h2` preferred, fall back to `http/1.1`.
                 %% `http3` co-serves over QUIC on UDP 8443 (same port
