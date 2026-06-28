@@ -1,0 +1,16 @@
+.{
+    .name = .zix_http3_arena,
+    .version = "0.1.0",
+    .fingerprint = 0xa059c25db9058d79,
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+    .dependencies = .{
+        .zix = .{
+            .url = "{URL_ZIX_SOURCE}/{ZIX_VERSION}.tar.gz",
+        },
+    },
+}
