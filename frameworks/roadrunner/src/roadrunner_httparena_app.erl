@@ -35,10 +35,13 @@ start(_StartType, _StartArgs) ->
         max_clients => 32768,
         num_acceptors => 100,
         max_content_length => 26214400,
-        %% Cap concurrent streams per connection: with `max_clients` lifted
-        %% high, an unbounded stream count multiplies per-stream buffers into
-        %% runaway memory on the h2c profiles.
+        %% Bound h2 memory under the lifted `max_clients`: cap streams per
+        %% connection AND cap total in-flight requests listener-wide, so the
+        %% per-request gzip state (~256 KB each) on `/json` can't multiply
+        %% into runaway memory across conns x streams. Over-cap streams are
+        %% refused (retry-safe) — connections stay up, no reconnect storm.
         max_concurrent_streams => 16,
+        max_concurrent_requests => 2048,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
@@ -66,6 +69,7 @@ start(_StartType, _StartArgs) ->
                 max_content_length => 26214400,
                 tls => TlsOpts,
                 max_concurrent_streams => 16,
+                max_concurrent_requests => 2048,
                 %% Listener derives `alpn_preferred_protocols` from
                 %% this list — `h2` preferred, fall back to `http/1.1`.
                 %% `http3` co-serves over QUIC on UDP 8443 (same port
