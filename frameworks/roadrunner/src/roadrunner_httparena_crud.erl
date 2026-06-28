@@ -34,16 +34,12 @@ list(Req) ->
      ORDER BY id
      LIMIT $2 OFFSET $3
     """,
-    CountSql = ~"SELECT COUNT(*) FROM items WHERE category = $1",
-    Items =
+    {Items, Total} =
         case roadrunner_httparena_db:query(ListSql, [Cat, Limit, Offset]) of
-            {ok, _, Rows} -> [roadrunner_httparena_items:row_to_json(R) || R <- Rows];
-            _ -> []
-        end,
-    Total =
-        case roadrunner_httparena_db:query(CountSql, [Cat]) of
-            {ok, _, [{N}]} -> N;
-            _ -> 0
+            {ok, _, Rows} ->
+                {[roadrunner_httparena_items:row_to_json(R) || R <- Rows], length(Rows)};
+            _ ->
+                {[], 0}
         end,
     Body = #{~"items" => Items, ~"total" => Total, ~"page" => Page},
     {roadrunner_resp:json(200, Body), Req}.
@@ -51,20 +47,26 @@ list(Req) ->
 get(Req) ->
     Id = id_from_path(Req),
     case ets:lookup(?CACHE, Id) of
-        [{Id, Item}] ->
-            Resp = roadrunner_resp:json(200, Item),
+        [{Id, Body}] ->
+            Resp = json_body(Body),
             {roadrunner_resp:add_header(Resp, ~"x-cache", ~"HIT"), Req};
         [] ->
             case roadrunner_httparena_db:query(read_sql(), [Id]) of
                 {ok, _, [Row]} ->
                     Item = roadrunner_httparena_items:row_to_json(Row),
-                    ets:insert(?CACHE, {Id, Item}),
-                    Resp = roadrunner_resp:json(200, Item),
+                    Body = iolist_to_binary(json:encode(Item)),
+                    ets:insert(?CACHE, {Id, Body}),
+                    Resp = json_body(Body),
                     {roadrunner_resp:add_header(Resp, ~"x-cache", ~"MISS"), Req};
                 _ ->
                     {roadrunner_resp:not_found(), Req}
             end
     end.
+
+%% Cache stores the already-encoded JSON body, so a cache hit ships the
+%% bytes verbatim instead of re-encoding the item map every request.
+json_body(Body) ->
+    roadrunner_resp:with_length(200, ~"application/json", Body).
 
 create(Req) ->
     {ok, Body, Req2} = roadrunner_req:read_body(Req),
@@ -74,6 +76,11 @@ create(Req) ->
     INSERT INTO items (id, name, category, price, quantity,
                        active, tags, rating_score, rating_count)
     VALUES ($1, $2, $3, $4, $5, true, '[]'::jsonb, 0, 0)
+    ON CONFLICT (id) DO UPDATE
+       SET name = EXCLUDED.name,
+           category = EXCLUDED.category,
+           price = EXCLUDED.price,
+           quantity = EXCLUDED.quantity
     """,
     case roadrunner_httparena_db:query(Sql, [
         Id,
