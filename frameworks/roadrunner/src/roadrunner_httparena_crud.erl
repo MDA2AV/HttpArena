@@ -45,7 +45,7 @@ get(Req) ->
         [{Id, Body}] ->
             {cached_json(Body, ~"HIT"), Req};
         [] ->
-            case roadrunner_httparena_db:query(read, [Id]) of
+            case roadrunner_httparena_db:query(read, [binary_to_integer(Id)]) of
                 {ok, _, [Row]} ->
                     Item = roadrunner_httparena_items:row_to_json(Row),
                     Body = iolist_to_binary(json:encode(Item)),
@@ -73,7 +73,7 @@ create(Req) ->
     } = json:decode(Body),
     case roadrunner_httparena_db:query(create, [Id, Name, Category, Price, Quantity]) of
         {ok, 1} ->
-            ets:delete(?CACHE, Id),
+            ets:delete(?CACHE, integer_to_binary(Id)),
             {roadrunner_resp:status(201), Req2};
         _ ->
             {roadrunner_resp:internal_error(), Req2}
@@ -88,7 +88,7 @@ update(Req) ->
         ~"price" := Price,
         ~"quantity" := Quantity
     } = json:decode(Body),
-    case roadrunner_httparena_db:query(update, [Id, Name, Category, Price, Quantity]) of
+    case roadrunner_httparena_db:query(update, [binary_to_integer(Id), Name, Category, Price, Quantity]) of
         {ok, 1} ->
             ets:delete(?CACHE, Id),
             {roadrunner_resp:status(200), Req2};
@@ -99,7 +99,8 @@ update(Req) ->
     end.
 
 id_from_path(Req) ->
-    binary_to_integer(maps:get(~"id", roadrunner_req:bindings(Req))).
+    #{~"id" := Id} = roadrunner_req:bindings(Req),
+    Id.
 
 qs_int(Key, Qs, Default) ->
     case lists:keyfind(Key, 1, Qs) of
