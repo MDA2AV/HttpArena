@@ -131,8 +131,9 @@ html_escape(Bin) when is_binary(Bin) ->
     binary:replace(B2, ~">", ~"&gt;", [global]).
 
 baseline(Req) ->
-    A = qs_int(~"a", Req, 0),
-    B = qs_int(~"b", Req, 0),
+    Qs = roadrunner_req:parse_qs(Req),
+    A = qs_int_from(~"a", Qs, 0),
+    B = qs_int_from(~"b", Qs, 0),
     {BodyN, Req2} =
         case roadrunner_req:method(Req) of
             ~"POST" ->
@@ -165,7 +166,10 @@ binding_int(Key, Req, Default) ->
     end.
 
 qs_int(Key, Req, Default) ->
-    case lists:keyfind(Key, 1, roadrunner_req:parse_qs(Req)) of
+    qs_int_from(Key, roadrunner_req:parse_qs(Req), Default).
+
+qs_int_from(Key, Qs, Default) ->
+    case lists:keyfind(Key, 1, Qs) of
         {Key, V} when is_binary(V) -> bin_int(V, Default);
         _ -> Default
     end.
