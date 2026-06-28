@@ -89,12 +89,16 @@ async_db_endpoint(Req) ->
       FROM items
      WHERE price BETWEEN $1 AND $2 LIMIT $3
     """,
-    Items =
+    {Items, Count} =
         case roadrunner_httparena_db:query(Sql, [Min, Max, Limit]) of
-            {ok, _Cols, Rows} -> [roadrunner_httparena_items:row_to_json(R) || R <- Rows];
-            _ -> []
+            {ok, _Cols, Rows} ->
+                lists:mapfoldl(
+                    fun(R, N) -> {roadrunner_httparena_items:row_to_json(R), N + 1} end, 0, Rows
+                );
+            _ ->
+                {[], 0}
         end,
-    Body = #{~"count" => length(Items), ~"items" => Items},
+    Body = #{~"count" => Count, ~"items" => Items},
     {roadrunner_resp:json(200, Body), Req}.
 
 clamp(N, Lo, _Hi) when N < Lo -> Lo;
@@ -145,8 +149,9 @@ json_endpoint(Req) ->
     M = qs_int(~"m", Req, 1),
     All = roadrunner_httparena_dataset:items(),
     Items = lists:sublist(All, max(0, Count)),
-    Processed = [add_total(I, M) || I <- Items],
-    Body = #{~"items" => Processed, ~"count" => length(Processed)},
+    {Processed, ItemCount} =
+        lists:mapfoldl(fun(I, N) -> {add_total(I, M), N + 1} end, 0, Items),
+    Body = #{~"items" => Processed, ~"count" => ItemCount},
     {roadrunner_resp:json(200, Body), Req}.
 
 add_total(Item, M) ->
