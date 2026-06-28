@@ -2,17 +2,21 @@
 //!
 //! zix HttpArena HTTP/1.1 entry point.
 //!
-//! Intent: demonstrate zix.Http1 (EPOLL dispatch model) against the HttpArena
-//! HTTP/1.1 benchmark suite (baseline, pipelined, short-lived).
+//! Intent: demonstrate zix.Http1 (URING dispatch model) against the HttpArena
+//! HTTP/1.1 benchmark suite (baseline, pipelined, limited-conn, json, json-comp,
+//! upload, static). json-comp reuses the /json endpoint and gzips the body when
+//! the client sends Accept-Encoding: gzip.
+//!
+//! json-tls runs a second Http1 server on H1TLS_PORT: https over TLS 1.3 with the baked Ed25519
+//! cert at /etc/zix-tls. TLS terminates in the per-core tls_mux (one worker per core via
+//! SO_REUSEPORT, no thread-per-connection), its own perf band apart from the cleartext URING engine.
 //!
 //! Design choices:
-//! - rawIntercept: called before any header parsing for each EPOLL request.
-//!   Handles /pipeline with zero parse overhead (direct byte-match + sink write),
-//!   direct byte-match before any parsing, avoiding the header scan loop. Routes that fall
-//!   through are handled by the Router dispatch with full parsing.
+//! - rawIntercept: called before any header parsing on each request. Handles /pipeline by direct
+//!   byte-match then a raw write, skipping the header scan. Other routes fall through to the Router
+//!   dispatch with full parsing.
 //! - Router: comptime route table (StaticStringMap for EXACT, inline for PREFIX).
-//! - PIPELINE_RESP: precomputed response bytes; one sink.append per request, no
-//!   header build overhead.
+//! - PIPELINE_RESP: precomputed response bytes, written verbatim per request with no header build.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -24,19 +28,21 @@ const PORT: u16 = 8080;
 const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
-/// Per-machine tuning profile (ADR-041 increment 5). The dev box is 12 threads
-/// / 32 GB (lean, memory-bound), the competition box is 64 cores / 251 GB
-/// (throughput, RAM-abundant). Only the recv buffer differs: workers auto-scale
-/// (WORKERS = 0), and the backlog and cache are already sized for both. Select
-/// .throughput for the 64-core deployment.
-const Profile = enum { lean, throughput };
-const PROFILE: Profile = .lean;
 
-/// Per-connection recv buffer, heap-allocated once at accept time. .lean keeps
-/// 4 KiB to hold the working set small (benchmark requests are under 300 bytes,
-/// and large upload bodies are drained by the engine in chunks, so only headers,
-/// always < 4 KiB, must fit). .throughput raises it to 16 KiB for deeper
-/// pipelined batches per recv, which the RAM-abundant box absorbs.
+// json-tls: the https port and the baked Ed25519 cert / key paths (generated at
+// image build, baked at /etc/zix-tls). Overridable via env so the same binary runs locally.
+const H1TLS_PORT: u16 = 8081;
+const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
+const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
+/// Per-machine tuning profile (ADR-041 increment 5): .lean for the 12-thread / 32 GB dev box,
+/// .throughput for the 64-core / 251 GB competition box. Only the recv buffer differs (workers,
+/// backlog, and cache are already sized for both). Select .throughput for the 64-core deployment.
+const Profile = enum { lean, throughput };
+const PROFILE: Profile = .throughput;
+
+/// Per-connection recv buffer, allocated once at accept. .lean keeps 4 KiB (requests are under
+/// 300 bytes and upload bodies are drained in chunks, so only headers must fit). .throughput
+/// raises it to 16 KiB for deeper pipelined batches per recv.
 const MAX_RECV_BUF: usize = switch (PROFILE) {
     .lean => 4 * 1024,
     .throughput => 16 * 1024,
@@ -44,11 +50,9 @@ const MAX_RECV_BUF: usize = switch (PROFILE) {
 const MAX_HEADERS: u8 = 16;
 const WORKERS: usize = 0;
 
-// Response cache (ADR-036), used by the /json endpoint only. The /json body is
-// deterministic in (count, m) and large enough to clear the cache crossover
-// (~4 KiB), so a hit replays the full response with zero serialization. The
-// other endpoints stay below the crossover (baseline, pipeline, upload) or use
-// their own zero-copy sendfile cache (static), so none of them enable it.
+// Response cache (ADR-036), /json only. The body is deterministic in (count, m) and clears the
+// cache crossover (~4 KiB), so a hit replays the full response with zero serialization. Other
+// endpoints stay below the crossover or use the sendfile cache (static).
 const CACHE_MAX_ENTRIES: u32 = 64;
 /// Per-slot cap. A /json/50 response is near 12 KiB, so 32 KiB leaves headroom.
 const CACHE_MAX_VALUE_BYTES: u32 = 32 * 1024;
@@ -56,12 +60,16 @@ const CACHE_MAX_VALUE_BYTES: u32 = 32 * 1024;
 /// long TTL means each key is built once and replayed for the whole run.
 const CACHE_TTL_MS: u32 = 60 * 1000;
 
+/// gzip output buffer size for the json-comp path. The largest JSON body (count 50)
+/// is near 12 KiB, so 64 KiB covers the worst case even when the body barely shrinks.
+const GZIP_OUT_SIZE: usize = 64 * 1024;
+
 // Data directory, overridable via the ARENA_DATA env var (default /data, the
 // container mount point). Lets the same binary run against a local data tree.
 var g_static_base: []const u8 = "/data/static/";
 var g_static_base_buf: [256]u8 = undefined;
 
-// Per-worker scratch. The JSON body (count up to 50) tops out near 12 KiB; the
+// Per-worker scratch. The JSON body (count up to 50) tops out near 12 KiB. The
 // assembled response (status line + headers + body) sits a little above it.
 threadlocal var json_body_buf: [32 * 1024]u8 = undefined;
 threadlocal var json_resp_buf: [32 * 1024]u8 = undefined;
@@ -97,8 +105,7 @@ fn baselineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.
     zix.Http1.writeSimple(fd, 200, "text/plain", out) catch {};
 }
 
-// Precomputed response for the pipeline endpoint: one memcpy per request into the
-// response sink. No header build overhead on the hot path.
+// Precomputed response for the pipeline endpoint: written verbatim per request, no header build.
 const PIPELINE_RESP: []const u8 = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok";
 
 // GET /pipeline : fixed tiny response, the pipelined-throughput endpoint.
@@ -109,15 +116,10 @@ fn pipelineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.
     zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
 }
 
-// Raw-request interceptor for the EPOLL dispatch model. Called before any header
-// parsing on each inbound request. Handles /pipeline with zero parse overhead:
-// byte-matches the path directly on rem, then appends PIPELINE_RESP to the
-// coalescing RespSink. Unknown
-// routes return null and fall through to the Router dispatch with full parsing.
-//
-// This is intentional benchmark infrastructure, not general HTTP parsing. It
-// exploits knowledge that /pipeline is always a bare GET with no body, so the
-// consumed length is always header_end + 4 ("\r\n\r\n").
+// Raw-request interceptor (initRaw), called before header parsing on each request. Handles /pipeline
+// with zero parse overhead: byte-matches the path on rem, writes PIPELINE_RESP, returns the consumed
+// length (always header_end + 4, since /pipeline is a bare GET with no body). Unknown routes return
+// null and fall through to the Router with full parsing.
 fn rawIntercept(rem: []const u8, header_end: usize, fd: std.posix.fd_t) ?usize {
     // Must start with "GET /p" to qualify for this fast path.
     if (rem.len < 24 or rem[0] != 'G' or rem[4] != '/' or rem[5] != 'p') return null;
@@ -132,18 +134,28 @@ fn rawIntercept(rem: []const u8, header_end: usize, fd: std.posix.fd_t) ?usize {
 
 // GET /json/{count}?m=M : render count dataset items, total = price*qty*M.
 //
-// Response-cache aware. The body is deterministic in (count, m) and big enough
-// to clear the cache crossover, so the full response is the ideal cache value.
-// The cache key is hash(method, path, query), so every distinct /json/{count}?m=M
-// caches under its own slot. A hit skips the whole build loop and replays the
-// stored bytes; a miss builds the response and stores it on the way out. When
-// the cache is disabled or full the path still works, it just always rebuilds.
+// Response-cache aware: the body is deterministic in (count, m), so each distinct path caches under
+// its own slot (key = hash(method, path, query)). A hit replays the stored bytes, a miss builds and
+// stores. With the cache disabled or full it still works, just always rebuilds.
 fn jsonHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.fd_t) void {
     _ = body;
 
-    if (zix.Http1.cacheLookup(head)) |cached| {
-        zix.Http1.fdWriteAll(fd, cached) catch {};
-        return;
+    // json-comp: when the client accepts gzip, serve a gzip body with Content-Encoding: gzip, cached
+    // per (key, encoding) so a repeat request replays the compressed bytes with no rebuild and no
+    // recompression. The plain json test sends no Accept-Encoding and uses the identity cache.
+    const accept = zix.Http1.getHeader(head, "accept-encoding") orelse "";
+    const want_gzip = std.mem.indexOf(u8, accept, "gzip") != null;
+
+    if (want_gzip) {
+        if (zix.Http1.cacheLookupEncoded(head, "gzip")) |cached| {
+            zix.Http1.fdWriteAll(fd, cached) catch {};
+            return;
+        }
+    } else {
+        if (zix.Http1.cacheLookup(head)) |cached| {
+            zix.Http1.fdWriteAll(fd, cached) catch {};
+            return;
+        }
     }
 
     const count_str = head.path["/json/".len..];
@@ -175,6 +187,13 @@ fn jsonHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posi
     buf[pos] = '}';
     pos += 1;
 
+    // json-comp path: gzip + per-(key, encoding) cache. The first request compresses and stores,
+    // the rest replay (the early cacheLookupEncoded above already short-circuits a hit).
+    if (want_gzip) {
+        writeJsonGzip(head, fd, buf[0..pos]);
+        return;
+    }
+
     // Assemble the full response so it can be cached and replayed verbatim. The
     // header matches the engine's writeJson output (send_date_header is off, so
     // there is no time-varying field to freeze in the cache).
@@ -186,6 +205,13 @@ fn jsonHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posi
     @memcpy(resp[hdr.len..][0..pos], buf[0..pos]);
 
     zix.Http1.writeWithCache(fd, head, resp[0 .. hdr.len + pos], CACHE_TTL_MS) catch {};
+}
+
+// json-comp: gzip a JSON body, send it with Content-Encoding: gzip. Delegates to the engine's
+// writeGzipCached: a per-worker compressor plus the per-(key, encoding) cache, so after the first
+// request the deterministic gzip body is a zero-compression cache replay.
+fn writeJsonGzip(head: *const zix.Http1.ParsedHead, fd: std.posix.fd_t, json: []const u8) void {
+    zix.Http1.writeGzipCached(fd, head, 200, "application/json", json, zix.Http1.cacheTtl()) catch {};
 }
 
 // POST /upload : return the received byte count. The Content-Length header is
@@ -440,6 +466,29 @@ const Routes = zix.Http1.Router(&[_]zix.Http1.Route{
 
 // --------------------------------------------------------- //
 
+// json-tls https server on H1TLS_PORT. Under .EPOLL / .URING it terminates TLS in the per-core
+// tls_mux (one worker per core, bounded memory), which scales where the thread-per-connection path
+// melts down. The same Router dispatch serves the handlers (json-tls only exercises /json).
+fn tlsWorker(io: std.Io, tls: *zix.Tls.Context) void {
+    var server = zix.Http1.Server.init(Routes.dispatch, .{
+        .io = io,
+        .ip = LISTEN_IP,
+        .port = H1TLS_PORT,
+        .tls = tls,
+        .dispatch_model = DISPATCH_MODEL,
+        .workers = WORKERS,
+        .kernel_backlog = KERNEL_BACKLOG,
+        .max_recv_buf = MAX_RECV_BUF,
+        .max_headers = MAX_HEADERS,
+        .send_date_header = false,
+    });
+    defer server.deinit();
+
+    server.run() catch {};
+}
+
+// --------------------------------------------------------- //
+
 fn sumQuery(query: []const u8) i64 {
     var sum: i64 = 0;
     var it = std.mem.tokenizeScalar(u8, query, '&');
@@ -495,6 +544,25 @@ pub fn main(process: std.process.Init) !void {
     const dataset_path = try std.fmt.bufPrint(&dataset_path_buf, "{s}/dataset.json", .{data_dir});
 
     g_dataset = try dataset.load(std.heap.smp_allocator, dataset_path);
+
+    // json-tls: load the baked Ed25519 cert from /etc/zix-tls and serve https on H1TLS_PORT. A missing
+    // or unreadable cert degrades gracefully: the cleartext server still runs, json-tls simply has
+    // no listener. Ed25519 signing is a cheap per-connection operation (zix.Tls).
+    const cert_path = process.environ_map.get("ARENA_TLS_CERT") orelse TLS_CERT_DEFAULT;
+    const key_path = process.environ_map.get("ARENA_TLS_KEY") orelse TLS_KEY_DEFAULT;
+
+    var tls_ctx: ?zix.Tls.Context = zix.Tls.Context.init(std.heap.smp_allocator, process.io, .{
+        .cert_path = cert_path,
+        .key_path = key_path,
+        .alpn = &.{.HTTP_1_1},
+        .min_version = .TLS_1_3,
+    }) catch null;
+
+    if (tls_ctx) |*tls| {
+        // One TLS server thread: under .EPOLL / .URING it spawns its own per-core tls_mux workers
+        // internally, so a thread pool here would over-subscribe. Thread models use one accept loop.
+        _ = std.Thread.spawn(.{}, tlsWorker, .{ process.io, tls }) catch {};
+    }
 
     var server = zix.Http1.Server.initRaw(Routes.dispatch, rawIntercept, .{
         .io = process.io,

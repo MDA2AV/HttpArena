@@ -10,7 +10,7 @@
     },
     .dependencies = .{
         .zix = .{
-            .path = "vendor/zix",
+            .url = "{URL_ZIX_SOURCE}/{ZIX_VERSION}.tar.gz",
         },
     },
 }

@@ -104,7 +104,7 @@ fn renderItemPrefix(buf: *std.ArrayList(u8), aa: std.mem.Allocator, obj: std.jso
         try buf.append(aa, ':');
         try writeValue(buf, aa, kv.value_ptr.*);
     }
-    // Intentionally no closing `}` — caller appends `,"total":N}`.
+    // Intentionally no closing `}`: the caller appends `,"total":N}`.
 }
 
 fn writeValue(buf: *std.ArrayList(u8), aa: std.mem.Allocator, v: std.json.Value) !void {
