@@ -31,7 +31,7 @@ use sark::fs::ServeDir;
 use sark::json::{Encode, Json, JsonDecode, JsonEncode, Writer};
 use sark::request::BodyLen;
 use sark::timer::{DEFAULT_HEAD_TIMEOUT, SARK_TIMER_ID, TimerHost};
-use sark_core::http::compress::Gzip;
+use sark_core::http::compress::{Brotli, Gzip};
 use sark_core::http::{LocalFrameBytes, Response};
 use sark_grpc::server::App as GrpcApp;
 use sark_h2::server::App as H2App;
@@ -114,15 +114,15 @@ fn u64_owned(n: u64) -> Owned {
     body
 }
 
-fn accepts_gzip(accept_encoding: &[u8]) -> bool {
+fn accepts(accept_encoding: &[u8], coding: &[u8]) -> bool {
     accept_encoding.split(|&b| b == b',').any(|part| {
-        let part = part.trim_ascii();
-        let coding = part
+        let c = part
+            .trim_ascii()
             .split(|&b| b == b';')
             .next()
             .unwrap_or(b"")
             .trim_ascii();
-        coding.eq_ignore_ascii_case(b"gzip")
+        c.eq_ignore_ascii_case(coding)
     })
 }
 
@@ -130,7 +130,14 @@ fn respond_json<T: JsonEncode>(value: T, accept_encoding: &[u8]) -> Response {
     let body = value.encode_json();
     let mut response = Response::ok();
     response.content_type("application/json");
-    if accepts_gzip(accept_encoding) {
+    // Prefer brotli (much smaller body → better compression-ratio score), fall
+    // back to gzip, then identity.
+    if accepts(accept_encoding, b"br") {
+        let compressed = Brotli::with_thread_local(|b| Shared::from(b.encode(&body).to_vec()));
+        response.append_wire_header_static("content-encoding", "br");
+        response.append_wire_header_static("vary", "accept-encoding");
+        response.set_body(compressed);
+    } else if accepts(accept_encoding, b"gzip") {
         let compressed = Gzip::with_thread_local(|g| Shared::from(g.encode(&body).to_vec()));
         response.append_wire_header_static("content-encoding", "gzip");
         response.append_wire_header_static("vary", "accept-encoding");
@@ -311,6 +318,7 @@ struct PipelineRequest {}
 
 #[sark_gen::handler]
 #[static_response]
+#[skip(date, server)]
 fn pipeline_endpoint(_req: PipelineRequest, _state: &AppState<'_>) -> PipelineResponse {
     PipelineResponse {
         status: StatusCode::OK,

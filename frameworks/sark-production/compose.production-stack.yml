@@ -1,3 +1,8 @@
+# CPU layout: the sark io_uring `server` busy-polls (Throughput profile spins
+# while it holds connections), so it must NOT share cores with the yielding
+# edge/authsvc/cache — otherwise it starves them and the whole stack serves
+# 0 RPS. `server` is pinned to GATEWAY_SERVER_CPUS (its own range); the proxy,
+# auth sidecar and redis share GATEWAY_PROXY_CPUS. Keep the two ranges DISJOINT.
 services:
   edge:
     build: ./proxy-production
@@ -20,14 +25,14 @@ services:
   cache:
     image: redis:7-alpine
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-0-2}"
+    cpuset: "${GATEWAY_PROXY_CPUS:-0-2}"
     security_opt:
       - seccomp:unconfined
 
   authsvc:
     build: ../_shared/authsvc
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-0-2}"
+    cpuset: "${GATEWAY_PROXY_CPUS:-0-2}"
     security_opt:
       - seccomp:unconfined
     environment:
@@ -39,7 +44,7 @@ services:
       context: ../sark
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-0-2}"
+    cpuset: "${GATEWAY_SERVER_CPUS:-3-5}"
     security_opt:
       - seccomp:unconfined
     ulimits:
@@ -49,7 +54,7 @@ services:
         hard: 1048576
     environment:
       - SARK_HTTPARENA_BIND=0.0.0.0:8080
-      - SARK_HTTPARENA_CPU_CORE=${GATEWAY_SERVER_CPU_CORE:-0}
+      - SARK_HTTPARENA_CPU_CORE=${GATEWAY_SERVER_CPU_CORE:-3}
       - SARK_HTTPARENA_CPU_COUNT=${GATEWAY_SERVER_CPU_COUNT:-3}
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=${DATABASE_MAX_CONN:-128}
