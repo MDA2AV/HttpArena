@@ -7,6 +7,9 @@
 -ignore_xref([{connect, 1}]).
 
 -define(POOL, httparena_pg).
+%% Max time a request waits for a pooled connection before giving up. The
+%% pool serves the offered load with short waits, so this is a safety ceiling.
+-define(CHECKOUT_TIMEOUT, 5000).
 
 %% Every SQL the adapter runs, keyed by an atom name. Each statement is
 %% parsed once per pooled connection at connect time (named after its key),
@@ -65,6 +68,11 @@ start_pool() ->
                 {name, ?POOL},
                 {init_count, Size},
                 {max_count, Size},
+                %% Block-and-queue checkout (FIFO): under the high-concurrency
+                %% profiles the offered connections far outnumber the pool, so
+                %% callers wait for a free member instead of failing. queue_max
+                %% must exceed the in-flight DB request count (default is 50).
+                {queue_max, 8192},
                 {start_mfa, {?MODULE, connect, [ConnMap]}}
             ],
             {ok, _Pid} = pooler:new_pool(PoolConfig),
@@ -96,7 +104,7 @@ prepare(Conn, Name, Sql) ->
 -spec query(atom(), [term()]) ->
     {ok, list(), list()} | {ok, non_neg_integer()} | {error, term()}.
 query(Name, Params) ->
-    case pooler:take_member(?POOL) of
+    case pooler:take_member(?POOL, ?CHECKOUT_TIMEOUT) of
         Conn when is_pid(Conn) ->
             try
                 epgsql:prepared_query(Conn, persistent_term:get({?MODULE, stmt, Name}), Params)
