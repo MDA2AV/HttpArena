@@ -51,8 +51,10 @@ get(Req) ->
                     Body = iolist_to_binary(json:encode(Item)),
                     ets:insert(?CACHE, {Id, Body}),
                     {cached_json(Body, ~"MISS"), Req};
-                _ ->
-                    {roadrunner_resp:not_found(), Req}
+                {ok, _, []} ->
+                    {roadrunner_resp:not_found(), Req};
+                {error, _} ->
+                    {roadrunner_resp:internal_error(), Req}
             end
     end.
 
