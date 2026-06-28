@@ -5,7 +5,7 @@ ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG ZIG_VERSION=0.16.0
-ARG ZIX_VERSION=0.4.x-rc3
+ARG ZIX_VERSION=0.5.x-rc1
 RUN apk add --no-cache ca-certificates curl git tar xz
 
 RUN set -eu; \
@@ -19,15 +19,8 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-# Vendor zix X.Y.Z, separate layer so source-only rebuilds skip the fetch.
-# The Http1 raw engine work this image needs (large-body drain plus the per-worker
-# response cache used by the /json endpoint) must be present on the X.Y.Z branch.
-# Four ordered attempts before giving up: curl the archive tarball from github then
-# codeberg, then a shallow git clone from github then codeberg. The github archive
-# redirects to codeload.github.com (which the benchmark runner may not resolve), so
-# curl can fall through to the codeberg tarball, and git clone talks to github.com
-# and codeberg.org directly as the deeper fallback. RETRY and RETRY_DELAY bound
-# every attempt.
+# Vendor zix ${ZIX_VERSION} in its own layer so source-only rebuilds skip the fetch. Tries curl
+# tarball then git clone, github before codeberg. RETRY / RETRY_DELAY bound every attempt.
 RUN set -eu; \
     fetch() { \
         rm -rf /src/vendor/zix; mkdir -p /src/vendor/zix; \
@@ -61,7 +54,7 @@ RUN set -eu; \
         amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3 ;; \
         arm64) ZIG_TARGET=aarch64-linux-musl; ZIG_CPU=baseline ;; \
     esac; \
-    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}" --release=fast
+    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}+aes+pclmul+adx" --release=fast
 
 FROM alpine:3.20
 COPY --from=build /src/zig-out/bin/zix-ws /zix-ws

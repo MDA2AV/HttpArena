@@ -2,7 +2,7 @@
 //!
 //! zix HttpArena WebSocket entry point.
 //!
-//! Intent: demonstrate the engine-owned WebSocket path of zix.Http1 (EPOLL
+//! Intent: demonstrate the engine-owned WebSocket path of zix.Http1 (URING
 //! dispatch model) against the HttpArena echo and echo-pipeline suites.
 //!
 //! Design choices:
