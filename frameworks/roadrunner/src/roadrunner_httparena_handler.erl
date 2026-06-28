@@ -154,9 +154,7 @@ json_endpoint(Req) ->
     Body = #{~"items" => Processed, ~"count" => ItemCount},
     {roadrunner_resp:json(200, Body), Req}.
 
-add_total(Item, M) ->
-    Price = maps:get(~"price", Item),
-    Qty = maps:get(~"quantity", Item),
+add_total(#{~"price" := Price, ~"quantity" := Qty} = Item, M) ->
     Item#{~"total" => Price * Qty * M}.
 
 binding_int(Key, Req, Default) ->
