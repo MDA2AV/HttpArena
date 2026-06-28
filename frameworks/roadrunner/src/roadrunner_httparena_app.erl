@@ -32,16 +32,12 @@ start(_StartType, _StartArgs) ->
     {ok, _} = roadrunner:start_listener(httparena_h2c, #{
         port => H2cPort,
         routes => Routes,
-        max_clients => 32768,
-        num_acceptors => 100,
         max_content_length => 26214400,
-        %% Bound h2 memory under the lifted `max_clients`: cap streams per
-        %% connection AND cap total in-flight requests listener-wide, so the
-        %% per-request gzip state (~256 KB each) on `/json` can't multiply
-        %% into runaway memory across conns x streams. Over-cap streams are
-        %% refused (retry-safe) — connections stay up, no reconnect storm.
-        max_concurrent_streams => 16,
-        max_concurrent_requests => 2048,
+        %% The h2 listeners keep the default connection cap on purpose: h2
+        %% multiplexes many streams per connection, so a few connections
+        %% already saturate. Lifting max_clients here (as the h1 listeners
+        %% do) only multiplies per-stream memory (the `/json` gzip state)
+        %% into a blow-up with no throughput gain.
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
@@ -64,12 +60,10 @@ start(_StartType, _StartArgs) ->
             {ok, _} = roadrunner:start_listener(httparena_h2, #{
                 port => H2Port,
                 routes => Routes,
-                max_clients => 32768,
-                num_acceptors => 100,
                 max_content_length => 26214400,
                 tls => TlsOpts,
-                max_concurrent_streams => 16,
-                max_concurrent_requests => 2048,
+                %% Default connection cap (see the h2c listener above) — h2/h3
+                %% multiplex, so raising it only bloats per-stream memory.
                 %% Listener derives `alpn_preferred_protocols` from
                 %% this list — `h2` preferred, fall back to `http/1.1`.
                 %% `http3` co-serves over QUIC on UDP 8443 (same port
