@@ -299,7 +299,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "wtx"
 version = "0.47.9"
-source = "git+https://github.com/c410-f3r/wtx?branch=misc#b095b15d41b3fe92879918ab7d53d53ce9957b68"
+source = "git+https://github.com/c410-f3r/wtx?branch=misc#dc15edb7ad841ba4fc5a5c9a4bea05811cbcce12"
 dependencies = [
  "foldhash",
  "hashbrown",
@@ -316,7 +316,7 @@ dependencies = [
 [[package]]
 name = "wtx-macros"
 version = "0.8.3"
-source = "git+https://github.com/c410-f3r/wtx?branch=misc#b095b15d41b3fe92879918ab7d53d53ce9957b68"
+source = "git+https://github.com/c410-f3r/wtx?branch=misc#dc15edb7ad841ba4fc5a5c9a4bea05811cbcce12"
 dependencies = [
  "proc-macro2",
  "quote",
