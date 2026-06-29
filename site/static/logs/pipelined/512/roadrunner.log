@@ -1,5 +1,465 @@
-Exec: /app/erts-17.0.1/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
+Exec: /app/erts-17.0.2/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
 Root: /app
 /app
-=ESOCK WARNING MSG==== 11-Jun-2026::00:22:14.399664 ===
+=ESOCK WARNING MSG==== 29-Jun-2026::11:10:21.027539 ===
 [UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.827892 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828077 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828026 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828437 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828030 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828409 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828520 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828190 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828597 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828577 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828705 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828906 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828826 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828865 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828871 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829028 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829033 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829081 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829244 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829218 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829356 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.828951 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829386 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829483 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829500 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829572 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829588 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829681 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829677 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829777 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829798 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829884 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:26.829965 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.124692 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.124828 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.124823 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.124857 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.124917 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125124 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125163 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125222 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125501 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125606 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125888 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125934 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.125776 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126131 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126135 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126379 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126289 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126516 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126697 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126786 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126836 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126965 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.126595 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127034 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127084 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127117 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127064 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127223 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127211 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127241 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127315 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127328 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127291 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127373 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127371 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127397 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127434 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127414 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127472 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127508 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127517 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127531 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127596 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127597 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127608 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127671 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127726 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127720 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127747 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127778 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127823 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.127846 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:34.129171 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.413804 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.413941 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.414173 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.414157 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.414680 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.414676 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.414278 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.414509 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415074 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415315 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415436 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415397 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415601 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415836 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415797 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415754 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415927 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415960 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415970 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.415777 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416080 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416094 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416063 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416183 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416226 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416506 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416598 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416721 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 29-Jun-2026::11:10:41.416786 ===
+    reason: enotconn
+    msg: roadrunner response send failed
+    phase: buffered_response
