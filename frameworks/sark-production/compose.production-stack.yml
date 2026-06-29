@@ -60,5 +60,6 @@ services:
       - DATABASE_MAX_CONN=${DATABASE_MAX_CONN:-128}
       - REDIS_URL=redis://127.0.0.1:6379
       - SARK_HTTPARENA_PER_IP_CAP=0
+      - SARK_HTTPARENA_H1_ONLY=1
     depends_on:
       - cache

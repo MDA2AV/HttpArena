@@ -822,6 +822,7 @@ struct PortArgs {
     json_tls_bind: SocketAddr,
     h2c_bind: SocketAddr,
     h2_bind: SocketAddr,
+    h1_only: bool,
 }
 
 struct PgArgs {
@@ -916,53 +917,63 @@ fn run_thread(pg: PgArgs, ports: PortArgs, cfg: ServerCfg, ctx: launcher::Ctx) -
         std::ptr::NonNull::from(handler.date_stamp())
     };
 
-    let mut json_tls = {
-        let driver = exec.driver_mut();
-        Listener::<2, _, TlsProd>::open_in(
-            tls_app::new::<Tls>(&()),
-            listener_cfg(ports.json_tls_bind, cfg.max_conn),
-            driver,
-        )?
-    };
-    json_tls.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
-        vec![b"http/1.1".to_vec()],
-    ))));
-    let tls_stamp = {
-        let handler = json_tls.handler_mut();
-        if !handler.is_timer_bound() {
-            handler.bind_timer(timer_borrow, DEFAULT_HEAD_TIMEOUT);
-        }
-        std::ptr::NonNull::from(handler.date_stamp())
-    };
+    let (json_tls, tls_stamp, h2c, h2) = if ports.h1_only {
+        (
+            None::<Listener<2, _, TlsProd>>,
+            h1_stamp,
+            None::<Listener<4, H2App<'_, BenchHandler, Identity>, IdThru>>,
+            None::<Listener<5, H2App<'_, BenchHandler, Tls>, TlsThru>>,
+        )
+    } else {
+        let mut json_tls = {
+            let driver = exec.driver_mut();
+            Listener::<2, _, TlsProd>::open_in(
+                tls_app::new::<Tls>(&()),
+                listener_cfg(ports.json_tls_bind, cfg.max_conn),
+                driver,
+            )?
+        };
+        json_tls.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+            vec![b"http/1.1".to_vec()],
+        ))));
+        let tls_stamp = {
+            let handler = json_tls.handler_mut();
+            if !handler.is_timer_bound() {
+                handler.bind_timer(timer_borrow, DEFAULT_HEAD_TIMEOUT);
+            }
+            std::ptr::NonNull::from(handler.date_stamp())
+        };
 
-    let h2c = {
-        let driver = exec.driver_mut();
-        Listener::<4, H2App<'_, BenchHandler, Identity>, IdThru>::open_in(
-            H2App::new(&h2c_handler),
-            listener_cfg(ports.h2c_bind, cfg.max_conn),
-            driver,
-        )?
-    };
+        let h2c = {
+            let driver = exec.driver_mut();
+            Listener::<4, H2App<'_, BenchHandler, Identity>, IdThru>::open_in(
+                H2App::new(&h2c_handler),
+                listener_cfg(ports.h2c_bind, cfg.max_conn),
+                driver,
+            )?
+        };
 
-    let mut h2 = {
-        let driver = exec.driver_mut();
-        Listener::<5, H2App<'_, BenchHandler, Tls>, TlsThru>::open_in(
-            H2App::new(&h2_handler),
-            listener_cfg(ports.h2_bind, cfg.max_conn),
-            driver,
-        )?
+        let mut h2 = {
+            let driver = exec.driver_mut();
+            Listener::<5, H2App<'_, BenchHandler, Tls>, TlsThru>::open_in(
+                H2App::new(&h2_handler),
+                listener_cfg(ports.h2_bind, cfg.max_conn),
+                driver,
+            )?
+        };
+        h2.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+            vec![b"h2".to_vec()],
+        ))));
+        (Some(json_tls), tls_stamp, Some(h2c), Some(h2))
     };
-    h2.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
-        vec![b"h2".to_vec()],
-    ))));
 
     let mut init = app.as_mut().project();
     init.date_h1.as_mut().get_mut().bind(h1_stamp);
     init.date_tls.as_mut().get_mut().bind(tls_stamp);
     init.p8080.set(Some(http));
-    init.json_tls.set(Some(json_tls));
-    init.h2c.set(Some(h2c));
-    init.p8443.set(Some(h2));
+    init.json_tls.set(json_tls);
+    init.h2c.set(h2c);
+    init.p8443.set(h2);
     exec.run(app.as_mut())
 }
 
@@ -987,11 +998,15 @@ fn main() -> io::Result<()> {
             .precompressed_gzip(),
     ));
 
+    let h1_only = std::env::var("SARK_HTTPARENA_H1_ONLY")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
     let ports = PortArgs {
         h1_bind: boot.bind,
         json_tls_bind: SocketAddr::from(([0, 0, 0, 0], 8081)),
         h2c_bind: SocketAddr::from(([0, 0, 0, 0], 8082)),
         h2_bind: SocketAddr::from(([0, 0, 0, 0], 8443)),
+        h1_only,
     };
 
     let cfg = ServerCfg {
@@ -1014,6 +1029,7 @@ fn main() -> io::Result<()> {
             json_tls_bind: ports.json_tls_bind,
             h2c_bind: ports.h2c_bind,
             h2_bind: ports.h2_bind,
+            h1_only: ports.h1_only,
         };
         run_thread(pg, ports, cfg.clone(), ctx)
     })
