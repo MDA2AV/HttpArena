@@ -130,16 +130,14 @@ fn respond_json<T: JsonEncode>(value: T, accept_encoding: &[u8]) -> Response {
     let body = value.encode_json();
     let mut response = Response::ok();
     response.content_type("application/json");
-    // Prefer brotli (much smaller body → better compression-ratio score), fall
-    // back to gzip, then identity.
-    if accepts(accept_encoding, b"br") {
-        let compressed = Brotli::with_thread_local(|b| Shared::from(b.encode(&body).to_vec()));
-        response.append_wire_header_static("content-encoding", "br");
-        response.append_wire_header_static("vary", "accept-encoding");
-        response.set_body(compressed);
-    } else if accepts(accept_encoding, b"gzip") {
+    if accepts(accept_encoding, b"gzip") {
         let compressed = Gzip::with_thread_local(|g| Shared::from(g.encode(&body).to_vec()));
         response.append_wire_header_static("content-encoding", "gzip");
+        response.append_wire_header_static("vary", "accept-encoding");
+        response.set_body(compressed);
+    } else if accepts(accept_encoding, b"br") {
+        let compressed = Brotli::with_thread_local(|b| Shared::from(b.encode(&body).to_vec()));
+        response.append_wire_header_static("content-encoding", "br");
         response.append_wire_header_static("vary", "accept-encoding");
         response.set_body(compressed);
     } else {
