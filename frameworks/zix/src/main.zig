@@ -1,22 +1,9 @@
 //! HttpArena: zix
 //!
-//! zix HttpArena HTTP/1.1 entry point.
-//!
-//! Intent: demonstrate zix.Http1 (URING dispatch model) against the HttpArena
-//! HTTP/1.1 benchmark suite (baseline, pipelined, limited-conn, json, json-comp,
-//! upload, static). json-comp reuses the /json endpoint and gzips the body when
-//! the client sends Accept-Encoding: gzip.
-//!
-//! json-tls runs a second Http1 server on H1TLS_PORT: https over TLS 1.3 with the baked Ed25519
-//! cert at /etc/zix-tls. TLS terminates in the per-core tls_mux (one worker per core via
-//! SO_REUSEPORT, no thread-per-connection), its own perf band apart from the cleartext URING engine.
-//!
-//! Design choices:
-//! - rawIntercept: called before any header parsing on each request. Handles /pipeline by direct
-//!   byte-match then a raw write, skipping the header scan. Other routes fall through to the Router
-//!   dispatch with full parsing.
-//! - Router: comptime route table (StaticStringMap for EXACT, inline for PREFIX).
-//! - PIPELINE_RESP: precomputed response bytes, written verbatim per request with no header build.
+//! zix.Http1 (.URING) against the HttpArena HTTP/1.1 suite (baseline, pipelined, limited-conn, json,
+//! json-comp, upload, static). json-comp reuses /json and gzips on Accept-Encoding: gzip. json-tls
+//! runs a second Http1 server on H1TLS_PORT (https over TLS 1.3, baked Ed25519 cert, per-core tls_mux).
+//! /pipeline is fast-pathed in rawIntercept (see below), other routes go through the comptime Router.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -40,15 +27,21 @@ const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
 const Profile = enum { lean, throughput };
 const PROFILE: Profile = .throughput;
 
-/// Per-connection recv buffer, allocated once at accept. .lean keeps 4 KiB (requests are under
-/// 300 bytes and upload bodies are drained in chunks, so only headers must fit). .throughput
-/// raises it to 16 KiB for deeper pipelined batches per recv.
+/// Per-connection recv buffer (allocated at accept). .lean 4 KiB, .throughput 8 KiB (holds a
+/// 16-deep pipelined burst, about 4.8 KiB). Held by every live and warm-pool connection, so it
+/// pairs with uring_idle_pool_ceiling (below): 8 KiB (down from 16 KiB) trims the resident set
+/// behind the high-connection regression at no cell cost (requests tiny, json/static use the send
+/// buffer and sendfile, uploads use the large-body path).
 const MAX_RECV_BUF: usize = switch (PROFILE) {
     .lean => 4 * 1024,
-    .throughput => 16 * 1024,
+    .throughput => 8 * 1024,
 };
 const MAX_HEADERS: u8 = 16;
 const WORKERS: usize = 0;
+
+/// Warm idle-pool ceiling for .URING: absolute cap on warm connections per worker, so the pool
+/// never tracks a full live_count at high concurrency (the engine-side high-connection regression fix).
+const URING_IDLE_POOL_CEILING: usize = 256;
 
 // Response cache (ADR-036), /json only. The body is deterministic in (count, m) and clears the
 // cache crossover (~4 KiB), so a hit replays the full response with zero serialization. Other
@@ -116,20 +109,35 @@ fn pipelineHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.
     zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
 }
 
-// Raw-request interceptor (initRaw), called before header parsing on each request. Handles /pipeline
-// with zero parse overhead: byte-matches the path on rem, writes PIPELINE_RESP, returns the consumed
-// length (always header_end + 4, since /pipeline is a bare GET with no body). Unknown routes return
-// null and fall through to the Router with full parsing.
+// Raw interceptor (initRaw), before header parsing. Handles /pipeline with zero parse overhead:
+// byte-matches the path, writes PIPELINE_RESP, returns the consumed length. One call drains every
+// consecutive /pipeline request in the buffer (a 16-deep burst answers in one pass, coalesced into
+// one write), safe because the entry owns /pipeline as a pure bodyless GET. Other routes return null
+// and fall through to the Router.
 fn rawIntercept(rem: []const u8, header_end: usize, fd: std.posix.fd_t) ?usize {
     // Must start with "GET /p" to qualify for this fast path.
     if (rem.len < 24 or rem[0] != 'G' or rem[4] != '/' or rem[5] != 'p') return null;
 
-    // "GET /pipeline " is 15 bytes. Verify without scanning the request line.
+    // Verify "/pipeline " without scanning the request line.
     if (!std.mem.eql(u8, rem[4..15], "/pipeline ")) return null;
 
+    // First request: the engine already found its header end, so its length is header_end + 4.
     zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
+    var consumed: usize = header_end + 4;
 
-    return header_end + 4;
+    // Drain further consecutive /pipeline requests (each a bodyless GET, length = its header end + 4).
+    // Stop at the first non-/pipeline or incomplete request and let the engine resume from there.
+    while (true) {
+        const next = rem[consumed..];
+        if (next.len < 24 or next[0] != 'G' or next[4] != '/' or next[5] != 'p') break;
+        if (!std.mem.eql(u8, next[4..15], "/pipeline ")) break;
+
+        const end = std.mem.indexOf(u8, next, "\r\n\r\n") orelse break;
+        zix.Http1.fdWriteAll(fd, PIPELINE_RESP) catch {};
+        consumed += end + 4;
+    }
+
+    return consumed;
 }
 
 // GET /json/{count}?m=M : render count dataset items, total = price*qty*M.
@@ -412,11 +420,9 @@ fn staticServeUncached(rel: []const u8, want_br: bool, want_gzip: bool, fd: std.
     sendfileAll(fd, variant.fd, variant.size) catch {};
 }
 
-// GET /static/{file} : serve from /data/static with content negotiation.
-// Prefers a precompressed .br then .gz variant when the client accepts it,
-// falling back to the identity file. Content-Type is by extension. The first
-// request for a path probes the disk and caches fd + size + pre-rendered
-// header, every later request is one header send plus one zero-copy sendfile.
+// GET /static/{file} : serve from /data/static, content negotiation (prefers .br then .gz when
+// accepted, else identity), Content-Type by extension. First request probes the disk and caches
+// fd + size + pre-rendered header, later requests are one header send plus one zero-copy sendfile.
 fn staticHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.fd_t) void {
     _ = body;
 
@@ -479,6 +485,7 @@ fn tlsWorker(io: std.Io, tls: *zix.Tls.Context) void {
         .workers = WORKERS,
         .kernel_backlog = KERNEL_BACKLOG,
         .max_recv_buf = MAX_RECV_BUF,
+        .uring_idle_pool_ceiling = URING_IDLE_POOL_CEILING,
         .max_headers = MAX_HEADERS,
         .send_date_header = false,
     });
@@ -571,6 +578,7 @@ pub fn main(process: std.process.Init) !void {
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
         .max_recv_buf = MAX_RECV_BUF,
+        .uring_idle_pool_ceiling = URING_IDLE_POOL_CEILING,
         .max_headers = MAX_HEADERS,
         .workers = WORKERS,
         .send_date_header = false,
