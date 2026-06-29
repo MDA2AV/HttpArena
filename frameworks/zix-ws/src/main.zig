@@ -1,16 +1,9 @@
 //! HttpArena: zix-ws
 //!
-//! zix HttpArena WebSocket entry point.
-//!
-//! Intent: demonstrate the engine-owned WebSocket path of zix.Http1 (URING
-//! dispatch model) against the HttpArena echo and echo-pipeline suites.
-//!
-//! Design choices:
-//! - GET /ws upgrades, then zix.Http1.WebSocket.serve drives the echo loop
-//!   inside the engine: frames are echoed on readiness and a pipelined burst is
-//!   coalesced into a single write.
-//! - No response cache: echo is per-connection, not a broadcast fanout, so there
-//!   is nothing to precompute or share across connections.
+//! zix.Http1 engine-owned WebSocket (.URING) against the HttpArena echo and echo-pipeline suites.
+//! GET /ws upgrades, then WebSocket.serve drives the echo loop inside the engine (frames echoed on
+//! readiness, a pipelined burst coalesced into one write). No response cache: echo is per-connection,
+//! nothing to precompute or share.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -22,12 +15,12 @@ const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 
-/// Per-machine tuning profile (ADR-041 increment 5): .lean for the 12-thread /
-/// 32 GB dev box, .throughput for the 64-core / 251 GB competition box. Only the
-/// HTTP handshake recv buffer differs (the WS frame buffer is already 32 KiB).
-/// Select .throughput for the 64-core deployment.
+/// Per-machine tuning profile (ADR-041 incr 5): .lean for the 12-thread dev box, .throughput for
+/// the 64-core box. Under .URING the engine now honors ws_recv_buf (sizes conn.buf and the unmask
+/// scratch, independent of max_recv_buf), so a deep pipelined echo burst accumulates in one
+/// WS_RECV_BUF (32 KiB) buffer. max_recv_buf only sizes the brief HTTP handshake recv.
 const Profile = enum { lean, throughput };
-const PROFILE: Profile = .lean;
+const PROFILE: Profile = .throughput;
 
 const MAX_RECV_BUF: usize = switch (PROFILE) {
     .lean => 4 * 1024,
