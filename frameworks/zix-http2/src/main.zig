@@ -26,6 +26,15 @@ const LISTEN_IP: []const u8 = "::";
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 const DISPATCH_MODEL: zix.Http2.DispatchModel = .URING;
 
+/// Advertise enough concurrent streams for h2load (`-m 100`): the config default 16 would refuse the
+/// surplus (REFUSED_STREAM) and cap h2c throughput. Mirrors the zix-grpc entry.
+const MAX_STREAMS: usize = 128;
+
+/// Per-stream request body buffer. The mux pre-allocates max_streams * max_body per connection
+/// (mux.zig), so 128 streams at the default 64 KiB would reserve 8 MiB. These endpoints take a tiny
+/// body, so 16 KiB keeps headroom while capping the footprint at 2 MiB. Mirrors zix-grpc.
+const MAX_BODY: usize = 16 * 1024;
+
 // TLS cert / key: self-signed Ed25519 pair baked at /etc/zix-tls at image build, overridable via env.
 const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
 const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
@@ -334,13 +343,10 @@ fn prewarmStatic() void {
     }
 }
 
-// GET /static/{file} : serve a file from /data/static, content type by extension. The first request
-// reads it into memory and caches it, later requests reuse the cached bytes. The body is sent as
-// chunked DATA frames since HTTP/2 caps a single frame at the peer's max frame size.
-//
-// Content negotiation: client accepts br and "{file}.br" exists serves brotli with content-encoding br.
-// Else gzip and "{file}.gz" likewise. Otherwise the raw (identity) file. The server never compresses,
-// it only serves a precompressed file already on disk.
+// GET /static/{file} : serve from /data/static, content type by extension. First request reads it
+// into memory and caches it (later requests reuse the bytes), body sent as chunked DATA frames
+// (HTTP/2 caps a frame at the peer max). Content negotiation: .br then .gz when accepted, else the
+// identity file. The server never compresses, only serves a precompressed file already on disk.
 fn staticHandler(_: []const u8, headers: []const zix.Http2.Header, _: []const u8, fd: std.posix.fd_t, sid: u31) void {
     const raw = pathFromHeaders(headers);
     const path = if (std.mem.indexOfScalar(u8, raw, '?')) |q| raw[0..q] else raw;
@@ -404,6 +410,8 @@ fn tlsServer(io: std.Io, tls: *zix.Tls.Context) void {
         .tls = tls,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
+        .max_streams = MAX_STREAMS,
+        .max_body = MAX_BODY,
     }) catch return;
     defer server.deinit();
 
@@ -509,6 +517,8 @@ pub fn main(process: std.process.Init) !void {
         .port = H2C_PORT,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
+        .max_streams = MAX_STREAMS,
+        .max_body = MAX_BODY,
     });
     defer server.deinit();
 
