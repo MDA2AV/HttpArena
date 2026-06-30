@@ -354,7 +354,12 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 	} else if route == '/fortunes' {
 		return w.start_fortunes(mut out, mut ac)
 	} else if route.starts_with('/static/') {
-		if f := w.ro.assets[route[8..]] {
+		// Zero-copy lookup key: a view into the request buffer. The map only hashes the
+		// key bytes and never retains it, so the view is safe. `route[8..]` would be a
+		// substr -> a fresh heap string every request, which `-gc none` never frees
+		// (+625 MiB over 20M requests, proven in isolation). Mirrors the vanilla lib's
+		// own static_assets module (http_server/static_assets/static_assets.v).
+		if f := w.ro.assets[unsafe { tos(route.str + 8, route.len - 8) }] {
 			wb(mut out, f.header)
 			core.queue_file(f.fd, 0, f.size)
 		} else {
