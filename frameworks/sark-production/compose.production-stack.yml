@@ -1,13 +1,16 @@
-# CPU layout: the sark io_uring `server` busy-polls (Throughput profile spins
-# while it holds connections), so it must NOT share cores with the yielding
-# edge/authsvc/cache — otherwise it starves them and the whole stack serves
-# 0 RPS. `server` is pinned to GATEWAY_SERVER_CPUS (its own range); the proxy,
-# auth sidecar and redis share GATEWAY_PROXY_CPUS. Keep the two ranges DISJOINT.
+# CPU layout mirrors the competing nginx production stack across the 64 logical
+# CPUs of the bench box's framework half: edge 0-14,64-78 (30) + authsvc 15,79
+# (2) + cache 16-19,80-83 (8) + server 20-31,84-95 (24). Every service gets its
+# OWN disjoint range — the sark io_uring `server` busy-polls, so sharing cores
+# with the yielding edge/authsvc/cache starves them and the stack serves 0 RPS.
+# cpuset is the SINGLE source of truth: sark reads its own sched_getaffinity
+# (Launcher::allowed_cpus) and spawns one busy-poll worker per granted core, so
+# there is no separate CPU_COUNT/CPU_CORE to keep in sync.
 services:
   edge:
     build: ./proxy-production
     network_mode: host
-    cpuset: "${GATEWAY_PROXY_CPUS:-0-2}"
+    cpuset: "${GATEWAY_EDGE_CPUS:-0-14,64-78}"
     security_opt:
       - seccomp:unconfined
     ulimits:
@@ -25,14 +28,14 @@ services:
   cache:
     image: redis:7-alpine
     network_mode: host
-    cpuset: "${GATEWAY_PROXY_CPUS:-0-2}"
+    cpuset: "${GATEWAY_CACHE_CPUS:-16-19,80-83}"
     security_opt:
       - seccomp:unconfined
 
   authsvc:
     build: ../_shared/authsvc
     network_mode: host
-    cpuset: "${GATEWAY_PROXY_CPUS:-0-2}"
+    cpuset: "${GATEWAY_AUTH_CPUS:-15,79}"
     security_opt:
       - seccomp:unconfined
     environment:
@@ -44,7 +47,7 @@ services:
       context: ../sark
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-3-5}"
+    cpuset: "${GATEWAY_SERVER_CPUS:-20-31,84-95}"
     security_opt:
       - seccomp:unconfined
     ulimits:
@@ -54,8 +57,6 @@ services:
         hard: 1048576
     environment:
       - SARK_HTTPARENA_BIND=0.0.0.0:8080
-      - SARK_HTTPARENA_CPU_CORE=${GATEWAY_SERVER_CPU_CORE:-3}
-      - SARK_HTTPARENA_CPU_COUNT=${GATEWAY_SERVER_CPU_COUNT:-3}
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=${DATABASE_MAX_CONN:-128}
       - REDIS_URL=redis://127.0.0.1:6379
