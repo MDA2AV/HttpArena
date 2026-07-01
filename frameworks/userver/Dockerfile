@@ -1,4 +1,4 @@
-FROM ghcr.io/userver-framework/ubuntu-24.04-userver:v3.0 AS builder
+FROM ghcr.io/userver-framework/ubuntu-24.04-userver:v3.1 AS builder
 
 WORKDIR /src
 COPY userver_benchmark/ ./
