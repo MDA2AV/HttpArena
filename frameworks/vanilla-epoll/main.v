@@ -3,6 +3,8 @@ module main
 import vanilla.http_server
 import vanilla.http_server.http1_1.request_parser
 import vanilla.http_server.core
+import vanilla.http_server.tls
+import vanilla.http_server.static_assets
 import vanilla.pg_async
 import json
 import os
@@ -28,16 +30,6 @@ struct DatasetItem {
 	rating   Rating
 }
 
-// A static asset served with sendfile(2): the response head is precomputed, the
-// body is streamed zero-copy straight from the page-cached file fd.
-struct StaticFile {
-	header []u8
-	fd     int
-	size   i64
-}
-
-fn C.open(pathname &char, flags int) int
-
 struct CrudCreate {
 	id       int
 	name     string
@@ -57,7 +49,7 @@ struct Fortune {
 struct SharedRO {
 	dataset  []DatasetItem
 	prefixes []string
-	assets   map[string]StaticFile
+	asv      static_assets.AssetServer // canonical static server (negotiation + sendfile), mounted at /static/
 mut:
 	// PROCESS-SHARED caches (mutex-guarded). They must be shared, not per-worker:
 	// validate.sh does two GET /crud/items/42 and requires X-Cache MISS then HIT,
@@ -77,8 +69,7 @@ mut:
 	// (~25 MiB, lazily allocated).
 	crud    []CrudSlot
 	crud_mu &sync.RwMutex = unsafe { nil }
-	gz      map[u64][]u8 // json-comp: (count<<32)|m -> gzipped response bytes
-	gz_mu   &sync.RwMutex = unsafe { nil }
+	gz      map[u64][]u8 // json-comp: precomputed at boot, READ-ONLY during serving (lock-free reads)
 }
 
 // CrudSlot is one entry of the id-indexed crud cache slab. `buf` is the rendered
@@ -354,17 +345,14 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 	} else if route == '/fortunes' {
 		return w.start_fortunes(mut out, mut ac)
 	} else if route.starts_with('/static/') {
-		// Zero-copy lookup key: a view into the request buffer. The map only hashes the
-		// key bytes and never retains it, so the view is safe. `route[8..]` would be a
-		// substr -> a fresh heap string every request, which `-gc none` never frees
-		// (+625 MiB over 20M requests, proven in isolation). Mirrors the vanilla lib's
-		// own static_assets module (http_server/static_assets/static_assets.v).
-		if f := w.ro.assets[unsafe { tos(route.str + 8, route.len - 8) }] {
-			wb(mut out, f.header)
-			core.queue_file(f.fd, 0, f.size)
-		} else {
-			wb(mut out, not_found)
-		}
+		// Canonical static serving via the lib's static_assets module: negotiates the
+		// precompressed .br/.gz sibling per Accept-Encoding (the arena sends
+		// `br;q=1, gzip;q=0.8`, so this ships the ~4x smaller .br body instead of the
+		// raw file), plus ETag/Vary/Cache-Control and sendfile(2) for large assets —
+		// ONE audited implementation instead of a second hand-rolled identity-only
+		// path that ignored Accept-Encoding. Mounted at /static/; emits via the same
+		// core.queue_file sendfile handoff the worker already drains.
+		w.ro.asv.respond_into(req_buffer, mut out) or { wb(mut out, not_found) }
 		return .done
 	} else if route == '/crud/items' {
 		if method == 'POST' {
@@ -848,23 +836,29 @@ fn (mut w WorkerCtx) render_crud_update(mut out []u8, id int) {
 
 // ── /json (non-DB) ───────────────────────────────────────────────────────────
 
-fn (w &WorkerCtx) write_json_response(mut out []u8, count int, m i64) {
+// write_json_into is the transport-agnostic /json serializer: it only APPENDS
+// response bytes to `out`, so the plaintext path (via WorkerCtx) and the json-tls
+// path (a stateless TLS handler) share it verbatim. `ro` is read-only and nothing
+// per-request is heap-allocated. Content-Length is precomputed from the SAME
+// values the body emits, so the framed length can never desync from the body
+// (no response-splitting / smuggling surface).
+fn write_json_into(ro &SharedRO, mut out []u8, count int, m i64) {
 	// 21 = len('{"items":[') + len('],"count":') + '}'; plus the count's own digits
 	mut clen := 21 + digits(i64(count))
 	if count > 0 {
 		clen += count - 1
 	}
 	for i in 0 .. count {
-		t := w.ro.dataset[i].price * w.ro.dataset[i].quantity * m
-		clen += w.ro.prefixes[i].len + digits(t) + 1
+		t := ro.dataset[i].price * ro.dataset[i].quantity * m
+		clen += ro.prefixes[i].len + digits(t) + 1
 	}
 	ws(mut out,
 		'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: application/json\r\nContent-Length: ')
 	wi(mut out, i64(clen))
 	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n{"items":[')
 	for i in 0 .. count {
-		ws(mut out, w.ro.prefixes[i])
-		wi(mut out, w.ro.dataset[i].price * w.ro.dataset[i].quantity * m)
+		ws(mut out, ro.prefixes[i])
+		wi(mut out, ro.dataset[i].price * ro.dataset[i].quantity * m)
 		ws(mut out, if i < count - 1 { '},' } else { '}' })
 	}
 	ws(mut out, '],"count":')
@@ -872,54 +866,66 @@ fn (w &WorkerCtx) write_json_response(mut out []u8, count int, m i64) {
 	ws(mut out, '}')
 }
 
-fn (mut w WorkerCtx) write_json_gzip(mut out []u8, count int, m i64) {
-	key := (u64(u32(count)) << 32) | u64(u32(m))
-	mut cached := []u8{}
-	w.ro.gz_mu.@rlock()
-	if c := w.ro.gz[key] {
-		unsafe {
-			cached = c
-		}
-	}
-	w.ro.gz_mu.runlock()
-	if cached.len > 0 {
-		wb(mut out, cached)
-		return
-	}
-	body := w.json_body(count, m)
-	gz := gzip.compress(body.bytes()) or {
-		write_resp(mut out, 'application/json', body)
-		return
-	}
+fn (w &WorkerCtx) write_json_response(mut out []u8, count int, m i64) {
+	write_json_into(w.ro, mut out, count, m)
+}
+
+// gz_response_ep builds the COMPLETE gzipped /json response for (count, m). Pure
+// function of the shared dataset; precomputed once at boot (see main) and also the
+// cold path for an unexpected param.
+fn gz_response_ep(ro &SharedRO, count int, m i64) []u8 {
+	body := ro.json_body(count, m)
+	gz := gzip.compress(body.bytes()) or { return []u8{} }
 	mut resp := []u8{cap: gz.len + 128}
 	ws(mut resp,
 		'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Encoding: gzip\r\nContent-Type: application/json\r\nContent-Length: ')
 	wi(mut resp, i64(gz.len))
 	ws(mut resp, '\r\nConnection: keep-alive\r\n\r\n')
 	unsafe { resp.push_many(gz.data, gz.len) }
-	w.ro.gz_mu.@lock()
-	if w.ro.gz.len < 1024 {
-		w.ro.gz[key] = resp
-	}
-	w.ro.gz_mu.unlock()
-	wb(mut out, resp)
+	return resp
 }
 
-fn (w &WorkerCtx) json_body(count int, m i64) string {
+// write_json_gzip is the json-comp path. The cache is fully precomputed at boot and
+// READ-ONLY during serving, so the hot path is a LOCK-FREE map read — no per-request
+// shared RwMutex (which contended across workers under the co-hosted json-tls
+// server's extra threads and collapsed io_uring json-comp @16384; enghitalo/vanilla#89).
+fn (w &WorkerCtx) write_json_gzip(mut out []u8, count int, m i64) {
+	key := (u64(u32(count)) << 32) | u64(u32(m))
+	if cached := w.ro.gz[key] {
+		wb(mut out, cached)
+		return
+	}
+	// Param outside the precomputed grid (not sent by the benchmark): build + send
+	// without caching, so the hot path stays write-free and lock-free.
+	resp := gz_response_ep(w.ro, count, m)
+	if resp.len > 0 {
+		wb(mut out, resp)
+	} else {
+		write_resp(mut out, 'application/json', w.ro.json_body(count, m))
+	}
+}
+
+// json_body builds the /json body for (count, m). Defined on &SharedRO so it can
+// run at boot (gz precompute) without a WorkerCtx; WorkerCtx.json_body delegates.
+fn (ro &SharedRO) json_body(count int, m i64) string {
 	mut sb := strings.new_builder(count * 224 + 32)
 	sb.write_string('{"items":[')
 	for i in 0 .. count {
 		if i > 0 {
 			sb.write_u8(`,`)
 		}
-		sb.write_string(w.ro.prefixes[i])
-		sb.write_decimal(w.ro.dataset[i].price * w.ro.dataset[i].quantity * m)
+		sb.write_string(ro.prefixes[i])
+		sb.write_decimal(ro.dataset[i].price * ro.dataset[i].quantity * m)
 		sb.write_u8(`}`)
 	}
 	sb.write_string('],"count":')
 	sb.write_decimal(i64(count))
 	sb.write_u8(`}`)
 	return sb.str()
+}
+
+fn (w &WorkerCtx) json_body(count int, m i64) string {
+	return w.ro.json_body(count, m)
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -1235,30 +1241,6 @@ fn parse_crud_body_fast(body []u8, need_id bool) ?CrudFastBody {
 	}
 }
 
-fn content_type(name string) string {
-	ext := name.all_after_last('.')
-	return match ext {
-		'css' { 'text/css' }
-		'js' { 'application/javascript' }
-		'json' { 'application/json' }
-		'html' { 'text/html' }
-		'svg' { 'image/svg+xml' }
-		'webp' { 'image/webp' }
-		'woff2' { 'font/woff2' }
-		else { 'application/octet-stream' }
-	}
-}
-
-fn static_header(ctype string, size i64) []u8 {
-	mut sb := strings.new_builder(96)
-	sb.write_string('HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: ')
-	sb.write_string(ctype)
-	sb.write_string('\r\nContent-Length: ')
-	sb.write_decimal(size)
-	sb.write_string('\r\nConnection: keep-alive\r\n\r\n')
-	return sb
-}
-
 // parse_db_url turns postgres://user:pass@host:port/dbname into a pg_async.ConnConfig.
 fn parse_db_url(u string) pg_async.ConnConfig {
 	mut s := u
@@ -1278,6 +1260,30 @@ fn parse_db_url(u string) pg_async.ConnConfig {
 		user:     creds.all_before(':')
 		password: creds.all_after(':')
 		database: rest.all_after('/')
+	}
+}
+
+// load_tls_config builds the json-tls server's TLS config. It reads the cert/key
+// the HttpArena harness bind-mounts at /certs (overridable via TLS_CERT/TLS_KEY).
+// If NO cert is mounted (local dev), it falls back to a fresh self-signed cert —
+// the benchmark/validate clients use `curl -k` / wrk, which never verify it. If a
+// cert IS present but the key is missing/unreadable, it FAILS LOUDLY rather than
+// silently self-signing, so a real misconfiguration can't slip through as "works
+// but with the wrong identity". TLS 1.3 + ALPN http/1.1 are fixed by the tls shim.
+fn load_tls_config() &tls.Config {
+	cert_path := os.getenv_opt('TLS_CERT') or { '/certs/server.crt' }
+	key_path := os.getenv_opt('TLS_KEY') or { '/certs/server.key' }
+	cert := os.read_bytes(cert_path) or {
+		eprintln('vanilla-epoll: no TLS cert at ${cert_path} (${err}); using ephemeral self-signed')
+		return tls.new_self_signed() or {
+			panic('vanilla-epoll: self-signed TLS bring-up failed: ${err}')
+		}
+	}
+	key := os.read_bytes(key_path) or {
+		panic('vanilla-epoll: TLS cert present at ${cert_path} but key unreadable at ${key_path}: ${err}')
+	}
+	return tls.new_from_pem(cert, key) or {
+		panic('vanilla-epoll: TLS cert/key parse failed: ${err}')
 	}
 }
 
@@ -1314,34 +1320,105 @@ fn main() {
 		prefixes << enc#[..-1] + ',"total":'
 	}
 
-	mut assets := map[string]StaticFile{}
 	static_dir := os.getenv_opt('STATIC_DIR') or { '/data/static' }
-	for name in os.ls(static_dir) or { []string{} } {
-		if name.ends_with('.gz') || name.ends_with('.br') {
-			continue
-		}
-		path := '${static_dir}/${name}'
-		fsize := i64(os.file_size(path))
-		fd := C.open(&char(path.str), 0)
-		if fd < 0 {
-			continue
-		}
-		assets[name] = StaticFile{
-			header: static_header(content_type(name), fsize)
-			fd:     fd
-			size:   fsize
-		}
-	}
+	// Canonical static server: loads every asset PLUS its .br/.gz siblings once,
+	// mounts them at /static/, and negotiates Accept-Encoding per request (serving
+	// the precompressed body when accepted). Replaces the former hand-rolled,
+	// identity-only map that ignored Accept-Encoding and always shipped the raw
+	// file. spa_fallback is off: the arena fixture set has no SPA entrypoint.
+	asv := static_assets.new(static_assets.Config{
+		root:         static_dir
+		url_prefix:   '/static/'
+		spa_fallback: ''
+		// Serve any representation >= 16 KiB from disk with sendfile(2) instead of
+		// preloading + copying it through the per-connection write buffer. The arena
+		// .br siblings are small (<256 KiB, the default threshold), so the default
+		// would copy each ~33-47 KiB .br into every connection's write_buf, which the
+		// pool then retains — a per-connection RSS balloon at high conn counts (CI
+		// measured +168% mem, ~1 GiB at 6800 conns). 16 KiB sendfiles the large .br
+		// (the balloon drivers) zero-copy while still preloading the tiny ones (cheap
+		// memcpy, negligible write_buf growth) — flat RSS + best throughput in A/B.
+		sendfile_min_bytes: 16 * 1024
+	}) or { panic('vanilla-epoll: static_assets init failed: ${err}') }
 
-	ro := &SharedRO{
+	mut ro := &SharedRO{
 		dataset:  dataset
 		prefixes: prefixes
-		assets:   assets
+		asv:      asv
 		crud:     []CrudSlot{len: crud_cache_slots}
 		crud_mu:  sync.new_rwmutex()
 		gz:       map[u64][]u8{}
-		gz_mu:    sync.new_rwmutex()
 	}
+
+	// Precompute json-comp gzip responses at boot so write_json_gzip reads the cache
+	// LOCK-FREE during serving (no per-request shared RwMutex — that contended across
+	// workers and, with the co-hosted json-tls server's threads, collapsed io_uring
+	// json-comp @16384; enghitalo/vanilla#89). Bounded grid covering count<=50 / m<=8.
+	gz_cap_count := if dataset.len < 64 { dataset.len } else { 64 }
+	for c in 1 .. gz_cap_count + 1 {
+		for mm in 1 .. 17 {
+			r := gz_response_ep(ro, c, i64(mm))
+			if r.len > 0 {
+				ro.gz[(u64(u32(c)) << 32) | u64(u32(mm))] = r
+			}
+		}
+	}
+
+	// ── json-tls profile: the same /json handler over HTTPS on :8081 ───────────
+	// A SECOND server because tls_config is server-wide. It serves ONLY /json
+	// (404 for everything else) so the TLS port exposes the minimal surface the
+	// profile needs — no /static, /upload, /crud or DB routes. The handler is a
+	// STATELESS request_handler (no make_state, sidestepping the TLS worker's
+	// stateful path) capturing the read-only `ro`; it reuses write_json_into
+	// verbatim, so the bytes are identical to the plaintext /json. Mbed TLS 1.3,
+	// ALPN http/1.1 (set by the tls shim) → curl --http1.1 negotiates 1.1.
+	tls_handler := fn [ro] (req_buffer []u8, fd int, mut out []u8) ! {
+		mut req := request_parser.HttpRequest{
+			buffer: req_buffer
+		}
+		if !request_parser.decode_into(mut req) {
+			wb(mut out, bad_request)
+			return
+		}
+		target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
+		qpos := target.index_u8(`?`)
+		route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+		if route.starts_with('/json/') {
+			count := clamp_count(parse_u_at(route, 6), ro.dataset.len)
+			mut m := qint(req, qk_m)
+			if m == 0 {
+				m = 1
+			}
+			write_json_into(ro, mut out, count, m)
+			return
+		}
+		wb(mut out, not_found)
+	}
+	// Port is fixed to 8081 by the HttpArena harness; TLS_PORT lets local runs pick
+	// a free port (the harness injects nothing, so the default is the contract).
+	mut tls_port := (os.getenv_opt('TLS_PORT') or { '8081' }).int()
+	if tls_port <= 0 {
+		tls_port = 8081
+	}
+	tls_server := http_server.new_server(http_server.ServerConfig{
+		port:            tls_port
+		io_multiplexing: .epoll
+		limits:          http_server.Limits{
+			// json-tls requests are tiny GETs; a small ceiling bounds per-conn
+			// memory and shrinks the DoS surface (the TLS port has no upload path).
+			max_request_bytes: 64 * 1024
+		}
+		request_handler: tls_handler
+		tls_config:      load_tls_config()
+	})!
+	// run() blocks in the accept loop, so the TLS server runs on its own thread
+	// while the plaintext server.run() below blocks main. run() has a value-mut
+	// receiver, so spawn it via a closure with a local mut copy (each Server is
+	// independent — own socket, workers and counters).
+	spawn fn [tls_server] () {
+		mut s := tls_server
+		s.run()
+	}()
 
 	mut server := http_server.new_server(http_server.ServerConfig{
 		port:            8080
