@@ -1,11 +1,4 @@
-# CPU layout mirrors the competing nginx production stack across the 64 logical
-# CPUs of the bench box's framework half: edge 0-14,64-78 (30) + authsvc 15,79
-# (2) + cache 16-19,80-83 (8) + server 20-31,84-95 (24). Every service gets its
-# OWN disjoint range — the sark io_uring `server` busy-polls, so sharing cores
-# with the yielding edge/authsvc/cache starves them and the stack serves 0 RPS.
-# cpuset is the SINGLE source of truth: sark reads its own sched_getaffinity
-# (Launcher::allowed_cpus) and spawns one busy-poll worker per granted core, so
-# there is no separate CPU_COUNT/CPU_CORE to keep in sync.
+# server busy-polls: every service needs its own disjoint cpuset, else 0 RPS.
 services:
   edge:
     build: ./proxy-production

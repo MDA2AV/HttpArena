@@ -1,10 +1,4 @@
-# CPU layout mirrors the competing Caddy/nginx gateways (64 logical CPUs, the
-# framework half of the bench box): proxy 0-19,64-83 (40) + server 20-31,84-95
-# (24). cpuset is the SINGLE source of truth — sark's server reads its own
-# sched_getaffinity (Launcher::allowed_cpus) and spawns one busy-poll worker per
-# granted core, so there is no separate CPU_COUNT/CPU_CORE to keep in sync. The
-# io_uring server busy-polls, so its range MUST stay DISJOINT from the yielding
-# proxy or it starves the edge and the stack serves 0 RPS.
+# server busy-polls: its cpuset must stay disjoint from proxy's, else 0 RPS.
 services:
   proxy:
     build:
