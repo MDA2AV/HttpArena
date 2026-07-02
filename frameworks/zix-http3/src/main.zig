@@ -25,12 +25,10 @@ const zix = @import("zix");
 // --------------------------------------------------------- //
 
 const TLS_PORT: u16 = 8443;
-// Both listeners bind dual-stack IPv6 ("::"): the TCP h2 listener and the zix.Udp / QUIC h3 listener
-// (dual-stack, so "::" also accepts IPv4 as IPv4-mapped) serve clients reaching the host over either
-// family.
 const LISTEN_IP: []const u8 = "::";
 const KERNEL_BACKLOG: u31 = 16 * 1024;
-const H3_DISPATCH: zix.Http3.DispatchModel = .URING;
+const DISPATCH_MODEL: zix.Http3.DispatchModel = .URING;
+const WORKERS: usize = 0;
 
 // Ed25519 cert / key, baked into the image. Overridable via env so the same binary runs locally.
 const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-h3/server.crt";
@@ -272,11 +270,6 @@ fn sendH2File(fd: std.posix.fd_t, sid: u31, content_type: []const u8, bytes: []c
     }
 }
 
-const H2_ROUTES = &[_]zix.Http2.Route{
-    .{ .path = "/baseline2", .handler = h2Baseline },
-    .{ .path = "/static", .handler = h2Static, .kind = .PREFIX },
-};
-
 // h2-over-TLS readiness listener: the per-core tls_mux terminates TLS 1.3 (ALPN h2) on TLS_PORT over
 // TCP. A missing or unreadable cert degrades gracefully: this thread returns and only the QUIC
 // listener serves.
@@ -286,7 +279,7 @@ fn h2TlsServer(io: std.Io, tls: *zix.Tls.Context) void {
         .ip = LISTEN_IP,
         .port = TLS_PORT,
         .tls = tls,
-        .dispatch_model = .URING,
+        .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
     }) catch return;
     defer server.deinit();
@@ -295,6 +288,11 @@ fn h2TlsServer(io: std.Io, tls: *zix.Tls.Context) void {
 }
 
 // --------------------------------------------------------- //
+
+const H2_ROUTES = &[_]zix.Http2.Route{
+    .{ .path = "/baseline2", .handler = h2Baseline },
+    .{ .path = "/static", .handler = h2Static, .kind = .PREFIX },
+};
 
 pub fn main(process: std.process.Init) !void {
     // Elevate scheduling priority (setpriority -19). Fails silently without CAP_SYS_NICE.
@@ -335,9 +333,11 @@ pub fn main(process: std.process.Init) !void {
         .allocator = std.heap.smp_allocator,
         .ip = LISTEN_IP,
         .port = TLS_PORT,
-        .dispatch_model = H3_DISPATCH,
+        .dispatch_model = DISPATCH_MODEL,
         .tls = &h3_tls,
         .gso_enabled = true,
+        .workers = WORKERS,
+        .max_datagram_size = 8192,
     });
     defer server.deinit();
 
