@@ -270,6 +270,13 @@ fn sendH2File(fd: std.posix.fd_t, sid: u31, content_type: []const u8, bytes: []c
     }
 }
 
+// --------------------------------------------------------- //
+
+const H2_ROUTES = &[_]zix.Http2.Route{
+    .{ .path = "/baseline2", .handler = h2Baseline },
+    .{ .path = "/static", .handler = h2Static, .kind = .PREFIX },
+};
+
 // h2-over-TLS readiness listener: the per-core tls_mux terminates TLS 1.3 (ALPN h2) on TLS_PORT over
 // TCP. A missing or unreadable cert degrades gracefully: this thread returns and only the QUIC
 // listener serves.
@@ -288,11 +295,6 @@ fn h2TlsServer(io: std.Io, tls: *zix.Tls.Context) void {
 }
 
 // --------------------------------------------------------- //
-
-const H2_ROUTES = &[_]zix.Http2.Route{
-    .{ .path = "/baseline2", .handler = h2Baseline },
-    .{ .path = "/static", .handler = h2Static, .kind = .PREFIX },
-};
 
 pub fn main(process: std.process.Init) !void {
     // Elevate scheduling priority (setpriority -19). Fails silently without CAP_SYS_NICE.
