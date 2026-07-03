@@ -37,6 +37,18 @@ const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-h3/server.key";
 // Max DATA frame payload on the h2 readiness listener (the HTTP/2 default SETTINGS_MAX_FRAME_SIZE).
 const MAX_DATA_CHUNK: usize = 16 * 1024;
 
+// IP Maximum Transmission Unit
+const IP_MTU: usize = 1500;
+// Header IP, IPv4 use 20 bytes and IPv6 use 40 bytes
+const HEADER_IP: usize = 40; 
+// UDP Header from source port, destination port, len of udp header + payload, checksum
+const UDP_HEADER: usize = 8;
+// Max datagram came from value of IP math on 1500 MTU (IPv4 & IPv6 headers alloc)
+// best value is 1452 since involve two models IP. But counting use IPv6 instead IPv4
+// best_option = IP_MTU - HEADER_IP - UDP_HEADER
+// the default is 1200 as safe floor.
+const MAX_DATAGRAM_SIZE: usize = IP_MTU - HEADER_IP - UDP_HEADER;
+
 // Static directory, overridable via ARENA_DATA (default /data, the container mount point).
 var g_static_base: []const u8 = "/data/static/";
 var g_static_base_buf: [256]u8 = undefined;
@@ -339,7 +351,7 @@ pub fn main(process: std.process.Init) !void {
         .tls = &h3_tls,
         .gso_enabled = true,
         .workers = WORKERS,
-        .max_datagram_size = 8192,
+        .max_datagram_size = MAX_DATAGRAM_SIZE,
     });
     defer server.deinit();
 
