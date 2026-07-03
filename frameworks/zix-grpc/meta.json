@@ -3,7 +3,7 @@
   "language": "Zig",
   "type": "engine",
   "engine": "zix uring",
-  "description": "TBD",
+  "description": "zix.Grpc: pure-Zig gRPC (HTTP/2 over TCP, no std.http) on io_uring dispatch, serving unary and server-streaming, cleartext and over TLS 1.3. Server-streaming packs many gRPC messages into each HTTP/2 DATA frame instead of one frame per message.",
   "repo": "https://github.com/prothegee/zix",
   "enabled": true,
   "tests": [
