@@ -42,6 +42,6 @@ std::string Handler::HandleRequestThrow(const userver::server::http::HttpRequest
   }
 
   request.GetHttpResponse().SetHeader(userver::http::headers::kContentType, "application/json");
-  return userver::formats::json::ToString(userver::formats::json::ValueBuilder{resp}.ExtractValue());
+  return ToJsonString(resp);
 }
 }  // namespace userver_httparena::json
