@@ -2,6 +2,8 @@ module main
 
 import vanilla.http_server
 import vanilla.http_server.http1_1.request_parser
+import vanilla.http_server.tls
+import vanilla.http_server.static_assets
 import db.pg
 import json
 import os
@@ -47,17 +49,12 @@ struct Fortune {
 	message string
 }
 
-// A static asset preloaded into memory with its full HTTP response.
-struct StaticFile {
-	response []u8
-}
-
 struct Shared {
 mut:
 	db       &pg.DB = unsafe { nil }
 	dataset  []DatasetItem
-	prefixes []string              // per item: `{…,"total":` (everything but the request-dependent total)
-	assets   map[string]StaticFile // /static/<name> -> prebuilt response
+	prefixes []string                  // per item: `{…,"total":` (everything but the request-dependent total)
+	asv      static_assets.AssetServer // /static/* via the audited module (negotiation + queue_buf borrowed send)
 	cache    map[int]string        // crud cache-aside: id -> item JSON
 	cache_mu &sync.RwMutex = unsafe { nil }
 	// json-comp cache: the gzipped response for a given (count, m) is fully
@@ -185,11 +182,14 @@ fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
 	} else if route == '/fortunes' {
 		write_resp(mut out, 'text/html; charset=utf-8', sh.fortunes())
 	} else if route.starts_with('/static/') {
-		if f := sh.assets[route[8..]] {
-			out << f.response
-		} else {
-			out << not_found
-		}
+		// Canonical static serving via the lib's static_assets module, mounted at
+		// /static/: negotiates the precompressed .br/.gz sibling per Accept-Encoding
+		// (the arena sends `br;q=1`, so this ships the ~4x smaller .br body instead of
+		// the raw file) and emits small assets via core.queue_buf borrowed send — the
+		// worker sends the preloaded, immutable bytes DIRECTLY (no copy through the
+		// per-connection write buffer). ONE audited path shared with vanilla-epoll,
+		// replacing the hand-rolled identity-only map that ignored Accept-Encoding.
+		sh.asv.respond_into(req_buffer, mut out) or { out << not_found }
 	} else if route == '/crud/items' {
 		if method == 'POST' {
 			sh.write_crud_create(mut out, req)
@@ -391,6 +391,13 @@ fn (sh &Shared) write_json_response(mut out []u8, count int, m i64) {
 // the COMPLETE response bytes and just append the cached copy on a hit — no
 // rebuild, no recompress. Compressing once instead of per-request is the whole
 // win for json-comp (the profile is compression-bound, not allocation-bound).
+//
+// Kept LAZY, not precomputed at boot: precomputing the full (count x m) grid would
+// compress ~800 keys vs the ~8 the profile sends. On the `-gc none` epoll sibling
+// that leaked ~135 MiB via gzip.compress scratch (vlang/v#27606); this io_uring
+// binary is default-GC so it would not leak, but lazy keeps both entries identical
+// and the shared lock is not a bottleneck (the json-comp@16384 collapse is thread
+// oversubscription from the co-hosted json-tls listener, enghitalo/vanilla#89).
 fn (mut sh Shared) write_json_gzip(mut out []u8, count int, m i64) {
 	key := (u64(u32(count)) << 32) | u64(u32(m))
 	sh.gz_mu.@rlock()
@@ -668,20 +675,6 @@ fn accepts_gzip(req request_parser.HttpRequest) bool {
 }
 
 // content_type maps a file extension to a MIME type for the static handler.
-fn content_type(name string) string {
-	ext := name.all_after_last('.')
-	return match ext {
-		'css' { 'text/css' }
-		'js' { 'application/javascript' }
-		'json' { 'application/json' }
-		'html' { 'text/html' }
-		'svg' { 'image/svg+xml' }
-		'webp' { 'image/webp' }
-		'woff2' { 'font/woff2' }
-		else { 'application/octet-stream' }
-	}
-}
-
 // parse_db_url turns postgres://user:pass@host:port/dbname into a pg.Config.
 fn parse_db_url(u string) pg.Config {
 	mut s := u
@@ -701,6 +694,29 @@ fn parse_db_url(u string) pg.Config {
 		user:     creds.all_before(':')
 		password: creds.all_after(':')
 		dbname:   rest.all_after('/')
+	}
+}
+
+// load_tls_config builds the json-tls server's TLS config. It reads the cert/key
+// the HttpArena harness bind-mounts at /certs (overridable via TLS_CERT/TLS_KEY).
+// If NO cert is mounted (local dev), it falls back to a fresh self-signed cert —
+// the benchmark/validate clients use `curl -k` / wrk, which never verify it. If a
+// cert IS present but the key is missing/unreadable, it FAILS LOUDLY rather than
+// silently self-signing. TLS 1.3 + ALPN http/1.1 are fixed by the tls shim.
+fn load_tls_config() &tls.Config {
+	cert_path := os.getenv_opt('TLS_CERT') or { '/certs/server.crt' }
+	key_path := os.getenv_opt('TLS_KEY') or { '/certs/server.key' }
+	cert := os.read_bytes(cert_path) or {
+		eprintln('vanilla-io_uring: no TLS cert at ${cert_path} (${err}); using ephemeral self-signed')
+		return tls.new_self_signed() or {
+			panic('vanilla-io_uring: self-signed TLS bring-up failed: ${err}')
+		}
+	}
+	key := os.read_bytes(key_path) or {
+		panic('vanilla-io_uring: TLS cert present at ${cert_path} but key unreadable at ${key_path}: ${err}')
+	}
+	return tls.new_from_pem(cert, key) or {
+		panic('vanilla-io_uring: TLS cert/key parse failed: ${err}')
 	}
 }
 
@@ -733,30 +749,81 @@ fn main() {
 		prefixes << enc#[..-1] + ',"total":'
 	}
 
-	// Preload static assets into memory as ready-to-send responses (originals
-	// only; skip the precompressed .gz/.br siblings — we serve identity).
-	mut assets := map[string]StaticFile{}
 	static_dir := os.getenv_opt('STATIC_DIR') or { '/data/static' }
-	for name in os.ls(static_dir) or { []string{} } {
-		if name.ends_with('.gz') || name.ends_with('.br') {
-			continue
-		}
-		bytes := os.read_bytes('${static_dir}/${name}') or { continue }
-		assets[name] = StaticFile{
-			response: static_response(content_type(name), bytes)
-		}
-	}
+	// Canonical static server: loads every asset PLUS its .br/.gz siblings once,
+	// mounts them at /static/, and negotiates Accept-Encoding per request (serving
+	// the precompressed body when accepted, emitted via core.queue_buf borrowed
+	// send). Replaces the former identity-only map that ignored Accept-Encoding and
+	// always shipped the raw file. spa_fallback off: the arena set has no SPA.
+	asv := static_assets.new(static_assets.Config{
+		root:         static_dir
+		url_prefix:   '/static/'
+		spa_fallback: ''
+	}) or { panic('vanilla-io_uring: static_assets init failed: ${err}') }
 
 	mut sh := Shared{
 		db:       db
 		dataset:  dataset
 		prefixes: prefixes
-		assets:   assets
+		asv:      asv
 		cache:    map[int]string{}
 		cache_mu: sync.new_rwmutex()
 		gz_cache: map[u64][]u8{}
 		gz_mu:    sync.new_rwmutex()
 	}
+
+	// ── json-tls profile: /json over HTTPS on :8081 via the epoll + kTLS backend ──
+	// The lib's io_uring backend has no TLS, so the json-tls listener runs on the
+	// epoll backend (TLS 1.3 via Mbed TLS; after the handshake the kernel does record
+	// AES-128-GCM via kTLS where the `tls` module is present, else userspace fallback).
+	// It serves ONLY /json (404 elsewhere) — minimal TLS surface — reusing the same
+	// allocation-free write_json_response (read-only: dataset + prefixes). A STATELESS
+	// request_handler captures `sh`; it never touches the DB/caches, so it runs safely
+	// alongside the io_uring workers. The io_uring server below keeps the non-TLS
+	// profiles on :8080.
+	tls_handler := fn [sh] (req_buffer []u8, fd int, mut out []u8) ! {
+		mut req := request_parser.HttpRequest{
+			buffer: req_buffer
+		}
+		if !request_parser.decode_into(mut req) {
+			wb(mut out, bad_request)
+			return
+		}
+		target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
+		qpos := target.index_u8(`?`)
+		route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+		if route.starts_with('/json/') {
+			count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
+			mut m := qint(req, qk_m)
+			if m == 0 {
+				m = 1
+			}
+			sh.write_json_response(mut out, count, m)
+			return
+		}
+		wb(mut out, not_found)
+	}
+	// Port is fixed to 8081 by the HttpArena harness; TLS_PORT lets local runs pick a
+	// free port. run() blocks, so the TLS server runs on its own thread (value-mut
+	// receiver → spawn via a closure with a local mut copy; the two servers are
+	// independent — own socket, workers and backend).
+	mut tls_port := (os.getenv_opt('TLS_PORT') or { '8081' }).int()
+	if tls_port <= 0 {
+		tls_port = 8081
+	}
+	tls_server := http_server.new_server(http_server.ServerConfig{
+		port:            tls_port
+		io_multiplexing: .epoll
+		limits:          http_server.Limits{
+			max_request_bytes: 64 * 1024
+		}
+		request_handler: tls_handler
+		tls_config:      load_tls_config()
+	})!
+	spawn fn [tls_server] () {
+		mut s := tls_server
+		s.run()
+	}()
 
 	mut server := http_server.new_server(http_server.ServerConfig{
 		port:            8080
@@ -772,13 +839,3 @@ fn main() {
 }
 
 // static_response prebuilds the full HTTP response for a static file.
-fn static_response(ctype string, body []u8) []u8 {
-	mut sb := strings.new_builder(body.len + 96)
-	sb.write_string('HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: ')
-	sb.write_string(ctype)
-	sb.write_string('\r\nContent-Length: ')
-	sb.write_decimal(i64(body.len))
-	sb.write_string('\r\nConnection: keep-alive\r\n\r\n')
-	unsafe { sb.write_ptr(body.data, body.len) }
-	return sb
-}
