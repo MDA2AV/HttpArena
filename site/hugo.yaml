@@ -48,7 +48,7 @@ menu:
         icon: github
 
 params:
-  description: "HTTP framework benchmark arena"
+  description: "Open-source HTTP server benchmarks and webserver benchmark platform — compare HTTP/1.1, HTTP/2, HTTP/3, gRPC, and WebSocket framework performance under realistic workloads."
   theme:
     default: system
     displayToggle: false
