@@ -46,7 +46,7 @@ pub mod tls {
             },
             transport_params: Vec::new(),
             alpn_protocols,
-            ticket_secret: None,
+            ticket_keys: None,
             accept_early_data: false,
         }
     }

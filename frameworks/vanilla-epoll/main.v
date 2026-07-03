@@ -69,7 +69,8 @@ mut:
 	// (~25 MiB, lazily allocated).
 	crud    []CrudSlot
 	crud_mu &sync.RwMutex = unsafe { nil }
-	gz      map[u64][]u8 // json-comp: precomputed at boot, READ-ONLY during serving (lock-free reads)
+	gz      map[u64][]u8 // json-comp: (count<<32)|m -> gzipped response bytes
+	gz_mu   &sync.RwMutex = unsafe { nil }
 }
 
 // CrudSlot is one entry of the id-indexed crud cache slab. `buf` is the rendered
@@ -870,62 +871,67 @@ fn (w &WorkerCtx) write_json_response(mut out []u8, count int, m i64) {
 	write_json_into(w.ro, mut out, count, m)
 }
 
-// gz_response_ep builds the COMPLETE gzipped /json response for (count, m). Pure
-// function of the shared dataset; precomputed once at boot (see main) and also the
-// cold path for an unexpected param.
-fn gz_response_ep(ro &SharedRO, count int, m i64) []u8 {
-	body := ro.json_body(count, m)
-	gz := gzip.compress(body.bytes()) or { return []u8{} }
+// write_json_gzip is the json-comp path: a LAZY, process-shared, RwMutex-guarded
+// cache of complete gzipped responses keyed by (count<<32)|m. Compress once on the
+// first miss, then append the cached bytes on every hit (the profile is
+// compression-bound).
+//
+// Do NOT precompute the full (count x m) grid at boot. This binary is `-gc none`,
+// and V's gzip.compress leaks ~157 KiB of scratch per call (vlang/v#27606), so
+// precomputing the ~800-key grid leaked ~135 MiB of permanent RSS at startup
+// (measured 77 -> 213 MiB). Lazy compresses only the ~8 (count,m) pairs the profile
+// actually sends (~1.3 MiB). The shared rlock is NOT a bottleneck: epoll is healthy
+// at 16384 conns with it; the io_uring json-comp@16384 collapse is worker/thread
+// oversubscription from the co-hosted json-tls listener, not this lock
+// (enghitalo/vanilla#89).
+fn (mut w WorkerCtx) write_json_gzip(mut out []u8, count int, m i64) {
+	key := (u64(u32(count)) << 32) | u64(u32(m))
+	mut cached := []u8{}
+	w.ro.gz_mu.@rlock()
+	if c := w.ro.gz[key] {
+		unsafe {
+			cached = c
+		}
+	}
+	w.ro.gz_mu.runlock()
+	if cached.len > 0 {
+		wb(mut out, cached)
+		return
+	}
+	body := w.json_body(count, m)
+	gz := gzip.compress(body.bytes()) or {
+		write_resp(mut out, 'application/json', body)
+		return
+	}
 	mut resp := []u8{cap: gz.len + 128}
 	ws(mut resp,
 		'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Encoding: gzip\r\nContent-Type: application/json\r\nContent-Length: ')
 	wi(mut resp, i64(gz.len))
 	ws(mut resp, '\r\nConnection: keep-alive\r\n\r\n')
 	unsafe { resp.push_many(gz.data, gz.len) }
-	return resp
+	w.ro.gz_mu.@lock()
+	if w.ro.gz.len < 1024 {
+		w.ro.gz[key] = resp
+	}
+	w.ro.gz_mu.unlock()
+	wb(mut out, resp)
 }
 
-// write_json_gzip is the json-comp path. The cache is fully precomputed at boot and
-// READ-ONLY during serving, so the hot path is a LOCK-FREE map read — no per-request
-// shared RwMutex (which contended across workers under the co-hosted json-tls
-// server's extra threads and collapsed io_uring json-comp @16384; enghitalo/vanilla#89).
-fn (w &WorkerCtx) write_json_gzip(mut out []u8, count int, m i64) {
-	key := (u64(u32(count)) << 32) | u64(u32(m))
-	if cached := w.ro.gz[key] {
-		wb(mut out, cached)
-		return
-	}
-	// Param outside the precomputed grid (not sent by the benchmark): build + send
-	// without caching, so the hot path stays write-free and lock-free.
-	resp := gz_response_ep(w.ro, count, m)
-	if resp.len > 0 {
-		wb(mut out, resp)
-	} else {
-		write_resp(mut out, 'application/json', w.ro.json_body(count, m))
-	}
-}
-
-// json_body builds the /json body for (count, m). Defined on &SharedRO so it can
-// run at boot (gz precompute) without a WorkerCtx; WorkerCtx.json_body delegates.
-fn (ro &SharedRO) json_body(count int, m i64) string {
+fn (w &WorkerCtx) json_body(count int, m i64) string {
 	mut sb := strings.new_builder(count * 224 + 32)
 	sb.write_string('{"items":[')
 	for i in 0 .. count {
 		if i > 0 {
 			sb.write_u8(`,`)
 		}
-		sb.write_string(ro.prefixes[i])
-		sb.write_decimal(ro.dataset[i].price * ro.dataset[i].quantity * m)
+		sb.write_string(w.ro.prefixes[i])
+		sb.write_decimal(w.ro.dataset[i].price * w.ro.dataset[i].quantity * m)
 		sb.write_u8(`}`)
 	}
 	sb.write_string('],"count":')
 	sb.write_decimal(i64(count))
 	sb.write_u8(`}`)
 	return sb.str()
-}
-
-fn (w &WorkerCtx) json_body(count int, m i64) string {
-	return w.ro.json_body(count, m)
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -1341,27 +1347,14 @@ fn main() {
 		sendfile_min_bytes: 16 * 1024
 	}) or { panic('vanilla-epoll: static_assets init failed: ${err}') }
 
-	mut ro := &SharedRO{
+	ro := &SharedRO{
 		dataset:  dataset
 		prefixes: prefixes
 		asv:      asv
 		crud:     []CrudSlot{len: crud_cache_slots}
 		crud_mu:  sync.new_rwmutex()
 		gz:       map[u64][]u8{}
-	}
-
-	// Precompute json-comp gzip responses at boot so write_json_gzip reads the cache
-	// LOCK-FREE during serving (no per-request shared RwMutex — that contended across
-	// workers and, with the co-hosted json-tls server's threads, collapsed io_uring
-	// json-comp @16384; enghitalo/vanilla#89). Bounded grid covering count<=50 / m<=8.
-	gz_cap_count := if dataset.len < 64 { dataset.len } else { 64 }
-	for c in 1 .. gz_cap_count + 1 {
-		for mm in 1 .. 17 {
-			r := gz_response_ep(ro, c, i64(mm))
-			if r.len > 0 {
-				ro.gz[(u64(u32(c)) << 32) | u64(u32(mm))] = r
-			}
-		}
+		gz_mu:    sync.new_rwmutex()
 	}
 
 	// ── json-tls profile: the same /json handler over HTTPS on :8081 ───────────
