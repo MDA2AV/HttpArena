@@ -26,22 +26,9 @@ const LISTEN_IP: []const u8 = "::";
 const KERNEL_BACKLOG: u31 = 16 * 1024;
 const DISPATCH_MODEL: zix.Http2.DispatchModel = .URING;
 
-/// Advertise enough concurrent streams for h2load (`-m 100`): the config default 16 would refuse the
-/// surplus (REFUSED_STREAM) and cap h2c throughput. Mirrors the zix-grpc entry.
-const MAX_STREAMS: usize = 128;
-
-/// Per-stream request body buffer. The mux pre-allocates max_streams * max_body per connection
-/// (mux.zig), so 128 streams at the default 64 KiB would reserve 8 MiB. These endpoints take a tiny
-/// body, so 16 KiB keeps headroom while capping the footprint at 2 MiB. Mirrors zix-grpc.
-const MAX_BODY: usize = 16 * 1024;
-
 // TLS cert / key: self-signed Ed25519 pair baked at /etc/zix-tls at image build, overridable via env.
 const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
 const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
-
-// Max DATA frame payload. 16384 is the HTTP/2 default SETTINGS_MAX_FRAME_SIZE (the largest a peer is
-// guaranteed to accept), so static bodies are framed in <= 16 KiB chunks.
-const MAX_DATA_CHUNK: usize = 16 * 1024;
 
 // Data directory, overridable via ARENA_DATA (default /data, the container mount point).
 var g_static_base: []const u8 = "/data/static/";
@@ -145,9 +132,8 @@ fn contentType(rel: []const u8) []const u8 {
     return "application/octet-stream";
 }
 
-/// Content type plus content encoding for a cached static name. A ".br" or ".gz" suffix marks a
-/// precompressed variant: the encoding is reported and the content type comes from the name with the
-/// suffix stripped (so "vendor.js.br" reports application/javascript).
+/// Content type plus content encoding for a cached static name. A ".br" / ".gz" suffix reports that
+/// encoding, with the content type taken from the stripped name ("vendor.js.br" -> javascript).
 const StaticMeta = struct {
     content_type: []const u8,
     content_encoding: []const u8,
@@ -190,10 +176,9 @@ const STATIC_NAME_MAX = 96;
 /// sized so the startup pre-warm fits every candidate with room to spare.
 const STATIC_CACHE_MAX = 128;
 
-/// One cached static file: the full bytes read into memory once (HTTP/2 frames the body in userspace,
-/// so no sendfile fast path) plus its content type. ok is false for a missing file (caching the 404 so
-/// a bad path is not re-probed). content_encoding is "" for identity (raw), or "br" / "gzip" for a
-/// precompressed variant.
+/// One cached static file: the bytes read into memory once plus its content type. ok is false for a
+/// missing file (caches the 404 so a bad path is not re-probed). content_encoding is "" for identity,
+/// or "br" / "gzip" for a precompressed variant.
 const StaticEntry = struct {
     name_len: u16,
     // rel (up to STATIC_NAME_MAX) plus a 3-char precompressed suffix (".br" or ".gz").
@@ -290,10 +275,9 @@ fn resolveStatic(name: []const u8) ?*const StaticEntry {
     return entry;
 }
 
-/// Populate the static cache once at startup, single-threaded, before any worker serves. Every file is
-/// resolved through all candidates the handler probes (.br, .gz, identity), so the request path only
-/// hits the lock-free lookup. Without it the first burst all misses into staticInsert, which holds a
-/// spinlock across the file read, and an oversubscribed worker pool livelocks.
+/// Populate the static cache once at startup, single-threaded, warming every candidate the handler
+/// probes (.br, .gz, identity) so the request path only hits the lock-free lookup. Without it the
+/// first burst misses into staticInsert under its spinlock and an oversubscribed pool livelocks.
 fn prewarmStatic() void {
     var base_buf: [512]u8 = undefined;
     var base = g_static_base;
@@ -324,9 +308,8 @@ fn prewarmStatic() void {
             if (d_type == 4) continue; // DT_DIR
             if (name.len == 0 or name[0] == '.') continue;
 
-            // Reduce a precompressed name to its base, then warm every candidate the handler probes
-            // (.br, .gz, identity). A missing variant caches a not-found slot, so the request path never
-            // inserts under load.
+            // Reduce a precompressed name to its base, then warm every candidate (.br, .gz, identity).
+            // A missing variant caches a not-found slot, so the request path never inserts under load.
             var stem = name;
             if (std.mem.endsWith(u8, stem, ".br")) stem = stem[0 .. stem.len - ".br".len] else if (std.mem.endsWith(u8, stem, ".gz")) stem = stem[0 .. stem.len - ".gz".len];
             if (stem.len == 0 or stem.len > STATIC_NAME_MAX) continue;
@@ -343,10 +326,9 @@ fn prewarmStatic() void {
     }
 }
 
-// GET /static/{file} : serve from /data/static, content type by extension. First request reads it
-// into memory and caches it (later requests reuse the bytes), body sent as chunked DATA frames
-// (HTTP/2 caps a frame at the peer max). Content negotiation: .br then .gz when accepted, else the
-// identity file. The server never compresses, only serves a precompressed file already on disk.
+// GET /static/{file} : serve from /data/static, content type by extension, body cached on first read.
+// Negotiates .br then .gz when accepted, else identity. Never compresses, only serves a precompressed
+// file already on disk.
 fn staticHandler(_: []const u8, headers: []const zix.Http2.Header, _: []const u8, fd: std.posix.fd_t, sid: u31) void {
     const raw = pathFromHeaders(headers);
     const path = if (std.mem.indexOfScalar(u8, raw, '?')) |q| raw[0..q] else raw;
@@ -378,14 +360,10 @@ fn staticHandler(_: []const u8, headers: []const zix.Http2.Header, _: []const u8
     sendH2File(fd, sid, served.content_type, served.content_encoding, served.bytes);
 }
 
-/// Send a 200 whose body is framed across DATA frames of at most MAX_DATA_CHUNK bytes, the last carrying
-/// END_STREAM. Built on the public frame writers so the body can exceed a single HTTP/2 frame
-/// (sendResponse emits one DATA frame, which would violate the peer's max frame size for large files).
-/// content_encoding is emitted only when non-empty (a precompressed variant).
+/// Send a 200 body through the flow-controlled streaming writer, which frames it into DATA chunks and
+/// paces by the peer WINDOW_UPDATE. content_encoding is emitted only when non-empty.
 fn sendH2File(fd: std.posix.fd_t, sid: u31, content_type: []const u8, content_encoding: []const u8, bytes: []const u8) void {
-    // Flow-controlled send. The cached bytes are process-lifetime, so the mux references and paces them
-    // by the peer's WINDOW_UPDATE (HTTP/2 send window) and chunks to the max frame size, instead of
-    // dumping a large body (vendor.js, 300 KB) past the 65535 window.
+    // The cached bytes are process-lifetime, so the mux may reference and pace them by WINDOW_UPDATE.
     zix.Http2.sendResponseStream(fd, sid, 200, content_type, content_encoding, bytes);
 }
 
@@ -399,9 +377,8 @@ const ROUTES = &[_]zix.Http2.Route{
 
 // --------------------------------------------------------- //
 
-// TLS h2 listener: the per-core tls_mux terminates TLS 1.3 (ALPN h2) in place (one worker per core, no
-// thread-per-connection). A missing or unreadable cert degrades gracefully: this thread returns and the
-// cleartext h2c server keeps running.
+// TLS h2 listener: the per-core tls_mux terminates TLS 1.3 (ALPN h2), one worker per core. A missing
+// or unreadable cert degrades gracefully: this thread returns and the cleartext h2c server keeps running.
 fn tlsServer(io: std.Io, tls: *zix.Tls.Context) void {
     var server = zix.Http2.Server.init(ROUTES, .{
         .io = io,
@@ -410,8 +387,6 @@ fn tlsServer(io: std.Io, tls: *zix.Tls.Context) void {
         .tls = tls,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
-        .max_streams = MAX_STREAMS,
-        .max_body = MAX_BODY,
     }) catch return;
     defer server.deinit();
 
@@ -517,8 +492,6 @@ pub fn main(process: std.process.Init) !void {
         .port = H2C_PORT,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
-        .max_streams = MAX_STREAMS,
-        .max_body = MAX_BODY,
     });
     defer server.deinit();
 
