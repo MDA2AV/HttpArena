@@ -16,8 +16,10 @@
 //!
 //! Endpoints:
 //! - GET /baseline2?a=..&b=.. : sum the query values, text/plain.
-//! - GET /static/{file}       : serve a file from /data/static, content type by extension. Served
-//!   identity (the h3 response has no content-encoding field, so no br/gzip negotiation).
+//! - GET /static/{file}       : serve a file from /data/static, content type by extension. Negotiates
+//!   a pre-compressed variant against the request accept-encoding: the `.br` file when the client
+//!   accepts br, else the `.gz` file for gzip, else the identity file. The compressed files are built
+//!   once on disk, so the send path never runs a codec, it just moves fewer bytes.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -94,6 +96,10 @@ const StaticEntry = struct {
     name_len: u16,
     name_buf: [STATIC_NAME_MAX]u8,
     bytes: []const u8,
+    /// The pre-compressed `<file>.br` variant, or empty when the file has none on disk.
+    br_bytes: []const u8,
+    /// The pre-compressed `<file>.gz` variant, or empty when the file has none on disk.
+    gzip_bytes: []const u8,
     content_type: []const u8,
     ok: bool,
 };
@@ -110,9 +116,9 @@ fn staticLookup(rel: []const u8, count: usize) ?*const StaticEntry {
     return null;
 }
 
-fn readStaticFile(rel: []const u8) ?[]const u8 {
+fn readStaticFile(rel: []const u8, suffix: []const u8) ?[]const u8 {
     var path_buf: [512]u8 = undefined;
-    const path = std.fmt.bufPrint(&path_buf, "{s}{s}", .{ g_static_base, rel }) catch return null;
+    const path = std.fmt.bufPrint(&path_buf, "{s}{s}{s}", .{ g_static_base, rel, suffix }) catch return null;
     if (path.len >= path_buf.len) return null;
 
     path_buf[path.len] = 0;
@@ -151,12 +157,18 @@ fn staticInsert(rel: []const u8) ?*const StaticEntry {
     const e = &g_static_entries[count];
     e.name_len = @intCast(rel.len);
     @memcpy(e.name_buf[0..rel.len], rel);
-    if (readStaticFile(rel)) |bytes| {
+    if (readStaticFile(rel, "")) |bytes| {
         e.bytes = bytes;
+        // The pre-compressed variants are optional: a file without a `.br` / `.gz` sibling just serves
+        // identity. Read once here, reused for the process lifetime like the identity body.
+        e.br_bytes = readStaticFile(rel, ".br") orelse &.{};
+        e.gzip_bytes = readStaticFile(rel, ".gz") orelse &.{};
         e.content_type = contentType(rel);
         e.ok = true;
     } else {
         e.bytes = &.{};
+        e.br_bytes = &.{};
+        e.gzip_bytes = &.{};
         e.content_type = "text/plain";
         e.ok = false;
     }
@@ -193,8 +205,15 @@ fn h3Baseline(req: *const zix.Http3.Request, res: *zix.Http3.Response) void {
     res.send(out);
 }
 
-// GET /static/{file} : serve a cached file from /data/static, content type by extension. Served
-// identity (the h3 response carries no content-encoding, so no br/gzip negotiation).
+/// Whether an accept-encoding value offers a coding token (a substring match is enough for the fixed
+/// `br` / `gzip` tokens the static files carry).
+fn accepts(accept_encoding: []const u8, coding: []const u8) bool {
+    return std.mem.indexOf(u8, accept_encoding, coding) != null;
+}
+
+// GET /static/{file} : serve a cached file from /data/static, content type by extension. Negotiates a
+// pre-compressed variant off the request accept-encoding (br preferred, then gzip, else identity). The
+// compressed bodies are prebuilt on disk, so this only picks a smaller slice, it never runs a codec.
 fn h3Static(req: *const zix.Http3.Request, res: *zix.Http3.Response) void {
     const entry = staticResolve(req.path) orelse {
         res.setStatus(404);
@@ -203,6 +222,19 @@ fn h3Static(req: *const zix.Http3.Request, res: *zix.Http3.Response) void {
     };
 
     res.content_type = entry.content_type;
+
+    if (entry.br_bytes.len != 0 and accepts(req.accept_encoding, "br")) {
+        res.setContentEncoding(.br);
+        res.send(entry.br_bytes);
+        return;
+    }
+
+    if (entry.gzip_bytes.len != 0 and accepts(req.accept_encoding, "gzip")) {
+        res.setContentEncoding(.gzip);
+        res.send(entry.gzip_bytes);
+        return;
+    }
+
     res.send(entry.bytes);
 }
 
@@ -282,13 +314,6 @@ fn sendH2File(fd: std.posix.fd_t, sid: u31, content_type: []const u8, bytes: []c
     }
 }
 
-// --------------------------------------------------------- //
-
-const H2_ROUTES = &[_]zix.Http2.Route{
-    .{ .path = "/baseline2", .handler = h2Baseline },
-    .{ .path = "/static", .handler = h2Static, .kind = .PREFIX },
-};
-
 // h2-over-TLS readiness listener: the per-core tls_mux terminates TLS 1.3 (ALPN h2) on TLS_PORT over
 // TCP. A missing or unreadable cert degrades gracefully: this thread returns and only the QUIC
 // listener serves.
@@ -307,6 +332,11 @@ fn h2TlsServer(io: std.Io, tls: *zix.Tls.Context) void {
 }
 
 // --------------------------------------------------------- //
+
+const H2_ROUTES = &[_]zix.Http2.Route{
+    .{ .path = "/baseline2", .handler = h2Baseline },
+    .{ .path = "/static", .handler = h2Static, .kind = .PREFIX },
+};
 
 pub fn main(process: std.process.Init) !void {
     // Elevate scheduling priority (setpriority -19). Fails silently without CAP_SYS_NICE.
