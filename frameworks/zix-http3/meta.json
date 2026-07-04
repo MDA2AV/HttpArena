@@ -2,7 +2,7 @@
   "display_name": "zix",
   "language": "Zig",
   "type": "engine",
-  "engine": "zix uring",
+  "engine": "zix.Http3 URING Dispatch Model",
   "description": "zix.Http3: pure-Zig HTTP/3 (QUIC over UDP, no std.http) on io_uring dispatch, serving baseline-h3 and static-h3. A TCP HTTP/2-over-TLS listener on the same port answers the harness readiness probe.",
   "repo": "https://github.com/prothegee/zix",
   "enabled": true,
