@@ -236,6 +236,21 @@ fn write_resp(mut out []u8, ctype string, body string) {
 	ws(mut out, body)
 }
 
+// emit_xcache writes a complete 200 JSON response carrying an X-Cache: HIT|MISS header
+// straight into `out` — the single framing shared by the crud GET hit/miss paths (and
+// byte-identical to the vanilla-io_uring twin's emit_xcache, so the two entries diff
+// cleanly). `body` is the render buffer (snapshotted under the read-lock on a HIT).
+fn emit_xcache(mut out []u8, ctype string, body []u8, cache string) {
+	ws(mut out, 'HTTP/1.1 200 OK\r\nServer: vanilla\r\nX-Cache: ')
+	ws(mut out, cache)
+	ws(mut out, '\r\nContent-Type: ')
+	ws(mut out, ctype)
+	ws(mut out, '\r\nContent-Length: ')
+	wi(mut out, i64(body.len))
+	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n')
+	wb(mut out, body)
+}
+
 // emit_int writes a 200 whose body is a single integer, formatting it into the
 // reused per-worker scratch. The obvious `write_resp(.., n.str())` heap-allocates
 // an int->string on every request — a permanent leak under `-gc none` (e.g. the
@@ -716,11 +731,7 @@ fn (mut w WorkerCtx) start_crud_get(mut out []u8, mut ac core.AsyncCtx, id int) 
 	}
 	if hit {
 		// Cache hit: answer synchronously, no DB round-trip.
-		ws(mut out,
-			'HTTP/1.1 200 OK\r\nServer: vanilla\r\nX-Cache: HIT\r\nContent-Type: application/json\r\nContent-Length: ')
-		wi(mut out, i64(w.scratch.len))
-		ws(mut out, '\r\nConnection: keep-alive\r\n\r\n')
-		wb(mut out, w.scratch)
+		emit_xcache(mut out, 'application/json', w.scratch, 'HIT')
 		return .done
 	}
 	w.reset_params()
@@ -758,11 +769,7 @@ fn (mut w WorkerCtx) render_crud_get(mut out []u8, res pg_async.Result, id int) 
 		slot.valid = true
 		w.ro.crud_mu.unlock()
 	}
-	ws(mut out,
-		'HTTP/1.1 200 OK\r\nServer: vanilla\r\nX-Cache: MISS\r\nContent-Type: application/json\r\nContent-Length: ')
-	wi(mut out, i64(w.scratch.len))
-	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n')
-	wb(mut out, w.scratch)
+	emit_xcache(mut out, 'application/json', w.scratch, 'MISS')
 }
 
 fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut ac core.AsyncCtx, req request_parser.HttpRequest) core.AsyncStep {
