@@ -25,14 +25,17 @@ RUN git clone https://github.com/vlang/v /opt/v && \
 # main moved, but that hit api.github.com every build and a transient 504/rate-limit
 # failed the whole build (MDA2AV/HttpArena#895). Bump this commit to pick up lib fixes.
 #
-# Pinned to vanilla main @b189036 — the lib-wide alloc audit (#72 pg_async, #73
-# static_assets, #74 TLS buffer pooling) PLUS kTLS record offload (enghitalo/vanilla#79,
-# ancestor 5137a9a). The io_uring backend has no TLS, so the json-tls listener runs on
+# Pinned to vanilla main @6fb4244 — bumped from b189036 for enghitalo/vanilla#94
+# (io_uring backend now supports make_state / stateful_handler, per-worker state), which
+# this entry needs: main.v dispatches through a stateful_handler with a per-worker
+# WorkerCtx (reused render scratch) — the older pin REJECTS stateful_handler on io_uring
+# at new_server() and panics on boot. Also carries the lib-wide alloc audit (#72 pg_async,
+# #73 static_assets, #74 TLS buffer pooling), kTLS record offload (#79) and the epoll TLS
+# stateful fix (#96). The io_uring backend has no TLS, so the json-tls listener runs on
 # the lib's epoll backend on :8081 (see main.v); kTLS makes its steady-state read/write
-# plain recv/send with the kernel doing AES-128-GCM. pg_async#72 touches this backend's
-# async-DB row-decode hot path.
+# plain recv/send with the kernel doing AES-128-GCM.
 RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
-    git -C /root/.vmodules/vanilla checkout b189036212e4283ef2cffe42b318b556f8a3d1bc
+    git -C /root/.vmodules/vanilla checkout 6fb42444d4309469e570157e58051d67e085764e
 
 # Mbed TLS 4 for the json-tls profile (the epoll TLS listener on :8081). The vanilla
 # `tls` C shim (built with -d vanilla_tls) targets the Mbed TLS 4.x API; Debian apt

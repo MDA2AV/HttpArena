@@ -61,15 +61,20 @@ const crud_cache_slots = 50001
 // margin so a slot's buffer, allocated once on first MISS, never reallocates.
 const crud_cache_bufcap = 512
 
-struct Shared {
-mut:
+// SharedRO is the immutable, process-wide data plus the mutex-guarded caches, shared by
+// reference across all workers. Mirrors the vanilla-epoll SharedRO so the two entries
+// have the same shape. (Unlike epoll's per-worker pg_async pool, db.pg's pool is itself
+// thread-safe — exec_param_many acquires/releases a pooled conn per call — so a single
+// shared handle is fine here.)
+struct SharedRO {
 	db       &pg.DB = unsafe { nil }
 	dataset  []DatasetItem
 	prefixes []string                  // per item: `{…,"total":` (everything but the request-dependent total)
 	asv      static_assets.AssetServer // /static/* via the audited module (negotiation + queue_buf borrowed send)
-	// crud cache-aside: id-indexed slab (see CrudSlot). Shared across workers (this
-	// request_handler closure is the same for every ring worker), so the two validate
-	// probes (MISS then HIT) hit the same cache regardless of which worker serves them.
+mut:
+	// crud cache-aside: id-indexed slab (see CrudSlot). PROCESS-SHARED (mutex-guarded) so
+	// the two validate probes (MISS then HIT) hit the same cache regardless of which ring
+	// worker serves them — the pool/scratch is per-worker, only these caches are shared.
 	crud     []CrudSlot
 	crud_mu  &sync.RwMutex = unsafe { nil }
 	// json-comp cache: the gzipped response for a given (count, m) is fully
@@ -77,6 +82,17 @@ mut:
 	// Key = (count << 32) | m. The benchmark hits only a few pairs, so it's tiny.
 	gz_cache map[u64][]u8
 	gz_mu    &sync.RwMutex = unsafe { nil }
+}
+
+// WorkerCtx is the per-worker state handed to every handler call as the make_state value
+// (now that the io_uring backend supports stateful_handler — enghitalo/vanilla#93). Each
+// ring worker owns its own reused render `scratch` (reset to len 0 per response, grown to
+// a high-water mark) so the DB-render paths allocate NO per-request buffer — matching the
+// epoll twin's WorkerCtx.scratch. The shared data + caches live in `ro`.
+struct WorkerCtx {
+mut:
+	ro      &SharedRO = unsafe { nil }
+	scratch []u8
 }
 
 // ── zero-alloc write helpers (push_many, never single-element `<<`) ──────────
@@ -266,7 +282,8 @@ const bad_request = 'HTTP/1.1 400 Bad Request\r\nServer: vanilla\r\nContent-Leng
 
 // ── request routing ──────────────────────────────────────────────────────────
 
-fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
+fn handle(req_buffer []u8, _fd int, mut out []u8, state voidptr) ! {
+	mut w := unsafe { &WorkerCtx(state) }
 	// Skip-decode fast path: the fixed /pipeline plaintext (highest-RPS test) blits its
 	// response before ANY parsing (the request is already framed by the backend).
 	if has_pipeline_prefix(req_buffer) {
@@ -310,41 +327,41 @@ fn handle(req_buffer []u8, _fd int, mut out []u8, mut sh Shared) ! {
 		n := if cl >= 0 { i64(cl) } else { i64(req.body.len) }
 		emit_int(mut out, 'text/plain', n)
 	} else if route.starts_with('/json/') {
-		count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
+		count := clamp_count(parse_u_at(route, 6), w.ro.dataset.len)
 		mut m := qint(req, qk_m)
 		if m == 0 {
 			m = 1
 		}
 		if accepts_gzip(req) {
 			// json-comp profile: gzip the body and set Content-Encoding.
-			sh.write_json_gzip(mut out, count, m)
+			w.write_json_gzip(mut out, count, m)
 		} else {
-			sh.write_json_response(mut out, count, m)
+			w.write_json_response(mut out, count, m)
 		}
 	} else if route == '/async-db' {
-		sh.write_async_db(mut out, qint(req, qk_min), qint(req, qk_max), qint(req, qk_limit))
+		w.write_async_db(mut out, qint(req, qk_min), qint(req, qk_max), qint(req, qk_limit))
 	} else if route == '/fortunes' {
-		sh.write_fortunes(mut out)
+		w.write_fortunes(mut out)
 	} else if route.starts_with('/static/') {
 		// Canonical static serving via the lib's static_assets module, mounted at
 		// /static/: negotiates the precompressed .br/.gz sibling per Accept-Encoding
 		// (the arena sends `br;q=1`, so this ships the ~4x smaller .br body) and emits
 		// small assets via core.queue_buf borrowed send. ONE audited path shared with
 		// vanilla-epoll, replacing the hand-rolled identity-only map.
-		sh.asv.respond_into(req_buffer, mut out) or { wb(mut out, not_found) }
+		w.ro.asv.respond_into(req_buffer, mut out) or { wb(mut out, not_found) }
 	} else if route == '/crud/items' {
 		if method == 'POST' {
-			sh.write_crud_create(mut out, req)
+			w.write_crud_create(mut out, req)
 		} else {
-			sh.write_crud_list(mut out, qstr(req, qk_category), qint(req, qk_page), qint(req,
+			w.write_crud_list(mut out, qstr(req, qk_category), qint(req, qk_page), qint(req,
 				qk_limit))
 		}
 	} else if route.starts_with('/crud/items/') {
 		id := int(parse_u_at(route, 12))
 		if method == 'PUT' {
-			sh.write_crud_update(mut out, id, req)
+			w.write_crud_update(mut out, id, req)
 		} else {
-			sh.write_crud_get(mut out, id)
+			w.write_crud_get(mut out, id)
 		}
 	} else {
 		wb(mut out, not_found)
@@ -398,7 +415,7 @@ const async_db_sql = 'SELECT id, name, category, price, quantity, active, tags, 
 // NOTE: db.pg is BLOCKING; on the single-threaded io_uring ring worker this stalls the
 // ring for the query's duration (enghitalo/vanilla#83) — the row rendering below is
 // zero-reflection regardless, matching the epoll twin's render_async_db.
-fn (mut sh Shared) write_async_db(mut out []u8, min i64, max i64, limit i64) {
+fn (mut w WorkerCtx) write_async_db(mut out []u8, min i64, max i64, limit i64) {
 	mut lim := limit
 	if lim < 1 {
 		lim = 1
@@ -406,34 +423,33 @@ fn (mut sh Shared) write_async_db(mut out []u8, min i64, max i64, limit i64) {
 	if lim > 50 {
 		lim = 50
 	}
-	mut db := sh.db
+	mut db := w.ro.db
 	rows := db.exec_param_many(async_db_sql, [min.str(), max.str(), lim.str()]) or {
 		write_resp(mut out, 'application/json', '{"items":[],"count":0}')
 		return
 	}
-	// The stateless request_handler has no per-worker scratch (make_state is epoll-only),
-	// so render into a local buffer, then emit. One alloc per DB response — this path is
-	// DB-bound (#83) so the alloc volume is bounded by query throughput, not RPS.
-	mut scratch := []u8{cap: 4096}
-	ws(mut scratch, '{"items":[')
+	// Render into the worker's REUSED scratch (reset to len 0, grows to a high-water mark)
+	// — no per-request buffer alloc, matching the epoll twin's render_async_db.
+	unsafe { w.scratch.len = 0 }
+	ws(mut w.scratch, '{"items":[')
 	for i, row in rows {
 		if i > 0 {
-			ws(mut scratch, ',')
+			ws(mut w.scratch, ',')
 		}
-		render_item_pg(mut scratch, row)
+		render_item_pg(mut w.scratch, row)
 	}
-	ws(mut scratch, '],"count":')
-	wi(mut scratch, i64(rows.len))
-	ws(mut scratch, '}')
-	emit(mut out, 'application/json', scratch)
+	ws(mut w.scratch, '],"count":')
+	wi(mut w.scratch, i64(rows.len))
+	ws(mut w.scratch, '}')
+	emit(mut out, 'application/json', w.scratch)
 }
 
 // ── /fortunes ────────────────────────────────────────────────────────────────
 
 const synthetic_fortune = 'Additional fortune added at request time.'.bytes()
 
-fn (mut sh Shared) write_fortunes(mut out []u8) {
-	mut db := sh.db
+fn (mut w WorkerCtx) write_fortunes(mut out []u8) {
+	mut db := w.ro.db
 	rows := db.exec_param_many('SELECT id, message FROM fortune', []) or {
 		write_resp(mut out, 'text/html; charset=utf-8',
 			'<!doctype html><html><body><table></table></body></html>')
@@ -452,18 +468,18 @@ fn (mut sh Shared) write_fortunes(mut out []u8) {
 		message: synthetic_fortune
 	}
 	fortunes.sort_with_compare(cmp_fortune_message)
-	mut scratch := []u8{cap: 32768}
-	ws(mut scratch,
+	unsafe { w.scratch.len = 0 } // reuse the worker's render buffer (no per-request alloc)
+	ws(mut w.scratch,
 		'<!doctype html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>')
 	for f in fortunes {
-		ws(mut scratch, '<tr><td>')
-		wi(mut scratch, i64(f.id))
-		ws(mut scratch, '</td><td>')
-		escape_html_into(mut scratch, f.message) // escape directly into scratch (no Builder)
-		ws(mut scratch, '</td></tr>')
+		ws(mut w.scratch, '<tr><td>')
+		wi(mut w.scratch, i64(f.id))
+		ws(mut w.scratch, '</td><td>')
+		escape_html_into(mut w.scratch, f.message) // escape directly into scratch (no Builder)
+		ws(mut w.scratch, '</td></tr>')
 	}
-	ws(mut scratch, '</table></body></html>')
-	emit(mut out, 'text/html; charset=utf-8', scratch)
+	ws(mut w.scratch, '</table></body></html>')
+	emit(mut out, 'text/html; charset=utf-8', w.scratch)
 }
 
 // cmp_fortune_message orders fortunes by message, lexicographically by bytes — V has no
@@ -495,7 +511,7 @@ const crud_insert_sql = "INSERT INTO items (id, name, category, price, quantity,
 
 const crud_update_sql = 'UPDATE items SET name = \$2, category = \$3, price = \$4, quantity = \$5 WHERE id = \$1'
 
-fn (mut sh Shared) write_crud_list(mut out []u8, category string, page i64, limit i64) {
+fn (mut w WorkerCtx) write_crud_list(mut out []u8, category string, page i64, limit i64) {
 	mut p := page
 	if p < 1 {
 		p = 1
@@ -508,45 +524,45 @@ fn (mut sh Shared) write_crud_list(mut out []u8, category string, page i64, limi
 		lim = 100
 	}
 	offset := (p - 1) * lim
-	mut db := sh.db
+	mut db := w.ro.db
 	rows := db.exec_param_many(crud_list_sql, [category, lim.str(), offset.str()]) or {
 		write_resp(mut out, 'application/json', '{"items":[],"total":0,"page":1}')
 		return
 	}
-	mut scratch := []u8{cap: 4096}
-	ws(mut scratch, '{"items":[')
+	unsafe { w.scratch.len = 0 } // reuse the worker's render buffer (no per-request alloc)
+	ws(mut w.scratch, '{"items":[')
 	mut total := i64(0)
 	for i, row in rows {
 		if i > 0 {
-			ws(mut scratch, ',')
+			ws(mut w.scratch, ',')
 		}
-		render_item_pg(mut scratch, row)
+		render_item_pg(mut w.scratch, row)
 		total = nn(row.vals[9]).i64() // count(*) OVER() — same in every row
 	}
-	ws(mut scratch, '],"total":')
-	wi(mut scratch, total)
-	ws(mut scratch, ',"page":')
-	wi(mut scratch, p)
-	ws(mut scratch, '}')
-	emit(mut out, 'application/json', scratch)
+	ws(mut w.scratch, '],"total":')
+	wi(mut w.scratch, total)
+	ws(mut w.scratch, ',"page":')
+	wi(mut w.scratch, p)
+	ws(mut w.scratch, '}')
+	emit(mut out, 'application/json', w.scratch)
 }
 
 // write_crud_get serves a single item, cache-aside against the id-indexed slab with the
 // X-Cache header (MISS on first read, HIT after). The HIT path is emitted directly under
 // the read-lock (a short memcpy into `out`; concurrent readers share the RwMutex, only a
 // MISS-refill write-lock blocks) — zero per-request allocation.
-fn (mut sh Shared) write_crud_get(mut out []u8, id int) {
+fn (mut w WorkerCtx) write_crud_get(mut out []u8, id int) {
 	if id >= 1 && id < crud_cache_slots {
-		sh.crud_mu.@rlock()
-		s := sh.crud[id]
+		w.ro.crud_mu.@rlock()
+		s := w.ro.crud[id]
 		if s.valid && s.buf.len > 0 {
 			emit_xcache(mut out, 'application/json', s.buf, 'HIT')
-			sh.crud_mu.runlock()
+			w.ro.crud_mu.runlock()
 			return
 		}
-		sh.crud_mu.runlock()
+		w.ro.crud_mu.runlock()
 	}
-	mut db := sh.db
+	mut db := w.ro.db
 	rows := db.exec_param_many(crud_get_sql, [id.str()]) or {
 		wb(mut out, not_found)
 		return
@@ -555,29 +571,29 @@ fn (mut sh Shared) write_crud_get(mut out []u8, id int) {
 		wb(mut out, not_found)
 		return
 	}
-	// Render the item once into a local buffer, publish it into the slab by refilling the
-	// slot's buffer IN PLACE under the write-lock (allocated once at a fixed cap, never
-	// reallocated/orphaned), then emit MISS from the same bytes.
-	mut scratch := []u8{cap: crud_cache_bufcap}
-	render_item_pg(mut scratch, rows[0])
+	// Render the item once into the worker's reused scratch, publish it into the slab by
+	// refilling the slot's buffer IN PLACE under the write-lock (allocated once at a fixed
+	// cap, never reallocated/orphaned), then emit MISS from the same bytes.
+	unsafe { w.scratch.len = 0 }
+	render_item_pg(mut w.scratch, rows[0])
 	if id >= 1 && id < crud_cache_slots {
-		sh.crud_mu.@lock()
-		mut slot := &sh.crud[id]
+		w.ro.crud_mu.@lock()
+		mut slot := &w.ro.crud[id]
 		if slot.buf.cap == 0 {
 			slot.buf = []u8{cap: crud_cache_bufcap}
 		}
 		unsafe { slot.buf.len = 0 }
-		slot.buf << scratch
+		slot.buf << w.scratch
 		slot.valid = true
-		sh.crud_mu.unlock()
+		w.ro.crud_mu.unlock()
 	}
-	emit_xcache(mut out, 'application/json', scratch, 'MISS')
+	emit_xcache(mut out, 'application/json', w.scratch, 'MISS')
 }
 
-fn (mut sh Shared) write_crud_create(mut out []u8, req request_parser.HttpRequest) {
+fn (mut w WorkerCtx) write_crud_create(mut out []u8, req request_parser.HttpRequest) {
 	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
 	if c := parse_crud_body_fast(body, true) {
-		mut db := sh.db
+		mut db := w.ro.db
 		db.exec_param_many(crud_insert_sql, [c.id.str(), c.name.bytestr(), c.category.bytestr(),
 			c.price.str(), c.quantity.str()]) or {
 			wb(mut out, bad_request)
@@ -592,7 +608,7 @@ fn (mut sh Shared) write_crud_create(mut out []u8, req request_parser.HttpReques
 		wb(mut out, bad_request)
 		return
 	}
-	mut db := sh.db
+	mut db := w.ro.db
 	db.exec_param_many(crud_insert_sql, [c.id.str(), c.name, c.category, c.price.str(),
 		c.quantity.str()]) or {
 		wb(mut out, bad_request)
@@ -601,16 +617,16 @@ fn (mut sh Shared) write_crud_create(mut out []u8, req request_parser.HttpReques
 	wb(mut out, created)
 }
 
-fn (mut sh Shared) write_crud_update(mut out []u8, id int, req request_parser.HttpRequest) {
+fn (mut w WorkerCtx) write_crud_update(mut out []u8, id int, req request_parser.HttpRequest) {
 	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
 	if c := parse_crud_body_fast(body, false) {
-		mut db := sh.db
+		mut db := w.ro.db
 		db.exec_param_many(crud_update_sql, [id.str(), c.name.bytestr(), c.category.bytestr(),
 			c.price.str(), c.quantity.str()]) or {
 			wb(mut out, bad_request)
 			return
 		}
-		sh.invalidate_crud(id)
+		w.invalidate_crud(id)
 		write_resp(mut out, 'application/json', '{"status":"ok"}')
 		return
 	}
@@ -619,24 +635,24 @@ fn (mut sh Shared) write_crud_update(mut out []u8, id int, req request_parser.Ht
 		wb(mut out, bad_request)
 		return
 	}
-	mut db := sh.db
+	mut db := w.ro.db
 	db.exec_param_many(crud_update_sql, [id.str(), c.name, c.category, c.price.str(),
 		c.quantity.str()]) or {
 		wb(mut out, bad_request)
 		return
 	}
-	sh.invalidate_crud(id)
+	w.invalidate_crud(id)
 	write_resp(mut out, 'application/json', '{"status":"ok"}')
 }
 
 // invalidate_crud flips the slot's `valid` to false and KEEPS the buffer for the next
 // MISS to reuse (cache-aside, invalidate-on-write).
 @[inline]
-fn (mut sh Shared) invalidate_crud(id int) {
+fn (mut w WorkerCtx) invalidate_crud(id int) {
 	if id >= 1 && id < crud_cache_slots {
-		sh.crud_mu.@lock()
-		sh.crud[id].valid = false
-		sh.crud_mu.unlock()
+		w.ro.crud_mu.@lock()
+		w.ro.crud[id].valid = false
+		w.ro.crud_mu.unlock()
 	}
 }
 
@@ -659,23 +675,23 @@ fn nn3(v ?string, d string) string {
 // read-only and nothing per-request is heap-allocated. Content-Length is precomputed
 // from the SAME values the body emits, so the framed length can never desync from the
 // body (no response-splitting surface).
-fn write_json_into(sh &Shared, mut out []u8, count int, m i64) {
+fn write_json_into(ro &SharedRO, mut out []u8, count int, m i64) {
 	// 21 = len('{"items":[') + len('],"count":') + '}'; plus the count's own digits
 	mut clen := 21 + digits(i64(count))
 	if count > 0 {
 		clen += count - 1 // item separators
 	}
 	for i in 0 .. count {
-		t := sh.dataset[i].price * sh.dataset[i].quantity * m
-		clen += sh.prefixes[i].len + digits(t) + 1 // prefix + total + '}'
+		t := ro.dataset[i].price * ro.dataset[i].quantity * m
+		clen += ro.prefixes[i].len + digits(t) + 1 // prefix + total + '}'
 	}
 	ws(mut out,
 		'HTTP/1.1 200 OK\r\nServer: vanilla\r\nContent-Type: application/json\r\nContent-Length: ')
 	wi(mut out, i64(clen))
 	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n{"items":[')
 	for i in 0 .. count {
-		ws(mut out, sh.prefixes[i])
-		wi(mut out, sh.dataset[i].price * sh.dataset[i].quantity * m)
+		ws(mut out, ro.prefixes[i])
+		wi(mut out, ro.dataset[i].price * ro.dataset[i].quantity * m)
 		// fuse each object's closing `}` with the item separator `,` into one bulk write.
 		ws(mut out, if i < count - 1 { '},' } else { '}' })
 	}
@@ -684,8 +700,8 @@ fn write_json_into(sh &Shared, mut out []u8, count int, m i64) {
 	ws(mut out, '}')
 }
 
-fn (sh &Shared) write_json_response(mut out []u8, count int, m i64) {
-	write_json_into(sh, mut out, count, m)
+fn (w &WorkerCtx) write_json_response(mut out []u8, count int, m i64) {
+	write_json_into(w.ro, mut out, count, m)
 }
 
 // write_json_gzip is the json-comp path: a LAZY, process-shared, RwMutex-guarded cache
@@ -694,21 +710,21 @@ fn (sh &Shared) write_json_response(mut out []u8, count int, m i64) {
 // lazy for parity with the epoll twin (there it also avoids a boot-time gzip.compress
 // leak); the shared rlock is not a bottleneck — the json-comp@16384 collapse is worker
 // oversubscription from the co-hosted json-tls listener (enghitalo/vanilla#89).
-fn (mut sh Shared) write_json_gzip(mut out []u8, count int, m i64) {
+fn (mut w WorkerCtx) write_json_gzip(mut out []u8, count int, m i64) {
 	key := (u64(u32(count)) << 32) | u64(u32(m))
 	mut cached := []u8{}
-	sh.gz_mu.@rlock()
-	if c := sh.gz_cache[key] {
+	w.ro.gz_mu.@rlock()
+	if c := w.ro.gz_cache[key] {
 		unsafe {
 			cached = c
 		}
 	}
-	sh.gz_mu.runlock()
+	w.ro.gz_mu.runlock()
 	if cached.len > 0 {
 		wb(mut out, cached)
 		return
 	}
-	body := sh.json_body(count, m)
+	body := w.json_body(count, m)
 	gz := gzip.compress(body.bytes()) or {
 		write_resp(mut out, 'application/json', body)
 		return
@@ -720,24 +736,24 @@ fn (mut sh Shared) write_json_gzip(mut out []u8, count int, m i64) {
 	ws(mut resp, '\r\nConnection: keep-alive\r\n\r\n')
 	unsafe { resp.push_many(gz.data, gz.len) }
 	// Store it (bounded so a flood of distinct m values can't grow it without limit).
-	sh.gz_mu.@lock()
-	if sh.gz_cache.len < 1024 {
-		sh.gz_cache[key] = resp
+	w.ro.gz_mu.@lock()
+	if w.ro.gz_cache.len < 1024 {
+		w.ro.gz_cache[key] = resp
 	}
-	sh.gz_mu.unlock()
+	w.ro.gz_mu.unlock()
 	wb(mut out, resp)
 }
 
 // json_body builds just the /json body string (used for the gzip path).
-fn (sh &Shared) json_body(count int, m i64) string {
+fn (w &WorkerCtx) json_body(count int, m i64) string {
 	mut sb := strings.new_builder(count * 224 + 32)
 	sb.write_string('{"items":[')
 	for i in 0 .. count {
 		if i > 0 {
 			sb.write_u8(`,`)
 		}
-		sb.write_string(sh.prefixes[i])
-		sb.write_decimal(sh.dataset[i].price * sh.dataset[i].quantity * m)
+		sb.write_string(w.ro.prefixes[i])
+		sb.write_decimal(w.ro.dataset[i].price * w.ro.dataset[i].quantity * m)
 		sb.write_u8(`}`)
 	}
 	sb.write_string('],"count":')
@@ -1151,7 +1167,7 @@ fn main() {
 		spa_fallback: ''
 	}) or { panic('vanilla-io_uring: static_assets init failed: ${err}') }
 
-	mut sh := Shared{
+	ro := &SharedRO{
 		db:       db
 		dataset:  dataset
 		prefixes: prefixes
@@ -1167,10 +1183,10 @@ fn main() {
 	// backend (TLS 1.3 via Mbed TLS; kTLS record offload where the kernel `tls` module is
 	// present). It serves ONLY /json (404 elsewhere) — minimal TLS surface — reusing the
 	// same allocation-free write_json_into (read-only: dataset + prefixes). A STATELESS
-	// request_handler captures `sh`; it never touches the DB/caches, so it runs safely
+	// request_handler captures `ro`; it never touches the DB/caches, so it runs safely
 	// alongside the io_uring workers. The io_uring server below keeps the non-TLS
 	// profiles on :8080.
-	tls_handler := fn [sh] (req_buffer []u8, fd int, mut out []u8) ! {
+	tls_handler := fn [ro] (req_buffer []u8, fd int, mut out []u8) ! {
 		mut req := request_parser.HttpRequest{
 			buffer: req_buffer
 		}
@@ -1182,12 +1198,12 @@ fn main() {
 		qpos := target.index_u8(`?`)
 		route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
 		if route.starts_with('/json/') {
-			count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
+			count := clamp_count(parse_u_at(route, 6), ro.dataset.len)
 			mut m := qint(req, qk_m)
 			if m == 0 {
 				m = 1
 			}
-			write_json_into(sh, mut out, count, m)
+			write_json_into(ro, mut out, count, m)
 			return
 		}
 		wb(mut out, not_found)
@@ -1214,13 +1230,20 @@ fn main() {
 	}()
 
 	mut server := http_server.new_server(http_server.ServerConfig{
-		port:            8080
-		io_multiplexing: .io_uring
-		limits:          http_server.Limits{
+		port:             8080
+		io_multiplexing:  .io_uring
+		limits:           http_server.Limits{
 			max_request_bytes: 32 * 1024 * 1024 // accept the 20 MiB upload bodies
 		}
-		request_handler: fn [mut sh] (req_buffer []u8, fd int, mut out []u8) ! {
-			handle(req_buffer, fd, mut out, mut sh)!
+		// Per-worker state (io_uring make_state — enghitalo/vanilla#93): each ring worker
+		// builds ONE WorkerCtx (its own reused render scratch) and dispatches every request
+		// through `handle` with it — no per-request render alloc, matching the epoll twin.
+		stateful_handler: handle
+		make_state:       fn [ro] () voidptr {
+			return voidptr(&WorkerCtx{
+				ro:      ro
+				scratch: []u8{cap: 32 * 1024}
+			})
 		}
 	})!
 	server.run()
