@@ -32,24 +32,12 @@ const DISPATCH_MODEL: zix.Grpc.DispatchModel = .URING;
 const KERNEL_BACKLOG: u31 = 1024 * 16;
 const WORKERS: usize = 0;
 
-// TLS cert / key, a self-signed Ed25519 pair baked at /etc/zix-tls at image build. Overridable via env so the same
-// binary runs locally.
+// TLS cert / key, a self-signed Ed25519 pair baked at /etc/zix-tls. Overridable via env.
 const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
 const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
 
-/// Per-core worker count for .URING (this entry's model) and .EPOLL. 0 selects one worker per CPU,
-/// which the shared-nothing io_uring loop wants: the unary path is CPU-bound, so a per-core count
-/// tops out throughput while oversubscription only thrashes the scheduler. Keep the default.
+/// Per-core worker count. 0 selects one worker per CPU.
 const POOL_SIZE: usize = 0;
-
-/// Advertise enough concurrent streams that a client opening many in parallel (h2load uses
-/// -m 100) is never refused at startup. Must be >= the load generator's stream count or those
-/// streams get REFUSED_STREAM. Per-stream buffers are tiny (below), so a wide table is cheap.
-const MAX_STREAMS: usize = 128;
-
-/// gRPC sum messages are a few bytes. A small per-stream body buffer keeps the wide stream
-/// table affordable in memory (MAX_STREAMS * MAX_BODY per connection).
-const MAX_BODY: usize = 4 * 1024;
 
 // --------------------------------------------------------- //
 
@@ -125,9 +113,8 @@ const ROUTES = &[_]zix.Grpc.Route{
     .{ .path = "/benchmark.BenchmarkService/StreamSum", .handler = streamSumHandler, .is_server_streaming = true },
 };
 
-// gRPC over TLS 1.3 listener: the per-core tls_mux terminates TLS (ALPN h2) in place (one worker per
-// core, no thread-per-connection). A missing or unreadable cert degrades gracefully: this thread
-// returns and the cleartext server keeps running.
+// gRPC over TLS 1.3 listener (per-core tls_mux, ALPN h2). A missing cert degrades gracefully: this
+// thread returns and the cleartext server keeps running.
 fn tlsServer(io: std.Io, tls: *zix.Tls.Context) void {
     var server = zix.Grpc.Server.init(ROUTES, .{
         .io = io,
@@ -136,8 +123,6 @@ fn tlsServer(io: std.Io, tls: *zix.Tls.Context) void {
         .tls = tls,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
-        .max_streams = MAX_STREAMS,
-        .max_body = MAX_BODY,
     }) catch return;
     defer server.deinit();
 
@@ -147,8 +132,7 @@ fn tlsServer(io: std.Io, tls: *zix.Tls.Context) void {
 // --------------------------------------------------------- //
 
 pub fn main(process: std.process.Init) !void {
-    // gRPC over TLS on H2_TLS_PORT (ALPN h2) with the baked Ed25519 cert. The cleartext server runs
-    // regardless: a missing cert just leaves the TLS port without a listener.
+    // gRPC over TLS with the baked Ed25519 cert. The cleartext server runs regardless of the cert.
     const cert_path = process.environ_map.get("ARENA_TLS_CERT") orelse TLS_CERT_DEFAULT;
     const key_path = process.environ_map.get("ARENA_TLS_KEY") orelse TLS_KEY_DEFAULT;
 
@@ -171,8 +155,6 @@ pub fn main(process: std.process.Init) !void {
         .kernel_backlog = KERNEL_BACKLOG,
         .workers = WORKERS,
         .pool_size = POOL_SIZE,
-        .max_streams = MAX_STREAMS,
-        .max_body = MAX_BODY,
     });
     defer server.deinit();
 
