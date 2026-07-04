@@ -1134,16 +1134,21 @@ fn main() {
 
 	static_dir := os.getenv_opt('STATIC_DIR') or { '/data/static' }
 	// Canonical static server: loads every asset PLUS its .br/.gz siblings once, mounts
-	// them at /static/, and negotiates Accept-Encoding per request. sendfile_min_bytes
-	// matches the epoll twin: serve any representation >= 16 KiB from disk with sendfile
-	// instead of preloading + copying it through the per-connection write buffer (the
-	// large .br siblings otherwise balloon per-connection RSS at high conn counts). The
-	// tiny siblings stay preloaded (cheap memcpy).
+	// them at /static/, and negotiates Accept-Encoding per request, emitting via
+	// core.queue_buf (borrowed send of the preloaded bytes).
+	//
+	// Do NOT set sendfile_min_bytes here (unlike the epoll twin, which uses 16 KiB): the
+	// io_uring backend has NO sendfile path (no core.enable_sendfile / queue_file drain),
+	// so static_assets.respond_into would fall back to READING a "large" asset's body
+	// from disk on every request — a blocking read that stalls the ring. Keeping the
+	// default (256 KiB) preloads every arena .br/.gz sibling (all < 256 KiB) and serves
+	// them as a zero-copy borrowed send. (Measured: 16 KiB here collapsed static ~-86% to
+	// -99% — the large .br siblings hit the read-per-request fallback. See vanilla#93/#83:
+	// io_uring sendfile support is future work.)
 	asv := static_assets.new(static_assets.Config{
-		root:               static_dir
-		url_prefix:         '/static/'
-		spa_fallback:       ''
-		sendfile_min_bytes: 16 * 1024
+		root:         static_dir
+		url_prefix:   '/static/'
+		spa_fallback: ''
 	}) or { panic('vanilla-io_uring: static_assets init failed: ${err}') }
 
 	mut sh := Shared{
