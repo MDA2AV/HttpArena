@@ -165,6 +165,7 @@ pub fn main(process: std.process.Init) !void {
         .ip = IP,
         .port = PORT,
         .dispatch_model = DISPATCH_MODEL,
+        .kernel_backlog = KERNEL_BACKLOG,
         .max_headers = MAX_HEADERS,
         .workers = WORKERS,
         .send_date_header = SEND_DATE_HEADER,
