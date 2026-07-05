@@ -1,8 +1,9 @@
+# server busy-polls: every service needs its own disjoint cpuset, else 0 RPS.
 services:
   edge:
     build: ./proxy-production
     network_mode: host
-    cpuset: "${GATEWAY_PROXY_CPUS:-0-2}"
+    cpuset: "${GATEWAY_EDGE_CPUS:-0-14,64-78}"
     security_opt:
       - seccomp:unconfined
     ulimits:
@@ -20,14 +21,14 @@ services:
   cache:
     image: redis:7-alpine
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-0-2}"
+    cpuset: "${GATEWAY_CACHE_CPUS:-16-19,80-83}"
     security_opt:
       - seccomp:unconfined
 
   authsvc:
     build: ../_shared/authsvc
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-0-2}"
+    cpuset: "${GATEWAY_AUTH_CPUS:-15,79}"
     security_opt:
       - seccomp:unconfined
     environment:
@@ -39,7 +40,7 @@ services:
       context: ../sark
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "${GATEWAY_SERVER_CPUS:-0-2}"
+    cpuset: "${GATEWAY_SERVER_CPUS:-20-31,84-95}"
     security_opt:
       - seccomp:unconfined
     ulimits:
@@ -49,11 +50,10 @@ services:
         hard: 1048576
     environment:
       - SARK_HTTPARENA_BIND=0.0.0.0:8080
-      - SARK_HTTPARENA_CPU_CORE=${GATEWAY_SERVER_CPU_CORE:-0}
-      - SARK_HTTPARENA_CPU_COUNT=${GATEWAY_SERVER_CPU_COUNT:-3}
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=${DATABASE_MAX_CONN:-128}
       - REDIS_URL=redis://127.0.0.1:6379
       - SARK_HTTPARENA_PER_IP_CAP=0
+      - SARK_HTTPARENA_H1_ONLY=1
     depends_on:
       - cache

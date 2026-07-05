@@ -1,5 +1,6 @@
 ---
-title: HttpArena
+title: HTTP Server Benchmarks – HttpArena
+description: "HttpArena delivers open HTTP server benchmarks and webserver benchmarks across 28+ test profiles — HTTP/1.1, HTTP/2, HTTP/3, gRPC, WebSocket. Open-source, automated, reproducible."
 layout: hextra-home
 ---
 
@@ -16,7 +17,7 @@ layout: hextra-home
 
 <div class="hx-mb-12">
 {{< hextra/hero-subtitle >}}
-  An open benchmarking platform that measures HTTP, gRPC, and WebSocket framework performance under realistic workloads using io_uring-based load generation. Add your framework, get results automatically.
+  An open HTTP server benchmark platform — compare webserver, gRPC, and WebSocket framework performance under realistic workloads using io_uring-based load generation. Add your framework, get results automatically.
 {{< /hextra/hero-subtitle >}}
 </div>
 

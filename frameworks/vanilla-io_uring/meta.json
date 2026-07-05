@@ -3,7 +3,7 @@
   "language": "V",
   "type": "engine",
   "engine": "io_uring",
-  "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking io_uring I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool). Built with the default GC on pinned V master c0624b274 (built from source). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
+  "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking io_uring I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; json-tls serves /json over HTTP/1.1 + TLS 1.3 on :8081 via the lib's epoll backend (the io_uring backend has no TLS) with kTLS record offload where the kernel `tls` module is present; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool). Built with the default GC on pinned V master c0624b274 (built from source). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
   "repo": "https://github.com/enghitalo/vanilla",
   "enabled": true,
   "tests": [
@@ -12,6 +12,7 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "static",
     "async-db",
