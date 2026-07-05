@@ -322,8 +322,7 @@ pub fn rawIntercept(rem: []const u8, header_end: usize, fd: std.posix.fd_t) ?usi
 
     // First request: the engine already found its header end,
     // so its length is header_end + 4.
-    // zix.Http1.writeAllFD(fd, PIPELINE_RESP) catch {}; // attempt 1
-    zix.Http1.sendSimpleFD(fd, 200, "text/plain", "ok") catch {};
+    zix.Http1.writeAllFD(fd, PIPELINE_RESP) catch {};
     var consumed: usize = header_end + 4;
 
     // Drain further consecutive /pipeline requests
@@ -336,8 +335,7 @@ pub fn rawIntercept(rem: []const u8, header_end: usize, fd: std.posix.fd_t) ?usi
         if (!std.mem.eql(u8, next[4..15], "/pipeline ")) break;
 
         const end = std.mem.indexOf(u8, next, "\r\n\r\n") orelse break;
-        // zix.Http1.writeAllFD(fd, PIPELINE_RESP) catch {}; // attempt 1
-        zix.Http1.sendSimpleFD(fd, 200, "text/plain", "ok") catch {};
+        zix.Http1.writeAllFD(fd, PIPELINE_RESP) catch {};
         consumed += end + 4;
     }
 
@@ -364,8 +362,7 @@ pub fn pipeline(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.pos
     _ = head;
     _ = body;
 
-    // zix.Http1.writeAllFD(fd, PIPELINE_RESP) catch {}; // attempt 1
-    zix.Http1.sendSimpleFD(fd, 200, "text/plain", "ok") catch {};
+    zix.Http1.writeAllFD(fd, PIPELINE_RESP) catch {};
 }
 
 // POST /upload : return the received byte count. The Content-Length header is
@@ -399,14 +396,12 @@ pub fn jsonResp(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.pos
 
     if (want_gzip) {
         if (zix.Http1.cacheLookupEncoded(head, "gzip")) |cached| {
-            // zix.Http1.writeAllFD(fd, cached) catch {}; // attempt 1
-            zix.Http1.sendJsonFD(fd, 200, cached) catch {};
+            zix.Http1.writeAllFD(fd, cached) catch {};
             return;
         }
     } else {
         if (zix.Http1.cacheLookup(head)) |cached| {
-            // zix.Http1.writeAllFD(fd, cached) catch {}; // attempt 1
-            zix.Http1.sendJsonFD(fd, 200, cached) catch {};
+            zix.Http1.writeAllFD(fd, cached) catch {};
             return;
         }
     }
