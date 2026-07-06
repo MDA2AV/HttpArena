@@ -23,16 +23,14 @@ components_manager:
     components:                         # Configuring components that were registered via component_list
         server:
             listener:
-                # TLS ports are disabled until upstream userver supports
-                # per-port TLS config (listener_impl.cpp: always uses ports[0])
                 ports:
                     - port: $server-port
+                    - port: $json-tls-port
+                      tls:
+                          cert: $tls-cert
+                          private-key: $tls-key
 # PORTS  for http2 and tls benchmarks
 #                    - port: $tls-port
-#                      tls:
-#                          cert: $tls-cert
-#                          private-key: $tls-key
-#                    - port: $json-tls-port
 #                      tls:
 #                          cert: $tls-cert
 #                          private-key: $tls-key
