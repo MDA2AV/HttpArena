@@ -2,6 +2,7 @@
 title: Leaderboard
 layout: wide
 toc: false
+canonical: "https://www.http-arena.com/"
 ---
 
 <style>
