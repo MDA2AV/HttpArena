@@ -1,50 +1,43 @@
 //! HttpArena: zix-ws
 //!
-//! zix.Http1 engine-owned WebSocket (.URING) against the HttpArena echo and echo-pipeline suites.
-//! GET /ws upgrades, then WebSocket.serve drives the echo loop inside the engine (frames echoed on
-//! readiness, a pipelined burst coalesced into one write). No response cache: echo is per-connection,
-//! nothing to precompute or share.
+//! zix.Http1 engine-owned WebSocket (.URING)
+//! against the HttpArena echo and echo-pipeline suites.
+//! GET /ws upgrades,
+//! then WebSocket.serve drives the echo loop inside the engine (frames echoed on
+//! readiness, a pipelined burst coalesced into one write).
+//! No response cache: echo is per-connection, nothing to precompute or share.
 
 const std = @import("std");
 const zix = @import("zix");
 
 // --------------------------------------------------------- //
 
+const IP: []const u8 = "::";
 const PORT: u16 = 8080;
-const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Http1.DispatchModel = .URING;
-const KERNEL_BACKLOG: u31 = 16 * 1024;
 
-/// Per-machine tuning profile (ADR-041 incr 5): .lean for the 12-thread dev box, .throughput for
-/// the 64-core box. Under .URING the engine now honors ws_recv_buf (sizes conn.buf and the unmask
-/// scratch, independent of max_recv_buf), so a deep pipelined echo burst accumulates in one
-/// WS_RECV_BUF (32 KiB) buffer. max_recv_buf only sizes the brief HTTP handshake recv.
-const Profile = enum { lean, throughput };
-const PROFILE: Profile = .throughput;
-
-const MAX_RECV_BUF: usize = switch (PROFILE) {
-    .lean => 4 * 1024,
-    .throughput => 16 * 1024,
-};
-const WS_RECV_BUF: usize = 32 * 1024;
-const MAX_HEADERS: u8 = 16;
+const MAX_HEADERS: u8 = 8;
 const WORKERS: usize = 0;
+
+const KERNEL_BACKLOG: u31 = 16 * 1024;
+const MAX_RECV_BUF: usize = 8 * 1024;
+const WS_RECV_BUF: usize = 16 * 1024;
 
 // --------------------------------------------------------- //
 
 fn badRequest(fd: std.posix.fd_t) void {
-    zix.Http1.writeSimple(fd, 400, "text/plain", "bad request") catch {};
+    zix.Http1.sendSimpleFD(fd, 400, "text/plain", "bad request") catch {};
 }
 
 fn notFound(fd: std.posix.fd_t) void {
-    zix.Http1.writeSimple(fd, 404, "text/plain", "Not Found") catch {};
+    zix.Http1.sendSimpleFD(fd, 404, "text/plain", "Not Found") catch {};
 }
 
 // --------------------------------------------------------- //
 
 // Echo every text/binary frame back. Ping/close are handled by the engine.
 fn wsOnFrame(fd: std.posix.fd_t, opcode: u8, payload: []const u8) void {
-    zix.Http1.WebSocket.send(fd, @enumFromInt(opcode), payload) catch {};
+    zix.Http1.WebSocket.sendFD(fd, @enumFromInt(opcode), payload) catch {};
 }
 
 // GET /ws : WebSocket upgrade then engine-owned echo.
@@ -59,7 +52,7 @@ fn wsHandler(head: *const zix.Http1.ParsedHead, body: []const u8, fd: std.posix.
     }
 
     zix.Http1.WebSocket.serve(fd, ws_key.?, wsOnFrame) catch {
-        zix.Http1.writeSimple(fd, 500, "text/plain", "handshake failed") catch {};
+        zix.Http1.sendSimpleFD(fd, 500, "text/plain", "handshake failed") catch {};
         return;
     };
 }
@@ -81,7 +74,7 @@ pub fn main(process: std.process.Init) !void {
 
     var server = zix.Http1.Server.init(dispatch, .{
         .io = process.io,
-        .ip = LISTEN_IP,
+        .ip = IP,
         .port = PORT,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
