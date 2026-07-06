@@ -134,13 +134,13 @@ pub fn main(process: std.process.Init) !void {
     // held across a file open on the first request for each name).
     prewarmStatic();
 
-    var alloc_dataset = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
-    defer alloc_dataset.deinit();
+    var allocator_dataset = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
+    defer allocator_dataset.deinit();
 
     var dataset_path_buf: [512]u8 = undefined;
     const data_dir = "/data";
     const dataset_path = try std.fmt.bufPrint(&dataset_path_buf, "{s}/dataset.json", .{data_dir});
-    handler.g_dataset = try dataset.load(alloc_dataset.allocator(), dataset_path);
+    handler.g_dataset = try dataset.load(allocator_dataset.allocator(), dataset_path);
     handler.g_static_base = std.fmt.bufPrint(&handler.g_static_base_buf, "{s}/static/", .{data_dir}) catch "/data/static/";
 
     var allocator_tls = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
