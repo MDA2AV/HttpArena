@@ -494,7 +494,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "zix-ws",
+    "framework": "zix",
     "language": "Zig",
     "rps": 60116442,
     "avg_latency": "135us",

@@ -672,7 +672,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "zix-ws",
+    "framework": "zix",
     "language": "Zig",
     "rps": 4321169,
     "avg_latency": "117us",
