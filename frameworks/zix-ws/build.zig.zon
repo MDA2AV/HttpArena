@@ -1,7 +1,7 @@
 .{
-    .name = .zix_ws_arena,
+    .name = .zix_http1_ws_arena,
     .version = "0.1.0",
-    .fingerprint = 0xba3a8c57d2738130,
+    .fingerprint = 0x82c28eaf94611fe6,
     .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",
