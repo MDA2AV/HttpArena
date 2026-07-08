@@ -65,7 +65,7 @@ RUN set -eu; \
         -days 3650 -subj "/CN=localhost"
 
 FROM alpine:3.20
-COPY --from=build /server/zig-out/bin/zix /zix
+COPY --from=build /server/zig-out/bin/zix-http3 /zix-http3
 COPY --from=build /etc/zix-tls /etc/zix-tls
 EXPOSE 8443/tcp 8443/udp
-ENTRYPOINT ["/zix"]
+ENTRYPOINT ["/zix-http3"]
