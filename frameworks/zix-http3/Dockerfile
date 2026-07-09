@@ -4,6 +4,7 @@ FROM alpine:3.20 AS build
 ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
+ARG TIMEOUT_SEC=180
 ARG ZIG_VERSION=0.16.0
 ARG ZIX_VERSION=0.5.x-rc1
 RUN apk add --no-cache ca-certificates curl git tar xz openssl
@@ -14,7 +15,7 @@ RUN set -eu; \
         arm64) ZIG_ARCH=aarch64 ;; \
         *) echo "unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    curl -fsSL "https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz" \
+    curl -fSL -m ${TIMEOUT_SEC} "https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz" \
         | tar -xJ -C /opt; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
