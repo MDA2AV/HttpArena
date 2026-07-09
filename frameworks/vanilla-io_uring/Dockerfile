@@ -25,9 +25,12 @@ RUN git clone https://github.com/vlang/v /opt/v && \
 # main moved, but that hit api.github.com every build and a transient 504/rate-limit
 # failed the whole build (MDA2AV/HttpArena#895). Bump this commit to pick up lib fixes.
 #
-# Pinned to vanilla main @2cfe007 — bumped from 6fb4244 for enghitalo/vanilla#99
-# (async runtime for the io_uring backend via oneshot IORING_OP_POLL_ADD), which this
-# entry needs: main.v is now the vanilla-epoll entry's async_handler + pg_async code
+# Pinned to vanilla main @be46940 — carries enghitalo/vanilla#99 (async runtime for
+# the io_uring backend via oneshot IORING_OP_POLL_ADD), which this entry needs, and
+# #101 (epoll async-runtime hardening — resume drains buffered pipelined requests,
+# inline queue-drain deactivation, watch-then-reject teardown; the json-tls listener
+# here runs on the epoll backend, stateless, so #101 is inert for this entry but keeps
+# both entries on ONE lib SHA): main.v is now the vanilla-epoll entry's async_handler + pg_async code
 # verbatim (DB queries PARK on the PG socket instead of blocking the ring worker —
 # enghitalo/vanilla#83); an older pin REJECTS async_handler on io_uring at new_server()
 # and panics on boot. Also carries #94 (make_state on io_uring), #96 (epoll TLS stateful
@@ -35,7 +38,7 @@ RUN git clone https://github.com/vlang/v /opt/v && \
 # io_uring backend has no TLS, so the json-tls listener runs on the lib's epoll backend
 # on :8081 (see main.v).
 RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
-    git -C /root/.vmodules/vanilla checkout 2cfe0079d024a8e4e8b283d03b27095dd5b53cd5
+    git -C /root/.vmodules/vanilla checkout be46940b624363ed93991d3166f950143ee14c7b
 
 # Mbed TLS 4 for the json-tls profile (the epoll TLS listener on :8081). The vanilla
 # `tls` C shim (built with -d vanilla_tls) targets the Mbed TLS 4.x API; Debian apt
