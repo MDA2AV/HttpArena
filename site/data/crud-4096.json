@@ -522,21 +522,21 @@
   {
     "framework": "vanilla-io_uring",
     "language": "V",
-    "rps": 193796,
-    "avg_latency": "21.12ms",
-    "p99_latency": "165.10ms",
-    "cpu": "898.6%",
-    "memory": "1.6GiB",
+    "rps": 338676,
+    "avg_latency": "10.40ms",
+    "p99_latency": "79.60ms",
+    "cpu": "825.3%",
+    "memory": "1.3GiB",
     "connections": 4096,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
-    "bandwidth": "61.20MB/s",
-    "input_bw": "16.63MB/s",
-    "reconnects": 12630,
-    "status_2xx": 2906943,
+    "bandwidth": "102.61MB/s",
+    "input_bw": "29.07MB/s",
+    "reconnects": 24161,
+    "status_2xx": 5080153,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 63843
   }
 ]
