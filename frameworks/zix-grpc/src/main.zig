@@ -1,9 +1,16 @@
 //! HttpArena: zix-grpc
 //!
-//! zix HttpArena gRPC (h2c) entry point.
+//! zix HttpArena gRPC entry point.
 //!
-//! Intent: demonstrate zix.Grpc (EPOLL dispatch model) against the HttpArena
-//! gRPC benchmark suite (unary, server-streaming).
+//! Intent: demonstrate zix.Grpc (URING dispatch model) against the HttpArena
+//! gRPC benchmark suite (unary, server-streaming), cleartext h2c and over TLS.
+//!
+//! ONE server, two listeners through config.tls_port (dual listener):
+//! - h2c cleartext on PORT (8080). Serves unary-grpc and stream-grpc.
+//! - gRPC over TLS 1.3 on TLS_PORT (8443), ALPN h2, self-signed Ed25519 cert
+//!   baked at /etc/zix-tls, terminated on the same per-core .URING workers
+//!   (no second launch, no doubled workers or fd tables).
+//!   Serves unary-grpc-tls and stream-grpc-tls.
 //!
 //! Design choices:
 //! - GetSum: unary SumRequest{a, b} -> SumReply{a + b}. The compute is a single
@@ -12,32 +19,23 @@
 //! - StreamSum: server-streaming, count replies of a + b + i.
 //! - max_streams is wide enough that a client opening many parallel streams is
 //!   never refused at startup.
+
 const std = @import("std");
 const zix = @import("zix");
 
 // --------------------------------------------------------- //
 
+const IP: []const u8 = "::";
 const PORT: u16 = 8080;
-/// Required for ipv4 and ipv6
-const LISTEN_IP: []const u8 = "::";
 const DISPATCH_MODEL: zix.Grpc.DispatchModel = .URING;
-const KERNEL_BACKLOG: u31 = 1024 * 16;
+
 const WORKERS: usize = 0;
 
-/// 0 selects the engine default EPOLL pool (max(10, cpu*2)). Each worker owns one connection
-/// while it is active. After the Phase 1 syscall cuts the unary path is CPU-bound, not
-/// connection-bound: a modest cpu-relative pool tops out throughput, while an oversized pool
-/// (thread-per-connection) thrashes the scheduler and collapses it. So keep the default.
-const POOL_SIZE: usize = 0;
+const TLS_PORT: u16 = 8443;
+const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
+const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
 
-/// Advertise enough concurrent streams that a client opening many in parallel (h2load uses
-/// -m 100) is never refused at startup. Must be >= the load generator's stream count or those
-/// streams get REFUSED_STREAM. Per-stream buffers are tiny (below), so a wide table is cheap.
-const MAX_STREAMS: usize = 128;
-
-/// gRPC sum messages are a few bytes. A small per-stream body buffer keeps the wide stream
-/// table affordable in memory (MAX_STREAMS * MAX_BODY per connection).
-const MAX_BODY: usize = 4 * 1024;
+const KERNEL_BACKLOG: u31 = 16 * 1024;
 
 // --------------------------------------------------------- //
 
@@ -108,20 +106,34 @@ fn streamSumHandler(headers: []const zix.Http2.Header, ctx: *zix.Grpc.Context) v
 
 // --------------------------------------------------------- //
 
+const Routes = &[_]zix.Grpc.Route{
+    .{ .path = "/benchmark.BenchmarkService/GetSum", .handler = getSumHandler },
+    .{ .path = "/benchmark.BenchmarkService/StreamSum", .handler = streamSumHandler, .is_server_streaming = true },
+};
+
 pub fn main(process: std.process.Init) !void {
-    var server = try zix.Grpc.Server.init(&[_]zix.Grpc.Route{
-        .{ .path = "/benchmark.BenchmarkService/GetSum", .handler = getSumHandler },
-        .{ .path = "/benchmark.BenchmarkService/StreamSum", .handler = streamSumHandler, .is_server_streaming = true },
-    }, .{
+    var allocator_tls = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
+    defer allocator_tls.deinit();
+
+    var tls = zix.Tls.Context.init(allocator_tls.allocator(), process.io, .{
+        .cert_path = TLS_CERT_DEFAULT,
+        .key_path = TLS_KEY_DEFAULT,
+        .alpn = &.{.H2},
+        .min_version = .TLS_1_3,
+    }) catch |e| {
+        std.debug.print("Error tls context: {}\n", .{e});
+        return;
+    };
+    defer tls.deinit();
+
+    var server = zix.Grpc.Server.init(Routes, .{
         .io = process.io,
-        .ip = LISTEN_IP,
+        .ip = IP,
         .port = PORT,
+        .tls = &tls,
+        .tls_port = TLS_PORT,
         .dispatch_model = DISPATCH_MODEL,
         .kernel_backlog = KERNEL_BACKLOG,
-        .workers = WORKERS,
-        .pool_size = POOL_SIZE,
-        .max_streams = MAX_STREAMS,
-        .max_body = MAX_BODY,
     });
     defer server.deinit();
 
