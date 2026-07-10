@@ -1,0 +1,22 @@
+{
+  "display_name": "ktor-kormium",
+  "language": "Kotlin",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "netty",
+  "description": "JetBrains Ktor 3.x on Netty (JVM, JDK 21) with Kormium ORM (JDBC + HikariCP), kotlinx.serialization.",
+  "repo": "https://github.com/kormium/kormium",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "pipelined",
+    "json",
+    "async-db",
+    "crud",
+    "fortunes"
+  ],
+  "maintainers": [
+    "knyazevs"
+  ]
+}

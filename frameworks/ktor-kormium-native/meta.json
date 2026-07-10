@@ -1,0 +1,22 @@
+{
+  "display_name": "ktor-kormium-native",
+  "language": "Kotlin",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "cio",
+  "description": "Kotlin/Native (no JVM): Ktor 3.x CIO server compiled to a linuxX64 binary, Kormium ORM over libpq, kotlinx.serialization.",
+  "repo": "https://github.com/kormium/kormium",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "pipelined",
+    "json",
+    "async-db",
+    "crud",
+    "fortunes"
+  ],
+  "maintainers": [
+    "knyazevs"
+  ]
+}
