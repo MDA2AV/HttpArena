@@ -196,8 +196,7 @@ fn handle(req fasthttp.HttpRequest) !fasthttp.HttpResponse {
 		}
 		return resp_int(sum)
 	} else if route == '/upload' {
-		cl := req.content_length()
-		n := if cl >= 0 { i64(cl) } else { i64(req.body.len) }
+		n := parse_content_length(req)
 		return resp_int(n)
 	} else if route.starts_with('/json/') {
 		count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
@@ -280,15 +279,15 @@ fn (sh &Shared) json_response(count int, m i64) []u8 {
 	ws(mut out, '\r\nConnection: keep-alive\r\n\r\n{"items":[')
 	for i in 0 .. count {
 		if i > 0 {
-			unsafe { out.push_many(&u8(`,`), 1) }
+			ws(mut out, ',')
 		}
 		ws(mut out, sh.prefixes[i])
 		wi(mut out, sh.dataset[i].price * sh.dataset[i].quantity * m)
-		unsafe { out.push_many(&u8(`}`), 1) }
+		ws(mut out, '}')
 	}
 	ws(mut out, '],"count":')
 	wi(mut out, i64(count))
-	unsafe { out.push_many(&u8(`}`), 1) }
+	ws(mut out, '}')
 	return out
 }
 
@@ -299,10 +298,10 @@ fn (mut sh Shared) json_gzip_response(count int, m i64) fasthttp.HttpResponse {
 	// Read under rlock — fast path (hit) does not need the write lock.
 	sh.gz_mu.@rlock()
 	if c := sh.gz[key] {
-		resp_bytes := c.clone()
+		cached_resp := c.clone()
 		sh.gz_mu.runlock()
 		return fasthttp.HttpResponse{
-			content:       resp_bytes
+			content:       cached_resp
 			content_owned: true
 		}
 	}
@@ -363,13 +362,13 @@ fn (mut sh Shared) async_db(min i64, max i64, limit i64) string {
 	ws(mut out, '{"items":[')
 	for i, row in rows {
 		if i > 0 {
-			unsafe { out.push_many(&u8(`,`), 1) }
+			ws(mut out, ',')
 		}
 		render_db_row(mut out, row)
 	}
 	ws(mut out, '],"count":')
 	wi(mut out, i64(rows.len))
-	unsafe { out.push_many(&u8(`}`), 1) }
+	ws(mut out, '}')
 	return out.bytestr()
 }
 
@@ -500,7 +499,7 @@ fn (mut sh Shared) crud_list(category string, page i64, limit i64) fasthttp.Http
 	mut total := i64(0)
 	for i, row in rows {
 		if i > 0 {
-			unsafe { body.push_many(&u8(`,`), 1) }
+			ws(mut body, ',')
 		}
 		render_db_row(mut body, row)
 		total = nn(row.vals[9]).i64()
@@ -509,7 +508,7 @@ fn (mut sh Shared) crud_list(category string, page i64, limit i64) fasthttp.Http
 	wi(mut body, total)
 	ws(mut body, ',"page":')
 	wi(mut body, p)
-	unsafe { body.push_many(&u8(`}`), 1) }
+	ws(mut body, '}')
 	mut out := []u8{cap: body.len + 96}
 	emit(mut out, 'application/json', body)
 	return fasthttp.HttpResponse{
@@ -885,6 +884,28 @@ fn hex_int(s string) int {
 		n = n * 16 + d
 	}
 	return n
+}
+
+// parse_content_length returns the Content-Length value from the request headers,
+// or req.body.len if the header is absent or cannot be parsed.
+@[direct_array_access]
+fn parse_content_length(req fasthttp.HttpRequest) i64 {
+	headers := req.buffer[req.header_fields.start..req.header_fields.start + req.header_fields.len].bytestr()
+	needle := 'content-length:'
+	lc := headers.to_lower()
+	idx := lc.index(needle) or { return i64(req.body.len) }
+	rest := lc[idx + needle.len..].trim_left(' \t')
+	mut n := i64(0)
+	for c in rest {
+		if c < `0` || c > `9` {
+			break
+		}
+		n = n * 10 + i64(c - `0`)
+	}
+	if n > 0 {
+		return n
+	}
+	return i64(req.body.len)
 }
 
 // req_accepts_gzip checks the Accept-Encoding header for 'gzip'.
