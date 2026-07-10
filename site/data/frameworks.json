@@ -982,7 +982,7 @@
         "dir": "wtx-ws",
         "description": "WTX - WebSocket Server",
         "repo": "https://github.com/c410-f3r/wtx",
-        "type": "engine",
+        "type": "emerging",
         "engine": "wtx"
       }
     ]
