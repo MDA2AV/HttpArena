@@ -1,40 +1,26 @@
 use tokio::net::TcpStream;
 use wtx::{
-  collection::Vector,
-  http::OptionedServer,
-  rng::Xorshift64,
-  web_socket::{OpCode, WebSocket, WebSocketBuffer, WebSocketPayloadOrigin},
+  collections::Vector,
+  executor::TokioExecutor,
+  http::WebSocketServerFramework,
+  misc::TcpParams,
+  tls::{TlsConfig, TlsModePlainText},
+  web_socket::{OpCode, WebSocket, WebSocketPayloadOrigin},
 };
 
-fn main() {
-  let threads = std::thread::available_parallelism().map(|el| el.get()).unwrap_or(1);
-  let mut handlers = Vector::new();
-  for _ in 0..threads {
-    let handle = std::thread::spawn(move || {
-      tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap().block_on(async {
-        let cb = (|| Ok(()), |_, stream| async move { Ok(stream) });
-        let _el = OptionedServer::web_socket_tokio("0.0.0.0:8080", || {}, |_| {}, handle, cb).await;
-      });
-    });
-    handlers.push(handle).unwrap();
-  }
-  for handle in handlers {
-    handle.join().unwrap();
-  }
+type LocalWebSocket = WebSocket<(), TcpStream, TlsModePlainText, false>;
+
+fn main() -> wtx::Result<()> {
+  WebSocketServerFramework::new(TokioExecutor::default(), TlsConfig::plaintext())?
+    .set_tcp_params(TcpParams::default().tcp_nodelay(false))
+    .run_in_threads("0.0.0.0:8080", (("/ws", ws),))
 }
 
-async fn handle(
-  path: String,
-  mut ws: WebSocket<(), Xorshift64, TcpStream, WebSocketBuffer, false>,
-) -> wtx::Result<()> {
-  if path != "/ws" {
-    return Ok(());
-  }
+async fn ws(mut buffer: Vector<u8>, mut ws: LocalWebSocket) -> wtx::Result<()> {
   let (mut common, mut reader, mut writer) = ws.split_mut();
-  let payload_origin = WebSocketPayloadOrigin::Adaptive;
-  let mut buffer = path.into_bytes().into();
   loop {
-    let Ok(mut frame) = reader.read_frame(&mut buffer, &mut common, payload_origin).await else {
+    let origin = WebSocketPayloadOrigin::Adaptive;
+    let Ok(mut frame) = reader.read_frame(&mut buffer, &mut common, origin).await else {
       return Ok(());
     };
     match frame.op_code() {
