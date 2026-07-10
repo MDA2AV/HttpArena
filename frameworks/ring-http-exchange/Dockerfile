@@ -13,4 +13,4 @@ COPY --from=builder /app/target/ring-0.1.0-standalone.jar /app/app.jar
 
 EXPOSE 8080 8081
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx1g", "-XX:+UseParallelGC", "-jar", "app.jar"]
