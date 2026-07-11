@@ -220,6 +220,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "fasthttp",
+    "language": "V",
+    "rps": 189804,
+    "avg_latency": "84.89ms",
+    "p99_latency": "157.40ms",
+    "cpu": "2669.6%",
+    "memory": "556MiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "310.35MB/s",
+    "input_bw": "14.12MB/s",
+    "reconnects": 31955,
+    "status_2xx": 949023,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "fastpysgi-asgi",
     "language": "Python",
     "rps": 337933,
