@@ -1,5 +1,5 @@
 {
-  "display_name": "zix-grpc",
+  "display_name": "zix",
   "language": "Zig",
   "type": "engine",
   "engine": "zix.Grpc URING Dispatch Model",
