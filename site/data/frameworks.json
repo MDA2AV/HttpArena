@@ -979,6 +979,14 @@
         "mode": "standard"
       },
       {
+        "dir": "wtx-http2-tls",
+        "description": "WTX - HTTP/2 Framework Server",
+        "repo": "https://github.com/c410-f3r/wtx",
+        "type": "emerging",
+        "engine": "wtx",
+        "mode": "standard"
+      },
+      {
         "dir": "wtx-ws",
         "description": "WTX - WebSocket Server",
         "repo": "https://github.com/c410-f3r/wtx",
