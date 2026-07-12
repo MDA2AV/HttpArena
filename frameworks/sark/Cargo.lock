@@ -341,9 +341,9 @@ dependencies = [
 
 [[package]]
 name = "dope"
-version = "0.5.5"
+version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99b1fe82bd8665f9b2d78a47b2c28834c9d3dbd6497575d7ebdad07de6acc35e"
+checksum = "40417a676988ac9d4776ab30c50a7ac06e1f3d00a0e32dc765d038eba9308c5a"
 dependencies = [
  "io-uring",
  "libc",
@@ -353,9 +353,9 @@ dependencies = [
 
 [[package]]
 name = "dope-extra"
-version = "0.5.5"
+version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0acda19f64a371f88a39a77b27322719008851221fd670b206544f0fe46be8c5"
+checksum = "0227219d7faae204d8e89a4d5a28371a7d23defc2a8a233faae48d66eb3c0512"
 dependencies = [
  "dope",
  "libc",
@@ -364,9 +364,9 @@ dependencies = [
 
 [[package]]
 name = "dope-gen"
-version = "0.5.5"
+version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "172c8823fb0399a240959a6707648cb73153b102cfdd3d565b6eb49dc9a777ee"
+checksum = "64ea8a5eaf1922ea8c5df3768ba38c79f6707dff87b9c45d9887c67ebfdcc614"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -558,6 +558,7 @@ dependencies = [
 name = "httparena-sark"
 version = "0.1.0"
 dependencies = [
+ "brotli",
  "cartel-gen",
  "cartel-pg",
  "cartel-redis",
@@ -1112,9 +1113,9 @@ checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
 name = "sark"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "420cdacd2626e1c5a20424d3c11c6ad0b55636d80bf5a12f5fe61a77114b2b11"
+checksum = "1cd9038671e5017d55cea520a9eeb9028ffe6a9556887244b5d779522d7a729d"
 dependencies = [
  "dope",
  "dope-extra",
@@ -1133,9 +1134,9 @@ dependencies = [
 
 [[package]]
 name = "sark-core"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3949dc53b561e4c2722cbea5adbf5e694af322577941bf32c0c02b059209757f"
+checksum = "76b74acd895e1c3889055471367567b737059bee96f9a52cdddf9818c4ef43e4"
 dependencies = [
  "brotli",
  "http",
@@ -1151,9 +1152,9 @@ dependencies = [
 
 [[package]]
 name = "sark-gen"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "822c2496faf77aea4efc834d72062ed5d53be86e6b7b12c74a26253e47d312bb"
+checksum = "aa84f9877e25146ccbf560ed030cda20f7f6c9b49bac5d462efe5f985d784ed9"
 dependencies = [
  "dope",
  "o3",
@@ -1164,9 +1165,9 @@ dependencies = [
 
 [[package]]
 name = "sark-grpc"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "042ea1eb87158113c9ac8637ec8b0fc5474f1157bb15e08cdbc439bcb1612a10"
+checksum = "909d6d978b65e3674e06ec11c0c3e95a9231fdafb6e2b611ada1d524a92db332"
 dependencies = [
  "dope",
  "dope-extra",
@@ -1181,18 +1182,18 @@ dependencies = [
 
 [[package]]
 name = "sark-grpc-build"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "076e604ccc96149135cc97f7fec6a9ef6253abcceeb49a38131e2bb61bb37539"
+checksum = "7075b026c0e93ef1f950ee7a9fdb51dbec1a852745f137def4b41676dd5bedbb"
 dependencies = [
  "prost-build",
 ]
 
 [[package]]
 name = "sark-h2"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38cd5859b112ad033b65dabb2892fd2e462cd93b6c64621244a8bde8d6e6cb85"
+checksum = "77a69a1c6e410c575371ddf4c4d79e7fca9bfe77c68b07cc4c1e02b3f2d510e8"
 dependencies = [
  "dope",
  "dope-extra",
@@ -1206,9 +1207,9 @@ dependencies = [
 
 [[package]]
 name = "sark-h3"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fd3c3cd0a0edb377f7f22b2c40e904cd3a45404a409024bc15ad074f5f17ad4"
+checksum = "d6bd499015af829f7c88ba5fc99d9090f488e468c27ef10eada9fa8a112d345d"
 dependencies = [
  "dope-quic",
  "sark",
@@ -1217,9 +1218,9 @@ dependencies = [
 
 [[package]]
 name = "sark-json"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ef0fb21a8d9c3fbcf1d41486d967cc5be51109b2009e2044697c6b39ef6571b"
+checksum = "68b560b4b06b8f216baee5fca331fce55a8e210fe898dc3825e85a4230a03492"
 dependencies = [
  "http",
  "o3",
@@ -1228,9 +1229,9 @@ dependencies = [
 
 [[package]]
 name = "sark-ws"
-version = "0.8.5"
+version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dc35a5e47355fd238a21431148e6a04b548fe37ba07f60a3154c112abd12ba0"
+checksum = "c2497dab6685b8eacaa66613a0bb00cc95fd8d066fa5d6febe9d21a2d8ba5205"
 dependencies = [
  "dope",
  "dope-extra",
