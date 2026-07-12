@@ -36,9 +36,11 @@ SimpleWServer CreateServer(int port, SslContext? sslContext = null)
 {
     var server = new SimpleWServer(IPAddress.Any, port)
         .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
+        .UseEngine(o => {
+            o.AcceptPerCore = true;
+        });
         .Configure(o => {
             o.MaxRequestBodySize = 25 * 1024 * 1024;
-            o.AcceptPerCore = true;
         });
 
     if (sslContext is not null)
