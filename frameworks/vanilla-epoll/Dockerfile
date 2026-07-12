@@ -23,7 +23,14 @@ RUN git clone https://github.com/vlang/v /opt/v && \
 # (or rate-limit) failed the whole build (MDA2AV/HttpArena#895). To pick up upstream
 # library fixes, bump this commit.
 #
-# Pinned to vanilla main @b189036 — the lib-wide alloc audit (#72 pg_async, #73
+# Pinned to vanilla main @be46940 — carries enghitalo/vanilla#101 (epoll async-runtime
+# hardening, the twins found while building the io_uring async runtime #99: a `.done`
+# resume now DRAINS requests pipelined behind a parked one that were already buffered;
+# drain_pipelined deactivates a fully-drained queue inline BEFORE the serve that may
+# re-park — the old trailing epilogue stranded such re-parks; and a watch registered by
+# a handler whose park was rejected is torn down instead of leaking an active entry on
+# a soon-reused client_fd). Also #96 (epoll TLS stateful make_state fix; inert for this
+# entry's stateless TLS listener) and #94/#99 (io_uring-only). Previously @b189036 — the lib-wide alloc audit (#72 pg_async, #73
 # static_assets, #74 TLS buffer pooling), kTLS record offload for json-tls
 # (enghitalo/vanilla#79; after the Mbed TLS handshake the kernel does TLS 1.3 record
 # AES-128-GCM via setsockopt TLS_TX+TLS_RX, so the epoll worker's steady-state
@@ -32,7 +39,7 @@ RUN git clone https://github.com/vlang/v /opt/v && \
 # audited static_assets module (precompressed .br/.gz negotiation + ETag/Vary,
 # sendfile for the large siblings) instead of a hand-rolled identity-only map.
 RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
-    git -C /root/.vmodules/vanilla checkout b189036212e4283ef2cffe42b318b556f8a3d1bc
+    git -C /root/.vmodules/vanilla checkout be46940b624363ed93991d3166f950143ee14c7b
 
 # Mbed TLS 4 for the json-tls profile. The vanilla `tls` module's C shim
 # (vanilla_tls.c, built with `-d vanilla_tls`) targets the Mbed TLS 4.x API

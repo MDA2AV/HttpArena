@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tokio = { default-features = false, features = ["macros", "rt-multi-thread"], version = "1.0" }
-wtx = { default-features = false, features = ["crypto-ring", "optimizations", "optioned-server", "tokio", "web-socket-handshake"], version = "0.47" }
+tokio = { default-features = false, features = ["full"], version = "1.0" }
+wtx = { default-features = false, features = ["crypto-ring", "optimizations-std", "tokio", "web-socket-server-framework"], version = "0.48" }
 
 [profile.release]
 codegen-units = 1

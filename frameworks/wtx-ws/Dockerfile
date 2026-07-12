@@ -1,5 +1,5 @@
 FROM rust:1.95 AS build
-RUN rustup default nightly-2026-05-07
+RUN rustup default nightly-2026-06-27
 WORKDIR /app
 COPY Cargo.toml .
 RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src/ target/release/httparena-wtx-ws* target/release/deps/httparena_wtx-ws*
