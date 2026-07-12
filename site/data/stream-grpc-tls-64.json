@@ -59,20 +59,20 @@
   {
     "framework": "trillium",
     "language": "Rust",
-    "rps": 2062000,
-    "avg_latency": "548.42ms",
-    "p99_latency": "789.38ms",
-    "cpu": "6042.4%",
-    "memory": "413MiB",
+    "rps": 2256000,
+    "avg_latency": "507.77ms",
+    "p99_latency": "662.44ms",
+    "cpu": "6167.0%",
+    "memory": "598MiB",
     "connections": 64,
     "threads": 64,
     "duration": "5s",
     "pipeline": 1,
     "bandwidth": "0",
     "reconnects": 0,
-    "status_2xx": 2062,
+    "status_2xx": 2256,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 18
+    "status_5xx": 0
   }
 ]
