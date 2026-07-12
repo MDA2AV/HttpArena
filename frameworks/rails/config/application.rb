@@ -1,3 +1,5 @@
+Symbol.alias_method(:to_s, :name)
+
 require 'rails'
 require 'action_controller/railtie'
 
