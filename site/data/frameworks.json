@@ -223,7 +223,7 @@
   },
   "fasthttp": {
     "dir": "fasthttp",
-    "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). Handlers return raw response bytes. JSON is built in a single allocation without per-request reflection (precomputed prefixes); async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool sized from DATABASE_MAX_CONN). Built on pinned V master c0624b274 with the default GC (Boehm). baseline is not subscribed: the fasthttp server parses each recv() in one shot and does not reassemble TCP-fragmented requests, which baseline validation requires.",
+    "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). Handlers return raw response bytes. JSON is built in a single allocation without per-request reflection (precomputed prefixes); json-comp gzips on Accept-Encoding; async-db and all DB endpoints use the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool sized from DATABASE_MAX_CONN); crud uses an id-indexed in-memory cache slab (X-Cache MISS/HIT, invalidated on PUT); fortunes renders DB rows + a runtime row with HTML escaping sorted by message; static assets are preloaded into memory at startup with correct MIME types. Built on pinned V master cef604a26 with the default GC (Boehm). baseline is not subscribed: the fasthttp server parses each recv() in one shot and does not reassemble TCP-fragmented requests.",
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "epoll"
@@ -934,7 +934,7 @@
   },
   "vanilla-io_uring": {
     "dir": "vanilla-io_uring",
-    "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking io_uring I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; json-tls serves /json over HTTP/1.1 + TLS 1.3 on :8081 via the lib's epoll backend (the io_uring backend has no TLS) with kTLS record offload where the kernel `tls` module is present; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool). Built with the default GC on pinned V master c0624b274 (built from source). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
+    "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking io_uring I/O, lock-free, copy-free, SO_REUSEPORT. This entry is the vanilla-epoll entry's async handler verbatim, running on the io_uring async runtime (enghitalo/vanilla#99): DB queries park on the PG socket via a oneshot IORING_OP_POLL_ADD and resume on the ring \u2014 never blocking the worker. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; json-tls serves /json over HTTP/1.1 + TLS 1.3 on :8081 via the lib's epoll backend (the io_uring backend has no TLS) with kTLS record offload where present; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db/crud/fortunes use the native async pg_async driver with per-worker pipelined pools. Built with the default GC on pinned V master (built from source). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
     "repo": "https://github.com/enghitalo/vanilla",
     "type": "engine",
     "engine": "io_uring"
@@ -979,10 +979,18 @@
         "mode": "standard"
       },
       {
+        "dir": "wtx-http2-tls",
+        "description": "WTX - HTTP/2 Framework Server",
+        "repo": "https://github.com/c410-f3r/wtx",
+        "type": "emerging",
+        "engine": "wtx",
+        "mode": "standard"
+      },
+      {
         "dir": "wtx-ws",
         "description": "WTX - WebSocket Server",
         "repo": "https://github.com/c410-f3r/wtx",
-        "type": "engine",
+        "type": "emerging",
         "engine": "wtx"
       }
     ]
@@ -1001,17 +1009,26 @@
     "type": "engine",
     "engine": "zix"
   },
-  "zix-ws": {
-    "dir": "zix-ws",
-    "description": "Zig WebSocket echo server on the zix.Http1 raw engine (no std.http). Shared-nothing by design: each worker owns its own SO_REUSEPORT multishot accept, io_uring completion ring, and connections, with no shared state or locking across cores. The upgrade and echo are engine-owned: frames are read from a shared per-worker provided-buffer ring (an idle connection holds no buffer), and a pipelined burst is coalesced into one write.",
-    "repo": "https://codeberg.org/prothegee/zix",
-    "type": "engine",
-    "engine": "zix"
-  },
   "zix": {
     "dir": "zix",
     "description": "Zig HTTP/1.1 server on the zix.Http1 raw engine (no std.http). Shared-nothing: each worker runs its own SO_REUSEPORT multishot accept plus io_uring completion loop and owns its connections. The /json endpoint serves from the per-worker response cache, and request bodies larger than the read buffer are drained rather than buffered.",
     "repo": "https://github.com/prothegee/zix",
+    "type": "engine",
+    "engine": "zix",
+    "variants": [
+      {
+        "dir": "zix-http3",
+        "description": "Zig HTTP/3 server on the zix.Http3 engine, pure-Zig QUIC on std.crypto (RFC 9000/9001/9002/9114), .URING dispatch: one SO_REUSEPORT worker per core on UDP 8443, NewReno with PTO retransmit, rolling MAX_STREAMS/MAX_DATA credit. A one-worker https responder on TCP 8443 answers the readiness probe, idle during the run.",
+        "repo": "https://github.com/prothegee/zix",
+        "type": "engine",
+        "engine": "zix.Http3 URING Dispatch Model"
+      }
+    ]
+  },
+  "zix-ws": {
+    "dir": "zix-ws",
+    "description": "Zig WebSocket echo server on the zix.Http1 raw engine (no std.http). Shared-nothing by design: each worker owns its own SO_REUSEPORT multishot accept, io_uring completion ring, and connections, with no shared state or locking across cores. The upgrade and echo are engine-owned: frames are read from a shared per-worker provided-buffer ring (an idle connection holds no buffer), and a pipelined burst is coalesced into one write.",
+    "repo": "https://codeberg.org/prothegee/zix",
     "type": "engine",
     "engine": "zix"
   }

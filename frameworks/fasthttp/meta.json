@@ -3,13 +3,18 @@
   "language": "V",
   "type": "engine",
   "engine": "epoll",
-  "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). Handlers return raw response bytes. JSON is built in a single allocation without per-request reflection (precomputed prefixes); async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool sized from DATABASE_MAX_CONN). Built on pinned V master c0624b274 with the default GC (Boehm). baseline is not subscribed: the fasthttp server parses each recv() in one shot and does not reassemble TCP-fragmented requests, which baseline validation requires.",
+  "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). Handlers return raw response bytes. JSON is built in a single allocation without per-request reflection (precomputed prefixes); json-comp gzips on Accept-Encoding; async-db and all DB endpoints use the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool sized from DATABASE_MAX_CONN); crud uses an id-indexed in-memory cache slab (X-Cache MISS/HIT, invalidated on PUT); fortunes renders DB rows + a runtime row with HTML escaping sorted by message; static assets are preloaded into memory at startup with correct MIME types. Built on pinned V master cef604a26 with the default GC (Boehm). baseline is not subscribed: the fasthttp server parses each recv() in one shot and does not reassemble TCP-fragmented requests.",
   "repo": "https://github.com/vlang/v",
   "enabled": true,
   "tests": [
     "pipelined",
+    "upload",
     "json",
-    "async-db"
+    "json-comp",
+    "async-db",
+    "fortunes",
+    "static",
+    "crud"
   ],
   "maintainers": [
     "enghitalo"

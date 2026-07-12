@@ -25,17 +25,20 @@ RUN git clone https://github.com/vlang/v /opt/v && \
 # main moved, but that hit api.github.com every build and a transient 504/rate-limit
 # failed the whole build (MDA2AV/HttpArena#895). Bump this commit to pick up lib fixes.
 #
-# Pinned to vanilla main @6fb4244 — bumped from b189036 for enghitalo/vanilla#94
-# (io_uring backend now supports make_state / stateful_handler, per-worker state), which
-# this entry needs: main.v dispatches through a stateful_handler with a per-worker
-# WorkerCtx (reused render scratch) — the older pin REJECTS stateful_handler on io_uring
-# at new_server() and panics on boot. Also carries the lib-wide alloc audit (#72 pg_async,
-# #73 static_assets, #74 TLS buffer pooling), kTLS record offload (#79) and the epoll TLS
-# stateful fix (#96). The io_uring backend has no TLS, so the json-tls listener runs on
-# the lib's epoll backend on :8081 (see main.v); kTLS makes its steady-state read/write
-# plain recv/send with the kernel doing AES-128-GCM.
+# Pinned to vanilla main @be46940 — carries enghitalo/vanilla#99 (async runtime for
+# the io_uring backend via oneshot IORING_OP_POLL_ADD), which this entry needs, and
+# #101 (epoll async-runtime hardening — resume drains buffered pipelined requests,
+# inline queue-drain deactivation, watch-then-reject teardown; the json-tls listener
+# here runs on the epoll backend, stateless, so #101 is inert for this entry but keeps
+# both entries on ONE lib SHA): main.v is now the vanilla-epoll entry's async_handler + pg_async code
+# verbatim (DB queries PARK on the PG socket instead of blocking the ring worker —
+# enghitalo/vanilla#83); an older pin REJECTS async_handler on io_uring at new_server()
+# and panics on boot. Also carries #94 (make_state on io_uring), #96 (epoll TLS stateful
+# fix), the lib-wide alloc audit (#72/#73/#74) and kTLS record offload (#79). The
+# io_uring backend has no TLS, so the json-tls listener runs on the lib's epoll backend
+# on :8081 (see main.v).
 RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
-    git -C /root/.vmodules/vanilla checkout 6fb42444d4309469e570157e58051d67e085764e
+    git -C /root/.vmodules/vanilla checkout be46940b624363ed93991d3166f950143ee14c7b
 
 # Mbed TLS 4 for the json-tls profile (the epoll TLS listener on :8081). The vanilla
 # `tls` C shim (built with -d vanilla_tls) targets the Mbed TLS 4.x API; Debian apt
@@ -61,9 +64,11 @@ RUN curl -fsSL -o /tmp/mbedtls.tar.bz2 \
 
 WORKDIR /app
 COPY . .
-# Default GC (NOT -gc none, NOT -prealloc): this runs on the vanilla HTTP server's own
-# manual buffer management. -d vanilla_tls compiles the real Mbed TLS backend for the
-# json-tls listener (without it the tls module is a stub and mbedtls isn't linked).
+# Default GC (NOT -gc none) for now: the handler code is the epoll twin's -gc none-
+# audited code, but this entry flips one variable per benchmark round — the async DB
+# runtime lands here; the -gc none switch is a measured follow-up. -d vanilla_tls
+# compiles the real Mbed TLS backend for the json-tls listener (without it the tls
+# module is a stub and mbedtls isn't linked).
 RUN v -prod -d vanilla_tls . -o server
 
 FROM debian:stable-slim
