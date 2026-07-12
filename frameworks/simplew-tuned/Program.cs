@@ -42,7 +42,7 @@ SimpleWServer CreateServer(int port, SslContext? sslContext = null)
 		        ReactorCount = Environment.ProcessorCount
 		    };
 		    return config;
-		});
+		})
         .Configure(o => {
             o.MaxRequestBodySize = 25 * 1024 * 1024;
         });
