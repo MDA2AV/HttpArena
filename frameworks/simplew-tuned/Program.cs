@@ -11,6 +11,7 @@ using Npgsql;
 
 using SimpleW;
 using SimpleW.Modules;
+using SimpleW.Engine.Ioxide;
 using SimpleW.Benchmarks;
 
 var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
@@ -36,13 +37,14 @@ SimpleWServer CreateServer(int port, SslContext? sslContext = null)
 {
     var server = new SimpleWServer(IPAddress.Any, port)
         .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
+        .UseIoxideEngine(config => {
+		    config.ServerConfig = config.ServerConfig with {
+		        ReactorCount = Environment.ProcessorCount
+		    };
+		    return config;
+		});
         .Configure(o => {
             o.MaxRequestBodySize = 25 * 1024 * 1024;
-            o.TcpNoDelay = true;
-            o.ReuseAddress = true;
-            o.TcpKeepAlive = true;
-            o.AcceptPerCore = true;
-            o.ReusePort = true;
         });
 
     if (sslContext is not null)
