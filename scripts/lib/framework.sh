@@ -10,6 +10,8 @@ LANGUAGE=""
 DISPLAY_NAME=""
 FRAMEWORK_TESTS=""
 
+set -euxo
+
 # ── Metadata loading ────────────────────────────────────────────────────────
 
 framework_load_meta() {
@@ -223,9 +225,13 @@ _wait_grpc() {
 
     local i
     for i in $(seq 1 30); do
-        if "$GHZ" "$flag" --proto "$proto" \
-             --call benchmark.BenchmarkService/GetSum \
-             -d '{"a":1,"b":2}' -c 1 -n 1 "$target" >/dev/null 2>&1; then
+        result=$("$GHZ" "$flag" --proto "$proto" \
+                --call benchmark.BenchmarkService/GetSum \
+                -d '{"a":1,"b":2}' -c 1 -n 1 "$target" 2>&1)
+        
+        echo "$result"
+
+        if [ $? -eq 0 ]; then
             info "gRPC server ready"
             return 0
         fi
