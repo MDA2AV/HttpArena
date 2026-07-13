@@ -35,8 +35,6 @@ const TLS_PORT: u16 = 8443;
 const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
 const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
 
-const KERNEL_BACKLOG: u31 = 16 * 1024;
-
 // --------------------------------------------------------- //
 
 /// Unary RPC: SumRequest{a, b} -> SumReply{result: a+b}
@@ -133,7 +131,12 @@ pub fn main(process: std.process.Init) !void {
         .tls = &tls,
         .tls_port = TLS_PORT,
         .dispatch_model = DISPATCH_MODEL,
-        .kernel_backlog = KERNEL_BACKLOG,
+        .kernel_backlog = 24 * 1024,
+        .max_streams = 1024,
+        .max_frame_size = 24 * 1024,
+        .max_recv_buf = 64 * 1024,
+        .max_body = 32 * 1024,
+        .tls_write_buf_initial_bytes = 32 * 1024,
     });
     defer server.deinit();
 
