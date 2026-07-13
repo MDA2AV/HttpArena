@@ -5,6 +5,8 @@ Bundler.require(:default)
 
 require 'pg'
 
+Symbol.alias_method(:to_s, :name)
+
 class Hash
   def symbolize_keys!
     transform_keys! { |key| key.to_sym }
