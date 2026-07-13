@@ -109,7 +109,7 @@ fn probeServer(io: std.Io, tls: *zix.Tls.Context) void {
         .ip = IP,
         .port = PROBE_TCP_PORT,
         .tls = tls,
-        .dispatch_model = .EPOLL,
+        .dispatch_model = DISPATCH_MODEL,
         .workers = 1,
     });
     defer server.deinit();
