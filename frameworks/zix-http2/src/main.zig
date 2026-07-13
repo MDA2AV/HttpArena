@@ -147,7 +147,12 @@ pub fn main(process: std.process.Init) !void {
         .tls = &tls,
         .tls_port = TLS_PORT,
         .dispatch_model = DISPATCH_MODEL,
-        .kernel_backlog = 16 * 1024,
+        .kernel_backlog = 24 * 1024,
+        .max_streams = 1024,
+        .max_frame_size = 24 * 1024,
+        .max_recv_buf = 64 * 1024,
+        .max_body = 32 * 1024,
+        .tls_write_buf_initial_bytes = 32 * 1024,
     });
     defer server.deinit();
 
