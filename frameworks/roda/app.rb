@@ -217,15 +217,15 @@ class App < Roda
 
   def map_row(row)
     mapped_row = {
-      id: row[:id],
-      name: row[:name],
-      category: row[:category],
-      price: row[:price],
-      quantity: row[:quantity],
-      active: row[:active] == 1,
+      id: row['id'],
+      name: row['name'],
+      category: row['category'],
+      price: row['price'],
+      quantity: row['quantity'],
+      active: row['active'] == 1,
     }
-    mapped_row[:tags] = JSON.parse(row[:tags]) if row[:tags]
-    mapped_row[:rating] = { score: row[:rating_score], count: row[:rating_count] } if row[:rating_score] && row[:rating_count]
+    mapped_row[:tags] = JSON.parse(row['tags']) if row['tags']
+    mapped_row[:rating] = { score: row['rating_score'], count: row['rating_count'] } if row['rating_score'] && row['rating_count']
     mapped_row
   end
 
@@ -234,7 +234,6 @@ class App < Roda
       return unless ENV['DATABASE_URL']
       ConnectionPool.new(size: pool_size, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
-        db.field_name_type = :symbol
         db.prepare('select', SELECT_QUERY)
         db.prepare('crud_get', CRUD_GET_SQL)
         db.prepare('crud_list', CRUD_LIST_SQL)
