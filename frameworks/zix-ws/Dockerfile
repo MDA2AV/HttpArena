@@ -37,7 +37,7 @@ RUN set -eu; \
     fetch() { \
         rm -rf /server/vendor/zix; mkdir -p /server/vendor/zix; \
         curl -fSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors "$1" -o /tmp/zix.tar.gz \
-            && tar -xz --strip-components=1 -C /src/vendor/zix -f /tmp/zix.tar.gz; \
+            && tar -xz --strip-components=1 -C /server/vendor/zix -f /tmp/zix.tar.gz; \
     }; \
     clone() { \
         attempt=0; \
