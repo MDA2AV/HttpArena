@@ -9,6 +9,7 @@ ARG ZIG_VERSION=0.16.0
 ARG ZIX_VERSION=0.5.x-rc1
 RUN apk add --no-cache ca-certificates curl git tar xz openssl
 
+WORKDIR /server
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
         amd64) ZIG_ARCH=x86_64 ;; \
@@ -20,7 +21,6 @@ RUN set -eu; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
 
-WORKDIR /server
 COPY build.zig build.zig.zon ./
 COPY src ./src
 
