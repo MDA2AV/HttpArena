@@ -4,20 +4,25 @@ FROM alpine:3.20 AS build
 ARG RETRY=6
 ARG TARGETARCH
 ARG RETRY_DELAY=3
+ARG TIMEOUT_SEC=180
 ARG ZIG_VERSION=0.16.0
 ARG ZIX_VERSION=0.4.x-rc3
-RUN apk add --no-cache ca-certificates curl git tar xz
+RUN apk add --no-cache ca-certificates curl git tar xz openssl
 
+WORKDIR /server
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
         amd64) ZIG_ARCH=x86_64 ;; \
         arm64) ZIG_ARCH=aarch64 ;; \
         *) echo "unsupported arch: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    curl -fsSL "https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz" \
+    curl -fSL -m ${TIMEOUT_SEC} "https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz" \
         | tar -xJ -C /opt; \
     mv "/opt/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}" /opt/zig
 ENV PATH="/opt/zig:${PATH}"
+
+COPY build.zig build.zig.zon ./
+COPY src ./src
 
 # Vendor zix X.Y.Z, separate layer so source-only rebuilds skip the fetch.
 # The Http1 raw engine work this image needs (large-body drain plus the per-worker
@@ -30,15 +35,15 @@ ENV PATH="/opt/zig:${PATH}"
 # every attempt.
 RUN set -eu; \
     fetch() { \
-        rm -rf /src/vendor/zix; mkdir -p /src/vendor/zix; \
-        curl -fsSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors "$1" -o /tmp/zix.tar.gz \
+        rm -rf /server/vendor/zix; mkdir -p /server/vendor/zix; \
+        curl -fSL --retry ${RETRY} --retry-delay ${RETRY_DELAY} --retry-all-errors "$1" -o /tmp/zix.tar.gz \
             && tar -xz --strip-components=1 -C /src/vendor/zix -f /tmp/zix.tar.gz; \
     }; \
     clone() { \
         attempt=0; \
         while [ "${attempt}" -lt "${RETRY}" ]; do \
-            rm -rf /src/vendor/zix; \
-            git clone --depth 1 --branch "${ZIX_VERSION}" "$1" /src/vendor/zix && return 0; \
+            rm -rf /server/vendor/zix; \
+            git clone --depth 1 --branch "${ZIX_VERSION}" "$1" /server/vendor/zix && return 0; \
             attempt=$((attempt + 1)); \
             sleep "${RETRY_DELAY}"; \
         done; \
@@ -53,17 +58,17 @@ RUN set -eu; \
         clone "https://codeberg.org/prothegee/zix.git" \
     || { echo "FAILED: git clone ${RETRY} times from codeberg" >&2; exit 1; }; }; }; }
 
-WORKDIR /src
-COPY build.zig build.zig.zon ./
-COPY src ./src
+# +aes+pclmul: x86_64_v3 omits AES-NI / PCLMUL,
+# so zix TLS would compile the ~40x slower software AES-GCM.
+# +adx speeds the RSA / Montgomery path. Every x86_64_v3 CPU has them, so it is safe.
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
         amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3 ;; \
         arm64) ZIG_TARGET=aarch64-linux-musl; ZIG_CPU=baseline ;; \
     esac; \
-    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}" --release=fast
+    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}+aes+pclmul+adx" --release=fast
 
 FROM alpine:3.20
-COPY --from=build /src/zig-out/bin/zix-ws /zix-ws
+COPY --from=build /server/zig-out/bin/zix-ws /zix-ws
 EXPOSE 8080
 ENTRYPOINT ["/zix-ws"]
