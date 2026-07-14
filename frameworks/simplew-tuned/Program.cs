@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 using Npgsql;
+using ioxide.tls;
 
 using SimpleW;
 using SimpleW.Modules;
