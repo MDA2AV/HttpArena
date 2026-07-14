@@ -33,7 +33,7 @@ else
 
 return;
 
-SimpleWServer CreateServer(int port, SslContext? sslContext = null)
+SimpleWServer CreateServer(int port, string certPath = null, string keyPath = null)
 {
     var server = new SimpleWServer(IPAddress.Any, port)
         .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
@@ -41,16 +41,21 @@ SimpleWServer CreateServer(int port, SslContext? sslContext = null)
 		    config.ServerConfig = config.ServerConfig with {
 		        ReactorCount = Environment.ProcessorCount
 		    };
+		    if (certPath is not null && keyPath is not null)
+		    {
+				config.TlsPort = 8443;
+				config.Tls = new TlsOptions {
+					CertificatePath = certPath,
+					KeyPath = keyPath,
+					Alpn = "http/1.1"
+				};		        
+		    }
+
 		    return config;
 		})
         .Configure(o => {
             o.MaxRequestBodySize = 25 * 1024 * 1024;
         });
-
-    if (sslContext is not null)
-    {
-        server.UseHttps(sslContext);
-    }
 
     ConfigureRoutes(server);
     return server;
@@ -66,14 +71,7 @@ SimpleWServer? CreateTlsServer(int port)
         return null;
     }
 
-    var certificate = X509Certificate2.CreateFromPemFile(certPath, keyPath);
-    var sslContext = new SslContext(
-        SslProtocols.Tls12 | SslProtocols.Tls13,
-        certificate,
-        clientCertificateRequired: false,
-        checkCertificateRevocation: false);
-
-    return CreateServer(port, sslContext);
+    return CreateServer(port, certPath, keyPath);
 }
 
 void ConfigureRoutes(SimpleWServer server)
