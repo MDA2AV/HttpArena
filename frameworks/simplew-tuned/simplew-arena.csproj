@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.2" />
-    <PackageReference Include="SimpleW" Version="26.1.0-alpha.20260712-1966" />
-    <PackageReference Include="SimpleW.Engine.Ioxide" Version="26.1.0-alpha.20260712-1978" />    
+    <PackageReference Include="SimpleW" Version="26.1.0-alpha.20260712-1984" />
+    <PackageReference Include="SimpleW.Engine.Ioxide" Version="26.1.0-alpha.20260714-1987" />    
   </ItemGroup>
 </Project>
