@@ -1,5 +1,3 @@
-//! HttpArena: zix
-//!
 //! Dataset loader for the /json endpoint.
 //!
 //! Loads the fixed 50-item benchmark dataset once at startup and pre-renders
