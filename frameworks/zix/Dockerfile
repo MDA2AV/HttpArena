@@ -6,7 +6,7 @@ ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG TIMEOUT_SEC=180
 ARG ZIG_VERSION=0.16.0
-ARG ZIX_VERSION=0.5.x-rc1
+ARG ZIX_VERSION=main-drivers
 RUN apk add --no-cache ca-certificates curl git tar xz openssl
 
 WORKDIR /server
