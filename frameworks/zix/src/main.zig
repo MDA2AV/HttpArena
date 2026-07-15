@@ -1,28 +1,18 @@
 //! HttpArena: zix
 //!
-//! Router-only variant: Server.init, no raw-byte interceptor. Every request,
-//! /pipeline included, goes through the engine's parser and the comptime
-//! Router. Pipelined correctness comes from the engine's staged response
-//! sink: each handler write appends to the per-connection send buffer in
-//! request order and the batch flushes as one on-ring send, so responses
-//! coalesce without hand-rolled request-line scanning.
-//!
-//! Knobs carry the attempt-2b sweep result: busy-poll 16 us, warm idle pool
-//! 256 floor / 1024 ceiling, 8 KiB recv buffer (deep pipelined batches parse
-//! from one fill), 16 KiB send buffer.
-//!
-//! zix.Http1 (.URING) against the HttpArena HTTP/1.1 suite
-//! (baseline, pipelined, limited-conn, json, json-comp, upload, static).
-//! json-comp reuses /json and gzips on Accept-Encoding: gzip.
-//! json-tls rides the same server through config.tls_port (dual listener):
-//! cleartext on PORT plus https (TLS 1.3, baked Ed25519 cert) on TLS_PORT,
-//! one worker fleet, one fd table, no second launch.
+//! zix.Http1 (.URING), Router-only: every request goes through the engine's
+//! parser and the comptime Router. json-tls rides config.tls_port (dual
+//! listener, one worker fleet). async-db and crud run on the postgrez.Executor
+//! (owned by dbpg.zig) over one shared pool, single-item crud reads serve
+//! from the in-process cache (crudcache.zig), rediz mirrors write-behind.
 
 const std = @import("std");
 const zix = @import("zix");
 
 const dataset = @import("dataset.zig");
 const handler = @import("handler.zig");
+const dbpg = @import("dbpg.zig");
+const dbrd = @import("dbrd.zig");
 
 // --------------------------------------------------------- //
 
@@ -48,11 +38,19 @@ const Routes = zix.Http1.Router(&[_]zix.Http1.Route{
     .{ .path = "/baseline11", .handler = handler.baseline },
     .{ .path = "/pipeline", .handler = handler.pipeline },
     .{ .path = "/upload", .handler = handler.upload },
-    .{ .path = "/json", .handler = handler.json, .kind = .PREFIX },
+    .{ .path = "/async-db", .handler = handler.asyncDb },
+    .{ .path = "/json", .handler = handler.jsonResp, .kind = .PREFIX },
     .{ .path = "/static", .handler = handler.static, .kind = .PREFIX },
+    .{ .path = "/crud/items", .handler = handler.crudItems, .kind = .PREFIX },
 });
 
 pub fn main(process: std.process.Init) !void {
+    // DB endpoints: the executor spawns nothing when DATABASE_URL is absent,
+    // so non-DB profiles run zero extra threads and the DB routes answer 503.
+    dbpg.init(process);
+    dbrd.init(process);
+    dbpg.startExecutor(handler.runBatch);
+
     var allocator_dataset = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
     defer allocator_dataset.deinit();
 
@@ -65,22 +63,22 @@ pub fn main(process: std.process.Init) !void {
     var allocator_tls = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
     defer allocator_tls.deinit();
 
-    var tls = zix.Tls.Context.init(allocator_tls.allocator(), process.io, .{
+    // json-tls https side. A failed cert load leaves tls_ctx null and the
+    // cleartext listener keeps serving.
+    var tls_ctx: ?zix.Tls.Context = zix.Tls.Context.init(allocator_tls.allocator(), process.io, .{
         .cert_path = TLS_CERT_DEFAULT,
         .key_path = TLS_KEY_DEFAULT,
         .alpn = &.{.HTTP_1_1},
         .min_version = .TLS_1_3,
-    }) catch |e| {
-        std.debug.print("Error tls context: {}\n", .{e});
-        return;
-    };
-    defer tls.deinit();
+    }) catch null;
 
+    // Dual listener: one server serves cleartext on PORT and https on
+    // TLS_PORT from the same .URING worker fleet.
     var server = zix.Http1.Server.init(Routes.dispatch, .{
         .io = process.io,
         .ip = IP,
         .port = PORT,
-        .tls = &tls,
+        .tls = if (tls_ctx) |*tls| tls else null,
         .tls_port = TLS_PORT,
         .dispatch_model = DISPATCH_MODEL,
         .max_headers = MAX_HEADERS,
@@ -95,7 +93,7 @@ pub fn main(process: std.process.Init) !void {
         .uring_send_buf_size = 16 * 1024,
         .uring_idle_pool_floor = 1 * 1024 / 4,
         .uring_idle_pool_ceiling = 1 * 1024,
-        .process_queue_len = 2_000_000,
+        .process_queue_len = 8192,
     });
     defer server.deinit();
 
