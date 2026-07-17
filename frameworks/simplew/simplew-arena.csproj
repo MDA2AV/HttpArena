@@ -8,6 +8,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.2" />
-    <PackageReference Include="SimpleW" Version="26.1.0-alpha.20260716-1995" />
+    <PackageReference Include="SimpleW" Version="26.1.0-alpha.20260717-1999" />
   </ItemGroup>
 </Project>
