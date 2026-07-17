@@ -14,16 +14,29 @@ namespace HttpArena.Services;
 /// create, and update. Cache-aside on single-item reads with 200ms TTL,
 /// invalidated on update. List queries always hit Postgres.
 /// </summary>
-public sealed class ItemService(DatabaseService database)
+public sealed class ItemService
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMilliseconds(200);
 
     private static readonly MemoryCacheEntryOptions CacheEntryOptions =
         new() { AbsoluteExpirationRelativeToNow = CacheTtl };
 
-    private readonly MemoryCache _cache = new(new MemoryCacheOptions());
+    private readonly DatabaseService _database;
 
-    public bool IsAvailable => database.Postgres is not null;
+    // In-process fallback cache; only constructed when Redis is not configured.
+    private readonly MemoryCache? _cache;
+
+    public ItemService(DatabaseService database)
+    {
+        _database = database;
+
+        if (database.Redis is null)
+        {
+            _cache = new MemoryCache(new MemoryCacheOptions());
+        }
+    }
+
+    public bool IsAvailable => _database.Postgres is not null;
 
     /// <summary>
     /// Range query for /async-db: items with price between
@@ -33,7 +46,7 @@ public sealed class ItemService(DatabaseService database)
     {
         limit = Math.Clamp(limit, 1, 50);
 
-        await using var cmd = database.Postgres!.CreateCommand(
+        await using var cmd = _database.Postgres!.CreateCommand(
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3");
 
         cmd.Parameters.AddWithValue(min);
@@ -46,17 +59,7 @@ public sealed class ItemService(DatabaseService database)
 
         while (await reader.ReadAsync())
         {
-            items.Add(new Item
-            {
-                Id = reader.GetInt32(0),
-                Name = reader.GetString(1),
-                Category = reader.GetString(2),
-                Price = (int)reader.GetDouble(3),
-                Quantity = reader.GetInt32(4),
-                Active = reader.GetBoolean(5),
-                Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-                Rating = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
-            });
+            items.Add(ReadItem(reader));
         }
 
         return new ItemsResponse<Item>(items, items.Count);
@@ -78,7 +81,7 @@ public sealed class ItemService(DatabaseService database)
         // fetches on every index-only scan. "Load more" pagination
         // (return page size, no total) is a realistic alternative that
         // removes that dominant cost.
-        await using var cmd = database.Postgres!.CreateCommand(
+        await using var cmd = _database.Postgres!.CreateCommand(
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
             "FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3");
         cmd.Parameters.AddWithValue(category);
@@ -103,11 +106,11 @@ public sealed class ItemService(DatabaseService database)
     /// </summary>
     public async Task<CachedItemResult?> ReadAsync(int id)
     {
-        var cacheKey = $"crud:{id}";
+        var cacheKey = CacheKey(id);
 
-        if (database.Redis is not null)
+        if (_database.Redis is not null)
         {
-            var cachedJson = await database.Redis.StringGetAsync(cacheKey);
+            var cachedJson = await _database.Redis.StringGetAsync(cacheKey);
             if (cachedJson.HasValue)
             {
                 return new CachedItemResult(null, (string)cachedJson!, CacheHit: true);
@@ -117,11 +120,11 @@ public sealed class ItemService(DatabaseService database)
             if (item is null) return null;
 
             var json = JsonSerializer.Serialize(item, AppJsonContext.Default.Item);
-            await database.Redis.StringSetAsync(cacheKey, json, CacheTtl);
+            await _database.Redis.StringSetAsync(cacheKey, json, CacheTtl);
             return new CachedItemResult(null, json, CacheHit: false);
         }
 
-        if (_cache.TryGetValue(cacheKey, out Item? cached))
+        if (_cache!.TryGetValue(cacheKey, out Item? cached))
         {
             return new CachedItemResult(cached, null, CacheHit: true);
         }
@@ -138,7 +141,7 @@ public sealed class ItemService(DatabaseService database)
     /// </summary>
     public async Task<CrudWriteResponse> CreateAsync(CrudItemInput input)
     {
-        await using var cmd = database.Postgres!.CreateCommand(
+        await using var cmd = _database.Postgres!.CreateCommand(
             "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) " +
             "VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0) " +
             "ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 " +
@@ -159,7 +162,7 @@ public sealed class ItemService(DatabaseService database)
     /// </summary>
     public async Task<CrudWriteResponse?> UpdateAsync(int id, CrudItemInput input)
     {
-        await using var cmd = database.Postgres!.CreateCommand(
+        await using var cmd = _database.Postgres!.CreateCommand(
             "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4");
         cmd.Parameters.AddWithValue(input.Name ?? "Updated");
         cmd.Parameters.AddWithValue(input.Price);
@@ -169,14 +172,14 @@ public sealed class ItemService(DatabaseService database)
         var affected = await cmd.ExecuteNonQueryAsync();
         if (affected == 0) return null;
 
-        var cacheKey = $"crud:{id}";
-        if (database.Redis is not null)
+        var cacheKey = CacheKey(id);
+        if (_database.Redis is not null)
         {
-            await database.Redis.KeyDeleteAsync(cacheKey);
+            await _database.Redis.KeyDeleteAsync(cacheKey);
         }
         else
         {
-            _cache.Remove(cacheKey);
+            _cache!.Remove(cacheKey);
         }
 
         return new CrudWriteResponse { Id = id, Name = input.Name, Price = input.Price, Quantity = input.Quantity };
@@ -184,7 +187,7 @@ public sealed class ItemService(DatabaseService database)
 
     private async Task<Item?> FetchItemByIdAsync(int id)
     {
-        await using var cmd = database.Postgres!.CreateCommand(
+        await using var cmd = _database.Postgres!.CreateCommand(
             "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
             "FROM items WHERE id = $1 LIMIT 1");
         cmd.Parameters.AddWithValue(id);
@@ -204,6 +207,8 @@ public sealed class ItemService(DatabaseService database)
         Quantity = reader.GetInt32(4),
         Active = reader.GetBoolean(5),
         Tags = JsonSerializer.Deserialize(reader.GetString(6), AppJsonContext.Default.ListString)!,
-        Rating = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
+        Rating = new RatingInfo { Score = reader.GetInt32(7), Count = reader.GetInt32(8) }
     };
+
+    private static string CacheKey(int id) => $"crud:{id}";
 }

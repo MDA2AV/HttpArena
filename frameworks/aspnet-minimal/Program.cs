@@ -43,10 +43,12 @@ builder.WebHost.ConfigureKestrel(options =>
 
     if (hasCert)
     {
+        var cert = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+
         options.ListenAnyIP(8443, lo =>
         {
             lo.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
-            lo.UseHttps(X509Certificate2.CreateFromPemFile(certPath, keyPath));
+            lo.UseHttps(cert);
         });
 
         // HTTP/1.1-only TLS listener for the json-tls profile. Kestrel
@@ -55,7 +57,7 @@ builder.WebHost.ConfigureKestrel(options =>
         options.ListenAnyIP(8081, lo =>
         {
             lo.Protocols = HttpProtocols.Http1;
-            lo.UseHttps(X509Certificate2.CreateFromPemFile(certPath, keyPath));
+            lo.UseHttps(cert);
         });
     }
 });

@@ -32,11 +32,24 @@ public sealed class DatabaseService
         try
         {
             var uri = new Uri(dbUrl);
-            var userInfo = uri.UserInfo.Split(':');
+            var userInfo = uri.UserInfo.Split(':', 2);
             var maxConn = int.TryParse(Environment.GetEnvironmentVariable("DATABASE_MAX_CONN"), out var p) && p > 0 ? p : 256;
-            var minConn = Math.Min(64, maxConn);
-            var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size={maxConn};Minimum Pool Size={minConn};Multiplexing=true;No Reset On Close=true;Max Auto Prepare=20;Auto Prepare Min Usages=1";
-            return new NpgsqlDataSourceBuilder(connStr).Build();
+
+            var connStr = new NpgsqlConnectionStringBuilder
+            {
+                Host = uri.Host,
+                Username = Uri.UnescapeDataString(userInfo[0]),
+                Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : null,
+                Database = uri.AbsolutePath.TrimStart('/'),
+                MaxPoolSize = maxConn,
+                MinPoolSize = Math.Min(64, maxConn),
+                Multiplexing = true,
+                MaxAutoPrepare = 20
+            };
+
+            if (uri.Port > 0) connStr.Port = uri.Port;
+
+            return new NpgsqlDataSourceBuilder(connStr.ConnectionString).Build();
         }
         catch
         {

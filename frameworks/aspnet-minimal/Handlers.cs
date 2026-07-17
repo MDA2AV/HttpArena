@@ -3,8 +3,6 @@ using System.Buffers;
 using HttpArena.Services;
 using HttpArena.Types;
 
-using Microsoft.AspNetCore.Http.HttpResults;
-
 static class Handlers
 {
     
@@ -38,7 +36,7 @@ static class Handlers
         return size.ToString();
     }
 
-    public static Results<Ok<ItemsResponse<ProcessedItem>>, ProblemHttpResult> Json(int count, DatasetService dataset, int m = 1)
+    public static IResult Json(int count, DatasetService dataset, int m = 1)
     {
         var response = dataset.GetItems(count, m);
 
@@ -48,7 +46,7 @@ static class Handlers
         return TypedResults.Ok(response);
     }
 
-    public static async Task<Results<Ok<ItemsResponse<Item>>, ProblemHttpResult>> AsyncDatabase(ItemService items, double min = 10, double max = 50, int limit = 50)
+    public static async Task<IResult> AsyncDatabase(ItemService items, double min = 10, double max = 50, int limit = 50)
     {
         if (!items.IsAvailable)
             return TypedResults.Problem("DB not available");
