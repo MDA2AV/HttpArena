@@ -108,7 +108,7 @@
   },
   "aspnet-mvc": {
     "dir": "aspnet-mvc",
-    "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and MVC routing.",
+    "description": "ASP.NET Core server using .NET 10 with Kestrel and MVC controller routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
@@ -1016,6 +1016,13 @@
     "type": "engine",
     "engine": "zix",
     "variants": [
+      {
+        "dir": "zix-http2",
+        "description": "Zig HTTP/2 server on the zix.Http2 raw engine, .URING dispatch: shared-nothing per-core io_uring with SO_REUSEPORT, per-worker stream-slot pool. Dual listener (config.tls_port): h2c 8082 plus h2 over TLS 1.3 (ALPN h2) on 8443, one process.",
+        "repo": "https://github.com/prothegee/zix",
+        "type": "engine",
+        "engine": "zix.Http2 URING Dispatch Model"
+      },
       {
         "dir": "zix-http3",
         "description": "Zig HTTP/3 server on the zix.Http3 engine, pure-Zig QUIC on std.crypto (RFC 9000/9001/9002/9114), .URING dispatch: one SO_REUSEPORT worker per core on UDP 8443, NewReno with PTO retransmit, rolling MAX_STREAMS/MAX_DATA credit. A one-worker https responder on TCP 8443 answers the readiness probe, idle during the run.",

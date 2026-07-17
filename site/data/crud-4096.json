@@ -80,6 +80,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "aspnet-mvc",
+    "language": "C#",
+    "rps": 329284,
+    "avg_latency": "11.63ms",
+    "p99_latency": "31.10ms",
+    "cpu": "5662.7%",
+    "memory": "446MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "113.70MB/s",
+    "input_bw": "28.26MB/s",
+    "reconnects": 22646,
+    "status_2xx": 4939262,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "fasthttp",
     "language": "V",
     "rps": 108227,
