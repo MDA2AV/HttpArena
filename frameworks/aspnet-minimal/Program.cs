@@ -1,13 +1,21 @@
 using System.Security.Cryptography.X509Certificates;
 
+using HttpArena.Services;
+using HttpArena.Types;
+
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
-builder.Services.AddMemoryCache();
 builder.Services.AddRazorPages();
+
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
+
+builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<DatasetService>();
+builder.Services.AddSingleton<ItemService>();
+builder.Services.AddSingleton<FortuneService>();
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
@@ -64,7 +72,11 @@ app.Use((ctx, next) =>
     return next();
 });
 
-AppData.Load();
+// Load the dataset and open the Postgres/Redis connections at startup
+// instead of on the first request.
+_ = app.Services.GetRequiredService<DatasetService>();
+_ = app.Services.GetRequiredService<ItemService>();
+_ = app.Services.GetRequiredService<FortuneService>();
 
 app.MapGet("/pipeline", Handlers.Text);
 
@@ -78,7 +90,7 @@ app.MapGet("/async-db", Handlers.AsyncDatabase);
 
 // ── CRUD endpoints ─────────────────────────────────────────────────────────
 // Realistic REST API: paginated list, cached single-item read, create, update.
-// In-process IMemoryCache with 1s TTL on single-item reads, invalidated on PUT.
+// Cache-aside single-item reads (Redis or in-process), invalidated on PUT.
 
 app.MapGet("/crud/items", Handlers.CrudList);
 app.MapGet("/crud/items/{id:int}", Handlers.CrudRead);
