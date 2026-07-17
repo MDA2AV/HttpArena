@@ -12,17 +12,17 @@ public class TestController(DatasetService dataset, ItemService items) : Control
     public string Pipeline() => "ok";
 
     [HttpGet("/baseline11")]
-    public int Sum([FromQuery] int a, [FromQuery] int b) => a + b;
+    public string Sum([FromQuery] int a, [FromQuery] int b) => (a + b).ToString();
 
     [HttpPost("/baseline11")]
-    public async Task<int> SumBody([FromQuery] int a, [FromQuery] int b)
+    public async Task<string> SumBody([FromQuery] int a, [FromQuery] int b)
     {
         using var reader = new StreamReader(Request.Body);
-        return a + b + int.Parse(await reader.ReadToEndAsync());
+        return (a + b + int.Parse(await reader.ReadToEndAsync())).ToString();
     }
 
     [HttpGet("/baseline2")]
-    public int Baseline2([FromQuery] int a, [FromQuery] int b) => a + b;
+    public string Baseline2([FromQuery] int a, [FromQuery] int b) => (a + b).ToString();
 
     [HttpPost("/upload")]
     public async Task<string> Upload()
