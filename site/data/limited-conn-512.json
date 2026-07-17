@@ -335,6 +335,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "fastendpoints",
+    "language": "C#",
+    "rps": 448668,
+    "avg_latency": "1.08ms",
+    "p99_latency": "11.50ms",
+    "cpu": "3766.1%",
+    "memory": "136MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "68.44MB/s",
+    "input_bw": "34.66MB/s",
+    "reconnects": 224304,
+    "status_2xx": 2243340,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "fastpysgi-asgi",
     "language": "Python",
     "rps": 629673,

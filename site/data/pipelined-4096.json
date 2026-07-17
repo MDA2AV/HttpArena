@@ -306,6 +306,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "fastendpoints",
+    "language": "C#",
+    "rps": 6548661,
+    "avg_latency": "8.47ms",
+    "p99_latency": "22.40ms",
+    "cpu": "5677.6%",
+    "memory": "336MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "998.89MB/s",
+    "reconnects": 0,
+    "status_2xx": 32743307,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "fasthttp",
     "language": "V",
     "rps": 311187,

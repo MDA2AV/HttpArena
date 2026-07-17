@@ -38,6 +38,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "fastendpoints",
+    "language": "C#",
+    "rps": 2474746,
+    "avg_latency": "10.52ms",
+    "p99_latency": "54.18ms",
+    "cpu": "6129.6%",
+    "memory": "1.1GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "54.62MB/s",
+    "reconnects": 0,
+    "status_2xx": 12447973,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "h2o",
     "language": "C",
     "rps": 16054059,
