@@ -39,9 +39,7 @@ SimpleWServer CreateServer(int port, string certPath = null, string keyPath = nu
     var server = new SimpleWServer(IPAddress.Any, port)
         .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
         .UseIoxideEngine(config => {
-		    config.ServerConfig = config.ServerConfig with {
-		        ReactorCount = Environment.ProcessorCount
-		    };
+		    config.ServerConfig = IoxideEngineOptions.CreateIncrementalConfig();
 		    if (certPath is not null && keyPath is not null)
 		    {
 				config.TlsPort = 8443;
