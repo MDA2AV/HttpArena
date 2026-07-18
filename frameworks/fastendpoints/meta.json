@@ -1,7 +1,7 @@
 {
   "display_name": "fastendpoints",
   "language": "C#",
-  "type": "emerging",
+  "type": "flagship",
   "mode": "standard",
   "engine": "kestrel",
   "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 10 with Kestrel.",
