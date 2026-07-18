@@ -19,6 +19,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "aspnet-mvc",
+    "language": "C#",
+    "rps": 78538,
+    "avg_latency": "10.73ms",
+    "p99_latency": "33.10ms",
+    "cpu": "5433.2%",
+    "memory": "485MiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.87GB/s",
+    "reconnects": 0,
+    "status_2xx": 392693,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "fasthttp",
     "language": "V",
     "rps": 170,
