@@ -225,7 +225,7 @@
     "dir": "fastendpoints",
     "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 10 with Kestrel.",
     "repo": "https://github.com/FastEndpoints/FastEndpoints",
-    "type": "emerging",
+    "type": "flagship",
     "engine": "kestrel",
     "mode": "standard"
   },
