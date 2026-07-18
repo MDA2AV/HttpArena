@@ -1769,6 +1769,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "veb",
+    "language": "V",
+    "rps": 106147,
+    "avg_latency": "4.85ms",
+    "p99_latency": "42.90ms",
+    "cpu": "1183.9%",
+    "memory": "519MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "7.99MB/s",
+    "input_bw": "8.20MB/s",
+    "reconnects": 0,
+    "status_2xx": 530739,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "workerman",
     "language": "PHP",
     "rps": 2844479,

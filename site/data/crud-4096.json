@@ -558,5 +558,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 63843
+  },
+  {
+    "framework": "veb",
+    "language": "V",
+    "rps": 62644,
+    "avg_latency": "65.23ms",
+    "p99_latency": "257.90ms",
+    "cpu": "1166.9%",
+    "memory": "2.4GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "17.56MB/s",
+    "input_bw": "5.38MB/s",
+    "reconnects": 2626,
+    "status_2xx": 939667,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
