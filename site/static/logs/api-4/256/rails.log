@@ -3,7 +3,7 @@
 => Run `bin/rails server --help` for more startup options
 [1] Puma starting in cluster mode...
 [1] * Puma version: 8.0.1 ("Into the Arena")
-[1] * Ruby version: ruby 4.0.5 (2026-05-20 revision 64336ffd0e) +YJIT +MN +PRISM [x86_64-linux]
+[1] * Ruby version: ruby 4.0.6 (2026-07-14 revision 03b6d3f889) +YJIT +MN +PRISM [x86_64-linux]
 [1] *  Min threads: 3
 [1] *  Max threads: 3
 [1] *  Environment: production

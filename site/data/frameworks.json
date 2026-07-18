@@ -42,7 +42,7 @@
   },
   "aspnet-minimal": {
     "dir": "aspnet-minimal",
-    "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
+    "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
@@ -108,7 +108,7 @@
   },
   "aspnet-mvc": {
     "dir": "aspnet-mvc",
-    "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and MVC routing.",
+    "description": "ASP.NET Core server using .NET 10 with Kestrel and MVC controller routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
@@ -219,6 +219,14 @@
     "repo": "https://github.com/fastapi/fastapi",
     "type": "flagship",
     "engine": "uvicorn",
+    "mode": "standard"
+  },
+  "fastendpoints": {
+    "dir": "fastendpoints",
+    "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 10 with Kestrel.",
+    "repo": "https://github.com/FastEndpoints/FastEndpoints",
+    "type": "flagship",
+    "engine": "kestrel",
     "mode": "standard"
   },
   "fasthttp": {
@@ -941,7 +949,7 @@
   },
   "veb": {
     "dir": "veb",
-    "description": "veb is the web framework in V's standard library (multi-threaded, built-in HTTP/1.1 server). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool sized from DATABASE_MAX_CONN). Built on pinned V master c0624b274 with the default GC (Boehm). Note: the baseline profile is not subscribed because veb does not decode chunked request bodies.",
+    "description": "veb is the web framework in V's standard library, now running on the parallel fasthttp backend (multi-threaded, SO_REUSEPORT epoll, zero-copy append handler). Its deterministic request framing reassembles TCP-fragmented requests and decodes chunked bodies, so baseline is subscribed (the old single-threaded backend could not). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); json-comp gzips on Accept-Encoding with a process-shared cache; static assets are served via veb's static handler (sendfile + MIME) mounted at /static/; crud is an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update); fortunes renders the DB rows + a runtime row with HTML escaping; async-db/crud/fortunes use the stdlib db.pg pooled Go-style DB. Built on pinned V master 84a76d791 (the fasthttp vanilla-architecture refactor, vlang/v#27771) with the default GC (Boehm). json-tls is not subscribed: it needs a second TLS listener on :8081 (a separate OpenSSL path) not wired here.",
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "veb"
