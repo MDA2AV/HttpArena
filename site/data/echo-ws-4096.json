@@ -191,6 +191,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp-11-ioxide",
+    "language": "C#",
+    "rps": 3295066,
+    "avg_latency": "1.24ms",
+    "p99_latency": "4.53ms",
+    "cpu": "5937.2%",
+    "memory": "524MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "22.12MB/s",
+    "reconnects": 0,
+    "status_2xx": 16475334,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "go-websocket",
     "language": "Go",
     "rps": 1089321,

@@ -152,6 +152,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp-11-ioxide",
+    "language": "C#",
+    "rps": 30706780,
+    "avg_latency": "8.48ms",
+    "p99_latency": "20.80ms",
+    "cpu": "5865.1%",
+    "memory": "1.1GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "205.53MB/s",
+    "reconnects": 0,
+    "status_2xx": 153533904,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ktor",
     "language": "Kotlin",
     "rps": 8879790,
