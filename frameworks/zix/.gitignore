@@ -2,3 +2,4 @@
 zig-out
 zig-package
 vendor
+/zig*
