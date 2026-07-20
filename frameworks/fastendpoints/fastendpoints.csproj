@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The project name "fastendpoints" collides with the FastEndpoints
+         package: NuGet rejects the restore as a dependency cycle (NU1108) and
+         the output fastendpoints.dll clobbers the package's FastEndpoints.dll
+         on case-insensitive file systems. Distinct PackageId + AssemblyName
+         avoid both. -->
+    <PackageId>httparena-fastendpoints</PackageId>
+    <AssemblyName>httparena-fastendpoints</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FastEndpoints" Version="8.2.0" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="StackExchange.Redis" Version="3.0.17" />
+  </ItemGroup>
+</Project>

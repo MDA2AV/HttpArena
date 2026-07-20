@@ -1,602 +1,155 @@
-[2026-06-07T13:41:24Z INFO  trillium_static::handler] serving files within "/data/static"
-[2026-06-07T13:41:24Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:24Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:25Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:28Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:30Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:32Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:33Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:33Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:33Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:33Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4056, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4086, target_size=4030, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4086, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:34Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4084, target_size=4030, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4084, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4031, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:35Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4030, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4043, target_size=4024, evicted_abs=0, floor=Some(0))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4031, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4035, target_size=4022, evicted_abs=4, floor=Some(4))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4026, target_size=4022, evicted_abs=5, floor=Some(5))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4092, target_size=4030, evicted_abs=7, floor=Some(7))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4031, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4046, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4031, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4030, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4031, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4046, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4031, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:36Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4050, target_size=4030, evicted_abs=9, floor=Some(9))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4031, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4087, target_size=4045, evicted_abs=1, floor=Some(1))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4036, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4031, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_http::headers::qpack::encoder_dynamic_table::state] qpack encoder: eviction blocked (current_size=4085, target_size=4047, evicted_abs=2, floor=Some(2))
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:37Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:39Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:41Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:41Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:41Z INFO  qpack_metrics] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-06-07T13:41:44Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:27Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:27Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:28Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:32Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:32Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:32Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:35Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:35Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:37Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:37Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:37Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:37Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:37Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:37Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
+[2026-07-12T13:40:42Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3

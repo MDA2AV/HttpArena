@@ -3,13 +3,22 @@
   "language": "V",
   "type": "engine",
   "engine": "veb",
-  "description": "veb is the web framework in V's standard library (multi-threaded, built-in HTTP/1.1 server). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); async-db uses the stdlib db.pg pooled Go-style DB (db.exec_param_many over a connection pool sized from DATABASE_MAX_CONN). Built on pinned V master c0624b274 with the default GC (Boehm). Note: the baseline profile is not subscribed because veb does not decode chunked request bodies.",
+  "description": "veb is the web framework in V's standard library, now running on the parallel fasthttp backend (multi-threaded, SO_REUSEPORT epoll, zero-copy append handler). Its deterministic request framing reassembles TCP-fragmented requests and decodes chunked bodies, so baseline is subscribed (the old single-threaded backend could not). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); json-comp gzips on Accept-Encoding with a process-shared cache; static assets are served via veb's static handler (sendfile + MIME) mounted at /static/; crud is an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update); fortunes renders the DB rows + a runtime row with HTML escaping; async-db/crud/fortunes use the stdlib db.pg pooled Go-style DB. Built on pinned V master 84a76d791 (the fasthttp vanilla-architecture refactor, vlang/v#27771) with the default GC (Boehm). json-tls is not subscribed: it needs a second TLS listener on :8081 (a separate OpenSSL path) not wired here.",
   "repo": "https://github.com/vlang/v",
   "enabled": true,
   "tests": [
+    "baseline",
     "pipelined",
+    "limited-conn",
     "json",
-    "async-db"
+    "json-comp",
+    "upload",
+    "static",
+    "async-db",
+    "crud",
+    "fortunes",
+    "api-4",
+    "api-16"
   ],
   "maintainers": [
     "enghitalo"
