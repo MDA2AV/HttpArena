@@ -14,15 +14,6 @@ namespace genhttp;
 
 public static class Project
 {
-
-    // HTTP/1.1 endpoints exercised by this entry's profiles:
-    //   baseline / limited-conn -> /baseline11   (Baseline webservice: GET/POST sum)
-    //   pipelined               -> /pipeline     (fixed "ok")
-    //   json / json-comp        -> /json/{count}?m=N   (json-comp = json + Accept-Encoding: br)
-    //   upload                  -> /upload       (streamed request-body byte count)
-    //   async-db                -> /async-db     (Postgres range query, when DATABASE_URL is set)
-    //   crud                    -> /crud/items   (list/read/create/update, when DATABASE_URL is set)
-    //   static                  -> /static/...   (files from IOXIDE_STATIC, when the dir exists)
     public static IHandlerBuilder Create()
     {
         var app = Layout.Create()
