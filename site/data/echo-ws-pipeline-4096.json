@@ -475,6 +475,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "vanilla-ws",
+    "language": "V",
+    "rps": 65026006,
+    "avg_latency": "998us",
+    "p99_latency": "6.56ms",
+    "cpu": "6271.7%",
+    "memory": "138MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 16,
+    "bandwidth": "433.82MB/s",
+    "reconnects": 0,
+    "status_2xx": 325130032,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "wtx",
     "language": "Rust",
     "rps": 19674141,

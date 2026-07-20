@@ -40,6 +40,22 @@
     "type": "infrastructure",
     "engine": "apache"
   },
+  "araara-standard": {
+    "dir": "araara-standard",
+    "description": "araara - an OCaml 5 web stack built on HCS, using HCS server defaults where possible for the HttpArena harness. Eio, radix-trie routing, Phoenix-style plugs, Postgres via repodb, gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
+    "repo": "https://araara.ml",
+    "type": "experimental",
+    "engine": "hcs",
+    "mode": "standard"
+  },
+  "araara": {
+    "dir": "araara",
+    "description": "araara - an OCaml 5 web stack built on HCS, Eio, a zero-copy sans-I/O HTTP codec, radix-trie routing, Phoenix-style plugs, Postgres via repodb, and gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
+    "repo": "https://araara.ml",
+    "type": "experimental",
+    "engine": "hcs",
+    "mode": "tuned"
+  },
   "aspnet-minimal": {
     "dir": "aspnet-minimal",
     "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
@@ -946,6 +962,13 @@
     "repo": "https://github.com/enghitalo/vanilla",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "vanilla-ws": {
+    "dir": "vanilla-ws",
+    "description": "WebSocket echo on vanilla's conn-mode seam: one epoll engine, two protocols on the same connection. The HTTP handler validates the RFC 6455 upgrade as a pure function, appends the 101 and hands the connection over (core.queue_takeover); from then on every readable burst is fed to a ConnHandler instead of the HTTP/1.1 state machine. The websocket module is a pure RFC 6455 codec (accept-key, frame-head parsing, in-place unmasking, unmasked server-frame writers). Read buffering/compaction, batched flushes and EPOLLOUT backpressure are the engine's own, so a pipelined burst of frames is drained in one handler call and coalesced into one write. Multi-threaded, SO_REUSEPORT, lock-free, -gc none.",
+    "repo": "https://github.com/enghitalo/vanilla",
+    "type": "engine",
+    "engine": "epoll"
   },
   "veb": {
     "dir": "veb",
