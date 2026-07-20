@@ -186,7 +186,7 @@ need_pg=false
 for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
-$need_pg && postgres_start
+if $need_pg; then postgres_start; fi
 
 # Redis sidecar — started whenever crud is in play so multi-process
 # frameworks can use it as a shared cache. Single-heap frameworks
@@ -197,7 +197,7 @@ need_redis=false
 for t in crud; do
     if framework_subscribes_to "$t"; then need_redis=true; break; fi
 done
-$need_redis && redis_start
+if $need_redis; then redis_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
