@@ -1298,5 +1298,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "zix",
+    "language": "Zig",
+    "rps": 3133503,
+    "avg_latency": "574us",
+    "p99_latency": "2.24ms",
+    "cpu": "6320.1%",
+    "memory": "204MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "3.95GB/s",
+    "input_bw": "233.09MB/s",
+    "reconnects": 626407,
+    "status_2xx": 15667517,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
