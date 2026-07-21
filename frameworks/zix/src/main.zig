@@ -60,6 +60,11 @@ pub fn main(process: std.process.Init) !void {
         return e;
     };
 
+    // Park ring sized to peak conns per worker: 16384c is the deepest
+    // scenario and workers = 0 spawns one worker per CPU.
+    const cpus = std.Thread.getCpuCount() catch 8;
+    const park_len = @max(512, 16 * 1024 / cpus);
+
     var server = zix.Http1.Server.init(Routes.dispatch, .{
         .io = process.io,
         .ip = "::",
@@ -83,9 +88,9 @@ pub fn main(process: std.process.Init) !void {
         .max_recv_buf = 8 * 1024,
         //
         .uring_send_buf_size = 16 * 1024,
-        .uring_idle_pool_floor = 1 * 1024 / 4,
+        .uring_idle_pool_floor = 16, // 0:256 1:16
         .uring_idle_pool_ceiling = 1 * 1024,
-        .process_queue_len = 8192,
+        .process_queue_len = park_len, // 0:8192 1:16384 / workers, floor 512
     });
     defer server.deinit();
 

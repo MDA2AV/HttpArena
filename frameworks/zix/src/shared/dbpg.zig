@@ -1,10 +1,10 @@
 //! PostgreSQL for the DB endpoints (async-db, crud) over the driver-owned
-//! multiplexed transport (postgrez.Transport, .URING), sharded: SHARD_COUNT
-//! transport threads each own their slice of the pipelined connections, so
-//! reply decode, render, and the client write are not serialized on one
-//! thread. Jobs route to a shard by fd (per-fd order). Handlers build a Job
-//! and call submitJob, replies render and write from onReply on the shard
-//! thread.
+//! multiplexed transport (postgrez.Transport, .URING), sharded: the active
+//! shard count (scaled from the CPU budget at init) transport threads each
+//! own their slice of the pipelined connections, so reply decode, render,
+//! and the client write are not serialized on one thread. Jobs route to a
+//! shard by fd (per-fd order). Handlers build a Job and call submitJob,
+//! replies render and write from onReply on the shard thread.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -33,9 +33,10 @@ const WINDOW = postgrez.dispatch.DEFAULT_WINDOW;
 /// list of 100 rows tops out near 21 KiB.
 const DB_BODY_MAX = 32 * 1024;
 
-/// Transport shards. Each runs its own thread and Transport, splitting the
-/// configured connections, so total DB connections stay the same.
-const SHARD_COUNT = 2;
+/// Transport shard ceiling. Each shard runs its own thread and Transport,
+/// splitting the configured connections. The active count comes from
+/// shardCountFor at init.
+const MAX_SHARDS = 8; // 0:2 1:8
 
 /// In-flight ASYNC_DB scans one shard allows: shard connections times this.
 /// Caps how many concurrent price-range scans can over-feed the server.
@@ -137,8 +138,8 @@ const QueuedJob = struct {
 // --------------------------------------------------------- //
 
 /// Jobs one shard queue holds (engine workers enqueue, the shard drains).
-/// Split across SHARD_COUNT shards this matches the single 8192 queue the
-/// unsharded entry ran.
+/// Per shard: at the two-shard floor this matches the single 8192 queue the
+/// unsharded entry ran, more shards raise the fleet total.
 const QUEUE_CAP = 4096;
 
 /// In-flight Jobs one shard tracks, above its conns times WINDOW ceiling.
@@ -270,8 +271,9 @@ var g_io: std.Io = undefined;
 var g_config: postgrez.Config = undefined;
 var g_enabled: bool = false;
 var g_conns: usize = 8;
+var g_shard_count: usize = 2;
 
-var g_shards: [SHARD_COUNT]Shard = @splat(.{});
+var g_shards: [MAX_SHARDS]Shard = @splat(.{});
 var g_open: bool = false;
 var g_running: std.atomic.Value(bool) = .init(false);
 
@@ -285,7 +287,27 @@ threadlocal var tl_shard: ?*Shard = null;
 threadlocal var tl_write_blocking: bool = false;
 
 fn shardOf(fd: std.posix.fd_t) *Shard {
-    return &g_shards[@intCast(@mod(fd, SHARD_COUNT))];
+    const key: usize = @intCast(fd);
+
+    return &g_shards[key % g_shard_count];
+}
+
+/// Active transport shards for a CPU budget: one per four CPUs, floored at
+/// the sharded baseline of two, capped at MAX_SHARDS.
+fn shardCountFor(cpu: usize) usize {
+    return std.math.clamp(cpu / 4, 2, MAX_SHARDS); // 0:2 1:clamp(cpu / 4, 2, 8)
+}
+
+/// Total DB connections for a CPU budget when DATABASE_MAX_CONN is absent.
+/// The arena postgres runs max_connections=256, 64 stays well inside it.
+fn connsFor(cpu: usize) usize {
+    return std.math.clamp(cpu, 4, 64); // 0:clamp(cpu, 4, 16) 1:clamp(cpu, 4, 64)
+}
+
+/// One shard's slice of the conn budget: an even split, the first
+/// total mod count shards take the remainder, never below one.
+fn shardConns(total: usize, count: usize, index: usize) usize {
+    return @max(1, total / count + @intFromBool(index < total % count));
 }
 
 // --------------------------------------------------------- //
@@ -301,13 +323,15 @@ pub fn init(process: std.process.Init) void {
     g_io = process.io;
     g_enabled = true;
 
+    const cpu = std.Thread.getCpuCount() catch 8;
+    g_shard_count = shardCountFor(cpu);
+
     if (process.environ_map.get("DATABASE_MAX_CONN")) |max_text| {
         if (std.fmt.parseInt(usize, max_text, 10)) |parsed| {
             if (parsed > 0) g_conns = parsed;
         } else |_| {}
     } else {
-        const cpu = std.Thread.getCpuCount() catch 8;
-        g_conns = std.math.clamp(cpu, 4, 16);
+        g_conns = connsFor(cpu);
     }
 }
 
@@ -345,8 +369,8 @@ pub fn start() void {
     g_running.store(true, .release);
 
     var opened: usize = 0;
-    for (&g_shards, 0..) |*shard, index| {
-        shard.conns = @max(1, g_conns / SHARD_COUNT + @intFromBool(index < g_conns % SHARD_COUNT));
+    for (g_shards[0..g_shard_count], 0..) |*shard, index| {
+        shard.conns = shardConns(g_conns, g_shard_count, index);
         shard.scan_cap = shard.conns * SCAN_CAP_PER_CONN;
         shard.slotInit();
 
@@ -365,7 +389,7 @@ pub fn start() void {
         opened += 1;
     }
 
-    if (opened < SHARD_COUNT) {
+    if (opened < g_shard_count) {
         g_enabled = false;
         g_running.store(false, .release);
 
@@ -1257,6 +1281,37 @@ test "3e test: scan hold ring admits under cap and holds at cap" {
 
     shard.scan_inflight = 1;
     try std.testing.expect(shard.scanTake() != null);
+}
+
+test "shardCountFor scales with the cpu budget inside the clamp" {
+    try std.testing.expectEqual(@as(usize, 2), shardCountFor(1));
+    try std.testing.expectEqual(@as(usize, 2), shardCountFor(6));
+    try std.testing.expectEqual(@as(usize, 4), shardCountFor(16));
+    try std.testing.expectEqual(@as(usize, 8), shardCountFor(64));
+    try std.testing.expectEqual(@as(usize, 8), shardCountFor(128));
+}
+
+test "connsFor scales with the cpu budget inside the clamp" {
+    try std.testing.expectEqual(@as(usize, 4), connsFor(2));
+    try std.testing.expectEqual(@as(usize, 6), connsFor(6));
+    try std.testing.expectEqual(@as(usize, 16), connsFor(16));
+    try std.testing.expectEqual(@as(usize, 64), connsFor(64));
+    try std.testing.expectEqual(@as(usize, 64), connsFor(128));
+}
+
+test "shardConns splits the conn budget without loss" {
+    var sum: usize = 0;
+    for (0..8) |index| sum += shardConns(64, 8, index);
+    try std.testing.expectEqual(@as(usize, 64), sum);
+
+    sum = 0;
+    for (0..2) |index| sum += shardConns(7, 2, index);
+    try std.testing.expectEqual(@as(usize, 7), sum);
+    try std.testing.expectEqual(@as(usize, 4), shardConns(7, 2, 0));
+    try std.testing.expectEqual(@as(usize, 3), shardConns(7, 2, 1));
+
+    // A budget smaller than the shard count still gives every shard one conn.
+    try std.testing.expectEqual(@as(usize, 1), shardConns(1, 2, 1));
 }
 
 test "3e test: deliver parks on a full socket and flush completes it" {
