@@ -956,6 +956,13 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "vanilla-h2c": {
+    "dir": "vanilla-h2c",
+    "description": "HTTP/2 cleartext (h2c, prior-knowledge) on vanilla's conn-mode seam: one epoll engine drives the RFC 9113 state machine behind a ConnHandler. The client's PRI * HTTP/2.0 preface parses as an ordinary request; the HTTP handler flips the connection over (core.queue_takeover), appends the server SETTINGS preface, and every later burst is fed to the http2 machine instead of the HTTP/1.1 parser. The http2 module is a self-contained RFC 9113/7541 codec: HPACK (static + dynamic table, canonical Huffman decode, decoded-block ceiling), frame codec, and a stream state machine with send-side flow control, hardened against a live h2spec CI gate. Requests surface only when COMPLETE (END_STREAM); responses are HPACK-encoded HEADERS + DATA. The :8082 listener is h2c-only \u2014 a plain HTTP/1.1 request is refused 505, never a 200, so the benchmark cannot silently measure h1 throughput. /json reuses the vanilla /json shape (same dataset, precomputed per-item prefixes, total = price*quantity*m). Multi-threaded, SO_REUSEPORT, lock-free, -gc none. Pinned V 0.5.2 (prebuilt from source).",
+    "repo": "https://github.com/enghitalo/vanilla",
+    "type": "engine",
+    "engine": "epoll"
+  },
   "vanilla-io_uring": {
     "dir": "vanilla-io_uring",
     "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking io_uring I/O, lock-free, copy-free, SO_REUSEPORT. This entry is the vanilla-epoll entry's async handler verbatim, running on the io_uring async runtime (enghitalo/vanilla#99): DB queries park on the PG socket via a oneshot IORING_OP_POLL_ADD and resume on the ring \u2014 never blocking the worker. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; json-tls serves /json over HTTP/1.1 + TLS 1.3 on :8081 via the lib's epoll backend (the io_uring backend has no TLS) with kTLS record offload where present; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db/crud/fortunes use the native async pg_async driver with per-worker pipelined pools. Built with the default GC on pinned V master (built from source). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
