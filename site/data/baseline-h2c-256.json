@@ -245,6 +245,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "vanilla-h2c",
+    "language": "V",
+    "rps": 955818,
+    "avg_latency": "26.28ms",
+    "p99_latency": "321.57ms",
+    "cpu": "4954.0%",
+    "memory": "16.8GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "41.60MB/s",
+    "reconnects": 0,
+    "status_2xx": 4846000,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "wtx",
     "language": "Rust",
     "rps": 4125744,

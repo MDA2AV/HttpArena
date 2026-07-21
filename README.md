@@ -3,9 +3,12 @@
 [![Discord](https://discordapp.com/api/guilds/1177529388229734410/widget.png?style=shield)](https://discord.com/invite/H84B5ZqDXR)
 <a href="https://www.anthropic.com"><img src="https://img.shields.io/badge/Sponsored%20by-Anthropic-D97757?logo=anthropic&logoColor=white" alt="Sponsored by Anthropic" /></a>
 
+## Hardware Upgrade
+Hi, thank you for visiting or contributing to our project, we are always looking to improve this benchmark platform, if you wish to help us by sponsoring or donating, all the money is invested into infrastructure costs, we are currently aiming for hardware upgrades that would substantially improve our benchmarks.
+
 HTTP framework benchmark platform.
 
-27 test profiles. 64-core dedicated hardware. Same conditions for every framework.
+28 test profiles. 64-core dedicated hardware. Same conditions for every framework.
 
 [View Leaderboard](https://www.http-arena.com/) | [Documentation](https://www.http-arena.com/docs/) | [Add a Framework](https://www.http-arena.com/docs/add-framework/)
 
@@ -13,11 +16,8 @@ HTTP framework benchmark platform.
 
 ## PR Commands
 
-Tag **@BennyFranciscus** on your PR for help with implementation or benchmark questions.
-
 | Command | Description |
 |---------|-------------|
-| `/validate -f <framework>` | Run the 18-point validation suite |
 | `/benchmark -f <framework>` | Run all benchmark tests |
 | `/benchmark -f <framework> -t <test>` | Run a specific test |
 | `/benchmark -f <framework> --save` | Run and save results (updates leaderboard on merge) |
