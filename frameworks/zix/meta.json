@@ -3,22 +3,22 @@
   "language": "Zig",
   "type": "engine",
   "engine": "zix.Http1 URING Dispatch Model",
-  "description": "Zig HTTP/1.1 server on the zix.Http1 raw engine, .URING dispatch: per-worker SO_REUSEPORT accept plus io_uring loop, comptime Router with a staged send sink, gzip negotiation, prewarmed static cache. Dual listener: cleartext 8080 plus https TLS 1.3 on 8081. async-db and crud go through the postgrez and rediz drivers with worker-owned connections, crud reads are cache-aside via the Redis sidecar.",
+  "description": "Zig HTTP/1.1 server on the zix.Http1 raw engine, .URING dispatch: per-worker SO_REUSEPORT io_uring loops, comptime Router, staged send sink. Dual listener: cleartext 8080, TLS 1.3 on 8081. DB endpoints ride the driver-owned multiplexed transports (postgrez plus rediz, .URING): fd-routed shard threads, named prepared statements, cache-aside crud with a Redis write-behind mirror.",
   "repo": "https://github.com/prothegee/zix",
   "enabled": true,
   "tests": [
     "baseline",
     "pipelined",
     "limited-conn",
+    "upload",
+    "static",
     "json",
     "json-comp",
     "json-tls",
-    "upload",
-    "static",
-    "async-db",
-    "crud",
     "api-4",
-    "api-16"
+    "api-16",
+    "async-db",
+    "crud"
   ],
   "maintainers": ["prothegee"]
 }
