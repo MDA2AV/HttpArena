@@ -36,7 +36,7 @@ const DB_BODY_MAX = 32 * 1024;
 /// Transport shard ceiling. Each shard runs its own thread and Transport,
 /// splitting the configured connections. The active count comes from
 /// shardCountFor at init.
-const MAX_SHARDS = 8; // 0:2 1:8
+const MAX_SHARDS = 16; // 0:2 1:8 2:16
 
 /// In-flight ASYNC_DB scans one shard allows: shard connections times this.
 /// Caps how many concurrent price-range scans can over-feed the server.
