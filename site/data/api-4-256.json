@@ -1632,5 +1632,31 @@
     "tpl_upload": 0,
     "tpl_static": 0,
     "tpl_async_db": 148717
+  },
+  {
+    "framework": "zix",
+    "language": "Zig",
+    "rps": 67637,
+    "avg_latency": "1.22ms",
+    "p99_latency": "9.45ms",
+    "cpu": "223.7%",
+    "memory": "38MiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "339.05MB/s",
+    "input_bw": "3.81MB/s",
+    "reconnects": 202910,
+    "status_2xx": 1014569,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0,
+    "tpl_baseline": 381285,
+    "tpl_json": 379909,
+    "tpl_db": 0,
+    "tpl_upload": 0,
+    "tpl_static": 0,
+    "tpl_async_db": 253374
   }
 ]
