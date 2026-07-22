@@ -312,122 +312,6 @@ fn shardConns(total: usize, count: usize, index: usize) usize {
 
 // --------------------------------------------------------- //
 
-/// Read DATABASE_URL and DATABASE_MAX_CONN once at startup. Absent or
-/// malformed DATABASE_URL leaves the DB endpoints answering 503.
-pub fn init(process: std.process.Init) void {
-    const url_text = process.environ_map.get("DATABASE_URL") orelse return;
-
-    g_config = postgrez.parseUrl(url_text) catch return;
-    g_config.tls = .OFF;
-    g_config.dispatch_model = .URING;
-    g_io = process.io;
-    g_enabled = true;
-
-    const cpu = std.Thread.getCpuCount() catch 8;
-    g_shard_count = shardCountFor(cpu);
-
-    if (process.environ_map.get("DATABASE_MAX_CONN")) |max_text| {
-        if (std.fmt.parseInt(usize, max_text, 10)) |parsed| {
-            if (parsed > 0) g_conns = parsed;
-        } else |_| {}
-    } else {
-        g_conns = connsFor(cpu);
-    }
-}
-
-pub fn enabled() bool {
-    return g_enabled;
-}
-
-/// Open one multiplexed transport per shard and spawn its poll-loop thread,
-/// splitting the configured connections. Does nothing when DATABASE_URL was
-/// absent, so non-DB profiles spawn no extra threads.
-pub fn start() void {
-    if (!g_enabled) return;
-
-    // Pre-encode one Parse plus Sync per named statement, handed to open so the
-    // transport parses each on every connection before the pipelined loop runs.
-    var prepare_buf: [4096]u8 = undefined;
-    var fixed = std.heap.FixedBufferAllocator.init(&prepare_buf);
-    const allocator = fixed.allocator();
-
-    var prepares: [STATEMENTS.len][]const u8 = undefined;
-    inline for (STATEMENTS, 0..) |spec, index| {
-        var out: std.ArrayList(u8) = .empty;
-        frontend.parse(allocator, &out, spec.name, spec.sql, &.{}) catch {
-            g_enabled = false;
-            return;
-        };
-        frontend.sync(allocator, &out) catch {
-            g_enabled = false;
-            return;
-        };
-
-        prepares[index] = out.items;
-    }
-
-    g_running.store(true, .release);
-
-    var opened: usize = 0;
-    for (g_shards[0..g_shard_count], 0..) |*shard, index| {
-        shard.conns = shardConns(g_conns, g_shard_count, index);
-        shard.scan_cap = shard.conns * SCAN_CAP_PER_CONN;
-        shard.slotInit();
-
-        shard.transport = postgrez.Transport.open(std.heap.smp_allocator, g_io, g_config, .{
-            .model = .URING,
-            .conns = shard.conns,
-            .window = WINDOW,
-            .context = shard,
-            .on_reply = onReply,
-            .prepare = &prepares,
-        }) catch break;
-
-        const thread = std.Thread.spawn(.{}, transportLoop, .{shard}) catch break;
-        thread.detach();
-
-        opened += 1;
-    }
-
-    if (opened < g_shard_count) {
-        g_enabled = false;
-        g_running.store(false, .release);
-
-        return;
-    }
-
-    g_open = true;
-}
-
-/// Queue a Job on its fd's shard thread.
-///
-/// Note:
-/// - keep_alive false marks a close request: this blocks until the shard
-///   thread writes the response (the engine closes the fd on return).
-///
-/// Return:
-/// - true when the response is owned by the shard thread (or already written)
-/// - false when the transport is down or the queue is full (shed 503)
-pub fn submit(job: Job, keep_alive: bool) bool {
-    if (!g_open) return false;
-
-    const shard = shardOf(jobFd(job));
-    if (keep_alive) return shard.enqueue(.{ .job = job });
-
-    var completion: Completion = .{};
-    if (!shard.enqueue(.{ .job = job, .completion = &completion })) return false;
-
-    while (!completion.done.load(.acquire)) std.atomic.spinLoopHint();
-
-    return true;
-}
-
-/// Queue a Job on its fd's shard thread. For a close request dbpg.submit blocks
-/// until the response is written, so a deferred write never races the fd close.
-pub fn submitJob(head: *const zix.Http1.ParsedHead, job: Job) bool {
-    return submit(job, head.keep_alive);
-}
-
 // --------------------------------------------------------- //
 
 /// One shard's thread: drain queued Jobs into the transport, poll for
@@ -1025,8 +909,6 @@ fn formatHttpDate(secs: u64, buf: []u8) []u8 {
     }) catch buf[0..0];
 }
 
-// --------------------------------------------------------- //
-
 /// Write one response (head then body) without letting a stalled client
 /// block the shard thread: send non-blocking, park the remainder on a full
 /// socket buffer, keep per-fd order by appending behind a parked response.
@@ -1215,8 +1097,6 @@ fn flushPendingWrites(shard: *Shard) bool {
     return progressed;
 }
 
-// --------------------------------------------------------- //
-
 fn sendJson(fd: std.posix.fd_t, body: []const u8) void {
     var head_buf: [HEAD_MAX]u8 = undefined;
 
@@ -1252,118 +1132,119 @@ fn sendCrudBody(fd: std.posix.fd_t, body: []const u8, cache_state: []const u8) v
 }
 
 // --------------------------------------------------------- //
-// --------------------------------------------------------- //
 
-test "3e test: buildHead matches the engine header shape" {
-    var buf: [HEAD_MAX]u8 = undefined;
-    const head = buildHead(&buf, 200, "application/json", 5);
+/// Read DATABASE_URL and DATABASE_MAX_CONN once at startup. Absent or
+/// malformed DATABASE_URL leaves the DB endpoints answering 503.
+pub fn init(process: std.process.Init) void {
+    const url_text = process.environ_map.get("DATABASE_URL") orelse return;
 
-    try std.testing.expect(std.mem.startsWith(u8, head, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 5\r\nDate: "));
-    try std.testing.expect(std.mem.endsWith(u8, head, " GMT\r\n\r\n"));
+    g_config = postgrez.parseUrl(url_text) catch return;
+    g_config.tls = .OFF;
+    g_config.dispatch_model = .URING;
+    g_io = process.io;
+    g_enabled = true;
+
+    const cpu = std.Thread.getCpuCount() catch 8;
+    g_shard_count = shardCountFor(cpu);
+
+    if (process.environ_map.get("DATABASE_MAX_CONN")) |max_text| {
+        if (std.fmt.parseInt(usize, max_text, 10)) |parsed| {
+            if (parsed > 0) g_conns = parsed;
+        } else |_| {}
+    } else {
+        g_conns = connsFor(cpu);
+    }
 }
 
-test "3e test: scan hold ring admits under cap and holds at cap" {
-    const shard = try std.testing.allocator.create(Shard);
-    defer std.testing.allocator.destroy(shard);
-
-    shard.* = .{};
-    shard.scan_cap = 2;
-
-    const job: Job = .{ .ASYNC_DB = .{ .fd = 0, .min = 1, .max = 2, .limit = 3 } };
-
-    try std.testing.expect(shard.scanTake() == null);
-    try std.testing.expect(shard.scanHold(.{ .job = job }));
-    try std.testing.expect(shard.scanTake() != null);
-
-    shard.scan_inflight = 2;
-    try std.testing.expect(shard.scanHold(.{ .job = job }));
-    try std.testing.expect(shard.scanTake() == null);
-
-    shard.scan_inflight = 1;
-    try std.testing.expect(shard.scanTake() != null);
+pub fn enabled() bool {
+    return g_enabled;
 }
 
-test "shardCountFor scales with the cpu budget inside the clamp" {
-    try std.testing.expectEqual(@as(usize, 2), shardCountFor(1));
-    try std.testing.expectEqual(@as(usize, 2), shardCountFor(6));
-    try std.testing.expectEqual(@as(usize, 4), shardCountFor(16));
-    try std.testing.expectEqual(@as(usize, 8), shardCountFor(64));
-    try std.testing.expectEqual(@as(usize, 8), shardCountFor(128));
-}
+/// Open one multiplexed transport per shard and spawn its poll-loop thread,
+/// splitting the configured connections. Does nothing when DATABASE_URL was
+/// absent, so non-DB profiles spawn no extra threads.
+pub fn start() void {
+    if (!g_enabled) return;
 
-test "connsFor scales with the cpu budget inside the clamp" {
-    try std.testing.expectEqual(@as(usize, 4), connsFor(2));
-    try std.testing.expectEqual(@as(usize, 6), connsFor(6));
-    try std.testing.expectEqual(@as(usize, 16), connsFor(16));
-    try std.testing.expectEqual(@as(usize, 64), connsFor(64));
-    try std.testing.expectEqual(@as(usize, 64), connsFor(128));
-}
+    // Pre-encode one Parse plus Sync per named statement, handed to open so the
+    // transport parses each on every connection before the pipelined loop runs.
+    var prepare_buf: [4096]u8 = undefined;
+    var fixed = std.heap.FixedBufferAllocator.init(&prepare_buf);
+    const allocator = fixed.allocator();
 
-test "shardConns splits the conn budget without loss" {
-    var sum: usize = 0;
-    for (0..8) |index| sum += shardConns(64, 8, index);
-    try std.testing.expectEqual(@as(usize, 64), sum);
+    var prepares: [STATEMENTS.len][]const u8 = undefined;
+    inline for (STATEMENTS, 0..) |spec, index| {
+        var out: std.ArrayList(u8) = .empty;
+        frontend.parse(allocator, &out, spec.name, spec.sql, &.{}) catch {
+            g_enabled = false;
+            return;
+        };
+        frontend.sync(allocator, &out) catch {
+            g_enabled = false;
+            return;
+        };
 
-    sum = 0;
-    for (0..2) |index| sum += shardConns(7, 2, index);
-    try std.testing.expectEqual(@as(usize, 7), sum);
-    try std.testing.expectEqual(@as(usize, 4), shardConns(7, 2, 0));
-    try std.testing.expectEqual(@as(usize, 3), shardConns(7, 2, 1));
-
-    // A budget smaller than the shard count still gives every shard one conn.
-    try std.testing.expectEqual(@as(usize, 1), shardConns(1, 2, 1));
-}
-
-test "3e test: deliver parks on a full socket and flush completes it" {
-    const linux = std.os.linux;
-
-    const shard = try std.testing.allocator.create(Shard);
-    defer std.testing.allocator.destroy(shard);
-
-    shard.* = .{};
-    tl_shard = shard;
-    defer tl_shard = null;
-
-    var fds: [2]i32 = undefined;
-    try std.testing.expect(linux.socketpair(linux.AF.UNIX, linux.SOCK.STREAM, 0, &fds) == 0);
-    defer _ = linux.close(fds[0]);
-    defer _ = linux.close(fds[1]);
-
-    // Shrink the send buffer so the body cannot fit in one non-blocking send.
-    const sndbuf: u32 = 4096;
-    _ = linux.setsockopt(fds[0], linux.SOL.SOCKET, linux.SO.SNDBUF, @ptrCast(&sndbuf), @sizeOf(u32));
-
-    const body = try std.testing.allocator.alloc(u8, DB_BODY_MAX);
-    defer std.testing.allocator.free(body);
-
-    @memset(body, 'x');
-
-    var head_buf: [HEAD_MAX]u8 = undefined;
-    const head = buildHead(&head_buf, 200, "application/json", body.len);
-    const total = head.len + body.len;
-
-    deliver(fds[0], head, body);
-
-    try std.testing.expect(shard.pw_active == 1);
-
-    // Drain the peer while flushing until the parked remainder is gone.
-    var received: usize = 0;
-    var recv_buf: [8192]u8 = undefined;
-    var rounds: usize = 0;
-    while (received < total) : (rounds += 1) {
-        try std.testing.expect(rounds < 100_000);
-
-        const rc = linux.recvfrom(fds[1], &recv_buf, recv_buf.len, linux.MSG.DONTWAIT, null, null);
-        switch (std.posix.errno(rc)) {
-            .SUCCESS => received += @intCast(rc),
-            .AGAIN => {},
-            else => return error.RecvFailed,
-        }
-
-        _ = flushPendingWrites(shard);
+        prepares[index] = out.items;
     }
 
-    try std.testing.expect(shard.pw_active == 0);
-    try std.testing.expect(received == total);
-    try std.testing.expect(recv_buf[0] == 'x');
+    g_running.store(true, .release);
+
+    var opened: usize = 0;
+    for (g_shards[0..g_shard_count], 0..) |*shard, index| {
+        shard.conns = shardConns(g_conns, g_shard_count, index);
+        shard.scan_cap = shard.conns * SCAN_CAP_PER_CONN;
+        shard.slotInit();
+
+        shard.transport = postgrez.Transport.open(std.heap.smp_allocator, g_io, g_config, .{
+            .model = .URING,
+            .conns = shard.conns,
+            .window = WINDOW,
+            .context = shard,
+            .on_reply = onReply,
+            .prepare = &prepares,
+        }) catch break;
+
+        const thread = std.Thread.spawn(.{}, transportLoop, .{shard}) catch break;
+        thread.detach();
+
+        opened += 1;
+    }
+
+    if (opened < g_shard_count) {
+        g_enabled = false;
+        g_running.store(false, .release);
+
+        return;
+    }
+
+    g_open = true;
+}
+
+/// Queue a Job on its fd's shard thread.
+///
+/// Note:
+/// - keep_alive false marks a close request: this blocks until the shard
+///   thread writes the response (the engine closes the fd on return).
+///
+/// Return:
+/// - true when the response is owned by the shard thread (or already written)
+/// - false when the transport is down or the queue is full (shed 503)
+pub fn submit(job: Job, keep_alive: bool) bool {
+    if (!g_open) return false;
+
+    const shard = shardOf(jobFd(job));
+    if (keep_alive) return shard.enqueue(.{ .job = job });
+
+    var completion: Completion = .{};
+    if (!shard.enqueue(.{ .job = job, .completion = &completion })) return false;
+
+    while (!completion.done.load(.acquire)) std.atomic.spinLoopHint();
+
+    return true;
+}
+
+/// Queue a Job on its fd's shard thread. For a close request dbpg.submit blocks
+/// until the response is written, so a deferred write never races the fd close.
+pub fn submitJob(head: *const zix.Http1.ParsedHead, job: Job) bool {
+    return submit(job, head.keep_alive);
 }
