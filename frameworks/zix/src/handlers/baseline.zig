@@ -41,11 +41,7 @@ fn parseIntLoose(s: []const u8) i64 {
 
 // --------------------------------------------------------- //
 
-pub fn RESPONSE(
-    req: *zix.Http1.Request,
-    _: *zix.Http1.Response,
-    _: *zix.Http1.Context
-) !void {
+pub fn RESPONSE(req: *zix.Http1.Request, _: *zix.Http1.Response, _: *zix.Http1.Context) !void {
     const head = req.head;
     const body = try req.body();
     const fd = req.fd;
@@ -53,7 +49,6 @@ pub fn RESPONSE(
     var sum: i64 = sumQuery(head.query);
 
     if (req.method() == .POST and body.len > 0) {
-    // if (std.mem.eql(u8, head.method, "POST") and body.len > 0) {
         sum += parseIntLoose(body);
     }
 
@@ -61,11 +56,6 @@ pub fn RESPONSE(
     const out = std.fmt.bufPrint(&body_buf, "{d}", .{sum}) catch return;
 
     zix.Http1.sendSimpleFD(fd, 200, "text/plain", out) catch {
-        try zix.Http1.sendSimpleFD(
-            fd,
-            @intFromEnum(zix.Http1.Status.Code.INTERNAL_SERVER_ERROR),
-            zix.Http1.Content.Type.TEXT_PLAIN.asString(),
-            zix.Http1.Status.Code.INTERNAL_SERVER_ERROR.asString()
-        );
+        try zix.Http1.sendSimpleFD(fd, @intFromEnum(zix.Http1.Status.Code.INTERNAL_SERVER_ERROR), zix.Http1.Content.Type.TEXT_PLAIN.asString(), zix.Http1.Status.Code.INTERNAL_SERVER_ERROR.asString());
     };
 }
