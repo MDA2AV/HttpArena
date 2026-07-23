@@ -1,5 +1,5 @@
 //! GET /async-db?min=..&max=..&limit=.. : price-range item scan. Queues a
-//! Job on the fd's postgrez shard thread (dbpg.zig), answered async.
+//! Job on the worker's postgres lane (dbpg.zig), answered async.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -15,19 +15,7 @@ const ASYNC_DB_LIMIT_MAX: i64 = 50;
 
 // --------------------------------------------------------- //
 
-// /// Queue a Job on its fd's shard thread. For a close request dbpg.submit blocks
-// /// until the response is written, so a deferred write never races the fd close.
-// fn submitJob(head: *const zix.Http1.ParsedHead, job: dbpg.Job) bool {
-//     return dbpg.submit(job, head.keep_alive);
-// }
-
-// --------------------------------------------------------- //
-
-pub fn RESPONSE(
-    req: *zix.Http1.Request,
-    _: *zix.Http1.Response,
-    _: *zix.Http1.Context
-) !void {
+pub fn RESPONSE(req: *zix.Http1.Request, _: *zix.Http1.Response, _: *zix.Http1.Context) !void {
     const head = req.head;
     const fd = req.fd;
 
