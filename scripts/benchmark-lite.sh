@@ -210,7 +210,7 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
 
     local need_pg=false
     if framework_subscribes_to async-db; then need_pg=true; fi
-    $need_pg && postgres_start
+    if $need_pg; then postgres_start; fi
 
     local profiles_to_run
     if [ -n "$PROFILE_FILTER" ]; then
@@ -232,7 +232,10 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
         done
     done
 
-    $need_pg && postgres_stop
+    # `if` rather than `$need_pg && postgres_stop`: as the function's last
+    # statement, the &&-list would make run_framework return 1 for non-DB
+    # frameworks and kill the script under `set -e` after a successful run.
+    if $need_pg; then postgres_stop; fi
 }
 
 # ── Single (profile, conns) iteration ──────────────────────────────────────
