@@ -20,10 +20,6 @@ pub const Item = struct {
 pub const Dataset = struct {
     items: []Item,
     arena: std.heap.ArenaAllocator,
-
-    pub fn deinit(self: *Dataset) void {
-        self.arena.deinit();
-    }
 };
 
 pub fn load(gpa: std.mem.Allocator, path: []const u8) !Dataset {
