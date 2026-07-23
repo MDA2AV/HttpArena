@@ -1,16 +1,14 @@
-//! PostgreSQL for the DB endpoints (async-db, crud) over the driver-owned
-//! multiplexed transport (postgrez.Transport, .URING), sharded: the active
-//! shard count (scaled from the CPU budget at init) transport threads each
-//! own their slice of the pipelined connections, so reply decode, render,
-//! and the client write are not serialized on one thread. Jobs route to a
-//! shard by fd (per-fd order). Handlers build a Job and call submitJob,
-//! replies render and write from onReply on the shard thread.
+//! PostgreSQL for the DB endpoints (async-db, crud) over engine-worker
+//! lanes: each engine worker owns one pipelined connection
+//! (postgrez.dispatch.Line) pumped by its own ring (zix.Http1.uringWatchFd),
+//! so a reply decodes, renders, and writes on the core that owns the client
+//! socket. Handlers build a Job and call submitJob, replies come back
+//! through onLaneReply on the same worker.
 
 const std = @import("std");
 const zix = @import("zix");
 
 const crudcache = @import("crudcache.zig");
-const dbrd = @import("dbrd.zig");
 
 const postgrez = zix.Driver.postgrez;
 const frontend = postgrez.frontend;
@@ -22,37 +20,30 @@ const row = postgrez.row;
 pub const NAME_MAX = 96;
 pub const CATEGORY_MAX = 48;
 
-/// Widest result set: the crud list adds a count(*) OVER() column to the nine
-/// item columns, so ten columns bound the row decode scratch.
+/// Every query returns the nine item columns, 16 bounds the decode scratch.
 const MAX_COLUMNS = 16;
 
-/// Pipeline depth per connection, matches the driver transport default.
+/// Pipeline depth per connection (driver default).
 const WINDOW = postgrez.dispatch.DEFAULT_WINDOW;
 
 /// Bytes one rendered DB body may reach before renderDbRow sheds it. A crud
 /// list of 100 rows tops out near 21 KiB.
 const DB_BODY_MAX = 32 * 1024;
 
-/// Transport shard ceiling. Each shard runs its own thread and Transport,
-/// splitting the configured connections. The active count comes from
-/// shardCountFor at init.
-const MAX_SHARDS = 16; // 0:2 1:8 2:16
-
-/// In-flight ASYNC_DB scans one shard allows: shard connections times this.
-/// Caps how many concurrent price-range scans can over-feed the server.
-/// Swept on the isolate bench: 2 under-feeds (43.3K), 4 is the knee (47.1K),
-/// 8 thrashes (45.9K, p99 up). Keep 4 while the scan stays sequential.
-const SCAN_CAP_PER_CONN = 4;
+/// In-flight ASYNC_DB scans one lane allows: line count times this. Caps how
+/// many concurrent price-range scans can pile onto the server at once.
+/// Swept on the isolate bench: 8 reads better than 4 on both DB cells.
+const SCAN_CAP_PER_CONN = 8;
 
 // SQL: column order is fixed here, the renderers decode cells by position.
 const SQL_ASYNC_DB = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
-const SQL_CRUD_LIST = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count, count(*) OVER() AS total FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3";
+const SQL_CRUD_LIST = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3"; // total = returned page size per spec, no count(*) OVER()
 const SQL_CRUD_GET = "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE id = $1";
 const SQL_CRUD_UPSERT = "INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) VALUES ($1, $2, $3, $4, $5, true, '[]', 0, 0) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price, quantity = EXCLUDED.quantity";
 const SQL_CRUD_UPDATE = "UPDATE items SET name = $2, category = $3, price = $4, quantity = $5 WHERE id = $1";
 
-// Named prepared statements, one per SQL. Created on every connection at open
-// (Transport prepare warm-up), so per request only Bind plus Execute is sent.
+// Named prepared statements, one per SQL. Prepared on every connection at
+// open, so per request only Bind plus Execute is sent.
 const STMT_ASYNC_DB = "zix_async_db";
 const STMT_CRUD_LIST = "zix_crud_list";
 const STMT_CRUD_GET = "zix_crud_get";
@@ -123,8 +114,7 @@ fn jobFd(job: Job) std.posix.fd_t {
 }
 
 /// Close-marked requests must be answered before the handler returns (the
-/// engine closes the fd on return). The engine worker spins on done until
-/// the shard thread has written the response.
+/// engine closes the fd on return). submit pumps the lane until done is set.
 const Completion = struct {
     done: std.atomic.Value(bool) = .init(false),
 };
@@ -137,18 +127,10 @@ const QueuedJob = struct {
 
 // --------------------------------------------------------- //
 
-/// Jobs one shard queue holds (engine workers enqueue, the shard drains).
-/// Per shard: at the two-shard floor this matches the single 8192 queue the
-/// unsharded entry ran, more shards raise the fleet total.
-const QUEUE_CAP = 4096;
-
-/// In-flight Jobs one shard tracks, above its conns times WINDOW ceiling.
+/// In-flight Jobs one lane tracks, above its lines times WINDOW ceiling.
 const SLOT_CAP = 1024;
 
-/// Over-cap ASYNC_DB scans one shard can hold before shedding.
-const SCAN_HOLD_CAP = 2048;
-
-/// Client fds one shard can have parked mid-response at once.
+/// Client fds one worker can have parked mid-response at once.
 const PENDING_CAP = 64;
 
 const Slot = struct {
@@ -165,223 +147,51 @@ const PendingWrite = struct {
     buf: [HEAD_MAX + DB_BODY_MAX]u8 = undefined,
 };
 
-/// One transport shard. Everything except the queue is touched only by the
-/// shard's own thread, the queue spinlock serializes the engine workers.
-const Shard = struct {
-    transport: ?*postgrez.Transport = null,
-    conns: usize = 0,
-
-    q_buf: [QUEUE_CAP]QueuedJob = undefined,
-    q_head: usize = 0,
-    q_tail: usize = 0,
-    q_lock: std.atomic.Value(bool) = .init(false),
-
-    s_slots: [SLOT_CAP]Slot = undefined,
-    s_free: [SLOT_CAP]usize = undefined,
-    s_free_count: usize = 0,
-
-    scan_cap: usize = 0,
-    scan_inflight: usize = 0,
-    scan_buf: [SCAN_HOLD_CAP]QueuedJob = undefined,
-    scan_head: usize = 0,
-    scan_tail: usize = 0,
-
+/// Parked client writes for one worker: the unsent remainder of responses
+/// whose socket was full, flushed non-blocking on every lane turn.
+const WritePool = struct {
     pw_slots: [PENDING_CAP]PendingWrite = @splat(.{}),
     pw_active: usize = 0,
-
-    fn lock(self: *Shard) void {
-        while (self.q_lock.swap(true, .acquire)) std.atomic.spinLoopHint();
-    }
-
-    fn unlock(self: *Shard) void {
-        self.q_lock.store(false, .release);
-    }
-
-    fn enqueue(self: *Shard, item: QueuedJob) bool {
-        self.lock();
-        defer self.unlock();
-
-        if (self.q_tail -% self.q_head >= QUEUE_CAP) return false;
-
-        self.q_buf[self.q_tail & (QUEUE_CAP - 1)] = item;
-        self.q_tail +%= 1;
-
-        return true;
-    }
-
-    fn dequeue(self: *Shard) ?QueuedJob {
-        self.lock();
-        defer self.unlock();
-
-        if (self.q_head == self.q_tail) return null;
-
-        const item = self.q_buf[self.q_head & (QUEUE_CAP - 1)];
-        self.q_head +%= 1;
-
-        return item;
-    }
-
-    fn slotInit(self: *Shard) void {
-        for (0..SLOT_CAP) |index| self.s_free[index] = SLOT_CAP - 1 - index;
-
-        self.s_free_count = SLOT_CAP;
-    }
-
-    fn slotAlloc(self: *Shard, item: QueuedJob) ?u64 {
-        if (self.s_free_count == 0) return null;
-
-        self.s_free_count -= 1;
-        const index = self.s_free[self.s_free_count];
-        self.s_slots[index] = .{ .job = item.job, .completion = item.completion };
-
-        return index;
-    }
-
-    fn slotFree(self: *Shard, tag: u64) void {
-        self.s_free[self.s_free_count] = @intCast(tag);
-        self.s_free_count += 1;
-    }
-
-    /// Take a held scan once an in-flight scan slot is open.
-    fn scanTake(self: *Shard) ?QueuedJob {
-        if (self.scan_inflight >= self.scan_cap) return null;
-        if (self.scan_head == self.scan_tail) return null;
-
-        const item = self.scan_buf[self.scan_head & (SCAN_HOLD_CAP - 1)];
-        self.scan_head +%= 1;
-
-        return item;
-    }
-
-    /// Hold a scan that is over the in-flight cap, false when the ring is full.
-    fn scanHold(self: *Shard, item: QueuedJob) bool {
-        if (self.scan_tail -% self.scan_head >= SCAN_HOLD_CAP) return false;
-
-        self.scan_buf[self.scan_tail & (SCAN_HOLD_CAP - 1)] = item;
-        self.scan_tail +%= 1;
-
-        return true;
-    }
 };
-
-// --------------------------------------------------------- //
 
 // Set once in init before start, read-only afterwards.
 var g_io: std.Io = undefined;
 var g_config: postgrez.Config = undefined;
 var g_enabled: bool = false;
 var g_conns: usize = 8;
-var g_shard_count: usize = 2;
-
-var g_shards: [MAX_SHARDS]Shard = @splat(.{});
 var g_open: bool = false;
-var g_running: std.atomic.Value(bool) = .init(false);
 
-/// The shard owned by the current thread, set at transportLoop entry so the
-/// send helpers under onReply reach the pending pool without threading a
-/// parameter through every renderer.
-threadlocal var tl_shard: ?*Shard = null;
+// Prepared-statement bytes, encoded once in start(). Module scope because the
+// lane mode opens connections lazily per worker, long after start() returned.
+var g_prepare_buf: [4096]u8 = undefined;
+var g_prepares: [STATEMENTS.len][]const u8 = undefined;
+
+/// The pending-write pool owned by the current worker, set at lane creation
+/// so the send helpers reach it without threading a parameter through every
+/// renderer.
+threadlocal var tl_pool: ?*WritePool = null;
 
 /// Set around a close-marked reply: its delivery must block until fully
 /// written because the engine worker closes the fd the moment it returns.
 threadlocal var tl_write_blocking: bool = false;
 
-fn shardOf(fd: std.posix.fd_t) *Shard {
-    const key: usize = @intCast(fd);
+// Per-worker scratch. One reply is decoded at a time on a worker, so a
+// per-thread buffer set is safe.
+threadlocal var db_body_buf: [DB_BODY_MAX]u8 = undefined;
+threadlocal var request_buf: [8 * 1024]u8 = undefined;
+threadlocal var param_scratch: [8][24]u8 = undefined;
 
-    return &g_shards[key % g_shard_count];
-}
-
-/// Active transport shards for a CPU budget: one per four CPUs, floored at
-/// the sharded baseline of two, capped at MAX_SHARDS.
-fn shardCountFor(cpu: usize) usize {
-    return std.math.clamp(cpu / 4, 2, MAX_SHARDS); // 0:2 1:clamp(cpu / 4, 2, 8)
-}
+// --------------------------------------------------------- //
 
 /// Total DB connections for a CPU budget when DATABASE_MAX_CONN is absent.
 /// The arena postgres runs max_connections=256, 64 stays well inside it.
+/// Small CPU budgets (the api profiles) double up: one postgres backend per
+/// worker serializes the scans there, two keeps them parallel. Larger budgets
+/// stay at one per worker, where two contends (isolate-swept).
 fn connsFor(cpu: usize) usize {
-    return std.math.clamp(cpu, 4, 64); // 0:clamp(cpu, 4, 16) 1:clamp(cpu, 4, 64)
-}
+    if (cpu <= 4) return cpu * 2;
 
-/// One shard's slice of the conn budget: an even split, the first
-/// total mod count shards take the remainder, never below one.
-fn shardConns(total: usize, count: usize, index: usize) usize {
-    return @max(1, total / count + @intFromBool(index < total % count));
-}
-
-// --------------------------------------------------------- //
-
-// --------------------------------------------------------- //
-
-/// One shard's thread: drain queued Jobs into the transport, poll for
-/// replies, then flush parked client writes. A held-over Job retries before
-/// the next dequeue, a held scan re-enters first once a scan slot frees.
-fn transportLoop(shard: *Shard) void {
-    tl_shard = shard;
-
-    const transport = shard.transport.?;
-
-    var holdover: ?QueuedJob = null;
-
-    while (g_running.load(.acquire)) {
-        var progressed = false;
-
-        while (shard.s_free_count > 0) {
-            const item = holdover orelse shard.scanTake() orelse shard.dequeue() orelse break;
-            holdover = null;
-
-            if (item.job == .ASYNC_DB and shard.scan_inflight >= shard.scan_cap) {
-                if (!shard.scanHold(item)) shed(item);
-                progressed = true;
-                continue;
-            }
-
-            if (serveFromCache(item)) {
-                progressed = true;
-                continue;
-            }
-
-            const tag = shard.slotAlloc(item) orelse {
-                holdover = item;
-                break;
-            };
-
-            const request = buildRequest(item.job) catch {
-                shard.slotFree(tag);
-                shed(item);
-                progressed = true;
-                continue;
-            };
-
-            if (!transport.submit(request, tag)) {
-                shard.slotFree(tag);
-                holdover = item;
-                break;
-            }
-
-            if (item.job == .ASYNC_DB) shard.scan_inflight += 1;
-            progressed = true;
-        }
-
-        if (transport.pending() > 0) {
-            _ = transport.poll() catch {};
-            progressed = true;
-        }
-
-        if (shard.pw_active > 0 and flushPendingWrites(shard)) progressed = true;
-
-        if (!progressed) idle();
-    }
-}
-
-/// Brief park when nothing is queued and nothing is in flight, so the loop
-/// does not busy-spin at idle. Under load the poll above always has work, so
-/// this never runs.
-fn idle() void {
-    const req = std.os.linux.timespec{ .sec = 0, .nsec = 200 * std.time.ns_per_us };
-
-    _ = std.os.linux.nanosleep(&req, null);
+    return std.math.clamp(cpu, 4, 64);
 }
 
 /// A crud read may have been filled between the engine-worker miss and this
@@ -403,23 +213,13 @@ fn serveFromCache(item: QueuedJob) bool {
                 return true;
             }
         },
-        .CRUD_LIST => |request| {
-            const category = request.category_buf[0..request.category_len];
-            const key = crudcache.listKey(category, request.page, request.limit);
-            if (crudcache.listGetFresh(key, &db_body_buf)) |len| {
-                sendJson(request.fd, db_body_buf[0..len]);
-                signal(item);
-
-                return true;
-            }
-        },
         else => {},
     }
 
     return false;
 }
 
-/// Shed a Job the transport could not accept: 503 the fd and release any
+/// Shed a Job the lane could not accept: 503 the fd and release any
 /// close-request waiter.
 fn shed(item: QueuedJob) void {
     tl_write_blocking = item.completion != null;
@@ -434,14 +234,6 @@ fn signal(item: QueuedJob) void {
     if (item.completion) |completion| completion.done.store(true, .release);
 }
 
-// --------------------------------------------------------- //
-
-// Per shard-thread scratch. One reply is decoded at a time on each shard
-// thread, so a per-thread buffer set is safe.
-threadlocal var db_body_buf: [DB_BODY_MAX]u8 = undefined;
-threadlocal var request_buf: [8 * 1024]u8 = undefined;
-threadlocal var param_scratch: [8][24]u8 = undefined;
-
 /// Route one Job to its prepared statement name.
 fn stmtName(job: Job) []const u8 {
     return switch (job) {
@@ -455,7 +247,7 @@ fn stmtName(job: Job) []const u8 {
 
 /// Encode one Job as Bind plus Describe plus Execute plus Sync against its
 /// named prepared statement. Params bind as text, results come back binary.
-/// The returned slice lives in request_buf, consumed by transport.submit.
+/// The returned slice lives in request_buf, consumed by line.submit.
 ///
 /// Return:
 /// - []const u8 request bytes
@@ -520,37 +312,6 @@ fn intParam(index: usize, value: i64) []const u8 {
 
 // --------------------------------------------------------- //
 
-/// Reply sink, fired by the shard's transport once per completed request in
-/// submit order. Decodes the backend messages, renders the response, writes
-/// it to the fd, then releases the slot (and the scan slot for ASYNC_DB).
-fn onReply(context: ?*anyopaque, tag: u64, reply: []const u8) void {
-    const shard: *Shard = @ptrCast(@alignCast(context.?));
-
-    const slot = &shard.s_slots[@intCast(tag)];
-    const job = slot.job;
-    const completion = slot.completion;
-
-    tl_write_blocking = completion != null;
-    defer tl_write_blocking = false;
-
-    switch (job) {
-        .ASYNC_DB => |request| renderRows(reply, request.fd, .ASYNC_DB, .{}),
-        .CRUD_LIST => |request| renderRows(reply, request.fd, .CRUD_LIST, .{
-            .page = request.page,
-            .limit = request.limit,
-            .category = request.category_buf[0..request.category_len],
-        }),
-        .CRUD_GET => |request| renderRows(reply, request.fd, .CRUD_GET, .{ .id = request.id }),
-        .CRUD_CREATE => |request| finishWrite(reply, request.fd, request.id, .CREATE),
-        .CRUD_UPDATE => |request| finishWrite(reply, request.fd, request.id, .UPDATE),
-    }
-
-    if (completion) |signal_ptr| signal_ptr.done.store(true, .release);
-
-    if (job == .ASYNC_DB) shard.scan_inflight -= 1;
-    shard.slotFree(tag);
-}
-
 const RowShape = enum { ASYNC_DB, CRUD_LIST, CRUD_GET };
 
 const RenderMeta = struct {
@@ -574,7 +335,6 @@ fn renderRows(reply: []const u8, fd: std.posix.fd_t, shape: RowShape, meta: Rend
     var pos: usize = prefix.len;
 
     var rows: usize = 0;
-    var total: i64 = 0;
 
     var walk = MessageWalk{ .bytes = reply };
     while (walk.next() catch {
@@ -624,9 +384,6 @@ fn renderRows(reply: []const u8, fd: std.posix.fd_t, shape: RowShape, meta: Rend
                     send503(fd);
                     return;
                 };
-                if (shape == .CRUD_LIST and count > 9) {
-                    total = cellInt(columns[0..column_count], cells[0..count], 9) catch total;
-                }
                 rows += 1;
             },
             else => {},
@@ -641,7 +398,7 @@ fn renderRows(reply: []const u8, fd: std.posix.fd_t, shape: RowShape, meta: Rend
     pos = appendStr(&db_body_buf, pos, "],");
     if (shape == .CRUD_LIST) {
         pos = appendStr(&db_body_buf, pos, "\"total\":");
-        pos = appendI64(&db_body_buf, pos, total);
+        pos = appendInt(&db_body_buf, pos, rows);
         pos = appendStr(&db_body_buf, pos, ",\"page\":");
         pos = appendI64(&db_body_buf, pos, meta.page);
     } else {
@@ -650,11 +407,6 @@ fn renderRows(reply: []const u8, fd: std.posix.fd_t, shape: RowShape, meta: Rend
     }
     db_body_buf[pos] = '}';
     pos += 1;
-
-    if (shape == .CRUD_LIST) {
-        const key = crudcache.listKey(meta.category, meta.page, meta.limit);
-        crudcache.listPut(key, db_body_buf[0..pos]);
-    }
 
     sendJson(fd, db_body_buf[0..pos]);
 }
@@ -709,20 +461,16 @@ const MessageWalk = struct {
 
 // --------------------------------------------------------- //
 
-/// MISS response plus the two cache fills: the in-process slot and the
-/// write-behind Redis mirror.
+/// MISS response plus the in-process cache fill.
 fn finishCrudGet(id: i64, body: []const u8, fd: std.posix.fd_t) void {
     crudcache.put(id, body);
-    dbrd.mirrorSet(id, body);
 
     sendCrudBody(fd, body, "MISS");
 }
 
-/// Drop the cached crud body on every write: the in-process slot first (the
-/// read path), the Redis mirror write-behind.
+/// Drop the cached crud body on every write.
 fn invalidateCrud(id: i64) void {
     crudcache.remove(id);
-    dbrd.mirrorDel(id);
 }
 
 // --------------------------------------------------------- //
@@ -837,7 +585,7 @@ fn renderDbRow(out: []u8, begin: usize, columns: []const row.ColumnInfo, cells: 
 /// Content-Length, Date).
 const HEAD_MAX = 192;
 
-/// Status lines for the transport-side responses, byte-matching the engine.
+/// Status lines for the lane-side responses, byte-matching the engine.
 fn statusLine(status: u16) []const u8 {
     return switch (status) {
         200 => "HTTP/1.1 200 OK\r\n",
@@ -848,8 +596,8 @@ fn statusLine(status: u16) []const u8 {
     };
 }
 
-/// Build a response head byte-matching what the engine fd writers emit on a
-/// shard thread (Content-Type, Content-Length, Date).
+/// Build a response head byte-matching what the engine fd writers emit
+/// (Content-Type, Content-Length, Date).
 fn buildHead(buf: []u8, status: u16, content_type: []const u8, body_len: usize) []const u8 {
     var pos: usize = 0;
     pos = appendStr(buf, pos, statusLine(status));
@@ -910,21 +658,21 @@ fn formatHttpDate(secs: u64, buf: []u8) []u8 {
 }
 
 /// Write one response (head then body) without letting a stalled client
-/// block the shard thread: send non-blocking, park the remainder on a full
+/// block the worker: send non-blocking, park the remainder on a full
 /// socket buffer, keep per-fd order by appending behind a parked response.
 ///
 /// Note:
 /// - a close-marked reply (tl_write_blocking) writes blocking instead, the
 ///   engine worker closes the fd the moment it returns.
 fn deliver(fd: std.posix.fd_t, head: []const u8, body: []const u8) void {
-    const shard = tl_shard orelse {
+    const pool = tl_pool orelse {
         deliverBlocking(fd, head, body, 0);
         return;
     };
 
     if (tl_write_blocking) {
-        if (shard.pw_active > 0) {
-            if (findPending(shard, fd)) |slot| flushSlotBlocking(shard, slot);
+        if (pool.pw_active > 0) {
+            if (findPending(pool, fd)) |slot| flushSlotBlocking(pool, slot);
         }
 
         deliverBlocking(fd, head, body, 0);
@@ -932,8 +680,8 @@ fn deliver(fd: std.posix.fd_t, head: []const u8, body: []const u8) void {
         return;
     }
 
-    if (shard.pw_active > 0) {
-        if (findPending(shard, fd)) |slot| {
+    if (pool.pw_active > 0) {
+        if (findPending(pool, fd)) |slot| {
             if (slot.len + head.len + body.len <= slot.buf.len) {
                 @memcpy(slot.buf[slot.len..][0..head.len], head);
                 @memcpy(slot.buf[slot.len + head.len ..][0..body.len], body);
@@ -942,7 +690,7 @@ fn deliver(fd: std.posix.fd_t, head: []const u8, body: []const u8) void {
                 return;
             }
 
-            flushSlotBlocking(shard, slot);
+            flushSlotBlocking(pool, slot);
         }
     }
 
@@ -979,7 +727,7 @@ fn deliver(fd: std.posix.fd_t, head: []const u8, body: []const u8) void {
             },
             .INTR => continue,
             .AGAIN => {
-                park(shard, fd, head, body, sent);
+                park(pool, fd, head, body, sent);
                 return;
             },
             else => return,
@@ -999,10 +747,10 @@ fn deliverBlocking(fd: std.posix.fd_t, head: []const u8, body: []const u8, sent:
     zix.Http1.writeAllFD(fd, body[sent - head.len ..]) catch {};
 }
 
-/// Park the unsent remainder of a response in the shard's pending pool. A
+/// Park the unsent remainder of a response in the worker's pending pool. A
 /// full pool finishes blocking instead (the pre-parking behavior).
-fn park(shard: *Shard, fd: std.posix.fd_t, head: []const u8, body: []const u8, sent: usize) void {
-    const slot = allocPending(shard, fd) orelse {
+fn park(pool: *WritePool, fd: std.posix.fd_t, head: []const u8, body: []const u8, sent: usize) void {
+    const slot = allocPending(pool, fd) orelse {
         deliverBlocking(fd, head, body, sent);
         return;
     };
@@ -1022,19 +770,19 @@ fn park(shard: *Shard, fd: std.posix.fd_t, head: []const u8, body: []const u8, s
 
     slot.sent = 0;
     slot.len = len;
-    shard.pw_active += 1;
+    pool.pw_active += 1;
 }
 
-fn findPending(shard: *Shard, fd: std.posix.fd_t) ?*PendingWrite {
-    for (&shard.pw_slots) |*slot| {
+fn findPending(pool: *WritePool, fd: std.posix.fd_t) ?*PendingWrite {
+    for (&pool.pw_slots) |*slot| {
         if (slot.len > 0 and slot.fd == fd) return slot;
     }
 
     return null;
 }
 
-fn allocPending(shard: *Shard, fd: std.posix.fd_t) ?*PendingWrite {
-    for (&shard.pw_slots) |*slot| {
+fn allocPending(pool: *WritePool, fd: std.posix.fd_t) ?*PendingWrite {
+    for (&pool.pw_slots) |*slot| {
         if (slot.len == 0) {
             slot.fd = fd;
             return slot;
@@ -1045,23 +793,23 @@ fn allocPending(shard: *Shard, fd: std.posix.fd_t) ?*PendingWrite {
 }
 
 /// Drain one parked slot blocking (order guard before a same-fd write).
-fn flushSlotBlocking(shard: *Shard, slot: *PendingWrite) void {
+fn flushSlotBlocking(pool: *WritePool, slot: *PendingWrite) void {
     zix.Http1.writeAllFD(slot.fd, slot.buf[slot.sent..slot.len]) catch {};
 
     slot.len = 0;
     slot.sent = 0;
-    shard.pw_active -= 1;
+    pool.pw_active -= 1;
 }
 
-/// One non-blocking pass over the shard's parked responses.
+/// One non-blocking pass over the worker's parked responses.
 ///
 /// Return:
 /// - true when any parked bytes moved or a slot freed
-fn flushPendingWrites(shard: *Shard) bool {
+fn flushPendingWrites(pool: *WritePool) bool {
     var progressed = false;
 
-    var remaining = shard.pw_active;
-    for (&shard.pw_slots) |*slot| {
+    var remaining = pool.pw_active;
+    for (&pool.pw_slots) |*slot| {
         if (remaining == 0) break;
         if (slot.len == 0) continue;
 
@@ -1090,7 +838,7 @@ fn flushPendingWrites(shard: *Shard) bool {
         if (slot.sent >= slot.len) {
             slot.len = 0;
             slot.sent = 0;
-            shard.pw_active -= 1;
+            pool.pw_active -= 1;
         }
     }
 
@@ -1145,7 +893,6 @@ pub fn init(process: std.process.Init) void {
     g_enabled = true;
 
     const cpu = std.Thread.getCpuCount() catch 8;
-    g_shard_count = shardCountFor(cpu);
 
     if (process.environ_map.get("DATABASE_MAX_CONN")) |max_text| {
         if (std.fmt.parseInt(usize, max_text, 10)) |parsed| {
@@ -1156,23 +903,17 @@ pub fn init(process: std.process.Init) void {
     }
 }
 
-pub fn enabled() bool {
-    return g_enabled;
-}
-
-/// Open one multiplexed transport per shard and spawn its poll-loop thread,
-/// splitting the configured connections. Does nothing when DATABASE_URL was
-/// absent, so non-DB profiles spawn no extra threads.
+/// Encode the prepared-statement bytes and mark the lanes ready to open.
+/// Does nothing when DATABASE_URL was absent, so non-DB profiles touch
+/// nothing.
 pub fn start() void {
     if (!g_enabled) return;
 
-    // Pre-encode one Parse plus Sync per named statement, handed to open so the
-    // transport parses each on every connection before the pipelined loop runs.
-    var prepare_buf: [4096]u8 = undefined;
-    var fixed = std.heap.FixedBufferAllocator.init(&prepare_buf);
+    // Pre-encode one Parse plus Sync per named statement, handed to Line.open
+    // so every connection prepares them before the pipelined loop runs.
+    var fixed = std.heap.FixedBufferAllocator.init(&g_prepare_buf);
     const allocator = fixed.allocator();
 
-    var prepares: [STATEMENTS.len][]const u8 = undefined;
     inline for (STATEMENTS, 0..) |spec, index| {
         var out: std.ArrayList(u8) = .empty;
         frontend.parse(allocator, &out, spec.name, spec.sql, &.{}) catch {
@@ -1184,67 +925,287 @@ pub fn start() void {
             return;
         };
 
-        prepares[index] = out.items;
-    }
-
-    g_running.store(true, .release);
-
-    var opened: usize = 0;
-    for (g_shards[0..g_shard_count], 0..) |*shard, index| {
-        shard.conns = shardConns(g_conns, g_shard_count, index);
-        shard.scan_cap = shard.conns * SCAN_CAP_PER_CONN;
-        shard.slotInit();
-
-        shard.transport = postgrez.Transport.open(std.heap.smp_allocator, g_io, g_config, .{
-            .model = .URING,
-            .conns = shard.conns,
-            .window = WINDOW,
-            .context = shard,
-            .on_reply = onReply,
-            .prepare = &prepares,
-        }) catch break;
-
-        const thread = std.Thread.spawn(.{}, transportLoop, .{shard}) catch break;
-        thread.detach();
-
-        opened += 1;
-    }
-
-    if (opened < g_shard_count) {
-        g_enabled = false;
-        g_running.store(false, .release);
-
-        return;
+        g_prepares[index] = out.items;
     }
 
     g_open = true;
 }
 
-/// Queue a Job on its fd's shard thread.
-///
-/// Note:
-/// - keep_alive false marks a close request: this blocks until the shard
-///   thread writes the response (the engine closes the fd on return).
-///
-/// Return:
-/// - true when the response is owned by the shard thread (or already written)
-/// - false when the transport is down or the queue is full (shed 503)
-pub fn submit(job: Job, keep_alive: bool) bool {
-    if (!g_open) return false;
+// Engine-worker lanes: one Lane per worker, single-threaded (every field is
+// touched only by the owning worker). The embedded pool supplies the
+// pending-write slots the shared send helpers park into through tl_pool.
+const LANE_LINES_MAX = 4;
 
-    const shard = shardOf(jobFd(job));
-    if (keep_alive) return shard.enqueue(.{ .job = job });
+const Lane = struct {
+    pool: WritePool = .{},
+    lines: [LANE_LINES_MAX]*postgrez.dispatch.Line = undefined,
+    line_count: usize = 0,
+    slots: [SLOT_CAP]Slot = undefined,
+    slot_line: [SLOT_CAP]u8 = undefined,
+    slot_live: [SLOT_CAP]bool = @splat(false),
+    free: [SLOT_CAP]usize = undefined,
+    free_count: usize = 0,
+    queue: [SLOT_CAP]QueuedJob = undefined,
+    q_head: usize = 0,
+    q_tail: usize = 0,
+    scan_inflight: usize = 0,
+    scan_cap: usize = 0,
+};
+
+threadlocal var tl_lane: ?*Lane = null;
+
+/// This worker's lane, opened lazily on its first DB request (blocking
+/// connect + prepare warm-up, once per worker).
+fn laneGet() ?*Lane {
+    if (tl_lane) |lane| return lane;
+    if (!g_open) return null;
+
+    const lane = std.heap.smp_allocator.create(Lane) catch return null;
+    lane.* = .{};
+
+    const cpu = std.Thread.getCpuCount() catch 8;
+    const want = std.math.clamp(g_conns / cpu, 1, LANE_LINES_MAX);
+
+    var opened: usize = 0;
+    while (opened < want) : (opened += 1) {
+        lane.lines[opened] = postgrez.dispatch.Line.open(std.heap.smp_allocator, g_io, g_config, .{
+            .conns = 1,
+            .window = WINDOW,
+            .context = lane,
+            .on_reply = onLaneReply,
+            .prepare = &g_prepares,
+        }) catch break;
+    }
+
+    if (opened == 0) {
+        std.heap.smp_allocator.destroy(lane);
+
+        return null;
+    }
+
+    lane.line_count = opened;
+    lane.scan_cap = opened * SCAN_CAP_PER_CONN;
+    for (0..SLOT_CAP) |index| lane.free[index] = SLOT_CAP - 1 - index;
+    lane.free_count = SLOT_CAP;
+
+    tl_lane = lane;
+    tl_pool = &lane.pool;
+
+    zix.Http1.setExternalHandler(onLaneReadable);
+    var armed = false;
+    for (lane.lines[0..opened]) |line| {
+        if (zix.Http1.uringWatchFd(line.fd())) armed = true;
+    }
+
+    if (!armed) {
+        for (lane.lines[0..opened]) |line| line.deinit();
+        std.heap.smp_allocator.destroy(lane);
+        tl_lane = null;
+        tl_pool = null;
+
+        return null;
+    }
+
+    return lane;
+}
+
+fn laneQueueFull(lane: *const Lane) bool {
+    return lane.q_tail -% lane.q_head >= SLOT_CAP;
+}
+
+fn lanePush(lane: *Lane, item: QueuedJob) void {
+    lane.queue[lane.q_tail & (SLOT_CAP - 1)] = item;
+    lane.q_tail +%= 1;
+}
+
+/// The least loaded line takes the next request.
+fn laneLineFor(lane: *const Lane) usize {
+    var best: usize = 0;
+    for (lane.lines[1..lane.line_count], 1..) |line, index| {
+        if (line.pending() < lane.lines[best].pending()) best = index;
+    }
+
+    return best;
+}
+
+/// Read replies from every line that owes some. A dead connection sheds
+/// everything it owes and leaves the rotation.
+fn lanePump(lane: *Lane) void {
+    var index: usize = 0;
+    while (index < lane.line_count) {
+        const line = lane.lines[index];
+
+        if (line.pending() > 0) {
+            _ = line.pump() catch {
+                laneDropLine(lane, index);
+                continue;
+            };
+        }
+
+        index += 1;
+    }
+}
+
+/// Shed every request a dead connection owes (503) and drop it from the
+/// rotation, so a lost backend degrades to shedding instead of hangs.
+fn laneDropLine(lane: *Lane, index: usize) void {
+    const line = lane.lines[index];
+
+    for (0..SLOT_CAP) |slot_index| {
+        if (!lane.slot_live[slot_index] or lane.slot_line[slot_index] != index) continue;
+
+        const slot = lane.slots[slot_index];
+        if (slot.job == .ASYNC_DB) lane.scan_inflight -= 1;
+        shed(.{ .job = slot.job, .completion = slot.completion });
+        lane.slot_live[slot_index] = false;
+        lane.free[lane.free_count] = slot_index;
+        lane.free_count += 1;
+    }
+
+    const last = lane.line_count - 1;
+    lane.lines[index] = lane.lines[last];
+    for (0..SLOT_CAP) |slot_index| {
+        if (lane.slot_live[slot_index] and lane.slot_line[slot_index] == last) {
+            lane.slot_line[slot_index] = @intCast(index);
+        }
+    }
+
+    lane.line_count -= 1;
+    line.deinit();
+}
+
+/// Drain queued jobs into the lines until a window fills, then flush any
+/// parked client writes. Runs on the owning engine worker only.
+fn laneDrain(lane: *Lane) void {
+    while (lane.line_count > 0 and lane.q_head != lane.q_tail) {
+        const item = lane.queue[lane.q_head & (SLOT_CAP - 1)];
+
+        if (item.job == .ASYNC_DB and lane.scan_inflight >= lane.scan_cap) break;
+        if (lane.free_count == 0) break;
+
+        if (serveFromCache(item)) {
+            lane.q_head +%= 1;
+            continue;
+        }
+
+        lane.free_count -= 1;
+        const tag = lane.free[lane.free_count];
+        lane.slots[tag] = .{ .job = item.job, .completion = item.completion };
+
+        const request = buildRequest(item.job) catch {
+            lane.free_count += 1;
+            lane.q_head +%= 1;
+            shed(item);
+
+            continue;
+        };
+
+        const line_index = laneLineFor(lane);
+        if (!lane.lines[line_index].submit(request, tag)) {
+            lane.free_count += 1;
+
+            break;
+        }
+
+        lane.slot_line[tag] = @intCast(line_index);
+        lane.slot_live[tag] = true;
+        if (item.job == .ASYNC_DB) lane.scan_inflight += 1;
+        lane.q_head +%= 1;
+    }
+
+    for (lane.lines[0..lane.line_count]) |line| line.flush();
+
+    if (lane.pool.pw_active > 0) _ = flushPendingWrites(&lane.pool);
+}
+
+/// Reply sink for the lane: render and send, then release the slot.
+fn onLaneReply(context: ?*anyopaque, tag: u64, reply: []const u8) void {
+    const lane: *Lane = @ptrCast(@alignCast(context.?));
+
+    const slot = &lane.slots[@intCast(tag)];
+    const job = slot.job;
+    const completion = slot.completion;
+
+    tl_write_blocking = completion != null;
+    defer tl_write_blocking = false;
+
+    switch (job) {
+        .ASYNC_DB => |request| renderRows(reply, request.fd, .ASYNC_DB, .{}),
+        .CRUD_LIST => |request| renderRows(reply, request.fd, .CRUD_LIST, .{
+            .page = request.page,
+            .limit = request.limit,
+            .category = request.category_buf[0..request.category_len],
+        }),
+        .CRUD_GET => |request| renderRows(reply, request.fd, .CRUD_GET, .{ .id = request.id }),
+        .CRUD_CREATE => |request| finishWrite(reply, request.fd, request.id, .CREATE),
+        .CRUD_UPDATE => |request| finishWrite(reply, request.fd, request.id, .UPDATE),
+    }
+
+    if (completion) |signal_ptr| signal_ptr.done.store(true, .release);
+
+    if (job == .ASYNC_DB) lane.scan_inflight -= 1;
+    lane.slot_live[@intCast(tag)] = false;
+    lane.free[lane.free_count] = @intCast(tag);
+    lane.free_count += 1;
+}
+
+/// Ring readable callback for a lane fd: pump and refill. The watch is
+/// multishot, the engine keeps it armed.
+fn onLaneReadable(fd: std.posix.fd_t) void {
+    _ = fd;
+
+    const lane = tl_lane orelse return;
+
+    lanePump(lane);
+    laneDrain(lane);
+}
+
+/// Lane-mode submit. For a close request the same thread owns the pump, so
+/// waiting means pumping.
+fn laneSubmit(job: Job, keep_alive: bool) bool {
+    const lane = laneGet() orelse return false;
+    if (lane.line_count == 0) return false;
+
+    lanePump(lane);
+
+    if (keep_alive) {
+        if (laneQueueFull(lane)) return false;
+
+        lanePush(lane, .{ .job = job });
+        laneDrain(lane);
+
+        return true;
+    }
 
     var completion: Completion = .{};
-    if (!shard.enqueue(.{ .job = job, .completion = &completion })) return false;
+    if (laneQueueFull(lane)) return false;
 
-    while (!completion.done.load(.acquire)) std.atomic.spinLoopHint();
+    lanePush(lane, .{ .job = job, .completion = &completion });
+    laneDrain(lane);
+    while (!completion.done.load(.acquire)) {
+        lanePump(lane);
+        laneDrain(lane);
+    }
 
     return true;
 }
 
-/// Queue a Job on its fd's shard thread. For a close request dbpg.submit blocks
-/// until the response is written, so a deferred write never races the fd close.
+/// Queue a Job on this worker's lane.
+///
+/// Note:
+/// - keep_alive false marks a close request: the call pumps the lane until
+///   the response is written (the engine closes the fd on return).
+///
+/// Return:
+/// - true when the response is written or owned by the lane
+/// - false when the lane is down or full (caller sheds 503)
+pub fn submit(job: Job, keep_alive: bool) bool {
+    return laneSubmit(job, keep_alive);
+}
+
+/// Queue a Job on this worker's lane. For a close request submit blocks
+/// until the response is written, so a deferred write never races the fd
+/// close.
 pub fn submitJob(head: *const zix.Http1.ParsedHead, job: Job) bool {
     return submit(job, head.keep_alive);
 }
