@@ -1,6 +1,6 @@
 //! /crud/items : GET lists (paged, category filter) or reads one id, POST
-//! creates, PUT updates. A cache hit (crudcache.zig) answers on the engine
-//! worker, otherwise queues a Job on the fd's postgrez shard thread
+//! creates, PUT updates. A single-item cache hit (crudcache.zig) answers
+//! right away, everything else queues a Job on the worker's postgres lane
 //! (dbpg.zig).
 
 const std = @import("std");
@@ -42,14 +42,6 @@ fn crudList(head: *const zix.Http1.ParsedHead, fd: std.posix.fd_t) void {
     if (limit < 1) limit = CRUD_LIST_LIMIT_DEFAULT;
     if (limit > CRUD_LIST_LIMIT_MAX) limit = CRUD_LIST_LIMIT_MAX;
     if (category.len > dbpg.CATEGORY_MAX) return response.badRequest(fd);
-
-    // list-page cache first: a hit answers on the engine worker
-    const list_key = crudcache.listKey(category, page, limit);
-    if (crudcache.listGet(list_key, &tl_db_body_buf)) |len| {
-        zix.Http1.sendJsonFD(fd, 200, tl_db_body_buf[0..len]) catch {};
-
-        return;
-    }
 
     var job: dbpg.Job = .{ .CRUD_LIST = .{
         .fd = fd,
@@ -124,14 +116,9 @@ fn crudUpdate(head: *const zix.Http1.ParsedHead, id: i64, body: []const u8, fd: 
     if (!dbpg.submitJob(head, job)) response.serviceUnavailable(fd);
 }
 
-
 // --------------------------------------------------------- //
 
-pub fn RESPONSE(
-    req: *zix.Http1.Request,
-    _: *zix.Http1.Response,
-    _: *zix.Http1.Context
-) !void {
+pub fn RESPONSE(req: *zix.Http1.Request, _: *zix.Http1.Response, _: *zix.Http1.Context) !void {
     const head = req.head;
     const body = try req.body();
     const fd = req.fd;
