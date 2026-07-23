@@ -3,9 +3,9 @@
 //! zix.Http1 (.URING), Router-only: every request goes through the engine's
 //! parser and the comptime Router, one handler module per route
 //! (src/handlers/). TLS rides tls_port (dual listener, one worker fleet).
-//! async-db and crud run over the driver-owned multiplexed transport
-//! (dbpg.zig, sharded), crud reads also check the in-process cache
-//! (crudcache.zig) mirrored to Redis (dbrd.zig).
+//! async-db and crud run over engine-worker lanes (dbpg.zig): each worker
+//! owns a pipelined postgres connection on its own ring. crud reads also
+//! check the in-process cache (crudcache.zig).
 
 const std = @import("std");
 const zix = @import("zix");
@@ -18,9 +18,7 @@ const json = @import("handlers/json.zig");
 const asyncdb = @import("handlers/asyncdb.zig");
 const crud = @import("handlers/crud.zig");
 
-const cache = @import("shared/cache.zig");
 const dbpg = @import("shared/dbpg.zig");
-const dbrd = @import("shared/dbrd.zig");
 
 // --------------------------------------------------------- //
 
@@ -43,12 +41,9 @@ pub fn main(process: std.process.Init) !void {
 
     try json.init(json_alloc.allocator());
 
-    // DB endpoints: each driver's transport threads spawn only when its URL
-    // is present (non-DB profiles run zero extra threads, DB routes answer
-    // 503). Redis starts first, the postgrez shard threads mirror to it.
+    // DB endpoints: lanes open lazily per engine worker once DATABASE_URL is
+    // present (non-DB profiles open nothing, DB routes answer 503).
     dbpg.init(process);
-    dbrd.init(process);
-    dbrd.start();
     dbpg.start();
 
     var tls = zix.Tls.Context.init(tls_alloc.allocator(), process.io, .{
@@ -79,18 +74,13 @@ pub fn main(process: std.process.Init) !void {
         //
         .compress = true,
         //
-        .response_cache = true,
-        .cache_max_entries = 1 * 1024 / 2,
-        .cache_max_value_bytes = 32 * 1024,
-        .cache_ttl_ms = cache.TTL_MS,
-        //
         .kernel_backlog = 16 * 1024,
         .max_recv_buf = 8 * 1024,
         //
         .uring_send_buf_size = 16 * 1024,
-        .uring_idle_pool_floor = 16, // 0:256 1:16
+        .uring_idle_pool_floor = 16,
         .uring_idle_pool_ceiling = 1 * 1024,
-        .process_queue_len = park_len, // 0:8192 1:16384 / workers, floor 512
+        .process_queue_len = park_len,
     });
     defer server.deinit();
 
