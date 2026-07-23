@@ -1,7 +1,7 @@
-//! GET /static/{file} : serve from /data/static. Negotiates .br then .gz
-//! when accepted, else identity. One header send coalesced with a zero-copy
-//! sendfile body. Resolved names cache in a lock-free wyhash index over an
-//! append-only entry table (process-lifetime fds, pre-rendered headers).
+//! GET /static/{file} : serve from /data/static. Picks .br then .gz when the
+//! client accepts them, else the plain file. One header send coalesced with
+//! a zero-copy sendfile body. Resolved names are cached: open fd, size, and
+//! a pre-built header per name.
 
 const std = @import("std");
 const zix = @import("zix");
@@ -17,12 +17,9 @@ pub const PATH = "/static";
 pub const STATIC_NAME_MAX: usize = 96;
 /// 20 fixtures times their (.br, .gz, identity) candidates plus headroom.
 pub const STATIC_CACHE_MAX: usize = 128;
-/// Open-addressed name index over g_static_entries: wyhash of the name to
-/// (entry index + 1), 0 = empty. Twice the entry capacity, so a probe always
-/// reaches an empty slot and a lookup is a couple of compares instead of a
-/// linear scan of every cached name per request. Entries are never removed,
-/// inserts publish a slot last (release) so lock-free readers always see the
-/// entry bytes behind a visible slot.
+/// Name index over g_static_entries: name hash to (entry index + 1), 0 =
+/// empty. Twice the entry capacity so a probe always ends at its entry or an
+/// empty slot. Entries are never removed.
 const STATIC_INDEX_SLOTS: usize = STATIC_CACHE_MAX * 2;
 
 var g_static_index: [STATIC_INDEX_SLOTS]u16 = @splat(0);
@@ -77,13 +74,12 @@ fn openStatic(name: []const u8) ?std.posix.fd_t {
     var path_buf: [512]u8 = undefined;
     const file_path =
         std.fmt.bufPrint(&path_buf, "{s}{s}", .{ g_static_base, name }) catch
-        return null;
+            return null;
     if (file_path.len >= path_buf.len) return null;
 
     path_buf[file_path.len] = 0;
 
-    return std.posix.openatZ(std.posix.AT.FDCWD, @ptrCast(&path_buf),
-        .{ .ACCMODE = .RDONLY }, 0) catch null;
+    return std.posix.openatZ(std.posix.AT.FDCWD, @ptrCast(&path_buf), .{ .ACCMODE = .RDONLY }, 0) catch null;
 }
 
 fn buildVariant(name: []const u8) ?StaticVariant {
@@ -100,12 +96,7 @@ fn buildVariant(name: []const u8) ?StaticVariant {
     const size: u64 = stx.size;
     const meta = staticMeta(name);
 
-    var v: StaticVariant = .{
-        .fd = file_fd,
-        .size = size,
-        .hdr_len = 0,
-        .hdr_buf = undefined
-    };
+    var v: StaticVariant = .{ .fd = file_fd, .size = size, .hdr_len = 0, .hdr_buf = undefined };
     const hdr = (if (meta.content_encoding.len > 0)
         std.fmt.bufPrint(&v.hdr_buf, "HTTP/1.1 200 OK\r\nContent-Type: {s}\r\nContent-Length: {d}\r\nContent-Encoding: {s}\r\n\r\n", .{ meta.content_type, size, meta.content_encoding })
     else
@@ -156,7 +147,6 @@ fn waitWritable(fd: std.posix.fd_t) error{BrokenPipe}!void {
     _ = std.posix.poll(&pfd, -1) catch return error.BrokenPipe;
 }
 
-
 fn sendMoreFD(fd: std.posix.fd_t, data: []const u8) error{BrokenPipe}!void {
     const linux = std.os.linux;
 
@@ -206,16 +196,10 @@ pub fn resolveStatic(name: []const u8) ?*const StaticEntry {
 
 pub fn staticMeta(name: []const u8) StaticMeta {
     if (std.mem.endsWith(u8, name, ".br")) {
-        return .{
-            .content_type = contentType(name[0 .. name.len - ".br".len]),
-            .content_encoding = "br"
-        };
+        return .{ .content_type = contentType(name[0 .. name.len - ".br".len]), .content_encoding = "br" };
     }
     if (std.mem.endsWith(u8, name, ".gz")) {
-        return .{
-            .content_type = contentType(name[0 .. name.len - ".gz".len]),
-            .content_encoding = "gzip"
-        };
+        return .{ .content_type = contentType(name[0 .. name.len - ".gz".len]), .content_encoding = "gzip" };
     }
 
     return .{ .content_type = contentType(name), .content_encoding = "" };
