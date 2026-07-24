@@ -615,13 +615,29 @@ def _meta_desc(html):
 
 
 def _sidebar(tree, curid):
+    """Collapsed nav, expanded along the path to the current page.
+
+    Rendering the whole tree flat put all 126 pages on every doc page — a wall
+    of links with its own scrollbar, where the board shows a collapsible
+    accordion. <details> gives the same behaviour with no JavaScript, and stays
+    usable if a crawler or a reader-mode ignores it.
+    """
+    def on_path(u):
+        # the current page, or one of its ancestors
+        return u == curid or (u != "" and curid.startswith(u + "/"))
+
     def walk(nodes):
         out = []
         for n in nodes:
-            cls = ' class="cur"' if n["u"] == curid else ""
-            kids = walk(n["c"]) if n.get("c") else ""
-            out.append('<li><a href="%s"%s>%s</a>%s</li>'
-                       % (_doc_url(n["u"]), cls, _html.escape(n["t"]), kids))
+            u, title = n["u"], _html.escape(n["t"])
+            cls = ' class="cur"' if u == curid else ""
+            link = '<a href="%s"%s>%s</a>' % (_doc_url(u), cls, title)
+            kids = n.get("c") or []
+            if kids:
+                out.append('<li><details%s><summary>%s</summary>%s</details></li>'
+                           % (" open" if on_path(u) else "", link, walk(kids)))
+            else:
+                out.append("<li>%s</li>" % link)
         return "<ul>" + "".join(out) + "</ul>"
     root_cls = ' class="cur"' if curid == "" else ""
     return ('<a class="ds-home" href="/">← Leaderboard</a>'
@@ -706,6 +722,11 @@ a{color:inherit;text-decoration:none}
 .docs-sidebar a{display:block;padding:.28rem .4rem;border-radius:6px;color:var(--text-2)}
 .docs-sidebar a:hover{background:var(--panel-2);color:var(--text)}
 .docs-sidebar a.cur{background:var(--accent-weak);color:var(--accent);font-weight:650}
+.docs-sidebar details>summary{list-style:none;display:flex;align-items:center;gap:.2rem;cursor:pointer}
+.docs-sidebar details>summary::-webkit-details-marker{display:none}
+.docs-sidebar details>summary::before{content:"▸";flex:none;width:.8rem;font-size:.6rem;color:var(--muted);transition:transform .18s ease}
+.docs-sidebar details[open]>summary::before{transform:rotate(90deg)}
+.docs-sidebar details>summary>a{flex:1;min-width:0}
 .doc-main{flex:1;min-width:0;max-width:820px}
 .doc-title{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin:.1rem 0 1.2rem;color:var(--text)}
 .doc-body{font-size:.92rem;line-height:1.7;color:var(--text-2)}
