@@ -293,7 +293,7 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
     _ws_only=true
     for _t in $TESTS; do
         case "$_t" in
-            echo-ws|echo-ws-pipeline) ;;
+            echo-ws|echo-ws-pipeline|echo-ws-limited) ;;
             *) _ws_only=false; break ;;
         esac
     done
@@ -1331,7 +1331,7 @@ fi
 
 # ───── WebSocket Echo (ws://localhost/ws) ─────
 
-if has_test "echo-ws"; then
+if has_test "echo-ws" || has_test "echo-ws-pipeline" || has_test "echo-ws-limited"; then
     WS_DOCS="$DOCS_BASE/ws/echo/validation"
     echo "[test] echo-ws endpoint"
     WS_OUTPUT=$(python3 "$SCRIPT_DIR/validate-ws.py" localhost "$PORT" /ws 2>&1) || true

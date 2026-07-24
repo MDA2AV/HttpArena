@@ -168,7 +168,8 @@ for t in baseline pipelined limited-conn json json-comp json-tls upload \
          api-4 api-16 static async-db \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
-         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls echo-ws; do
+         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls \
+         echo-ws echo-ws-pipeline echo-ws-limited; do
     if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
 done
 $_has_isolated_test && framework_build

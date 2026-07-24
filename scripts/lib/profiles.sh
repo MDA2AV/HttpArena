@@ -38,6 +38,7 @@ declare -A PROFILES=(
     [production-stack]="1|0|0-31,64-95|256,1024|production-stack"
     [echo-ws]="1|0|0-31,64-95|512,4096,16384|ws-echo"
     [echo-ws-pipeline]="16|0|0-31,64-95|512,4096,16384|ws-echo"
+    [echo-ws-limited]="1|10|0-31,64-95|512,4096|ws-echo"
 )
 
 PROFILE_ORDER=(
@@ -53,7 +54,7 @@ PROFILE_ORDER=(
     production-stack
     unary-grpc unary-grpc-tls
     stream-grpc stream-grpc-tls
-    echo-ws echo-ws-pipeline
+    echo-ws echo-ws-pipeline echo-ws-limited
 )
 
 # ── Parsing + validation ────────────────────────────────────────────────────

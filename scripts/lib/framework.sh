@@ -166,7 +166,7 @@ framework_wait_ready() {
         IFS=',' read -ra _ws_tests_arr <<< "$FRAMEWORK_TESTS"
         for _t in "${_ws_tests_arr[@]}"; do
             case "$_t" in
-                echo-ws|echo-ws-pipeline) ;;
+                echo-ws|echo-ws-pipeline|echo-ws-limited) ;;
                 *) _all_ws=false; break ;;
             esac
         done

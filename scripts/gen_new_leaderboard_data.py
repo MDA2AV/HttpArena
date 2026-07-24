@@ -79,6 +79,7 @@ CATALOG = [
     ("WebSocket", [
         ("echo-ws",          "Echo",           "WebSocket echo throughput.",         [512,4096,16384],[512,4096,16384],True,True),
         ("echo-ws-pipeline", "Echo Pipelined", "Batched WebSocket echo.",            [512,4096,16384],[512,4096,16384],True,True),
+        ("echo-ws-limited",  "Echo Short-lived","WebSocket echo, 10 messages per connection.", [512,4096],[512,4096],True,True),
     ]),
 ]
 
@@ -118,6 +119,7 @@ PROFILE_DOC = {
     "production-stack": "test-profiles/gateway/production-stack/implementation",
     "echo-ws":          "test-profiles/ws/echo/implementation",
     "echo-ws-pipeline": "test-profiles/ws/echo-pipeline/implementation",
+    "echo-ws-limited":  "test-profiles/ws/echo-limited/implementation",
 }
 
 
