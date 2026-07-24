@@ -22,6 +22,12 @@ This produces a 0–100 value where the top framework scores 100.
 
 **Exception: JSON Compressed.** The `json-comp` profile applies a compression-ratio gain before normalization so frameworks that ship smaller response bodies are rewarded directly. Instead of averaging raw rps, `avgRps` is first scaled by `(minBpr / myBpr)²` where `myBpr = avgBw / avgRps` and `minBpr` is the smallest bytes-per-response across the field. Doubling the response size quarters the score. See the [JSON Compressed implementation](/docs/test-profiles/h1/isolated/json-compressed/implementation/#scoring) for the full formula and rationale.
 
+**Normalized against the whole field, not the current view.** The 100-point reference for each profile is the best result in the full field, regardless of what the leaderboard is currently filtering to. Filtering by language, hiding tuned entries or searching for a name changes which rows are *displayed*; it does not change any score. Without this, filtering to a single language re-based every profile on the best entry of that language — and because each profile's leader moved by a different factor, the summed ranking could reorder, showing one framework above another only while the filter was applied.
+
+Framework types remain separate: engine entries are scored on their own subset of profiles, so an engine result never sets the reference for a framework entry.
+
+The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself — for example, ranking the Ruby entries against each other rather than against the field.
+
 ### Step 3: Sum across scored profiles
 
 The final composite score is the **sum** of per-profile scores across all **scored** profiles:

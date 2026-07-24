@@ -497,7 +497,7 @@
   function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws'}[p.category]||'h1'; }
   var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Workload','Database','Multi-endpoint']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
   var expanded=new Set(['composite']);
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', useMem:false, scope:'h1', showTuned:true };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', useMem:false, scope:'h1', showTuned:true, rescale:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -957,12 +957,19 @@
       var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles'}[state.scope];
       var sName={h1:'HTTP/1.1',h2:'HTTP/2',h3:'HTTP/3',gw:'Gateway',grpc:'gRPC',ws:'WebSocket'}[state.scope];
       cat.textContent='Composite ranking'; title.textContent=sName;
-      blurb.innerHTML='Normalized score summed across '+sLabel+' (each profile worth 100 to its leader), per framework type. Higher is better. <a href="#doc=scoring/composite-score">How it works →</a>';
+      blurb.innerHTML='Normalized score summed across '+sLabel+' (each profile worth 100 to its leader'
+        +(state.rescale?' among the frameworks shown':' in the full field, so filtering does not change the numbers')
+        +'), per framework type. Higher is better. <a href="#doc=scoring/composite-score">How it works →</a>';
       ctl.innerHTML='';
       var t=document.createElement('div'); t.className='toggle'+(state.useMem?' on':'');
       t.innerHTML='<span class="sw"><i></i></span> Memory efficiency';
       t.onclick=function(){ state.useMem=!state.useMem; t.classList.toggle('on', state.useMem); render(); };
       ctl.appendChild(t);
+      var rs=document.createElement('div'); rs.className='toggle'+(state.rescale?' on':'');
+      rs.innerHTML='<span class="sw"><i></i></span> Rescale to selection';
+      rs.setAttribute('data-tip','Off: each profile is worth 100 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
+      rs.onclick=function(){ state.rescale=!state.rescale; rs.classList.toggle('on', state.rescale); render(); };
+      ctl.appendChild(rs);
     } else {
       var p=PROF[state.profile];
       cat.textContent=p.category; title.textContent=p.label;
@@ -1059,9 +1066,27 @@
     if(!AGG) AGG=aggregate();
     var A=AGG, useMem=state.useMem;
     var pids=[]; D.profiles.forEach(function(p){ if(p.scored!==false && (state.scope==='all'||familyOf(p)===state.scope)) pids.push(p.id); });
-    function excl(fw){ if(state.types.indexOf(typeOf(fw))<0) return true; if(!state.showTuned && modeOf(fw)==='tuned') return true; if(!matchQ(fw)) return true; return false; }
+    // Two different questions, previously answered by one predicate:
+    //
+    //   outOfLeague — is this entry ranked somewhere else entirely? Types are
+    //                 separate leagues: engine entries are scored on their own
+    //                 subset of profiles, so a framework's 100 should never be
+    //                 set by an engine's result.
+    //   hidden      — is it merely filtered out of view right now? The search
+    //                 box and the tuned toggle are display filters.
+    //
+    // Normalizing over `hidden` entries too is what keeps a score stable: with
+    // it, filtering to one language re-based every profile on the best entry of
+    // that language, and because each profile moved by a different factor the
+    // summed ranking could reorder (#702 — Rage above Roda overall, below it
+    // once filtered to Ruby). The `rescale` toggle restores that behaviour for
+    // when comparing a subset against itself is the point.
+    function outOfLeague(fw){ return state.types.indexOf(typeOf(fw))<0; }
+    function hidden(fw){ if(!state.showTuned && modeOf(fw)==='tuned') return true; return !matchQ(fw); }
+    function excl(fw){ return outOfLeague(fw) || hidden(fw); }
+    var exclFromScale = state.rescale ? excl : outOfLeague;
     var minBpr=null;
-    if(pids.indexOf('json-comp')>=0 && A.avg['json-comp']){ var mv=Infinity; Object.keys(A.avg['json-comp']).forEach(function(fw){ if(excl(fw))return; var rps=A.avg['json-comp'][fw]||0,b=A.bw['json-comp'][fw]||0; if(rps>0&&b>0){var bpr=b/rps; if(bpr<mv)mv=bpr;} }); if(mv<Infinity)minBpr=mv; }
+    if(pids.indexOf('json-comp')>=0 && A.avg['json-comp']){ var mv=Infinity; Object.keys(A.avg['json-comp']).forEach(function(fw){ if(exclFromScale(fw))return; var rps=A.avg['json-comp'][fw]||0,b=A.bw['json-comp'][fw]||0; if(rps>0&&b>0){var bpr=b/rps; if(bpr<mv)mv=bpr;} }); if(mv<Infinity)minBpr=mv; }
     function eff(pid,fw){
       var rps=(A.avg[pid]&&A.avg[pid][fw])||0; if(rps<=0) return 0;
       if((pid==='api-4'||pid==='api-16')&&A.tpl[pid]&&A.tpl[pid][fw]){ var t=A.tpl[pid][fw]; return t.baseline*MIXW.baseline+t.json*MIXW.json+t.upload*MIXW.upload+t.static*MIXW.static+t.async_db*MIXW.async_db; }
@@ -1069,7 +1094,7 @@
       return rps;
     }
     var maxR={},maxME={};
-    pids.forEach(function(pid){ maxR[pid]=0; maxME[pid]=0; Object.keys(A.avg[pid]||{}).forEach(function(fw){ if(excl(fw))return; var e=eff(pid,fw); if(e>maxR[pid])maxR[pid]=e; var rps=A.avg[pid][fw]||0,m=A.mem[pid][fw]||0; if(m>0&&rps>0){var me=Math.sqrt(rps)/m; if(me>maxME[pid])maxME[pid]=me;} }); });
+    pids.forEach(function(pid){ maxR[pid]=0; maxME[pid]=0; Object.keys(A.avg[pid]||{}).forEach(function(fw){ if(exclFromScale(fw))return; var e=eff(pid,fw); if(e>maxR[pid])maxR[pid]=e; var rps=A.avg[pid][fw]||0,m=A.mem[pid][fw]||0; if(m>0&&rps>0){var me=Math.sqrt(rps)/m; if(me>maxME[pid])maxME[pid]=me;} }); });
     var fwset={}; pids.forEach(function(pid){ Object.keys(A.avg[pid]||{}).forEach(function(fw){fwset[fw]=1;}); });
     var rows=[];
     Object.keys(fwset).forEach(function(fw){
@@ -1126,7 +1151,7 @@
     }
     var p=[];
     if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); }
+    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); }
     var defSort = state.view==='profile' ? (state.sortKey==='rps'&&state.sortDir===-1) : (state.sortKey==='score'&&state.sortDir===-1);
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
@@ -1154,6 +1179,7 @@
       state.view='composite';
       state.scope=(p.scope && SCOPES.some(function(s){return s.k===p.scope;}))?p.scope:'h1';
       state.useMem = p.mem==='1';
+      state.rescale = p.rescale==='1';
       state.sortKey='score'; state.sortDir=-1;
       expanded.add('composite');
     }
