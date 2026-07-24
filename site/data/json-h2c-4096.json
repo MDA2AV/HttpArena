@@ -57,25 +57,6 @@
     "status_5xx": 0
   },
   {
-    "framework": "h2o",
-    "language": "C",
-    "rps": 153659,
-    "avg_latency": "756.37ms",
-    "p99_latency": "756.37ms",
-    "cpu": "6499.5%",
-    "memory": "1.9GiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "529.18MB/s",
-    "reconnects": 0,
-    "status_2xx": 788274,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
     "framework": "ktor",
     "language": "Kotlin",
     "rps": 282755,

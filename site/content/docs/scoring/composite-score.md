@@ -30,7 +30,7 @@ The final composite score is the **sum** of per-profile scores across all **scor
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 26 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,600, rising to ~3,900 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine and infrastructure entries are scored on smaller subsets and have correspondingly lower ceilings.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 26 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,600, rising to ~3,900 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
@@ -154,10 +154,9 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Infrastructure** (nginx, h2o, and similar proxies/servers) are scored only on Baseline, Pipelined, Short-lived, and Static - the profiles that don't require executing application logic. Other profiles (JSON, async-db, etc.) may be displayed as reference data but do not count toward the infrastructure composite.
 - **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
 
-The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Infrastructure and Engine are each exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
+The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Engine is exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
 
 ## Why this approach
 
