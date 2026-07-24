@@ -1,6 +1,6 @@
 ARG LUTE_VERSION=1.0.1-nightly.20260421
 
-FROM buildpack-deps:curl AS bin
+FROM buildpack-deps:bookworm-curl AS bin
 
 RUN apt-get update && apt-get install -y --no-install-recommends unzip \
     && rm -rf /var/lib/apt/lists/*
@@ -13,7 +13,7 @@ RUN ARCH=$(echo "${TARGETARCH:-amd64}" | sed -e 's/arm64/aarch64/' -e 's/amd64/x
     && unzip lute.zip \
     && chmod +x lute
 
-FROM debian:stable-slim
+FROM debian:trixie-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates libssl3 \

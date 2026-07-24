@@ -123,6 +123,52 @@ has_test() {
     [[ " $TESTS " == *" $1 "* ]]
 }
 
+# A benchmark has to be reproducible, so every base image must name a version
+# (#471). Floating tags - latest, stable, nightly, or no tag at all - mean two
+# runs months apart measure different software and the numbers can't be
+# compared. major.minor is enough; a Debian/Ubuntu codename counts as one.
+FROM_FILE="$ROOT_DIR/frameworks/$FRAMEWORK/Dockerfile"
+if [ -f "$FROM_FILE" ]; then
+    UNPINNED=$(python3 - "$FROM_FILE" <<'PYEOF'
+import re, sys
+
+FLOATING = {"latest", "stable", "nightly", "edge", "main", "master",
+            "current", "devel", "testing", "rolling", "unstable"}
+# distro codenames are a release, i.e. a major version
+CODENAMES = {"bookworm", "trixie", "bullseye", "buster", "sid",
+             "jammy", "noble", "focal", "bionic", "plucky", "oracular"}
+
+stages, bad = set(), []
+for n, line in enumerate(open(sys.argv[1], encoding="utf-8", errors="replace"), 1):
+    m = re.match(r"\s*FROM\s+(\S+)(?:\s+AS\s+(\S+))?", line, re.I)
+    if not m:
+        continue
+    img, alias = m.group(1), m.group(2)
+    if alias:
+        stages.add(alias.lower())
+    if img.lower() in stages or img.startswith("$") or img.lower() == "scratch":
+        continue          # earlier build stage, build arg, or scratch
+    if "@sha256:" in img:
+        continue          # digest pin is the strongest form
+    name, _, tag = img.partition(":")
+    if not tag:
+        bad.append((n, img, "no tag (same as :latest)"))
+    elif tag.lower() in FLOATING or tag.lower().split("-")[0] in FLOATING:
+        bad.append((n, img, f"floating tag ':{tag}'"))
+    elif not any(c.isdigit() for c in tag) and not any(c in CODENAMES for c in tag.lower().split("-")):
+        bad.append((n, img, f"no version in ':{tag}'"))
+for n, img, why in bad:
+    print(f"line {n}: {img} - {why}")
+PYEOF
+)
+    if [ -n "$UNPINNED" ]; then
+        echo "FAIL: Dockerfile base images must name a version (see #471)"
+        printf '%s\n' "$UNPINNED" | sed 's/^/       /'
+        echo "       use e.g. node:22, python:3.13-slim, debian:trixie-slim, or an @sha256 digest"
+        exit 1
+    fi
+fi
+
 # Build — skip standalone build if framework only subscribes to compose profiles
 # (gateway-64, gateway-h3, production-stack) and has no isolated tests.
 GATEWAY_ONLY=true

@@ -1,4 +1,4 @@
-FROM trueasync/php-true-async:latest-frankenphp
+FROM trueasync/php-true-async:0.8.4-php8.6-frankenphp
 
 WORKDIR /app
 

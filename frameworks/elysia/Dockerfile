@@ -1,5 +1,5 @@
 # https://elysiajs.com/patterns/deploy.html#deploy-to-production
-FROM oven/bun AS build
+FROM oven/bun:1.3 AS build
 
 WORKDIR /app
 
@@ -20,7 +20,8 @@ RUN bun build \
 	--outfile server \
 	server.ts
 
-FROM gcr.io/distroless/base
+# distroless publishes no version tags, so pin the digest
+FROM gcr.io/distroless/base-debian12@sha256:62730825d3cf03571e0a1b8f014748de94d0404500f063593b614c23da38841d
 
 WORKDIR /app
 

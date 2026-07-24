@@ -1,4 +1,4 @@
-FROM debian:stable-slim AS build
+FROM debian:trixie-slim AS build
 
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends \
@@ -71,7 +71,7 @@ COPY . .
 # module is a stub and mbedtls isn't linked).
 RUN v -prod -d vanilla_tls . -o server
 
-FROM debian:stable-slim
+FROM debian:trixie-slim
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends libpq5 liburing2 && \
     rm -rf /var/lib/apt/lists/*

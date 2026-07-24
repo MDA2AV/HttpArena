@@ -1,4 +1,4 @@
-FROM debian:stable-slim AS build
+FROM debian:trixie-slim AS build
 
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends \
@@ -31,7 +31,7 @@ WORKDIR /app
 COPY . .
 RUN v -prod -gc none . -o server
 
-FROM debian:stable-slim
+FROM debian:trixie-slim
 # The binary links liburing.so.2 (the io_uring backend is compiled in on
 # Linux even though this entry selects epoll at runtime).
 RUN apt-get -qq update && \
