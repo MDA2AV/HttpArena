@@ -1,5 +1,7 @@
 ---
 title: Fortunes (Templates)
+seo_title: "Fortunes Template Rendering Benchmark"
+description: "Database-backed HTML rendering end to end: a Postgres read, runtime row injection, sorting and escape-aware template output."
 ---
 
 Database-backed HTML rendering benchmark - measures template-engine throughput end-to-end: Postgres read, runtime row injection, sort, escape-aware HTML rendering. Reference-only profile (not part of the composite score).

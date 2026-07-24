@@ -2,6 +2,8 @@
 
 Notable changes to test profiles, scoring, and validation.
 
+> **This file covers changes through 2026-04-16.** Later work is not recorded here — notably the five-value framework `type` vocabulary (`flagship` / `emerging` / `engine` / `infrastructure` / `experimental`) and the retirement of the Hugo site. For current specifications, read `site/content/docs/` (profiles, scoring, implementation rules) and `scripts/lib/profiles.sh` (the profile table the runner actually reads).
+
 ## 2026-04-16
 
 ### CRUD — realistic REST API benchmark (H/1.1 Isolated)

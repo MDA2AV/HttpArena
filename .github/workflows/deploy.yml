@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'scripts/gen_leaderboard_data.py'
       - 'results/**'
 
 permissions:
@@ -22,36 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: '0.157.0'
-          extended: true
+      - name: Generate leaderboard data
+        run: python3 scripts/gen_leaderboard_data.py
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Generate new-leaderboard data
-        run: python3 scripts/gen_new_leaderboard_data.py
-
-      - name: Build Hugo site (archived under /old/)
-        working-directory: site
-        run: |
-          hugo mod tidy
-          hugo --minify --baseURL "https://www.http-arena.com/old/" --destination old_build
-
-      - name: Assemble — new board at root, Hugo site under /old/
+      - name: Assemble site — standalone leaderboard at root
         working-directory: site
         run: |
           rm -rf public && mkdir public
-          mv old_build public/old
-          cp public/old/new-leaderboard/index.html public/index.html
-          cp public/old/new-leaderboard/data.js public/data.js
-          cp public/old/new-leaderboard/docs.js public/docs.js
-          for f in openapi.json openapi-gateway.json; do [ -f "public/old/$f" ] && cp "public/old/$f" "public/$f"; done   # OpenAPI specs linked from the docs, served at root
-          cp root/404.html public/404.html   # path-preserving redirects: old links -> /old/
+          cp leaderboard/index.html public/index.html
+          cp leaderboard/data.js public/data.js
+          cp leaderboard/search.js public/search.js                                  # plain-text Knowledge Base index for the board's page search
+          cp -r static/logs public/logs                                             # run logs, served at /logs/
+          for f in openapi.json openapi-gateway.json; do [ -f "static/$f" ] && cp "static/$f" "public/$f"; done   # OpenAPI specs linked from the docs
+          cp -r root/. public/                                                       # 404.html, robots.txt, favicon.ico/.svg, and the /leaderboard/ -> / redirect
+          cp -r generated/docs public/docs                                          # pre-rendered Knowledge Base pages (real /docs/<id>/ URLs) + docs.css
+          cp generated/sitemap.xml public/sitemap.xml                               # root + every /docs/<id>/ (generated, replaces the old static one)
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

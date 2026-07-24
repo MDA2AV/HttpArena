@@ -1,5 +1,7 @@
 ---
 title: HTTP/2
+seo_title: "HTTP/2 Load Generation"
+description: "How HttpArena generates multiplexed HTTP/2 load for the TLS and cleartext (h2c) profiles."
 ---
 
 {{< cards >}}

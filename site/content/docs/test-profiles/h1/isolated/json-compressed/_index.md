@@ -1,5 +1,7 @@
 ---
 title: JSON Compressed
+seo_title: "Compressed JSON Benchmark (gzip and Brotli)"
+description: "The JSON workload under content negotiation: the client advertises gzip and Brotli, and scoring accounts for the response size achieved."
 ---
 
 Same workload as [JSON Processing](../json-processing/), but with HTTP content negotiation: the client advertises `Accept-Encoding: gzip, br` and the server must return a compressed response. Measures serialization plus compression throughput.

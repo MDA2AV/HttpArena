@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "JSON over TLS Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the JSON over TLS benchmark before a framework's results are accepted."
 ---
 
 The validation script (`scripts/validate.sh`) runs these checks for the `json-tls` test profile. All must pass for a framework to be considered valid for this benchmark.

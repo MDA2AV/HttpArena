@@ -1,17 +1,38 @@
 #!/usr/bin/env bash
 # Compare benchmark results for a framework against published data on main.
-# Usage: ./scripts/compare.sh <framework> [profile]
+#
+# Usage: ./scripts/compare.sh <framework> [profile] [--compare <framework>]
+#
+# By default the baseline is the same framework's own published results, which
+# answers "did my change help?". --compare swaps in another framework's
+# published results instead, which answers "how does this tuned build stack up
+# against the entry it derives from?" — e.g.
+#
+#     ./scripts/compare.sh genhttp-11 --compare genhttp
+#
 # Output: Markdown table with deltas (suitable for PR comments)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 
-FRAMEWORK="${1:-}"
-PROFILE_FILTER="${2:-}"
+FRAMEWORK=""
+PROFILE_FILTER=""
+COMPARE_FRAMEWORK=""
+POSITIONAL=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --compare)   COMPARE_FRAMEWORK="${2:-}"; shift ;;
+        --compare=*) COMPARE_FRAMEWORK="${1#*=}" ;;
+        *)           POSITIONAL+=("$1") ;;
+    esac
+    shift
+done
+FRAMEWORK="${POSITIONAL[0]:-}"
+PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 if [ -z "$FRAMEWORK" ]; then
-    echo "Usage: $0 <framework> [profile]" >&2
+    echo "Usage: $0 <framework> [profile] [--compare <framework>]" >&2
     exit 1
 fi
 
@@ -23,19 +44,39 @@ if [ -f "$META_FILE" ]; then
     [ -n "$dn" ] && DISPLAY_NAME="$dn"
 fi
 
+# The baseline is looked up in site/data by display_name, so resolve the
+# comparison framework's the same way. A directory that doesn't exist is a
+# typo worth reporting rather than silently comparing against nothing.
+COMPARE_DISPLAY=""
+if [ -n "$COMPARE_FRAMEWORK" ]; then
+    COMPARE_META="$ROOT_DIR/frameworks/$COMPARE_FRAMEWORK/meta.json"
+    if [ ! -f "$COMPARE_META" ]; then
+        echo "No such framework to compare against: \`$COMPARE_FRAMEWORK\` (frameworks/$COMPARE_FRAMEWORK/meta.json not found)"
+        exit 0
+    fi
+    COMPARE_DISPLAY=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('display_name',sys.argv[2]))" "$COMPARE_META" "$COMPARE_FRAMEWORK" 2>/dev/null)
+    [ -n "$COMPARE_DISPLAY" ] || COMPARE_DISPLAY="$COMPARE_FRAMEWORK"
+fi
+
 # Find new results (just benchmarked)
 RESULTS_DIR="$ROOT_DIR/results"
 SITE_DATA="$ROOT_DIR/site/data"
 
 # Collect all profiles with results for this framework
 python3 -c "
-import json, os, sys, glob
+import json, os, re, sys, glob
 
 framework = sys.argv[1]
 display_name = sys.argv[2]
 results_dir = sys.argv[3]
 site_data = sys.argv[4]
 profile_filter = sys.argv[5] if len(sys.argv) > 5 else ''
+compare_display = sys.argv[6] if len(sys.argv) > 6 else ''
+
+# Baseline: this framework's own published results by default, another
+# framework's when --compare was given.
+baseline_name = compare_display or display_name
+cross = bool(compare_display)
 
 # Find new results
 new_results = {}
@@ -65,21 +106,24 @@ if not new_results:
     print(f'No results found for \`{framework}\`')
     sys.exit(0)
 
-# Find old results from site/data (published on main)
+# Find old results from site/data (published on main). Results are one file
+# per framework keyed by <profile>-<conns> (#751), so this is a single read.
+def _slug(name):
+    return (re.sub(r'[^A-Za-z0-9._-]+', '-', name).strip('-') or 'unnamed').lower()
+
 old_results = {}
-for key, new_data in new_results.items():
-    profile, conns = key.split('/')
-    site_file = f'{site_data}/{profile}-{conns}.json'
-    if os.path.exists(site_file):
-        try:
-            with open(site_file) as f:
-                entries = json.load(f)
-            for entry in entries:
-                if entry.get('framework') == display_name:
-                    old_results[key] = entry
-                    break
-        except:
-            pass
+baseline_file = f'{site_data}/results/{_slug(baseline_name)}.json'
+if os.path.exists(baseline_file):
+    try:
+        with open(baseline_file) as f:
+            published = (json.load(f).get('results') or {})
+        for key in new_results:
+            profile, conns = key.split('/')
+            entry = published.get(f'{profile}-{conns}')
+            if entry:
+                old_results[key] = entry
+    except:
+        pass
 
 # Format helpers
 def fmt_num(n):
@@ -98,7 +142,7 @@ def fmt_rps(n):
 
 def delta_pct(new_val, old_val):
     if old_val is None or old_val == 0 or new_val is None:
-        return 'NEW'
+        return 'n/a' if cross else 'NEW'
     pct = ((new_val - old_val) / old_val) * 100
     if abs(pct) < 0.1:
         return '~0%'
@@ -151,6 +195,14 @@ for key in sorted(new_results.keys()):
 # Output markdown
 has_comparison = bool(old_results)
 
+if cross:
+    if has_comparison:
+        print(f'Deltas are against **{baseline_name}** published on \`main\`, not against '
+              f'\`{display_name}\`\'s own results.')
+    else:
+        print(f'**{baseline_name}** has no published results for these profiles - nothing to compare against.')
+    print()
+
 for profile, conns_list in profiles.items():
     print(f'### {profile}')
     print()
@@ -189,4 +241,4 @@ for profile, conns_list in profiles.items():
         print(row)
 
     print()
-" "$FRAMEWORK" "$DISPLAY_NAME" "$RESULTS_DIR" "$SITE_DATA" "$PROFILE_FILTER"
+" "$FRAMEWORK" "$DISPLAY_NAME" "$RESULTS_DIR" "$SITE_DATA" "$PROFILE_FILTER" "$COMPARE_DISPLAY"

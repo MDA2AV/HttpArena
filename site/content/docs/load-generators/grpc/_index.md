@@ -1,5 +1,7 @@
 ---
 title: gRPC
+seo_title: "gRPC Load Generation"
+description: "How HttpArena generates gRPC load for the unary and server-streaming profiles, and which tool drives each."
 ---
 
 {{< cards >}}

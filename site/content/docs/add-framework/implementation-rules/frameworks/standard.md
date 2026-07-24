@@ -1,5 +1,7 @@
 ---
 title: Standard
+seo_title: "Standard Mode Rules"
+description: "Standard mode measures a framework in its default configuration — no experimental flags — reflecting what developers get out of the box."
 weight: 1
 ---
 

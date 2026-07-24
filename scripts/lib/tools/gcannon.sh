@@ -10,7 +10,8 @@
 # Emits one token per line — caller captures with `mapfile -t gc_args`.
 #
 # req_per_conn is only honored for endpoints that don't hardcode their own -r.
-# Today that's the empty (baseline/limited-conn) and api-4/api-16 cases.
+# Today that's the empty (baseline/limited-conn), api-4/api-16 and ws-echo
+# (echo-ws-limited) cases.
 gcannon_build_args() {
     local endpoint="$1" conns="$2" pipeline="$3" duration="$4" req_per_conn="${5:-0}"
     local -a args
@@ -65,6 +66,11 @@ gcannon_build_args() {
         ws-echo)
             args=("http://localhost:$PORT/ws" --ws
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
+            # echo-ws-limited passes req_per_conn: gcannon's quota check sits
+            # above its ws/http branch, so -r caps frames per connection and
+            # retires the socket once drained. Each replacement connection
+            # redoes the HTTP/1.1 upgrade, which is what that profile measures.
+            [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
         crud)
             # CRUD mix: 75% single-item read + 15% update + 5% list + 5% create.

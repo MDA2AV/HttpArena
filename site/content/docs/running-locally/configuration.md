@@ -1,5 +1,7 @@
 ---
 title: Configuration
+seo_title: "Benchmark Configuration Reference"
+description: "Every environment variable the benchmark driver accepts, plus the anatomy of a profile definition in profiles.sh."
 weight: 5
 ---
 

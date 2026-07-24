@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Executors/Executors.csproj" Id="d4a9c91f-e8c0-4db2-9bf5-6fda8b2d5a4f" />
+  <Project Path="Server/Server.csproj" />
+</Solution>

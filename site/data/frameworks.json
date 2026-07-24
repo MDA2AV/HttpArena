@@ -33,13 +33,6 @@
     "engine": "netty",
     "mode": "standard"
   },
-  "apache": {
-    "dir": "apache",
-    "description": "Apache HTTPD 2.4 with event MPM and mod_lua for the dynamic /baseline11 handler. Native file serving for /static/.",
-    "repo": "https://github.com/apache/httpd",
-    "type": "infrastructure",
-    "engine": "apache"
-  },
   "araara-standard": {
     "dir": "araara-standard",
     "description": "araara - an OCaml 5 web stack built on HCS, using HCS server defaults where possible for the HttpArena harness. Eio, radix-trie routing, Phoenix-style plugs, Postgres via repodb, gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
@@ -169,13 +162,6 @@
     "engine": "bun",
     "mode": "tuned"
   },
-  "caddy": {
-    "dir": "caddy",
-    "description": "Caddy with a custom Go handler module for /baseline11, compiled via xcaddy. Native file_server for /static.",
-    "repo": "https://github.com/caddyserver/caddy",
-    "type": "infrastructure",
-    "engine": "caddy"
-  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
@@ -221,13 +207,6 @@
     "type": "flagship",
     "engine": "jsc",
     "mode": "standard"
-  },
-  "envoy": {
-    "dir": "envoy",
-    "description": "Envoy proxy with an inline Lua HTTP filter for /baseline11 and direct_response routes for /static files.",
-    "repo": "https://github.com/envoyproxy/envoy",
-    "type": "infrastructure",
-    "engine": "envoy"
   },
   "fastapi": {
     "dir": "fastapi",
@@ -361,22 +340,6 @@
     "type": "emerging",
     "engine": "grpc-go",
     "mode": "tuned"
-  },
-  "h2o": {
-    "dir": "h2o",
-    "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
-    "repo": "https://github.com/h2o/h2o",
-    "type": "infrastructure",
-    "engine": "h2o",
-    "variants": [
-      {
-        "dir": "h2o-h2c",
-        "description": "libh2o evloop with a dedicated h2c-only listener on port 8082. The accept callback calls h2o_http2_accept directly instead of h2o_accept, so the connection must begin with the HTTP/2 client preface \u2014 plain HTTP/1.1 clients are dropped at protocol negotiation. Handlers for /baseline2 (query sum) and /json/{count} (serialized via cJSON).",
-        "repo": "https://github.com/h2o/h2o",
-        "type": "infrastructure",
-        "engine": "h2o"
-      }
-    ]
   },
   "h2o-mruby": {
     "dir": "h2o-mruby",
@@ -547,13 +510,6 @@
       }
     ]
   },
-  "nginx": {
-    "dir": "nginx",
-    "description": "Nginx with a custom C handler module, compiled with -O3 -march=native.",
-    "repo": "https://github.com/nginx/nginx",
-    "type": "infrastructure",
-    "engine": "nginx"
-  },
   "ngx-php": {
     "dir": "ngx-php",
     "description": "Embedded PHP scripting language module for nginx.",
@@ -592,13 +548,6 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "picoev"
-  },
-  "pingora": {
-    "dir": "pingora",
-    "description": "Pingora, Cloudflare's Rust HTTP framework, used as a standalone server with custom handlers for /baseline11 and preloaded /static files.",
-    "repo": "https://github.com/cloudflare/pingora",
-    "type": "infrastructure",
-    "engine": "pingora"
   },
   "pyronova": {
     "dir": "pyronova",
@@ -887,13 +836,6 @@
     "type": "emerging",
     "engine": "tonic",
     "mode": "tuned"
-  },
-  "traefik": {
-    "dir": "traefik",
-    "description": "Traefik with a Yaegi-interpreted local plugin handling /baseline11 computation and /static file serving. Plugin code is interpreted, so throughput is modest by design.",
-    "repo": "https://github.com/traefik/traefik",
-    "type": "infrastructure",
-    "engine": "traefik"
   },
   "trillium-tuned": {
     "dir": "trillium-tuned",

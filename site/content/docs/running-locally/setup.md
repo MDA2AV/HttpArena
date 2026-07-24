@@ -1,5 +1,7 @@
 ---
 title: Setup
+seo_title: "Setup"
+description: "Clone HttpArena and install the native load generators, or take the Docker-only path if you would rather not build them."
 weight: 2
 ---
 

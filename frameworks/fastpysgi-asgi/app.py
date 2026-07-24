@@ -293,6 +293,7 @@ async def app(scope, receive, send):
 # -----------------------------------------------------------------------
 
 if __name__ == "__main__":
+    import uvloop
     import fastpysgi
 
     certfile = os.environ.get("TLS_CERT", "/certs/server.crt")
@@ -305,5 +306,7 @@ if __name__ == "__main__":
     fastpysgi.server.read_buffer_size = 256*1024
     fastpysgi.server.max_content_length = 31_000_000
     fastpysgi.server.backlog = 16*1024
-    fastpysgi.server.loop_timeout = 1
+    fastpysgi.server.loop_factory = uvloop.new_event_loop
+    fastpysgi.server.loop_timeout = 300
+    fastpysgi.server.loop_call_soon = 0
     fastpysgi.run(app, workers = WRK_COUNT, loglevel = 0)

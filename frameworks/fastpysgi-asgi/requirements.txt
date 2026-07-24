@@ -1,4 +1,5 @@
-#fastpysgi==0.6  # v0.6 is bugged
-git+https://github.com/remittor/fastpysgi.git@21095fe037fabb0d324814ccacfff3f4b164128d#egg=fastpysgi
+#fastpysgi==0.7
+git+https://github.com/remittor/fastpysgi.git@439dbfb6e034812422d7000983552aa560f794b5#egg=fastpysgi
+uvloop==0.22.1
 orjson==3.11.8
 asyncpg==0.31.0

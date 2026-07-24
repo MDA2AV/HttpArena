@@ -36,15 +36,16 @@ SimpleWServer CreateServer(int port, SslContext? sslContext = null)
 {
     var server = new SimpleWServer(IPAddress.Any, port)
         .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
+        .UseEngine(o => {
+            if (sslContext is not null)
+            {
+                o.SslContext = sslContext;
+            }            
+            o.AcceptPerCore = true;
+        })
         .Configure(o => {
             o.MaxRequestBodySize = 25 * 1024 * 1024;
-            o.AcceptPerCore = true;
         });
-
-    if (sslContext is not null)
-    {
-        server.UseHttps(sslContext);
-    }
 
     ConfigureRoutes(server);
     return server;

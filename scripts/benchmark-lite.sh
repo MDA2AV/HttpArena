@@ -254,6 +254,7 @@ run_one() {
     framework_start "$endpoint" "$PROF_CPU"
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
         framework_stop
         return 1
     fi
