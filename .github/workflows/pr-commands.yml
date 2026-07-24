@@ -75,6 +75,16 @@ jobs:
           fi
 
           FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
+
+          # These values come from a PR comment, which anyone can write, and are
+          # interpolated into later steps. Restrict them to the characters a
+          # framework directory or profile name can actually contain, so a
+          # crafted comment cannot smuggle shell syntax through
+          # (e.g. `--compare a";touch${IFS}/tmp/x;#`). Anything else becomes empty.
+          safe() { printf '%s' "$1" | grep -oP '^[A-Za-z0-9._-]{1,64}$' || true; }
+          FRAMEWORK=$(safe "$FRAMEWORK")
+          EXPLICIT_TEST=$(safe "$EXPLICIT_TEST")
+          COMPARE_FW=$(safe "$COMPARE_FW")
           echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
           echo "profile=$EXPLICIT_TEST" >> "$GITHUB_OUTPUT"
           echo "save=$SAVE_FLAG" >> "$GITHUB_OUTPUT"
@@ -119,15 +129,22 @@ jobs:
 
       - name: Run benchmark
         if: steps.parse.outputs.framework != ''
-        run: |
-          gh workflow run benchmark-pr.yml \
-            -f pr=${{ steps.parse.outputs.pr }} \
-            -f framework=${{ steps.parse.outputs.framework }} \
-            -f profile="${{ steps.parse.outputs.profile }}" \
-            -f save="${{ steps.parse.outputs.save }}" \
-            -f compare="${{ steps.parse.outputs.compare }}"
+        # Values reach the shell as environment variables rather than being
+        # pasted into the script text, so nothing in them can be parsed as code.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.parse.outputs.pr }}
+          FRAMEWORK: ${{ steps.parse.outputs.framework }}
+          PROFILE: ${{ steps.parse.outputs.profile }}
+          SAVE: ${{ steps.parse.outputs.save }}
+          COMPARE: ${{ steps.parse.outputs.compare }}
+        run: |
+          gh workflow run benchmark-pr.yml \
+            -f pr="$PR_NUMBER" \
+            -f framework="$FRAMEWORK" \
+            -f profile="$PROFILE" \
+            -f save="$SAVE" \
+            -f compare="$COMPARE"
 
       - name: No framework detected
         if: steps.parse.outputs.framework == ''

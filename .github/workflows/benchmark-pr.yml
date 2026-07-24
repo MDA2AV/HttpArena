@@ -112,6 +112,10 @@ jobs:
 
       - name: Compare with main
         id: compare
+        env:
+          FRAMEWORK: ${{ inputs.framework }}
+          PROFILE: ${{ inputs.profile }}
+          COMPARE: ${{ inputs.compare }}
         run: |
           # Preserve benchmark results before overwriting site/data for comparison
           cp -r site/data /tmp/bench_site_data 2>/dev/null || true
@@ -119,9 +123,9 @@ jobs:
           if [ -d /tmp/main_site_data ]; then
             cp -r /tmp/main_site_data/* site/data/ 2>/dev/null || true
           fi
-          compare_args=""
-          [ -n "${{ inputs.compare }}" ] && compare_args="--compare ${{ inputs.compare }}"
-          comparison=$(./scripts/compare.sh "${{ inputs.framework }}" "${{ inputs.profile }}" $compare_args 2>/dev/null || echo "")
+          compare_args=()
+          [ -n "$COMPARE" ] && compare_args=(--compare "$COMPARE")
+          comparison=$(./scripts/compare.sh "$FRAMEWORK" "$PROFILE" "${compare_args[@]}" 2>/dev/null || echo "")
           echo "$comparison" > /tmp/bench_comparison.md
           # Restore benchmark site/data (not original PR data)
           if [ -d /tmp/bench_site_data ]; then
