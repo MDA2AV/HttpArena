@@ -754,6 +754,25 @@ a{color:inherit;text-decoration:none}
 .doc-card:hover{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-1px)}
 .doc-card .dc-t{font-weight:650;color:var(--text);font-size:.9rem}
 .doc-card .dc-s{color:var(--muted);font-size:.8rem;line-height:1.5}
+/* Shortcode widgets. _doc_html() emits these on every implementation page, and
+   without the rules all three type-rules panels render stacked instead of as
+   tabs — the SPA had them and the static pages did not. */
+.type-rules{margin:1.2rem 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.type-rules-tabs{display:flex;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.type-rules-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem 1rem;font-size:.84rem;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);font-family:inherit;transition:background .15s ease,color .15s ease}
+.type-rules-tab:hover{color:var(--text)}
+.type-rules-tab.active{color:var(--text);background:var(--panel)}
+.tr-sq{width:9px;height:9px;border-radius:3px;display:inline-block}
+.type-rules-panel{display:none;padding:.9rem 1.1rem;font-size:.88rem;line-height:1.7;color:var(--text-2)}
+.type-rules-panel.active{display:block}
+.doc-tabset{margin:1.1rem 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.doc-tabs{display:flex;gap:.25rem;background:var(--panel-2);border-bottom:1px solid var(--line);padding:.3rem .3rem 0}
+.doc-tab{padding:.45rem .9rem;font-size:.83rem;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);border-radius:7px 7px 0 0;font-family:inherit;transition:background .15s ease,color .15s ease}
+.doc-tab:hover{color:var(--text)}
+.doc-tab.active{color:var(--text);background:var(--panel)}
+.doc-tabpanel{display:none;padding:.4rem 1.1rem 1rem}
+.doc-tabpanel.active{display:block}
+.doc-tabpanel>:first-child{margin-top:0}
 @media (max-width:820px){.docs-layout{flex-direction:column;gap:1rem;padding:1rem}.docs-sidebar{position:static;width:100%;max-height:none;padding-bottom:.5rem;border-bottom:1px solid var(--line)}.doc-main{max-width:100%}}
 """
 
