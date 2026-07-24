@@ -31,54 +31,54 @@ OUT = ROOT / "site" / "static" / "new-leaderboard" / "data.js"
 #   id, label, category, blurb,
 #   explorer:  conn counts shown in the explorer (all useful runs),
 #   scored:    conn counts that feed the composite (canonical scored set),
-#   s/es/is:   scored / engineScored / infraScored eligibility flags.
+#   s/es:      scored / engineScored eligibility flags.
 # scored conns are always a subset of explorer conns.
 CATALOG = [
     ("Connection", [
-        ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True,True),
-        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining.",         [512,4096,16384],[512,4096], True,True,True),
-        ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True,True),
+        ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True),
+        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining.",         [512,4096,16384],[512,4096], True,True),
+        ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True),
     ]),
     ("Workload", [
-        ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,False),
-        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
-        ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,False),
-        ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False,False),
-        ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False,True),
+        ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False),
+        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False),
+        ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True),
+        ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False),
+        ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False),
     ]),
     ("Database", [
-        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True,False),
-        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False,False),
-        ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
+        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True),
+        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False),
+        ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False),
     ]),
     ("Multi-endpoint", [
-        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False,False),
-        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
+        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False),
+        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False),
     ]),
     ("HTTP/2", [
-        ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,False),
-        ("static-h2",    "Static",         "Static assets over h2 multiplexing.",    [256,1024],     [256,1024],     True,True,False),
-        ("baseline-h2c", "Baseline (h2c)", "Baseline over cleartext h2.",            [256,1024,4096],[256,1024,4096],True,True,False),
-        ("json-h2c",     "JSON (h2c)",     "JSON over cleartext h2.",                [1024,4096],    [1024,4096],    True,False,False),
+        ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True),
+        ("static-h2",    "Static",         "Static assets over h2 multiplexing.",    [256,1024],     [256,1024],     True,True),
+        ("baseline-h2c", "Baseline (h2c)", "Baseline over cleartext h2.",            [256,1024,4096],[256,1024,4096],True,True),
+        ("json-h2c",     "JSON (h2c)",     "JSON over cleartext h2.",                [1024,4096],    [1024,4096],    True,False),
     ]),
     ("HTTP/3", [
-        ("baseline-h3", "Baseline", "Baseline over QUIC + TLS 1.3.",                 [64], [64], True,True,False),
-        ("static-h3",   "Static",   "Static assets over QUIC.",                      [64], [64], True,True,False),
+        ("baseline-h3", "Baseline", "Baseline over QUIC + TLS 1.3.",                 [64], [64], True,True),
+        ("static-h3",   "Static",   "Static assets over QUIC.",                      [64], [64], True,True),
     ]),
     ("gRPC", [
-        ("unary-grpc",     "Unary",     "Unary gRPC over plaintext h2.",             [256,1024],[256,1024],True,True,False),
-        ("unary-grpc-tls", "Unary TLS", "Unary gRPC over TLS.",                      [256,1024],[256,1024],True,True,False),
-        ("stream-grpc",    "Stream",    "Server-streaming gRPC, plaintext.",         [64],      [64],      True,True,False),
-        ("stream-grpc-tls","Stream TLS","Server-streaming gRPC over TLS.",           [64],      [64],      True,True,False),
+        ("unary-grpc",     "Unary",     "Unary gRPC over plaintext h2.",             [256,1024],[256,1024],True,True),
+        ("unary-grpc-tls", "Unary TLS", "Unary gRPC over TLS.",                      [256,1024],[256,1024],True,True),
+        ("stream-grpc",    "Stream",    "Server-streaming gRPC, plaintext.",         [64],      [64],      True,True),
+        ("stream-grpc-tls","Stream TLS","Server-streaming gRPC over TLS.",           [64],      [64],      True,True),
     ]),
     ("Gateway", [
-        ("gateway-64", "Gateway (H2)", "Reverse proxy + server, mixed h2.",          [256,512,1024],[512,1024],True,True,False),
-        ("gateway-h3", "Gateway (H3)", "Reverse proxy + server over h3.",            [64,256],      [64,256],  True,True,False),
-        ("production-stack", "Production Stack", "Edge + Redis + JWT auth + server.",[256,1024],[256,1024],True,True,False),
+        ("gateway-64", "Gateway (H2)", "Reverse proxy + server, mixed h2.",          [256,512,1024],[512,1024],True,True),
+        ("gateway-h3", "Gateway (H3)", "Reverse proxy + server over h3.",            [64,256],      [64,256],  True,True),
+        ("production-stack", "Production Stack", "Edge + Redis + JWT auth + server.",[256,1024],[256,1024],True,True),
     ]),
     ("WebSocket", [
-        ("echo-ws",          "Echo",           "WebSocket echo throughput.",         [512,4096,16384],[512,4096,16384],True,True,False),
-        ("echo-ws-pipeline", "Echo Pipelined", "Batched WebSocket echo.",            [512,4096,16384],[512,4096,16384],True,True,False),
+        ("echo-ws",          "Echo",           "WebSocket echo throughput.",         [512,4096,16384],[512,4096,16384],True,True),
+        ("echo-ws-pipeline", "Echo Pipelined", "Batched WebSocket echo.",            [512,4096,16384],[512,4096,16384],True,True),
     ]),
 ]
 
@@ -528,7 +528,7 @@ def main():
 
     profiles, results = [], {}
     for category, entries in CATALOG:
-        for pid, label, blurb, explorer, scored, s, es, isc in entries:
+        for pid, label, blurb, explorer, scored, s, es in entries:
             present = []
             for c in explorer:
                 rows = load(f"{pid}-{c}.json")
@@ -554,7 +554,7 @@ def main():
                     "id": pid, "label": label, "category": category, "blurb": blurb,
                     "conns": present,
                     "scoredConns": [c for c in scored if c in present],
-                    "scored": s, "engineScored": es, "infraScored": isc,
+                    "scored": s, "engineScored": es,
                 }
                 docid = PROFILE_DOC.get(pid)
                 if docid and docid in docs_content:

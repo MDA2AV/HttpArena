@@ -71,7 +71,7 @@ parse_profile() {
 }
 
 # Map an endpoint to the tool name that handles it.
-# Returns one of: gcannon, wrk, h2load, h2load-h3, ghz, oha
+# Returns one of: gcannon, wrk, h2load, h2load-h3, ghz
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
