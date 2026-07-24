@@ -35,6 +35,7 @@ RUN wget -q http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && \
             --add-module=/ngx_brotli \
             --add-module=/ngx-php/third_party/ngx_devel_kit \
             --add-module=/ngx-php >/dev/null && \
+            --with-cc-opt="-O3" \
     make -j$(nproc) >/dev/null && make install >/dev/null
 
 RUN echo "opcache.jit=tracing" >> /etc/php/8.4/embed/conf.d/90-override.ini
