@@ -28,3 +28,7 @@ node_modules/
 
 # macOS Finder metadata
 .DS_Store
+
+# Python bytecode (generated when the site-data scripts are imported/run)
+__pycache__/
+*.py[cod]
