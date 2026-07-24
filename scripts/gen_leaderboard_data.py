@@ -646,11 +646,71 @@ def _sidebar(tree, curid):
                walk(tree["c"]) if tree.get("c") else ""))
 
 
-# Verbatim from site/leaderboard/index.html so the two headers cannot drift.
-BRAND_LINKS = '<a class="brand-name" href="/" aria-label="HttpArena home"><b>Http</b>Arena</a>\n      <a class="icon-btn" href="https://timeline.http-arena.com" target="_blank" rel="noopener" title="Timeline" aria-label="Timeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></a>\n      <a class="icon-btn" href="https://mda2av.github.io/Http11Probe/" target="_blank" rel="noopener" title="RFC Compliance" aria-label="RFC Compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></a>'
+BOARD = ROOT / "site" / "leaderboard" / "index.html"
 
-TOP_LINKS = '<a class="icon-btn" href="https://github.com/MDA2AV/HttpArena" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>\n      <a class="icon-btn" href="https://discord.gg/H84B5ZqDXR" target="_blank" rel="noopener" title="Discord" aria-label="Discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></a>\n      <button class="icon-btn" id="theme" title="Toggle theme">◐</button>'
+# Selectors the doc pages share with the board. Everything else in the board's
+# stylesheet is leaderboard furniture - the table, the filters, its own nav -
+# and stays there.
+_SHARED_EXACT = {
+    ":root", "html", "body", "a", "*",
+    ".top", ".brand", ".brand-name", ".brand-name b", ".brand-name:hover",
+    ".icon-btn", ".icon-btn:hover", ".icon-btn svg", ".top-links",
+}
+_SHARED_PREFIX = (".doc-", ".type-rules", ".tr-sq")
 
+
+def _top_level_rules(css):
+    """Split a stylesheet into top-level rules, keeping @media blocks whole."""
+    out, buf, depth = [], "", 0
+    for ch in css:
+        buf += ch
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                out.append(buf.strip())
+                buf = ""
+    return out
+
+
+def _is_shared(rule):
+    sel = rule.split("{", 1)[0].strip()
+    if sel.startswith("@media"):
+        # the dark-mode preference block defines the same variables as :root
+        return "prefers-color-scheme" in sel
+    first = sel.split(",")[0].strip()
+    return first in _SHARED_EXACT or first.startswith(_SHARED_PREFIX)
+
+
+def board_chrome():
+    """Header markup and shared CSS, read out of the board at build time.
+
+    The board is the single source of truth for site chrome. Copying it by hand
+    is what let the doc pages drift twice - the type-rules widget lost the rules
+    that hide its inactive panels, and the header lost its icon buttons - so
+    this reads the real thing instead. Editing the board now updates the doc
+    pages automatically, and a structural change here fails the build loudly
+    rather than silently shipping a half-styled page.
+    """
+    html = BOARD.read_text(encoding="utf-8")
+    brand = re.search(r'<div class="brand">(.*?)</div>', html, re.S)
+    links = re.search(r'<div class="top-links">(.*?)</div>', html, re.S)
+    style = re.search(r"<style>(.*?)</style>", html, re.S)
+    if not (brand and links and style):
+        raise SystemExit(f"gen: cannot read site chrome from {BOARD.relative_to(ROOT)} - "
+                         "expected .brand, .top-links and a <style> block")
+    shared = [r for r in _top_level_rules(style.group(1)) if _is_shared(r)]
+    if len(shared) < 40:
+        raise SystemExit(f"gen: only {len(shared)} shared CSS rules found in "
+                         f"{BOARD.relative_to(ROOT)} - the selector list is stale")
+    # the board's brand link drives its in-page router; on a doc page it goes home
+    brand_html = brand.group(1).strip().replace('href="#" id="brandHome"', 'href="/"')
+    return brand_html, links.group(1).strip(), "\n".join(shared)
+
+
+# Resolved once at import: the board's chrome, shared by every generated page.
+_CHROME = board_chrome()
 
 _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
                "if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>")
@@ -689,9 +749,9 @@ def _doc_page(did, title, body_html, tree, seo_title="", description=""):
     # filters, round selector, hardware chips) are leaderboard state, not site
     # chrome, so they aren't carried over; everything else is identical.
     header = ('<body><header class="top">'
-              '<div class="brand">' + BRAND_LINKS + '</div>'
+              '<div class="brand">' + _CHROME[0] + '</div>'
               '<a class="brand-sub" href="/docs/">Knowledge Base</a>'
-              '<div class="top-links">' + TOP_LINKS + '</div>'
+              '<div class="top-links">' + _CHROME[1] + '</div>'
               '</header>')
     body = ('<div class="docs-layout">'
             '<aside class="docs-sidebar">' + _sidebar(tree, did) + '</aside>'
@@ -703,22 +763,15 @@ def _doc_page(did, title, body_html, tree, seo_title="", description=""):
 
 
 def _docs_css():
-    return """:root{--bg:#f8f9fa;--panel:#fff;--panel-2:#f1f3f4;--line:#dadce0;--line-soft:#e8eaed;--text:#202124;--text-2:#5f6368;--muted:#80868b;--accent:#1a73e8;--accent-weak:#e8f0fe;--shadow:0 1px 2px 0 rgba(60,64,67,.1),0 2px 6px 2px rgba(60,64,67,.06);--header-bg:rgba(255,255,255,.82);--mono:"SF Mono",ui-monospace,"JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;--sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif}
-html[data-theme="dark"]{--bg:#202124;--panel:#2a2b2e;--panel-2:#35363a;--line:#3c4043;--line-soft:#303134;--text:#e8eaed;--text-2:#9aa0a6;--muted:#80868b;--accent:#8ab4f8;--accent-weak:#283446;--shadow:0 1px 2px 0 rgba(0,0,0,.3),0 2px 6px 2px rgba(0,0,0,.25);--header-bg:rgba(32,33,36,.8)}
-@media (prefers-color-scheme:dark){html:not([data-theme="light"]){--bg:#202124;--panel:#2a2b2e;--panel-2:#35363a;--line:#3c4043;--line-soft:#303134;--text:#e8eaed;--text-2:#9aa0a6;--muted:#80868b;--accent:#8ab4f8;--accent-weak:#283446;--shadow:0 1px 2px 0 rgba(0,0,0,.3),0 2px 6px 2px rgba(0,0,0,.25);--header-bg:rgba(32,33,36,.8)}}
-*{box-sizing:border-box}html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-a{color:inherit;text-decoration:none}
-.top{position:sticky; top:0; z-index:40; display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap; row-gap:.5rem; padding:.72rem 1.5rem; background:var(--header-bg); backdrop-filter:blur(14px) saturate(1.6); -webkit-backdrop-filter:blur(14px) saturate(1.6); border-bottom:1px solid var(--line); box-shadow:0 6px 20px -12px rgba(20,22,40,.25)}
-.brand{white-space:nowrap; width:calc(264px - .85rem); display:flex; align-items:center; gap:.55rem}  /* spans the sidebar width (type filter aligns with the content column); holds the home link + Timeline/RFC */
-.brand-name{font-weight:750; font-size:1.06rem; letter-spacing:-.02em; color:var(--text); text-decoration:none; cursor:pointer; flex:none}
-.brand-name:hover{opacity:.82}
-.brand-name b{color:var(--accent)}
-.top-links{display:flex; align-items:center; gap:.25rem}
-.icon-btn{display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--text-2); cursor:pointer; font-size:.9rem}
-.icon-btn:hover{color:var(--text); border-color:var(--accent)}
-.icon-btn svg{width:17px; height:17px}
-.brand{width:auto}
+    """The board's shared chrome, plus the rules only these pages need.
+
+    Everything shared - theme variables, reset, header, doc body, cards and the
+    shortcode widgets - comes from the board itself, so the two can't diverge.
+    Only the standalone-page shell is defined here: the board has no two-column
+    docs layout and no sidebar of its own.
+    """
+    return _CHROME[2] + """
+/* ── standalone doc-page shell (not present on the board) ─────────────── */
 .brand-sub{color:var(--text-2);font-size:.9rem;padding-left:.7rem;border-left:1px solid var(--line)}
 .top-links{margin-left:auto}
 .docs-layout{display:flex;align-items:flex-start;gap:2rem;max-width:1200px;margin:0 auto;padding:1.5rem}
@@ -734,56 +787,12 @@ a{color:inherit;text-decoration:none}
 .docs-sidebar a.cur{background:var(--accent-weak);color:var(--accent);font-weight:650}
 .docs-sidebar details>summary{list-style:none;display:flex;align-items:center;gap:.2rem;cursor:pointer}
 .docs-sidebar details>summary::-webkit-details-marker{display:none}
-.docs-sidebar details>summary::before{content:"▸";flex:none;width:.8rem;font-size:.6rem;color:var(--muted);transition:transform .18s ease}
+.docs-sidebar details>summary::before{content:"\u25b8";flex:none;width:.8rem;font-size:.6rem;color:var(--muted);transition:transform .18s ease}
 .docs-sidebar details[open]>summary::before{transform:rotate(90deg)}
 .docs-sidebar details>summary>a{flex:1;min-width:0}
 .doc-main{flex:1;min-width:0;max-width:820px}
-.doc-title{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin:.1rem 0 1.2rem;color:var(--text)}
-.doc-body{font-size:.92rem;line-height:1.7;color:var(--text-2)}
-.doc-body>:first-child{margin-top:0}
-.doc-body h2{font-size:1.25rem;font-weight:700;color:var(--text);margin:2rem 0 .8rem;padding-bottom:.35rem;border-bottom:1px solid var(--line);letter-spacing:-.01em}
-.doc-body h3{font-size:1.06rem;font-weight:650;color:var(--text);margin:1.6rem 0 .55rem}
-.doc-body h4{font-size:.95rem;font-weight:650;color:var(--text);margin:1.3rem 0 .5rem}
-.doc-body p{margin:.7rem 0}
-.doc-body a{color:var(--accent);text-decoration:none}
-.doc-body a:hover{text-decoration:underline}
-.doc-body ul,.doc-body ol{margin:.7rem 0;padding-left:1.45rem}
-.doc-body li{margin:.3rem 0}
-.doc-body li>ul,.doc-body li>ol{margin:.25rem 0}
-.doc-body code{font-family:var(--mono);font-size:.84em;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:5px;padding:.08em .36em;color:var(--text)}
-.doc-body pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.9rem 1.1rem;overflow-x:auto;margin:1rem 0;line-height:1.55}
-.doc-body pre code{background:none;border:0;padding:0;font-size:.82rem;color:var(--text-2);white-space:pre}
-.doc-body blockquote{margin:1rem 0;padding:.2rem .9rem;border-left:3px solid var(--accent-weak);color:var(--muted)}
-.doc-body hr{border:0;border-top:1px solid var(--line);margin:1.6rem 0}
-.doc-body table{border-collapse:separate;border-spacing:0;width:100%;margin:1.1rem 0;font-size:.85rem;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.doc-body th{text-align:left;font-weight:650;color:var(--text);background:var(--panel-2);padding:.55rem .75rem;border-bottom:1px solid var(--line)}
-.doc-body td{padding:.5rem .75rem;border-bottom:1px solid var(--line-soft);vertical-align:top}
-.doc-body tr:last-child td{border-bottom:0}
-.doc-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.7rem;margin:1.2rem 0}
-.doc-card{display:flex;flex-direction:column;gap:.3rem;padding:.85rem 1rem;border:1px solid var(--line);border-radius:10px;background:var(--panel);text-decoration:none;transition:border-color .12s,box-shadow .12s,transform .12s}
-.doc-card:hover{border-color:var(--accent);box-shadow:var(--shadow);transform:translateY(-1px)}
-.doc-card .dc-t{font-weight:650;color:var(--text);font-size:.9rem}
-.doc-card .dc-s{color:var(--muted);font-size:.8rem;line-height:1.5}
-/* Shortcode widgets. _doc_html() emits these on every implementation page, and
-   without the rules all three type-rules panels render stacked instead of as
-   tabs — the SPA had them and the static pages did not. */
-.type-rules{margin:1.2rem 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.type-rules-tabs{display:flex;background:var(--panel-2);border-bottom:1px solid var(--line)}
-.type-rules-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.6rem 1rem;font-size:.84rem;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);font-family:inherit;transition:background .15s ease,color .15s ease}
-.type-rules-tab:hover{color:var(--text)}
-.type-rules-tab.active{color:var(--text);background:var(--panel)}
-.tr-sq{width:9px;height:9px;border-radius:3px;display:inline-block}
-.type-rules-panel{display:none;padding:.9rem 1.1rem;font-size:.88rem;line-height:1.7;color:var(--text-2)}
-.type-rules-panel.active{display:block}
-.doc-tabset{margin:1.1rem 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.doc-tabs{display:flex;gap:.25rem;background:var(--panel-2);border-bottom:1px solid var(--line);padding:.3rem .3rem 0}
-.doc-tab{padding:.45rem .9rem;font-size:.83rem;font-weight:600;cursor:pointer;border:0;background:transparent;color:var(--muted);border-radius:7px 7px 0 0;font-family:inherit;transition:background .15s ease,color .15s ease}
-.doc-tab:hover{color:var(--text)}
-.doc-tab.active{color:var(--text);background:var(--panel)}
-.doc-tabpanel{display:none;padding:.4rem 1.1rem 1rem}
-.doc-tabpanel.active{display:block}
-.doc-tabpanel>:first-child{margin-top:0}
-@media (max-width:820px){.docs-layout{flex-direction:column;gap:1rem;padding:1rem}.docs-sidebar{position:static;width:100%;max-height:none;padding-bottom:.5rem;border-bottom:1px solid var(--line)}.doc-main{max-width:100%}}
+.doc-wrap{max-width:none}
+@media (max-width:820px){.docs-layout{flex-direction:column;gap:1rem;padding:1rem}.docs-sidebar{position:static;width:100%;max-height:none;padding-bottom:.5rem;border-bottom:1px solid var(--line)}.doc-main{max-width:100%}.brand{width:auto}}
 """
 
 
