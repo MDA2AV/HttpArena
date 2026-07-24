@@ -30,7 +30,7 @@ The final composite score is the **sum** of per-profile scores across all **scor
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 26 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,600, rising to ~3,900 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine and infrastructure entries are scored on smaller subsets and have correspondingly lower ceilings.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 27 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,700, rising to ~4,050 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine and infrastructure entries are scored on smaller subsets and have correspondingly lower ceilings.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
@@ -53,7 +53,6 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Async DB | Yes | Async Postgres query with connection pooling |
 | CRUD | Yes | Realistic REST API against Postgres: cached reads (75%), updates (15%), list (5%), upsert create (5%). Cache-aside with 200ms TTL (in-process or Redis sidecar) |
 | Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
-| TCP Frag | No (*) | Baseline with MTU 69 - TCP fragmentation stress |
 
 ### H/1.1 Workload
 
@@ -92,14 +91,17 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Unary | Yes | gRPC unary call over cleartext HTTP/2 |
 | Unary TLS | Yes | gRPC unary call over TLS |
+| Stream | Yes | Server-streaming gRPC over cleartext HTTP/2 |
+| Stream TLS | Yes | Server-streaming gRPC over TLS |
 
 ### WebSocket
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Echo | Yes | WebSocket echo throughput |
+| Echo Pipelined | Yes | Batched WebSocket echo throughput |
 
-TCP Frag and Noisy are reference-only - shown for comparison but not counted in the composite score.
+Fortunes is the only reference-only profile - shown for comparison but not counted in the composite score.
 
 ## Memory efficiency bonus
 
