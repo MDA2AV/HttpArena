@@ -44,7 +44,7 @@ function json($request, $count)
             $header = ['Content-Encoding' => 'br'];
         } elseif (str_contains($encoding, 'gzip')) {
             $result = gzencode($result, 1);
-            $header = ['Content-Encoding' => 'br'];
+            $header = ['Content-Encoding' => 'gzip'];
         }
     }
 
