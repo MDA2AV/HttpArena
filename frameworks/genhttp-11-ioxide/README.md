@@ -6,11 +6,11 @@ instead of GenHTTP's default socket engine.
 
 The engine runs GenHTTP's own HTTP/1.1 conversation directly on ioxide's per-connection
 duplex pipe — thread-per-core, one io_uring reactor per core, with chunked transfer-encoding,
-keep-alive, a per-second cached `Date` header and a per-reactor request pool. It is built from
-the GenHTTP `ioxide-engine` branch ([PR #860](https://github.com/Kaliumhexacyanoferrat/GenHTTP/pull/860)):
-the Dockerfile clones that branch and the app references its engine plus the
-IO / Layouting / Webservices / Compression / Files modules from source, and the published
-`ioxide.pg` (Postgres) and `ioxide.tls` (TLS) packages.
+keep-alive, a per-second cached `Date` header and a per-reactor request pool. The ioxide engine
+([PR #860](https://github.com/Kaliumhexacyanoferrat/GenHTTP/pull/860)) is now merged and published
+to nuget.org: the app references the `GenHTTP.Engine.Ioxide` and `GenHTTP.Modules.IoxideFiles`
+packages alongside the standard IO / Layouting / Webservices / Compression modules and the
+`ioxide.pg` (Postgres) and `ioxide.tls` (TLS) packages — no source checkout needed.
 
 Postgres access and TLS termination ride generic per-reactor seams the engine exposes
 (`IoxideReactor.Current`, an `onReactorStart` hook, and a connection-transport factory) — the
@@ -36,7 +36,7 @@ need `DATABASE_URL`. Both are provided by the harness sidecars.
 
 ## Build note
 
-This entry targets **.NET 11** (`net11.0`), matching the GenHTTP `ioxide-engine` branch it
-builds from. Requires the .NET 11 SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator
+This entry targets **.NET 11** (`net11.0`), matching the GenHTTP ioxide packages it
+references. Requires the .NET 11 SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator
 references `Microsoft.CodeAnalysis 5.3`); the `mcr.microsoft.com/dotnet/sdk:11.0.100-preview.5`
 image used by the Dockerfile provides both.

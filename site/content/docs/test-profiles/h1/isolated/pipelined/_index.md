@@ -1,5 +1,7 @@
 ---
 title: Pipelined (16x)
+seo_title: "HTTP Pipelining Benchmark (16x)"
+description: "Sixteen requests are sent back to back per connection before any response is read, isolating raw I/O throughput from application logic."
 ---
 
 16 HTTP requests are sent back-to-back on each connection before waiting for responses, isolating raw I/O throughput from application logic.

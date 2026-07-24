@@ -8,24 +8,18 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Features>runtime-async=on</Features>
     <ServerGarbageCollection>true</ServerGarbageCollection>
-
-    <!-- GenHTTP checkout that carries the ioxide io_uring engine (PR #860, branch
-         ioxide-engine). The Dockerfile clones it to /src/genhttp; override with
-         -p:GenHttpSrc=/path/to/GenHTTP for a local build. The engine project pulls
-         ioxide + Glyph11 + GenHTTP.Api/Engine.Shared transitively. The cloned branch
-         must target net11.0 to match this entry (see README build note). -->
-    <GenHttpSrc Condition="'$(GenHttpSrc)' == ''">/src/genhttp</GenHttpSrc>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(GenHttpSrc)/Engine/Ioxide/GenHTTP.Engine.Ioxide.csproj" />
-    <ProjectReference Include="$(GenHttpSrc)/Modules/IO/GenHTTP.Modules.IO.csproj" />
-    <ProjectReference Include="$(GenHttpSrc)/Modules/Layouting/GenHTTP.Modules.Layouting.csproj" />
-    <ProjectReference Include="$(GenHttpSrc)/Modules/Webservices/GenHTTP.Modules.Webservices.csproj" />
-    <ProjectReference Include="$(GenHttpSrc)/Modules/Compression/GenHTTP.Modules.Compression.csproj" />
-    <ProjectReference Include="$(GenHttpSrc)/Modules/IoxideFiles/GenHTTP.Modules.IoxideFiles.csproj" />
-    <PackageReference Include="ioxide.pg" Version="0.0.9" />
-    <PackageReference Include="ioxide.tls" Version="0.0.9" />
+    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Modules.IoxideFiles" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.21" />
+    <PackageReference Include="ioxide.pg" Version="0.0.17" />
+    <PackageReference Include="ioxide.tls" Version="0.0.17" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 

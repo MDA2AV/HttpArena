@@ -1,0 +1,28 @@
+{
+  "baseline11_t": {
+    "api": "cc",
+    "loadType": "initialization",
+    "route": "baseline11"
+  },
+  "json_executor_t": {
+    "api": "cc",
+    "loadType": "initialization",
+    "route": "json/{int:count}"
+  },
+  "pipeline_t": {
+    "api": "cc",
+    "loadType": "initialization",
+    "route": "pipeline"
+  },
+  "upload_t": {
+    "api": "cc",
+    "loadType": "dynamic",
+    "route": "upload"
+  },
+  "ws_t": {
+    "api": "cc",
+    "loadType": "initialization",
+    "route": "ws",
+    "webSocketExecutorName": "web_socket_echo_t"
+  }
+}

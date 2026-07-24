@@ -1,0 +1,25 @@
+{
+  "WebServer": {
+    "ip": "0.0.0.0",
+    "port": 8080,
+    "timeout": 30000
+  },
+  "WebFramework": {
+    "assetsPath": "/data",
+    "templatesPath": "templates",
+    "webServerType": "threadPool",
+    "settingsPaths": [ "web.json" ],
+    "loadSources": [ "executors" ],
+    "HTTPS": {
+      "pathToCertificate": "/certs/server.crt",
+      "pathToKey": "/certs/server.key",
+      "useHTTPS": false
+    },
+    "resourcesThreads": 8,
+    "largeBodySizeThreshold": 102400,
+    "largeBodyPacketSize": 1048576
+  },
+  "ThreadPoolServer": {
+    "threadCount": 8
+  }
+}

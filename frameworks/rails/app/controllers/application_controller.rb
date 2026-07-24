@@ -20,7 +20,6 @@ class ApplicationController < ActionController::API
       return unless ENV['DATABASE_URL']
       ConnectionPool.new(size: pool_size, timeout: 5) do
         db = PG.connect(ENV['DATABASE_URL'])
-        db.field_name_type = :symbol
         db.prepare('select', SELECT_QUERY)
         db.prepare('crud_get', CRUD_GET_SQL)
         db.prepare('crud_list', CRUD_LIST_SQL)
@@ -41,6 +40,6 @@ class ApplicationController < ActionController::API
   end
 
   def self.pool_size
-    ENV.fetch('RAILS_MAX_THREADS', 4).to_i
+    ENV.fetch('RAILS_MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
   end
 end

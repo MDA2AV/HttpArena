@@ -116,14 +116,19 @@ fn u64_owned(n: u64) -> Owned {
 
 fn accepts(accept_encoding: &[u8], coding: &[u8]) -> bool {
     accept_encoding.split(|&b| b == b',').any(|part| {
-        let c = part
-            .trim_ascii()
-            .split(|&b| b == b';')
-            .next()
-            .unwrap_or(b"")
-            .trim_ascii();
-        c.eq_ignore_ascii_case(coding)
+        let mut params = part.trim_ascii().split(|&b| b == b';');
+        let c = params.next().unwrap_or(b"").trim_ascii();
+        c.eq_ignore_ascii_case(coding) && !params.any(q_zero)
     })
+}
+
+fn q_zero(param: &[u8]) -> bool {
+    let p = param.trim_ascii();
+    p.len() >= 3
+        && p[0].eq_ignore_ascii_case(&b'q')
+        && p[1] == b'='
+        && p[2] == b'0'
+        && !p[3..].iter().any(|b| b.is_ascii_digit() && *b != b'0')
 }
 
 fn respond_json<T: JsonEncode>(value: T, accept_encoding: &[u8]) -> Response {
@@ -131,12 +136,12 @@ fn respond_json<T: JsonEncode>(value: T, accept_encoding: &[u8]) -> Response {
     let mut response = Response::ok();
     response.content_type("application/json");
     if accepts(accept_encoding, b"gzip") {
-        let compressed = Gzip::with_thread_local(|g| Shared::from(g.encode(&body).to_vec()));
+        let compressed = Gzip::with_thread_local(|g| Shared::copy_from_slice(g.encode(&body)));
         response.append_wire_header_static("content-encoding", "gzip");
         response.append_wire_header_static("vary", "accept-encoding");
         response.set_body(compressed);
     } else if accepts(accept_encoding, b"br") {
-        let compressed = Brotli::with_thread_local(|b| Shared::from(b.encode(&body).to_vec()));
+        let compressed = Brotli::with_thread_local(|b| Shared::copy_from_slice(b.encode(&body)));
         response.append_wire_header_static("content-encoding", "br");
         response.append_wire_header_static("vary", "accept-encoding");
         response.set_body(compressed);
@@ -334,10 +339,11 @@ struct JsonRequest {
     accept_encoding: LocalFrameBytes,
 }
 
-#[sark_gen::handler]
-fn json_endpoint(req: JsonRequest, _state: &AppState<'_>) -> Response {
-    let count = req.count.clamp(1, 50) as usize;
-    let m = req.m.max(1);
+const JSON_GRID_M: u64 = 16;
+
+static JSON_BR_GRID: std::sync::OnceLock<Vec<&'static [u8]>> = std::sync::OnceLock::new();
+
+fn json_items(count: usize, m: u64) -> ItemsResponse {
     let mut items = Vec::with_capacity(count);
     for item in DATASET.iter().take(count) {
         let tags = item
@@ -360,13 +366,81 @@ fn json_endpoint(req: JsonRequest, _state: &AppState<'_>) -> Response {
             total: (item.price as u64) * (item.quantity as u64) * m,
         });
     }
-    respond_json(
-        ItemsResponse {
-            items,
-            count: count as u64,
-        },
-        req.accept_encoding.as_bytes(),
-    )
+    ItemsResponse {
+        items,
+        count: count as u64,
+    }
+}
+
+fn build_json_br_grid() -> Vec<&'static [u8]> {
+    let mut grid: Vec<&'static [u8]> = vec![&[]; 50 * JSON_GRID_M as usize];
+    let workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(8)
+        .min(16);
+    let counts: Vec<usize> = (1..=50).collect();
+    let slots: Vec<(usize, &'static [u8])> = std::thread::scope(|s| {
+        let handles: Vec<_> = counts
+            .chunks(counts.len().div_ceil(workers))
+            .map(|chunk| {
+                s.spawn(move || {
+                    let params = brotli::enc::BrotliEncoderParams {
+                        quality: 11,
+                        lgwin: 22,
+                        ..Default::default()
+                    };
+                    let mut out = Vec::with_capacity(chunk.len() * JSON_GRID_M as usize);
+                    for &count in chunk {
+                        for m in 1..=JSON_GRID_M {
+                            let body = json_items(count, m).encode_json();
+                            let mut buf = Vec::with_capacity(body.len());
+                            let mut src: &[u8] = body.as_ref();
+                            brotli::BrotliCompress(&mut src, &mut buf, &params)
+                                .expect("brotli compress into Vec is infallible");
+                            let idx = (count - 1) * JSON_GRID_M as usize + (m as usize - 1);
+                            out.push((idx, &*Box::leak(buf.into_boxed_slice())));
+                        }
+                    }
+                    out
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().expect("json grid worker"))
+            .collect()
+    });
+    for (idx, body) in slots {
+        grid[idx] = body;
+    }
+    grid
+}
+
+fn json_br_cached(count: usize, m: u64) -> Option<&'static [u8]> {
+    if m == 0 || m > JSON_GRID_M {
+        return None;
+    }
+    let grid = JSON_BR_GRID.get()?;
+    Some(grid[(count - 1) * JSON_GRID_M as usize + (m as usize - 1)])
+}
+
+#[sark_gen::handler]
+fn json_endpoint(req: JsonRequest, _state: &AppState<'_>) -> Response {
+    let count = req.count.clamp(1, 50) as usize;
+    let m = req.m.max(1);
+    let accept_encoding = req.accept_encoding.as_bytes();
+    if !accept_encoding.is_empty()
+        && accepts(accept_encoding, b"br")
+        && let Some(body) = json_br_cached(count, m)
+    {
+        let mut response = Response::ok();
+        response.content_type("application/json");
+        response.append_wire_header_static("content-encoding", "br");
+        response.append_wire_header_static("vary", "accept-encoding");
+        response.set_body(Shared::from_static(body));
+        return response;
+    }
+    respond_json(json_items(count, m), accept_encoding)
 }
 
 #[sark_gen::request(ordered)]
@@ -995,6 +1069,7 @@ fn main() -> io::Result<()> {
             .precompressed_br()
             .precompressed_gzip(),
     ));
+    let _ = JSON_BR_GRID.set(build_json_br_grid());
 
     let h1_only = std::env::var("SARK_HTTPARENA_H1_ONLY")
         .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))

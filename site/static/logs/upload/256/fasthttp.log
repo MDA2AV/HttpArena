@@ -1,23 +1,15 @@
 listening on http://0.0.0.0:8080/
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
@@ -25,24 +17,14 @@ ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: send() failed with errno=104
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
 ERROR: recv() failed with errno=104
-
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
@@ -52,15 +34,12 @@ ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
@@ -68,57 +47,27 @@ ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
-
-
-
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
 ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104ERROR: send() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-
 ERROR: recv() failed with errno=104
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-
-
 ERROR: recv() failed with errno=104
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
@@ -141,11 +90,7 @@ ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
@@ -164,7 +109,6 @@ ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
@@ -173,214 +117,10 @@ ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
-
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104ERROR: recv() failed with errno=104
-
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: recv() failed with errno=104
-ERROR: send() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104
 ERROR: recv() failed with errno=104

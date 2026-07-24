@@ -1,6 +1,8 @@
 ---
 weight: 3
 title: H/3
+seo_title: "HTTP/3 Test Profiles"
+description: "HTTP/3 profiles measuring performance over QUIC. Only frameworks with native QUIC support take part."
 ---
 
 H/3 test profiles measure framework performance over QUIC, the UDP-based transport protocol. Only frameworks with native QUIC support participate.

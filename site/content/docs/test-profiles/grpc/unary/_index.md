@@ -1,5 +1,7 @@
 ---
 title: Unary (gRPC)
+seo_title: "Unary gRPC Benchmark"
+description: "Measures unary gRPC call throughput over cleartext HTTP/2 using a simple GetSum remote procedure call."
 ---
 
 Measures unary gRPC call throughput over cleartext HTTP/2 (h2c) using a simple `GetSum` RPC.

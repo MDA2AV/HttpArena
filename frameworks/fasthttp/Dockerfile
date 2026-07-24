@@ -5,16 +5,20 @@ RUN apt-get -qq update && \
         ca-certificates git build-essential libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Pinned, reproducible V at master commit cef604a26 (built from source). No release
-# tag carries the modern stdlib this framework needs: the pooled Go-style `db.pg`
-# (vlang/v#27265) and the single-element-array-push codegen fix (vlang/v#27470, which
-# is why 0.5.1 was previously pinned). This commit also carries the Boehm GC
-# free-space-divisor fix (vlang/v#27560, fixes vlang/v#27555) that recovers the
-# default-GC throughput regression introduced in the c0624b2..6c4d26f range. `make`
-# bootstraps via the matching vc; if a much later rebuild ever fails to bootstrap,
-# pin vlang/vc to the commit cut for this V.
+# Pinned, reproducible V at master commit 84a76d791 (built from source). This is the
+# `fasthttp: refactor toward the vanilla architecture` commit (vlang/v#27771): it adds
+# the zero-copy append handler (write the raw response straight into the connection's
+# reused buffer), per-worker lock-free state (make_state), deterministic request framing
+# (TCP-fragmented + chunked reassembly), and sendfile(2) file bodies — the API this
+# server is now built on. It also carries everything the previous cef604a26 pin did: the
+# pooled Go-style `db.pg` (vlang/v#27265), the single-element-array-push codegen fix
+# (vlang/v#27470), and the Boehm GC free-space-divisor fix (vlang/v#27560, fixes
+# vlang/v#27555) — cef604a26 is an ancestor of this commit. No later master commit
+# touches vlib/fasthttp, so this pin is exactly the module the server was validated
+# against. `make` bootstraps via the matching vc; if a much later rebuild ever fails to
+# bootstrap, pin vlang/vc to the commit cut for this V.
 RUN git clone https://github.com/vlang/v /opt/v && \
-    cd /opt/v && git checkout cef604a26 && \
+    cd /opt/v && git checkout 84a76d791 && \
     make && ln -s /opt/v/v /usr/local/bin/v
 
 WORKDIR /app

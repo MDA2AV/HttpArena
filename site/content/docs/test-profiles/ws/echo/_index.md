@@ -1,5 +1,7 @@
 ---
 title: Echo (WebSocket)
+seo_title: "WebSocket Echo Benchmark"
+description: "Measures WebSocket echo throughput: each connection upgrades over HTTP/1.1, then exchanges text messages one at a time."
 ---
 
 Measures WebSocket echo throughput. Each connection upgrades via HTTP/1.1, then sends text messages and receives echoes.

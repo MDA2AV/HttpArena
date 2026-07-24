@@ -8,6 +8,7 @@
   "enabled": true,
   "tests": [
     "baseline",
+    "pipelined",
     "limited-conn",
     "json",
     "json-comp",

@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "API-4 Constrained Workload Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the API-4 constrained workload before a framework's results are accepted."
 ---
 
 The API-4 test uses a subset of endpoints. Subscribing to the `mini` test automatically triggers validation for all of them, even if the individual tests are not listed in `meta.json`:

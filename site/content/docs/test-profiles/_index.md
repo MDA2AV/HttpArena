@@ -1,5 +1,7 @@
 ---
 title: Test Profiles
+seo_title: "Test Profiles"
+description: "Every HttpArena benchmark profile, each isolating a different performance dimension so frameworks are compared on equal terms."
 weight: -1
 toc: false
 ---

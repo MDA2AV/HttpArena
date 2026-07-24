@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Static File Serving Benchmark (HTTP/3) — Validation Checks"
+description: "The correctness checks validate.sh runs against the HTTP/3 static file benchmark before a framework's results are accepted."
 ---
 
 The HTTP/3 static files profile does not have dedicated validation checks in `validate.sh`. HTTP/3 (QUIC) validation relies on:

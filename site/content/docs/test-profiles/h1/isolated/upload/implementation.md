@@ -1,7 +1,9 @@
 ---
 title: Implementation Guidelines
+seo_title: "Large Upload Benchmark (20 MB) — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the 20 MB upload benchmark."
 ---
-{{< type-rules production="Must use the framework standard body reading API. Streaming is allowed if the framework supports it natively." tuned="May use custom buffer sizes, direct socket reads, or bypass framework body parsing for maximum throughput." engine="No specific rules." >}}
+{{< type-rules standard="Must use the framework standard body reading API. Streaming is allowed if the framework supports it natively." tuned="May use custom buffer sizes, direct socket reads, or bypass framework body parsing for maximum throughput." engine="No specific rules." >}}
 
 
 The Upload profile measures how efficiently a framework handles large request body ingestion. The benchmark rotates across four payload sizes: 500 KB, 2 MB, 10 MB, and 20 MB. The server returns the byte count.
