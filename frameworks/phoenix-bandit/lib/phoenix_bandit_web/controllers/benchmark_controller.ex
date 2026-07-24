@@ -3,6 +3,8 @@ defmodule PhoenixBanditWeb.BenchmarkController do
 
   @compile {:inline, clamp_int: 3, sum_params: 1}
 
+  @body_length 16_384
+
   def pipeline(conn, _params) do
     conn
     |> put_resp_content_type("text/plain")
@@ -106,7 +108,7 @@ defmodule PhoenixBanditWeb.BenchmarkController do
   end
 
   def upload(conn, _params) do
-    size = read_body_chunks(conn, 0)
+    {size, conn} = read_body_chunks(conn, 0)
 
     conn
     |> put_resp_header("server", "Phoenix")
@@ -173,9 +175,9 @@ defmodule PhoenixBanditWeb.BenchmarkController do
   end
 
   defp read_body_chunks(conn, acc_size) do
-    case read_body(conn) do
-      {:ok, binary, _conn} ->
-        acc_size + byte_size(binary)
+    case read_body(conn, length: @body_length) do
+      {:ok, binary, conn} ->
+        {acc_size + byte_size(binary), conn}
 
       {:more, binary, conn} ->
         read_body_chunks(conn, acc_size + byte_size(binary))

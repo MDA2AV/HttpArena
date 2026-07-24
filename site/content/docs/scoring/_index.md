@@ -1,5 +1,7 @@
 ---
 title: Scoring
+seo_title: "Scoring"
+description: "How HttpArena turns per-profile throughput into the composite score that ranks frameworks across the whole test suite."
 toc: false
 weight: 5
 ---

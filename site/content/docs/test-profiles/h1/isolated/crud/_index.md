@@ -1,5 +1,7 @@
 ---
 title: CRUD (REST API)
+seo_title: "CRUD REST API Benchmark"
+description: "A realistic REST API workload against Postgres: paginated list, cached single-item read, create and update, with cache-aside invalidation."
 ---
 
 Realistic REST API benchmark with paginated list, cached single-item read, create, and update operations against Postgres.

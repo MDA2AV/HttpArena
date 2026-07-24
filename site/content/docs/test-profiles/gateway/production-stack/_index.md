@@ -1,6 +1,8 @@
 ---
 weight: 5
 title: Production Stack
+seo_title: "Production Stack Benchmark"
+description: "A four-service CRUD API deployment: reverse proxy, JWT auth sidecar, Redis cache and application server under concurrent reads and writes."
 ---
 
 The Production Stack profile benchmarks a **realistic multi-service CRUD API deployment** - reverse proxy, JWT auth sidecar, Redis cache, application server, and Postgres database - with a 10,000-item working set that exercises a real three-tier cache hierarchy (L1 in-process → L2 Redis → Postgres) under authenticated load.

@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Server-Streaming gRPC Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the server-streaming gRPC benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `stream-grpc` or `stream-grpc-tls` tests.

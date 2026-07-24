@@ -1,5 +1,7 @@
 ---
 title: Hardware & Topology
+seo_title: "Benchmark Hardware and CPU Topology"
+description: "The reference machine behind every HttpArena result: an AMD Threadripper PRO 3995WX workstation, its CPU topology, and how cores are allocated."
 toc: true
 weight: 5
 ---

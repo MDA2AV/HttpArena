@@ -4,7 +4,7 @@
   "type": "flagship",
   "mode": "standard",
   "engine": "kestrel",
-  "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and minimal API routing.",
+  "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "tests": [

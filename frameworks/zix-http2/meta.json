@@ -1,0 +1,16 @@
+{
+  "display_name": "zix",
+  "language": "Zig",
+  "type": "engine",
+  "engine": "zix.Http2 URING Dispatch Model",
+  "description": "Zig HTTP/2 server on the zix.Http2 raw engine, .URING dispatch: shared-nothing per-core io_uring with SO_REUSEPORT, per-worker stream-slot pool. Dual listener (config.tls_port): h2c 8082 plus h2 over TLS 1.3 (ALPN h2) on 8443, one process.",
+  "repo": "https://github.com/prothegee/zix",
+  "enabled": true,
+  "tests": [
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": ["prothegee"]
+}

@@ -1,5 +1,7 @@
 ---
 title: ghz
+seo_title: "ghz — gRPC Load Generator"
+description: "ghz is a proto-aware gRPC benchmarking tool. HttpArena uses it to drive the server-streaming profiles, including its required warm-up run."
 ---
 
 [ghz](https://ghz.sh/) is a proto-aware gRPC load testing tool written in Go. HttpArena uses it to drive the `stream-grpc` and `stream-grpc-tls` profiles. Unlike h2load (which ships pre-serialized binary bodies as raw HTTP/2 DATA frames), ghz is a full gRPC client - it parses the `.proto` file at runtime, marshals requests into protobuf, and issues actual gRPC calls of the correct shape (unary, server-streaming, client-streaming, or bidi) based on the method's proto definition.

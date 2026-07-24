@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Fortunes Template Rendering Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the Fortunes template rendering benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `fortunes` test. A Postgres sidecar container is started automatically before these checks run.

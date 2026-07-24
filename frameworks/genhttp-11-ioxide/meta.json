@@ -3,9 +3,9 @@
   "language": "C#",
   "type": "emerging",
   "mode": "tuned",
-  "engine": "io_uring",
-  "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP ioxide-engine branch (PR #860). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
-  "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP/pull/860",
+  "engine": "ioxide",
+  "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Uses GenHTTP's published ioxide engine packages (GenHTTP.Engine.Ioxide / GenHTTP.Modules.IoxideFiles, PR #860, merged). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
+  "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
   "enabled": true,
   "tests": [
     "baseline",
@@ -19,7 +19,9 @@
     "async-db",
     "crud",
     "api-4",
-    "api-16"
+    "api-16",
+    "echo-ws",
+    "echo-ws-pipeline"
   ],
   "maintainers": [
     "MDA2AV"

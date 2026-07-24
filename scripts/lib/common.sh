@@ -82,3 +82,44 @@ banner() {
     echo "=== $* ==="
     echo "=============================================="
 }
+
+# ── Failure diagnostics ─────────────────────────────────────────────────────
+#
+# Container logs are written to site/static/logs/ only by save_result(), which
+# a server that never became ready never reaches — and framework_stop() runs
+# `docker rm -f` moments later, so the evidence is gone. These print it while
+# it still exists. Bounded by FAIL_LOG_TAIL: a crash-looping server can emit
+# megabytes, and this output is also what lands in the PR comment, which
+# quotes the last 200 lines of the run.
+
+dump_container_logs() {
+    local ref="$1" label="${2:-$1}" n="${FAIL_LOG_TAIL:-120}" state logs
+    echo ""
+    # No container at all means an earlier step (build, or `docker run` itself)
+    # failed; asking for its logs would just echo docker's own error back.
+    if ! state=$(docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' \
+                 "$ref" 2>/dev/null); then
+        echo "─── $label — no such container: it was never created, so an earlier build or start step is what failed"
+        return 0
+    fi
+    echo "─── $label — $state"
+    logs=$(docker logs --tail "$n" "$ref" 2>&1) || true
+    if [ -n "$logs" ]; then
+        echo "─── $label — last $n log lines ───"
+        printf '%s\n' "$logs" | sed 's/^/  | /'
+        echo "─── $label — end of logs ───"
+    else
+        echo "─── $label — the container produced no output at all"
+    fi
+}
+
+# Every container in a compose project. `docker ps -a`, not `docker ps`: the
+# service that died is exactly the one missing from the running list.
+dump_compose_logs() {
+    local project="$1" id name
+    [ -n "$project" ] || return 0
+    for id in $(docker ps -aq --filter "label=com.docker.compose.project=$project" 2>/dev/null); do
+        name=$(docker inspect -f '{{.Name}}' "$id" 2>/dev/null | sed 's#^/##')
+        dump_container_logs "$id" "${name:-$id}"
+    done
+}

@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Baseline Throughput Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the HTTP/1.1 baseline throughput benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `baseline` or `limited-conn` test.

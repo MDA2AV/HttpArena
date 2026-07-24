@@ -1,7 +1,9 @@
 ---
 title: Implementation Guidelines
+seo_title: "HTTP/3 Baseline Benchmark (QUIC) — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP/3 baseline benchmark."
 ---
-{{< type-rules production="Must use the framework native QUIC/HTTP3 support with default configuration." tuned="May tune QUIC parameters, congestion control, and UDP buffer sizes." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework native QUIC/HTTP3 support with default configuration." tuned="May tune QUIC parameters, congestion control, and UDP buffer sizes." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 The HTTP/3 Baseline profile tests raw throughput over QUIC, the UDP-based transport protocol that powers HTTP/3.

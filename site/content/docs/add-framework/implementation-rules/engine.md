@@ -1,9 +1,11 @@
 ---
 title: Engine
+seo_title: "Engine Entry Rules"
+description: "Rules for engine entries: bare-metal HTTP implementations built on raw sockets and low-level I/O, ranked separately from frameworks."
 weight: 2
 ---
 
-Engine entries (`type: engine`) are bare-metal HTTP implementations - raw sockets, custom parsers, low-level I/O. They are not frameworks and are ranked separately. (Reverse proxies and static-file servers like nginx and h2o are classified as [Infrastructure](../infrastructure/), not Engine.)
+Engine entries (`type: engine`) are bare-metal HTTP implementations - raw sockets, custom parsers, low-level I/O. They are not frameworks and are ranked separately.
 
 ## What qualifies as an engine
 

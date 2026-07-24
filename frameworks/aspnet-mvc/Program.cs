@@ -1,11 +1,23 @@
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.FileProviders;
-
 using System.Security.Cryptography.X509Certificates;
+
+using HttpArena.Services;
+using HttpArena.Types;
+
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
+
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(o => o.JsonSerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
+
+// Framework-agnostic application layer (Services/ + Types/), shared with the
+// other C# entries.
+builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<DatasetService>();
+builder.Services.AddSingleton<ItemService>();
+builder.Services.AddSingleton<FortuneService>();
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
@@ -28,8 +40,7 @@ builder.WebHost.ConfigureKestrel(options =>
     }
 });
 
-builder.Services.AddResponseCompression()
-                .AddControllers();
+builder.Services.AddResponseCompression();
 
 var app = builder.Build();
 
@@ -37,11 +48,15 @@ app.UseResponseCompression();
 
 app.Use((ctx, next) =>
 {
-    ctx.Response.Headers["Server"] = "aspnet-minimal";
+    ctx.Response.Headers.Server = "aspnet-mvc";
     return next();
 });
 
-AppData.Load();
+// Load the dataset and open the Postgres/Redis connections at startup
+// instead of on the first request.
+_ = app.Services.GetRequiredService<DatasetService>();
+_ = app.Services.GetRequiredService<ItemService>();
+_ = app.Services.GetRequiredService<FortuneService>();
 
 app.MapControllers();
 
