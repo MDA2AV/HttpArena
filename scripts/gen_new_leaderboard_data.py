@@ -383,7 +383,7 @@ def _md_to_html(body, curdir, ids):
 
 
 def _typerules(a, curdir, ids):
-    spec = [("production", "Standard", "#22c55e"), ("tuned", "Tuned", "#eab308"), ("engine", "Engine", "#dc2626")]
+    spec = [("standard", "Standard", "#22c55e"), ("tuned", "Tuned", "#eab308"), ("engine", "Engine", "#dc2626")]
     tabs = panels = ""
     for idx, (k, lbl, col) in enumerate(spec):
         act = " active" if idx == 0 else ""

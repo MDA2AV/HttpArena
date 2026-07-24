@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework standard WebSocket API with default buffer sizes." tuned="May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard WebSocket API with default buffer sizes." tuned="May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 Measures WebSocket echo throughput. Each connection upgrades via HTTP/1.1, then sends text messages and receives echoes. Each echo counts as one completed response.

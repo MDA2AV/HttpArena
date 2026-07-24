@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework's standard gRPC server implementation. No bypassing of protobuf serialization or HTTP/2 framing." tuned="May tune HTTP/2 frame sizes, flow-control window sizes, and server concurrency limits beyond defaults." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework's standard gRPC server implementation. No bypassing of protobuf serialization or HTTP/2 framing." tuned="May tune HTTP/2 frame sizes, flow-control window sizes, and server concurrency limits beyond defaults." engine="No specific rules. Ranked separately from frameworks." >}}
 
 The Server Streaming profile measures how efficiently a framework can emit a stream of protobuf messages from a single server-streaming gRPC call. One unary-style request lands on the server, and the handler writes **N** replies to a single `IServerStreamWriter` (or equivalent) before completing the call. The load generator ([ghz](/docs/load-generators/grpc/ghz/)) opens many concurrent streams and sums the total messages delivered per second.
 

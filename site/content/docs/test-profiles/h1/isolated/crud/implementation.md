@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use a standard async Postgres driver with connection pooling. Cache-aside with 200 ms absolute TTL on single-item reads, invalidated on PUT. In-process cache is the default; multi-process runtimes (e.g. SO_REUSEPORT with one process per core) may use the provided Redis sidecar for a shared cache. No pre-warming or background refresh." tuned="May use custom pool sizes, prepared statements, multi-tier caches, or any cache backend including the Redis sidecar." engine="No specific rules." >}}
+{{< type-rules standard="Must use a standard async Postgres driver with connection pooling. Cache-aside with 200 ms absolute TTL on single-item reads, invalidated on PUT. In-process cache is the default; multi-process runtimes (e.g. SO_REUSEPORT with one process per core) may use the provided Redis sidecar for a shared cache. No pre-warming or background refresh." tuned="May use custom pool sizes, prepared statements, multi-tier caches, or any cache backend including the Redis sidecar." engine="No specific rules." >}}
 
 The CRUD profile benchmarks a realistic REST API with four operations against Postgres: paginated list, cached single-item read, create (upsert), and update with cache invalidation.
 

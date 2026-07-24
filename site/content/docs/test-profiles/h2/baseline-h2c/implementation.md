@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework standard HTTP/2 cleartext (h2c) configuration. No custom ALPN settings or TLS cipher tuning (TLS isn't used on this port)." tuned="May tune HTTP/2 stream limits, window sizes, and connection parameters." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard HTTP/2 cleartext (h2c) configuration. No custom ALPN settings or TLS cipher tuning (TLS isn't used on this port)." tuned="May tune HTTP/2 stream limits, window sizes, and connection parameters." engine="No specific rules. Ranked separately from frameworks." >}}
 
 Same `/baseline2?a=…&b=…` sum endpoint as the HTTP/2-TLS baseline, served as HTTP/2 **cleartext** - no TLS, h2 framing from the first byte. This matches the deployment pattern behind TLS-terminating load balancers (ALB → backend, nginx → app server) and inside service meshes where mTLS is handled by sidecars.
 

@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the standard gRPC library for the language with default configuration. No custom protobuf serialization." tuned="May optimize gRPC channel settings, thread pools, and use custom protobuf serialization." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the standard gRPC library for the language with default configuration. No custom protobuf serialization." tuned="May optimize gRPC channel settings, thread pools, and use custom protobuf serialization." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 Measures unary gRPC call throughput over cleartext HTTP/2 (h2c). The server implements a simple `GetSum` RPC that adds two integers.

@@ -1,7 +1,7 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations." tuned="May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations." tuned="May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 16 HTTP requests are sent back-to-back on each connection before waiting for responses. Uses a lightweight `GET /pipeline` endpoint that returns a fixed `ok` response, isolating raw I/O throughput from application logic.
