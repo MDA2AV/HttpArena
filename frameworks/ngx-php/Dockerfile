@@ -10,7 +10,7 @@ RUN LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php >/dev/null && \
                     zlib1g-dev libpcre3-dev libargon2-dev libsodium-dev libkrb5-dev \
                     php8.4-cli php8.4-dev libphp8.4-embed php8.4-pgsql >/dev/null
 
-ARG NGINX_VERSION=1.30.0
+ARG NGINX_VERSION=1.30.4
 
 RUN git clone -b v0.0.30 --single-branch --depth 1 https://github.com/rryqszq4/ngx-php.git >/dev/null
 #RUN git clone -b master --recursive --single-branch --depth 1 https://github.com/cloudflare/ngx_brotli.git
