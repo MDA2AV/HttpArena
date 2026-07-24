@@ -2,17 +2,12 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-/* ---------- Pre-loaded data ---------- */
-
-#define MAX_STATIC 32
-typedef struct {
-    char name[64];
-    char ct[64];
-    u_char *data;
-    size_t len;
-} sfile_t;
-static sfile_t g_sf[MAX_STATIC];
-static ngx_int_t g_sf_n = 0;
+/* Static files (/static/<name>) are not handled here — the nginx.conf
+ * location /static/ block serves them directly from /data/static via
+ * nginx core's sendfile-backed file handler, which is both faster and
+ * exercises the "real nginx static path" the benchmark is meant to
+ * measure. Any request that reaches this module has already missed
+ * that more-specific location. */
 
 /* ---------- Integer parser ---------- */
 
@@ -99,10 +94,33 @@ baseline11_post_handler(ngx_http_request_t *r)
 {
     int64_t sum = sum_args(&r->args);
 
+    /* The canonical nginx idiom for reading a buffered request body is to
+     * walk r->request_body->bufs. One chain node per recv(); reading only
+     * bufs->buf gives you just the first chunk, which silently breaks on
+     * fragmented bodies (validate.sh splits "20" as "2"+"0").
+     *
+     * request_body_in_single_buf=1 only sizes rb->buf's allocation; it does
+     * not produce a merged view. rb->buf->pos is advanced to last by the
+     * body-length filter as it hands data off to the save filter, so
+     * reading rb->buf directly returns an empty range. Walk the chain. */
     if (r->request_body && r->request_body->bufs) {
-        ngx_buf_t *buf = r->request_body->bufs->buf;
-        if (buf && !buf->in_file && buf->pos < buf->last) {
-            sum += parse_int(buf->pos, buf->last);
+        u_char body[64];
+        size_t body_len = 0;
+        ngx_chain_t *cl;
+        for (cl = r->request_body->bufs; cl; cl = cl->next) {
+            ngx_buf_t *buf = cl->buf;
+            if (!buf || buf->in_file) continue;
+            size_t chunk_len = buf->last - buf->pos;
+            if (chunk_len == 0) continue;
+            if (body_len + chunk_len > sizeof(body)) {
+                chunk_len = sizeof(body) - body_len;
+            }
+            ngx_memcpy(body + body_len, buf->pos, chunk_len);
+            body_len += chunk_len;
+            if (body_len >= sizeof(body)) break;
+        }
+        if (body_len > 0) {
+            sum += parse_int(body, body + body_len);
         }
     }
 
@@ -168,76 +186,11 @@ ngx_http_httparena_handler(ngx_http_request_t *r)
                          buf, last - buf, 1);
     }
 
-    /* /static/<filename> */
-    if (uri_len > 8 && ngx_strncmp(uri, "/static/", 8) == 0) {
-        ngx_http_discard_request_body(r);
-        u_char *fname = uri + 8;
-        size_t fname_len = uri_len - 8;
-        for (ngx_int_t i = 0; i < g_sf_n; i++) {
-            size_t nlen = ngx_strlen(g_sf[i].name);
-            if (nlen == fname_len &&
-                ngx_strncmp(g_sf[i].name, fname, nlen) == 0) {
-                return send_resp(r, 200,
-                                 (u_char *)g_sf[i].ct, ngx_strlen(g_sf[i].ct),
-                                 g_sf[i].data, g_sf[i].len, 0);
-            }
-        }
-        return send_resp(r, 404,
-                         (u_char *)"text/plain", 10,
-                         (u_char *)"Not Found", 9, 0);
-    }
-
     /* Unknown path — return 404 instead of falling through to nginx default */
     ngx_http_discard_request_body(r);
     return send_resp(r, 404,
                      (u_char *)"text/plain", 10,
                      (u_char *)"Not Found", 9, 1);
-}
-
-static void
-load_static_files(void)
-{
-    static const struct { const char *name; const char *ct; } entries[] = {
-        {"reset.css",       "text/css"},
-        {"layout.css",      "text/css"},
-        {"theme.css",       "text/css"},
-        {"components.css",  "text/css"},
-        {"utilities.css",   "text/css"},
-        {"analytics.js",    "application/javascript"},
-        {"helpers.js",      "application/javascript"},
-        {"app.js",          "application/javascript"},
-        {"vendor.js",       "application/javascript"},
-        {"router.js",       "application/javascript"},
-        {"header.html",     "text/html"},
-        {"footer.html",     "text/html"},
-        {"regular.woff2",   "font/woff2"},
-        {"bold.woff2",      "font/woff2"},
-        {"logo.svg",        "image/svg+xml"},
-        {"icon-sprite.svg", "image/svg+xml"},
-        {"hero.webp",       "image/webp"},
-        {"thumb1.webp",     "image/webp"},
-        {"thumb2.webp",     "image/webp"},
-        {"manifest.json",   "application/json"},
-    };
-    int n = sizeof(entries) / sizeof(entries[0]);
-    for (int i = 0; i < n && g_sf_n < MAX_STATIC; i++) {
-        char path[256];
-        snprintf(path, sizeof(path), "/data/static/%s", entries[i].name);
-        FILE *f = fopen(path, "rb");
-        if (!f) continue;
-        fseek(f, 0, SEEK_END);
-        long sz = ftell(f);
-        fseek(f, 0, SEEK_SET);
-        u_char *data = malloc(sz);
-        if (!data) { fclose(f); continue; }
-        fread(data, 1, sz, f);
-        fclose(f);
-        strncpy(g_sf[g_sf_n].name, entries[i].name, sizeof(g_sf[g_sf_n].name) - 1);
-        strncpy(g_sf[g_sf_n].ct, entries[i].ct, sizeof(g_sf[g_sf_n].ct) - 1);
-        g_sf[g_sf_n].data = data;
-        g_sf[g_sf_n].len = sz;
-        g_sf_n++;
-    }
 }
 
 /* ---------- Module boilerplate ---------- */
@@ -249,13 +202,6 @@ ngx_http_httparena(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
     clcf->handler = ngx_http_httparena_handler;
     return NGX_CONF_OK;
-}
-
-static ngx_int_t
-ngx_http_httparena_init_module(ngx_cycle_t *cycle)
-{
-    load_static_files();
-    return NGX_OK;
 }
 
 static ngx_command_t ngx_http_httparena_commands[] = {
@@ -280,7 +226,7 @@ ngx_module_t ngx_http_httparena_module = {
     ngx_http_httparena_commands,
     NGX_HTTP_MODULE,
     NULL,                                /* init master */
-    ngx_http_httparena_init_module,      /* init module */
+    NULL,                                /* init module */
     NULL,                                /* init process */
     NULL,                                /* init thread */
     NULL,                                /* exit thread */

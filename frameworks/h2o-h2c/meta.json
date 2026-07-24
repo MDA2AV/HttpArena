@@ -1,0 +1,14 @@
+{
+  "display_name": "h2o",
+  "language": "C",
+  "type": "infrastructure",
+  "engine": "h2o",
+  "description": "libh2o evloop with a dedicated h2c-only listener on port 8082. The accept callback calls h2o_http2_accept directly instead of h2o_accept, so the connection must begin with the HTTP/2 client preface — plain HTTP/1.1 clients are dropped at protocol negotiation. Handlers for /baseline2 (query sum) and /json/{count} (serialized via cJSON).",
+  "repo": "https://github.com/h2o/h2o",
+  "enabled": true,
+  "tests": [
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": []
+}

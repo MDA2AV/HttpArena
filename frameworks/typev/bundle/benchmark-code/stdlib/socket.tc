@@ -1,0 +1,170 @@
+/**
+ * TCP/UDP/Unix socket API — high-level wrappers over raw socket operations.
+ *
+ * Usage:
+ *   from std.socket import tcp_listen, tcp_accept, tcp_read, tcp_write, tcp_close
+ *
+ * For full control (bind to specific IP, UDP, Unix sockets, socket options),
+ * use the raw API directly:
+ *   from std.internal.socket import socket
+ */
+
+from std.internal.socket import socket
+
+/**
+ * Create a TCP server socket bound to all interfaces (INADDR_ANY).
+ * @param port    - port to listen on
+ * @param backlog - maximum pending connection queue length
+ * Returns the listening socket fd, or -1 on error.
+ */
+fn tcp_listen(port: uint, backlog: int) -> int {
+    let fd = socket.socket_tcp()
+    if fd < 0 {
+        return -1
+    }
+    let rc = socket.socket_bind(fd, 0, port)
+    if rc < 0 {
+        socket.socket_close(fd)
+        return -1
+    }
+    rc = socket.socket_listen(fd, backlog)
+    if rc < 0 {
+        socket.socket_close(fd)
+        return -1
+    }
+    return fd
+}
+
+/**
+ * Create a TCP server socket bound to a specific IP address.
+ * @param ip      - IPv4 address in host byte order (use socket.parse_ipv4())
+ * @param port    - port to listen on
+ * @param backlog - maximum pending connection queue length
+ * Returns the listening socket fd, or -1 on error.
+ */
+fn tcp_listen(ip: uint, port: uint, backlog: int) -> int {
+    let fd = socket.socket_tcp()
+    if fd < 0 {
+        return -1
+    }
+    let rc = socket.socket_bind(fd, ip, port)
+    if rc < 0 {
+        socket.socket_close(fd)
+        return -1
+    }
+    rc = socket.socket_listen(fd, backlog)
+    if rc < 0 {
+        socket.socket_close(fd)
+        return -1
+    }
+    return fd
+}
+
+/**
+ * Accept an incoming TCP connection. Blocks until a client connects.
+ * @param server_fd - listening socket fd (from tcp_listen)
+ * Returns the new client socket fd, or < 0 on error.
+ */
+fn tcp_accept(server_fd: int) -> int {
+    return socket.socket_accept(server_fd)
+}
+
+/**
+ * Read data from a connected TCP socket. Blocks until data is available.
+ * @param fd  - connected socket fd
+ * @param buf - buffer to read into
+ * @param len - max bytes to read
+ * Returns bytes read (> 0), 0 if closed, or < 0 on error.
+ */
+fn tcp_read(fd: int, buf: uint[], len: uint) -> int {
+    return socket.socket_read(fd, buf, len)
+}
+
+/**
+ * Write data to a connected TCP socket. Blocks if the send buffer is full.
+ * @param fd  - connected socket fd
+ * @param buf - buffer to write from
+ * @param len - bytes to write
+ * Returns bytes written, or < 0 on error.
+ */
+fn tcp_write(fd: int, buf: uint[], len: uint) -> int {
+    return socket.socket_write(fd, buf, len)
+}
+
+/**
+ * Connect to a remote TCP server. Blocks until connected.
+ * @param ip   - remote IPv4 address in host byte order
+ * @param port - remote port number
+ * Returns the connected socket fd, or < 0 on error.
+ */
+fn tcp_connect(ip: uint, port: uint) -> int {
+    let fd = socket.socket_tcp()
+    if fd < 0 {
+        return -1
+    }
+    let rc = socket.socket_connect(fd, ip, port)
+    if rc < 0 {
+        socket.socket_close(fd)
+        return rc
+    }
+    return fd
+}
+
+/**
+ * Close a socket (TCP, UDP, or Unix).
+ * @param fd - socket file descriptor
+ * Returns 0 on success, -1 on error.
+ */
+fn tcp_close(fd: int) -> int {
+    return socket.socket_close(fd)
+}
+
+/**
+ * Receive data and immediately send a fixed response in a single call.
+ * For static-response request/response loops where the response body is the
+ * same every cycle.
+ *
+ * @param fd       - connected socket fd
+ * @param buf      - buffer to read into
+ * @param len      - max bytes to read
+ * @param resp     - response buffer to send on successful recv
+ * @param resp_len - bytes of response to send
+ * Returns bytes received (>0), 0 on orderly close, < 0 on error.
+ */
+fn tcp_read_send(fd: int, buf: uint[], len: uint, resp: uint[], resp_len: uint) -> int {
+    return socket.socket_read_send(fd, buf, len, resp, resp_len)
+}
+
+/**
+ * Receive data into a byte array. The returned array is a normal byte[] —
+ * indexing, .length, slice all work.
+ *
+ * @param fd - connected socket fd
+ * Returns byte[] with received data. Length = 0 means closed or error.
+ */
+fn tcp_stream_recv(fd: int) -> byte[] {
+    return socket.tcp_stream_recv(fd)
+}
+
+/**
+ * Optional: release a stream recv buffer early. Without this it is reclaimed
+ * automatically. Safe to call on any byte[] and safe to call more than once.
+ *
+ * @param buf - byte[] from tcp_stream_recv
+ */
+fn tcp_stream_release(buf: byte[]) -> void {
+    socket.tcp_stream_release(buf)
+}
+
+/**
+ * Count complete HTTP requests in a received buffer by scanning for
+ * non-overlapping "\r\n\r\n" terminators. Use it to size a pipelined batch
+ * response.
+ *
+ * @param buf - buffer holding received request bytes
+ * @param n   - number of valid bytes in buf (clamped to buf.length)
+ * Returns the count of complete request terminators.
+ */
+fn count_http_terminators(buf: uint[], n: uint) -> uint {
+    return socket.count_http_terminators(buf, n)
+}

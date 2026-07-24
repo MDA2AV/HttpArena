@@ -1,0 +1,15 @@
+# Traefik plugin manifest. Traefik's local-plugin loader reads this file
+# from the plugin source root to discover display metadata, the plugin
+# type, and the expected import path. `import` MUST match the moduleName
+# declared under experimental.localPlugins.<name> in the static config.
+
+displayName: HttpArena
+type: middleware
+import: github.com/httparena/traefik-httparena
+
+summary: |
+  HttpArena benchmark handler. Intercepts GET|POST /baseline11 (sum of
+  integer query args plus POST body) and GET /static/<path> (serves
+  files from /data/static), passing everything else through.
+
+testData: {}

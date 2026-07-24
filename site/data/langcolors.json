@@ -1,15 +1,16 @@
 {
   "C":          { "accent": "#e53e3e", "text": "#c53030", "textDark": "#fc8181", "rgb": "229,62,62" },
   "C#":         { "accent": "#7c3aed", "text": "#6d28d9", "textDark": "#a78bfa", "rgb": "124,58,237" },
-  "Go":         { "accent": "#0891b2", "text": "#0e7490", "textDark": "#22d3ee", "rgb": "8,145,178" },
+  "Go":         { "accent": "#00add8", "text": "#0094b8", "textDark": "#4fd1eb", "rgb": "0,173,216" },
   "Java":       { "accent": "#d97706", "text": "#b45309", "textDark": "#fbbf24", "rgb": "217,119,6" },
   "Rust":       { "accent": "#b45309", "text": "#92400e", "textDark": "#f59e0b", "rgb": "180,83,9" },
-  "JS":         { "accent": "#eab308", "text": "#a16207", "textDark": "#facc15", "rgb": "234,179,8" },
-  "TS":         { "accent": "#2563eb", "text": "#1d4ed8", "textDark": "#60a5fa", "rgb": "37,99,235" },
-  "Python":     { "accent": "#16a34a", "text": "#15803d", "textDark": "#4ade80", "rgb": "22,163,74" },
+  "JS":         { "accent": "#f7df1e", "text": "#a16207", "textDark": "#facc15", "rgb": "247,223,30" },
+  "TS":         { "accent": "#3178c6", "text": "#2a66a8", "textDark": "#6db4f3", "rgb": "49,120,198" },
+  "Python":     { "accent": "#3776ab", "text": "#2f6491", "textDark": "#73b7dd", "rgb": "55,118,171" },
   "C++":        { "accent": "#db2777", "text": "#be185d", "textDark": "#f472b6", "rgb": "219,39,119" },
   "PHP":        { "accent": "#7b7fb5", "text": "#4f5b93", "textDark": "#a0a4d9", "rgb": "123,127,181" },
   "Lua":        { "accent": "#000080", "text": "#00006a", "textDark": "#6e6eff", "rgb": "0,0,128" },
+  "Luau":       { "accent": "#00a2ff", "text": "#0087d4", "textDark": "#4fc3ff", "rgb": "0,162,255" },
   "Ruby":       { "accent": "#cc342d", "text": "#a82723", "textDark": "#f06b5e", "rgb": "204,52,45" },
   "Crystal":    { "accent": "#000100", "text": "#000100", "textDark": "#a8a8a8", "rgb": "0,1,0" },
   "Nim":        { "accent": "#ffc200", "text": "#d4a200", "textDark": "#ffe066", "rgb": "255,194,0" },
@@ -19,5 +20,7 @@
   "Elixir":     { "accent": "#6e4a7e", "text": "#5b3a6b", "textDark": "#b07cc6", "rgb": "110,74,126" },
   "Kotlin":     { "accent": "#7f52ff", "text": "#6538d4", "textDark": "#a48bff", "rgb": "127,82,255" },
   "Dart":       { "accent": "#0175c2", "text": "#01589b", "textDark": "#40c4ff", "rgb": "1,117,194" },
-  "Clojure":    { "accent": "#5881d8", "text": "#3e64b8", "textDark": "#91b3ed", "rgb": "88,129,216" }
+  "Clojure":    { "accent": "#5881d8", "text": "#3e64b8", "textDark": "#91b3ed", "rgb": "88,129,216" },
+  "Erlang":     { "accent": "#a20031", "text": "#880029", "textDark": "#c63762", "rgb": "162,0,49" },
+  "Type-C":     { "accent": "#059669", "text": "#047857", "textDark": "#34d399", "rgb": "5,150,105" }
 }

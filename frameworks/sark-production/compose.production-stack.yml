@@ -1,0 +1,59 @@
+# server busy-polls: every service needs its own disjoint cpuset, else 0 RPS.
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "${GATEWAY_EDGE_CPUS:-0-14,64-78}"
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - authsvc
+      - server
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "${GATEWAY_CACHE_CPUS:-16-19,80-83}"
+    security_opt:
+      - seccomp:unconfined
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "${GATEWAY_AUTH_CPUS:-15,79}"
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+
+  server:
+    build:
+      context: ../sark
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${GATEWAY_SERVER_CPUS:-20-31,84-95}"
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    environment:
+      - SARK_HTTPARENA_BIND=0.0.0.0:8080
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=${DATABASE_MAX_CONN:-128}
+      - REDIS_URL=redis://127.0.0.1:6379
+      - SARK_HTTPARENA_PER_IP_CAP=0
+      - SARK_HTTPARENA_H1_ONLY=1
+    depends_on:
+      - cache

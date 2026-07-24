@@ -1,0 +1,76 @@
+// HTTP/1.1 response writers — append bytes into a caller-supplied buffer.
+
+// Fixed response chunks, byte-encoded once.
+let local const PIPE_STR: string = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: keep-alive\r\n\r\nok"
+let local const PIPE_KA: byte[] = PIPE_STR.bytes()
+let local const PIPE_CLOSE: byte[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".bytes()
+
+// Pipeline fast path: PIPE_BATCH_N canned responses concatenated, prebuilt once.
+let const RESP_LEN: uint = PIPE_KA.length
+let const PIPE_BATCH_N: uint = 512u
+let const PIPE_BATCH: byte[] = PIPE_STR.repeat(PIPE_BATCH_N).bytes()
+let local const HDR_PLAIN: byte[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ".bytes()
+let local const CONN_KA: byte[] = "\r\nConnection: keep-alive\r\n\r\n".bytes()
+let local const CONN_CLOSE: byte[] = "\r\nConnection: close\r\n\r\n".bytes()
+
+// Copy src into dst at pos; return the position after. The copy is a single
+// native blit (copyFrom); dst is grown first if it can't hold the span.
+fn writeBytes(dst: byte[], pos: uint, src: byte[]) -> uint {
+    let need: uint = pos + src.length
+    if need > dst.length {
+        dst.resize(need)
+    }
+    dst.copyFrom(pos, src)
+    return need
+}
+
+// Decimal digit count of a non-negative integer.
+fn digitCount(n: int) -> uint {
+    if n <= 0 {
+        return 1u
+    }
+    let c: uint = 0u
+    let v: int = n
+    while v > 0 {
+        c = c + 1u
+        v = v / 10
+    }
+    return c
+}
+
+// Write n as decimal ASCII into dst at pos; return the position after.
+fn writeInt(dst: byte[], pos: uint, n: int) -> uint {
+    if n <= 0 {
+        dst[pos] = 48 as byte
+        return pos + 1u
+    }
+    let end: uint = pos + digitCount(n)
+    let v: int = n
+    let p: uint = end
+    while v > 0 {
+        p = p - 1u
+        dst[p] = ((v % 10) + 48) as byte
+        v = v / 10
+    }
+    return end
+}
+
+// /pipeline -> fixed "ok" response.
+fn writePipeline(dst: byte[], pos: uint, keepAlive: bool) -> uint {
+    if keepAlive {
+        return writeBytes(dst, pos, PIPE_KA)
+    }
+    return writeBytes(dst, pos, PIPE_CLOSE)
+}
+
+// /baseline11 -> text/plain body = the decimal of `result`.
+fn writeBaseline(dst: byte[], pos: uint, result: int, keepAlive: bool) -> uint {
+    let p: uint = writeBytes(dst, pos, HDR_PLAIN)
+    p = writeInt(dst, p, digitCount(result) as int)
+    if keepAlive {
+        p = writeBytes(dst, p, CONN_KA)
+    } else {
+        p = writeBytes(dst, p, CONN_CLOSE)
+    }
+    return writeInt(dst, p, result)
+}

@@ -1,9 +1,9 @@
 ---
 title: Implementation Guidelines
 ---
-{{< type-rules production="Must ship exactly two services — one HTTP/3-capable reverse proxy and one application server. The proxy must be a widely-used, production-grade server with QUIC support (Caddy, nginx 1.25+ with ngx_http_v3_module, Envoy, HAProxy 2.8+, h2o). No custom QUIC implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, QUIC parameter tuning). May tune the proxy-to-server protocol (h1/h2c/UDS). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom QUIC implementations. Ranked separately from frameworks." >}}
+{{< type-rules production="Must ship exactly two services - one HTTP/3-capable reverse proxy and one application server. The proxy must be a widely-used, production-grade server with QUIC support (Caddy, nginx 1.25+ with ngx_http_v3_module, Envoy, HAProxy 2.8+, h2o). No custom QUIC implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, QUIC parameter tuning). May tune the proxy-to-server protocol (h1/h2c/UDS). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom QUIC implementations. Ranked separately from frameworks." >}}
 
-The Gateway-H3 test is the HTTP/3 sibling of [Gateway-64](../gateway-h2/). Same endpoint surface, same two-service shape, same 64-CPU budget, same 20-URI round-robin mix — **the only difference is the edge protocol**. The load generator sends requests over QUIC to port 8443 (UDP), the proxy terminates h3 + TLS, and the upstream backend is still reached over plain h1 (or whatever the entry chooses internally).
+The Gateway-H3 test is the HTTP/3 sibling of [Gateway-64](../gateway-h2/). Same endpoint surface, same two-service shape, same 64-CPU budget, same 20-URI round-robin mix - **the only difference is the edge protocol**. The load generator sends requests over QUIC to port 8443 (UDP), the proxy terminates h3 + TLS, and the upstream backend is still reached over plain h1 (or whatever the entry chooses internally).
 
 ## Architecture
 
@@ -24,9 +24,9 @@ Exactly two services: one HTTP/3-capable reverse proxy and one application serve
 
 HTTP/3 shifts work around compared to HTTP/2 in ways that are worth measuring separately:
 
-- **No head-of-line blocking** at the TCP layer — QUIC streams are independent, so a slow response on one stream doesn't stall others on the same connection
-- **Stream and datagram framing happens in userspace**, not in the kernel's TCP stack — moves CPU cost from `softirq` to the proxy process
-- **Encryption is per-packet, not per-record** — different cost profile than TLS-over-TCP
+- **No head-of-line blocking** at the TCP layer - QUIC streams are independent, so a slow response on one stream doesn't stall others on the same connection
+- **Stream and datagram framing happens in userspace**, not in the kernel's TCP stack - moves CPU cost from `softirq` to the proxy process
+- **Encryption is per-packet, not per-record** - different cost profile than TLS-over-TCP
 - **UDP send/recv syscall overhead** is higher than TCP `sendfile()`, but `SO_TXTIME` / `SO_TIMESTAMPING` / GRO/GSO mitigations vary by kernel version and proxy implementation
 - **Connection migration and 0-RTT** are h3-specific features that production proxies handle very differently
 
@@ -96,10 +96,10 @@ services:
 
 Proxy options (pick one):
 
-- **Caddy** — h3 is enabled by default when you bind a TLS listener. Stock `caddy:2-alpine` image works out of the box. See the reference entry at [`frameworks/aspnet-minimal_caddy/`](https://github.com/MDA2AV/HttpArena/tree/main/frameworks/aspnet-minimal_caddy) for a minimal working Caddyfile.
-- **nginx with QUIC** — nginx 1.25+ supports h3 via `ngx_http_v3_module`, but the stock `nginx:alpine` image is not built with it. You need to either build from source or use a community image that includes QUIC.
-- **Envoy** — supports h3 via the `envoy.quic.connection_id_generator` + `QuicProtocolOptions` listener config.
-- **HAProxy 2.8+** — supports h3 via the `quic4@:8443` bind spec.
+- **Caddy** - h3 is enabled by default when you bind a TLS listener. Stock `caddy:2-alpine` image works out of the box. See the reference entry at [`frameworks/aspnet-minimal_caddy/`](https://github.com/MDA2AV/HttpArena/tree/main/frameworks/aspnet-minimal_caddy) for a minimal working Caddyfile.
+- **nginx with QUIC** - nginx 1.25+ supports h3 via `ngx_http_v3_module`, but the stock `nginx:alpine` image is not built with it. You need to either build from source or use a community image that includes QUIC.
+- **Envoy** - supports h3 via the `envoy.quic.connection_id_generator` + `QuicProtocolOptions` listener config.
+- **HAProxy 2.8+** - supports h3 via the `quic4@:8443` bind spec.
 
 ### Required compose settings
 
@@ -113,7 +113,7 @@ Proxy options (pick one):
 
 ## CPU allocation
 
-Identical to [Gateway-64](../gateway-h2/implementation/#cpu-allocation) — 64 logical CPUs (32 physical + 32 SMT siblings) split freely between proxy and server, with SMT-sibling pairing required. See the Gateway-64 page for the full rules.
+Identical to [Gateway-64](../gateway-h2/implementation/#cpu-allocation) - 64 logical CPUs (32 physical + 32 SMT siblings) split freely between proxy and server, with SMT-sibling pairing required. See the Gateway-64 page for the full rules.
 
 ## Workload
 
@@ -126,15 +126,15 @@ The load generator (`h2load-h3`) requests 20 URIs in a round-robin across multip
 | Baseline | `/baseline2?a=N&b=M` with 4 distinct parameter combinations | 4 | 20% | Server |
 | Async DB | `/async-db?min=10&max=50&limit=N` with `limit ∈ {10, 25, 50}` | 3 | 15% | Server |
 
-Same mix and weighting as Gateway-64 — the `requests/gateway-64-uris.txt` URI file is shared between both profiles so benchmark numbers are directly comparable across the edge protocol dimension.
+Same mix and weighting as Gateway-64 - the `requests/gateway-64-uris.txt` URI file is shared between both profiles so benchmark numbers are directly comparable across the edge protocol dimension.
 
 ## What it measures
 
 - **QUIC termination cost** at the proxy at realistic connection counts
 - **HTTP/3 stream multiplexing** through a proxy
-- **Static file serving over h3** — disk I/O + precompressed asset selection + UDP send path
+- **Static file serving over h3** - disk I/O + precompressed asset selection + UDP send path
 - **Mixed workload throughput** when the edge is QUIC instead of TCP+TLS
-- **h3-vs-h2 delta** for the same stack — comparing Gateway-H3 to Gateway-64 numbers tells you how much of a framework's gateway performance is attributable to edge protocol choice
+- **h3-vs-h2 delta** for the same stack - comparing Gateway-H3 to Gateway-64 numbers tells you how much of a framework's gateway performance is attributable to edge protocol choice
 
 ## Parameters
 

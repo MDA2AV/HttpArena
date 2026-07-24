@@ -45,7 +45,7 @@ Several validations use randomized inputs to detect hardcoded responses:
   PASS [POST /baseline11?a=13&b=42 body=20]
   ...
 [test] json endpoint
-  PASS [GET /json] (50 items, totals computed correctly)
+  PASS [GET /json/{count}?m=X] (4 counts × multipliers + full item schema verified)
   PASS [GET /json Content-Type] (Content-Type: application/json)
   ...
 

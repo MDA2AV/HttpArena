@@ -1,0 +1,11 @@
+{
+  "display_name": "pingora",
+  "language": "Rust",
+  "type": "infrastructure",
+  "engine": "pingora",
+  "description": "Pingora, Cloudflare's Rust HTTP framework, used as a standalone server with custom handlers for /baseline11 and preloaded /static files.",
+  "repo": "https://github.com/cloudflare/pingora",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "static"],
+  "maintainers": []
+}

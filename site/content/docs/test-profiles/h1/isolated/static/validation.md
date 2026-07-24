@@ -8,9 +8,9 @@ The following checks are executed by `validate.sh` for every framework subscribe
 
 Verifies correct `Content-Type` headers for representative file types:
 
-- `GET /static/reset.css` — expects `Content-Type: text/css`
-- `GET /static/app.js` — expects `Content-Type: application/javascript`
-- `GET /static/manifest.json` — expects `Content-Type: application/json`
+- `GET /static/reset.css` - expects `Content-Type: text/css`
+- `GET /static/app.js` - expects `Content-Type: application/javascript`
+- `GET /static/manifest.json` - expects `Content-Type: application/json`
 
 Note: `text/javascript` is accepted as equivalent to `application/javascript` per RFC 9239.
 
@@ -25,7 +25,7 @@ Requests all 20 static files **without** `Accept-Encoding` and compares the resp
 Requests all 20 static files **with** `Accept-Encoding: br;q=1, gzip;q=0.8` and checks:
 
 - If the server returns a `Content-Encoding` header (br or gzip), the decompressed response size must match the original file size on disk
-- If the server does not compress a file, it is counted as skipped (not a failure — compression is optional)
+- If the server does not compress a file, it is counted as skipped (not a failure - compression is optional)
 
 **PASS** if all compressed files decompress to the correct size. **SKIP** if the server does not compress any files. **FAIL** if any compressed file decompresses to the wrong size.
 

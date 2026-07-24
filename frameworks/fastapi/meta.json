@@ -1,0 +1,24 @@
+{
+  "display_name": "fastapi",
+  "language": "Python",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "uvicorn",
+  "description": "FastAPI async web framework on Uvicorn (uvloop)",
+  "repo": "https://github.com/fastapi/fastapi",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static"
+  ],
+  "maintainers": []
+}

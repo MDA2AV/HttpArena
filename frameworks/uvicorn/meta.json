@@ -1,0 +1,23 @@
+{
+  "display_name": "uvicorn",
+  "language": "Python",
+  "type": "engine",
+  "engine": "uvloop",
+  "description": "An ASGI web server implementation for Python (uvloop)",
+  "repo": "https://github.com/Kludex/uvicorn",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "async-db"
+  ],
+  "maintainers": []
+}

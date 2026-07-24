@@ -48,7 +48,7 @@ Templates are assigned round-robin to connections, so each connection sends one 
 
 Raw templates support per-request value substitution via two placeholder types:
 
-**`{RAND:min:max}`** — replaced with a random number between `min` and `max` (inclusive) on every request. Uses a per-connection xorshift64 PRNG with no cross-thread contention. Ideal for distributing reads and writes across a large ID space.
+**`{RAND:min:max}`** - replaced with a random number between `min` and `max` (inclusive) on every request. Uses a per-connection xorshift64 PRNG with no cross-thread contention. Ideal for distributing reads and writes across a large ID space.
 
 ```http
 GET /items/{RAND:1:100000} HTTP/1.1
@@ -56,7 +56,7 @@ Host: localhost:8080
 
 ```
 
-**`{SEQ:start}`** — replaced with a globally incrementing counter starting at `start`. Uses a shared atomic counter across all threads, so every request gets a unique value. Ideal for INSERT operations where each row needs a distinct ID.
+**`{SEQ:start}`** - replaced with a globally incrementing counter starting at `start`. Uses a shared atomic counter across all threads, so every request gets a unique value. Ideal for INSERT operations where each row needs a distinct ID.
 
 ```http
 POST /items HTTP/1.1
@@ -69,7 +69,7 @@ Content-Length: 72
 
 Values are **zero-padded** to the digit width of the max value, so the substituted buffer is always the same length as the original placeholder. This means `Content-Length` stays correct for POST/PUT bodies without recalculation.
 
-One placeholder per template (the first `{RAND:` or `{SEQ:` found). Each template gets its own independent counter/RNG state. A per-connection scratch buffer is used for substitution — the shared template buffer is never modified.
+One placeholder per template (the first `{RAND:` or `{SEQ:` found). Each template gets its own independent counter/RNG state. A per-connection scratch buffer is used for substitution - the shared template buffer is never modified.
 
 ## Pipelining
 

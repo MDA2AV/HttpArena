@@ -1,13 +1,15 @@
 {
   "display_name": "aspnet-minimal",
   "language": "C#",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "kestrel",
   "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "tests": [
-    "echo-ws"
+    "echo-ws",
+    "echo-ws-pipeline"
   ],
   "maintainers": []
 }

@@ -18,12 +18,15 @@ partial class AppJsonContext : JsonSerializerContext { }
 
 static class Handlers
 {
-    public static int Sum(int a, int b) => a + b;
+    // Returning `string` makes ASP.NET minimal APIs set Content-Type to
+    // text/plain automatically. Returning `int` defaults to JSON and
+    // serializes the bare number — which violates the baseline contract.
+    public static string Sum(int a, int b) => (a + b).ToString();
 
-    public static async ValueTask<int> SumBody(int a, int b, HttpRequest req)
+    public static async ValueTask<string> SumBody(int a, int b, HttpRequest req)
     {
         using var reader = new StreamReader(req.Body);
-        return a + b + int.Parse(await reader.ReadToEndAsync());
+        return (a + b + int.Parse(await reader.ReadToEndAsync())).ToString();
     }
 
     public static string Text() => "ok";

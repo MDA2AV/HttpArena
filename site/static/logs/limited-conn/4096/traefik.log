@@ -1,0 +1,4 @@
+[90m2026-04-19T22:27:32Z[0m [1m[31mERR[0m[0m Error while Peeking first byte [36merror=[0m[31m"read tcp 127.0.0.1:8080->127.0.0.1:6474: read: connection reset by peer"[0m
+[90m2026-04-19T22:27:39Z[0m [1m[31mERR[0m[0m Error while Peeking first byte [36merror=[0m[31m"read tcp 127.0.0.1:8080->127.0.0.1:60392: read: connection reset by peer"[0m
+[90m2026-04-19T22:27:39Z[0m [1m[31mERR[0m[0m Error while Peeking first byte [36merror=[0m[31m"read tcp 127.0.0.1:8080->127.0.0.1:60400: read: connection reset by peer"[0m
+[90m2026-04-19T22:27:39Z[0m [1m[31mERR[0m[0m Error while Peeking first byte [36merror=[0m[31m"read tcp 127.0.0.1:8080->127.0.0.1:60402: read: connection reset by peer"[0m

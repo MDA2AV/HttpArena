@@ -1,7 +1,8 @@
 {
   "display_name": "rails",
   "language": "Ruby",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "puma",
   "description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.",
   "repo": "https://github.com/rails/rails",
@@ -9,15 +10,16 @@
   "tests": [
     "baseline",
     "pipelined",
-    "noisy",
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "api-4",
     "api-16",
     "async-db",
+    "crud",
     "static"
   ],
-  "maintainers": []
+  "maintainers": ["p8"]
 }

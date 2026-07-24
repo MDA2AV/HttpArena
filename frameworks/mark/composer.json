@@ -1,0 +1,12 @@
+{
+    "require": {
+        "workerman/workerman": "dev-master as 5.1",
+        "mark-php/mark": "^v2"
+    },
+    "autoload": {
+        "files": [
+            "handlers.php",
+            "Pgsql.php"
+        ]
+    }
+}

@@ -90,7 +90,11 @@ cleanup_all() {
     docker volume prune -f >/dev/null 2>&1 || true
     docker image prune  -f >/dev/null 2>&1 || true
 }
-trap 'cleanup_all; system_restore' EXIT
+if [ "${SKIP_TUNE:-}" != "true" ]; then
+    trap 'cleanup_all; system_restore' EXIT
+else
+    trap 'cleanup_all' EXIT
+fi
 
 # Clean slate: stop any leftover benchmark containers from a previous
 # crashed run, AND prune any leftover dangling volumes/images from the
@@ -162,7 +166,8 @@ FRAMEWORK="$FRAMEWORK_ARG"
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
          api-4 api-16 static async-db \
-         baseline-h2 static-h2 baseline-h3 static-h3 \
+         baseline-h2 static-h2 baseline-h2c json-h2c \
+         baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls echo-ws; do
     if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
 done
@@ -170,14 +175,18 @@ $_has_isolated_test && framework_build
 
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
-system_tune
+if [ "${SKIP_TUNE:-}" != "true" ]; then
+    system_tune
+else
+    info "skipping system tuning as requested (SKIP_TUNE=true)"
+fi
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack; do
+for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
-$need_pg && postgres_start
+if $need_pg; then postgres_start; fi
 
 # Redis sidecar — started whenever crud is in play so multi-process
 # frameworks can use it as a shared cache. Single-heap frameworks
@@ -188,7 +197,7 @@ need_redis=false
 for t in crud; do
     if framework_subscribes_to "$t"; then need_redis=true; break; fi
 done
-$need_redis && redis_start
+if $need_redis; then redis_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
@@ -209,6 +218,25 @@ run_one() {
     tool=$(endpoint_tool "$endpoint")
 
     banner "$FRAMEWORK / $profile / ${CONNS}c (tool=$tool)"
+
+    # Reset Postgres before each DB profile so it sees the same clean,
+    # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
+    # Postgres is started once and shared across the whole run, so otherwise the
+    # previous profile's warm buffers / planner stats / table bloat bleed into
+    # this one. That contamination is severe: after async-db's seq-scan load
+    # leaves every page resident, crud's cached-read backends all become
+    # runnable at once and Postgres spins ~120 cores on snapshot/buffer
+    # contention, collapsing crud from ~680k to ~210k rps. The first DB profile
+    # already has a fresh server from the upfront postgres_start, so skip it.
+    case "$endpoint" in
+        async-db|crud|api-4|api-16|fortunes)
+            if [ "${PG_DIRTY:-false}" = true ]; then
+                info "resetting postgres for a clean per-profile baseline"
+                postgres_start
+            fi
+            PG_DIRTY=true
+            ;;
+    esac
 
     # Compose-orchestrated profiles (gateway-*, production-stack) use
     # a multi-container stack instead of a single framework container.
@@ -292,6 +320,43 @@ run_one() {
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
+    # Input bandwidth — bytes the server ingests per second. Matters for
+    # profiles where the *request* body dominates (upload, api-4/16 mixed
+    # fixtures, crud writes) and where the response bandwidth alone
+    # understates the actual work done. Computed as
+    #    rps × mean(--raw fixture size)
+    # which is the avg bytes/request sent by gcannon. Skipped when the
+    # endpoint doesn't use --raw (baseline, pipeline, ws-echo, grpc, h2/h3
+    # via other tools).
+    local raw_arg=""
+    local prev_was_raw=false
+    local arg
+    for arg in "${gc_args[@]}"; do
+        if [ "$prev_was_raw" = "true" ]; then
+            raw_arg="$arg"
+            break
+        fi
+        [ "$arg" = "--raw" ] && prev_was_raw=true || prev_was_raw=false
+    done
+    if [ -n "$raw_arg" ] && [ "$best_rps" -gt 0 ] 2>/dev/null; then
+        local avg_tpl_size
+        avg_tpl_size=$(IFS=','; total=0; count=0
+            for f in $raw_arg; do
+                s=$(wc -c < "$f" 2>/dev/null || echo 0)
+                total=$((total + s))
+                count=$((count + 1))
+            done
+            [ "$count" -gt 0 ] && echo "$((total / count))" || echo "0")
+        BEST_M[input_bw]=$(python3 -c "
+bps = $best_rps * $avg_tpl_size
+if bps >= 1073741824: print(f'{bps/1073741824:.2f}GB/s')
+elif bps >= 1048576: print(f'{bps/1048576:.2f}MB/s')
+elif bps >= 1024: print(f'{bps/1024:.2f}KB/s')
+else: print(f'{bps}B/s')
+" 2>/dev/null || echo "")
+        [ -n "${BEST_M[input_bw]}" ] && info "input BW: ${BEST_M[input_bw]} (avg template: ${avg_tpl_size} bytes)"
+    fi
+
     # ── Save results (--save) ───────────────────────────────────────────
     if [ "$SAVE_RESULTS" = "true" ]; then
         save_result "$profile" "$CONNS" "$best_rps" "$best_cpu" "$best_mem"
@@ -373,7 +438,7 @@ save_result() {
   "threads": $THREADS,
   "duration": "$DURATION",
   "pipeline": $PROF_PIPELINE,
-  "bandwidth": "${BEST_M[bandwidth]:-0}",
+  "bandwidth": "${BEST_M[bandwidth]:-0}",$([ -n "${BEST_M[input_bw]:-}" ] && printf '\n  "input_bw": "%s",' "${BEST_M[input_bw]}")
   "reconnects": ${BEST_M[reconnects]:-0},
   "status_2xx": ${BEST_M[status_2xx]:-0},
   "status_3xx": ${BEST_M[status_3xx]:-0},

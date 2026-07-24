@@ -1,0 +1,41 @@
+# HttpArena entry for mq-bridge (Rust) — HTTP/1.1 + cleartext HTTP/2 (h2c) on
+# 8080, plus HTTP/2-over-TLS (ALPN h2) on 8443 for the baseline-h2 / static-h2
+# profiles.
+#
+# HttpArena builds each framework from its own directory, so mq-bridge is pulled
+# in via a pinned git reference. hyper-util's auto connection builder serves both
+# HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the plaintext port; the same
+# builder runs behind the TLS listener, where the library now advertises ALPN
+# `h2`. Tracks the `dev` branch to benchmark unreleased code; pin to a `tag` or
+# exact `rev` for reproducible benchmarks.
+[package]
+name = "httparena-mqbridge"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "httparena-mqbridge"
+path = "src/main.rs"
+
+[dependencies]
+# `rustls-ring` selects the ring crypto provider for the TLS (8443) listener.
+mq-bridge = { git = "https://github.com/marcomq/mq-bridge", tag = "v0.2.21", default-features = false, features = ["http", "rustls-ring"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+# Zero-copy bodies + pre-gzip for the in-memory static/json caches.
+bytes = "1"
+flate2 = "1"
+# Install the process-default rustls crypto provider before the TLS endpoint.
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+# Async-db profile: own a Postgres pool in the handler (HttpArena seeds an
+# `items` table and passes DATABASE_URL).
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "json"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"

@@ -7,7 +7,12 @@ class PostgreSQL
 
     public static function init(): void
     {
-        $parts = parse_url(getenv('DATABASE_URL'));
+        $dsn = getenv('DATABASE_URL');
+        if (!$dsn) {
+            return;
+        }
+
+        $parts = parse_url($dsn);
         $host  = $parts['host'] ?? 'localhost';
         $port  = $parts['port'] ?? 5432;
         $db    = ltrim($parts['path'] ?? '/benchmark', '/');

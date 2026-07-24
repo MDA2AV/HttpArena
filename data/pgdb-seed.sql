@@ -100043,3 +100043,52 @@ INSERT INTO users VALUES
     (17, 'Bob Martinez',  'bob@bench.local',    'free'),
     (8,  'Carla Nguyen',  'carla@bench.local',  'pro'),
     (99, 'Dmitri Volkov', 'dmitri@bench.local', 'enterprise');
+
+-- ── fortunes table ─────────────────────────────────────────────────────────
+-- Backs the /fortunes profile (template-engine benchmark). 12 fixed rows;
+-- the handler appends a 13th row in-memory at request time and sorts by
+-- message before rendering. Row 11 contains a raw <script> tag — the
+-- validator asserts it is HTML-escaped in the rendered output, which is
+-- the load-bearing check for "the engine actually escapes user content".
+-- Dataset matches the TechEmpower Fortunes spec for cross-benchmark
+-- comparability; see docs/test-profiles/h1/isolated/fortunes/.
+
+CREATE TABLE fortune (
+    id      INTEGER PRIMARY KEY,
+    message TEXT NOT NULL
+);
+
+INSERT INTO fortune (id, message) VALUES
+    (1,  'fortune: No such file or directory'),
+    (2,  'A computer scientist is someone who fixes things that aren''t broken.'),
+    (3,  'After enough decimal places, nobody gives a damn.'),
+    (4,  'A bad random number generator: 1, 1, 1, 1, 1, 4.33e+67, 1, 1, 1'),
+    (5,  'A computer program does what you tell it to do, not what you want it to do.'),
+    (6,  'Emacs is a nice operating system, but I prefer UNIX. — Tom Christaensen'),
+    (7,  'Any program that runs right is obsolete.'),
+    (8,  'A list is only as strong as its weakest link. — Donald Knuth'),
+    (9,  'Feature: A bug with seniority.'),
+    (10, 'Computers make very fast, very accurate mistakes.'),
+    (11, '<script>alert("This should not be displayed in a browser alert box.");</script>'),
+    (12, 'フレームワークのベンチマーク');
+
+-- Synthetic rows 13..200 — bulk content so per-request render time is
+-- proportional to a real engine workload instead of being dwarfed by the
+-- PG round-trip. With only the 12 TE-canonical rows the profile measures
+-- the database driver more than the template engine; adding 188 rows
+-- means render cost scales linearly while the query cost stays fixed
+-- (still one round-trip, still single-page table read). Each row contains
+-- &, ', " and an em-dash so escape work runs on every cell, not just on
+-- row 11. Diverges from TE Fortunes' 12-row spec by design — see
+-- docs/test-profiles/h1/isolated/fortunes/.
+INSERT INTO fortune (id, message)
+SELECT g, CASE g % 7
+    WHEN 0 THEN 'Adage #' || g || ': "Premature optimization is the root of all evil." — D. Knuth'
+    WHEN 1 THEN 'Adage #' || g || ': There are 10 kinds of people: those who understand binary & those who don''t.'
+    WHEN 2 THEN 'Adage #' || g || ': Walking on water & developing from a spec are easy if both are frozen — E. Berard'
+    WHEN 3 THEN 'Adage #' || g || ': In theory there is no difference between theory & practice. In practice there is.'
+    WHEN 4 THEN 'Adage #' || g || ': "It''s not a bug, it''s an undocumented feature." — anonymous'
+    WHEN 5 THEN 'Adage #' || g || ': The cheapest, fastest & most reliable components are those that aren''t there.'
+    ELSE       'Adage #' || g || ': Programs must be written for people to read & only incidentally for machines to execute.'
+END
+FROM generate_series(13, 200) AS g;

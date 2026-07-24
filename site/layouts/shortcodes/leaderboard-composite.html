@@ -1,28 +1,32 @@
 {{ $profiles := slice
-  (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true)
-  (dict "id" "api-16" "label" "API-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false)
-  (dict "id" "baseline" "label" "Baseline" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
-  (dict "id" "pipelined" "label" "Pipelined" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
-  (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true)
-  (dict "id" "json" "label" "JSON" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "json-comp" "label" "JSON Compressed" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" true "engineScored" false)
-  (dict "id" "json-tls" "label" "JSON TLS" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "upload" "label" "Upload" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 32 256) "scored" true "engineScored" false)
-  (dict "id" "static" "label" "Static" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024 4096 6800) "scored" true "engineScored" false)
-  (dict "id" "async-db" "label" "Async DB" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" true "engineScored" false)
-  (dict "id" "crud" "label" "CRUD" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "gateway-64" "label" "Gateway-64" "sublabel" "H/2 Gateway" "proto" "h2gw" "conns" (slice 512 1024) "scored" true "engineScored" true)
-  (dict "id" "gateway-h3" "label" "Gateway-H3" "sublabel" "H/3 Gateway" "proto" "h3gw" "conns" (slice 64 256) "scored" true "engineScored" true)
-  (dict "id" "production-stack" "label" "Prod Stack" "sublabel" "Production Stack" "proto" "prodstack" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "unary-grpc-tls" "label" "Unary TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true)
-  (dict "id" "stream-grpc" "label" "Stream" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "stream-grpc-tls" "label" "Stream TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "static-h3" "label" "Static" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true)
-  (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true)
+  (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "api-16" "label" "API-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "baseline" "label" "Baseline" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true "infraScored" true)
+  (dict "id" "pipelined" "label" "Pipelined" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true "infraScored" true)
+  (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096) "scored" true "engineScored" true "infraScored" true)
+  (dict "id" "json" "label" "JSON" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "json-comp" "label" "JSON Compressed" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "json-tls" "label" "JSON TLS" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "upload" "label" "Upload" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 32 256) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "static" "label" "Static" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024 4096 6800) "scored" true "engineScored" false "infraScored" true)
+  (dict "id" "async-db" "label" "Async DB" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "crud" "label" "CRUD" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "fortunes" "label" "Fortunes" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 1024) "scored" false "engineScored" false "infraScored" false)
+  (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "static-h2" "label" "Static" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "baseline-h2c" "label" "Baseline h2c" "sublabel" "H/2" "proto" "h2" "conns" (slice 256 1024 4096) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "json-h2c" "label" "JSON h2c" "sublabel" "H/2" "proto" "h2" "conns" (slice 1024 4096) "scored" true "engineScored" false "infraScored" false)
+  (dict "id" "gateway-64" "label" "Gateway-64" "sublabel" "H/2 Gateway" "proto" "h2gw" "conns" (slice 512 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "gateway-h3" "label" "Gateway-H3" "sublabel" "H/3 Gateway" "proto" "h3gw" "conns" (slice 64 256) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "production-stack" "label" "Prod Stack" "sublabel" "Production Stack" "proto" "prodstack" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "unary-grpc" "label" "Unary" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "unary-grpc-tls" "label" "Unary TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 256 1024) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "stream-grpc" "label" "Stream" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "stream-grpc-tls" "label" "Stream TLS" "sublabel" "gRPC" "proto" "grpc" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "static-h3" "label" "Static" "sublabel" "H/3" "proto" "h3" "conns" (slice 64) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "echo-ws" "label" "Echo" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true "infraScored" false)
+  (dict "id" "echo-ws-pipeline" "label" "Echo Pipelined" "sublabel" "WebSocket" "proto" "ws" "conns" (slice 512 4096 16384) "scored" true "engineScored" true "infraScored" false)
 }}
 
 {{/* Build a clean JSON blob: array of {profile, framework, rps, language} entries */}}
@@ -43,6 +47,7 @@
 var compositeEntries = {{ $entries | jsonify | safeJS }};
 var compositeProfiles = {{ $profiles | jsonify | safeJS }};
 var compositeMeta = {{ site.Data.frameworks | jsonify | safeJS }};
+var compositeLangColors = {{ site.Data.langcolors | jsonify | safeJS }};
 </script>
 
 <div id="composite-type-note" style="margin-top:1rem; padding:0.85rem 1.25rem; border-radius:0.5rem; background:linear-gradient(135deg, rgba(59,130,246,0.04), rgba(139,92,246,0.04)); border:1px solid rgba(59,130,246,0.15); color:#1e293b; font-size:1.02rem; line-height:1.7;">
@@ -64,6 +69,7 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
     <span class="lb-filters-label">Type</span>
     <div class="composite-type-filter active" data-type="production">Production</div>
     <div class="composite-type-filter active" data-type="tuned">Tuned</div>
+    <div class="composite-type-filter" data-type="infrastructure">Infrastructure</div>
     <div class="composite-type-filter" data-type="engine">Engine</div>
   </div>
   <style>
@@ -71,12 +77,14 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
   .composite-type-filter:hover { color:#475569; border-color:#cbd5e1; transform:translateY(-1px); box-shadow:0 2px 4px rgba(0,0,0,0.08); }
   .composite-type-filter[data-type="production"].active { color:#22c55e; border-color:#22c55e; background:rgba(34,197,94,0.06); font-weight:600; }
   .composite-type-filter[data-type="tuned"].active { color:#ca8a04; border-color:#eab308; background:rgba(234,179,8,0.06); font-weight:600; }
+  .composite-type-filter[data-type="infrastructure"].active { color:#0891b2; border-color:#0891b2; background:rgba(8,145,178,0.06); font-weight:600; }
   .composite-type-filter[data-type="engine"].active { color:#f59e0b; border-color:#f59e0b; background:rgba(245,158,11,0.06); font-weight:600; }
   html.dark .composite-type-wrap { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.10); }
   html.dark .composite-type-filter { color:#64748b; border-color:#334155; }
   html.dark .composite-type-filter:hover { color:#94a3b8; border-color:#475569; }
   html.dark .composite-type-filter[data-type="production"].active { color:#4ade80; border-color:#22c55e; background:rgba(34,197,94,0.12); }
   html.dark .composite-type-filter[data-type="tuned"].active { color:#fbbf24; border-color:#eab308; background:rgba(234,179,8,0.12); }
+  html.dark .composite-type-filter[data-type="infrastructure"].active { color:#22d3ee; border-color:#0891b2; background:rgba(8,145,178,0.12); }
   html.dark .composite-type-filter[data-type="engine"].active { color:#fbbf24; border-color:#f59e0b; background:rgba(245,158,11,0.12); }
   .composite-badges { display:inline-flex; flex-wrap:wrap; gap:0; margin-left:0.15rem; vertical-align:middle; }
   .composite-badge { display:inline-flex; align-items:center; justify-content:center; font-size:1.05rem; line-height:1; cursor:default; margin-left:-0.15rem; }
@@ -152,8 +160,7 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
 
   <div class="lb-filters composite-resource-wrap" style="margin:0.5rem 0 0 0; padding:0.5rem 1rem; background:rgba(0,0,0,0.02); border-radius:8px; border:1px solid rgba(0,0,0,0.06);">
     <span class="lb-filters-label">Resource factors</span>
-    <div class="composite-resource-toggle" data-resource="cpu">CPU efficiency <span style="font-size:0.6rem; color:#94a3b8;">(1x weight)</span></div>
-    <div class="composite-resource-toggle" data-resource="mem">Memory efficiency <span style="font-size:0.6rem; color:#94a3b8;">(0.5x weight)</span></div>
+    <div class="composite-resource-toggle active" data-resource="mem">Memory efficiency <span style="font-size:0.6rem; color:#94a3b8;">(0.5x weight)</span></div>
   </div>
   <style>
   .composite-resource-toggle { padding:0.3rem 0.75rem; font-size:0.8rem; font-weight:500; color:#94a3b8; cursor:pointer; border-radius:6px; border:1.5px solid #e2e8f0; background:transparent; transition:all 0.15s ease; user-select:none; }
@@ -220,10 +227,56 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
     Which tests matter the most to you? Help us improve our benchmark — <span style="font-size:1.05rem; font-weight:700; color:#EAB308;">Vote here</span> — or suggest new test ideas in the comments
   </a>
 
+  <div class="composite-view-switcher" role="tablist" aria-label="Leaderboard view">
+    <button type="button" class="composite-view-tab active" data-view="table" role="tab" aria-selected="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      Table
+    </button>
+    <button type="button" class="composite-view-tab" data-view="graph" role="tab" aria-selected="false">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="4" y2="4"/><line x1="4" y1="20" x2="20" y2="20"/><rect x="7" y="10" width="3" height="7"/><line x1="8.5" y1="10" x2="8.5" y2="6"/><line x1="8.5" y1="17" x2="8.5" y2="19"/><rect x="13" y="7" width="3" height="10"/><line x1="14.5" y1="7" x2="14.5" y2="4"/><line x1="14.5" y1="17" x2="14.5" y2="19"/></svg>
+      Graph
+    </button>
+  </div>
+  <style>
+  .composite-view-switcher { display:inline-flex; gap:0; margin:0.75rem 0 0 0; padding:0.25rem; background:rgba(0,0,0,0.04); border-radius:10px; border:1px solid rgba(0,0,0,0.08); }
+  .composite-view-tab { display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.9rem; font-size:0.85rem; font-weight:500; color:#64748b; background:transparent; border:0; border-radius:7px; cursor:pointer; transition:all 0.15s ease; user-select:none; }
+  .composite-view-tab:hover { color:#334155; }
+  .composite-view-tab.active { color:#1e293b; background:#ffffff; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+  html.dark .composite-view-switcher { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.10); }
+  html.dark .composite-view-tab { color:#94a3b8; }
+  html.dark .composite-view-tab:hover { color:#cbd5e1; }
+  html.dark .composite-view-tab.active { color:#f1f5f9; background:#0f172a; }
+
+  .composite-graph-wrap { position:relative; width:100%; margin-top:0.5rem; padding:0.75rem 0.5rem 0.5rem 0.5rem; background:rgba(0,0,0,0.02); border-radius:10px; border:1px solid rgba(0,0,0,0.06); overflow-x:auto; overflow-y:hidden; }
+  html.dark .composite-graph-wrap { background:rgba(255,255,255,0.02); border-color:rgba(255,255,255,0.06); }
+  .composite-graph-empty { padding:2.5rem 1rem; text-align:center; color:#94a3b8; font-size:0.9rem; }
+  .composite-graph-tooltip { position:fixed; z-index:1000; pointer-events:none; padding:0.45rem 0.65rem; border-radius:6px; background:rgba(15,23,42,0.95); color:#f1f5f9; font-size:0.78rem; line-height:1.35; box-shadow:0 6px 20px rgba(0,0,0,0.25); white-space:nowrap; opacity:0; transition:opacity 0.12s; }
+  .composite-graph-tooltip.visible { opacity:1; }
+  .composite-graph-tooltip .cgt-name { font-weight:600; }
+  .composite-graph-tooltip .cgt-score { color:#a5b4fc; }
+  .composite-graph svg .cg-axis text { fill:#64748b; font-size:0.72rem; }
+  .composite-graph svg .cg-grid line { stroke:#e2e8f0; stroke-dasharray:2 3; }
+  .composite-graph svg .cg-lang-label { fill:#1e293b; font-size:0.78rem; font-weight:600; cursor:default; }
+  .composite-graph svg .cg-lang-count { fill:#94a3b8; font-size:0.66rem; }
+  .composite-graph svg .cg-box { stroke-width:1.5; fill-opacity:0.25; cursor:pointer; transition:fill-opacity 0.12s; }
+  .composite-graph svg .cg-box:hover { fill-opacity:0.45; }
+  .composite-graph svg .cg-whisker { stroke-width:1.5; }
+  .composite-graph svg .cg-median { stroke-width:2.5; stroke-linecap:round; }
+  .composite-graph svg .cg-dot { cursor:pointer; transition:r 0.12s; stroke:#ffffff; stroke-width:1; }
+  .composite-graph svg .cg-dot:hover { stroke-width:1.5; }
+  html.dark .composite-graph svg .cg-axis text { fill:#94a3b8; }
+  html.dark .composite-graph svg .cg-grid line { stroke:#334155; }
+  html.dark .composite-graph svg .cg-lang-label { fill:#e2e8f0; }
+  html.dark .composite-graph svg .cg-lang-count { fill:#64748b; }
+  html.dark .composite-graph svg .cg-dot { stroke:#0f172a; }
+  </style>
+
   <div style="overflow-x:auto; overflow-y:hidden;">
   <div id="composite-table" class="lb" style="min-width:50rem;">
   </div>
   </div>
+  <div id="composite-graph" class="composite-graph-wrap composite-graph" style="display:none;"></div>
+  <div id="composite-graph-tooltip" class="composite-graph-tooltip" role="tooltip"></div>
 </div>
 
 <div class="lb-header-floating" id="lb-floating-header-composite"></div>
@@ -235,14 +288,17 @@ var currentMeta = compositeMeta;
 var profiles = compositeProfiles;
 var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
 var compositeSortCol = 'composite';
+var currentView = 'table';
+var langColors = compositeLangColors || {};
 
 var allProfileIds = profiles.map(function(p) { return p.id; });
 var profileLabels = {};
 var profileProtos = {};
 var profileScored = {};
 var profileEngineScored = {};
+var profileInfraScored = {};
 var profileSublabels = {};
-profiles.forEach(function(p) { profileLabels[p.id] = p.label; profileProtos[p.id] = p.proto; profileScored[p.id] = p.scored !== false; profileEngineScored[p.id] = p.engineScored === true; profileSublabels[p.id] = p.sublabel || ''; });
+profiles.forEach(function(p) { profileLabels[p.id] = p.label; profileProtos[p.id] = p.proto; profileScored[p.id] = p.scored !== false; profileEngineScored[p.id] = p.engineScored === true; profileInfraScored[p.id] = p.infraScored === true; profileSublabels[p.id] = p.sublabel || ''; });
 
 function parseCpu(s) {
   if (!s) return 0;
@@ -520,21 +576,18 @@ function renderComposite() {
   if (activeCount === 0) activeIds = allProfileIds.slice();
   activeCount = activeIds.length;
 
-  var useCpu = document.querySelector('.composite-resource-toggle[data-resource="cpu"]').classList.contains('active');
   var useMem = document.querySelector('.composite-resource-toggle[data-resource="mem"]').classList.contains('active');
   var activeTypes = getActiveTypes();
   var hasEngine = activeTypes.indexOf('engine') >= 0;
 
-  // Per-framework scored profile check: engines use engineScored, others use scored
+  // Per-framework scored profile check: each type has its own scored set.
   function isScoredForFw(pid, fw) {
     var fmeta = meta[fw] || {};
     var ftype = fmeta.type || 'production';
-    return ftype === 'engine' ? profileEngineScored[pid] : profileScored[pid];
+    if (ftype === 'engine') return profileEngineScored[pid];
+    if (ftype === 'infrastructure') return profileInfraScored[pid];
+    return profileScored[pid];
   }
-  var scoredIds = activeIds.filter(function(pid) { return profileScored[pid]; });
-  var scoredCount = scoredIds.length;
-  var engineScoredIds = activeIds.filter(function(pid) { return profileEngineScored[pid]; });
-  var engineScoredCount = engineScoredIds.length;
 
   // Search filter
   var searchVal = (document.querySelector('.composite-search-input').value || '').toLowerCase().trim();
@@ -563,26 +616,19 @@ function renderComposite() {
     return false;
   }
 
-  // Compute max RPS and max efficiency per active profile (filtered by type)
+  // Compute max RPS and max memory efficiency per active profile.
   var maxRpsByProfile = {};
-  var maxCpuEffByProfile = {};
   var maxMemEffByProfile = {};
   activeIds.forEach(function(pid) {
     maxRpsByProfile[pid] = 0;
-    maxCpuEffByProfile[pid] = 0;
     maxMemEffByProfile[pid] = 0;
     Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
       if (isExcluded(fw)) return;
       var rps = avgByProfile[pid][fw] || 0;
       if (rps > maxRpsByProfile[pid]) maxRpsByProfile[pid] = rps;
-      var cpu = avgCpuByProfile[pid][fw] || 0;
-      if (cpu > 0 && rps > 0) {
-        var cpuEff = rps / cpu;
-        if (cpuEff > maxCpuEffByProfile[pid]) maxCpuEffByProfile[pid] = cpuEff;
-      }
       var mem = avgMemByProfile[pid][fw] || 0;
       if (mem > 0 && rps > 0) {
-        var memEff = rps / mem;
+        var memEff = Math.sqrt(rps) / mem;
         if (memEff > maxMemEffByProfile[pid]) maxMemEffByProfile[pid] = memEff;
       }
     });
@@ -636,37 +682,79 @@ function renderComposite() {
     }
   }
 
+  // Per-profile normalization denominators (max of effective-rps and max of
+  // memory-efficiency) across all frameworks in the current filter. These
+  // feed profileScoreFor() below, which is the one score function used by
+  // medals, crowns, bananas, and eggplants — so they all react to the
+  // memory-efficiency toggle the same way the composite score does.
+  var allMaxRps = {};
+  var allMaxMemEffByProfile = {};
+  allProfileIds.forEach(function(pid) {
+    allMaxRps[pid] = 0;
+    allMaxMemEffByProfile[pid] = 0;
+    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
+      if (isExcluded(fw)) return;
+      var rps = avgByProfile[pid][fw] || 0;
+      var effective = rps;
+      if ((pid === 'api-4' || pid === 'api-16') && avgTplByProfile[pid] && avgTplByProfile[pid][fw]) {
+        var t = avgTplByProfile[pid][fw];
+        effective = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+      } else if (pid === 'json-comp' && minBwPerReq['json-comp']) {
+        var bw = avgBwByProfile['json-comp'][fw] || 0;
+        if (bw > 0 && rps > 0) {
+          effective = rps * Math.pow(minBwPerReq['json-comp'] / (bw / rps), 2);
+        }
+      }
+      if (effective > allMaxRps[pid]) allMaxRps[pid] = effective;
+      var mem = avgMemByProfile[pid][fw] || 0;
+      if (mem > 0 && rps > 0) {
+        var memEff = Math.sqrt(rps) / mem;
+        if (memEff > allMaxMemEffByProfile[pid]) allMaxMemEffByProfile[pid] = memEff;
+      }
+    });
+  });
+
+  // Memory-aware per-profile score (0..150) — the same shape the composite
+  // uses, so badges and awards track whatever the visible leaderboard shows.
+  // When useMem=false this is just the normalized rps score and the ranking
+  // is identical to the pre-toggle behavior.
+  function profileScoreFor(pid, fw) {
+    var rps = (avgByProfile[pid] && avgByProfile[pid][fw]) || 0;
+    if (rps <= 0) return 0;
+    var maxRps = allMaxRps[pid] || 0;
+    if (maxRps <= 0) return 0;
+    var effectiveRps = rps;
+    if ((pid === 'api-4' || pid === 'api-16') && avgTplByProfile[pid] && avgTplByProfile[pid][fw]) {
+      var t = avgTplByProfile[pid][fw];
+      effectiveRps = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+    } else if (pid === 'json-comp' && minBwPerReq['json-comp']) {
+      var bwJc = avgBwByProfile['json-comp'][fw] || 0;
+      if (bwJc > 0) {
+        effectiveRps = rps * Math.pow(minBwPerReq['json-comp'] / (bwJc / rps), 2);
+      }
+    }
+    var rpsScore = (effectiveRps / maxRps) * 100;
+    if (!useMem) return rpsScore;
+    var maxMemEff = allMaxMemEffByProfile[pid] || 0;
+    if (maxMemEff <= 0) return rpsScore;
+    var mem = avgMemByProfile[pid][fw] || 0;
+    if (mem <= 0) return rpsScore;
+    var memEff = Math.sqrt(rps) / mem;
+    return rpsScore + (memEff / maxMemEff) * 100 * 0.5;
+  }
+
   // Determine top-3 frameworks per profile for badges (always all profiles)
   var topFwByProfile = {}, secondFwByProfile = {}, thirdFwByProfile = {};
   allProfileIds.forEach(function(pid) {
     var bestFw = null, bestScore = 0, secondFw = null, secondScore = 0, thirdFw = null, thirdScore = 0;
-    if (pid === 'api-4' || pid === 'api-16') {
-      Object.keys(avgTplByProfile[pid] || {}).forEach(function(fw) {
-        if (isExcluded(fw)) return;
-        var t = avgTplByProfile[pid][fw];
-        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-        if (w > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = w; bestFw = fw; }
-        else if (w > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = w; secondFw = fw; }
-        else if (w > thirdScore) { thirdScore = w; thirdFw = fw; }
-      });
-    } else {
-      Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
-        if (isExcluded(fw)) return;
-        var rps = avgByProfile[pid][fw] || 0;
-        var score = rps;
-        // Match the json-comp bandwidth adjustment so badges reflect the
-        // composite-score winners, not raw rps.
-        if (pid === 'json-comp' && minBwPerReq['json-comp']) {
-          var bw = avgBwByProfile['json-comp'][fw] || 0;
-          if (bw > 0 && rps > 0) {
-            score = rps * Math.pow(minBwPerReq['json-comp'] / (bw / rps), 2);
-          }
-        }
-        if (score > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = score; bestFw = fw; }
-        else if (score > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = score; secondFw = fw; }
-        else if (score > thirdScore) { thirdScore = score; thirdFw = fw; }
-      });
-    }
+    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
+      if (isExcluded(fw)) return;
+      var score = profileScoreFor(pid, fw);
+      if (score <= 0) return;
+      if (score > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = score; bestFw = fw; }
+      else if (score > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = score; secondFw = fw; }
+      else if (score > thirdScore) { thirdScore = score; thirdFw = fw; }
+    });
     if (bestFw) topFwByProfile[pid] = bestFw;
     if (secondFw) secondFwByProfile[pid] = secondFw;
     if (thirdFw) thirdFwByProfile[pid] = thirdFw;
@@ -690,16 +778,32 @@ function renderComposite() {
     }
   });
 
-  // Weight config
-  var wRps = 1, wCpu = useCpu ? 1 : 0, wMem = useMem ? 0.5 : 0;
-  var totalWeight = wRps + wCpu + wMem;
+  // Scoring model. CPU efficiency was dropped: a framework that uses less
+  // CPU but produces less throughput already scores worse on rps alone, so
+  // rewarding "low CPU" as its own factor double-counted the signal.
+  // Memory (when toggled) adds a 0..50 bonus on top of the rpsScore:
+  // memEff = sqrt(rps) / memMB (sqrt dampens rps so memory can actually
+  // win against throughput), memScore = (memEff / best) × 100, then × 0.5.
+  // High rps + low memory can reach ~150; high rps + bloated memory stays
+  // near 100; low rps gets little from either term. The composite is the
+  // SUM across scored profiles (not the mean), so larger numbers separate
+  // strong all-rounders from frameworks that only win a single profile.
 
   // Compute scores
   var results = [];
   Object.keys(allFw).forEach(function(fw) {
     if (isExcluded(fw)) return;
     var scores = [];
-    var participated = 0;
+    // Visibility is separate from scoring: a row shows up whenever the
+    // framework has *any* data in the active profile set (hasAnyData),
+    // while the composite total sums only profiles that are scored for
+    // that framework's type (scoredCount / composite). Conflating the
+    // two was hiding infrastructure frameworks on every non-H/1.1-isolated
+    // tab because profileInfraScored is only true for baseline/pipelined/
+    // limited-conn/static — nginx/h2o then showed 0 scored profiles on
+    // an H/2 or H/3 tab and were dropped entirely.
+    var hasAnyData = false;
+    var scoredCount = 0;
     activeIds.forEach(function(pid) {
       if (avgByProfile[pid] && avgByProfile[pid][fw] && maxRpsByProfile[pid] > 0) {
         var rps = avgByProfile[pid][fw];
@@ -718,39 +822,28 @@ function renderComposite() {
           }
         }
         var rpsScore = (effectiveRps / maxRpsByProfile[pid]) * 100;
-        var profileScore = rpsScore * wRps;
-        if (wCpu > 0 && maxCpuEffByProfile[pid] > 0) {
-          var fwCpu = avgCpuByProfile[pid][fw] || 0;
-          var cpuEff = (fwCpu > 0) ? rps / fwCpu : 0;
-          var cpuScore = (cpuEff / maxCpuEffByProfile[pid]) * 100;
-          profileScore += cpuScore * wCpu;
-        }
-        if (wMem > 0 && maxMemEffByProfile[pid] > 0) {
+        var profileScore = rpsScore;
+        if (useMem && maxMemEffByProfile[pid] > 0) {
           var fwMem = avgMemByProfile[pid][fw] || 0;
-          var memEff = (fwMem > 0) ? rps / fwMem : 0;
-          var memScore = (memEff / maxMemEffByProfile[pid]) * 100;
-          profileScore += memScore * wMem;
+          if (fwMem > 0) {
+            var memEff = Math.sqrt(rps) / fwMem;
+            var memScore = (memEff / maxMemEffByProfile[pid]) * 100;
+            profileScore += memScore * 0.5;
+          }
         }
-        scores.push(profileScore / totalWeight);
-        if (isScoredForFw(pid, fw)) participated++;
+        scores.push(profileScore);
+        hasAnyData = true;
+        if (isScoredForFw(pid, fw)) scoredCount++;
       } else {
         scores.push(0);
       }
     });
-    var composite;
-    if (participated === 0) {
-      return;
-    } else {
-      var fmeta = meta[fw] || {};
-      var ftype = fmeta.type || 'production';
-      var fwScoredCount = ftype === 'engine' ? engineScoredCount : scoredCount;
-      var sum = 0;
-      activeIds.forEach(function(pid, i) {
-        if (isScoredForFw(pid, fw) && scores[i] > 0) sum += scores[i];
-      });
-      composite = fwScoredCount > 0 ? (sum / fwScoredCount) : 0;
-    }
-    results.push({ framework: fw, language: fwLang[fw] || '', scores: scores, composite: composite, participated: participated });
+    if (!hasAnyData) return;
+    var sum = 0;
+    activeIds.forEach(function(pid, i) {
+      if (isScoredForFw(pid, fw) && scores[i] > 0) sum += scores[i];
+    });
+    results.push({ framework: fw, language: fwLang[fw] || '', scores: scores, composite: sum, participated: scoredCount });
   });
   // Sort by active column
   if (compositeSortCol === 'composite' || compositeSortCol === null) {
@@ -775,31 +868,12 @@ function renderComposite() {
     else if (proto === 'grpc') sectionGroups.grpc.push(pid);
     else if (proto === 'ws') sectionGroups.ws.push(pid);
   });
-  // Compute max RPS per profile across all profiles (for normalization)
-  var allMaxRps = {};
-  allProfileIds.forEach(function(pid) {
-    allMaxRps[pid] = 0;
-    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
-      if (isExcluded(fw)) return;
-      var rps = avgByProfile[pid][fw] || 0;
-      if (rps > allMaxRps[pid]) allMaxRps[pid] = rps;
-    });
-  });
+  // allMaxRps + allMaxMemEffByProfile (and the mix/json-comp adjustments) are
+  // already computed up front and used by profileScoreFor(); nothing extra to
+  // build here.
   var crownsByFw = {};
   var sectionLabels = { h1iso: 'H/1.1 Isolated', h1wk: 'H/1.1 Workload', h2: 'H/2', h3: 'H/3', grpc: 'gRPC', ws: 'WebSocket' };
   var sectionColors = { h1iso: '#3b82f6', h1wk: '#2563eb', h2: '#eab308', h3: '#22c55e', grpc: '#7c3aed', ws: '#0891b2' };
-  // Compute max weighted score for api profiles (for crown normalization)
-  var allMaxWeighted = {};
-  ['api-4', 'api-16'].forEach(function(mpid) {
-    var maxW = 0;
-    Object.keys(avgTplByProfile[mpid] || {}).forEach(function(fw) {
-      if (isExcluded(fw)) return;
-      var t = avgTplByProfile[mpid][fw];
-      var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-      if (w > maxW) maxW = w;
-    });
-    allMaxWeighted[mpid] = maxW;
-  });
   Object.keys(sectionGroups).forEach(function(section) {
     var pids = sectionGroups[section];
     if (pids.length === 0) return;
@@ -809,20 +883,7 @@ function renderComposite() {
       if (isExcluded(fw)) return;
       var sum = 0;
       pids.forEach(function(pid) {
-        if (pid === 'api-4' || pid === 'api-16') {
-          var t = avgTplByProfile[pid] && avgTplByProfile[pid][fw];
-          var maxW = allMaxWeighted[pid] || 0;
-          if (t && maxW > 0) {
-            var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-            sum += (w / maxW) * 100;
-          }
-        } else {
-          var rps = (avgByProfile[pid] && avgByProfile[pid][fw]) || 0;
-          var maxRps = allMaxRps[pid] || 0;
-          if (rps > 0 && maxRps > 0) {
-            sum += (rps / maxRps) * 100;
-          }
-        }
+        sum += profileScoreFor(pid, fw);
       });
       var avg = totalPids > 0 ? sum / totalPids : 0;
       if (avg > bestAvg) { thirdAvg = secondAvg; thirdFw = secondFw; secondAvg = bestAvg; secondFw = bestFw; bestAvg = avg; bestFw = fw; }
@@ -866,26 +927,30 @@ function renderComposite() {
     }
   });
 
-  // Compute eggplant points per framework across ALL profiles
-  // Each scored test below 15 = 1 point (uses allMaxRps, not active-only maxRpsByProfile)
+  // Compute eggplant points per framework across ALL profiles.
+  // One point per scored profile where the framework's profileScoreFor is
+  // below 10. When the memory toggle is on, a bad-on-rps framework that's
+  // also memory-efficient gets pulled above the threshold — which is why
+  // this goes through profileScoreFor rather than raw rps.
   var eggplantByFw = {};
   Object.keys(allFw).forEach(function(fw) {
     if (isExcluded(fw)) return;
     var points = 0;
     allProfileIds.forEach(function(pid) {
       if (!isScoredForFw(pid, fw)) return;
-      var rps = (avgByProfile[pid] && avgByProfile[pid][fw]) || 0;
-      if (rps <= 0) return;
-      var maxRps = allMaxRps[pid] || 0;
-      if (maxRps <= 0) return;
-      var score = (rps / maxRps) * 100;
-      if (score < 10) points++;
+      var score = profileScoreFor(pid, fw);
+      if (score > 0 && score < 10) points++;
     });
     if (points >= 5) {
       var tier = points >= 12 ? 'diamond' : points >= 9 ? 'gold' : points >= 7 ? 'silver' : 'bronze';
       eggplantByFw[fw] = { points: points, tier: tier };
     }
   });
+
+  if (currentView === 'graph') {
+    renderGraph(results);
+    return;
+  }
 
   // Render
   var table = document.getElementById('composite-table');
@@ -958,20 +1023,8 @@ function renderComposite() {
       var pid = activeIds[i];
       var proto = profileProtos[pid];
       var scored = isScoredForFw(pid, r.framework);
-      var bgStyle;
-      if (!scored) {
-        bgStyle = ' background:rgba(148,163,184,0.08); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px; opacity:0.5;';
-      } else if (proto === 'h3') {
-        bgStyle = ' background:rgba(34,197,94,0.12); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else if (proto === 'h2') {
-        bgStyle = ' background:rgba(234,179,8,0.12); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else if (proto === 'grpc') {
-        bgStyle = ' background:rgba(124,58,237,0.10); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else if (proto === 'ws') {
-        bgStyle = ' background:rgba(8,145,178,0.10); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else {
-        bgStyle = ' background:rgba(59,130,246,0.08); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      }
+      // Value cells are unstyled except for a dim on unscored profiles.
+      var bgStyle = scored ? '' : ' opacity:0.5;';
       if (s === 0) {
         profileCells += '<div class="lb-stat" style="text-align:right; color:#cbd5e1;' + bgStyle + '">—</div>';
       } else {
@@ -1133,6 +1186,291 @@ function syncTestFilters() {
   document.querySelector('.composite-profile-filter[data-profile="all"]').classList.add('active');
 }
 
+// ── Graph view (boxplot per language) ──────────────────────────────────────
+//
+// Shares `results` with the table renderer — same filters, same scoring.
+// Per language we compute min / p25 / median / p75 / max plus the raw dots.
+// Languages with a single framework render as a lone dot (no box, no whiskers)
+// per the spec.
+
+function svgEl(name, attrs) {
+  var el = document.createElementNS('http://www.w3.org/2000/svg', name);
+  if (attrs) {
+    Object.keys(attrs).forEach(function(k) { el.setAttribute(k, attrs[k]); });
+  }
+  return el;
+}
+
+function quantile(sorted, q) {
+  var n = sorted.length;
+  if (n === 0) return 0;
+  if (n === 1) return sorted[0];
+  var pos = (n - 1) * q;
+  var lo = Math.floor(pos), hi = Math.ceil(pos);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+// Deterministic horizontal jitter for scatter dots so the same framework
+// always lands at the same x within its column regardless of sort order.
+function hashJitter(name, range) {
+  var h = 0;
+  for (var i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+  var r = ((h % 1000) + 1000) % 1000 / 1000; // 0..1
+  return (r - 0.5) * 2 * range;
+}
+
+function niceCeil(v) {
+  if (v <= 0) return 100;
+  var pow = Math.pow(10, Math.floor(Math.log10(v)));
+  var n = v / pow;
+  var step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return step * pow;
+}
+
+function renderGraph(results) {
+  var container = document.getElementById('composite-graph');
+  var tooltip = document.getElementById('composite-graph-tooltip');
+  container.innerHTML = '';
+
+  // Bucket by language; skip entries with no language or zero composite
+  // (the latter means the framework had no data in any active profile,
+  // so plotting 0 would just be noise at the floor).
+  var buckets = {};
+  results.forEach(function(r) {
+    var lang = r.language || '';
+    if (!lang) return;
+    if (r.composite <= 0) return;
+    if (!buckets[lang]) buckets[lang] = [];
+    buckets[lang].push(r);
+  });
+
+  var groups = Object.keys(buckets).map(function(lang) {
+    var items = buckets[lang];
+    var values = items.map(function(r) { return r.composite; }).sort(function(a, b) { return a - b; });
+    return {
+      lang: lang,
+      items: items,
+      min: values[0],
+      p25: quantile(values, 0.25),
+      median: quantile(values, 0.5),
+      p75: quantile(values, 0.75),
+      max: values[values.length - 1],
+      n: values.length
+    };
+  });
+  groups.sort(function(a, b) { return b.median - a.median; });
+
+  if (groups.length === 0) {
+    container.innerHTML = '<div class="composite-graph-empty">No frameworks match the current filters.</div>';
+    return;
+  }
+
+  var colWidth = 78;
+  var marginLeft = 56, marginRight = 20, marginTop = 24, marginBottom = 72;
+  var plotH = 380;
+  var svgW = marginLeft + marginRight + groups.length * colWidth;
+  var svgH = marginTop + plotH + marginBottom;
+
+  var yMaxRaw = 0;
+  groups.forEach(function(g) { if (g.max > yMaxRaw) yMaxRaw = g.max; });
+  var yMax = niceCeil(yMaxRaw * 1.05);
+  function yScale(v) { return marginTop + plotH - (v / yMax) * plotH; }
+
+  var svg = svgEl('svg', {
+    class: 'composite-graph-svg',
+    width: svgW,
+    height: svgH,
+    viewBox: '0 0 ' + svgW + ' ' + svgH,
+    role: 'img',
+    'aria-label': 'Composite score distribution by language'
+  });
+
+  // Y-axis grid + ticks
+  var gGrid = svgEl('g', { class: 'cg-grid' });
+  var gAxis = svgEl('g', { class: 'cg-axis' });
+  var tickCount = 5;
+  for (var t = 0; t <= tickCount; t++) {
+    var v = (yMax / tickCount) * t;
+    var y = yScale(v);
+    gGrid.appendChild(svgEl('line', { x1: marginLeft, x2: svgW - marginRight, y1: y, y2: y }));
+    var label = svgEl('text', { x: marginLeft - 8, y: y + 3.5, 'text-anchor': 'end' });
+    label.textContent = Math.round(v).toString();
+    gAxis.appendChild(label);
+  }
+  // Y-axis title
+  var yTitle = svgEl('text', {
+    x: -(marginTop + plotH / 2), y: 14, transform: 'rotate(-90)',
+    'text-anchor': 'middle', class: 'cg-lang-count'
+  });
+  yTitle.textContent = 'Composite score';
+  gAxis.appendChild(yTitle);
+
+  svg.appendChild(gGrid);
+  svg.appendChild(gAxis);
+
+  // Per-language columns
+  groups.forEach(function(g, i) {
+    var cx = marginLeft + (i + 0.5) * colWidth;
+    var color = (langColors[g.lang] && langColors[g.lang].accent) || '#64748b';
+
+    var gg = svgEl('g', { class: 'cg-col', 'data-lang': g.lang });
+
+    if (g.n >= 2) {
+      // Whisker: vertical line min → max
+      gg.appendChild(svgEl('line', {
+        class: 'cg-whisker',
+        x1: cx, x2: cx, y1: yScale(g.max), y2: yScale(g.min),
+        stroke: color
+      }));
+      // Whisker caps
+      gg.appendChild(svgEl('line', {
+        class: 'cg-whisker',
+        x1: cx - 8, x2: cx + 8, y1: yScale(g.max), y2: yScale(g.max),
+        stroke: color
+      }));
+      gg.appendChild(svgEl('line', {
+        class: 'cg-whisker',
+        x1: cx - 8, x2: cx + 8, y1: yScale(g.min), y2: yScale(g.min),
+        stroke: color
+      }));
+      // Box: p25 → p75
+      var boxW = 30;
+      var boxTop = yScale(g.p75);
+      var boxH = yScale(g.p25) - boxTop;
+      gg.appendChild(svgEl('rect', {
+        class: 'cg-box',
+        x: cx - boxW / 2, y: boxTop, width: boxW, height: Math.max(boxH, 1),
+        fill: color, stroke: color, rx: 2
+      }));
+      // Median line
+      gg.appendChild(svgEl('line', {
+        class: 'cg-median',
+        x1: cx - boxW / 2, x2: cx + boxW / 2,
+        y1: yScale(g.median), y2: yScale(g.median),
+        stroke: color
+      }));
+    } else {
+      // Single-framework group — short horizontal tick at the one score.
+      var v = g.items[0].composite;
+      gg.appendChild(svgEl('line', {
+        class: 'cg-median',
+        x1: cx - 10, x2: cx + 10, y1: yScale(v), y2: yScale(v),
+        stroke: color
+      }));
+    }
+
+    // Scatter dots per framework with deterministic jitter
+    g.items.forEach(function(r) {
+      var jitter = g.n >= 2 ? hashJitter(r.framework, 12) : 0;
+      var dot = svgEl('circle', {
+        class: 'cg-dot',
+        cx: cx + jitter,
+        cy: yScale(r.composite),
+        r: 3.6,
+        fill: color
+      });
+      dot.dataset.fw = r.framework;
+      dot.dataset.score = r.composite.toFixed(1);
+      gg.appendChild(dot);
+    });
+
+    // Language label
+    var labelY = marginTop + plotH + 22;
+    var nameText = svgEl('text', {
+      class: 'cg-lang-label',
+      x: cx, y: labelY, 'text-anchor': 'middle', fill: color
+    });
+    nameText.textContent = g.lang;
+    gg.appendChild(nameText);
+
+    var countText = svgEl('text', {
+      class: 'cg-lang-count',
+      x: cx, y: labelY + 14, 'text-anchor': 'middle'
+    });
+    countText.textContent = g.n + (g.n === 1 ? ' fw' : ' fws');
+    gg.appendChild(countText);
+
+    svg.appendChild(gg);
+  });
+
+  // X-axis baseline
+  svg.appendChild(svgEl('line', {
+    class: 'cg-whisker',
+    x1: marginLeft, x2: svgW - marginRight,
+    y1: marginTop + plotH, y2: marginTop + plotH,
+    stroke: '#94a3b8', 'stroke-width': 1
+  }));
+
+  container.appendChild(svg);
+
+  // Tooltip delegation — one listener on the SVG rather than per-dot.
+  function showTooltip(dot, ev) {
+    var fw = dot.dataset.fw;
+    var score = dot.dataset.score;
+    var lang = dot.parentNode.getAttribute('data-lang') || '';
+    tooltip.innerHTML =
+      '<div class="cgt-name">' + fw + '</div>' +
+      '<div class="cgt-score">' + score + '</div>' +
+      '<div style="color:#cbd5e1; font-size:0.7rem;">' + lang + '</div>';
+    tooltip.classList.add('visible');
+    positionTooltip(ev);
+  }
+  function positionTooltip(ev) {
+    var pad = 14;
+    var rect = tooltip.getBoundingClientRect();
+    var x = ev.clientX + pad;
+    var y = ev.clientY - rect.height - pad;
+    if (x + rect.width > window.innerWidth - 8) x = ev.clientX - rect.width - pad;
+    if (y < 8) y = ev.clientY + pad;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+  function hideTooltip() { tooltip.classList.remove('visible'); }
+
+  svg.addEventListener('mouseover', function(ev) {
+    var dot = ev.target.closest('.cg-dot');
+    if (dot) showTooltip(dot, ev);
+  });
+  svg.addEventListener('mousemove', function(ev) {
+    if (tooltip.classList.contains('visible')) positionTooltip(ev);
+  });
+  svg.addEventListener('mouseout', function(ev) {
+    var dot = ev.target.closest('.cg-dot');
+    if (dot) hideTooltip();
+  });
+}
+
+// ── View switcher (table ↔ graph) ──────────────────────────────────────────
+
+function setCompositeView(v) {
+  if (v !== 'graph') v = 'table';
+  if (v === currentView) return;
+  currentView = v;
+  document.querySelectorAll('.composite-view-tab').forEach(function(tab) {
+    var active = tab.dataset.view === v;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  var tableWrap = document.getElementById('composite-table').parentElement;
+  tableWrap.style.display = v === 'table' ? '' : 'none';
+  document.getElementById('composite-graph').style.display = v === 'graph' ? '' : 'none';
+  // The floating sticky header is table-only; force-hide while on the graph.
+  var floater = document.getElementById('lb-floating-header-composite');
+  if (floater && v === 'graph') floater.style.display = 'none';
+  renderComposite();
+}
+
+document.querySelectorAll('.composite-view-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    setCompositeView(tab.dataset.view);
+    if (window.dlScheduleUpdate) window.dlScheduleUpdate();
+  });
+});
+
+window.setCompositeView = setCompositeView;
+window.compositeGetView = function() { return currentView; };
+
 // Initial sync and render
 syncTestFilters();
 renderComposite();
@@ -1145,10 +1483,12 @@ function updateCompositeNote() {
   if (!note) return;
   var prodActive = document.querySelector('.composite-type-filter[data-type="production"]').classList.contains('active');
   var tunedActive = document.querySelector('.composite-type-filter[data-type="tuned"]').classList.contains('active');
+  var infraActive = document.querySelector('.composite-type-filter[data-type="infrastructure"]').classList.contains('active');
   var engineActive = document.querySelector('.composite-type-filter[data-type="engine"]').classList.contains('active');
   var defs = [];
   if (prodActive) defs.push('<span class="lb-type-badge lb-type-badge-production"><span class="lb-type-square" style="background:#22c55e;"></span> Production</span> Standard framework configuration. Must follow production-specific implementation rules for each test.');
   if (tunedActive) defs.push('<span class="lb-type-badge lb-type-badge-tuned"><span class="lb-type-square" style="background:#eab308;"></span> Tuned</span> May use experimental flags and non-default optimizations. Not bound by production implementation rules.');
+  if (infraActive) defs.push('<span class="lb-type-badge lb-type-badge-infrastructure"><span class="lb-type-square" style="background:#0891b2;"></span> Infrastructure</span> Reverse proxies, static-file servers, and their scripting extensions (nginx, h2o, caddy). Scored only on baseline, pipelined, short-lived, and static.');
   if (engineActive) defs.push('<span class="lb-type-badge lb-type-badge-engine"><span class="lb-type-square" style="background:#dc2626;"></span> Engine</span> Bare-metal HTTP servers — not frameworks. A different breed entirely.');
   note.innerHTML = defs.join('<br>');
 }
@@ -1203,15 +1543,17 @@ document.querySelectorAll('.composite-resource-toggle').forEach(function(btn) {
 });
 
 // Type filter click handlers
-// Production and Tuned can be selected together; Engine is always exclusive
+// Production and Tuned can be selected together. Engine and Infrastructure
+// are each exclusive — selecting them clears all other types.
 document.querySelectorAll('.composite-type-filter').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var type = btn.dataset.type;
-    if (type === 'engine') {
+    if (type === 'engine' || type === 'infrastructure') {
       document.querySelectorAll('.composite-type-filter').forEach(function(f) { f.classList.remove('active'); });
       btn.classList.add('active');
     } else {
       document.querySelector('.composite-type-filter[data-type="engine"]').classList.remove('active');
+      document.querySelector('.composite-type-filter[data-type="infrastructure"]').classList.remove('active');
       btn.classList.toggle('active');
       var prodActive = document.querySelector('.composite-type-filter[data-type="production"]').classList.contains('active');
       var tunedActive = document.querySelector('.composite-type-filter[data-type="tuned"]').classList.contains('active');

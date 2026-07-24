@@ -6,17 +6,25 @@ site/resources/
 *.o
 *.exe
 .idea/
+.gradle/
 obj/
 bin/
+frameworks/*/build/
 !frameworks/fletch/bin/
 target/
 frameworks/blitz/zig-linux-*
 frameworks/blitz/.zig-cache
 frameworks/fletch/.dart_tool/
+!frameworks/hyperf/bin/
 
 # IDE settings
 *.user
 .vs/
+.vscode/
+.zed/
 
 # Ignore node modules anywhere in the repo
 node_modules/
+
+# macOS Finder metadata
+.DS_Store

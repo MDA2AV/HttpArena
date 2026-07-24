@@ -1,0 +1,42 @@
+{
+  "server": {
+    "address": "0.0.0.0",
+    "port": 8080,
+    "max_connections": 512,
+    "static_root": "/data/static",
+    "workers": 0,
+    "disable_middleware": true,
+    "cache_static_files": true,
+    "preencoded": false,
+    "listeners": [
+      { "address": "0.0.0.0", "port": 8080, "use_tls": false, "h2c_only": false },
+      { "address": "0.0.0.0", "port": 8082, "use_tls": false, "h2c_only": true },
+      { "address": "0.0.0.0", "port": 8081, "use_tls": true,  "h2c_only": false },
+      { "address": "0.0.0.0", "port": 8443, "use_tls": true,  "h2c_only": false, "quic_enabled": true, "quic_port": 8443 }
+    ]
+  },
+  "limits": {
+    "max_body_bytes": 22020096
+  },
+  "buffer_pool": {
+    "buffer_size": 65536,
+    "buffer_count": 1024
+  },
+  "tls": {
+    "cert_path": "/certs/server.crt",
+    "key_path": "/certs/server.key"
+  },
+  "http2": {
+    "max_streams": 256,
+    "initial_window_size": 1048576
+  },
+  "quic": {
+    "enabled": true,
+    "port": 8443,
+    "cert_path": "/certs/server.crt",
+    "key_path": "/certs/server.key",
+    "max_idle_timeout_ms": 30000,
+    "max_streams_bidi": 256,
+    "max_streams_uni": 16
+  }
+}

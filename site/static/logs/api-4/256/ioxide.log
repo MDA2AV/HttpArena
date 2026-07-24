@@ -1,0 +1,6 @@
+[ioxide] ProcessorCount=4, reactors=4
+[ioxide] 4 reactors on :8080 (dataset=50 items, static=50 files (15 precompressed), pg=127.0.0.1:5432/benchmark pool=8, tls=8081 (ktls tx), cache=inproc)
+[r1] listening on 0.0.0.0:8080,8081 (incremental=False)
+[r2] listening on 0.0.0.0:8080,8081 (incremental=False)
+[r0] listening on 0.0.0.0:8080,8081 (incremental=False)
+[r3] listening on 0.0.0.0:8080,8081 (incremental=False)

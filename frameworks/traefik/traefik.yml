@@ -1,0 +1,29 @@
+# Traefik static configuration.
+#
+# Keep logs quiet so they do not skew benchmark overhead, and register the
+# local plugin that implements the HttpArena contract. The `moduleName`
+# under experimental.localPlugins.httparena MUST match the directory
+# layout under /plugins-local/src/ that the Dockerfile sets up.
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: ERROR
+
+# accessLog is intentionally omitted — leaving the key absent disables it.
+
+entryPoints:
+  web:
+    address: ":8080"
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: false
+
+experimental:
+  localPlugins:
+    httparena:
+      moduleName: github.com/httparena/traefik-httparena

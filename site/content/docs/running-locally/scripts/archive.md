@@ -18,7 +18,7 @@ Manage benchmark result archives (rounds). Snapshots current results as a named 
 Archives all current benchmark results as a named round.
 
 ```bash
-./scripts/archive.sh create "Round 1 — March 2026"
+./scripts/archive.sh create "Round 1 - March 2026"
 ```
 
 What it does:
@@ -40,8 +40,8 @@ Lists all archived rounds with their ID, name, date, and file size.
 Example output:
 
 ```
-  # 1  Round 1 — March 2026                    2026-03-15  (1248KB)
-  # 2  Round 2 — Pre-optimization baseline      2026-03-20  (1305KB)
+  # 1  Round 1 - March 2026                    2026-03-15  (1248KB)
+  # 2  Round 2 - Pre-optimization baseline      2026-03-20  (1305KB)
 ```
 
 ### delete

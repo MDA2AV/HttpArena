@@ -1,0 +1,4 @@
+uvicorn[standard]==0.44.0
+uvloop==0.22.1
+orjson==3.10.15
+asyncpg==0.30.0

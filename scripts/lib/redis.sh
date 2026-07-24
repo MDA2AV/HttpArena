@@ -29,8 +29,7 @@ redis_start() {
             --appendonly no \
             --maxmemory 512mb \
             --maxmemory-policy allkeys-lru \
-            --io-threads 2 \
-            --io-threads-do-reads yes \
+            --io-threads 1 \
             >/dev/null
 
     # Wait for PING to succeed.

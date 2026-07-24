@@ -1,0 +1,31 @@
+{
+  "display_name": "effinitive",
+  "language": "C#",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "effinitive",
+  "description": "Ultra-high-performance custom HTTP server for .NET 10 — built from scratch for maximum speed.",
+  "repo": "https://github.com/HBartosch/Effinitive",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "async-db",
+    "baseline-h2",
+    "static-h2",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": [
+    "HBartosch"
+  ]
+}

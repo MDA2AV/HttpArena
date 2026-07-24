@@ -9,7 +9,7 @@ class Hash
   end
 end
 
-class BenchmarkController < RageController::API
+class BenchmarkController < ApplicationController
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
 
   dataset_path = File.join DATA_DIR, 'dataset.json'
@@ -18,26 +18,16 @@ class BenchmarkController < RageController::API
       item.symbolize_keys!
       item[:rating].symbolize_keys!
       item
-    end
+    end.freeze
   end
   def self.dataset_items = @dataset_items
 
   FileUtils.cp_r(File.join(DATA_DIR, 'static'), File.join(Rage.root, 'public', 'static'))
 
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'
-
-  before_action do
-    headers["server"] = "rage"
-  end
-
-  def pipeline
-    render plain: 'ok'
-  end
-
   def baseline_one
     total = params[:a].to_i + params[:b].to_i
     if request.post?
-      rack_input = request.send(:rack_request).env["rack.input"]
+      rack_input = request.send(:rack_request).env[Rack::RACK_INPUT]
       rack_input.rewind
       body_str = rack_input.read.strip
       total += body_str.to_i
@@ -62,24 +52,7 @@ class BenchmarkController < RageController::API
       items = []
     end
 
-    result = { items: items, count: items.length }
-
-    if accept_encodings = request.headers['Accept-Encoding']
-      types = accept_encodings.split(',').map(&:strip)
-      if types.include? 'gzip'
-        sio = StringIO.new
-        gz = Zlib::GzipWriter.new(sio, 1)
-        gz.write JSON.generate(result)
-        gz.close
-        headers['Content-Encoding'] = 'gzip'
-        headers['Content-Type'] = 'application/json'
-        render plain: sio.string
-      else
-        render json: result
-      end
-    else
-      render json: result
-    end
+    render json: { items: items, count: items.length }
   end
 
   def async_db
@@ -93,21 +66,21 @@ class BenchmarkController < RageController::API
 
     items = rows.map do |r|
       {
-        id: r['id'],
-        name: r['name'],
-        category: r['category'],
-        price: r['price'],
-        quantity: r['quantity'],
-        active: r['active'] == 't',
-        tags: JSON.parse(r['tags']),
-        rating: { score: r['rating_score'], count: r['rating_count'] }
+        id: r[:id],
+        name: r[:name],
+        category: r[:category],
+        price: r[:price],
+        quantity: r[:quantity],
+        active: r[:active] == 't',
+        tags: JSON.parse(r[:tags]),
+        rating: { score: r[:rating_score], count: r[:rating_count] }
       }
     end
     render json: { items: items, count: items.length }
   end
 
   def upload
-    rack_input = request.send(:rack_request).env["rack.input"]
+    rack_input = request.send(:rack_request).env[Rack::RACK_INPUT]
     rack_input.rewind
     size = 0
     while (chunk = rack_input.read(65536))
@@ -118,20 +91,5 @@ class BenchmarkController < RageController::API
 
   def not_found
     head 404
-  end
-
-  private
-
-  def self.get_async_db
-    @async_db ||= begin
-      return unless ENV['DATABASE_URL']
-      processors = Integer(::Concurrent.available_processor_count)
-      pool_size = (2 * Math.log(256 / processors)).floor
-      ConnectionPool.new(size: pool_size, timeout: 5) do
-        db = PG.connect(ENV['DATABASE_URL'])
-        db.prepare('select', PG_QUERY)
-        db
-      end
-    end
   end
 end

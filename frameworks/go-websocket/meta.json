@@ -1,13 +1,15 @@
 {
   "display_name": "go-websocket",
   "language": "Go",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "net/http",
   "description": "Go WebSocket echo server using gobwas/ws",
   "repo": "https://github.com/gobwas/ws",
   "enabled": true,
   "tests": [
-    "echo-ws"
+    "echo-ws",
+    "echo-ws-pipeline"
   ],
   "maintainers": []
 }

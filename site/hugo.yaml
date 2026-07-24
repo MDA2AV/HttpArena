@@ -16,12 +16,18 @@ menu:
     - name: Leaderboard
       pageRef: /leaderboard
       weight: 1
+    - name: Timeline
+      url: https://timeline.http-arena.com
+      weight: 1.5
     - name: Knowledge Base
       pageRef: /docs
       weight: 2
     - name: RFC Compliance
       weight: 3
       url: https://mda2av.github.io/Http11Probe/
+    - name: New Leaderboard
+      weight: 4
+      url: https://www.http-arena.com/
     - name: Search
       weight: 5
       params:
@@ -42,7 +48,7 @@ menu:
         icon: github
 
 params:
-  description: "HTTP framework benchmark arena"
+  description: "Open-source HTTP server benchmarks and webserver benchmark platform — compare HTTP/1.1, HTTP/2, HTTP/3, gRPC, and WebSocket framework performance under realistic workloads."
   theme:
     default: system
     displayToggle: false

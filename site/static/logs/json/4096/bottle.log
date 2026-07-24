@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/usr/local/bin/bottle.py", line 996, in _handle
+    out = route.call(**args)
+  File "/usr/local/bin/bottle.py", line 2026, in wrapper
+    rv = callback(*a, **ka)
+  File "/app/app.py", line 127, in json_endpoint
+    m_val = float(request.query.m)
+ValueError: could not convert string to float: ''

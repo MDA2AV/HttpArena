@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HttpArena</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* The old Hugo site moved under /old/. Preserve inbound links by redirecting
+   old root paths there; /new-leaderboard/* now lives at the root. Paths already
+   under /old/ are genuinely missing — fall through to the 404 below (no loop). */
+(function(){
+  var p = location.pathname;
+  if (/^\/new-leaderboard(\/|$)/.test(p)) { location.replace('/' + location.search + location.hash); return; }
+  if (p !== '/old' && p.indexOf('/old/') !== 0) { location.replace('/old' + p + location.search + location.hash); return; }
+})();
+</script>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#111827}
+  .box{text-align:center;padding:2rem}
+  h1{font-size:3rem;margin:0 0 .25rem;color:#2563eb;letter-spacing:-.02em}
+  p{color:#4b5563;margin:.4rem 0}
+  a{color:#2563eb;text-decoration:none;font-weight:600}
+  a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>404</h1>
+    <p>That page doesn’t exist.</p>
+    <p><a href="/">← Back to the leaderboard</a></p>
+  </div>
+</body>
+</html>

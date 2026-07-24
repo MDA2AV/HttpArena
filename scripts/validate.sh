@@ -7,6 +7,7 @@ CONTAINER_NAME="httparena-validate-${FRAMEWORK}"
 PORT=8080
 H2PORT=8443
 H1TLS_PORT=8081
+H2C_PORT=8082
 PASS=0
 FAIL=0
 
@@ -51,14 +52,18 @@ echo "=== Validating: $FRAMEWORK ==="
 
 # Read subscribed tests from meta.json
 if [ ! -f "$META_FILE" ]; then
-    echo "FAIL: meta.json not found"
-    exit 1
+    echo "SKIP: meta.json not found (framework removed)"
+    exit 0
 fi
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
 echo "[info] Subscribed tests: $TESTS"
 
 has_test() {
-    echo "$TESTS" | grep -qw "$1"
+    # Exact whole-token match. `grep -qw` treats "-" as a word boundary
+    # and matches "baseline" against "baseline-h2c" / "baseline-h2", and
+    # "json" against "json-h2c" / "json-tls" / "json-comp" — all false
+    # positives. Bash pattern match on the space-padded string is exact.
+    [[ " $TESTS " == *" $1 "* ]]
 }
 
 # Build — skip standalone build if framework only subscribes to compose profiles
@@ -84,11 +89,11 @@ fi
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 # Docker --ulimit nofile rejects "unlimited"; fall back to a large numeric cap
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
-if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
+if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
-    docker_args=(-d --name "$CONTAINER_NAME" -p "$PORT:8080"
+    docker_args=(-d --name "$CONTAINER_NAME" -p "$PORT:8080" --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 fi
 docker_args+=(-v "$DATA_DIR/dataset.json:/data/dataset.json:ro")
@@ -103,11 +108,19 @@ if has_test "json-tls"; then
     needs_h1tls=true
 fi
 
+needs_h2c=false
+if has_test "baseline-h2c" || has_test "json-h2c"; then
+    needs_h2c=true
+fi
+
 if ($needs_h2 || $needs_h1tls) && [ -d "$CERTS_DIR" ]; then
     docker_args+=(-v "$CERTS_DIR:/certs:ro")
     $needs_h2     && docker_args+=(-p "$H2PORT:8443")
     $needs_h1tls  && docker_args+=(-p "$H1TLS_PORT:8081")
 fi
+
+# h2c uses no TLS so no certs mount needed; just expose the port.
+$needs_h2c && docker_args+=(-p "$H2C_PORT:8082")
 
 if has_test "gateway-64" || has_test "gateway-h3"; then
     docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
@@ -117,15 +130,15 @@ if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
-# Allow io_uring syscalls for frameworks that need them (blocked by default seccomp)
-ENGINE=$(python3 -c "import json; print(json.load(open('$META_FILE')).get('engine',''))" 2>/dev/null || true)
-if [ "$ENGINE" = "io_uring" ]; then
-    docker_args+=(--security-opt seccomp=unconfined)
-    docker_args+=(--ulimit memlock=-1:-1)
-fi
+# Note: --security-opt seccomp=unconfined is applied unconditionally in both
+# container-launch branches above. io_uring (and other syscalls some runtimes
+# rely on) are blocked by Docker's default seccomp profile, and a framework
+# shouldn't have to advertise engine=="io_uring" to be testable — many need it
+# transitively (e.g. an engine built on io_uring under another name). This
+# mirrors benchmark.sh, which always runs framework containers unconfined.
 
 # Start Postgres sidecar if async-db is needed
-if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
+if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker run -d --name "$PG_CONTAINER" --network host \
@@ -133,7 +146,7 @@ if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-1
         -e POSTGRES_PASSWORD=bench \
         -e POSTGRES_DB=benchmark \
         -v "$DATA_DIR/pgdb-seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro" \
-        postgres:17-alpine \
+        postgres:18 \
         -c max_connections=256
     for i in $(seq 1 60); do
         if docker exec "$PG_CONTAINER" pg_isready -U bench -d benchmark >/dev/null 2>&1; then
@@ -150,29 +163,112 @@ if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-1
     docker_args+=(-e "DATABASE_MAX_CONN=256")
 fi
 
+# Start Redis sidecar if needed
+if has_test "crud"; then
+
+    REDIS_CONTAINER="httparena-redis"
+    REDIS_URL="redis://localhost:6379"
+    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
+    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
+    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
+    REDIS_CPUSET="${REDIS_CPUSET:-}"
+
+    echo "[redis] Starting Redis sidecar${REDIS_CPUSET:+ (cpuset=$REDIS_CPUSET)}"
+    docker rm -f "$REDIS_CONTAINER" 2>/dev/null || true
+    docker run -d --rm --name "$REDIS_CONTAINER" --network host \
+        ${REDIS_CPUSET:+--cpuset-cpus="$REDIS_CPUSET"} \
+        --ulimit memlock=-1:-1 \
+        --ulimit nofile=1048576:1048576 \
+        redis:7-alpine \
+        redis-server \
+            --protected-mode no \
+            --bind 0.0.0.0 \
+            --port 6379 \
+            --save "" \
+            --appendonly no \
+            --maxmemory 512mb \
+            --maxmemory-policy allkeys-lru \
+            --io-threads 1 \
+            >/dev/null
+
+    # Wait for PING to succeed.
+    for i in $(seq 1 30); do
+        if docker exec "$REDIS_CONTAINER" redis-cli ping 2>/dev/null | grep -q PONG; then
+            echo "[redis] Ready"
+            break
+        fi
+        [ "$i" -eq 30 ] && { echo "FAIL: Redis sidecar not ready"; exit 1; }
+        sleep 1
+    done
+    docker_args+=(-e "REDIS_URL=$REDIS_URL")
+fi
+
 # Start container (skip for gateway-only — compose handles it later)
 if [ "$GATEWAY_ONLY" = "false" ]; then
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
     docker run "${docker_args[@]}" "$IMAGE_NAME"
 
-    # Wait for server to start
-    echo "[wait] Waiting for server..."
-    for i in $(seq 1 30); do
-        if curl -s --max-time 2 -o /dev/null -w '' "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
-            break
-        fi
-        if [ "$i" -eq 30 ]; then
-            echo "FAIL: Server did not start within 30s"
-            exit 1
-        fi
-        sleep 1
+    # Wait for server to start.
+    #
+    # Primary probe is GET /baseline11 over plaintext HTTP/1.1 on $PORT — that
+    # works for the vast majority of frameworks, which all listen on 8080.
+    # H/2-only or H/3-only frameworks (e.g. wtx, which speaks h2c on 8080 or
+    # h2/h3 on 8443 depending on build) never respond to an HTTP/1.1 request
+    # and would otherwise time out. Fall back to GET /baseline2 over HTTPS
+    # with ALPN h2 on $H2PORT when the framework subscribes to any h2 or h3
+    # profile. H/3 servers still advertise h2 on the same TLS listener via
+    # ALPN, so this single fallback covers both cases without requiring
+    # curl to be built with HTTP/3 support.
+    need_tls_probe=false
+    if has_test "baseline-h2" || has_test "static-h2" \
+       || has_test "baseline-h3" || has_test "static-h3"; then
+        need_tls_probe=true
+    fi
+
+    need_h2c_probe=false
+    if has_test "baseline-h2c" || has_test "json-h2c"; then
+        need_h2c_probe=true
+    fi
+
+    # Pure-WebSocket frameworks (e.g. Fleck) don't speak HTTP at all, so the
+    # curl probes below would never succeed. Skip the wait when every
+    # subscribed test is a WS-only profile.
+    _ws_only=true
+    for _t in $TESTS; do
+        case "$_t" in
+            echo-ws|echo-ws-pipeline) ;;
+            *) _ws_only=false; break ;;
+        esac
     done
-    echo "[ready] Server is up"
+    if [ "$_ws_only" = "true" ] && [ -n "$TESTS" ]; then
+        echo "[wait] ws-only framework — skipping readiness probe"
+    else
+        echo "[wait] Waiting for server..."
+        for i in $(seq 1 30); do
+            if curl -s --max-time 2 -o /dev/null -w '' "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
+                break
+            fi
+            if [ "$need_tls_probe" = "true" ] && \
+               curl -sk --http2 --max-time 2 -o /dev/null -w '' "https://localhost:$H2PORT/baseline2?a=1&b=1" 2>/dev/null; then
+                break
+            fi
+            if [ "$need_h2c_probe" = "true" ] && \
+               curl -s --http2-prior-knowledge --max-time 2 -o /dev/null -w '' "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null; then
+                break
+            fi
+            if [ "$i" -eq 30 ]; then
+                echo "FAIL: Server did not start within 30s"
+                exit 1
+            fi
+            sleep 1
+        done
+        echo "[ready] Server is up"
+    fi
 fi
 
 # ───── Helpers ─────
 
-DOCS_BASE="https://www.http-arena.com/docs/test-profiles"
+DOCS_BASE="https://www.http-arena.com/#doc=test-profiles"
 
 fail_with_link() {
     local msg="$1"
@@ -184,21 +280,38 @@ fail_with_link() {
     FAIL=$((FAIL + 1))
 }
 
+dump_debug() {
+    local trace="$1"
+    local response="$2"
+    if [ -n "$trace" ] && [ -s "$trace" ]; then
+        echo "        ─── wire trace ───"
+        sed 's/^/        /' "$trace"
+    fi
+    if [ -n "$response" ]; then
+        echo "        ─── response ───"
+        printf '%s\n' "$response" | sed 's/^/        /'
+    fi
+    [ -n "$trace" ] && rm -f "$trace"
+}
+
 check() {
     local label="$1"
     local expected_body="$2"
     local docs_url="$3"
     shift 3
-    local response
-    response=$(curl -s --max-time 30 -D- "$@" || true)
+    local response trace
+    trace=$(mktemp)
+    response=$(curl -s --max-time 30 -D- --trace-ascii "$trace" "$@" || true)
     local body
     body=$(echo "$response" | tail -1)
 
     if [ "$body" = "$expected_body" ]; then
         echo "  PASS [$label]"
         PASS=$((PASS + 1))
+        rm -f "$trace"
     else
         fail_with_link "[$label]: expected body '$expected_body', got '$body'" "$docs_url"
+        dump_debug "$trace" "$response"
     fi
 }
 
@@ -207,14 +320,132 @@ check_status() {
     local expected_status="$2"
     local docs_url="$3"
     shift 3
-    local http_code
-    http_code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@" || true)
+    local http_code trace body_file
+    trace=$(mktemp)
+    body_file=$(mktemp)
+    http_code=$(curl -s --max-time 30 -o "$body_file" -D "$body_file.hdr" -w '%{http_code}' --trace-ascii "$trace" "$@" || true)
 
     if [ "$http_code" = "$expected_status" ]; then
         echo "  PASS [$label] (HTTP $http_code)"
         PASS=$((PASS + 1))
+        rm -f "$trace" "$body_file" "$body_file.hdr"
     else
         fail_with_link "[$label]: expected HTTP $expected_status, got HTTP $http_code" "$docs_url"
+        local response=""
+        [ -s "$body_file.hdr" ] && response=$(cat "$body_file.hdr")
+        [ -s "$body_file" ] && response="${response}$(cat "$body_file")"
+        dump_debug "$trace" "$response"
+        rm -f "$body_file" "$body_file.hdr"
+    fi
+}
+
+check_fragmented() {
+    # Send an HTTP request in multiple TCP writes with small pauses between
+    # them so the server's read loop sees partial, incomplete buffers and
+    # must reassemble across recv() calls. Exercises HTTP parser correctness
+    # under realistic network fragmentation (slow clients, small MTU, etc.).
+    #
+    # Usage: check_fragmented <label> <expected_body> <docs_url> <frag1> <frag2> [frag3...]
+    # Use $'...' literal form in the caller to embed CR/LF inside fragments.
+    local label="$1"
+    local expected_body="$2"
+    local docs_url="$3"
+    shift 3
+    local body trace
+    trace=$(mktemp)
+    body=$(PORT="$PORT" TRACE="$trace" python3 -c '
+import os, socket, sys, time
+port = int(os.environ["PORT"])
+trace_path = os.environ.get("TRACE", "")
+frags = sys.argv[1:]
+sent = b""
+buf = b""
+wire_error = ""
+s = None
+try:
+    s = socket.create_connection(("localhost", port), timeout=5)
+    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)  # no Nagle coalescing
+    for i, f in enumerate(frags):
+        data = f.encode("latin-1")
+        s.sendall(data)
+        sent += data
+        if i < len(frags) - 1:
+            time.sleep(0.03)
+    while True:
+        chunk = s.recv(4096)
+        if not chunk: break
+        buf += chunk
+except socket.timeout:
+    wire_error = "socket.timeout (server never closed; client blocked in recv)"
+except Exception as e:
+    wire_error = type(e).__name__ + ": " + str(e)
+finally:
+    if s is not None:
+        try: s.close()
+        except Exception: pass
+    # Always write the trace — even (especially) on failure. Without this
+    # the wire dump is empty on the exact error paths where you need it.
+    if trace_path:
+        try:
+            with open(trace_path, "w") as tf:
+                tf.write("=> Send (" + str(len(sent)) + " bytes across " + str(len(frags)) + " fragment(s))\n")
+                tf.write(sent.decode("latin-1", errors="replace"))
+                tf.write("\n<= Recv (" + str(len(buf)) + " bytes)\n")
+                tf.write(buf.decode("latin-1", errors="replace"))
+                if wire_error:
+                    tf.write("\n<!> " + wire_error + "\n")
+                else:
+                    tf.write("\n")
+        except Exception:
+            pass
+resp = buf.decode("latin-1", errors="replace")
+try:
+    head, raw = resp.split("\r\n\r\n", 1)
+except ValueError:
+    sys.stdout.write("")
+    sys.exit(0)
+
+# Parse headers (case-insensitive)
+hdrs = {}
+for line in head.split("\r\n")[1:]:
+    if ":" in line:
+        k, v = line.split(":", 1)
+        hdrs[k.strip().lower()] = v.strip()
+
+# If the response is chunked, decode the frames; otherwise honor Content-Length
+# when present, else just return the raw remaining bytes.
+if hdrs.get("transfer-encoding", "").lower() == "chunked":
+    parts, rest = [], raw
+    while rest:
+        nl = rest.find("\r\n")
+        if nl < 0: break
+        try:
+            size = int(rest[:nl].split(";", 1)[0], 16)  # ignore chunk extensions
+        except ValueError:
+            break
+        rest = rest[nl+2:]
+        if size == 0: break
+        parts.append(rest[:size])
+        rest = rest[size+2:]  # skip trailing CRLF
+    body = "".join(parts)
+elif "content-length" in hdrs:
+    try:
+        body = raw[:int(hdrs["content-length"])]
+    except ValueError:
+        body = raw
+else:
+    body = raw
+
+sys.stdout.write(body.strip())
+' "$@" 2>/dev/null || echo "")
+
+    if [ "$body" = "$expected_body" ]; then
+        echo "  PASS [$label]"
+        PASS=$((PASS + 1))
+        rm -f "$trace"
+    else
+        fail_with_link "[$label]: expected body '$expected_body', got '$body'" "$docs_url"
+        dump_debug "$trace" ""
     fi
 }
 
@@ -224,8 +455,9 @@ check_header() {
     local expected_value="$3"
     local docs_url="$4"
     shift 4
-    local headers
-    headers=$(curl -s --max-time 30 -D- -o /dev/null "$@" || true)
+    local headers trace
+    trace=$(mktemp)
+    headers=$(curl -s --max-time 30 -D- -o /dev/null --trace-ascii "$trace" "$@" || true)
     local value
     value=$(echo "$headers" | grep -i "^${header_name}:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
 
@@ -236,8 +468,10 @@ check_header() {
     if [ "$value" = "$expected_value" ] || [[ "$value" == "$expected_value;"* ]] || [ "$norm_value" = "$norm_expected" ] || [[ "$norm_value" == "$norm_expected;"* ]]; then
         echo "  PASS [$label] ($header_name: $value)"
         PASS=$((PASS + 1))
+        rm -f "$trace"
     else
         fail_with_link "[$label]: expected $header_name '$expected_value', got '$value'" "$docs_url"
+        dump_debug "$trace" "$headers"
     fi
 }
 
@@ -272,6 +506,14 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
         -X POST -H "Content-Type: text/plain" -H "Transfer-Encoding: chunked" -d "20" \
         "http://localhost:$PORT/baseline11?a=13&b=42"
 
+    # Response Content-Type must be text/plain (bare or with ;charset=…). A
+    # missing header or application/json is a spec violation. Issue #526.
+    check_header "GET /baseline11 Content-Type" "Content-Type" "text/plain" "$BASELINE_DOCS" \
+        "http://localhost:$PORT/baseline11?a=13&b=42"
+    check_header "POST /baseline11 Content-Type" "Content-Type" "text/plain" "$BASELINE_DOCS" \
+        -X POST -H "Content-Type: text/plain" -d "20" \
+        "http://localhost:$PORT/baseline11?a=13&b=42"
+
     # Anti-cheat: randomized inputs to detect hardcoded responses
     echo "[test] baseline anti-cheat (randomized inputs)"
     A1=$((RANDOM % 900 + 100))
@@ -288,6 +530,35 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
     check "POST body=$BODY2 (cache check 2)" "$((13 + 42 + BODY2))" "$BASELINE_DOCS" \
         -X POST -H "Content-Type: text/plain" -d "$BODY2" \
         "http://localhost:$PORT/baseline11?a=13&b=42"
+
+    # TCP fragmentation: send each request in multiple small writes with a
+    # short pause between, so the server's HTTP parser sees partial buffers
+    # and must reassemble across recv() calls. Exercises parser correctness
+    # under realistic network conditions (slow clients, small MTU).
+    echo "[test] baseline TCP fragmentation"
+    # Split 1: break the request line mid-path
+    check_fragmented "GET /baseline11 — split request line" "55" "$BASELINE_DOCS" \
+        "GET /baseli" \
+        $'ne11?a=13&b=42 HTTP/1.1\r\n' \
+        $'Host: localhost\r\nConnection: close\r\n\r\n'
+
+    # Split 2: break between request line and headers
+    check_fragmented "GET /baseline11 — split before headers" "55" "$BASELINE_DOCS" \
+        $'GET /baseline11?a=13&b=42 HTTP/1.1\r\n' \
+        $'Host: localhost\r\n' \
+        $'User-Agent: arena-frag/1.0\r\n' \
+        $'Connection: close\r\n\r\n'
+
+    # Split 3: POST with headers and body in separate writes
+    check_fragmented "POST /baseline11 — split headers/body" "75" "$BASELINE_DOCS" \
+        $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: close\r\n\r\n' \
+        "20"
+
+    # Split 4: POST with body split across two writes (body = "20", split to "2" + "0")
+    check_fragmented "POST /baseline11 — split body bytes" "75" "$BASELINE_DOCS" \
+        $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: close\r\n\r\n' \
+        "2" \
+        "0"
 fi
 
 # ───── Pipelined (GET /pipeline) ─────
@@ -296,6 +567,8 @@ if has_test "pipelined"; then
     PIPELINED_DOCS="$DOCS_BASE/h1/isolated/pipelined/validation"
     echo "[test] pipelined endpoint"
     check "GET /pipeline" "ok" "$PIPELINED_DOCS" \
+        "http://localhost:$PORT/pipeline"
+    check_header "GET /pipeline Content-Type" "Content-Type" "text/plain" "$PIPELINED_DOCS" \
         "http://localhost:$PORT/pipeline"
 fi
 
@@ -316,28 +589,34 @@ m = $jm
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = item['price'] * item['quantity'] * m
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
     if item.get('total', 0) != expected:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         json_count=$(echo "$json_result" | cut -d' ' -f1)
-        json_total=$(echo "$json_result" | cut -d' ' -f2)
+        json_valid=$(echo "$json_result" | cut -d' ' -f2)
         json_correct=$(echo "$json_result" | cut -d' ' -f3)
 
-        if [ "$json_count" = "$jcount" ] && [ "$json_total" = "True" ] && [ "$json_correct" = "True" ]; then
+        if [ "$json_count" = "$jcount" ] && [ "$json_valid" = "True" ] && [ "$json_correct" = "True" ]; then
             :
         else
-            fail_with_link "[GET /json/$jcount?m=$jm]: count=$json_count, has_total=$json_total, correct_totals=$json_correct" "$JSON_DOCS"
+            fail_with_link "[GET /json/$jcount?m=$jm]: count=$json_count, schema=$json_valid, correct_totals=$json_correct" "$JSON_DOCS"
             json_fail=true
         fi
     done
     if [ "$json_fail" = "false" ]; then
-        echo "  PASS [GET /json/{count}?m=X] (4 counts with multipliers verified)"
+        echo "  PASS [GET /json/{count}?m=X] (4 counts × multipliers + full item schema verified)"
         PASS=$((PASS + 1))
     fi
 
@@ -364,7 +643,7 @@ if has_test "json-comp"; then
 
     # Verify compressed response with varying counts and multipliers
     jc_fail=false
-    jc_params=("12:9" "31:4" "50:6")
+    jc_params=("25:3" "40:7" "50:2")
     for jcp in "${jc_params[@]}"; do
         jccount="${jcp%%:*}"
         jcm="${jcp##*:}"
@@ -375,28 +654,34 @@ m = $jcm
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = item['price'] * item['quantity'] * m
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
     if item.get('total', 0) != expected:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         jc_count=$(echo "$jc_result" | cut -d' ' -f1)
-        jc_total=$(echo "$jc_result" | cut -d' ' -f2)
+        jc_valid=$(echo "$jc_result" | cut -d' ' -f2)
         jc_correct=$(echo "$jc_result" | cut -d' ' -f3)
 
-        if [ "$jc_count" = "$jccount" ] && [ "$jc_total" = "True" ] && [ "$jc_correct" = "True" ]; then
+        if [ "$jc_count" = "$jccount" ] && [ "$jc_valid" = "True" ] && [ "$jc_correct" = "True" ]; then
             :
         else
-            fail_with_link "[json-comp /json/$jccount?m=$jcm]: count=$jc_count, has_total=$jc_total, correct=$jc_correct" "$JSONCOMP_DOCS"
+            fail_with_link "[json-comp /json/$jccount?m=$jcm]: count=$jc_count, schema=$jc_valid, correct=$jc_correct" "$JSONCOMP_DOCS"
             jc_fail=true
         fi
     done
     if [ "$jc_fail" = "false" ]; then
-        echo "  PASS [json-comp response] (3 counts with multipliers, compressed)"
+        echo "  PASS [json-comp response] (3 counts × multipliers, compressed, full item schema)"
         PASS=$((PASS + 1))
     fi
 
@@ -438,28 +723,34 @@ m = $jtm
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = item['price'] * item['quantity'] * m
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
     if item.get('total', 0) != expected:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         jt_count=$(echo "$jt_result" | cut -d' ' -f1)
-        jt_total=$(echo "$jt_result" | cut -d' ' -f2)
+        jt_valid=$(echo "$jt_result" | cut -d' ' -f2)
         jt_correct=$(echo "$jt_result" | cut -d' ' -f3)
 
-        if [ "$jt_count" = "$jtcount" ] && [ "$jt_total" = "True" ] && [ "$jt_correct" = "True" ]; then
+        if [ "$jt_count" = "$jtcount" ] && [ "$jt_valid" = "True" ] && [ "$jt_correct" = "True" ]; then
             :
         else
-            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, has_total=$jt_total, correct=$jt_correct" "$JSONTLS_DOCS"
+            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, schema=$jt_valid, correct=$jt_correct" "$JSONTLS_DOCS"
             jt_fail=true
         fi
     done
     if [ "$jt_fail" = "false" ]; then
-        echo "  PASS [json-tls response] (3 (count, m) pairs over TLS)"
+        echo "  PASS [json-tls response] (3 (count, m) pairs over TLS, full item schema)"
         PASS=$((PASS + 1))
     fi
 
@@ -539,6 +830,137 @@ if has_test "baseline-h2"; then
         B3=$((RANDOM % 900 + 100))
         check "GET /baseline2?a=$A3&b=$B3 over HTTP/2 (random)" "$((A3 + B3))" "$H2_DOCS" \
             -sk --http2 "https://localhost:$H2PORT/baseline2?a=$A3&b=$B3"
+
+        check_header "GET /baseline2 Content-Type" "Content-Type" "text/plain" "$H2_DOCS" \
+            -sk --http2 "https://localhost:$H2PORT/baseline2?a=1&b=1"
+    fi
+fi
+
+# ───── Baseline H2c (GET /baseline2 over HTTP/2 cleartext, prior-knowledge) ─────
+
+if has_test "baseline-h2c"; then
+    H2C_DOCS="$DOCS_BASE/h2/baseline-h2c/validation"
+    echo "[test] baseline-h2c endpoint"
+
+    # Wait briefly for the h2c listener to be up — the main probe waited on
+    # :8080 or :8443, not :8082. One shot with a short timeout is enough
+    # because the container has already been up for the earlier tests.
+    for i in $(seq 1 10); do
+        if curl -s --http2-prior-knowledge --max-time 2 -o /dev/null \
+             "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null; then
+            break
+        fi
+        sleep 1
+    done
+
+    # Anti-cheat #1: require HTTP/2 on the wire. Forces prior-knowledge so
+    # a server that naively accepts an HTTP/1.1 request on the same port
+    # can't pass by answering plain h1 — %{http_version} reports the actual
+    # negotiated protocol.
+    h2c_proto=$(curl -s --max-time 30 --http2-prior-knowledge \
+        -o /dev/null -w '%{http_version}' \
+        "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null || echo "0")
+    if [ "$h2c_proto" = "2" ]; then
+        echo "  PASS [HTTP/2 cleartext (prior-knowledge)] (HTTP/$h2c_proto)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[HTTP/2 cleartext (prior-knowledge)]: server responded with HTTP/$h2c_proto, expected HTTP/2" "$H2C_DOCS"
+    fi
+
+    # Anti-cheat #2: the same port MUST NOT also serve HTTP/1.1. If it did,
+    # the benchmark could be measuring h1 throughput (much higher on some
+    # stacks) while labeled as h2c. --http1.1 forces curl to refuse the
+    # h2 preface; we check that the server didn't happily answer.
+    h1_code=$(curl -s --max-time 5 --http1.1 \
+        -o /dev/null -w '%{http_code}' \
+        "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null || echo "000")
+    if [ "$h1_code" != "200" ]; then
+        echo "  PASS [h2c-only: port $H2C_PORT rejects plain HTTP/1.1] (got $h1_code)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[h2c-only]: port $H2C_PORT also answered HTTP/1.1 with 200 — dual-serving lets the benchmark measure h1 throughput instead of h2c. The h2c listener must refuse HTTP/1.1 requests." "$H2C_DOCS"
+    fi
+
+    check "GET /baseline2?a=13&b=42 over h2c" "55" "$H2C_DOCS" \
+        -s --http2-prior-knowledge "http://localhost:$H2C_PORT/baseline2?a=13&b=42"
+
+    # Anti-cheat #3: randomized sum
+    A4=$((RANDOM % 900 + 100))
+    B4=$((RANDOM % 900 + 100))
+    check "GET /baseline2?a=$A4&b=$B4 over h2c (random)" "$((A4 + B4))" "$H2C_DOCS" \
+        -s --http2-prior-knowledge "http://localhost:$H2C_PORT/baseline2?a=$A4&b=$B4"
+
+    check_header "GET /baseline2 Content-Type (h2c)" "Content-Type" "text/plain" "$H2C_DOCS" \
+        -s --http2-prior-knowledge "http://localhost:$H2C_PORT/baseline2?a=1&b=1"
+fi
+
+# ───── JSON H2c (GET /json/{count}?m=M over HTTP/2 cleartext) ─────
+
+if has_test "json-h2c"; then
+    JSON_H2C_DOCS="$DOCS_BASE/h2/json-h2c/validation"
+    echo "[test] json-h2c endpoint"
+
+    # Still re-assert HTTP/2 on the wire for the /json path specifically —
+    # a server could in theory route /baseline2 through h2c and /json
+    # through an h1 fallback handler.
+    h2c_json_proto=$(curl -s --max-time 30 --http2-prior-knowledge \
+        -o /dev/null -w '%{http_version}' \
+        "http://localhost:$H2C_PORT/json/1?m=1" 2>/dev/null || echo "0")
+    if [ "$h2c_json_proto" = "2" ]; then
+        echo "  PASS [/json HTTP/2 cleartext] (HTTP/$h2c_json_proto)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[/json HTTP/2 cleartext]: server responded with HTTP/$h2c_json_proto on /json" "$JSON_H2C_DOCS"
+    fi
+
+    check_header "GET /json Content-Type (h2c)" "Content-Type" "application/json" "$JSON_H2C_DOCS" \
+        -s --http2-prior-knowledge "http://localhost:$H2C_PORT/json/1?m=1"
+
+    # Same (count, m) validator as the h1 json profile — count field must
+    # match and items.length equals count. Uses 4 distinct pairs that
+    # differ from the benchmark rotation so caching-by-key gets punished.
+    json_h2c_fail=false
+    for jp in "12:3" "22:7" "31:2" "50:5"; do
+        jcount="${jp%%:*}"
+        jm="${jp##*:}"
+        resp=$(curl -s --max-time 30 --http2-prior-knowledge \
+            "http://localhost:$H2C_PORT/json/$jcount?m=$jm" 2>/dev/null || true)
+        parsed=$(echo "$resp" | python3 -c "
+import sys, json
+m = $jm
+d = json.load(sys.stdin)
+count = d.get('count', -1)
+items = d.get('items', [])
+items_n = len(items)
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
+correct_totals = True
+for item in items:
+    expected = item.get('price', 0) * item.get('quantity', 0) * m
+    if item.get('total', 0) != expected:
+        correct_totals = False
+        break
+print(f'{count} {items_n} {valid} {correct_totals}')
+" 2>/dev/null || echo "-1 -1 False False")
+        pc=$(echo "$parsed" | cut -d' ' -f1)
+        pn=$(echo "$parsed" | cut -d' ' -f2)
+        pv=$(echo "$parsed" | cut -d' ' -f3)
+        ptot=$(echo "$parsed" | cut -d' ' -f4)
+        if [ "$pc" = "$jcount" ] && [ "$pn" = "$jcount" ] && [ "$pv" = "True" ] && [ "$ptot" = "True" ]; then
+            :
+        else
+            fail_with_link "[GET /json/$jcount?m=$jm (h2c)]: count=$pc, items=$pn, schema=$pv, correct_totals=$ptot, expected $jcount" "$JSON_H2C_DOCS"
+            json_h2c_fail=true
+        fi
+    done
+    if [ "$json_h2c_fail" = "false" ]; then
+        echo "  PASS [GET /json/{count}?m=X over h2c] (4 counts × multipliers, full item schema + totals)"
+        PASS=$((PASS + 1))
     fi
 fi
 
@@ -689,6 +1111,73 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
         PASS=$((PASS + 1))
     else
         fail_with_link "[GET /async-db empty range]: expected count=0, got $pgdb_empty" "$ASYNCDB_DOCS"
+    fi
+fi
+
+# ───── Fortunes (GET /fortunes) — template-engine benchmark ─────
+#
+# Feature-based validation, not byte-exact. Engines disagree on whitespace
+# and attribute formatting; what matters is that the rendered HTML actually
+# loops the DB rows, includes the runtime-injected row, escapes user
+# content, and is sized like a real page (not stripped to win the bench).
+
+if has_test "fortunes"; then
+    FORTUNES_DOCS="$DOCS_BASE/h1/isolated/fortunes/validation"
+    echo "[test] fortunes endpoint"
+
+    body=$(curl -s --max-time 30 "http://localhost:$PORT/fortunes" || true)
+
+    check_header "GET /fortunes Content-Type" "Content-Type" "text/html" "$FORTUNES_DOCS" \
+        "http://localhost:$PORT/fortunes"
+
+    if echo "$body" | grep -qi '<!doctype html>'; then
+        echo "  PASS [GET /fortunes <!DOCTYPE html>]"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /fortunes <!DOCTYPE html>]: missing — layout/partial likely not rendered" "$FORTUNES_DOCS"
+    fi
+
+    # Each row in the rendered table must produce a <tr>. 201 data rows are
+    # required (200 seeded + 1 runtime-injected); a header row is allowed
+    # but not required, so the band is 201–210 to absorb implementation-
+    # specific extras (footer rows, etc.).
+    tr_count=$(echo "$body" | grep -oi '<tr' | wc -l)
+    if [ "$tr_count" -ge 201 ] && [ "$tr_count" -le 210 ]; then
+        echo "  PASS [GET /fortunes <tr> count=$tr_count]"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /fortunes <tr> count]: expected 201–210, got $tr_count" "$FORTUNES_DOCS"
+    fi
+
+    # Runtime-injected row text — proves the handler appended id=0 in memory
+    # rather than caching a pre-rendered page from the DB rows alone.
+    if echo "$body" | grep -qF 'Additional fortune added at request time.'; then
+        echo "  PASS [GET /fortunes runtime-injected row]"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /fortunes runtime-injected row]: missing 'Additional fortune added at request time.'" "$FORTUNES_DOCS"
+    fi
+
+    # XSS escape — load-bearing check. Row 11 contains a raw <script> tag
+    # in the DB; the rendered output must encode it as &lt;script&gt; and
+    # must NOT contain the raw <script>alert sequence anywhere.
+    if echo "$body" | grep -qF '&lt;script&gt;' && ! echo "$body" | grep -qF '<script>alert'; then
+        echo "  PASS [GET /fortunes XSS escape]"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /fortunes XSS escape]: <script> in row 11 not properly HTML-escaped" "$FORTUNES_DOCS"
+    fi
+
+    # Size sanity — catches stripped pages and empty bodies. A 201-row
+    # table plus a layout typically lands between 18 KB and 40 KB; the band
+    # is generous to absorb whitespace and per-engine formatting, but
+    # rejects empty / fragment / pathologically-large outputs.
+    size=${#body}
+    if [ "$size" -ge 18432 ] && [ "$size" -le 65536 ]; then
+        echo "  PASS [GET /fortunes body size=${size}B]"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /fortunes body size]: expected 18432–65536 bytes, got $size" "$FORTUNES_DOCS"
     fi
 fi
 
@@ -875,31 +1364,37 @@ _validate_gateway() {
             -sk --http2 "https://localhost:$GW_PORT/static/nonexistent.txt"
 
         # 5. JSON endpoint — valid JSON with computed totals
-        local gw_json_response gw_json_result gw_json_count gw_json_total gw_json_correct
+        local gw_json_response gw_json_result gw_json_count gw_json_valid gw_json_correct
         gw_json_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/json/50" || true)
         gw_json_result=$(echo "$gw_json_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = round(item['price'] * item['quantity'], 2)
+    expected = round(item.get('price', 0) * item.get('quantity', 0), 2)
     if abs(item.get('total', 0) - expected) > 0.02:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         gw_json_count=$(echo "$gw_json_result" | cut -d' ' -f1)
-        gw_json_total=$(echo "$gw_json_result" | cut -d' ' -f2)
+        gw_json_valid=$(echo "$gw_json_result" | cut -d' ' -f2)
         gw_json_correct=$(echo "$gw_json_result" | cut -d' ' -f3)
 
-        if [ "$gw_json_count" = "50" ] && [ "$gw_json_total" = "True" ] && [ "$gw_json_correct" = "True" ]; then
-            echo "  PASS [gateway /json] (50 items, totals correct)"
+        if [ "$gw_json_count" = "50" ] && [ "$gw_json_valid" = "True" ] && [ "$gw_json_correct" = "True" ]; then
+            echo "  PASS [gateway /json] (50 items, full schema, totals correct)"
             PASS=$((PASS + 1))
         else
-            fail_with_link "[gateway /json]: count=$gw_json_count, has_total=$gw_json_total, correct=$gw_json_correct" "$gateway_docs"
+            fail_with_link "[gateway /json]: count=$gw_json_count, schema=$gw_json_valid, correct=$gw_json_correct" "$gateway_docs"
         fi
 
         check_header "gateway /json Content-Type" "Content-Type" "application/json" "$gateway_docs" \
@@ -969,7 +1464,7 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
 if has_test "gateway-64"; then
     _validate_gateway "gateway-64" \
         "$ROOT_DIR/frameworks/$FRAMEWORK/compose.gateway.yml" \
-        "$DOCS_BASE/h2-gateway/gateway-64/validation"
+        "$DOCS_BASE/gateway/gateway-h2/validation"
 fi
 
 # ───── Gateway H3 (h3/QUIC at the edge) ─────
@@ -977,7 +1472,7 @@ fi
 if has_test "gateway-h3"; then
     _validate_gateway "gateway-h3" \
         "$ROOT_DIR/frameworks/$FRAMEWORK/compose.gateway-h3.yml" \
-        "$DOCS_BASE/h3-gateway/gateway-h3/validation"
+        "$DOCS_BASE/gateway/gateway-h3/validation"
 fi
 
 # ───── Production-stack (edge + authsvc + cache + server) ─────
@@ -1054,31 +1549,37 @@ _validate_production_stack() {
             -sk --http2 "https://localhost:$GW_PORT/public/baseline?a=$GW_A&b=$GW_B"
 
         # 4. Public JSON — no auth, no cache, returns count items with totals
-        local gw_json_response gw_json_result gw_json_count gw_json_total gw_json_correct
+        local gw_json_response gw_json_result gw_json_count gw_json_valid gw_json_correct
         gw_json_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/public/json/25" || true)
         gw_json_result=$(echo "$gw_json_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-has_total = all('total' in item for item in items) if items else False
+def valid_item(it):
+    r = it.get('rating')
+    return ('id' in it and 'name' in it and 'category' in it and 'price' in it
+            and 'quantity' in it and 'total' in it
+            and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
+            and isinstance(r, dict) and 'score' in r and 'count' in r)
+valid = all(valid_item(it) for it in items) if items else False
 correct_totals = True
 for item in items:
-    expected = round(item['price'] * item['quantity'], 2)
+    expected = round(item.get('price', 0) * item.get('quantity', 0), 2)
     if abs(item.get('total', 0) - expected) > 0.02:
         correct_totals = False
         break
-print(f'{count} {has_total} {correct_totals}')
+print(f'{count} {valid} {correct_totals}')
 " 2>/dev/null || echo "0 False False")
         gw_json_count=$(echo "$gw_json_result" | cut -d' ' -f1)
-        gw_json_total=$(echo "$gw_json_result" | cut -d' ' -f2)
+        gw_json_valid=$(echo "$gw_json_result" | cut -d' ' -f2)
         gw_json_correct=$(echo "$gw_json_result" | cut -d' ' -f3)
 
-        if [ "$gw_json_count" = "25" ] && [ "$gw_json_total" = "True" ] && [ "$gw_json_correct" = "True" ]; then
-            echo "  PASS [$profile /public/json/25] (25 items, totals correct)"
+        if [ "$gw_json_count" = "25" ] && [ "$gw_json_valid" = "True" ] && [ "$gw_json_correct" = "True" ]; then
+            echo "  PASS [$profile /public/json/25] (25 items, full schema, totals correct)"
             PASS=$((PASS + 1))
         else
-            fail_with_link "[$profile /public/json/25]: count=$gw_json_count, has_total=$gw_json_total, correct=$gw_json_correct" "$docs_url"
+            fail_with_link "[$profile /public/json/25]: count=$gw_json_count, schema=$gw_json_valid, correct=$gw_json_correct" "$docs_url"
         fi
 
         # 5. Auth wall (GET) — /api/* without a cookie must return 401
@@ -1193,7 +1694,7 @@ print(f'{count} {has_total} {correct_totals}')
 if has_test "production-stack"; then
     _validate_production_stack \
         "$ROOT_DIR/frameworks/$FRAMEWORK/compose.production-stack.yml" \
-        "$DOCS_BASE/production-stack/validation"
+        "$DOCS_BASE/gateway/production-stack/validation"
 fi
 
 # ───── Summary ─────

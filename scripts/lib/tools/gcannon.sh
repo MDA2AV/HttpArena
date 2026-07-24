@@ -17,7 +17,11 @@ gcannon_build_args() {
 
     case "$endpoint" in
         "")  # default: baseline / limited-conn
-            args=("http://localhost:$PORT/baseline11?a=1&b=1"
+            # Mixed GET / POST-Content-Length / POST-Transfer-Encoding:chunked
+            # rotation, matching the "Mixed GET/POST with query parsing" README
+            # description and validate.sh's three-shape correctness suite.
+            args=("http://localhost:$PORT"
+                  --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_chunked.raw"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
             [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
@@ -41,6 +45,13 @@ gcannon_build_args() {
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
+        fortunes)
+            # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
+            # No --raw rotation: every request is the same GET; the per-request
+            # variance lives inside the handler (sort + render).
+            args=("http://localhost:$PORT/fortunes"
+                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
+            ;;
         json)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"
@@ -48,7 +59,7 @@ gcannon_build_args() {
             ;;
         json-compressed)
             args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/json-gzip-1.raw,$REQUESTS_DIR/json-gzip-5.raw,$REQUESTS_DIR/json-gzip-10.raw,$REQUESTS_DIR/json-gzip-15.raw,$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
+                  --raw "$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 25)
             ;;
         ws-echo)

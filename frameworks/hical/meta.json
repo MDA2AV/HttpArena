@@ -1,0 +1,19 @@
+{
+  "display_name": "hical",
+  "language": "C++",
+  "type": "engine",
+  "engine": "hical",
+  "description": "Hical is a modern C++20/26 high-performance web framework built on Boost.Asio, featuring coroutine-based async I/O (boost::asio::awaitable<T>), three-tier PMR memory pools, zero-copy HTTP parsing via picohttpparser, and a self-developed WebSocket stack (RFC 6455 with permessage-deflate). SO_REUSEPORT multi-acceptor model on Linux. Dual-track C++26 reflection layer (P2996 / C++20 macro fallback).",
+  "repo": "https://github.com/Hical61/Hical",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "static",
+    "echo-ws"
+  ],
+  "maintainers": ["Hical61"]
+}

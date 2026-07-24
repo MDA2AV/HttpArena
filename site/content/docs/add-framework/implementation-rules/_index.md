@@ -3,10 +3,10 @@ title: Implementation Rules
 weight: 5
 ---
 
-HttpArena classifies entries into three types, each with different rules. Choose the type that matches your submission in `meta.json`.
+Every entry declares a **type** in `meta.json` - what it is and how it is ranked. Framework entries (Flagship / Emerging / Experimental) additionally declare a **mode** (Standard or Tuned).
 
 {{< cards >}}
-  {{< card link="production" title="$ Production" subtitle="Standard framework usage. Must use framework APIs, production-documented settings, and standard libraries." icon="shield-check" >}}
-  {{< card link="tuned" title="# Tuned" subtitle="Experimental flags, custom optimizations, and non-default configurations allowed." icon="adjustments" >}}
-  {{< card link="engine" title="* Engine" subtitle="Bare-metal HTTP implementations. No restrictions, ranked separately." icon="lightning-bolt" >}}
+  {{< card link="frameworks" title="Frameworks" subtitle="Flagship, Emerging and Experimental tiers - run in Standard or Tuned mode." icon="collection" >}}
+  {{< card link="engine" title="Engine" subtitle="Bare-metal HTTP implementations (raw sockets, custom parser). Ranked separately." icon="lightning-bolt" >}}
+  {{< card link="infrastructure" title="Infrastructure" subtitle="Reverse proxies and static-file servers (nginx, h2o) without an app framework layer." icon="server" >}}
 {{< /cards >}}

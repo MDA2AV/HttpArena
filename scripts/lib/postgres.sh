@@ -6,10 +6,10 @@ postgres_start() {
     info "starting postgres sidecar"
 
     # -v on the rm is load-bearing: without it, the anonymous volume
-    # postgres:17-alpine creates for /var/lib/postgresql/data survives
-    # even after the container is gone, and every benchmark run leaks
-    # a fresh ~70MB dataset. Over dozens of runs that silently grows
-    # into tens of GB of dangling volumes.
+    # postgres:18 creates for /var/lib/postgresql survives even after
+    # the container is gone, and every benchmark run leaks a fresh
+    # ~70MB dataset. Over dozens of runs that silently grows into tens
+    # of GB of dangling volumes.
     docker rm -f -v "$PG_CONTAINER" 2>/dev/null || true
 
     # --rm so the container self-cleans on stop. Also pass --tmpfs for

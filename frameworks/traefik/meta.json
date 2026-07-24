@@ -1,0 +1,11 @@
+{
+  "display_name": "traefik",
+  "language": "Go",
+  "type": "infrastructure",
+  "engine": "traefik",
+  "description": "Traefik with a Yaegi-interpreted local plugin handling /baseline11 computation and /static file serving. Plugin code is interpreted, so throughput is modest by design.",
+  "repo": "https://github.com/traefik/traefik",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "static"],
+  "maintainers": []
+}

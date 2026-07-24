@@ -1,7 +1,8 @@
 {
   "display_name": "aspnet-minimal-aot",
   "language": "C#",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "tuned",
   "engine": "Kestrel",
   "description": "Minimal ASP.NET Core Native AOT server using .NET 10 with Kestrel and minimal API routing.",
   "repo": "https://github.com/dotnet/aspnetcore",
@@ -13,7 +14,6 @@
     "json",
     "json-comp",
     "upload",
-    "noisy",
     "static",
     "async-db",
     "api-4",

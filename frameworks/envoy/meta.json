@@ -1,0 +1,11 @@
+{
+  "display_name": "envoy",
+  "language": "C++",
+  "type": "infrastructure",
+  "engine": "envoy",
+  "description": "Envoy proxy with an inline Lua HTTP filter for /baseline11 and direct_response routes for /static files.",
+  "repo": "https://github.com/envoyproxy/envoy",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "static"],
+  "maintainers": []
+}

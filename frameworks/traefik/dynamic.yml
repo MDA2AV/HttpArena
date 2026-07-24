@@ -1,0 +1,30 @@
+# Traefik dynamic configuration.
+#
+# One catch-all router routes every request through the httparena middleware
+# (our Yaegi-interpreted local plugin). The plugin short-circuits /baseline11
+# and /static/* and never calls next.ServeHTTP for those paths, so the dummy
+# service below is only hit for paths the plugin passes through (which should
+# be none of the benchmarked routes). We still have to declare a service —
+# routers cannot exist without one — hence a stub pointing at a black hole.
+
+http:
+  routers:
+    catchall:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/`)"
+      middlewares:
+        - httparena
+      service: dummy
+      priority: 1
+
+  middlewares:
+    httparena:
+      plugin:
+        httparena: {}
+
+  services:
+    dummy:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:1"

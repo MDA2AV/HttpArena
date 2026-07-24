@@ -1,0 +1,24 @@
+{
+  "display_name": "flask",
+  "language": "Python",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "gunicorn",
+  "description": "Flask web framework on Gunicorn with sync workers",
+  "repo": "https://github.com/pallets/flask",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static"
+  ],
+  "maintainers": []
+}

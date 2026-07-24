@@ -82,6 +82,30 @@ jobs:
           PR_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
 
+      # Pre-check that origin/main can auto-merge into the PR. The actual
+      # merge happens inside benchmark-pr.yml after maintainer approval;
+      # doing the dry-run here lets us reject conflicting PRs before
+      # asking a maintainer to approve a run that's guaranteed to abort.
+      # Skipped for non-save runs since they don't push back.
+      - name: Check main merges into PR
+        if: steps.parse.outputs.save == 'true' && steps.parse.outputs.framework != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main --depth=1
+          if ! git merge --no-commit --no-ff origin/main; then
+            git merge --abort 2>/dev/null || true
+            gh pr comment "${{ steps.parse.outputs.pr }}" \
+              --repo "${{ github.repository }}" \
+              --body "⚠️ \`/benchmark --save\` cannot start: \`main\` has diverged and cannot be auto-merged into this branch. Please merge or rebase \`main\` manually, push, and re-run \`/benchmark --save\`."
+            exit 1
+          fi
+          # Discard the merged state — actual merge runs in benchmark-pr.yml
+          # after maintainer approval. main may move between now and then.
+          git merge --abort 2>/dev/null || true
+
       - name: React to comment
         run: |
           gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="rocket"
@@ -96,8 +120,6 @@ jobs:
             -f framework=${{ steps.parse.outputs.framework }} \
             -f profile="${{ steps.parse.outputs.profile }}" \
             -f save="${{ steps.parse.outputs.save }}"
-
-          gh pr comment "${{ steps.parse.outputs.pr }}" --body "🚀 Benchmark run triggered for \`${{ steps.parse.outputs.framework }}\`${{ steps.parse.outputs.profile && format(' (test: {0})', steps.parse.outputs.profile) || ' (all tests)' }}${{ steps.parse.outputs.save == 'true' && ' with --save' || '' }}. Results will be posted here when done."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

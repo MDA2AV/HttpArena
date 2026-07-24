@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ioxide io_uring Kestrel transport (UseIoxide), kTLS for json-tls, ioxide.pg for on-reactor DB. -->
+    <PackageReference Include="ioxide.Kestrel" Version="0.0.16" />
+    <PackageReference Include="ioxide.pg" Version="0.0.16" />
+  </ItemGroup>
+</Project>

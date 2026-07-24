@@ -1,7 +1,8 @@
 {
   "display_name": "ngx-php",
   "language": "PHP",
-  "type": "tuned",
+  "type": "emerging",
+  "mode": "tuned",
   "engine": "nginx",
   "description": "Embedded PHP scripting language module for nginx.",
   "repo": "https://github.com/rryqszq4/ngx-php",
@@ -13,7 +14,6 @@
     "json",
     "json-comp",
     "json-tls",
-    "noisy",
     "api-4",
     "api-16",
     "async-db",

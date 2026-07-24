@@ -1,0 +1,22 @@
+{
+  "display_name": "bjoern",
+  "language": "Python",
+  "type": "engine",
+  "engine": "libev",
+  "description": "A screamingly fast, ultra-lightweight WSGI server",
+  "repo": "https://github.com/jonashaag/bjoern",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "async-db"
+  ],
+  "maintainers": []
+}

@@ -6,7 +6,7 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>    
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="10.0.2" />
-    <PackageReference Include="StackExchange.Redis" Version="2.8.22" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="StackExchange.Redis" Version="3.0.17" />
   </ItemGroup>
 </Project>

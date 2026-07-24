@@ -1,13 +1,15 @@
 {
   "display_name": "workerman-websocket",
   "language": "PHP",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "workerman",
   "description": "An asynchronous event driven PHP socket framework. Supports HTTP, Websocket, SSL and other custom protocols.",
   "repo": "https://github.com/walkor/Workerman",
   "enabled": true,
   "tests": [
-    "echo-ws"
+    "echo-ws",
+    "echo-ws-pipeline"
   ],
   "maintainers": ["joanhey"]
 }

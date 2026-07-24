@@ -75,7 +75,7 @@ framework_start() {
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.
     case "$endpoint" in
-        async-db|crud|api-4|api-16)
+        async-db|crud|api-4|api-16|fortunes)
             args+=(-e "DATABASE_URL=$DATABASE_URL" -e "DATABASE_MAX_CONN=256")
             ;;
     esac
@@ -95,7 +95,18 @@ framework_start() {
     # Profile-declared CPU limit.
     if [ -n "$cpu_limit" ]; then
         if [[ "$cpu_limit" == *-* ]]; then
-            args+=(--cpuset-cpus="$cpu_limit")
+            local max_cpu
+            max_cpu=$(($(nproc)-1))
+            # Extract the largest CPU index from the cpuset string (e.g. "95" from "0-31,64-95")
+            local requested_max
+            requested_max=$(echo "$cpu_limit" | grep -oP '\d+$')
+            
+            if [ "$requested_max" -gt "$max_cpu" ]; then
+                warn "profile cpuset $cpu_limit exceeds available CPUs (max $max_cpu) — using all cores"
+                args+=(--cpus="$(nproc)")
+            else
+                args+=(--cpuset-cpus="$cpu_limit")
+            fi
         else
             local avail
             avail=$(nproc 2>/dev/null || echo 64)
@@ -125,6 +136,27 @@ framework_stop() {
 framework_wait_ready() {
     local endpoint="$1"
     local probe_url
+    local -a probe_extra=()
+
+    # Pure-WebSocket frameworks (e.g. Fleck) don't speak HTTP at all, so the
+    # curl probe below would never succeed. If every subscribed test is a
+    # WS-only profile, sleep briefly to let the container bind its listener
+    # (sub-second on most runtimes) and skip the HTTP probe.
+    if [ -n "$FRAMEWORK_TESTS" ]; then
+        local _t _all_ws=true
+        IFS=',' read -ra _ws_tests_arr <<< "$FRAMEWORK_TESTS"
+        for _t in "${_ws_tests_arr[@]}"; do
+            case "$_t" in
+                echo-ws|echo-ws-pipeline) ;;
+                *) _all_ws=false; break ;;
+            esac
+        done
+        if $_all_ws; then
+            info "ws-only framework — skipping HTTP probe (sleep 2s for startup)"
+            sleep 2
+            return 0
+        fi
+    fi
 
     info "waiting for server..."
 
@@ -140,6 +172,13 @@ framework_wait_ready() {
             ;;
         static-h2)
             probe_url="https://localhost:$H2PORT/static/reset.css"
+            ;;
+        h2c|json-h2c)
+            # h2c prior-knowledge — curl sends the h2 connection preface
+            # immediately, no HTTP/1.1 Upgrade step. Server must speak h2c
+            # on port 8082 or the probe fails.
+            probe_url="http://localhost:$H2C_PORT/baseline2?a=1&b=1"
+            probe_extra+=(--http2-prior-knowledge)
             ;;
         static)
             probe_url="http://localhost:$PORT/static/reset.css"
@@ -160,7 +199,7 @@ framework_wait_ready() {
 
     local i
     for i in $(seq 1 30); do
-        if curl -sk -o /dev/null --max-time 2 "$probe_url" 2>/dev/null; then
+        if curl -sk -o /dev/null --max-time 2 "${probe_extra[@]}" "$probe_url" 2>/dev/null; then
             info "server ready"
             return 0
         fi

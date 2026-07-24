@@ -1,0 +1,62 @@
+/**
+ * Standard I/O — print, read, and string conversion utilities.
+ *
+ * Usage:
+ *   from std.io import println, readLine, stringFromBytes
+ */
+
+from std.internal.io import io
+
+namespace stdio {
+    fn flush() -> void {
+        io.flush()
+    }
+
+    fn flush_stderr() -> void {
+        io.flush_stderr()
+    }
+}
+
+/**
+ * Print a string to stdout (no newline).
+ */
+fn print(s: string) -> void {
+    io.print_str(s)
+}
+
+/**
+ * Print a string to stdout followed by a newline.
+ */
+fn println(s: string) -> void {
+    io.println_str(s)
+}
+
+/**
+ * Print a string to stderr (no newline).
+ */
+fn printErr(s: string) -> void {
+    io.eprint_str(s)
+}
+
+/**
+ * Print a string to stderr followed by a newline.
+ */
+fn printlnErr(s: string) -> void {
+    io.eprintln_str(s)
+}
+
+/**
+ * Read a line from stdin. Strips trailing newline.
+ * Returns empty string on EOF.
+ */
+fn readLine() -> string {
+    return io.read_line()
+}
+
+/**
+ * Convert a byte array to a UTF-8 string.
+ * Inverse of string.bytes().
+ */
+fn stringFromBytes(buf: uint[]) -> string {
+    return io.string_from_bytes(buf)
+}

@@ -1,7 +1,8 @@
 {
   "display_name": "aspnet-minimal + nginx",
   "language": "C#",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "kestrel",
   "description": "ASP.NET Core minimal API behind an Nginx reverse proxy. Nginx handles TLS termination and static files, proxying dynamic endpoints to Kestrel over HTTP/1.1.",
   "repo": "https://github.com/dotnet/aspnetcore",

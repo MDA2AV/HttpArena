@@ -127,7 +127,7 @@ def get_header(scope: dict, name: str, def_value: str):
 
 def check_accept_encoding(scope, substr):
     aenc = get_header(scope, 'Accept-Encoding', '')
-    if aenc and substr == "*":
+    if aenc and substr == "":
         return True
     if aenc and substr in aenc:
         return True
@@ -159,35 +159,11 @@ async def baseline11(scope, receive, send):
     req_method = scope.get('method', '')
     query_params = parse_qs(scope.get('query_string', b'').decode())
     total = 0
-    for v in query_params.values():
-        try:
-            total += int(v[0])
-        except ValueError:
-            pass
+    for val in query_params.values():
+        total += int(val[0])
     if req_method == "POST":
-        body = b''
-        while True:
-            message = await receive()
-            body += message.get('body', b'')
-            if not message.get('more_body', False):
-                break
-        if body:
-            try:
-                total += int(body.decode().strip())
-            except UnicodeDecodeError:
-                pass
-            except ValueError:
-                pass
-    return text_resp(str(total))
-
-async def baseline2(scope, receive, send):
-    query_params = parse_qs(scope.get('query_string', b'').decode())
-    total = 0
-    for v in query_params.values():
-        try:
-            total += int(v[0])
-        except ValueError:
-            pass
+        message = await receive()
+        total += int(message.get('body', b''))
     return text_resp(str(total))
 
 async def json_endpoint(scope, receive, send):
@@ -270,7 +246,6 @@ async def upload_endpoint(scope, receive, send):
 ROUTES = {
     '/pipeline': pipeline,
     '/baseline11': baseline11,
-    '/baseline2': baseline2,
     '/json/': json_endpoint,
     '/json-comp/': json_endpoint,
     '/upload': upload_endpoint,
@@ -320,10 +295,15 @@ async def app(scope, receive, send):
 if __name__ == "__main__":
     import fastpysgi
 
-    host = '0.0.0.0'
-    port = 8080
+    certfile = os.environ.get("TLS_CERT", "/certs/server.crt")
+    keyfile  = os.environ.get("TLS_KEY" , "/certs/server.key")
+
+    fastpysgi.server.delete_all_binds()
+    fastpysgi.server.add_bind('0.0.0.0', 8080)
+    fastpysgi.server.add_bind('0.0.0.0', 8081, (certfile, keyfile, None))
 
     fastpysgi.server.read_buffer_size = 256*1024
+    fastpysgi.server.max_content_length = 31_000_000
     fastpysgi.server.backlog = 16*1024
     fastpysgi.server.loop_timeout = 1
-    fastpysgi.run(app, host, port, workers = WRK_COUNT, loglevel = 0)
+    fastpysgi.run(app, workers = WRK_COUNT, loglevel = 0)

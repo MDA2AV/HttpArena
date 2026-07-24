@@ -1,0 +1,15 @@
+{
+  "display_name": "sark",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "sark production stack \u2014 nginx edge (TLS + JWT auth_request) + redis cache + shared authsvc in front of the sark io_uring server. Cache-aside, stateless JWT. No tokio, no Arc/atomic.",
+  "repo": "https://github.com/dope-rs/dope",
+  "enabled": true,
+  "tests": [
+    "production-stack"
+  ],
+  "maintainers": [
+    "inq"
+  ]
+}

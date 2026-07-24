@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:18
+    command: ["-c", "max_connections=256"]
+    environment:
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: bench
+      POSTGRES_DB: benchmark
+    volumes:
+      - ${DATA_DIR:-../../data}/pgdb-seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bench -d benchmark && psql -U bench -d benchmark -tAc 'SELECT 1 FROM items LIMIT 1' | grep -q 1"]
+      interval: 2s
+      timeout: 10s
+      retries: 30
+    networks: [arena]
+
+  server:
+    build:
+      context: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://bench:bench@postgres:5432/benchmark
+      DATABASE_MAX_CONN: "256"
+    volumes:
+      - ${DATA_DIR:-../../data}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR:-../../data}/benchmark.db:/data/benchmark.db:ro
+      - ${DATA_DIR:-../../data}/static:/data/static:ro
+      - ${CERTS_DIR:-../../certs}:/certs:ro
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8080/pipeline"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    networks: [arena]
+
+  validator:
+    build:
+      context: ./test
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      SERVER: server
+      HTTP_PORT: "8080"
+      HTTPS_PORT: "8443"
+    volumes:
+      - ${CERTS_DIR:-../../certs}:/certs:ro
+    networks: [arena]
+
+networks:
+  arena:
+    driver: bridge

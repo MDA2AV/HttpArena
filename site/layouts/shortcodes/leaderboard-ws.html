@@ -1,5 +1,6 @@
 {{ $profiles := slice
   (dict "id" "echo-ws" "label" "Echo (WebSocket)" "conns" (slice 512 4096 16384) "desc" "WebSocket echo test — upgrade to WebSocket on <code>/ws</code>, then send one message at a time and wait for the echo before sending the next. Measures single-message round-trip throughput. Benchmarked with <code>gcannon --ws -p 1</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/ws/echo/' class='lb-desc-link'>Learn more &rarr;</a>")
+  (dict "id" "echo-ws-pipeline" "label" "Echo Pipelined (WebSocket)" "conns" (slice 512 4096 16384) "desc" "WebSocket echo test with pipelining — upgrade to WebSocket on <code>/ws</code>, then send 16 messages back-to-back per connection before waiting for the echoes. Measures batched round-trip throughput and how efficiently a framework drains the read buffer. Benchmarked with <code>gcannon --ws -p 16</code>. Container pinned to 64 CPU threads (cores 0-31, 64-95). <a href='/docs/test-profiles/ws/echo/' class='lb-desc-link'>Learn more &rarr;</a>")
 }}
 
 {{/* Build JSON data blob for round switching */}}
@@ -43,6 +44,7 @@ html.dark .lb-type-note-ws { color: #e2e8f0 !important; background: linear-gradi
     <div class="lb-type-filter lb-type-all" data-type="all">All</div>
     <div class="lb-type-filter lb-type-production active" data-type="production">Production</div>
     <div class="lb-type-filter lb-type-tuned active" data-type="tuned">Tuned</div>
+    <div class="lb-type-filter lb-type-infrastructure" data-type="infrastructure">Infrastructure</div>
     <div class="lb-type-filter lb-type-engine" data-type="engine">Engine</div>
   </div>
   <div class="lb-filters" style="margin:0 0 0 0;">
@@ -102,6 +104,7 @@ html.dark .lb-type-note-ws { color: #e2e8f0 !important; background: linear-gradi
       <div title="HTTP server engine">Engine</div>
       <div title="Number of concurrent connections" style="text-align:right">Conn</div>
       <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+      <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
       <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
       <div></div>
       <div class="lb-sortable" data-sort="cpu" title="Average CPU usage" style="text-align:right">CPU</div>
@@ -249,6 +252,7 @@ function applyFilters_ws(activePanel) {
 
   var showAll = activePanel.querySelector('.lb-type-filter[data-type="all"]').classList.contains('active');
   var showEngine = showAll || activePanel.querySelector('.lb-type-filter[data-type="engine"]').classList.contains('active');
+  var showInfrastructure = showAll || activePanel.querySelector('.lb-type-filter[data-type="infrastructure"]').classList.contains('active');
   var showTuned = showAll || activePanel.querySelector('.lb-type-filter[data-type="tuned"]').classList.contains('active');
   var showProduction = showAll || activePanel.querySelector('.lb-type-filter[data-type="production"]').classList.contains('active');
 
@@ -259,6 +263,7 @@ function applyFilters_ws(activePanel) {
     var defs = [];
     if (showProduction) defs.push('<span class="lb-type-badge lb-type-badge-production"><span class="lb-type-square" style="background:#22c55e;"></span> Production</span> Standard framework configuration. Must follow production-specific implementation rules for each test.');
     if (showTuned) defs.push('<span class="lb-type-badge lb-type-badge-tuned"><span class="lb-type-square" style="background:#eab308;"></span> Tuned</span> May use experimental flags and non-default optimizations. Not bound by production implementation rules.');
+    if (showInfrastructure) defs.push('<span class="lb-type-badge lb-type-badge-infrastructure"><span class="lb-type-square" style="background:#0891b2;"></span> Infrastructure</span> Reverse proxies, static-file servers, and their scripting extensions (nginx, h2o). Scored on baseline, pipelined, short-lived, and static only.');
     if (showEngine) defs.push('<span class="lb-type-badge lb-type-badge-engine"><span class="lb-type-square" style="background:#dc2626;"></span> Engine</span> Bare-metal HTTP servers — not frameworks. A different breed entirely.');
     typeNote.innerHTML = defs.join('<br>');
   }
@@ -280,7 +285,7 @@ function applyFilters_ws(activePanel) {
       var engine = (row.dataset.engine || '').toLowerCase();
       var langMatch = allLangs || langState.selected.has(lang);
       var engineMatch = allEngines || engineState.selected.has(engine);
-      var typeMatch = (type === 'engine' && showEngine) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'tuned' && showProduction);
+      var typeMatch = (type === 'engine' && showEngine) || (type === 'infrastructure' && showInfrastructure) || (type === 'tuned' && showTuned) || (type === 'production' && showProduction) || (type !== 'engine' && type !== 'infrastructure' && type !== 'tuned' && showProduction);
       var textMatch = terms.length === 0 || terms.some(function(t) {
         return name.indexOf(t) !== -1 || lang.toLowerCase().indexOf(t) !== -1 || engine.indexOf(t) !== -1;
       });
@@ -425,21 +430,32 @@ document.querySelectorAll('.lb-panel-ws .lb-search-input').forEach(function(inpu
   });
 });
 
+/* Type filters — mirrored across every panel's copy so the selection
+ * survives inner-tab (profile) switches. */
 w.querySelectorAll('.lb-type-filter').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var type = btn.dataset.type;
-    var allBtn = w.querySelector('.lb-type-filter[data-type="all"]');
-    var typeButtons = w.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+    var allBtns = w.querySelectorAll('.lb-type-filter[data-type="all"]');
     if (type === 'all') {
-      var allActive = allBtn.classList.contains('active');
-      typeButtons.forEach(function(f) { f.classList.toggle('active', !allActive); });
-      allBtn.classList.toggle('active', !allActive);
+      var allActive = btn.classList.contains('active');
+      w.querySelectorAll('.lb-type-filter').forEach(function(f) {
+        f.classList.toggle('active', !allActive);
+      });
     } else {
-      btn.classList.toggle('active');
-      var allOn = Array.from(typeButtons).every(function(f) { return f.classList.contains('active'); });
-      allBtn.classList.toggle('active', allOn);
-      var anyOn = Array.from(typeButtons).some(function(f) { return f.classList.contains('active'); });
-      if (!anyOn) { btn.classList.add('active'); }
+      var isNowActive = !btn.classList.contains('active');
+      w.querySelectorAll('.lb-type-filter[data-type="' + type + '"]').forEach(function(f) {
+        f.classList.toggle('active', isNowActive);
+      });
+      var firstPanel = w.querySelector('.lb-panel-ws') || w;
+      var panelTypeBtns = firstPanel.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+      var everyOn = Array.from(panelTypeBtns).every(function(f) { return f.classList.contains('active'); });
+      allBtns.forEach(function(f) { f.classList.toggle('active', everyOn); });
+      var anyOn = Array.from(panelTypeBtns).some(function(f) { return f.classList.contains('active'); });
+      if (!anyOn) {
+        w.querySelectorAll('.lb-type-filter[data-type="' + type + '"]').forEach(function(f) {
+          f.classList.add('active');
+        });
+      }
     }
     applyFilters_ws();
     if (window.dlScheduleUpdate) window.dlScheduleUpdate();
@@ -545,9 +561,24 @@ w.addEventListener('click', function(e) {
   var connCount = connPanel ? connPanel.dataset.conns : '';
   if (connCount === 'best') connCount = row.querySelector('.lb-conns').textContent.replace(/,/g, '').trim();
   var baseUrl = '{{ "logs" | relURL }}';
-  var repoHtml = repo ? '<a class="lb-popup-link" href="' + repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
-  var benchHtml = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(name) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
-  var logHtml = (profile && connCount) ? '<a class="lb-popup-link" href="' + baseUrl + '/' + profile + '/' + connCount + '/' + encodeURIComponent(name) + '.log" target="_blank" rel="noreferrer">Docker logs &rarr;</a>' : '';
+  var fwMetaRef = (lbWsCurrentMeta && lbWsCurrentMeta[name]) || {};
+  var dirName = fwMetaRef.dir || name;
+  var variantsList = [{ dir: dirName, description: fwMetaRef.description || desc, repo: fwMetaRef.repo || repo }];
+  if (Array.isArray(fwMetaRef.variants)) {
+    fwMetaRef.variants.forEach(function(v) {
+      variantsList.push({ dir: v.dir, description: v.description || '', repo: v.repo || '' });
+    });
+  }
+  var variantsHtml = variantsList.map(function(v) {
+    var vHeader = variantsList.length > 1
+      ? '<div style="font-size:0.75rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.5rem;">' + v.dir + '</div>'
+      : '';
+    var vDesc = v.description ? '<div class="lb-popup-desc" style="margin-top:0.2rem;">' + v.description + '</div>' : '';
+    var vRepo = v.repo ? '<a class="lb-popup-link" href="' + v.repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
+    var vBench = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(v.dir) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
+    return vHeader + vDesc + '<div class="lb-popup-links" style="margin-top:0.35rem;">' + vRepo + vBench + '</div>';
+  }).join('');
+  var logHtml = (profile && connCount) ? '<a class="lb-popup-link" href="' + baseUrl + '/' + profile + '/' + connCount + '/' + encodeURIComponent(dirName) + '.log" target="_blank" rel="noreferrer">Docker logs &rarr;</a>' : '';
   var statusHtml = s2xx > 0
     ? '2xx: ' + s2xx.toLocaleString() + ', 3xx: ' + s3xx.toLocaleString() + ', 4xx: ' + s4xx.toLocaleString() + ', 5xx: ' + s5xx.toLocaleString()
     : '\u2014';
@@ -558,7 +589,7 @@ w.addEventListener('click', function(e) {
       '<button class="lb-popup-close" aria-label="Close">&times;</button>' +
       '<div class="lb-popup-name">' + name + '</div>' +
       '<div class="lb-popup-lang">' + lang + ' (WebSocket)</div>' +
-      '<div class="lb-popup-desc">' + desc + '</div>' +
+      variantsHtml +
       '<div class="lb-popup-stats">' +
         '<div><div class="lb-popup-stat-label">Req/s</div><div class="lb-popup-stat-value">' + rps + '</div></div>' +
         '<div><div class="lb-popup-stat-label">Connections</div><div class="lb-popup-stat-value">' + conns + '</div></div>' +
@@ -568,7 +599,7 @@ w.addEventListener('click', function(e) {
         '<div><div class="lb-popup-stat-label">Memory</div><div class="lb-popup-stat-value">' + mem + '</div></div>' +
         '<div style="grid-column:1/-1"><div class="lb-popup-stat-label">Status Codes</div><div class="lb-popup-stat-value">' + statusHtml + '</div></div>' +
       '</div>' +
-      '<div class="lb-popup-links">' + repoHtml + benchHtml + logHtml + '</div>' +
+      (logHtml ? '<div class="lb-popup-links" style="margin-top:0.5rem;">' + logHtml + '</div>' : '') +
     '</div>';
   document.body.appendChild(overlay);
   function close() { overlay.remove(); }

@@ -1,23 +1,34 @@
 {
   "display_name": "ktor",
   "language": "Kotlin",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "netty",
   "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
   "repo": "https://github.com/ktorio/ktor",
   "enabled": true,
   "tests": [
     "baseline",
-    "pipelined",
     "limited-conn",
+    "pipelined",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
-    "noisy",
+    "static",
+    "async-db",
     "api-4",
     "api-16",
-    "async-db",
-    "static"
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "crud",
+    "fortunes"
   ],
-  "maintainers": []
+  "maintainers": [
+    "bjhham"
+  ]
 }

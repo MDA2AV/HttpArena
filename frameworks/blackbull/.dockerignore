@@ -1,0 +1,10 @@
+# Build context = bench/httparena/.  Keep the image small: only
+# requirements.txt + app.py + launcher.py are copied into the image.
+**
+!requirements.txt
+!app.py
+!launcher.py
+# Dev-only: a locally-built wheel for Dockerfile.dev.  Untracked.
+!blackbull-*.whl
+**/__pycache__/
+**/*.pyc

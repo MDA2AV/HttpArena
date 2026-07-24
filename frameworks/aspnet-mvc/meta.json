@@ -1,9 +1,10 @@
 {
   "display_name": "aspnet-mvc",
   "language": "C#",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "kestrel",
-  "description": "Minimal ASP.NET Core server using .NET 10 preview with Kestrel and MVC routing.",
+  "description": "ASP.NET Core server using .NET 10 with Kestrel and MVC controller routing.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
   "tests": [
@@ -13,11 +14,12 @@
     "json",
     "json-comp",
     "upload",
-    "noisy",
     "api-4",
     "api-16",
     "static",
     "async-db",
+    "crud",
+    "fortunes",
     "baseline-h2",
     "static-h2"
   ],

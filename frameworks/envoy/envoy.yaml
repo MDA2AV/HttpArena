@@ -1,0 +1,263 @@
+admin:
+  access_log:
+  - name: envoy.access_loggers.file
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
+      path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9901
+
+static_resources:
+  listeners:
+  - name: main
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 8080
+    # SO_REUSEPORT per-worker accept socket so the kernel balances connections
+    # across workers. Default is true in v1.30+, set explicitly for clarity.
+    enable_reuse_port: true
+    # Default (1 MiB) is plenty — /baseline11 responses are <32 bytes and the
+    # upload profile is not in envoy's test subscriptions. 32 MiB × 4096 conns
+    # is a 128 GiB commit ceiling that never fires but costs bookkeeping.
+    per_connection_buffer_limit_bytes: 1048576
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: ingress_http
+          codec_type: HTTP1
+          use_remote_address: false
+          skip_xff_append: true
+          # Benchmark paths are clean (/baseline11, /pipeline, /static/<name>)
+          # so path canonicalization is pure overhead.
+          normalize_path: false
+          merge_slashes: false
+          server_header_transformation: PASS_THROUGH
+          common_http_protocol_options:
+            max_connection_duration: 0s
+            max_headers_count: 100
+          http_protocol_options:
+            accept_http_10: false
+            allow_chunked_length: true
+          http_filters:
+          - name: envoy.filters.http.lua
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+              default_source_code:
+                inline_string: |
+                  -- Parse an integer from a substring between [s, e).
+                  -- Returns the integer value; ignores leading whitespace and
+                  -- trailing non-digit characters, matching nginx/h2o reference.
+                  local function parse_int(str, s, e)
+                    local n = 0
+                    local neg = false
+                    local i = s
+                    -- skip leading whitespace
+                    while i <= e do
+                      local c = string.byte(str, i)
+                      if c ~= 32 and c ~= 9 and c ~= 13 and c ~= 10 then
+                        break
+                      end
+                      i = i + 1
+                    end
+                    if i <= e and string.byte(str, i) == 45 then  -- '-'
+                      neg = true
+                      i = i + 1
+                    end
+                    while i <= e do
+                      local c = string.byte(str, i)
+                      if c < 48 or c > 57 then break end
+                      n = n * 10 + (c - 48)
+                      i = i + 1
+                    end
+                    if neg then return -n end
+                    return n
+                  end
+
+                  -- Sum all `=<int>` values in a query string like "a=1&b=2".
+                  local function sum_query(q)
+                    if q == nil or #q == 0 then return 0 end
+                    local sum = 0
+                    local len = #q
+                    local i = 1
+                    while i <= len do
+                      local eq = string.find(q, "=", i, true)
+                      if eq == nil then break end
+                      local v = eq + 1
+                      local amp = string.find(q, "&", v, true)
+                      local e
+                      if amp == nil then
+                        e = len
+                      else
+                        e = amp - 1
+                      end
+                      sum = sum + parse_int(q, v, e)
+                      if amp == nil then
+                        break
+                      else
+                        i = amp + 1
+                      end
+                    end
+                    return sum
+                  end
+
+                  -- Split the request path into the path portion and the raw
+                  -- query string (without the leading '?').
+                  local function split_path(p)
+                    if p == nil then return "", "" end
+                    local q = string.find(p, "?", 1, true)
+                    if q == nil then return p, "" end
+                    return string.sub(p, 1, q - 1), string.sub(p, q + 1)
+                  end
+
+                  -- Static file cache, populated lazily on first hit per worker.
+                  -- Envoy's direct_response.body.filename caps at 4096 bytes, so
+                  -- we serve /static/* through the Lua filter instead.
+                  if static_cache == nil then
+                    static_cache = {}
+                    mime_by_ext = {
+                      css = "text/css",
+                      js = "application/javascript",
+                      html = "text/html",
+                      json = "application/json",
+                      svg = "image/svg+xml",
+                      webp = "image/webp",
+                      woff2 = "font/woff2",
+                      png = "image/png",
+                      jpg = "image/jpeg",
+                      jpeg = "image/jpeg",
+                    }
+                  end
+
+                  local function ext_of(name)
+                    local dot = name:match(".*()%.")
+                    if dot == nil then return "" end
+                    return string.sub(name, dot + 1)
+                  end
+
+                  local function load_static(name)
+                    local hit = static_cache[name]
+                    if hit ~= nil then return hit end
+                    local f = io.open("/data/static/" .. name, "rb")
+                    if f == nil then return nil end
+                    local data = f:read("*a")
+                    f:close()
+                    local ct = mime_by_ext[ext_of(name)] or "application/octet-stream"
+                    local entry = { body = data, ct = ct }
+                    static_cache[name] = entry
+                    return entry
+                  end
+
+                  function envoy_on_request(request_handle)
+                    local hdrs = request_handle:headers()
+                    local full_path = hdrs:get(":path") or ""
+                    local path, query = split_path(full_path)
+
+                    if path == "/baseline11" then
+                      local method = hdrs:get(":method") or "GET"
+                      if method ~= "GET" and method ~= "POST" and method ~= "HEAD" then
+                        request_handle:respond(
+                          {[":status"] = "405",
+                           ["content-type"] = "text/plain"},
+                          "Method Not Allowed")
+                        return
+                      end
+                      local sum = sum_query(query)
+                      if method == "POST" then
+                        local body = request_handle:body()
+                        if body ~= nil and body:length() > 0 then
+                          local buf = body:getBytes(0, body:length())
+                          sum = sum + parse_int(buf, 1, #buf)
+                        end
+                      end
+                      request_handle:respond(
+                        {[":status"] = "200",
+                         ["content-type"] = "text/plain"},
+                        tostring(sum))
+                      return
+                    end
+
+                    if string.sub(path, 1, 8) == "/static/" then
+                      local name = string.sub(path, 9)
+                      -- Reject any traversal attempt.
+                      if string.find(name, "..", 1, true) ~= nil then
+                        request_handle:respond(
+                          {[":status"] = "403", ["content-type"] = "text/plain"},
+                          "Forbidden")
+                        return
+                      end
+                      local f = load_static(name)
+                      if f == nil then
+                        request_handle:respond(
+                          {[":status"] = "404", ["content-type"] = "text/plain"},
+                          "Not Found")
+                        return
+                      end
+                      request_handle:respond(
+                        {[":status"] = "200", ["content-type"] = f.ct},
+                        f.body)
+                      return
+                    end
+
+                    -- Fall through — router will 404 via direct_response.
+                  end
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+              suppress_envoy_headers: true
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: default
+              domains: ["*"]
+              response_headers_to_remove: ["x-envoy-upstream-service-time", "date", "server"]
+              routes:
+              # /baseline11 — Lua filter intercepts and responds before this
+              # route is used. The direct_response here is a safety net in case
+              # the filter does not short-circuit.
+              - match: { path: "/baseline11" }
+                direct_response:
+                  status: 200
+                  body: { inline_string: "0" }
+                response_headers_to_add:
+                - header: { key: "content-type", value: "text/plain" }
+
+              # /pipeline — fixed "ok" response. Route-level direct_response
+              # is cheaper than sending every request through the Lua VM.
+              # The Lua filter falls through for this path so the router
+              # handles it directly.
+              - match: { path: "/pipeline" }
+                direct_response:
+                  status: 200
+                  body: { inline_string: "ok" }
+                response_headers_to_add:
+                - header: { key: "content-type", value: "text/plain" }
+
+              # /static/* is served by the Lua filter above (envoy's
+              # direct_response.body.filename has a 4KB size cap).
+
+                            # Catch-all 404
+              - match: { prefix: "/" }
+                direct_response:
+                  status: 404
+                  body: { inline_string: "Not Found" }
+                response_headers_to_add:
+                - header: { key: "content-type", value: "text/plain" }
+
+  # No upstream clusters are actually dialed — the Lua filter short-circuits
+  # /baseline11 with respond(), and every other route is a direct_response.
+  clusters: []
+
+layered_runtime:
+  layers:
+  - name: static_layer
+    static_layer:
+      envoy:
+        resource_limits:
+          listener:
+            main:
+              connection_limit: 1048576

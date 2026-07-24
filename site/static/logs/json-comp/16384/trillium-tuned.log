@@ -1,0 +1,130 @@
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned::static_preload] static preload: 20 files from /data/static
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] starting 64 workers
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 1: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 0: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 2: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 6: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 5: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 3: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 4: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 7: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 10: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 9: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 1: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 8: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 15: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 2: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 3: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 11: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 5: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 8: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 7: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 4: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 10: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 9: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 6: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 52: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 16: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 15: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 33: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 61: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 53: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 62: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 59: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 41: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 12: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 27: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 50: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 60: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 40: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 17: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 35: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 46: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 22: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 13: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 0: bound TLS + QUIC on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 31: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 53: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 16: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 33: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 61: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 27: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 24: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 38: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 55: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 56: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 44: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 29: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 63: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 42: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 26: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 14: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 23: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 28: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 36: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 13: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 20: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 48: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 19: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 47: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 58: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 11: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 25: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 21: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 51: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 45: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 62: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 17: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 37: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 43: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 49: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 41: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 30: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 39: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 18: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 32: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 52: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 59: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 60: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 55: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 40: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 54: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 44: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 42: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 22: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 14: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 34: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 57: bound 8080
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 24: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 31: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 21: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 38: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 18: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 51: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 32: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 50: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 56: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 35: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 58: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 46: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 26: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 23: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 29: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 25: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 36: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 12: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 34: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 48: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 63: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 37: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 47: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 20: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 30: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 28: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 43: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 54: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 49: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 39: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 45: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 57: bound TLS on 8443
+[2026-05-13T13:19:42Z INFO  httparena_trillium_tuned] worker 19: bound TLS on 8443
