@@ -243,6 +243,13 @@
   .badge{font-size:.6rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:.1rem .34rem; border-radius:5px; white-space:nowrap; flex:none}
   /* type as a small colored square (no label) in tables; fixed lang slot keeps names aligned. .badge stays for the modal */
   .tsq{width:10px; height:10px; border-radius:3px; flex:none; display:inline-block}
+  /* One rule per line: these five used to share a line, and removing the
+     infrastructure tier (#1017) took the whole line with it, leaving every
+     square transparent. */
+  .tsq-flagship{background:#2e9e6a}
+  .tsq-emerging{background:#3b73c4}
+  .tsq-experimental{background:#d98e2b}
+  .tsq-engine{background:#cb5f51}
   /* 'tuned' mode cue - yellow ring around the type square / badge */
   .tsq.tuned, .badge.tuned{position:relative}
   .tsq.tuned::after, .badge.tuned::after{content:""; position:absolute; top:0; bottom:0; right:calc(100% + 2px); width:4px; background:#c89a3c}
