@@ -49,7 +49,7 @@ gcannon reports WebSocket results with the same layout as HTTP requests, except 
   WS frames: 2400000
 ```
 
-The parser (`gcannon_parse ws-echo`) records `frames received` as the `status_2xx` equivalent and divides by the measured duration to produce the headline RPS number shown on the [WebSocket leaderboard](/leaderboards/websocket/). One echo round-trip counts as one unit - the frames-received count from the client side, not frames-sent, because the metric is "how many echoes the framework completed," not "how many messages the benchmarker pushed into the socket."
+The parser (`gcannon_parse ws-echo`) records `frames received` as the `status_2xx` equivalent and divides by the measured duration to produce the headline RPS number shown on the [WebSocket leaderboard](https://www.http-arena.com/#scope=ws). One echo round-trip counts as one unit - the frames-received count from the client side, not frames-sent, because the metric is "how many echoes the framework completed," not "how many messages the benchmarker pushed into the socket."
 
 ## Why not a dedicated WebSocket tool
 

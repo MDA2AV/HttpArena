@@ -448,9 +448,10 @@
   "use strict";
   var D = window.LB_DATA;
   var LB_DOCS = window.LB_DOCS || {};
-  // Run-logs live under the Hugo site. Served at /old/logs/ once the board is the
-  // root; ../logs/ still works under /new-leaderboard/ (hugo server) and file://.
-  var LOGBASE = (location.protocol==='file:' || location.pathname.indexOf('/new-leaderboard/')>=0) ? '../logs/' : '/old/logs/';
+  // Run-logs are published from site/static/logs/ and served at /logs/. The
+  // relative fallback covers file:// and the /new-leaderboard/ copy, where the
+  // board sits one level below the static root.
+  var LOGBASE = (location.protocol==='file:' || location.pathname.indexOf('/new-leaderboard/')>=0) ? '../logs/' : '/logs/';
   if(!D){ document.getElementById('rows').innerHTML='<div class="empty">data.js not found - run scripts/gen_new_leaderboard_data.py</div>'; return; }
 
   // ── maps ─────────────────────────────────────────────────

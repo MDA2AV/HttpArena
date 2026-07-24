@@ -5,13 +5,39 @@
 <title>HttpArena</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>
-/* The old Hugo site moved under /old/. Preserve inbound links by redirecting
-   old root paths there; /new-leaderboard/* now lives at the root. Paths already
-   under /old/ are genuinely missing — fall through to the 404 below (no loop). */
+/* The Hugo site is retired — the standalone board at / is the whole site now.
+   GitHub Pages has no server-side rewrites, so this 404 page is the redirect
+   layer for every URL the old site owned:
+
+     /old/logs/<path>      -> /logs/<path>      (run logs moved with the site)
+     /leaderboard/         -> /                 (badge links live in other repos' READMEs)
+     /new-leaderboard/     -> /                 (pre-move URL of the board)
+     /docs/<path>/         -> /#doc=<path>      (docs are inlined in the board)
+     /docs/                -> /#doc=            (docs root id is the empty string)
+     /old/<anything else>  -> /                 (the whole namespace is gone)
+
+   Doc ids are exactly the docs-relative paths gen_new_leaderboard_data.py
+   derives (site/content/docs/scoring/composite-score.md -> "scoring/composite-score",
+   site/content/docs/_index.md -> ""), so /docs/* maps 1:1 with no lookup table.
+   Anything outside these namespaces falls through to the 404 body below. */
 (function(){
-  var p = location.pathname;
-  if (/^\/new-leaderboard(\/|$)/.test(p)) { location.replace('/' + location.search + location.hash); return; }
-  if (p !== '/old' && p.indexOf('/old/') !== 0) { location.replace('/old' + p + location.search + location.hash); return; }
+  var raw = location.pathname;
+  var wasOld = /^\/old(\/|$)/.test(raw);
+  var p = wasOld ? (raw.replace(/^\/old/, '') || '/') : raw;
+  var to = null;
+
+  if (/^\/logs\//.test(p)) {
+    to = p + location.search;                       // only reachable via /old/logs/*
+  } else if (/^\/(leaderboard|new-leaderboard)(\/|$)/.test(p)) {
+    to = '/' + location.search + location.hash;
+  } else {
+    var m = p.match(/^\/docs(?:\/(.*?))?\/?$/);
+    if (m) to = '/#doc=' + encodeURIComponent(m[1] || '');
+    else if (wasOld) to = '/';                      // retired page, send them to the board
+  }
+
+  /* Never redirect to the path we're already on — that would loop forever. */
+  if (to && to.split(/[?#]/)[0] !== raw) location.replace(to);
 })();
 </script>
 <style>

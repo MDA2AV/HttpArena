@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths:
       - 'site/**'
-      - 'results/**'
+      - 'scripts/gen_new_leaderboard_data.py'
 
 permissions:
   pages: write
@@ -22,36 +22,26 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: '0.157.0'
-          extended: true
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Generate new-leaderboard data
+      # Regenerates site/static/new-leaderboard/{data.js,docs.js} from
+      # site/data/*.json and site/content/docs/**. No Hugo involved — the
+      # board is a standalone page and the generator does its own markdown
+      # + shortcode rendering.
+      - name: Generate leaderboard data + docs
         run: python3 scripts/gen_new_leaderboard_data.py
 
-      - name: Build Hugo site (archived under /old/)
-        working-directory: site
-        run: |
-          hugo mod tidy
-          hugo --minify --baseURL "https://www.http-arena.com/old/" --destination old_build
-
-      - name: Assemble — new board at root, Hugo site under /old/
+      # site/static/ is served verbatim at the root: logs/, images/,
+      # openapi*.json, favicon.svg, and new-leaderboard/ itself (kept so the
+      # pre-move URL still serves a working page). The board is then lifted
+      # out of new-leaderboard/ to become the root index.
+      - name: Assemble site
         working-directory: site
         run: |
           rm -rf public && mkdir public
-          mv old_build public/old
-          cp public/old/new-leaderboard/index.html public/index.html
-          cp public/old/new-leaderboard/data.js public/data.js
-          cp public/old/new-leaderboard/docs.js public/docs.js
-          for f in openapi.json openapi-gateway.json; do [ -f "public/old/$f" ] && cp "public/old/$f" "public/$f"; done   # OpenAPI specs linked from the docs, served at root
-          cp root/404.html public/404.html   # path-preserving redirects: old links -> /old/
+          cp -r static/. public/
+          cp static/new-leaderboard/index.html public/index.html
+          cp static/new-leaderboard/data.js   public/data.js
+          cp static/new-leaderboard/docs.js   public/docs.js
+          cp root/404.html public/404.html   # redirects retired Hugo URLs -> the board
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

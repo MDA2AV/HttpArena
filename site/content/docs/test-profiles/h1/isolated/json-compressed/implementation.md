@@ -97,7 +97,7 @@ On the JSON Compressed tab of the main leaderboard, the Score column is computed
 
 ### Composite score column
 
-On the [composite leaderboard](/leaderboards/composite/), the JSON Compressed column follows a different aggregation path:
+On the [composite leaderboard](https://www.http-arena.com/), the JSON Compressed column follows a different aggregation path:
 
 1. Average `rps` and `bandwidth` across the 3 conn counts (arithmetic mean, equal weight).
 2. Compute `myBpr = avgBw / avgRps` from those averages.

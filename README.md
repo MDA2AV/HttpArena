@@ -10,7 +10,7 @@ HTTP framework benchmark platform.
 
 28 test profiles. 64-core dedicated hardware. Same conditions for every framework.
 
-[View Leaderboard](https://www.http-arena.com/) | [Documentation](https://www.http-arena.com/docs/) | [Add a Framework](https://www.http-arena.com/docs/add-framework/)
+[View Leaderboard](https://www.http-arena.com/) | [Documentation](https://www.http-arena.com/#doc=) | [Add a Framework](https://www.http-arena.com/#doc=add-framework)
 
 ---
 
@@ -57,7 +57,7 @@ cd HttpArena
 
 ## Contributing
 
-- [Add a new framework](https://www.http-arena.com/docs/add-framework/)
+- [Add a new framework](https://www.http-arena.com/#doc=add-framework)
 - Improve an existing implementation — open a PR modifying files under `frameworks/<name>/`
 - [Open an issue](https://github.com/MDA2AV/HttpArena/issues)
 - Comment on any open issue or PR
@@ -75,13 +75,13 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 Benchmarked on HttpArena? Add the badge to your project's README — it links to the live leaderboard and adapts to light & dark themes automatically.
 
 ```md
-[![Benchmarked by HttpArena](https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg)](https://www.http-arena.com/leaderboard/)
+[![Benchmarked by HttpArena](https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg)](https://www.http-arena.com/)
 ```
 
 Prefer HTML, e.g. to set the size:
 
 ```html
-<a href="https://www.http-arena.com/leaderboard/">
+<a href="https://www.http-arena.com/">
   <img src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" alt="Benchmarked by HttpArena" height="44">
 </a>
 ```
@@ -97,7 +97,7 @@ Another badge variants:
 ---
 
 <div align="left">
-  <a href="https://www.http-arena.com/leaderboard/">
+  <a href="https://www.http-arena.com/">
     <img alt="Benchmarked by HttpArena" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" width="235">
   </a>
 </div>
