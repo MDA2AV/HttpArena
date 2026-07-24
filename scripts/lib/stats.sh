@@ -11,12 +11,43 @@
 #   stats_start <container...>    # starts background collector
 #   stats_stop                    # stops, fills STATS_AVG_CPU / STATS_PEAK_MEM
 #                                 # and (multi-container) STATS_BREAKDOWN
+#                                 # and STATS_MEM_DETAIL
+#
+# `docker stats` reports memory.current minus inactive_file, so it already
+# excludes most page cache - but that single number says nothing about what
+# the memory actually is. #1015 asks whether the published figures are really
+# the application's memory; answering it needs the composition, not another
+# opinion. So alongside the existing number we record the cgroup's own
+# accounting (anon, file, sock, slab, kernel) at the moment of peak usage and
+# store it on the result row for later analysis. Nothing consumes it yet: the
+# leaderboard still reads `memory`.
 
 STATS_PID=""
 STATS_LOG=""
+STATS_CG_LOG=""
 STATS_AVG_CPU="0%"
 STATS_PEAK_MEM="0MiB"
 STATS_BREAKDOWN=""
+STATS_MEM_DETAIL=""
+
+# Fields worth keeping from cgroup v2 memory.stat. anon is application memory,
+# file is page cache (active_file is the part docker still counts), sock is
+# kernel socket buffers - which at 4096 connections is not a rounding error -
+# and slab/kernel are kernel structures charged to the container.
+STATS_CG_FIELDS="anon file active_file inactive_file sock slab kernel"
+
+# Resolve a container's cgroup directory. Layout varies with the cgroup driver
+# (systemd vs cgroupfs) and version, so try the known shapes and give up
+# quietly - this is supplementary data, never a reason to fail a run.
+_cg_dir() {
+    local id="$1" p
+    for p in "/sys/fs/cgroup/system.slice/docker-$id.scope" \
+             "/sys/fs/cgroup/docker/$id" \
+             "/sys/fs/cgroup/memory/docker/$id"; do
+        [ -r "$p/memory.stat" ] && { echo "$p"; return 0; }
+    done
+    return 1
+}
 
 # Start a background poller. Accepts one or more container names. Each
 # sample writes one line per container, tagged with a snapshot counter so
@@ -26,7 +57,17 @@ STATS_BREAKDOWN=""
 # Log line format: <snap> <container-name> <cpu%> <mem-MiB>
 stats_start() {
     STATS_LOG=$(mktemp)
+    STATS_CG_LOG=$(mktemp)
     local containers=("$@")
+
+    # Resolve cgroup paths once; container ids don't change mid-run.
+    local _cg_paths=() _c _id _dir
+    for _c in "${containers[@]}"; do
+        _id=$(docker inspect -f '{{.Id}}' "$_c" 2>/dev/null) || continue
+        _dir=$(_cg_dir "$_id") || continue
+        _cg_paths+=("$_dir")
+    done
+
     (
         local snap=0
         while true; do
@@ -49,6 +90,16 @@ stats_start() {
                     else if (unit == "B")   mem_mib /= (1024 * 1024)
                     printf "%s %s %.2f %.2f\n", snap, name, cpu, mem_mib
                 }'
+
+            # cgroup accounting for the same snapshot, summed across containers
+            for _d in "${_cg_paths[@]}"; do
+                awk -v snap="$snap" -v want="$STATS_CG_FIELDS" '
+                    BEGIN { n = split(want, w, " "); for (i = 1; i <= n; i++) keep[w[i]] = 1 }
+                    keep[$1] { printf "%s %s %s\n", snap, $1, $2 }
+                ' "$_d/memory.stat" 2>/dev/null
+                awk -v snap="$snap" '{ printf "%s current %s\n", snap, $1 }' \
+                    "$_d/memory.current" 2>/dev/null
+            done >>"$STATS_CG_LOG"
         done
     ) >"$STATS_LOG" 2>/dev/null &
     STATS_PID=$!
@@ -89,6 +140,37 @@ stats_stop() {
             else printf "%.0fMiB", max
         }
     ' "$STATS_LOG")
+
+    # ── cgroup composition at the peak snapshot ─────────────────────────
+    #    Reported as MiB per field. The snapshot is chosen by total memory so
+    #    the breakdown describes the same moment STATS_PEAK_MEM reports,
+    #    rather than being a max-per-field mixture of different instants.
+    STATS_MEM_DETAIL=""
+    if [ -s "${STATS_CG_LOG:-/dev/null}" ]; then
+        STATS_MEM_DETAIL=$(awk '
+            { v[$1 SUBSEP $2] += $3; if (!($1 in seen)) { seen[$1]=1 } }
+            END {
+                best = ""; bestv = -1
+                for (k in v) {
+                    split(k, a, SUBSEP)
+                    if (a[2] == "current" && v[k] > bestv) { bestv = v[k]; best = a[1] }
+                }
+                if (best == "") exit
+                n = split("current anon file active_file inactive_file sock slab kernel", f, " ")
+                out = ""
+                for (i = 1; i <= n; i++) {
+                    key = best SUBSEP f[i]
+                    if (key in v) {
+                        if (out != "") out = out ","
+                        out = out sprintf("\"%s\":%.1f", f[i], v[key] / 1048576)
+                    }
+                }
+                print out
+            }
+        ' "$STATS_CG_LOG")
+    fi
+    rm -f "${STATS_CG_LOG:-}" 2>/dev/null || true
+    STATS_CG_LOG=""
 
     # ── Per-container breakdown — average CPU and peak mem per container,
     #    rendered as "proxy: 4200% 1.2GiB | server: 1200% 512MiB". Skipped

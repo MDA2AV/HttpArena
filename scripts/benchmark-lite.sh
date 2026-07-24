@@ -294,6 +294,7 @@ run_one() {
             best_output="$output"
             best_cpu="$STATS_AVG_CPU"
             best_mem="$STATS_PEAK_MEM"
+            BEST_MEM_DETAIL="$STATS_MEM_DETAIL"
             BEST_M=()
             for k in "${!m[@]}"; do BEST_M[$k]="${m[$k]}"; done
         fi
@@ -321,6 +322,16 @@ save_result() {
 
     # Composite-score support — api-4/16 + gateway-64 need per-template splits
     # or the website scores them as 0. See save_result in benchmark.sh.
+    # cgroup composition at peak memory, in MiB. Recorded for #1015: the
+    # `memory` field above is docker's number (memory.current minus
+    # inactive_file) and cannot show whether it is application memory, page
+    # cache the kernel kept active, or socket buffers. Nothing reads this yet.
+    local mem_detail_extra=""
+    if [ -n "${BEST_MEM_DETAIL:-}" ]; then
+        mem_detail_extra=",
+  \"memory_detail\": {${BEST_MEM_DETAIL}}"
+    fi
+
     local tpl_extra=""
     if [ "$profile" = "api-4" ] || [ "$profile" = "api-16" ]; then
         tpl_extra=",
@@ -359,7 +370,7 @@ save_result() {
   "status_2xx": ${BEST_M[status_2xx]:-0},
   "status_3xx": ${BEST_M[status_3xx]:-0},
   "status_4xx": ${BEST_M[status_4xx]:-0},
-  "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}
+  "status_5xx": ${BEST_M[status_5xx]:-0}${mem_detail_extra}${tpl_extra}
 }
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
