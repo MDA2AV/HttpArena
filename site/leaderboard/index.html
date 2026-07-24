@@ -137,6 +137,7 @@
   .nav-ico svg{width:15px; height:15px}
   .nav-grp-h:hover .nav-ico, .nav-grp.open>.nav-grp-h .nav-ico{color:var(--text)}
   .nav-grp.lvl0>.nav-grp-h{font-size:.9rem; padding:.5rem .55rem}
+  .lvl0-link{font-size:.9rem; padding:.5rem .55rem; font-weight:650}
   .nav-subgrp-h{display:flex; align-items:center; gap:.4rem; padding:.34rem .55rem; border-radius:7px; cursor:pointer; color:var(--text-2); font-weight:600; font-size:.78rem; user-select:none}
   .nav-subgrp-h:hover{background:var(--panel-2); color:var(--text)}
   .caret{display:inline-flex; align-items:center; justify-content:center; width:.85rem; font-size:.62rem; color:var(--muted); transition:transform .22s cubic-bezier(.4,0,.2,1); flex:none}
@@ -211,6 +212,9 @@
   .seg button:hover{color:var(--text)}
   .seg button.on{color:var(--accent)}
 
+  /* the composite view stacks its toggles; align-items:stretch makes every row
+     the width of the widest label so the switches line up under each other */
+  #headctl{display:flex; flex-direction:column; align-items:stretch; gap:.5rem}
   .toggle{display:inline-flex; align-items:center; gap:.55rem; font-size:.82rem; font-weight:600; color:var(--text-2); cursor:pointer; user-select:none; white-space:nowrap}
   .toggle .sw{width:34px; height:20px; border-radius:999px; background:var(--line); position:relative; transition:background .15s; flex:none}
   .toggle .sw i{position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 2px rgba(0,0,0,.25)}
@@ -623,10 +627,15 @@
     var nav=document.getElementById('navTree'); nav.innerHTML='';
     var byCat={}; D.profiles.forEach(function(p){ (byCat[p.category]=byCat[p.category]||[]).push(p); });
 
-    // 1. Knowledge Base (top) - entire docs tree nested in one collapsible group
+    // 1. Knowledge Base (top) - a plain link out to /docs/. The docs are real
+    // pages now, so every leaf navigated away anyway; expanding the tree here
+    // just duplicated the nav that the Knowledge Base already carries.
     if(D.docs && D.docs.c && D.docs.c.length){
       var ks=document.createElement('div'); ks.className='nav-sec';
-      ks.appendChild(docsGroup(D.docs));
+      var kb=document.createElement('a');
+      kb.className='nav-grp-h lvl0-link'; kb.href=docUrl('');
+      kb.innerHTML=navIco('kb')+'<span class="nav-grp-t">'+esc(D.docs.t||'Knowledge Base')+'</span>';
+      ks.appendChild(kb);
       nav.appendChild(ks);
     }
 
@@ -658,31 +667,6 @@
     });
     dgrp.appendChild(dbody); bs.appendChild(dgrp); nav.appendChild(bs);
     buildMobileNav(byCat);
-  }
-  // A docs section: the header is a pure expand/collapse toggle (folders);
-  // leaf pages open in-page. Section overviews remain reachable via card grids.
-  function docsGroup(node){
-    var isRoot=node.u==='';
-    var grp=document.createElement('div'); grp.className='nav-grp'+(isRoot?' lvl0':'')+(expanded.has(node.u)?' open':'');
-    var gh=document.createElement('div'); gh.className='nav-grp-h'+(!isRoot&&state.view==='doc'&&state.doc===node.u?' active':'');
-    gh.innerHTML=(isRoot?navIco('kb')+'<span class="nav-grp-t">'+esc(node.t)+'</span>':'<span>'+esc(node.t)+'</span>')+'<span class="caret">▸</span>';
-    // Clicking a section opens it and shows its overview page (the _index content, e.g. Test Profiles'
-    // API Specification); clicking again (when open) collapses it. Root + content-less sections just toggle.
-    gh.onclick=function(){
-      // Root: expand/collapse the Knowledge Base group in place. Section: navigate
-      // to its real overview page (/docs/<id>/) — children stay browsable in the
-      // tree below and in that page's own sidebar.
-      if(isRoot){ toggleGrp(grp,node.u); } else { location.href=docUrl(node.u); }
-    };
-    grp.appendChild(gh);
-    var body=navBody();
-    node.c.forEach(function(ch){ body.firstChild.appendChild(ch.c&&ch.c.length ? docsGroup(ch) : docsLeaf(ch)); });
-    grp.appendChild(body); return grp;
-  }
-  function docsLeaf(node){
-    var a=document.createElement('a'); a.className='nav-item';
-    a.href=docUrl(node.u); a.textContent=node.t;   // real page; browser navigates out of the SPA
-    return a;
   }
   function expandDocAncestors(id){
     expanded.add('');  // the Knowledge Base root group

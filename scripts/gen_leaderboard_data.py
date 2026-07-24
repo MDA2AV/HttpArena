@@ -615,35 +615,57 @@ def _meta_desc(html):
 
 
 def _sidebar(tree, curid):
-    """Collapsed nav, expanded along the path to the current page.
+    """The board's nav, rebuilt statically.
 
-    Rendering the whole tree flat put all 126 pages on every doc page — a wall
-    of links with its own scrollbar, where the board shows a collapsible
-    accordion. <details> gives the same behaviour with no JavaScript, and stays
-    usable if a crawler or a reader-mode ignores it.
+    Same markup and classes as buildNav() produces - .nav-search, .nav-grp /
+    .nav-grp-h / .nav-grp-body, .nav-item, .caret - so it is styled by the
+    board's own CSS and behaves the same. Groups on the path to the current
+    page carry .open, exactly as `expanded` does on the board.
     """
     def on_path(u):
-        # the current page, or one of its ancestors
         return u == curid or (u != "" and curid.startswith(u + "/"))
 
-    def walk(nodes):
+    def walk(nodes, lvl=0):
         out = []
         for n in nodes:
             u, title = n["u"], _html.escape(n["t"])
-            cls = ' class="cur"' if u == curid else ""
-            link = '<a href="%s"%s>%s</a>' % (_doc_url(u), cls, title)
             kids = n.get("c") or []
             if kids:
-                out.append('<li><details%s><summary>%s</summary>%s</details></li>'
-                           % (" open" if on_path(u) else "", link, walk(kids)))
+                open_cls = " open" if on_path(u) else ""
+                head = ('<div class="nav-grp-h%s">'
+                        '<a class="nav-grp-link%s" href="%s">%s</a>'
+                        '<span class="caret">\u25b8</span></div>'
+                        % (" active" if u == curid else "",
+                           " active" if u == curid else "", _doc_url(u), title))
+                out.append('<div class="nav-grp%s%s">%s'
+                           '<div class="nav-grp-body"><div class="nav-grp-inner">%s</div></div>'
+                           '</div>'
+                           % (" lvl0" if lvl == 0 else "", open_cls, head, walk(kids, lvl + 1)))
             else:
-                out.append("<li>%s</li>" % link)
-        return "<ul>" + "".join(out) + "</ul>"
-    root_cls = ' class="cur"' if curid == "" else ""
-    return ('<a class="ds-home" href="/">← Leaderboard</a>'
-            '<a class="ds-root"%s href="/docs/">%s</a>%s'
-            % (root_cls, _html.escape(tree["t"] or "Knowledge Base"),
-               walk(tree["c"]) if tree.get("c") else ""))
+                out.append('<a class="nav-item%s" href="%s">%s</a>'
+                           % (" active" if u == curid else "", _doc_url(u), title))
+        return "".join(out)
+
+    return (
+        '<div class="nav-search"><div class="ns-box">'
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'
+        '<input id="navq" type="search" placeholder="Search pages" autocomplete="off" '
+        'spellcheck="false" aria-label="Search pages" role="combobox" aria-expanded="false" '
+        'aria-controls="navResults"></div></div>'
+        '<div class="nav-results" id="navResults" role="listbox" aria-label="Search results" '
+        'style="display:none"></div>'
+        '<div id="navTree">'
+        '<a class="nav-item" href="/">\u2190 Leaderboard</a>'
+        '<div class="nav-sec"><div class="nav-grp lvl0 open">'
+        '<div class="nav-grp-h%s"><a class="nav-grp-link" href="/docs/">%s</a>'
+        '<span class="caret">\u25b8</span></div>'
+        '<div class="nav-grp-body"><div class="nav-grp-inner">%s</div></div>'
+        '</div></div></div>'
+        % (" active" if curid == "" else "",
+           _html.escape(tree["t"] or "Knowledge Base"),
+           walk(tree.get("c") or []))
+    )
 
 
 BOARD = ROOT / "site" / "leaderboard" / "index.html"
@@ -656,7 +678,7 @@ _SHARED_EXACT = {
     ".top", ".brand", ".brand-name", ".brand-name b", ".brand-name:hover",
     ".icon-btn", ".icon-btn:hover", ".icon-btn svg", ".top-links",
 }
-_SHARED_PREFIX = (".doc-", ".type-rules", ".tr-sq")
+_SHARED_PREFIX = (".doc-", ".type-rules", ".tr-sq", ".nav", ".ns-box", ".caret")
 
 
 def _top_level_rules(css):
@@ -675,7 +697,8 @@ def _top_level_rules(css):
 
 
 def _is_shared(rule):
-    sel = rule.split("{", 1)[0].strip()
+    # a rule can carry a leading /* comment */; that is not part of the selector
+    sel = re.sub(r"/\*.*?\*/", " ", rule.split("{", 1)[0], flags=re.S).strip()
     if sel.startswith("@media"):
         # the dark-mode preference block defines the same variables as :root
         return "prefers-color-scheme" in sel
@@ -714,6 +737,44 @@ _CHROME = board_chrome()
 
 _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
                "if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>")
+_NAV_JS = ("<script src=\"/search.js\"></script>"
+           "<script>(function(){"
+           # accordion: same behaviour as the board's toggleGrp
+           "document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
+           "c.onclick=function(e){e.preventDefault();e.stopPropagation();"
+           "c.closest('.nav-grp').classList.toggle('open');};});"
+           # page search over the index the generator emits
+           "var inp=document.getElementById('navq'),box=document.getElementById('navResults'),"
+           "tree=document.getElementById('navTree');if(!inp||!window.LB_SEARCH)return;"
+           "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
+           "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
+           "function snip(x,t){var i=x.toLowerCase().indexOf(t);if(i<0)return esc(x.slice(0,110));"
+           "var a=Math.max(0,i-45),b=Math.min(x.length,i+t.length+75);"
+           "return (a>0?'\u2026':'')+esc(x.slice(a,i))+'<mark>'+esc(x.slice(i,i+t.length))+'</mark>'"
+           "+esc(x.slice(i+t.length,b))+(b<x.length?'\u2026':'');}"
+           "function run(){var q=inp.value.trim().toLowerCase();"
+           "if(!q){box.style.display='none';tree.style.display='';inp.setAttribute('aria-expanded','false');return;}"
+           "var terms=q.split(/\\s+/).filter(Boolean),hits=[];"
+           "window.LB_SEARCH.forEach(function(e){var t=(e.t||'').toLowerCase(),"
+           "b=((e.d||'')+' '+(e.x||'')).toLowerCase(),sc=0;"
+           "for(var i=0;i<terms.length;i++){var ti=t.indexOf(terms[i]),bi=b.indexOf(terms[i]);"
+           "if(ti<0&&bi<0)return;sc+=ti===0?60:ti>0?35:0;if(bi>=0)sc+=5;}"
+           "if(t===q)sc+=50;hits.push({e:e,sc:sc});});"
+           "hits.sort(function(a,b){return b.sc-a.sc||a.e.t.length-b.e.t.length;});"
+           "hits=hits.slice(0,25);"
+           "tree.style.display='none';box.style.display='';inp.setAttribute('aria-expanded','true');"
+           "if(!hits.length){box.innerHTML='<div class=\"nav-empty\">No page matches <b>'+esc(inp.value)+'</b>.</div>';return;}"
+           "var h='<div class=\"nav-res-h\"><span>Pages</span><span>'+hits.length+'</span></div>';"
+           "hits.forEach(function(hit){var e=hit.e;"
+           "h+='<a class=\"nav-res\" href=\"/docs/'+(e.u?e.u+'/':'')+'\">'"
+           "+'<span class=\"nav-res-t\">'+esc(e.t)+'</span>'"
+           "+'<span class=\"nav-res-c\">'+esc(e.c||'')+'</span>'"
+           "+'<span class=\"nav-res-s\">'+snip((e.d||'')+' '+(e.x||''),terms[0])+'</span></a>';});"
+           "box.innerHTML=h;}"
+           "var t;inp.addEventListener('input',function(){clearTimeout(t);t=setTimeout(run,90);});"
+           "inp.addEventListener('keydown',function(e){if(e.key==='Escape'){inp.value='';run();inp.blur();}});"
+           "})();</script>")
+
 _THEME_TOGGLE = ("<script>var b=document.getElementById('theme');if(b)b.onclick=function(){"
                  "var d=document.documentElement,c=d.getAttribute('data-theme')==='dark'||"
                  "(d.getAttribute('data-theme')!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);"
@@ -754,12 +815,12 @@ def _doc_page(did, title, body_html, tree, seo_title="", description=""):
               '<div class="top-links">' + _CHROME[1] + '</div>'
               '</header>')
     body = ('<div class="docs-layout">'
-            '<aside class="docs-sidebar">' + _sidebar(tree, did) + '</aside>'
+            '<aside class="nav">' + _sidebar(tree, did) + '</aside>'
             '<main class="doc-main"><article class="doc-wrap">'
             '<h1 class="doc-title">' + t + "</h1>"
             + _static_links(body_html)
             + "</article></main></div>")
-    return head + header + body + _THEME_TOGGLE + "</body></html>"
+    return head + header + body + _NAV_JS + _THEME_TOGGLE + "</body></html>"
 
 
 def _docs_css():
@@ -774,25 +835,15 @@ def _docs_css():
 /* ── standalone doc-page shell (not present on the board) ─────────────── */
 .brand-sub{color:var(--text-2);font-size:.9rem;padding-left:.7rem;border-left:1px solid var(--line)}
 .top-links{margin-left:auto}
-.docs-layout{display:flex;align-items:flex-start;gap:2rem;max-width:1200px;margin:0 auto;padding:1.5rem}
-.docs-sidebar{position:sticky;top:64px;flex:none;width:250px;max-height:calc(100vh - 84px);overflow-y:auto;font-size:.86rem}
-.ds-home{display:block;color:var(--muted);font-size:.8rem;margin-bottom:.9rem}
-.ds-home:hover{color:var(--accent)}
-.ds-root{display:block;font-weight:700;color:var(--text);margin-bottom:.5rem;padding:.28rem .4rem}
-.ds-root.cur{color:var(--accent)}
-.docs-sidebar ul{list-style:none;margin:0;padding:0 0 0 .2rem}
-.docs-sidebar li>ul{padding-left:.75rem;border-left:1px solid var(--line-soft);margin:.1rem 0 .1rem .35rem}
-.docs-sidebar a{display:block;padding:.28rem .4rem;border-radius:6px;color:var(--text-2)}
-.docs-sidebar a:hover{background:var(--panel-2);color:var(--text)}
-.docs-sidebar a.cur{background:var(--accent-weak);color:var(--accent);font-weight:650}
-.docs-sidebar details>summary{list-style:none;display:flex;align-items:center;gap:.2rem;cursor:pointer}
-.docs-sidebar details>summary::-webkit-details-marker{display:none}
-.docs-sidebar details>summary::before{content:"\u25b8";flex:none;width:.8rem;font-size:.6rem;color:var(--muted);transition:transform .18s ease}
-.docs-sidebar details[open]>summary::before{transform:rotate(90deg)}
-.docs-sidebar details>summary>a{flex:1;min-width:0}
-.doc-main{flex:1;min-width:0;max-width:820px}
+/* Same two-column shape as the board's .layout; the rail itself is the board's
+   .nav, styled by the board's own CSS. */
+/* wider than the board's 264px rail: this tree goes five levels deep and
+   each level costs .8rem of indent, so names would truncate. */
+.docs-layout{display:grid;grid-template-columns:320px 1fr;align-items:start}
+.doc-main{min-width:0;padding:1.6rem 2rem 4rem;max-width:900px}
 .doc-wrap{max-width:none}
-@media (max-width:820px){.docs-layout{flex-direction:column;gap:1rem;padding:1rem}.docs-sidebar{position:static;width:100%;max-height:none;padding-bottom:.5rem;border-bottom:1px solid var(--line)}.doc-main{max-width:100%}.brand{width:auto}}
+.nav-grp-link{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit;text-decoration:none}
+@media (max-width:820px){.docs-layout{grid-template-columns:1fr}.nav{position:static;height:auto;width:100%;border-right:0;border-bottom:1px solid var(--line)}.doc-main{padding:1.1rem 1.1rem 4rem;max-width:100%}.brand{width:auto}}
 """
 
 
