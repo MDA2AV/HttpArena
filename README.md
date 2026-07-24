@@ -8,7 +8,7 @@ Hi, thank you for visiting or contributing to our project, we are always looking
 
 HTTP framework benchmark platform.
 
-28 test profiles. 64-core dedicated hardware. Same conditions for every framework.
+29 test profiles. 64-core dedicated hardware. Same conditions for every framework.
 
 [View Leaderboard](https://www.http-arena.com/) | [Documentation](https://www.http-arena.com/#doc=) | [Add a Framework](https://www.http-arena.com/#doc=add-framework)
 
@@ -41,7 +41,7 @@ Always specify `-f <framework>`. Results are automatically compared against the 
 | gRPC | `unary-grpc`, `unary-grpc-tls`, `stream-grpc`, `stream-grpc-tls` | Unary and server-streaming gRPC over plaintext HTTP/2 and TLS |
 | Gateway | `gateway-64`, `gateway-h3` | Reverse proxy + server stack over HTTP/2 and HTTP/3 with mixed workload |
 | Production Stack | `production-stack` | Four-service architecture: edge + Redis + JWT auth sidecar + server, 10K-item cache-aside, concurrent reads + writes |
-| WebSocket | `echo-ws` | WebSocket echo throughput across connection counts |
+| WebSocket | `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` | Echo throughput across connection counts; 16x batched echo; echo with each connection closed after 10 messages (upgrade-handshake cost) |
 
 ## Run Locally
 
