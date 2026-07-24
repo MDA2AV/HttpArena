@@ -1,7 +1,9 @@
 ---
 title: Implementation Guidelines
+seo_title: "Pipelined WebSocket Echo Benchmark — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the pipelined WebSocket echo benchmark."
 ---
-{{< type-rules production="Must use the framework standard WebSocket API with default buffer sizes. No custom batching or read-ahead optimizations." tuned="May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers or batched read paths." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard WebSocket API with default buffer sizes. No custom batching or read-ahead optimizations." tuned="May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers or batched read paths." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 Measures WebSocket echo throughput with pipelining. Each connection upgrades via HTTP/1.1, then sends 16 text messages back-to-back before waiting for the echoes. Each echo counts as one completed response.

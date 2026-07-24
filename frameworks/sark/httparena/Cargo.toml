@@ -23,6 +23,7 @@ cartel-redis.workspace = true
 cartel-gen.workspace = true
 tent.workspace = true
 shin.workspace = true
+brotli = { version = "8", default-features = false, features = ["std"] }
 http.workspace = true
 rcgen.workspace = true
 pin-project.workspace = true

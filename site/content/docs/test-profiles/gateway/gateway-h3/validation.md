@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Gateway H3 Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the Gateway H3 proxy and server stack before a framework's results are accepted."
 ---
 
 The Gateway-H3 validation flow reuses the same checks as [Gateway-64](../gateway-h2/validation/) - same endpoints, same expected responses, same anti-cheat probes. The only differences:

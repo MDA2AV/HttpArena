@@ -8,9 +8,11 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 using Npgsql;
+using ioxide.tls;
 
 using SimpleW;
 using SimpleW.Modules;
+using SimpleW.Engine.Ioxide;
 using SimpleW.Benchmarks;
 
 var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
@@ -32,23 +34,27 @@ else
 
 return;
 
-SimpleWServer CreateServer(int port, SslContext? sslContext = null)
+SimpleWServer CreateServer(int port, string certPath = null, string keyPath = null)
 {
     var server = new SimpleWServer(IPAddress.Any, port)
         .ConfigureJsonEngine(new SystemTextJsonEngine(_ => jsonOptions))
+        .UseIoxideEngine(config => {
+		    config.ServerConfig = IoxideEngineOptions.CreateIncrementalConfig();
+		    if (certPath is not null && keyPath is not null)
+		    {
+				config.TlsPort = 8443;
+				config.Tls = new TlsOptions {
+					CertificatePath = certPath,
+					KeyPath = keyPath,
+					Alpn = "http/1.1"
+				};		        
+		    }
+
+		    return config;
+		})
         .Configure(o => {
             o.MaxRequestBodySize = 25 * 1024 * 1024;
-            o.TcpNoDelay = true;
-            o.ReuseAddress = true;
-            o.TcpKeepAlive = true;
-            o.AcceptPerCore = true;
-            o.ReusePort = true;
         });
-
-    if (sslContext is not null)
-    {
-        server.UseHttps(sslContext);
-    }
 
     ConfigureRoutes(server);
     return server;
@@ -64,14 +70,7 @@ SimpleWServer? CreateTlsServer(int port)
         return null;
     }
 
-    var certificate = X509Certificate2.CreateFromPemFile(certPath, keyPath);
-    var sslContext = new SslContext(
-        SslProtocols.Tls12 | SslProtocols.Tls13,
-        certificate,
-        clientCertificateRequired: false,
-        checkCertificateRevocation: false);
-
-    return CreateServer(port, sslContext);
+    return CreateServer(port, certPath, keyPath);
 }
 
 void ConfigureRoutes(SimpleWServer server)

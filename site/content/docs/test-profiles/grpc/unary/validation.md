@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Unary gRPC Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the unary gRPC benchmark before a framework's results are accepted."
 ---
 
 The gRPC unary profile does not have dedicated validation checks in `validate.sh`. Correctness is verified during the benchmark run itself:

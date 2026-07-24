@@ -1,7 +1,7 @@
 {
   "display_name": "wtx",
   "language": "Rust",
-  "type": "engine",
+  "type": "emerging",
   "engine": "wtx",
   "description": "WTX - WebSocket Server",
   "repo": "https://github.com/c410-f3r/wtx",

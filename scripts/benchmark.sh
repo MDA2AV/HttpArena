@@ -168,7 +168,8 @@ for t in baseline pipelined limited-conn json json-comp json-tls upload \
          api-4 api-16 static async-db \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
-         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls echo-ws; do
+         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls \
+         echo-ws echo-ws-pipeline echo-ws-limited; do
     if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
 done
 $_has_isolated_test && framework_build
@@ -186,7 +187,7 @@ need_pg=false
 for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
-$need_pg && postgres_start
+if $need_pg; then postgres_start; fi
 
 # Redis sidecar — started whenever crud is in play so multi-process
 # frameworks can use it as a shared cache. Single-heap frameworks
@@ -197,7 +198,7 @@ need_redis=false
 for t in crud; do
     if framework_subscribes_to "$t"; then need_redis=true; break; fi
 done
-$need_redis && redis_start
+if $need_redis; then redis_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
@@ -253,6 +254,11 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        if $is_gateway; then
+            dump_compose_logs "$GATEWAY_PROJECT"
+        else
+            dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+        fi
         framework_stop
         $is_gateway && gateway_down
         return 1

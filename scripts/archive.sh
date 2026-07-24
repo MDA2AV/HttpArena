@@ -87,16 +87,25 @@ import json, glob, os, sys
 site_data = sys.argv[1]
 round_file = sys.argv[2]
 
+# Rounds keep their existing shape - {"<profile>-<conns>": [row, ...]} - so
+# archived rounds stay readable. Results now live one file per framework
+# (#751), so regroup them back into per-profile arrays here.
 bundle = {}
-for f in sorted(glob.glob(os.path.join(site_data, '*.json'))):
-    name = os.path.basename(f)
-    if name in ('frameworks.json', 'langcolors.json'):
+for f in sorted(glob.glob(os.path.join(site_data, 'results', '*.json'))):
+    try:
+        with open(f) as fh:
+            entry = json.load(fh)
+    except Exception:
         continue
-    if name.startswith('rounds'):
-        continue
-    key = os.path.splitext(name)[0]
-    with open(f) as fh:
-        bundle[key] = json.load(fh)
+    for key, row in (entry.get('results') or {}).items():
+        bundle.setdefault(key, []).append(row)
+for key in bundle:
+    bundle[key].sort(key=lambda r: (r.get('framework') or '').lower())
+
+current = os.path.join(site_data, 'current.json')
+if os.path.exists(current):
+    with open(current) as fh:
+        bundle['current'] = json.load(fh)
 
 # Include frameworks metadata
 fw_path = os.path.join(site_data, 'frameworks.json')

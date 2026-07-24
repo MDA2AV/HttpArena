@@ -1,7 +1,9 @@
 ---
 title: Implementation Guidelines
+seo_title: "API-4 Constrained Workload Benchmark — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the API-4 constrained workload."
 ---
-{{< type-rules production="All endpoint implementations must follow their respective production rules. No endpoint-specific optimizations that would not be used in production." tuned="May optimize each endpoint independently. Custom serializers and non-default configurations allowed. Pre-computed / pre-serialized JSON response caches are not allowed on either type - the JSON slice of this workload must still be serialized per request from live data." engine="No specific rules." >}}
+{{< type-rules standard="All endpoint implementations must follow their respective production rules. No endpoint-specific optimizations that would not be used in production." tuned="May optimize each endpoint independently. Custom serializers and non-default configurations allowed. Pre-computed / pre-serialized JSON response caches are not allowed on either type - the JSON slice of this workload must still be serialized per request from live data." engine="No specific rules." >}}
 
 The API-4 profile runs a multi-endpoint workload with the server container constrained to **4 CPUs and 16 GB memory**. Only baseline, JSON, and async database endpoints are tested. The load generator uses 64 threads and 256 connections.
 

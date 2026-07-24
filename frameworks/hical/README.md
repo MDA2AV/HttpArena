@@ -15,7 +15,7 @@ web framework built on Boost.Asio.
 ## Test Types
 
 - baseline, pipelined, limited-conn
-- json
+- json, json-comp (gzip)
 - upload
 - static
 - echo-ws

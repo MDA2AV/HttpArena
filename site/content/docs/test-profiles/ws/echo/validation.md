@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "WebSocket Echo Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the WebSocket echo benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate-ws.py` for every framework subscribed to the `echo-ws` test. The script uses a raw socket WebSocket client with no external dependencies.

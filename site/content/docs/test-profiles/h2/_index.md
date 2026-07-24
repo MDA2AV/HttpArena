@@ -1,6 +1,8 @@
 ---
 weight: 2
 title: H/2
+seo_title: "HTTP/2 Test Profiles"
+description: "HTTP/2 profiles measuring multiplexed stream performance, in both TLS and cleartext prior-knowledge variants."
 ---
 
 H/2 test profiles measure framework performance under multiplexed streams. The TLS variants model edge-facing deployments; the cleartext (h2c) variants model reverse-proxy-to-origin and service-to-service deployments inside a trust boundary.

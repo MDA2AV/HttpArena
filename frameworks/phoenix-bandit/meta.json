@@ -22,7 +22,6 @@
     "echo-ws",
     "echo-ws-pipeline",
     "baseline-h2",
-    "static-h2",
-    "json-h2"
+    "static-h2"
   ]
 }

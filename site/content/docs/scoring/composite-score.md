@@ -1,5 +1,7 @@
 ---
 title: Composite Score
+seo_title: "Composite Score Methodology"
+description: "The composite score explained: per-profile normalization, the sum across scored profiles, the compression adjustment and the memory bonus."
 ---
 
 The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–100 scale, then **summed** across all scored profiles. An optional memory toggle adds a 0–50 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
@@ -22,6 +24,12 @@ This produces a 0–100 value where the top framework scores 100.
 
 **Exception: JSON Compressed.** The `json-comp` profile applies a compression-ratio gain before normalization so frameworks that ship smaller response bodies are rewarded directly. Instead of averaging raw rps, `avgRps` is first scaled by `(minBpr / myBpr)²` where `myBpr = avgBw / avgRps` and `minBpr` is the smallest bytes-per-response across the field. Doubling the response size quarters the score. See the [JSON Compressed implementation](/docs/test-profiles/h1/isolated/json-compressed/implementation/#scoring) for the full formula and rationale.
 
+**Normalized against the whole field, not the current view.** The 100-point reference for each profile is the best result in the full field, regardless of what the leaderboard is currently filtering to. Filtering by language, hiding tuned entries or searching for a name changes which rows are *displayed*; it does not change any score. Without this, filtering to a single language re-based every profile on the best entry of that language — and because each profile's leader moved by a different factor, the summed ranking could reorder, showing one framework above another only while the filter was applied.
+
+Framework types remain separate: engine entries are scored on their own subset of profiles, so an engine result never sets the reference for a framework entry.
+
+The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself — for example, ranking the Ruby entries against each other rather than against the field.
+
 ### Step 3: Sum across scored profiles
 
 The final composite score is the **sum** of per-profile scores across all **scored** profiles:
@@ -30,7 +38,7 @@ The final composite score is the **sum** of per-profile scores across all **scor
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 26 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,600, rising to ~3,900 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine and infrastructure entries are scored on smaller subsets and have correspondingly lower ceilings.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 26 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,600, rising to ~3,900 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
@@ -53,7 +61,6 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Async DB | Yes | Async Postgres query with connection pooling |
 | CRUD | Yes | Realistic REST API against Postgres: cached reads (75%), updates (15%), list (5%), upsert create (5%). Cache-aside with 200ms TTL (in-process or Redis sidecar) |
 | Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
-| TCP Frag | No (*) | Baseline with MTU 69 - TCP fragmentation stress |
 
 ### H/1.1 Workload
 
@@ -92,14 +99,17 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Unary | Yes | gRPC unary call over cleartext HTTP/2 |
 | Unary TLS | Yes | gRPC unary call over TLS |
+| Stream | Yes | Server-streaming gRPC over cleartext HTTP/2 |
+| Stream TLS | Yes | Server-streaming gRPC over TLS |
 
 ### WebSocket
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Echo | Yes | WebSocket echo throughput |
+| Echo Pipelined | Yes | Batched WebSocket echo throughput |
 
-TCP Frag and Noisy are reference-only - shown for comparison but not counted in the composite score.
+Fortunes is the only reference-only profile - shown for comparison but not counted in the composite score.
 
 ## Memory efficiency bonus
 
@@ -154,10 +164,9 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Infrastructure** (nginx, h2o, and similar proxies/servers) are scored only on Baseline, Pipelined, Short-lived, and Static - the profiles that don't require executing application logic. Other profiles (JSON, async-db, etc.) may be displayed as reference data but do not count toward the infrastructure composite.
 - **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
 
-The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Infrastructure and Engine are each exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
+The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Engine is exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
 
 ## Why this approach
 

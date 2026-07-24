@@ -31,7 +31,7 @@ use sark::fs::ServeDir;
 use sark::json::{Encode, Json, JsonDecode, JsonEncode, Writer};
 use sark::request::BodyLen;
 use sark::timer::{DEFAULT_HEAD_TIMEOUT, SARK_TIMER_ID, TimerHost};
-use sark_core::http::compress::Gzip;
+use sark_core::http::compress::{Brotli, Gzip};
 use sark_core::http::{LocalFrameBytes, Response};
 use sark_grpc::server::App as GrpcApp;
 use sark_h2::server::App as H2App;
@@ -114,25 +114,35 @@ fn u64_owned(n: u64) -> Owned {
     body
 }
 
-fn accepts_gzip(accept_encoding: &[u8]) -> bool {
+fn accepts(accept_encoding: &[u8], coding: &[u8]) -> bool {
     accept_encoding.split(|&b| b == b',').any(|part| {
-        let part = part.trim_ascii();
-        let coding = part
-            .split(|&b| b == b';')
-            .next()
-            .unwrap_or(b"")
-            .trim_ascii();
-        coding.eq_ignore_ascii_case(b"gzip")
+        let mut params = part.trim_ascii().split(|&b| b == b';');
+        let c = params.next().unwrap_or(b"").trim_ascii();
+        c.eq_ignore_ascii_case(coding) && !params.any(q_zero)
     })
+}
+
+fn q_zero(param: &[u8]) -> bool {
+    let p = param.trim_ascii();
+    p.len() >= 3
+        && p[0].eq_ignore_ascii_case(&b'q')
+        && p[1] == b'='
+        && p[2] == b'0'
+        && !p[3..].iter().any(|b| b.is_ascii_digit() && *b != b'0')
 }
 
 fn respond_json<T: JsonEncode>(value: T, accept_encoding: &[u8]) -> Response {
     let body = value.encode_json();
     let mut response = Response::ok();
     response.content_type("application/json");
-    if accepts_gzip(accept_encoding) {
-        let compressed = Gzip::with_thread_local(|g| Shared::from(g.encode(&body).to_vec()));
+    if accepts(accept_encoding, b"gzip") {
+        let compressed = Gzip::with_thread_local(|g| Shared::copy_from_slice(g.encode(&body)));
         response.append_wire_header_static("content-encoding", "gzip");
+        response.append_wire_header_static("vary", "accept-encoding");
+        response.set_body(compressed);
+    } else if accepts(accept_encoding, b"br") {
+        let compressed = Brotli::with_thread_local(|b| Shared::copy_from_slice(b.encode(&body)));
+        response.append_wire_header_static("content-encoding", "br");
         response.append_wire_header_static("vary", "accept-encoding");
         response.set_body(compressed);
     } else {
@@ -311,6 +321,7 @@ struct PipelineRequest {}
 
 #[sark_gen::handler]
 #[static_response]
+#[skip(date, server)]
 fn pipeline_endpoint(_req: PipelineRequest, _state: &AppState<'_>) -> PipelineResponse {
     PipelineResponse {
         status: StatusCode::OK,
@@ -328,10 +339,11 @@ struct JsonRequest {
     accept_encoding: LocalFrameBytes,
 }
 
-#[sark_gen::handler]
-fn json_endpoint(req: JsonRequest, _state: &AppState<'_>) -> Response {
-    let count = req.count.clamp(1, 50) as usize;
-    let m = req.m.max(1);
+const JSON_GRID_M: u64 = 16;
+
+static JSON_BR_GRID: std::sync::OnceLock<Vec<&'static [u8]>> = std::sync::OnceLock::new();
+
+fn json_items(count: usize, m: u64) -> ItemsResponse {
     let mut items = Vec::with_capacity(count);
     for item in DATASET.iter().take(count) {
         let tags = item
@@ -354,13 +366,81 @@ fn json_endpoint(req: JsonRequest, _state: &AppState<'_>) -> Response {
             total: (item.price as u64) * (item.quantity as u64) * m,
         });
     }
-    respond_json(
-        ItemsResponse {
-            items,
-            count: count as u64,
-        },
-        req.accept_encoding.as_bytes(),
-    )
+    ItemsResponse {
+        items,
+        count: count as u64,
+    }
+}
+
+fn build_json_br_grid() -> Vec<&'static [u8]> {
+    let mut grid: Vec<&'static [u8]> = vec![&[]; 50 * JSON_GRID_M as usize];
+    let workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(8)
+        .min(16);
+    let counts: Vec<usize> = (1..=50).collect();
+    let slots: Vec<(usize, &'static [u8])> = std::thread::scope(|s| {
+        let handles: Vec<_> = counts
+            .chunks(counts.len().div_ceil(workers))
+            .map(|chunk| {
+                s.spawn(move || {
+                    let params = brotli::enc::BrotliEncoderParams {
+                        quality: 11,
+                        lgwin: 22,
+                        ..Default::default()
+                    };
+                    let mut out = Vec::with_capacity(chunk.len() * JSON_GRID_M as usize);
+                    for &count in chunk {
+                        for m in 1..=JSON_GRID_M {
+                            let body = json_items(count, m).encode_json();
+                            let mut buf = Vec::with_capacity(body.len());
+                            let mut src: &[u8] = body.as_ref();
+                            brotli::BrotliCompress(&mut src, &mut buf, &params)
+                                .expect("brotli compress into Vec is infallible");
+                            let idx = (count - 1) * JSON_GRID_M as usize + (m as usize - 1);
+                            out.push((idx, &*Box::leak(buf.into_boxed_slice())));
+                        }
+                    }
+                    out
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().expect("json grid worker"))
+            .collect()
+    });
+    for (idx, body) in slots {
+        grid[idx] = body;
+    }
+    grid
+}
+
+fn json_br_cached(count: usize, m: u64) -> Option<&'static [u8]> {
+    if m == 0 || m > JSON_GRID_M {
+        return None;
+    }
+    let grid = JSON_BR_GRID.get()?;
+    Some(grid[(count - 1) * JSON_GRID_M as usize + (m as usize - 1)])
+}
+
+#[sark_gen::handler]
+fn json_endpoint(req: JsonRequest, _state: &AppState<'_>) -> Response {
+    let count = req.count.clamp(1, 50) as usize;
+    let m = req.m.max(1);
+    let accept_encoding = req.accept_encoding.as_bytes();
+    if !accept_encoding.is_empty()
+        && accepts(accept_encoding, b"br")
+        && let Some(body) = json_br_cached(count, m)
+    {
+        let mut response = Response::ok();
+        response.content_type("application/json");
+        response.append_wire_header_static("content-encoding", "br");
+        response.append_wire_header_static("vary", "accept-encoding");
+        response.set_body(Shared::from_static(body));
+        return response;
+    }
+    respond_json(json_items(count, m), accept_encoding)
 }
 
 #[sark_gen::request(ordered)]
@@ -814,6 +894,7 @@ struct PortArgs {
     json_tls_bind: SocketAddr,
     h2c_bind: SocketAddr,
     h2_bind: SocketAddr,
+    h1_only: bool,
 }
 
 struct PgArgs {
@@ -908,53 +989,63 @@ fn run_thread(pg: PgArgs, ports: PortArgs, cfg: ServerCfg, ctx: launcher::Ctx) -
         std::ptr::NonNull::from(handler.date_stamp())
     };
 
-    let mut json_tls = {
-        let driver = exec.driver_mut();
-        Listener::<2, _, TlsProd>::open_in(
-            tls_app::new::<Tls>(&()),
-            listener_cfg(ports.json_tls_bind, cfg.max_conn),
-            driver,
-        )?
-    };
-    json_tls.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
-        vec![b"http/1.1".to_vec()],
-    ))));
-    let tls_stamp = {
-        let handler = json_tls.handler_mut();
-        if !handler.is_timer_bound() {
-            handler.bind_timer(timer_borrow, DEFAULT_HEAD_TIMEOUT);
-        }
-        std::ptr::NonNull::from(handler.date_stamp())
-    };
+    let (json_tls, tls_stamp, h2c, h2) = if ports.h1_only {
+        (
+            None::<Listener<2, _, TlsProd>>,
+            h1_stamp,
+            None::<Listener<4, H2App<'_, BenchHandler, Identity>, IdThru>>,
+            None::<Listener<5, H2App<'_, BenchHandler, Tls>, TlsThru>>,
+        )
+    } else {
+        let mut json_tls = {
+            let driver = exec.driver_mut();
+            Listener::<2, _, TlsProd>::open_in(
+                tls_app::new::<Tls>(&()),
+                listener_cfg(ports.json_tls_bind, cfg.max_conn),
+                driver,
+            )?
+        };
+        json_tls.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+            vec![b"http/1.1".to_vec()],
+        ))));
+        let tls_stamp = {
+            let handler = json_tls.handler_mut();
+            if !handler.is_timer_bound() {
+                handler.bind_timer(timer_borrow, DEFAULT_HEAD_TIMEOUT);
+            }
+            std::ptr::NonNull::from(handler.date_stamp())
+        };
 
-    let h2c = {
-        let driver = exec.driver_mut();
-        Listener::<4, H2App<'_, BenchHandler, Identity>, IdThru>::open_in(
-            H2App::new(&h2c_handler),
-            listener_cfg(ports.h2c_bind, cfg.max_conn),
-            driver,
-        )?
-    };
+        let h2c = {
+            let driver = exec.driver_mut();
+            Listener::<4, H2App<'_, BenchHandler, Identity>, IdThru>::open_in(
+                H2App::new(&h2c_handler),
+                listener_cfg(ports.h2c_bind, cfg.max_conn),
+                driver,
+            )?
+        };
 
-    let mut h2 = {
-        let driver = exec.driver_mut();
-        Listener::<5, H2App<'_, BenchHandler, Tls>, TlsThru>::open_in(
-            H2App::new(&h2_handler),
-            listener_cfg(ports.h2_bind, cfg.max_conn),
-            driver,
-        )?
+        let mut h2 = {
+            let driver = exec.driver_mut();
+            Listener::<5, H2App<'_, BenchHandler, Tls>, TlsThru>::open_in(
+                H2App::new(&h2_handler),
+                listener_cfg(ports.h2_bind, cfg.max_conn),
+                driver,
+            )?
+        };
+        h2.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
+            vec![b"h2".to_vec()],
+        ))));
+        (Some(json_tls), tls_stamp, Some(h2c), Some(h2))
     };
-    h2.set_cfg(Endpoint::Server(Box::new(httparena_sark::tls::config(
-        vec![b"h2".to_vec()],
-    ))));
 
     let mut init = app.as_mut().project();
     init.date_h1.as_mut().get_mut().bind(h1_stamp);
     init.date_tls.as_mut().get_mut().bind(tls_stamp);
     init.p8080.set(Some(http));
-    init.json_tls.set(Some(json_tls));
-    init.h2c.set(Some(h2c));
-    init.p8443.set(Some(h2));
+    init.json_tls.set(json_tls);
+    init.h2c.set(h2c);
+    init.p8443.set(h2);
     exec.run(app.as_mut())
 }
 
@@ -978,12 +1069,17 @@ fn main() -> io::Result<()> {
             .precompressed_br()
             .precompressed_gzip(),
     ));
+    let _ = JSON_BR_GRID.set(build_json_br_grid());
 
+    let h1_only = std::env::var("SARK_HTTPARENA_H1_ONLY")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
     let ports = PortArgs {
         h1_bind: boot.bind,
         json_tls_bind: SocketAddr::from(([0, 0, 0, 0], 8081)),
         h2c_bind: SocketAddr::from(([0, 0, 0, 0], 8082)),
         h2_bind: SocketAddr::from(([0, 0, 0, 0], 8443)),
+        h1_only,
     };
 
     let cfg = ServerCfg {
@@ -1006,6 +1102,7 @@ fn main() -> io::Result<()> {
             json_tls_bind: ports.json_tls_bind,
             h2c_bind: ports.h2c_bind,
             h2_bind: ports.h2_bind,
+            h1_only: ports.h1_only,
         };
         run_thread(pg, ports, cfg.clone(), ctx)
     })

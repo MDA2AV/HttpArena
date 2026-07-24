@@ -1,6 +1,8 @@
 ---
 weight: 2
 title: Workload
+seo_title: "HTTP/1.1 Workload Profiles"
+description: "Multi-endpoint benchmarks that exercise several code paths at once under constrained CPU and memory."
 ---
 
 Multi-endpoint benchmarks that exercise multiple code paths simultaneously under realistic conditions.
