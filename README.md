@@ -22,6 +22,7 @@ HTTP framework benchmark platform.
 | `/benchmark -f <framework> -t <test>` | Run a specific test |
 | `/benchmark -f <framework> --save` | Run and save results (updates leaderboard on merge) |
 | `/benchmark -f <framework> -t <test> --save` | Run specific test and save results |
+| `/benchmark -f <framework> --compare <other>` | Compare against another framework's published results instead of this one's |
 
 Always specify `-f <framework>`. Results are automatically compared against the current leaderboard.
 

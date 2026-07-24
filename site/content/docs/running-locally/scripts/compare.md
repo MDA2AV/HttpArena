@@ -6,7 +6,7 @@ weight: 4
 Compare a framework's benchmark results against the published leaderboard data on the main branch. Outputs a Markdown table with deltas, suitable for PR comments.
 
 ```bash
-./scripts/compare.sh <framework> [profile]
+./scripts/compare.sh <framework> [profile] [--compare <framework>]
 ```
 
 ## Options
@@ -15,6 +15,7 @@ Compare a framework's benchmark results against the published leaderboard data o
 |-----------|-------------|
 | `<framework>` | Name of the framework to compare |
 | `[profile]` | Optional - compare only this test profile |
+| `--compare <framework>` | Optional - use another framework's published results as the baseline instead of this framework's own |
 
 ## What it does
 
@@ -22,6 +23,22 @@ Compare a framework's benchmark results against the published leaderboard data o
 2. Reads published leaderboard data from `site/data/<profile>-<connections>.json`
 3. Matches the framework by its `display_name` from `meta.json`
 4. Outputs a Markdown table for each profile with columns per connection count
+
+## Comparing against a different framework
+
+By default the baseline is the framework's own published results, which answers *"did my change help?"*. When you are developing a tuned or successor entry, the more useful question is often *"how does this compare to the entry it derives from?"* - `--compare` swaps the baseline:
+
+```bash
+./scripts/compare.sh genhttp-11 --compare genhttp
+```
+
+Every delta is then measured against `genhttp`'s published results, and the output says so explicitly so the numbers cannot be mistaken for a regression against the framework's own history. Profiles the comparison framework does not run show `n/a` rather than `NEW`.
+
+The same flag is available from a pull request:
+
+```
+/benchmark -f genhttp-11 --compare genhttp
+```
 
 ## Metrics compared
 
@@ -51,4 +68,4 @@ Each value includes a percentage delta against the main branch. New frameworks w
 
 ## CI usage
 
-The `benchmark-pr.yml` workflow calls this script automatically after benchmarking a PR branch, and posts the comparison table as a PR comment.
+The `benchmark-pr.yml` workflow calls this script automatically after benchmarking a PR branch, and posts the comparison table as a PR comment. Adding `--compare <framework>` to the `/benchmark` command forwards it to this script, and the comment header records which framework the deltas are against.
