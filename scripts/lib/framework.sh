@@ -31,6 +31,25 @@ import json; print(','.join(json.load(open('$meta_file')).get('tests', [])))" 2>
 
     info "framework: $FRAMEWORK ($DISPLAY_NAME, $LANGUAGE)"
     info "subscribed tests: $FRAMEWORK_TESTS"
+
+    framework_validate_tests
+}
+
+# A `tests` entry that doesn't name a real profile is otherwise silent:
+# framework_subscribes_to() returns false, the driver logs "skip", and the
+# framework quietly loses that coverage on every run since the typo landed.
+# `php` lost json-tls to "json-lts" this way. Fail loudly instead.
+#
+# PROFILES comes from profiles.sh, which is sourced *after* this file — that's
+# fine, the name resolves when this runs, not when the file is sourced.
+framework_validate_tests() {
+    local t unknown=()
+    for t in ${FRAMEWORK_TESTS//,/ }; do
+        [ -n "${PROFILES[$t]+x}" ] || unknown+=("$t")
+    done
+    [ ${#unknown[@]} -eq 0 ] || fail \
+"$FRAMEWORK/meta.json subscribes to unknown profile(s): ${unknown[*]}
+       known profiles: $(printf '%s\n' "${!PROFILES[@]}" | sort | tr '\n' ' ')"
 }
 
 framework_subscribes_to() {

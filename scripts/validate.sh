@@ -58,6 +58,22 @@ fi
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
 echo "[info] Subscribed tests: $TESTS"
 
+# Reject test names that aren't real profiles, before spending a build on it.
+# Nothing downstream would complain: has_test() just returns false and the
+# section is skipped, so a typo reads as a clean pass while the framework
+# silently loses that coverage in every benchmark run. Sourced rather than
+# re-listed so PROFILES stays the single source of truth.
+source "$SCRIPT_DIR/lib/profiles.sh"
+UNKNOWN_TESTS=()
+for t in $TESTS; do
+    [ -n "${PROFILES[$t]+x}" ] || UNKNOWN_TESTS+=("$t")
+done
+if [ ${#UNKNOWN_TESTS[@]} -gt 0 ]; then
+    echo "FAIL: meta.json subscribes to unknown profile(s): ${UNKNOWN_TESTS[*]}"
+    echo "      known profiles: $(printf '%s\n' "${!PROFILES[@]}" | sort | tr '\n' ' ')"
+    exit 1
+fi
+
 has_test() {
     # Exact whole-token match. `grep -qw` treats "-" as a word boundary
     # and matches "baseline" against "baseline-h2c" / "baseline-h2", and
