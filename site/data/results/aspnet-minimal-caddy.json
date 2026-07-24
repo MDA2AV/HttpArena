@@ -1,0 +1,53 @@
+{
+  "framework": "aspnet-minimal + caddy",
+  "results": {
+    "gateway-h3-256": {
+      "framework": "aspnet-minimal + caddy",
+      "language": "C#",
+      "rps": 56118,
+      "avg_latency": "141.54ms",
+      "p99_latency": "805.47ms",
+      "cpu": "2471.5%",
+      "memory": "1.6GiB",
+      "connections": 256,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "646.22MB/s",
+      "reconnects": 0,
+      "status_2xx": 283396,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0,
+      "tpl_static": 85018,
+      "tpl_baseline": 56679,
+      "tpl_json": 99188,
+      "tpl_async_db": 42509,
+      "cpu_breakdown": "server: 656% 180MiB | proxy: 1815% 1.4GiB"
+    },
+    "gateway-h3-64": {
+      "framework": "aspnet-minimal + caddy",
+      "language": "C#",
+      "rps": 82666,
+      "avg_latency": "24.55ms",
+      "p99_latency": "90.18ms",
+      "cpu": "3472.1%",
+      "memory": "804MiB",
+      "connections": 64,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "972.81MB/s",
+      "reconnects": 0,
+      "status_2xx": 415811,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0,
+      "tpl_static": 124743,
+      "tpl_baseline": 83162,
+      "tpl_json": 145533,
+      "tpl_async_db": 62371,
+      "cpu_breakdown": "server: 845% 226MiB | proxy: 2628% 578MiB"
+    }
+  }
+}

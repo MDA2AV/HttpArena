@@ -23,7 +23,7 @@ Archives all current benchmark results as a named round.
 
 What it does:
 
-1. Bundles all `site/data/*.json` files into a single round file at `site/data/rounds/<id>.json`
+1. Bundles every `site/data/results/<framework>.json` into a single round file at `site/data/rounds/<id>.json`, regrouped by `<profile>-<conns>` so archived rounds keep their existing shape
 2. Records hardware info (CPU, cores, RAM, governor), OS, kernel, Docker version, and git commit
 3. Reads system info from `site/data/current.json` if available (written by `benchmark.sh --save`)
 4. Updates the round index at `site/data/rounds/index.json`

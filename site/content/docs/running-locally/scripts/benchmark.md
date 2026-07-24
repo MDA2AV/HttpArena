@@ -43,7 +43,7 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
    - Raw load-generator output from every run is written to `site/static/logs/<profile>/<conns>/<framework>.<tool>.run<N>.txt` - useful when a parser misbehaves.
 7. **Save** (`--save` only) - writes `results/<profile>/<conns>/<framework>.json` + framework `docker logs` to `site/static/logs/<profile>/<conns>/<framework>.log`.
 8. **Restore** - trap runs `framework_stop`, `gateway_down`, `postgres_stop`, then restores the original CPU governor and loopback MTU.
-9. **Rebuild site data** (`--save` only) - re-runs `scripts/rebuild_site_data.py` to regenerate `site/data/<profile>-<conns>.json` and `site/data/frameworks.json`.
+9. **Rebuild site data** (`--save` only) - re-runs `scripts/rebuild_site_data.py` to regenerate `site/data/results/<framework>.json` and `site/data/frameworks.json`.
 
 ## Flags
 
@@ -174,7 +174,15 @@ THREADS=8 H2THREADS=16 H3THREADS=8 ./scripts/benchmark.sh actix baseline
 results/<profile>/<conns>/<framework>.json     # metrics (RPS, p99, CPU, mem, status buckets)
 site/static/logs/<profile>/<conns>/<framework>.log            # docker logs of the framework container
 site/static/logs/<profile>/<conns>/<framework>.<tool>.runN.txt # raw load-generator stdout per iteration
-site/data/<profile>-<conns>.json                # aggregated for the leaderboard
+site/data/results/<framework>.json              # one file per framework, keyed by <profile>-<conns>
+```
+
+Each framework owns exactly one results file, so two pull requests benchmarking
+different frameworks never write the same file and never conflict. The filename
+is the `display_name` lowercased with anything outside `[A-Za-z0-9._-]` replaced
+by `-`, so `aspnet-minimal + nginx` is stored as `aspnet-minimal-nginx.json`.
+
+```
 site/data/frameworks.json                       # framework metadata
 site/data/current.json                          # host/OS/commit snapshot
 ```

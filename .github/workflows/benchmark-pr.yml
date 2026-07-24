@@ -134,6 +134,8 @@ jobs:
 
       - name: Commit saved results
         if: inputs.save == 'true'
+        env:
+          FRAMEWORK: ${{ inputs.framework }}
         run: |
           PR_DATA=$(gh api "/repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq '.head.ref + " " + .head.repo.full_name')
           PR_BRANCH=$(echo "$PR_DATA" | awk '{print $1}')
@@ -143,14 +145,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           find site/static/logs -name "${{ inputs.framework }}.log" -exec git add -f {} +
           git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
-          # Only add leaderboard files for the profiles that were actually benchmarked
-          for f in results/*/*/${{ inputs.framework }}.json; do
-            [ -f "$f" ] || continue
-            dir=$(dirname "$f")
-            conns=$(basename "$dir")
-            prof=$(basename "$(dirname "$dir")")
-            git add -f "site/data/${prof}-${conns}.json" 2>/dev/null || true
-          done
+          # Results are one file per framework (#751), so a run only ever stages
+          # its own — two PRs benchmarking different frameworks no longer touch
+          # the same file. The filename is the slugified display_name.
+          SLUG=$(python3 -c "import json,re,sys;n=json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('display_name',sys.argv[1]);print((re.sub(r'[^A-Za-z0-9._-]+','-',n).strip('-') or 'unnamed').lower())" "$FRAMEWORK")
+          git add -f "site/data/results/${SLUG}.json" 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No results to commit"
           else

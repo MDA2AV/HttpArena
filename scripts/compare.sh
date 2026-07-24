@@ -64,7 +64,7 @@ SITE_DATA="$ROOT_DIR/site/data"
 
 # Collect all profiles with results for this framework
 python3 -c "
-import json, os, sys, glob
+import json, os, re, sys, glob
 
 framework = sys.argv[1]
 display_name = sys.argv[2]
@@ -106,21 +106,24 @@ if not new_results:
     print(f'No results found for \`{framework}\`')
     sys.exit(0)
 
-# Find old results from site/data (published on main)
+# Find old results from site/data (published on main). Results are one file
+# per framework keyed by <profile>-<conns> (#751), so this is a single read.
+def _slug(name):
+    return (re.sub(r'[^A-Za-z0-9._-]+', '-', name).strip('-') or 'unnamed').lower()
+
 old_results = {}
-for key, new_data in new_results.items():
-    profile, conns = key.split('/')
-    site_file = f'{site_data}/{profile}-{conns}.json'
-    if os.path.exists(site_file):
-        try:
-            with open(site_file) as f:
-                entries = json.load(f)
-            for entry in entries:
-                if entry.get('framework') == baseline_name:
-                    old_results[key] = entry
-                    break
-        except:
-            pass
+baseline_file = f'{site_data}/results/{_slug(baseline_name)}.json'
+if os.path.exists(baseline_file):
+    try:
+        with open(baseline_file) as f:
+            published = (json.load(f).get('results') or {})
+        for key in new_results:
+            profile, conns = key.split('/')
+            entry = published.get(f'{profile}-{conns}')
+            if entry:
+                old_results[key] = entry
+    except:
+        pass
 
 # Format helpers
 def fmt_num(n):

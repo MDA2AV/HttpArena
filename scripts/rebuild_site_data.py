@@ -4,7 +4,7 @@ Rebuild site/data/*.json from results/<profile>/<conns>/<framework>.json files.
 
 Writes:
   site/data/frameworks.json    — hybrid map of {display_name: {dir, description, ..., variants?}}
-  site/data/<profile>-<conns>.json  — merged per-profile-per-conn result arrays
+  site/data/results/<framework>.json — per-framework results keyed by <profile>-<conns>
   site/data/current.json       — hardware + OS + round info for the current round
 
 This is a straightforward data transform; it used to live as two embedded
@@ -17,6 +17,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -71,19 +72,28 @@ def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
     print(f"[updated] {target}")
 
 
-def merge_results(results_dir: Path, site_data: Path) -> None:
-    """For each results/<profile>/<conns>/ directory, merge the per-framework
-    JSON files with any existing entries in site/data/<profile>-<conns>.json.
+def _slug(name: str) -> str:
+    """Filename for a display name. A couple of gateway entries contain spaces
+    and a '+', so names can't be used as filenames directly."""
+    return (re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "unnamed").lower()
 
-    Rules:
-      * New results always replace existing entries with the same framework name
-      * Existing entries for frameworks not in the current run are preserved
-      * Deduplicate by framework name, keeping the highest rps
-      * Sort alphabetically by framework name
+
+def merge_results(results_dir: Path, site_data: Path) -> None:
+    """Fold results/<profile>/<conns>/<framework>.json into the per-framework
+    files under site/data/results/.
+
+    One file per framework, keyed by "<profile>-<conns>". Results used to be
+    stored as one array per profile-conns holding every framework, so two pull
+    requests saving results wrote the same files and conflicted (#751); now a
+    run only ever touches the file belonging to the framework it benchmarked.
+
+    Rules (unchanged from the flat layout):
+      * A new result replaces the existing one for that framework and key
+      * Keys the run didn't produce are left alone
+      * Frameworks that no longer exist in frameworks.json are dropped
     """
-    # Drop result rows for framework names that no longer exist (e.g. a renamed
-    # framework) so stale entries don't linger across runs. frameworks.json was
-    # just rebuilt from meta.json, so its keys are the current framework names.
+    # frameworks.json was just rebuilt from meta.json, so its keys are the
+    # current display names; anything else is stale (e.g. a renamed framework).
     valid_names: set[str] = set()
     fj = site_data / "frameworks.json"
     if fj.exists():
@@ -92,51 +102,53 @@ def merge_results(results_dir: Path, site_data: Path) -> None:
         except Exception:
             valid_names = set()
 
+    out_dir = site_data / "results"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Collect this run's rows, grouped by framework: {name: {key: row}}
+    incoming: dict[str, dict] = {}
     for profile_dir in sorted(results_dir.iterdir()):
         if not profile_dir.is_dir():
             continue
-        profile = profile_dir.name
         for conn_dir in sorted(profile_dir.iterdir()):
             if not conn_dir.is_dir():
                 continue
-            conns = conn_dir.name
-            data_file = site_data / f"{profile}-{conns}.json"
-
-            new_entries: dict[str, dict] = {}
+            key = f"{profile_dir.name}-{conn_dir.name}"
             for f in sorted(conn_dir.glob("*.json")):
                 try:
                     entry = json.load(open(f))
-                    new_entries[entry.get("framework", "")] = entry
                 except Exception as e:
                     print(f"[warn] skipping {f}: {e}", file=sys.stderr)
+                    continue
+                name = entry.get("framework", "")
+                if not name:
+                    continue
+                incoming.setdefault(name, {})[key] = entry
 
-            existing: list[dict] = []
-            if data_file.exists():
-                try:
-                    existing = json.load(open(data_file))
-                except Exception:
-                    existing = []
+    for name, rows in sorted(incoming.items()):
+        path = out_dir / f"{_slug(name)}.json"
+        data = {"framework": name, "results": {}}
+        if path.exists():
+            try:
+                prev = json.load(open(path))
+                if isinstance(prev.get("results"), dict):
+                    data["results"] = prev["results"]
+            except Exception:
+                pass
+        data["results"].update(rows)
+        data["results"] = dict(sorted(data["results"].items()))
+        path.write_text(json.dumps(data, indent=2) + "\n")
+        print(f"[updated] {path} - {len(rows)} new, {len(data['results'])} total")
 
-            # Start from existing entries whose framework name isn't in the new batch,
-            # then add every new entry.
-            merged = [e for e in existing if e.get("framework", "") not in new_entries]
-            merged.extend(new_entries.values())
-
-            # Dedup by framework name, keeping the one with the highest rps.
-            by_name: dict[str, dict] = {}
-            for e in merged:
-                name = e.get("framework", "")
-                if name not in by_name or e.get("rps", 0) > by_name[name].get("rps", 0):
-                    by_name[name] = e
-
-            final = sorted(by_name.values(), key=lambda e: e.get("framework", "").lower())
-            if valid_names:
-                stale = sorted({e.get("framework", "") for e in final if e.get("framework", "") not in valid_names})
-                if stale:
-                    print(f"[purged stale] {data_file.name}: {stale}", file=sys.stderr)
-                final = [e for e in final if e.get("framework", "") in valid_names]
-            data_file.write_text(json.dumps(final, indent=2))
-            print(f"[updated] {data_file}")
+    if valid_names:
+        for path in sorted(out_dir.glob("*.json")):
+            try:
+                name = json.load(open(path)).get("framework", "")
+            except Exception:
+                continue
+            if name and name not in valid_names:
+                path.unlink()
+                print(f"[purged stale] {path.name} ({name})", file=sys.stderr)
 
 
 def write_current_json(root: Path, site_data: Path) -> None:

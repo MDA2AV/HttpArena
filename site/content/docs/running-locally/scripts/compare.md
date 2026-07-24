@@ -20,7 +20,7 @@ Compare a framework's benchmark results against the published leaderboard data o
 ## What it does
 
 1. Reads new results from `results/<profile>/<connections>/<framework>.json`
-2. Reads published leaderboard data from `site/data/<profile>-<connections>.json`
+2. Reads published leaderboard data from `site/data/results/<framework>.json`
 3. Matches the framework by its `display_name` from `meta.json`
 4. Outputs a Markdown table for each profile with columns per connection count
 
