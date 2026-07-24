@@ -95,6 +95,24 @@
   .nav::-webkit-scrollbar-track{background:transparent}
   .nav-mobile{display:none}
 
+  /* page search — pinned to the top of the menu so it stays put while the tree scrolls */
+  .nav-search{position:sticky; top:0; z-index:2; background:var(--bg); padding:.1rem 0 .55rem}
+  .ns-box{position:relative}
+  .ns-box svg{position:absolute; left:.6rem; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none}
+  .nav-search input{font:inherit; font-size:.82rem; width:100%; padding:.45rem .6rem .45rem 1.85rem; background:var(--panel); color:var(--text); border:1px solid var(--line); transition:border-color .15s ease, box-shadow .15s ease}
+  .nav-search input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-weak)}
+  .nav-search input::-webkit-search-cancel-button{cursor:pointer}
+  .nav-results{margin-bottom:.7rem}
+  .nav-res-h{display:flex; justify-content:space-between; gap:.5rem; margin:.15rem .55rem .4rem; font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+  .nav-res{display:block; width:100%; text-align:left; font:inherit; background:none; border:0; border-left:2px solid transparent; padding:.42rem .55rem; cursor:pointer; color:var(--text-2); text-decoration:none}
+  .nav-res:hover, .nav-res.sel{background:var(--panel-2); color:var(--text); border-left-color:var(--text-2)}
+  .nav-res:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+  .nav-res-t{display:block; font-size:.83rem; font-weight:600; color:var(--text)}
+  .nav-res-c{display:block; font-size:.66rem; color:var(--muted); margin-top:.08rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .nav-res-s{display:block; font-size:.7rem; color:var(--text-2); margin-top:.2rem; line-height:1.4}
+  .nav-res-s mark{background:var(--accent-weak); color:var(--text); font-weight:600}
+  .nav-empty{padding:.5rem .6rem; font-size:.78rem; color:var(--muted); line-height:1.5}
+
   .nav-sec{margin-bottom:.4rem}
   .nav-sec + .nav-sec{margin-top:1rem}
   .nav-sec-h{display:flex; align-items:center; gap:.35rem; margin:.1rem .55rem .45rem; font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
@@ -372,7 +390,10 @@
   @media (max-width:820px){
     .layout{grid-template-columns:1fr}
     .brand{width:auto}
-    .nav{display:none}
+    /* the tree is replaced by the select above, but keep page search reachable */
+    .nav{display:block; position:static; height:auto; overflow:visible; border-right:0; padding:.75rem 1.25rem 0}
+    #navTree{display:none}
+    .nav-search{position:static; padding:0}
     .nav-mobile{display:block; padding:1rem 1.25rem 0}
     .nav-mobile select{width:100%; font:inherit; padding:.55rem .7rem; border-radius:9px; border:1px solid var(--line); background:var(--panel); color:var(--text)}
     .col-avg,.thead .th.col-avg,.col-mem,.thead .th.col-mem,.col-bw,.thead .th.col-bw{display:none}
@@ -414,7 +435,17 @@
   <div class="nav-mobile"><select id="navSelect"></select></div>
 
   <div class="layout">
-    <aside class="nav" id="nav"></aside>
+    <aside class="nav" id="nav">
+      <div class="nav-search">
+        <div class="ns-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="navq" type="search" placeholder="Search pages" autocomplete="off" spellcheck="false"
+                 aria-label="Search pages" role="combobox" aria-expanded="false" aria-controls="navResults">
+        </div>
+      </div>
+      <div class="nav-results" id="navResults" role="listbox" aria-label="Search results" style="display:none"></div>
+      <div id="navTree"></div>
+    </aside>
     <main class="main">
       <div class="phead">
         <div>
@@ -584,7 +615,10 @@
   };
   function navIco(k){ return '<span class="nav-ico">'+NAVICO[k]+'</span>'; }
   function buildNav(){
-    var nav=document.getElementById('nav'); nav.innerHTML='';
+    // #navTree, not #nav — the search box above it is static markup and must
+    // survive the rebuilds that every navigation triggers, or typing would
+    // lose focus mid-query.
+    var nav=document.getElementById('navTree'); nav.innerHTML='';
     var byCat={}; D.profiles.forEach(function(p){ (byCat[p.category]=byCat[p.category]||[]).push(p); });
 
     // 1. Knowledge Base (top) - entire docs tree nested in one collapsible group
@@ -751,6 +785,141 @@
       sel.appendChild(dg);
     }
     sel.onchange=function(){ var v=sel.value; if(v.indexOf('doc:')===0){ pickDoc(v.slice(4)); } else if(v.indexOf('scope:')===0) pickScope(v.slice(6)); else pickProfile(v.slice(3)); };
+  }
+
+  // ── page search ─────────────────────────────────────────
+  // Searches the Knowledge Base (titles + full body text) and every
+  // leaderboard view. docs.js already ships the rendered HTML of every page,
+  // so the index is built from what is already in memory — no fetch, no
+  // prebuilt index file, no dependency. Built on the first keystroke and then
+  // cached — it is only ~5 ms over the whole corpus, but there is no reason to
+  // spend it on visitors who never search.
+  var SIDX=null, SHITS=[], SSEL=-1;
+
+  // Tags are stripped with a regex rather than by assigning to innerHTML:
+  // a detached element still fetches <img> src, and docs are authored
+  // markdown that may grow images later.
+  function stripHtml(html){
+    return String(html||'')
+      .replace(/<(script|style)[\s\S]*?<\/\1>/gi,' ')
+      .replace(/<[^>]+>/g,' ')
+      .replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+      .replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&')
+      .replace(/\s+/g,' ').trim();
+  }
+  function docCrumb(id){
+    if(!id) return 'Knowledge Base';
+    var parts=id.split('/'), acc='', out=[];
+    for(var i=0;i<parts.length-1;i++){
+      acc=acc?(acc+'/'+parts[i]):parts[i];
+      var d=LB_DOCS[acc]; out.push(d&&d.t?d.t:parts[i]);
+    }
+    return out.length ? ('Knowledge Base › '+out.join(' › ')) : 'Knowledge Base';
+  }
+  function buildSearchIndex(){
+    if(SIDX) return SIDX;
+    SIDX=[];
+    if(window.LB_DOCS) Object.keys(LB_DOCS).forEach(function(id){
+      var d=LB_DOCS[id]; if(!d) return;
+      var title=d.t||id||'Knowledge Base', body=stripHtml(d.html);
+      SIDX.push({ kind:'doc', title:title, crumb:docCrumb(id), body:body,
+                  tl:title.toLowerCase(), bl:body.toLowerCase(),
+                  go:function(){ pickDoc(id); } });
+    });
+    D.profiles.forEach(function(p){
+      var body=p.blurb||'';
+      SIDX.push({ kind:'view', title:p.label, crumb:'Detailed Views › '+p.category, body:body,
+                  tl:(p.label+' '+p.id+' '+p.category).toLowerCase(), bl:body.toLowerCase(),
+                  go:function(){ pickProfile(p.id); } });
+    });
+    SCOPES.forEach(function(sc){
+      SIDX.push({ kind:'view', title:sc.label+' Composite', crumb:'Composite', body:'',
+                  tl:(sc.label+' composite').toLowerCase(), bl:'',
+                  go:function(){ pickScope(sc.k); } });
+    });
+    return SIDX;
+  }
+  // Every term must match somewhere (AND), title hits outrank body hits.
+  function searchPages(q){
+    var ql=q.toLowerCase(), terms=ql.split(/\s+/).filter(Boolean);
+    if(!terms.length) return [];
+    var out=[];
+    buildSearchIndex().forEach(function(e){
+      var score=0;
+      for(var i=0;i<terms.length;i++){
+        var t=terms[i], ti=e.tl.indexOf(t), bi=e.bl.indexOf(t);
+        if(ti<0 && bi<0) return;
+        score += ti===0 ? 60 : ti>0 ? 35 : 0;
+        if(bi>=0) score+=5;
+      }
+      if(e.tl===ql) score+=50;
+      if(e.kind==='view') score+=8;
+      out.push({e:e, score:score, term:terms[0]});
+    });
+    out.sort(function(a,b){ return b.score-a.score || a.e.title.length-b.e.title.length; });
+    return out.slice(0,25);
+  }
+  function snippet(body, term){
+    if(!body) return '';
+    var i=body.toLowerCase().indexOf(term);
+    if(i<0) return esc(body.slice(0,110))+(body.length>110?'…':'');
+    var s=Math.max(0,i-45), e=Math.min(body.length,i+term.length+75);
+    return (s>0?'…':'')+esc(body.slice(s,i))+'<mark>'+esc(body.slice(i,i+term.length))+'</mark>'
+          +esc(body.slice(i+term.length,e))+(e<body.length?'…':'');
+  }
+  function renderSearch(q){
+    var box=document.getElementById('navResults'), tree=document.getElementById('navTree'),
+        inp=document.getElementById('navq');
+    if(!q){
+      SHITS=[]; SSEL=-1; box.style.display='none'; box.innerHTML='';
+      tree.style.display=''; inp.setAttribute('aria-expanded','false'); return;
+    }
+    SHITS=searchPages(q); SSEL=SHITS.length?0:-1;
+    tree.style.display='none'; box.style.display=''; inp.setAttribute('aria-expanded','true');
+    if(!SHITS.length){ box.innerHTML='<div class="nav-empty">No page matches <b>'+esc(q)+'</b>.</div>'; return; }
+    var h='<div class="nav-res-h"><span>Pages</span><span>'+SHITS.length+(SHITS.length===25?'+':'')+'</span></div>';
+    SHITS.forEach(function(hit,i){
+      var e=hit.e, sn=e.kind==='doc' ? snippet(e.body,hit.term) : esc(e.body||'');
+      h+='<button type="button" class="nav-res'+(i===SSEL?' sel':'')+'" role="option" data-i="'+i+'"'
+        +' aria-selected="'+(i===SSEL)+'"><span class="nav-res-t">'+esc(e.title)+'</span>'
+        +'<span class="nav-res-c">'+esc(e.crumb)+'</span>'
+        +(sn?'<span class="nav-res-s">'+sn+'</span>':'')+'</button>';
+    });
+    box.innerHTML=h;
+  }
+  function moveSel(d){
+    if(!SHITS.length) return;
+    SSEL=(SSEL+d+SHITS.length)%SHITS.length;
+    Array.prototype.forEach.call(document.querySelectorAll('#navResults .nav-res'), function(el,i){
+      var on=(i===SSEL); el.classList.toggle('sel',on); el.setAttribute('aria-selected',on);
+      if(on && el.scrollIntoView) el.scrollIntoView({block:'nearest'});
+    });
+  }
+  function clearSearch(){
+    var inp=document.getElementById('navq'); if(inp) inp.value='';
+    renderSearch('');
+  }
+  // Clear before navigating: pickDoc/pickProfile rebuild the tree, and the
+  // user should land back on a normal menu showing where they now are.
+  function openSel(i){ var hit=SHITS[i]; if(!hit) return; var go=hit.e.go; clearSearch(); go(); }
+  function initNavSearch(){
+    var inp=document.getElementById('navq'), box=document.getElementById('navResults');
+    if(!inp||!box) return;
+    var t;
+    inp.addEventListener('input', function(){
+      clearTimeout(t); var v=inp.value.trim();
+      t=setTimeout(function(){ renderSearch(v); }, 90);
+    });
+    inp.addEventListener('keydown', function(e){
+      if(e.key==='ArrowDown'){ e.preventDefault(); moveSel(1); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); moveSel(-1); }
+      else if(e.key==='Enter'){ e.preventDefault(); openSel(SSEL); }
+      else if(e.key==='Escape'){ e.preventDefault(); clearSearch(); inp.blur(); }
+    });
+    box.addEventListener('click', function(e){
+      var b=e.target.closest?e.target.closest('.nav-res'):null; if(!b) return;
+      openSel(parseInt(b.getAttribute('data-i'),10));
+    });
   }
 
   function pickScope(scope){
@@ -1164,7 +1333,7 @@
   try{ var _st=localStorage.getItem('lb-showtuned'); if(_st!==null) state.showTuned=_st==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
-  initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); hw(); buildNav(); renderHead(); render();
+  initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
