@@ -405,26 +405,6 @@
     "status_5xx": 0
   },
   {
-    "framework": "php-fpm",
-    "language": "PHP",
-    "rps": 294864,
-    "avg_latency": "143.45ms",
-    "p99_latency": "143.45ms",
-    "cpu": "2169.8%",
-    "memory": "4.8GiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "60.80MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 11817,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 1462506
-  },
-  {
     "framework": "pyronova",
     "language": "Python",
     "rps": 1357933,
@@ -557,25 +537,6 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
-  },
-  {
-    "framework": "symfony-spawn-franken",
-    "language": "PHP",
-    "rps": 97817,
-    "avg_latency": "465.99ms",
-    "p99_latency": "465.99ms",
-    "cpu": "4817.0%",
-    "memory": "7.1GiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "57.95MB/s",
-    "reconnects": 0,
-    "status_2xx": 494959,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 284226
   },
   {
     "framework": "symfony-spawn-tas",

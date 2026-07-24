@@ -120,25 +120,6 @@
     "status_5xx": 0
   },
   {
-    "framework": "fasthttp",
-    "language": "V",
-    "rps": 0,
-    "avg_latency": "0us",
-    "p99_latency": "0us",
-    "cpu": "0.0%",
-    "memory": "0MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "4B/s",
-    "reconnects": 14506257,
-    "status_2xx": 0,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
     "framework": "fishcake",
     "language": "Kotlin",
     "rps": 450035,

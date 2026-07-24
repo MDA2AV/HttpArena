@@ -559,25 +559,6 @@
     "status_5xx": 0
   },
   {
-    "framework": "symfony-spawn-franken",
-    "language": "PHP",
-    "rps": 28243,
-    "avg_latency": "229.68ms",
-    "p99_latency": "229.68ms",
-    "cpu": "5180.8%",
-    "memory": "4.3GiB",
-    "connections": 256,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "76.21MB/s",
-    "reconnects": 0,
-    "status_2xx": 142064,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 381252
-  },
-  {
     "framework": "symfony-spawn-tas",
     "language": "PHP",
     "rps": 75553,

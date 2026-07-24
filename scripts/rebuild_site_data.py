@@ -22,6 +22,32 @@ import sys
 from pathlib import Path
 
 
+# A run whose responses were overwhelmingly errors is not a measurement. rps
+# counts a 500 exactly like a 200, so a framework that collapses under load
+# can outrank one that serves every request — php-fpm published 294k rps on
+# baseline-h2 with 99.2% 5xx. Rows above this error rate are dropped rather
+# than ranked. Override for a one-off rebuild with HTTPARENA_MAX_ERROR_PCT.
+MAX_ERROR_PCT = float(os.environ.get("HTTPARENA_MAX_ERROR_PCT", "5"))
+
+
+def failure_reason(entry: dict) -> str | None:
+    """Why this result row isn't publishable, or None if it is.
+
+    Every load generator in scripts/lib/tools/ reports status counts, so a row
+    whose 2xx+3xx is zero got nothing back at all — a crash, a hang, or a
+    refused connection. Publishing its rps=0 states "we measured zero
+    throughput", which ranks the framework last on a test that never ran.
+    """
+    ok = entry.get("status_2xx", 0) + entry.get("status_3xx", 0)
+    err = entry.get("status_4xx", 0) + entry.get("status_5xx", 0)
+    if ok == 0:
+        return "no successful responses"
+    pct = err / (ok + err) * 100
+    if pct > MAX_ERROR_PCT:
+        return f"{pct:.1f}% non-2xx/3xx"
+    return None
+
+
 def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
     """Aggregate every frameworks/*/meta.json into site/data/frameworks.json.
 
@@ -135,6 +161,17 @@ def merge_results(results_dir: Path, site_data: Path) -> None:
                 if stale:
                     print(f"[purged stale] {data_file.name}: {stale}", file=sys.stderr)
                 final = [e for e in final if e.get("framework", "") in valid_names]
+
+            # Applied to the merged list, not just this run's batch, so a bad
+            # row already sitting in site/data is dropped on the next rebuild
+            # rather than living on because its framework wasn't re-run.
+            dropped = [(e.get("framework", ""), failure_reason(e)) for e in final]
+            dropped = [(name, why) for name, why in dropped if why]
+            if dropped:
+                detail = ", ".join(f"{name} ({why})" for name, why in dropped)
+                print(f"[dropped failed] {data_file.name}: {detail}", file=sys.stderr)
+                final = [e for e in final if not failure_reason(e)]
+
             data_file.write_text(json.dumps(final, indent=2))
             print(f"[updated] {data_file}")
 

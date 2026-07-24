@@ -448,6 +448,22 @@ save_result() {
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
 
+    # rebuild_site_data.py refuses to publish a run whose responses were mostly
+    # errors — rps counts a 500 exactly like a 200. The row and the container
+    # log are still written above, since they're the post-mortem evidence, but
+    # say so here: otherwise a clean-looking --save implies a result that will
+    # never reach the board. Threshold shared via HTTPARENA_MAX_ERROR_PCT.
+    local ok_count err_count
+    ok_count=$((  ${BEST_M[status_2xx]:-0} + ${BEST_M[status_3xx]:-0} ))
+    err_count=$(( ${BEST_M[status_4xx]:-0} + ${BEST_M[status_5xx]:-0} ))
+    if [ "$ok_count" -eq 0 ]; then
+        warn "$profile/$CONNS: no successful responses ($err_count errors) — will not be published"
+    elif awk -v e="$err_count" -v n="$((ok_count + err_count))" \
+             -v thr="${HTTPARENA_MAX_ERROR_PCT:-5}" 'BEGIN{exit !(e/n*100 > thr)}'; then
+        warn "$profile/$CONNS: $(awk -v e="$err_count" -v n="$((ok_count + err_count))" \
+             'BEGIN{printf "%.1f", e/n*100}')% non-2xx/3xx ($err_count of $((ok_count + err_count))) — will not be published"
+    fi
+
     # Persist container logs alongside results for post-mortem.
     local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
     mkdir -p "$log_dir"

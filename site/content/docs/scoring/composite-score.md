@@ -34,6 +34,12 @@ Summing instead of averaging means the composite scales with the number of score
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
+### Failed runs are not scored
+
+A run whose responses were mostly errors is not a measurement: rps counts a 500 exactly like a 200, so a framework that collapses under load would otherwise outrank one that serves every request. When the site data is built, a result is dropped rather than ranked if it has **no successful responses at all** (a crash, a hang, or a refused connection — its rps of 0 would read as a measured zero) or if **more than 5% of its responses were non-2xx/3xx**.
+
+A dropped result is treated exactly like not participating in that profile: the framework scores 0 for it. The raw result and the container log are still kept under `results/` and `site/static/logs/` for post-mortem.
+
 ## Scored vs reference-only profiles
 
 Not all profiles count toward the composite score. Profiles marked as **scored** contribute to the composite. Reference-only profiles (marked with **\***) are displayed for comparison but do not affect the ranking.
