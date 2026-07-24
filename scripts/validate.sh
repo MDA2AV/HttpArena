@@ -43,9 +43,50 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# ───── Failure diagnostics ─────
+#
+# Defined up here rather than with the other helpers below because the
+# readiness wait — the failure people actually hit — runs before that point.
+# Nothing else in this script ever shows container output, so a server that
+# refuses to start produced one line ("Server did not start within 30s") and
+# then had its container removed by the EXIT trap above.
+# Bounded by FAIL_LOG_TAIL; a crash-looping server can emit megabytes.
+
+dump_logs() {
+    local ref="$1" label="${2:-$1}" n="${FAIL_LOG_TAIL:-120}" state logs
+    echo ""
+    # No container at all means an earlier step (build, or `docker run` itself)
+    # failed; asking for its logs would just echo docker's own error back.
+    if ! state=$(docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' \
+                 "$ref" 2>/dev/null); then
+        echo "─── $label — no such container: it was never created, so an earlier build or start step is what failed"
+        return 0
+    fi
+    echo "─── $label — $state"
+    logs=$(docker logs --tail "$n" "$ref" 2>&1) || true
+    if [ -n "$logs" ]; then
+        echo "─── $label — last $n log lines ───"
+        printf '%s\n' "$logs" | sed 's/^/  | /'
+        echo "─── $label — end of logs ───"
+    else
+        echo "─── $label — the container produced no output at all"
+    fi
+}
+
+# Every container in a compose project. `docker ps -a`, not `docker ps`: the
+# service that died is exactly the one missing from the running list.
+dump_stack_logs() {
+    local project="$1" id name
+    [ -n "$project" ] || return 0
+    for id in $(docker ps -aq --filter "label=com.docker.compose.project=$project" 2>/dev/null); do
+        name=$(docker inspect -f '{{.Name}}' "$id" 2>/dev/null | sed 's#^/##')
+        dump_logs "$id" "${name:-$id}"
+    done
+}
+
 # 5-minute overall timeout
 VALIDATE_TIMEOUT=${VALIDATE_TIMEOUT:-300}
-( trap 'exit 0' TERM; sleep "$VALIDATE_TIMEOUT"; echo ""; echo "FAIL: Validation timed out after ${VALIDATE_TIMEOUT}s"; kill -TERM $$ 2>/dev/null ) &
+( trap 'exit 0' TERM; sleep "$VALIDATE_TIMEOUT"; echo ""; echo "FAIL: Validation timed out after ${VALIDATE_TIMEOUT}s"; dump_logs "$CONTAINER_NAME" "$FRAMEWORK"; kill -TERM $$ 2>/dev/null ) &
 WATCHDOG_PID=$!
 
 echo "=== Validating: $FRAMEWORK ==="
@@ -274,6 +315,7 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
             fi
             if [ "$i" -eq 30 ]; then
                 echo "FAIL: Server did not start within 30s"
+                dump_logs "$CONTAINER_NAME" "$FRAMEWORK"
                 exit 1
             fi
             sleep 1
@@ -499,6 +541,7 @@ wait_h2() {
         fi
         if [ "$i" -eq 15 ]; then
             echo "  FAIL: HTTPS port $H2PORT not responding"
+            dump_logs "$CONTAINER_NAME" "$FRAMEWORK"
             FAIL=$((FAIL + 1))
             return 1
         fi
@@ -1327,7 +1370,7 @@ _validate_gateway() {
     if [ -f "$compose_file" ]; then
         echo "[gateway] Building and starting compose stack..."
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
-            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: gateway compose up"; FAIL=$((FAIL + 1)); return; }
+            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: gateway compose up"; dump_stack_logs "$gw_project"; FAIL=$((FAIL + 1)); return; }
     else
         echo "  FAIL [$profile]: compose file not found at $compose_file"
         FAIL=$((FAIL + 1))
@@ -1465,6 +1508,7 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
             -sk --http2 "https://localhost:$GW_PORT/baseline2?a=$GW_A&b=$GW_B"
     else
         echo "  FAIL: Gateway HTTPS port $GW_PORT not responding after 30s"
+        dump_stack_logs "$gw_project"
         FAIL=$((FAIL + 1))
     fi
 
@@ -1510,7 +1554,7 @@ _validate_production_stack() {
     if [ -f "$compose_file" ]; then
         echo "[$profile] Building and starting compose stack..."
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
-            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: $profile compose up"; FAIL=$((FAIL + 1)); return; }
+            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: $profile compose up"; dump_stack_logs "$gw_project"; FAIL=$((FAIL + 1)); return; }
     else
         echo "  FAIL [$profile]: compose file not found at $compose_file"
         FAIL=$((FAIL + 1))
@@ -1697,6 +1741,7 @@ print(f'{count} {valid} {correct_totals}')
         fi
     else
         echo "  FAIL: $profile HTTPS port $GW_PORT not responding after 60s"
+        dump_stack_logs "$gw_project"
         FAIL=$((FAIL + 1))
     fi
 
@@ -1717,4 +1762,10 @@ fi
 
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="
-[ "$FAIL" -eq 0 ] || exit 1
+if [ "$FAIL" -ne 0 ]; then
+    # The checks above show what the server answered; this shows what it
+    # was doing at the time. Last container to run, so for a multi-profile
+    # validation this is the profile that was active when it ended.
+    dump_logs "$CONTAINER_NAME" "$FRAMEWORK"
+    exit 1
+fi

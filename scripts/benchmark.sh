@@ -253,6 +253,11 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        if $is_gateway; then
+            dump_compose_logs "$GATEWAY_PROJECT"
+        else
+            dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+        fi
         framework_stop
         $is_gateway && gateway_down
         return 1
