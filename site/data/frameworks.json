@@ -926,6 +926,34 @@
     "type": "engine",
     "engine": "veb"
   },
+  "WebFramework C": {
+    "dir": "web-framework-cc",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
+  "WebFramework C++": {
+    "dir": "web-framework-cpp",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
+  "WebFramework C#": {
+    "dir": "web-framework-csharp",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
+  "WebFramework Python": {
+    "dir": "web-framework-python",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
   "workerman-websocket": {
     "dir": "workerman-websocket",
     "description": "An asynchronous event driven PHP socket framework. Supports HTTP, Websocket, SSL and other custom protocols.",
