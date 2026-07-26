@@ -1,0 +1,24 @@
+{
+  "display_name": "aleph",
+  "language": "Clojure",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "netty",
+  "description": "",
+  "repo": "https://github.com/clj-commons/aleph",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "json-tls",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static",
+    "fortunes",
+    "crud"
+  ]
+}

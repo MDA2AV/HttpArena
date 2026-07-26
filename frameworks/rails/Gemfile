@@ -1,7 +1,8 @@
 source 'https://rubygems.org'
 
 gem 'rails', '~> 8.0'
-gem 'puma', '~> 7.2'
+gem 'puma', '~> 8.0'
 gem 'pg', '~> 1.5'
+gem 'redis'
+gem 'bootsnap', require: false
 gem 'connection_pool'
-gem 'thruster', require: false

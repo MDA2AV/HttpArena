@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "JSON Processing Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the JSON processing benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `json` test.
@@ -9,8 +11,8 @@ The following checks are executed by `validate.sh` for every framework subscribe
 Sends `GET /json/{count}` for counts **12, 22, 31, and 50** (different from the benchmark counts to prevent hardcoded responses). For each request, verifies:
 
 - The response contains exactly **count** items
-- Every item has a `total` field
-- Each `total` is correctly computed as `price * quantity`, rounded to 2 decimal places (tolerance: 0.01)
+- Every item contains the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`. Partial payloads that omit fields are rejected.
+- Each `total` is correctly computed as `price * quantity * m`
 
 ## Content-Type header
 

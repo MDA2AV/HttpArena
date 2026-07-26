@@ -1,7 +1,8 @@
 {
   "display_name": "flask",
   "language": "Python",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "gunicorn",
   "description": "Flask web framework on Gunicorn with sync workers",
   "repo": "https://github.com/pallets/flask",

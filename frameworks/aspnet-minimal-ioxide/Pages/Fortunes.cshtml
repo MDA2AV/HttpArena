@@ -1,0 +1,16 @@
+@page "/fortunes"
+@model FortunesModel
+@{ Layout = null; }
+<!DOCTYPE html>
+<html>
+<head><title>Fortunes</title></head>
+<body>
+<table>
+<tr><th>id</th><th>message</th></tr>
+@foreach (var f in Model.Fortunes)
+{
+<tr><td>@f.Id</td><td>@f.Message</td></tr>
+}
+</table>
+</body>
+</html>

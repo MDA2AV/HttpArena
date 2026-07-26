@@ -1,0 +1,15 @@
+{
+  "display_name": "libreactorng",
+  "language": "C",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "libreactorng — Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
+  "repo": "https://github.com/fredrikwidlund/libreactorng",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": []
+}

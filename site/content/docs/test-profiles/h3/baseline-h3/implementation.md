@@ -1,7 +1,9 @@
 ---
 title: Implementation Guidelines
+seo_title: "HTTP/3 Baseline Benchmark (QUIC) — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP/3 baseline benchmark."
 ---
-{{< type-rules production="Must use the framework native QUIC/HTTP3 support with default configuration." tuned="May tune QUIC parameters, congestion control, and UDP buffer sizes." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework native QUIC/HTTP3 support with default configuration." tuned="May tune QUIC parameters, congestion control, and UDP buffer sizes." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 The HTTP/3 Baseline profile tests raw throughput over QUIC, the UDP-based transport protocol that powers HTTP/3.
@@ -49,5 +51,5 @@ Content-Type: text/plain
 
 ## Notes
 
-- HTTP/3 support is not universal — only frameworks with native QUIC support participate
-- HTTP/3 throughput is typically 4–6× lower than HTTP/2 on the same framework. This reflects the inherent CPU cost of QUIC (per-packet AEAD, no kernel TLS offload, userspace packet processing) — see the [h2load-h3 load generator docs](/docs/load-generators/h3/h2load-h3/) for details
+- HTTP/3 support is not universal - only frameworks with native QUIC support participate
+- HTTP/3 throughput is typically 4–6× lower than HTTP/2 on the same framework. This reflects the inherent CPU cost of QUIC (per-packet AEAD, no kernel TLS offload, userspace packet processing) - see the [h2load-h3 load generator docs](/docs/load-generators/h3/h2load-h3/) for details

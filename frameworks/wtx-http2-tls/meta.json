@@ -1,0 +1,13 @@
+{
+  "display_name": "wtx",
+  "language": "Rust",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "wtx",
+  "description": "WTX - HTTP/2 Framework Server",
+  "repo": "https://github.com/c410-f3r/wtx",
+  "enabled": true,
+  "tests": [
+    "baseline-h2"
+  ]
+}

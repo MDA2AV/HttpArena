@@ -1,5 +1,7 @@
 ---
 title: Composite Score
+seo_title: "Composite Score Methodology"
+description: "The composite score explained: per-profile normalization, the sum across scored profiles, the compression adjustment and the memory bonus."
 ---
 
 The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–100 scale, then **summed** across all scored profiles. An optional memory toggle adds a 0–50 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
@@ -22,6 +24,12 @@ This produces a 0–100 value where the top framework scores 100.
 
 **Exception: JSON Compressed.** The `json-comp` profile applies a compression-ratio gain before normalization so frameworks that ship smaller response bodies are rewarded directly. Instead of averaging raw rps, `avgRps` is first scaled by `(minBpr / myBpr)²` where `myBpr = avgBw / avgRps` and `minBpr` is the smallest bytes-per-response across the field. Doubling the response size quarters the score. See the [JSON Compressed implementation](/docs/test-profiles/h1/isolated/json-compressed/implementation/#scoring) for the full formula and rationale.
 
+**Normalized against the whole field, not the current view.** The 100-point reference for each profile is the best result in the full field, regardless of what the leaderboard is currently filtering to. Filtering by language, hiding tuned entries or searching for a name changes which rows are *displayed*; it does not change any score. Without this, filtering to a single language re-based every profile on the best entry of that language — and because each profile's leader moved by a different factor, the summed ranking could reorder, showing one framework above another only while the filter was applied.
+
+Framework types remain separate: engine entries are scored on their own subset of profiles, so an engine result never sets the reference for a framework entry.
+
+The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself — for example, ranking the Ruby entries against each other rather than against the field.
+
 ### Step 3: Sum across scored profiles
 
 The final composite score is the **sum** of per-profile scores across all **scored** profiles:
@@ -30,7 +38,7 @@ The final composite score is the **sum** of per-profile scores across all **scor
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with ~15 scored profiles the ceiling is around 1,500.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 100 points per profile, so with the current 26 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is ~2,600, rising to ~3,900 when the memory-efficiency toggle is on (each profile adds up to 50 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
@@ -52,7 +60,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Static | Yes | 20 static files served over HTTP/1.1 |
 | Async DB | Yes | Async Postgres query with connection pooling |
 | CRUD | Yes | Realistic REST API against Postgres: cached reads (75%), updates (15%), list (5%), upsert create (5%). Cache-aside with 200ms TTL (in-process or Redis sidecar) |
-| TCP Frag | No (*) | Baseline with MTU 69 — TCP fragmentation stress |
+| Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
 
 ### H/1.1 Workload
 
@@ -67,6 +75,8 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Baseline | Yes | Query parsing over TLS with multiplexed streams |
 | Static | Yes | 20 static files served over TLS with multiplexed streams |
+| Baseline h2c | Yes | Query parsing over cleartext h2 on port 8082 (prior-knowledge, anti-cheat rejects dual-serving HTTP/1.1) |
+| JSON h2c | Yes | JSON serialization workload over cleartext h2 on port 8082 |
 
 ### H/3
 
@@ -89,18 +99,21 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Unary | Yes | gRPC unary call over cleartext HTTP/2 |
 | Unary TLS | Yes | gRPC unary call over TLS |
+| Stream | Yes | Server-streaming gRPC over cleartext HTTP/2 |
+| Stream TLS | Yes | Server-streaming gRPC over TLS |
 
 ### WebSocket
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Echo | Yes | WebSocket echo throughput |
+| Echo Pipelined | Yes | Batched WebSocket echo throughput |
 
-TCP Frag and Noisy are reference-only — shown for comparison but not counted in the composite score.
+Fortunes is the only reference-only profile - shown for comparison but not counted in the composite score.
 
 ## Memory efficiency bonus
 
-An optional toggle rewards memory efficiency with an **additive** bonus per profile. It never scales down the raw-throughput score — it only adds on top of it, up to +50 points for the most memory-efficient framework in that profile.
+An optional toggle rewards memory efficiency with an **additive** bonus per profile. It never scales down the raw-throughput score - it only adds on top of it, up to +50 points for the most memory-efficient framework in that profile.
 
 This uses an **efficiency ratio** (`rps / memoryMB`), not absolute memory usage. A framework that is fast *and* lean gets the largest bonus; a framework that uses little memory only because it is slow earns less, because its rps is in the numerator of the ratio.
 
@@ -114,7 +127,7 @@ For each profile, compute the efficiency ratio for every framework:
 memEfficiency = sqrt(rps) / memoryMB
 ```
 
-Why `sqrt(rps)` instead of `rps`? A plain `rps / MB` ratio double-counts throughput: high-rps frameworks would win both `rpsScore` *and* `memScore` because `rps` dominates the ratio. Taking the square root dampens rps to log-scale — it still matters (a dead framework shouldn't win "efficiency"), but memory can now actually move the needle.
+Why `sqrt(rps)` instead of `rps`? A plain `rps / MB` ratio double-counts throughput: high-rps frameworks would win both `rpsScore` *and* `memScore` because `rps` dominates the ratio. Taking the square root dampens rps to log-scale - it still matters (a dead framework shouldn't win "efficiency"), but memory can now actually move the needle.
 
 Normalize against the best efficiency in that profile:
 
@@ -144,21 +157,20 @@ With the memory toggle on:
 - A: `100 + 0.5 × 89.4 = 144.7`
 - B: `20 + 0.5 × 100 = 70.0`
 
-B actually wins the memory term despite A's 5× throughput advantage, because `sqrt(rps)` only gives A a √5 ≈ 2.24× boost in the numerator — not enough to beat B's 2.5× memory savings. A still wins overall thanks to its raw throughput lead, but B's lean memory footprint is now rewarded meaningfully instead of being drowned out.
+B actually wins the memory term despite A's 5× throughput advantage, because `sqrt(rps)` only gives A a √5 ≈ 2.24× boost in the numerator - not enough to beat B's 2.5× memory savings. A still wins overall thanks to its raw throughput lead, but B's lean memory footprint is now rewarded meaningfully instead of being drowned out.
 
 ## Type-specific scoring
 
-Types are scored **separately** — each has its own composite ranking and normalization pool. The scored profiles differ by type:
+Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
-- **Frameworks** (Production + Tuned) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Infrastructure** (nginx, h2o, and similar proxies/servers) are scored only on Baseline, Pipelined, Short-lived, and Static — the profiles that don't require executing application logic. Other profiles (JSON, async-db, etc.) may be displayed as reference data but do not count toward the infrastructure composite.
+- **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
 - **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
 
-The Type filter on the composite leaderboard switches between these rankings. Production and Tuned can be combined (they share the framework normalization pool); Infrastructure and Engine are each exclusive.
+The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Engine is exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
 
 ## Why this approach
 
-- **Sum across profiles** — larger numbers separate strong all-rounders from frameworks that only win a single profile; a framework that covers 15 profiles at 80% crushes one that wins one profile at 100%
-- **Normalization** — each profile contributes equally regardless of absolute RPS scale (baseline at 1M vs JSON at 200K), and is capped at 100 points per profile
-- **Additive memory bonus** — memory-efficient frameworks earn up to +50 per profile on top of their RPS score; slow frameworks can't game the bonus because `rps` is in the efficiency numerator
-- **Average across connections** — each framework is scored on its average RPS across all connection counts, rewarding consistent scaling
+- **Sum across profiles** - larger numbers separate strong all-rounders from frameworks that only win a single profile; a framework that covers 15 profiles at 80% crushes one that wins one profile at 100%
+- **Normalization** - each profile contributes equally regardless of absolute RPS scale (baseline at 1M vs JSON at 200K), and is capped at 100 points per profile
+- **Additive memory bonus** - memory-efficient frameworks earn up to +50 per profile on top of their RPS score; slow frameworks can't game the bonus because `rps` is in the efficiency numerator
+- **Average across connections** - each framework is scored on its average RPS across all connection counts, rewarding consistent scaling

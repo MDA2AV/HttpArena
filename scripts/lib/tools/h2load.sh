@@ -33,6 +33,24 @@ h2load_build_args() {
                   -H "Accept-Encoding: br;q=1, gzip;q=0.8"
                   -c "$conns" -m 32 -t "$H2THREADS" -D "$duration")
             ;;
+        h2c)
+            # Prior-knowledge h2c on port 8082. h2load's -p h2c flag forces
+            # HTTP/2 cleartext framing from the first byte (the standard h2
+            # connection preface) — no HTTP/1.1 Upgrade dance. An http://
+            # URL already defaults to h2c in h2load, but -p is explicit so a
+            # misconfigured server can't silently downgrade the benchmark
+            # to HTTP/1.1 and still look "fast".
+            cmd+=("http://localhost:$H2C_PORT/baseline2?a=1&b=1"
+                  -p h2c
+                  -c "$conns" -m 100 -t "$H2THREADS" -D "$duration")
+            ;;
+        json-h2c)
+            # Same (count, m) rotation as the json profile (7 fixed pairs),
+            # served over h2c prior-knowledge on port 8082.
+            cmd+=(-i "$REQUESTS_DIR/json-h2c-uris.txt"
+                  -p h2c
+                  -c "$conns" -m 32 -t "$H2THREADS" -D "$duration")
+            ;;
         gateway-64)
             cmd+=(-i "$REQUESTS_DIR/gateway-64-uris.txt"
                   -H "Accept-Encoding: br;q=1, gzip;q=0.8"
@@ -200,7 +218,7 @@ h2load_parse() {
         echo "avg_lat=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
             | awk '/time for request:/{print $6}' | head -1)"
         echo "p99_lat=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | awk '/time for request:/{print $6}' | head -1)"
+            | awk '/time for request:/{print $5}' | head -1)"
 
         echo "reconnects=0"
         echo "bandwidth=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
@@ -230,10 +248,10 @@ h2load_parse() {
     echo "rps=$(awk -v ok="$ok" -v dur="$duration_secs" \
         'BEGIN { if (dur+0 > 0) printf "%d", ok/dur; else print 0 }' 2>/dev/null || echo 0)"
 
-    # Latency — h2 mode uses "time for request:" one-liner,
-    # h3 (not used here) uses a tabular "request :" row.
+    # Latency — h2 mode uses "time for request:" one-liner: min/max/mean/sd, no
+    # percentiles. avg = mean ($6). h2load has no p99, so use max ($5) as the tail.
     echo "avg_lat=$(echo "$output" | awk '/time for request:/{print $6}' | head -1)"
-    echo "p99_lat=$(echo "$output" | awk '/time for request:/{print $6}' | head -1)"
+    echo "p99_lat=$(echo "$output" | awk '/time for request:/{print $5}' | head -1)"
 
     echo "reconnects=0"
     echo "bandwidth=$(echo "$output" | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' | head -1 || echo 0)"

@@ -1,0 +1,182 @@
+FROM ubuntu:24.04 AS builder
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV PHP_VERSION=8.5.5
+ENV PHP_INI_DIR=/usr/local/php/etc
+ENV PHP_INI_SCAN_DIR=/usr/local/php/etc/conf.d
+ENV PATH="/usr/local/php/bin:$PATH"
+
+# see https://github.com/docker-library/php/blob/fabd7ab7430b7cd7505683e92de3b437fd85073c/8.5/trixie/cli/Dockerfile
+ARG PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ARG PHP_CPPFLAGS="$PHP_CFLAGS"
+ARG PHP_LDFLAGS="-Wl,-O1 -pie"
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+    autoconf \
+    dpkg-dev \
+    file \
+    g++ \
+    gcc \
+    libc-dev \
+    make \
+    pkg-config \
+    re2c \
+    \
+    libxml2-dev \
+    libssl-dev \
+    libsqlite3-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libcurl4-openssl-dev \
+    libffi-dev \
+    libgmp-dev \
+    libicu-dev \
+    libonig-dev \
+    libpq-dev \
+    libreadline-dev \
+    libsodium-dev \
+    libargon2-dev \
+    libxslt1-dev \
+    libzip-dev
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends curl ca-certificates; \
+    mkdir -p /src/php; \
+    curl -fsSL -o /src/php.tar.gz https://www.php.net/distributions/php-${PHP_VERSION}.tar.gz; \
+    tar -xf /src/php.tar.gz -C /src/php --strip-components=1; \
+    cd /src/php; \
+    export \
+        CFLAGS="$PHP_CFLAGS" \
+        CPPFLAGS="$PHP_CPPFLAGS" \
+        LDFLAGS="$PHP_LDFLAGS" \
+        PHP_BUILD_PROVIDER='https://github.com/MDA2AV/HttpArena' \
+        PHP_UNAME='Linux - Docker' \
+    ; \
+    gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
+    ./configure \
+        --build="$gnuArch" \
+        --prefix=/usr/local/php \
+        --disable-phpdbg \
+        --disable-cgi \
+        --with-config-file-path=/usr/local/php/etc \
+        --with-config-file-scan-dir=/usr/local/php/etc/conf.d \
+        --with-openssl \
+        --with-sqlite3=/usr \
+        --with-zlib \
+        --enable-bcmath \
+        --with-bz2 \
+        --enable-calendar \
+        --with-curl \
+        --enable-exif \
+        --with-ffi \
+        --with-gettext \
+        --with-gmp \
+        --enable-intl \
+        --enable-mbstring \
+        --enable-pcntl \
+        --with-pdo-mysql \
+        --with-pdo-sqlite=/usr \
+        --with-pdo-pgsql \
+        --with-readline \
+        --enable-shmop \
+        --enable-sockets \
+        --with-sodium \
+        --with-password-argon2 \
+        --enable-sysvmsg \
+        --enable-sysvsem \
+        --enable-sysvshm \
+        --with-xsl \
+        --with-zip \
+        --enable-mysqlnd \
+        --with-mysqlnd-ssl; \
+    make -j$(nproc) && make install; \
+    mkdir -p $PHP_INI_DIR $PHP_INI_SCAN_DIR; \
+    cp php.ini-production $PHP_INI_DIR/php.ini
+
+ARG LIBURING_VERSION=2.14
+ARG EXT_SWOOLE_VERSION=6.2.0
+
+RUN set -eux; \
+    mkdir -p /src/liburing; \
+    curl -fsSL -o /src/liburing.tar.gz https://github.com/axboe/liburing/archive/refs/tags/liburing-${LIBURING_VERSION}.tar.gz; \
+    tar -xf /src/liburing.tar.gz -C /src/liburing --strip-components=1; \
+    cd /src/liburing; \
+    ./configure; \
+    make -j$(nproc); \
+    make liburing.pc; \
+    make install; \
+    apt-get install -y --no-install-recommends libc-ares-dev libbrotli-dev libzstd-dev; \
+    mkdir -p /src/swoole; \
+    curl -fsSL -o /src/swoole.tar.gz https://github.com/swoole/swoole-src/archive/refs/tags/v${EXT_SWOOLE_VERSION}.tar.gz; \
+    tar -xf /src/swoole.tar.gz -C /src/swoole --strip-components=1; \
+    cd /src/swoole; \
+    phpize; \
+    ./configure \
+        --enable-cares \
+        --enable-iouring \
+        --enable-uring-socket \
+        --enable-brotli \
+        --enable-zstd \
+        --enable-swoole-curl \
+        --enable-swoole-pgsql \
+        --enable-swoole-sqlite; \
+    make -j$(nproc) && make install; \
+    echo "extension=swoole.so" > $PHP_INI_SCAN_DIR/25-swoole.ini
+
+RUN set -eux; \
+    find \
+        /usr/local/php \
+        -type f \
+        -perm '/0111' \
+        -exec sh -euxc ' \
+            strip --strip-unneeded "$@" || : \
+        ' -- '{}' + \
+    ; \
+    php --version
+
+
+FROM ubuntu:24.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV PHP_VERSION=8.5.5
+ENV PHP_INI_DIR=/usr/local/php/etc
+ENV PHP_INI_SCAN_DIR=/usr/local/php/etc/conf.d
+ENV PATH="/usr/local/php/bin:$PATH"
+
+COPY --from=builder /usr/local/php /usr/local/php
+COPY --from=builder /usr/lib/liburing.so.2.14 /usr/lib/
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        unzip \
+        ca-certificates \
+        libxml2 \
+        libssl3t64 \
+        libsqlite3-0 \
+        zlib1g \
+        libbz2-1.0 \
+        libcurl4t64 \
+        libffi8 \
+        libgmp10 \
+        libicu74 \
+        libonig5 \
+        libpq5 \
+        libreadline8t64 \
+        libsodium23 \
+        libargon2-1 \
+        libxslt1.1 \
+        libzip4t64 \
+        \
+        libzstd1 \
+        libcares2 \
+        libbrotli1; \
+    ln -sf /usr/lib/liburing.so.2.14 /usr/lib/liburing.so.2; \
+    ln -sf /usr/lib/liburing.so.2.14 /usr/lib/liburing.so; \
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+    apt-get dist-clean

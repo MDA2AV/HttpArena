@@ -36,13 +36,18 @@ RUN git clone --depth 1 --recursive https://github.com/ngtcp2/ngtcp2 \
     && make -j"$(nproc)" \
     && make install
 
-# nghttp2 with h2load h3 support
-RUN git clone --depth 1 https://github.com/nghttp2/nghttp2 \
+# nghttp2 with h2load h3 support. Pinned to a release tag so master churn
+# (e.g. a future C++23 bump) can't silently break our build. CXXFLAGS forces
+# C++20 mode — nghttp2 >= v1.69 uses std::span / std::ranges /
+# unordered_set::contains unconditionally, and the default g++ standard
+# mode on Ubuntu 24.04 doesn't enable them. See issue #579.
+RUN git clone --depth 1 -b v1.69.0 https://github.com/nghttp2/nghttp2 \
     && cd nghttp2 \
     && git submodule update --init \
     && autoreconf -i \
     && PKG_CONFIG_PATH=/opt/quictls/lib/pkgconfig:/opt/nghttp3/lib/pkgconfig:/opt/ngtcp2/lib/pkgconfig \
        LDFLAGS="-Wl,-rpath,/opt/quictls/lib:/opt/nghttp3/lib:/opt/ngtcp2/lib" \
+       CXXFLAGS="-std=c++20" \
        ./configure --prefix=/opt/nghttp2 \
            --enable-app --enable-http3 \
            --disable-examples --disable-python-bindings \

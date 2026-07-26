@@ -1,0 +1,197 @@
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+params: p.flags=0x3000 p.wq_fd=0
+params: p.flags=0x3000 p.wq_fd=0
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w7] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w4] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+[w0] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+params: p.flags=0x3000 p.wq_fd=0
+[w9] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w5] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w10] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w6] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w24] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w1] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w8] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w3] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w2] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w11] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w12] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w13] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w14] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w15] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w20] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w16] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w17] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w18] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w19] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w21] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w22] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w23] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w25] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w26] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w27] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w28] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w29] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w30] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w31] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w32] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w33] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w34] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w35] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w36] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w37] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w38] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w39] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w40] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w41] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w42] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w43] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w44] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w45] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w46] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w47] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w48] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w49] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w50] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w51] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w52] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w53] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w54] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w55] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w56] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w57] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w58] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w59] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w60] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+[w61] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w62] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+shim_create_ring_ex: flags=0x3000 sq_cpu=-1 idle=100
+params: p.flags=0x3000 p.wq_fd=0
+[w63] ring flags = 0x13000 (SQPOLL=False, SQ_AFF=False)
+Server started with 64 reactors + 1 acceptor
+[acceptor] ring flags = 0x10000 (SQPOLL=False, SQ_AFF=False)
+[acceptor] Multishot accept armed
+dogrider listening on ws://0.0.0.0:8080/
+[acceptor] Load balancing across 64 reactors

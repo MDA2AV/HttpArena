@@ -1,7 +1,8 @@
 {
   "display_name": "mark",
   "language": "PHP",
-  "type": "production",
+  "type": "emerging",
+  "mode": "standard",
   "engine": "workerman",
   "description": "Mark is a high performance API micro framework based on workerman, helps you quickly write APIs with PHP.",
   "repo": "https://github.com/passwalls/mark",

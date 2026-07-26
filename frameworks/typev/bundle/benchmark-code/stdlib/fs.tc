@@ -1,0 +1,509 @@
+/**
+ * Filesystem API — file I/O, metadata, and path utilities.
+ *
+ * Usage:
+ *   from std.fs import File, readText, writeText, fs
+ *
+ * High-level functions (readText, writeText, readBytes, writeBytes, appendText)
+ * handle open/read/write/close in one call with error returns.
+ *
+ * The File class provides cursor-based sequential I/O for more control.
+ *
+ * The fs namespace wraps low-level metadata operations (exists, mkdir, etc.).
+ */
+
+from std.internal.file import file
+from std.internal.fs import fs as fs_api
+from std.internal.io import io
+
+// ============================================================
+// File open flags (portable — same on all platforms)
+// Combine with bitwise OR: WRONLY | CREATE | TRUNCATE
+// ============================================================
+
+let const RDONLY:   int = 0x00
+let const WRONLY:   int = 0x01
+let const RDWR:     int = 0x02
+let const CREATE:   int = 0x10
+let const TRUNCATE: int = 0x20
+let const APPEND:   int = 0x40
+let const EXCL:     int = 0x80
+
+// ============================================================
+// High-level convenience functions
+// ============================================================
+
+/**
+ * Read an entire file as a UTF-8 string.
+ * @param path - file path
+ * Returns (content, 0) on success, ("", negative errno) on error.
+ */
+fn readText(path: string) -> (string, int) {
+    let fd = file.file_open(path, RDONLY, 0)
+    if fd < 0 {
+        return ("", fd)
+    }
+    let (size, stat_err) = file.file_stat(fd)
+    if stat_err != 0 {
+        file.file_close(fd)
+        return ("", stat_err)
+    }
+
+    if size == 0 {
+        file.file_close(fd)
+        return ("", 0)
+    }
+
+    let buf: uint[] = new uint[](size)
+
+    let n = file.file_read(fd, buf, size, 0)
+    file.file_close(fd)
+
+    if n < 0 {
+        return ("", n)
+    }
+
+    let data = io.string_from_bytes(buf)
+    
+    return (data, 0)
+}
+
+/**
+ * Write a UTF-8 string to a file (creates or truncates).
+ * @param path    - file path
+ * @param content - string to write
+ * Returns 0 on success, negative errno on error.
+ */
+fn writeText(path: string, content: string) -> int {
+    let fd = file.file_open(path, WRONLY | CREATE | TRUNCATE, 0o644)
+    if fd < 0 {
+        return fd
+    }
+
+    let data = content.bytes()
+    let n = file.file_write(fd, data, content.bytesLength(), 0)
+    file.file_close(fd)
+
+    if n < 0 {
+        return n
+    }
+
+    return 0
+}
+
+/**
+ * Append a UTF-8 string to a file (creates if needed).
+ * @param path    - file path
+ * @param content - string to append
+ * Returns 0 on success, negative errno on error.
+ */
+fn appendText(path: string, content: string) -> int {
+    let fd = file.file_open(path, WRONLY | CREATE | APPEND, 0o644)
+    if fd < 0 {
+        return fd
+    }
+
+    let (size, stat_err) = file.file_stat(fd)
+    let offset: uint = 0
+    if stat_err == 0 && size > 0 {
+        offset = size
+    }
+
+    let data = content.bytes()
+    let n = file.file_write(fd, data, content.bytesLength(), offset)
+    file.file_close(fd)
+
+    if n < 0 {
+        return n
+    }
+
+    return 0
+}
+
+/**
+ * Read an entire file as a byte array.
+ * @param path - file path
+ * Returns (data, 0) on success, ([], negative errno) on error.
+ */
+fn readBytes(path: string) -> (uint[], int) {
+    let fd = file.file_open(path, RDONLY, 0)
+    if fd < 0 {
+        return ([], fd)
+    }
+
+    let (size, stat_err) = file.file_stat(fd)
+    if stat_err != 0 {
+        file.file_close(fd)
+        return ([], stat_err)
+    }
+
+    if size == 0 {
+        file.file_close(fd)
+        return ([], 0)
+    }
+
+    let buf: uint[] = []
+    buf.resize(size)
+
+    let n = file.file_read(fd, buf, size, 0)
+    file.file_close(fd)
+
+    if n < 0 {
+        return ([], n)
+    }
+
+    return (buf, 0)
+}
+
+/**
+ * Write a byte array to a file (creates or truncates).
+ * @param path - file path
+ * @param data - bytes to write
+ * Returns 0 on success, negative errno on error.
+ */
+fn writeBytes(path: string, data: uint[]) -> int {
+    let fd = file.file_open(path, WRONLY | CREATE | TRUNCATE, 0o644)
+    if fd < 0 {
+        return fd
+    }
+
+    let n = file.file_write(fd, data, data.length, 0)
+    file.file_close(fd)
+
+    if n < 0 {
+        return n
+    }
+
+    return 0
+}
+
+// ============================================================
+// File class — cursor-based sequential I/O
+// ============================================================
+
+/**
+ * A file handle with an internal cursor for sequential read/write.
+ *
+ * The cursor advances automatically after each read or write.
+ * Use seek() to reposition. Use the raw fd for direct pread/pwrite access.
+ *
+ * Example:
+ *   let f = File.open("data.txt", RDONLY)
+ *   let (line, n) = f.read(1024)
+ *   f.close()
+ */
+type File = class {
+    let const fd: int
+    let cursor: uint
+
+    /**
+     * Open a file.
+     * @param path  - file path
+     * @param flags - open flags (RDONLY, WRONLY|CREATE|TRUNCATE, etc.)
+     * @param mode  - Unix permission bits (default 0o644)
+     * Returns a File, or throws on error.
+     */
+    fn init(path: string, flags: int, mode: int) {
+        let fd_ = file.file_open(path, flags, mode)
+        if fd_ < 0 {
+            throw "Failed to open file: " + path
+        }
+        this.{fd: fd_, cursor: 0}
+    }
+
+    fn init(path: string, flags: int) {
+        let fd_ = file.file_open(path, flags, 0o644)
+        if fd_ < 0 {
+            throw "Failed to open file: " + path
+        }
+        this.{fd: fd_, cursor: 0}
+    }
+
+    /**
+     * Read up to len bytes from the current cursor position.
+     * Advances the cursor by the number of bytes read.
+     * @param buf - buffer to read into
+     * @param len - max bytes to read
+     * Returns bytes read (0 = EOF, < 0 = error).
+     */
+    fn read(buf: uint[], len: uint) -> int {
+        let n = file.file_read(this.fd, buf, len, this.cursor)
+        if n > 0 {
+            this.cursor = this.cursor + n as uint
+        }
+        return n
+    }
+
+    /**
+     * Write bytes at the current cursor position.
+     * Advances the cursor by the number of bytes written.
+     * @param buf - buffer to write from
+     * @param len - bytes to write
+     * Returns bytes written, or < 0 on error.
+     */
+    fn write(buf: uint[], len: uint) -> int {
+        let n = file.file_write(this.fd, buf, len, this.cursor)
+        if n > 0 {
+            this.cursor = this.cursor + n as uint
+        }
+        return n
+    }
+
+    /**
+     * Write a string at the current cursor position.
+     * Advances the cursor by the number of bytes written.
+     */
+    fn writeStr(s: string) -> int {
+        let data = s.bytes()
+        return this.write(data, s.bytesLength())
+    }
+
+    /**
+     * Seek to an absolute byte offset.
+     */
+    fn seek(offset: uint) -> void {
+        this.cursor = offset
+    }
+
+    /**
+     * Get the current cursor position.
+     */
+    fn tell() -> uint {
+        return this.cursor
+    }
+
+    /**
+     * Get the file size in bytes.
+     * Returns (size, error_code). On error: size=0, error_code=negative errno.
+     */
+    fn size() -> (uint, int) {
+        return file.file_stat(this.fd)
+    }
+
+    /**
+     * Flush file data to disk (fsync).
+     * Returns 0 on success, negative errno on error.
+     */
+    fn fsync() -> int {
+        return file.file_fsync(this.fd)
+    }
+
+    /**
+     * Close the file.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn close() -> int {
+        return file.file_close(this.fd)
+    }
+}
+
+// ============================================================
+// Filesystem metadata — thin wrappers over internal/fs.tc
+// ============================================================
+
+namespace fs {
+    /**
+     * Check if a path exists (file or directory).
+     */
+    fn exists(path: string) -> bool {
+        return fs_api.fs_exists(path) == 1
+    }
+
+    /**
+     * Check if a path is a directory.
+     */
+    fn isDir(path: string) -> bool {
+        return fs_api.fs_is_dir(path) == 1
+    }
+
+    /**
+     * Check if a path is a regular file.
+     */
+    fn isFile(path: string) -> bool {
+        return fs_api.fs_is_file(path) == 1
+    }
+
+    /**
+     * Delete a file.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn remove(path: string) -> int {
+        return fs_api.fs_unlink(path)
+    }
+
+    /**
+     * Create a directory with default permissions (0o755).
+     * Returns 0 on success, negative errno on error.
+     */
+    fn mkdir(path: string) -> int {
+        return fs_api.fs_mkdir(path, 0o755)
+    }
+
+    /**
+     * Create a directory with specific permissions.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn mkdir(path: string, mode: int) -> int {
+        return fs_api.fs_mkdir(path, mode)
+    }
+
+    /**
+     * Remove an empty directory.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn rmdir(path: string) -> int {
+        return fs_api.fs_rmdir(path)
+    }
+
+    /**
+     * Rename or move a file/directory.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn rename(src: string, dest: string) -> int {
+        return fs_api.fs_rename(src, dest)
+    }
+
+    /**
+     * Copy a file. Preserves permissions on Unix.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn copy(src: string, dest: string) -> int {
+        return fs_api.fs_copy(src, dest)
+    }
+
+    /**
+     * List directory contents (excludes "." and "..").
+     * When recursive is true, returns all entries under the directory tree
+     * with paths relative to the given path.
+     * Returns entries on success, empty array on error.
+     */
+    fn listDir(path: string, recursive: bool = false) -> string[] {
+        let (entries, count) = fs_api.fs_listdir(path)
+        if count < 0 || !recursive {
+            return entries
+        }
+
+        let result: string[] = []
+
+        foreach  i in 0, count, 1 {
+            let entry = entries[i]
+            let fullPath = fs_api.fs_path_join(path, entry)
+            result = [...result, entry]
+
+            if fs_api.fs_is_dir(fullPath) == 1 {
+                let subEntries = listDir(fullPath, true)
+                foreach j in 0, subEntries.length, 1 {
+                    result = [...result, fs_api.fs_path_join(entry, subEntries[j])]
+                }
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Get file metadata.
+     * Returns (size_bytes, mode_bits, mtime_seconds).
+     * On error: size=-1.
+     */
+    fn stat(path: string) -> (int, int, int) {
+        return fs_api.fs_stat_path(path)
+    }
+
+    /**
+     * Create a symbolic link.
+     * @param target   - what the link points to
+     * @param linkpath - where to create the link
+     * Returns 0 on success, negative errno on error.
+     */
+    fn symlink(target: string, linkpath: string) -> int {
+        return fs_api.fs_symlink(target, linkpath)
+    }
+
+    /**
+     * Read the target of a symbolic link.
+     * Returns the target path, or empty string on error.
+     */
+    fn readlink(path: string) -> string {
+        return fs_api.fs_readlink(path)
+    }
+
+    /**
+     * Resolve a path to its absolute, canonical form.
+     * Returns the resolved path, or empty string on error.
+     */
+    fn realpath(path: string) -> string {
+        return fs_api.fs_realpath(path)
+    }
+
+    /**
+     * Change file permissions.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn chmod(path: string, mode: int) -> int {
+        return fs_api.fs_chmod(path, mode)
+    }
+
+    /**
+     * Get the current working directory.
+     * Returns the path, or empty string on error.
+     */
+    fn cwd() -> string {
+        return fs_api.fs_getcwd()
+    }
+
+    /**
+     * Change the current working directory.
+     * Returns 0 on success, negative errno on error.
+     */
+    fn chdir(path: string) -> int {
+        return fs_api.fs_chdir(path)
+    }
+
+    /**
+     * Get the platform path separator ('/' on Unix, '\\' on Windows).
+     */
+    fn separator() -> uint {
+        return fs_api.fs_get_separator()
+    }
+
+    /**
+     * Join two path components, normalizing separators and resolving . and ..
+     * Example: join("/usr", "./local/../bin") → "/usr/bin"
+     */
+    fn join(a: string, b: string) -> string {
+        return fs_api.fs_path_join(a, b)
+    }
+
+    /**
+     * Normalize a path: resolve . and .. segments, collapse double separators.
+     * Example: normalize("/usr/./local/../bin/") → "/usr/bin"
+     */
+    fn normalize(path: string) -> string {
+        return fs_api.fs_path_normalize(path)
+    }
+
+    /**
+     * Get the directory portion of a path.
+     * Example: dirname("/usr/bin/ls") → "/usr/bin"
+     */
+    fn dirname(path: string) -> string {
+        return fs_api.fs_path_dirname(path)
+    }
+
+    /**
+     * Get the filename portion of a path (last segment).
+     * Example: basename("/usr/bin/ls") → "ls"
+     */
+    fn basename(path: string) -> string {
+        return fs_api.fs_path_basename(path)
+    }
+
+    /**
+     * Get the file extension including the dot, or empty string if none.
+     * Example: extension("main.tc") → ".tc"
+     */
+    fn extension(path: string) -> string {
+        return fs_api.fs_path_extension(path)
+    }
+}

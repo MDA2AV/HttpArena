@@ -1,0 +1,21 @@
+diff --git a/arena/server/arena.ml b/arena/server/arena.ml
+index 19f8884..8c6f61a 100644
+--- a/arena/server/arena.ml
++++ b/arena/server/arena.ml
+@@ -759,11 +759,14 @@ let gc_tuning () =
+       max_overhead = 1000;
+     }
+
++let is_standard_mode () = Sys.getenv_opt "HCS_ARENA_MODE" = Some "standard"
++
+ let base_config =
+-  Hcs.Server.
++  let open Hcs.Server in
++  if is_standard_mode () then { default_config with reuse_port = true }
++  else
+     {
+       default_config with
+-      backlog = 4096;
+       max_connections = 200000;
+       reuse_port = true;
+       (* Stream large request bodies instead of buffering them whole: /upload

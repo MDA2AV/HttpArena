@@ -1,7 +1,8 @@
 {
   "display_name": "spring-boot",
   "language": "Java",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "tomcat",
   "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
   "repo": "https://github.com/spring-projects/spring-boot",
@@ -12,6 +13,7 @@
     "pipelined",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "static",
     "async-db",
@@ -19,7 +21,8 @@
     "api-16",
     "baseline-h2",
     "static-h2",
-    "echo-ws"
+    "echo-ws",
+    "echo-ws-pipeline"
   ],
   "maintainers": []
 }

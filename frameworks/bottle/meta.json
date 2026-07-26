@@ -1,0 +1,23 @@
+{
+  "display_name": "bottle",
+  "language": "Python",
+  "type": "flagship",
+  "mode": "tuned",
+  "engine": "gunicorn",
+  "description": "Fast, simple and lightweight WSGI micro web-framework for Python",
+  "repo": "https://github.com/bottlepy/bottle",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static"
+  ],
+  "maintainers": []
+}

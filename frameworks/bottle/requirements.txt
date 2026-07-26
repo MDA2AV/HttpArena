@@ -1,0 +1,4 @@
+bottle==0.13.4
+gunicorn==25.3.0
+psycopg[binary]==3.3.3
+psycopg_pool==3.3.0

@@ -1,0 +1,1568 @@
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/blackbull/app.py", line 472, in _dispatch
+    await function(scope, receive, send)
+  File "/app/app.py", line 183, in upload_endpoint
+    msg = await receive()
+          ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/access_log.py", line 166, in detecting_receive
+    event = await receive()
+            ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 331, in __call__
+    body = await self._read_with_timeout(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self._reader.readexactly(self._content_length))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 295, in _read_with_timeout
+    return await coro
+           ^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/blackbull/server/recipient.py", line 157, in readexactly
+    return await self._sr.readexactly(n)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 769, in readexactly
+    await self._wait_for_data('readexactly')
+  File "/usr/local/lib/python3.13/asyncio/streams.py", line 539, in _wait_for_data
+    await self._waiter
+  File "/usr/local/lib/python3.13/asyncio/selector_events.py", line 1012, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [Errno 104] Connection reset by peer
+

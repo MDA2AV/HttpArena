@@ -1,0 +1,216 @@
+// assets.tc — GET /static/<name> serving for the HttpArena `static` test.
+//
+// Every asset, plus its precompressed .gz / .br siblings, is loaded once at
+// module init. A request builds ~250 bytes of headers in the caller's
+// scratch buffer and streams the asset body straight from the loaded copy —
+// no per-request copy of the body.
+
+from std.fs import readBytes
+from std.socket import tcp_write
+from response import writeBytes, writeInt
+
+// One static asset: raw bytes, optional precompressed variants, metadata.
+// raw/gz/br are uint[] — that is what readBytes returns and what tcp_write
+// consumes, so the bytes never need re-typing. gz/br stay empty if absent.
+type Asset = struct {
+    name: byte[],
+    ctype: byte[],
+    raw: uint[],
+    gz: uint[],
+    br: uint[]
+}
+
+type StaticSet = struct {
+    items: Asset[],
+    n: int
+}
+
+// The container mounts the asset tree here (same as /data/dataset.json).
+let const STATIC_DIR: string = "/data/static/"
+
+// Content-Type values, byte-encoded once.
+let local const CT_CSS:   byte[] = "text/css".bytes()
+let local const CT_JS:    byte[] = "application/javascript".bytes()
+let local const CT_JSON:  byte[] = "application/json".bytes()
+let local const CT_HTML:  byte[] = "text/html".bytes()
+let local const CT_SVG:   byte[] = "image/svg+xml".bytes()
+let local const CT_WOFF2: byte[] = "font/woff2".bytes()
+let local const CT_WEBP:  byte[] = "image/webp".bytes()
+
+// Response structural literals.
+let local const S_STATUS_CT: byte[] = "HTTP/1.1 200 OK\r\nContent-Type: ".bytes()
+let local const S_ENC_BR:    byte[] = "\r\nContent-Encoding: br".bytes()
+let local const S_ENC_GZIP:  byte[] = "\r\nContent-Encoding: gzip".bytes()
+let local const S_CL:        byte[] = "\r\nContent-Length: ".bytes()
+let local const S_CONN_KA:   byte[] = "\r\nConnection: keep-alive\r\n\r\n".bytes()
+let local const S_CONN_CL:   byte[] = "\r\nConnection: close\r\n\r\n".bytes()
+let local const S_NOT_FOUND: byte[] = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".bytes()
+
+// Read one asset and, if compressible, its .gz / .br precompressed siblings.
+local fn loadAsset(name: string, ctype: byte[], compressible: bool) -> Asset {
+    let (raw, st) = readBytes(STATIC_DIR + name)
+    let gz: uint[] = []
+    let br: uint[] = []
+    if compressible {
+        let (g, gst) = readBytes(STATIC_DIR + name + ".gz")
+        if gst == 0 {
+            gz = g
+        }
+        let (b, bst) = readBytes(STATIC_DIR + name + ".br")
+        if bst == 0 {
+            br = b
+        }
+    }
+    let a: Asset = {name: name.bytes(), ctype: ctype, raw: raw, gz: gz, br: br}
+    return a
+}
+
+// Load the full asset set once. The 20 names are fixed by the benchmark.
+fn loadStatic() -> StaticSet {
+    let items: Asset[] = []
+    items.push(loadAsset("reset.css",       CT_CSS,   true))
+    items.push(loadAsset("layout.css",      CT_CSS,   true))
+    items.push(loadAsset("theme.css",       CT_CSS,   true))
+    items.push(loadAsset("components.css",  CT_CSS,   true))
+    items.push(loadAsset("utilities.css",   CT_CSS,   true))
+    items.push(loadAsset("analytics.js",    CT_JS,    true))
+    items.push(loadAsset("helpers.js",      CT_JS,    true))
+    items.push(loadAsset("app.js",          CT_JS,    true))
+    items.push(loadAsset("vendor.js",       CT_JS,    true))
+    items.push(loadAsset("router.js",       CT_JS,    true))
+    items.push(loadAsset("header.html",     CT_HTML,  true))
+    items.push(loadAsset("footer.html",     CT_HTML,  true))
+    items.push(loadAsset("regular.woff2",   CT_WOFF2, false))
+    items.push(loadAsset("bold.woff2",      CT_WOFF2, false))
+    items.push(loadAsset("logo.svg",        CT_SVG,   true))
+    items.push(loadAsset("icon-sprite.svg", CT_SVG,   true))
+    items.push(loadAsset("hero.webp",       CT_WEBP,  false))
+    items.push(loadAsset("thumb1.webp",     CT_WEBP,  false))
+    items.push(loadAsset("thumb2.webp",     CT_WEBP,  false))
+    items.push(loadAsset("manifest.json",   CT_JSON,  true))
+    let s: StaticSet = {items: items, n: items.length as int}
+    return s
+}
+
+let const STATIC: StaticSet = loadStatic()
+
+// Index of the asset whose name equals buf[start..end), or -1 if none.
+local fn findAsset(buf: byte[], start: uint, end: uint) -> int {
+    if end < start {
+        return -1
+    }
+    let want: uint = end - start
+    foreach i in 0, STATIC.n {
+        let nm = STATIC.items[i as uint].name
+        if nm.length == want {
+            let hit: bool = true
+            foreach k: uint in 0u, want {
+                if (buf[start + k] as int) != (nm[k] as int) {
+                    hit = false
+                    break
+                }
+            }
+            if hit {
+                return i
+            }
+        }
+    }
+    return -1
+}
+
+// Write all `len` bytes of the mutable buffer `b` to fd, shifting the unsent
+// tail forward on a partial send. `b` is caller scratch — shifting is fine.
+local fn sendBuf(fd: int, b: byte[], len: uint) -> bool {
+    let remaining: uint = len
+    while remaining > 0u {
+        let w = tcp_write(fd, b, remaining)
+        if w <= 0 {
+            return false
+        }
+        let n: uint = w as uint
+        if n >= remaining {
+            return true
+        }
+        let rest: uint = remaining - n
+        foreach k: uint in 0u, rest {
+            b[k] = b[n + k]
+        }
+        remaining = rest
+    }
+    return true
+}
+
+// Send all `len` bytes of `src` without mutating it; a partial send is
+// finished by copying the unsent tail through `scratch` (capacity `scap`).
+local fn sendConst(fd: int, src: uint[], len: uint, scratch: byte[], scap: uint) -> bool {
+    let w = tcp_write(fd, src, len)
+    if w < 0 {
+        return false
+    }
+    let sent: uint = w as uint
+    while sent < len {
+        let rest: uint = len - sent
+        let chunk: uint = if rest > scap => scap else rest
+        foreach k: uint in 0u, chunk {
+            scratch[k] = src[sent + k] as byte
+        }
+        let w2 = tcp_write(fd, scratch, chunk)
+        if w2 <= 0 {
+            return false
+        }
+        sent = sent + (w2 as uint)
+    }
+    return true
+}
+
+// Serve GET /static/<name>. `scratch`/`scap` is the caller's output buffer,
+// reused for header assembly and partial-send finishing. false on socket error.
+fn serveStatic(fd: int, buf: byte[], pathStart: uint, pathEnd: uint,
+                acceptBr: bool, acceptGzip: bool, keepAlive: bool,
+                scratch: byte[], scap: uint) -> bool {
+    // request target is "/static/<name>" — skip the 8-byte "/static/" prefix
+    let nameStart: uint = pathStart + 8u
+    let idx: int = if pathEnd > nameStart => findAsset(buf, nameStart, pathEnd) else -1
+    if idx < 0 {
+        return sendConst(fd, S_NOT_FOUND, S_NOT_FOUND.length, scratch, scap)
+    }
+
+    let a = STATIC.items[idx as uint]
+
+    // pick the best available encoding: br > gzip > identity
+    let body: uint[] = a.raw
+    let useBr: bool = false
+    let useGz: bool = false
+    if acceptBr && a.br.length > 0u {
+        body = a.br
+        useBr = true
+    } else if acceptGzip && a.gz.length > 0u {
+        body = a.gz
+        useGz = true
+    }
+    let bodyLen: uint = body.length
+
+    // assemble headers in the scratch buffer
+    let p: uint = writeBytes(scratch, 0u, S_STATUS_CT)
+    p = writeBytes(scratch, p, a.ctype)
+    if useBr {
+        p = writeBytes(scratch, p, S_ENC_BR)
+    } else if useGz {
+        p = writeBytes(scratch, p, S_ENC_GZIP)
+    }
+    p = writeBytes(scratch, p, S_CL)
+    p = writeInt(scratch, p, bodyLen as int)
+    if keepAlive {
+        p = writeBytes(scratch, p, S_CONN_KA)
+    } else {
+        p = writeBytes(scratch, p, S_CONN_CL)
+    }
+
+    if !sendBuf(fd, scratch, p) {
+        return false
+    }
+    if bodyLen > 0u {
+        return sendConst(fd, body, bodyLen, scratch, scap)
+    }
+    return true
+}

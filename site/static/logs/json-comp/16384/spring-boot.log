@@ -8,15 +8,15 @@
 
  :: Spring Boot ::                (v4.0.5)
 
-2026-04-12T19:03:55.865Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : Starting Application v0.0.1-SNAPSHOT using Java 25.0.2 with PID 1 (/app/app.jar started by root in /app)
-2026-04-12T19:03:55.868Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : No active profile set, falling back to 1 default profile: "default"
-2026-04-12T19:03:56.739Z  INFO 1 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with ports 8443 (https), 8080 (http)
-2026-04-12T19:03:56.752Z  INFO 1 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-04-12T19:03:56.752Z  INFO 1 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
-2026-04-12T19:03:56.771Z  INFO 1 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 857 ms
-2026-04-12T19:03:57.312Z  INFO 1 --- [spring-boot] [           main] o.a.t.util.net.NioEndpoint.certificate   : Connector [https-jsse-nio-8443], TLS virtual host [_default_], certificate type [UNDEFINED] configured from keystore [Set directly - location unknown] using alias [tomcat] with trust store [null]
-2026-04-12T19:03:57.321Z  INFO 1 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on ports 8443 (https), 8080 (http) with context path '/'
-2026-04-12T19:03:57.329Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : Started Application in 1.794 seconds (process running for 2.134)
-2026-04-12T19:03:58.268Z  INFO 1 --- [spring-boot] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-04-12T19:03:58.268Z  INFO 1 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-04-12T19:03:58.269Z  INFO 1 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-04-24T00:45:23.337Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : Starting Application v0.0.1-SNAPSHOT using Java 25.0.2 with PID 1 (/app/app.jar started by root in /app)
+2026-04-24T00:45:23.340Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : No active profile set, falling back to 1 default profile: "default"
+2026-04-24T00:45:24.198Z  INFO 1 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with ports 8443 (https), 8080 (http)
+2026-04-24T00:45:24.221Z  INFO 1 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-24T00:45:24.221Z  INFO 1 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-04-24T00:45:24.241Z  INFO 1 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 846 ms
+2026-04-24T00:45:24.755Z  INFO 1 --- [spring-boot] [           main] o.a.t.util.net.NioEndpoint.certificate   : Connector [https-jsse-nio-8443], TLS virtual host [_default_], certificate type [UNDEFINED] configured from keystore [Set directly - location unknown] using alias [tomcat] with trust store [null]
+2026-04-24T00:45:24.763Z  INFO 1 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on ports 8443 (https), 8080 (http) with context path '/'
+2026-04-24T00:45:24.773Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : Started Application in 1.767 seconds (process running for 2.104)
+2026-04-24T00:45:25.736Z  INFO 1 --- [spring-boot] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-24T00:45:25.736Z  INFO 1 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-04-24T00:45:25.737Z  INFO 1 --- [spring-boot] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms

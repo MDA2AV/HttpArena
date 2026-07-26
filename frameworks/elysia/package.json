@@ -2,9 +2,8 @@
 	"name": "httparena-elysia",
 	"private": true,
 	"dependencies": {
-		"@elysiajs/static": "^1.4.9",
-		"elysia": "^1.4.28",
-		"pg": "^8.13.1"
+		"@elysiajs/static": "^1.4.0",
+		"elysia": "^1.4.28"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.3.12"

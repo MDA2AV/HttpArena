@@ -1,0 +1,28 @@
+{
+  "display_name": "mq-bridge",
+  "language": "Rust",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "mq-bridge",
+  "description": "mq-bridge async message-bridging library run as an HTTP server. A single catch-all http->response route dispatches on request metadata and replies through mq-bridge's inline-response fast path; hyper-util's auto connection builder serves HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the cleartext port (8080) and HTTP/2-over-TLS (ALPN h2) on 8443. Postgres via sqlx for async-db, dataset read from /data/dataset.json, static assets from /data/static, gzip negotiated by the library's Accept-Encoding-gated response compression.",
+  "repo": "https://github.com/marcomq/mq-bridge",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "static",
+    "async-db",
+    "api-4",
+    "api-16",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": []
+}

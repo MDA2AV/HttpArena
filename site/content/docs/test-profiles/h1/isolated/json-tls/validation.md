@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "JSON over TLS Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the JSON over TLS benchmark before a framework's results are accepted."
 ---
 
 The validation script (`scripts/validate.sh`) runs these checks for the `json-tls` test profile. All must pass for a framework to be considered valid for this benchmark.
@@ -27,7 +29,7 @@ Three requests are sent over HTTPS on port 8081 with different counts and multip
 For each response the validator checks:
 
 1. `count` field equals the route count
-2. Every item in `items` has a `total` field
+2. Every item in `items` contains the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
 3. `total == price * quantity * m` for every item (integer, exact)
 
 These `(count, m)` pairs are deliberately **different** from the `json-comp` validation pairs so a framework that tries to cache validation results across profiles can't pass both.

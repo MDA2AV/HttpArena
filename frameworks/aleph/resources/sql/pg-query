@@ -1,0 +1,1 @@
+SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN :min AND :max LIMIT :limit

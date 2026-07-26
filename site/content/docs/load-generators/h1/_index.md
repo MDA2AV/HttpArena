@@ -1,5 +1,7 @@
 ---
 title: HTTP/1.1
+seo_title: "HTTP/1.1 Load Generation"
+description: "The load generators behind the HTTP/1.1 profiles: gcannon for most workloads and wrk for URI-rotating static file tests."
 ---
 
 {{< cards >}}

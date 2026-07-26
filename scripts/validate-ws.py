@@ -234,8 +234,20 @@ def test_reject_bad_upgrade():
 
 print(f"[test] WebSocket echo validation (ws://{HOST}:{PORT}{PATH})")
 
-# 1. Upgrade handshake
-sock = test_upgrade()
+# 1. Upgrade handshake — retry briefly to absorb container startup race.
+# The harness skips its HTTP readiness probe for pure-WS frameworks (e.g.
+# Fleck), so the TCP listener may bind a moment before the WS handler is
+# fully ready and resets the first upgrade attempt. The exception-only retry
+# avoids double-counting result() calls from a successful-then-failed run.
+sock = None
+for attempt in range(20):
+    try:
+        sock = test_upgrade()
+        break
+    except (ConnectionResetError, ConnectionRefusedError, BrokenPipeError, ConnectionError):
+        if attempt == 19:
+            raise
+        time.sleep(0.5)
 if sock is None:
     print(f"\n=== WS Results: {PASS} passed, {FAIL} failed ===")
     sys.exit(1)

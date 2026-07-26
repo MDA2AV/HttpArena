@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HttpArena</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* The Hugo site is retired — the standalone board at / is the whole site now.
+   GitHub Pages has no server-side rewrites, so this 404 page is the redirect
+   layer for the URLs the old site owned:
+
+     /old/logs/<path>      -> /logs/<path>      (run logs moved with the site)
+     /leaderboard/         -> /                 (badge links live in other repos)
+     /new-leaderboard/     -> /                 (pre-move URL of the board)
+     /docs, /docs/<path>   -> /docs/            (unknown doc path -> KB landing)
+     /old/<anything else>  -> /                 (the whole namespace is gone)
+
+   The /docs/<id>/ pages are now REAL pre-rendered files, so this only fires for
+   docs paths that don't exist — those go to the Knowledge Base landing (a real
+   page), NOT the board hash, which would loop against the board's own
+   #doc= -> /docs/ redirect. Anything else falls through to the 404 body. */
+(function(){
+  var raw = location.pathname;
+  var wasOld = /^\/old(\/|$)/.test(raw);
+  var p = wasOld ? (raw.replace(/^\/old/, '') || '/') : raw;
+  var to = null;
+
+  if (/^\/logs\//.test(p)) {
+    to = p + location.search;                       // only reachable via /old/logs/*
+  } else if (/^\/(leaderboard|new-leaderboard)(\/|$)/.test(p)) {
+    to = '/' + location.search + location.hash;
+  } else if (/^\/docs(\/|$)/.test(p)) {
+    to = '/docs/';                                  // unknown docs path -> real KB landing
+  } else if (wasOld) {
+    to = '/';                                       // retired page, send them to the board
+  }
+
+  /* Never redirect to the path we're already on — that would loop forever. */
+  if (to && to.split(/[?#]/)[0] !== raw) location.replace(to);
+})();
+</script>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#111827}
+  .box{text-align:center;padding:2rem}
+  h1{font-size:3rem;margin:0 0 .25rem;color:#2563eb;letter-spacing:-.02em}
+  p{color:#4b5563;margin:.4rem 0}
+  a{color:#2563eb;text-decoration:none;font-weight:600}
+  a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>404</h1>
+    <p>That page doesn’t exist.</p>
+    <p><a href="/">← Back to the leaderboard</a></p>
+  </div>
+</body>
+</html>

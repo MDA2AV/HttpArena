@@ -90,7 +90,11 @@ cleanup_all() {
     docker volume prune -f >/dev/null 2>&1 || true
     docker image prune  -f >/dev/null 2>&1 || true
 }
-trap 'cleanup_all; system_restore' EXIT
+if [ "${SKIP_TUNE:-}" != "true" ]; then
+    trap 'cleanup_all; system_restore' EXIT
+else
+    trap 'cleanup_all' EXIT
+fi
 
 # Clean slate: stop any leftover benchmark containers from a previous
 # crashed run, AND prune any leftover dangling volumes/images from the
@@ -162,22 +166,28 @@ FRAMEWORK="$FRAMEWORK_ARG"
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
          api-4 api-16 static async-db \
-         baseline-h2 static-h2 baseline-h3 static-h3 \
-         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls echo-ws; do
+         baseline-h2 static-h2 baseline-h2c json-h2c \
+         baseline-h3 static-h3 \
+         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls \
+         echo-ws echo-ws-pipeline echo-ws-limited; do
     if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
 done
 $_has_isolated_test && framework_build
 
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
-system_tune
+if [ "${SKIP_TUNE:-}" != "true" ]; then
+    system_tune
+else
+    info "skipping system tuning as requested (SKIP_TUNE=true)"
+fi
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack; do
+for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
-$need_pg && postgres_start
+if $need_pg; then postgres_start; fi
 
 # Redis sidecar — started whenever crud is in play so multi-process
 # frameworks can use it as a shared cache. Single-heap frameworks
@@ -188,7 +198,7 @@ need_redis=false
 for t in crud; do
     if framework_subscribes_to "$t"; then need_redis=true; break; fi
 done
-$need_redis && redis_start
+if $need_redis; then redis_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
@@ -210,6 +220,25 @@ run_one() {
 
     banner "$FRAMEWORK / $profile / ${CONNS}c (tool=$tool)"
 
+    # Reset Postgres before each DB profile so it sees the same clean,
+    # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
+    # Postgres is started once and shared across the whole run, so otherwise the
+    # previous profile's warm buffers / planner stats / table bloat bleed into
+    # this one. That contamination is severe: after async-db's seq-scan load
+    # leaves every page resident, crud's cached-read backends all become
+    # runnable at once and Postgres spins ~120 cores on snapshot/buffer
+    # contention, collapsing crud from ~680k to ~210k rps. The first DB profile
+    # already has a fresh server from the upfront postgres_start, so skip it.
+    case "$endpoint" in
+        async-db|crud|api-4|api-16|fortunes)
+            if [ "${PG_DIRTY:-false}" = true ]; then
+                info "resetting postgres for a clean per-profile baseline"
+                postgres_start
+            fi
+            PG_DIRTY=true
+            ;;
+    esac
+
     # Compose-orchestrated profiles (gateway-*, production-stack) use
     # a multi-container stack instead of a single framework container.
     local is_gateway=false
@@ -225,6 +254,11 @@ run_one() {
 
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        if $is_gateway; then
+            dump_compose_logs "$GATEWAY_PROJECT"
+        else
+            dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
+        fi
         framework_stop
         $is_gateway && gateway_down
         return 1

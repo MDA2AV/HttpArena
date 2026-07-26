@@ -1,0 +1,13 @@
+✅ Registered: GET    /async-db                 -> AsyncDatabaseEndpoint
+✅ Registered: GET    /pipeline                 -> PipelineEndpoint
+✅ Registered: GET    /baseline11               -> BaselineGetEndpoint
+✅ Registered: POST   /baseline11               -> BaselinePostEndpoint
+✅ Registered: GET    /baseline2                -> Baseline2GetEndpoint
+✅ Registered: GET    /compression              -> CompressionEndpoint
+✅ Registered: GET    /db                       -> DatabaseEndpoint
+✅ Registered: GET    /json/{count}             -> JsonEndpoint
+✅ Registered: POST   /upload                   -> UploadEndpoint
+  quic://localhost:8443 (HTTP/3)
+EffinitiveFramework listening on:
+  http://localhost:8080
+  https://localhost:8443

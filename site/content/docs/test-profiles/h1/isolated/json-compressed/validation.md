@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Compressed JSON Benchmark (gzip and Brotli) — Validation Checks"
+description: "The correctness checks validate.sh runs against the compressed JSON benchmark before a framework's results are accepted."
 ---
 
 The validation script (`scripts/validate.sh`) runs these checks for the `json-comp` test profile. All must pass for a framework to be considered valid for this benchmark.
@@ -21,17 +23,17 @@ Three requests are sent with different counts and multipliers:
 
 | Count | Multiplier |
 |-------|-----------|
-| 12 | 9 |
-| 31 | 4 |
-| 50 | 6 |
+| 25 | 3 |
+| 40 | 7 |
+| 50 | 2 |
 
 For each response, after decompressing, the validator checks:
 
 1. `count` field equals the route count
-2. Every item in `items` has a `total` field
+2. Every item in `items` contains the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
 3. `total == price * quantity * m` for every item (integer, exact)
 
-Any missing field or incorrect arithmetic is a failure. This confirms the server honors the `m` parameter and applies it per item.
+Any missing field or incorrect arithmetic is a failure. Partial payloads that omit fields are rejected. This confirms the server honors the `m` parameter and applies it per item.
 
 ### No Content-Encoding when Accept-Encoding is absent
 
@@ -39,7 +41,7 @@ Any missing field or incorrect arithmetic is a failure. This confirms the server
 GET /json/50?m=1
 ```
 
-Without `Accept-Encoding`, the response **must not** include a `Content-Encoding` header. Compression is driven per request by the client — servers that unconditionally compress fail this check.
+Without `Accept-Encoding`, the response **must not** include a `Content-Encoding` header. Compression is driven per request by the client - servers that unconditionally compress fail this check.
 
 ## Running locally
 

@@ -1,7 +1,8 @@
 {
   "display_name": "elysia",
   "language": "TS",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "jsc",
   "description": "An ergonomic framework for Humans",
   "repo": "https://github.com/elysiajs/elysia",

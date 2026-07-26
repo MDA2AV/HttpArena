@@ -1,0 +1,25 @@
+{
+  "display_name": "aspnet-minimal-ioxide",
+  "language": "C#",
+  "type": "flagship",
+  "mode": "tuned",
+  "engine": "io_uring",
+  "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal — only the Kestrel transport differs. HTTP/1.1 only: plaintext plus HTTP/1.1-over-TLS (json-tls) terminated in the transport via kTLS (ioxide.tls). HTTP/2 and HTTP/3 are not enabled.",
+  "repo": "https://github.com/MDA2AV/ioxide",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "async-db",
+    "crud"
+  ],
+  "maintainers": []
+}

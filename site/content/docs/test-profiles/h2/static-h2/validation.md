@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Static File Serving Benchmark (HTTP/2) — Validation Checks"
+description: "The correctness checks validate.sh runs against the HTTP/2 static file benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `static-h2` test. The HTTPS port (8443) must be responding before checks begin.
@@ -8,9 +10,9 @@ The following checks are executed by `validate.sh` for every framework subscribe
 
 Verifies correct `Content-Type` headers for representative file types over HTTPS with HTTP/2:
 
-- `GET /static/reset.css` — expects `Content-Type: text/css`
-- `GET /static/app.js` — expects `Content-Type: application/javascript`
-- `GET /static/manifest.json` — expects `Content-Type: application/json`
+- `GET /static/reset.css` - expects `Content-Type: text/css`
+- `GET /static/app.js` - expects `Content-Type: application/javascript`
+- `GET /static/manifest.json` - expects `Content-Type: application/json`
 
 Note: `text/javascript` is accepted as equivalent to `application/javascript` per RFC 9239.
 

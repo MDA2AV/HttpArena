@@ -1,0 +1,18 @@
+{
+  "display_name": "dart-io",
+  "language": "Dart",
+  "engine": "dart:io",
+  "type": "engine",
+  "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
+  "repo": "https://github.com/kartikey321/dart-sdk",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json"
+  ],
+  "maintainers": [
+    "kartikey321"
+  ]
+}

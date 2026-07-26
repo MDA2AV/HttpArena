@@ -1,4 +1,5 @@
-fastpysgi==0.5
+#fastpysgi==0.7
+git+https://github.com/remittor/fastpysgi.git@439dbfb6e034812422d7000983552aa560f794b5#egg=fastpysgi
 orjson==3.10.15
 psycopg[binary]==3.2.4
 psycopg_pool==3.2.6

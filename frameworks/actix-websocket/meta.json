@@ -1,13 +1,15 @@
 {
   "display_name": "actix",
   "language": "Rust",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "actix",
   "description": "Actix-web WebSocket echo server",
   "repo": "https://github.com/actix/actix-web",
   "enabled": true,
   "tests": [
-    "echo-ws"
+    "echo-ws",
+    "echo-ws-pipeline"
   ],
   "maintainers": []
 }

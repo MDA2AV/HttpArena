@@ -35,11 +35,10 @@ foreach ($dir as $fileInfo) {
 
 $http = new Server('0.0.0.0', 8080);
 $http->set([
-    'worker_num'             => swoole_cpu_num(),
-    'enable_reuse_port'      => true,
-    'enable_coroutine'       => false,
-    'package_max_length'     => 30 * 1024 * 1024,
-    'http_compression_level' => 0
+    'worker_num'         => swoole_cpu_num(),
+    'enable_reuse_port'  => true,
+    'enable_coroutine'   => false,
+    'package_max_length' => 30 * 1024 * 1024
 ]);
 
 $http->on('workerStart', function (Server $server, int $workerId) {
@@ -67,13 +66,13 @@ $http->on('request', function (Request $request, Response $response) use ($datas
 
     if (preg_match('#^/json/(\d+)$#', $path, $matches)) {
         $count = min((int)$matches[1], count($dataset));
-        $m = (int)($request->get['m'] ?? 1);
+        $m     = (int)($request->get['m'] ?? 1);
         if ($m === 0) $m = 1;
         $items = [];
         for ($i = 0; $i < $count; $i++) {
-            $item = $dataset[$i];
+            $item          = $dataset[$i];
             $item['total'] = $item['price'] * $item['quantity'] * $m;
-            $items[] = $item;
+            $items[]       = $item;
         }
         $response->header['Content-Type'] = 'application/json';
         $response->end(json_encode(['items' => $items, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -120,11 +119,40 @@ $http->on('request', function (Request $request, Response $response) use ($datas
 
 $port = $http->listen('0.0.0.0', 8443, SWOOLE_TCP | SWOOLE_SSL);
 $port->set([
-    'open_http2_protocol'    => true,
-    'ssl_cert_file'          => '/certs/server.crt',
-    'ssl_key_file'           => '/certs/server.key',
-    'package_max_length'     => 30 * 1024 * 1024,
-    'http_compression_level' => 0,
+    'open_http2_protocol' => true,
+    'ssl_cert_file'       => '/certs/server.crt',
+    'ssl_key_file'        => '/certs/server.key',
+    'package_max_length'  => 30 * 1024 * 1024
 ]);
+
+$port2 = $http->listen('0.0.0.0', 8081, SWOOLE_TCP | SWOOLE_SSL);
+$port2->set([
+    'ssl_cert_file'      => '/certs/server.crt',
+    'ssl_key_file'       => '/certs/server.key',
+    'package_max_length' => 30 * 1024 * 1024,
+    'http_compression'   => false,
+    'open_http_protocol' => true,
+]);
+$port2->on('request', function (Request $request, Response $response) use ($dataset) {
+    $path = $request->server['request_uri'];
+    if (preg_match('#^/json/(\d+)$#', $path, $matches)) {
+        $count = min((int)$matches[1], count($dataset));
+        $m     = (int)($request->get['m'] ?? 1);
+        if ($m === 0) $m = 1;
+        $items = [];
+        for ($i = 0; $i < $count; $i++) {
+            $item          = $dataset[$i];
+            $item['total'] = $item['price'] * $item['quantity'] * $m;
+            $items[]       = $item;
+        }
+        $response->header['Content-Type'] = 'application/json';
+        $response->end(json_encode(['items' => $items, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return;
+    }
+
+    $response->status(404);
+    $response->header['Content-Type'] = 'text/plain';
+    $response->end('404 Not Found');
+});
 
 $http->start();

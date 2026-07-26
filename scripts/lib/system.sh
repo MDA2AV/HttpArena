@@ -3,21 +3,16 @@
 # that affects measurement stability lives here.
 #
 # Usage:
-#   system_tune      # apply all settings, record originals for restore
-#   system_restore   # revert everything to pre-run state (trap on EXIT)
+#   system_tune      # apply all settings
+#   system_restore   # revert per-run state (loopback MTU) on EXIT trap
 
-: "${ORIG_GOVERNOR:=}"
-
-# Apply system tuning. Safe to call multiple times; records original values
-# on first call only.
+# Apply system tuning. Safe to call multiple times.
 system_tune() {
     info "tuning host for benchmark runs"
 
-    # Record the original CPU governor so restore_settings can revert.
-    if [ -z "$ORIG_GOVERNOR" ]; then
-        ORIG_GOVERNOR=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo "")
-    fi
-
+    # CPU governor → performance. Intentionally NOT reverted afterwards (see
+    # system_restore): this is a dedicated bench host, and the old
+    # revert-to-powersave was drifting the box off performance between runs.
     if command -v cpupower &>/dev/null; then
         # cpupower prints "Setting cpu: N" for every core — silence stdout,
         # keep stderr. Check exit code to report success/failure.
@@ -83,14 +78,6 @@ system_restore() {
     info "restoring loopback MTU to 65536"
     sudo ip link set lo mtu 65536 2>/dev/null || true
 
-    if [ -n "$ORIG_GOVERNOR" ]; then
-        info "restoring CPU governor → $ORIG_GOVERNOR"
-        if command -v cpupower &>/dev/null; then
-            sudo cpupower frequency-set -g "$ORIG_GOVERNOR" >/dev/null 2>&1 || true
-        else
-            for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-                sudo sh -c "echo $ORIG_GOVERNOR > $g" 2>/dev/null || true
-            done
-        fi
-    fi
+    # CPU governor is deliberately left on performance — not restored to the
+    # box default (powersave). Keeps boost residency stable across runs.
 }

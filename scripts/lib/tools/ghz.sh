@@ -100,7 +100,11 @@ ghz_parse() {
     fi
 
     echo "avg_lat=$(echo "$output" | awk '/^\s*Average:/ { print $2 $3; exit }')"
-    echo "p99_lat=$(echo "$output" | awk '/^\s*Slowest:/ { print $2 $3; exit }')"
+    # ghz reports real percentiles; use the 99th line, falling back to Slowest (max).
+    local p99
+    p99=$(echo "$output" | awk '/^[[:space:]]*99(\.[0-9]+)? % in /{print $4 $5; exit}')
+    [ -z "$p99" ] && p99=$(echo "$output" | awk '/^[[:space:]]*Slowest:/{print $2 $3; exit}')
+    echo "p99_lat=$p99"
     echo "reconnects=0"
     echo "bandwidth=0"
 

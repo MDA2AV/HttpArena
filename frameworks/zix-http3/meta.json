@@ -1,0 +1,14 @@
+{
+  "display_name": "zix",
+  "language": "Zig",
+  "type": "engine",
+  "engine": "zix.Http3 URING Dispatch Model",
+  "description": "Zig HTTP/3 server on the zix.Http3 engine, pure-Zig QUIC on std.crypto (RFC 9000/9001/9002/9114), .URING dispatch: one SO_REUSEPORT worker per core on UDP 8443, NewReno with PTO retransmit, rolling MAX_STREAMS/MAX_DATA credit. A one-worker https responder on TCP 8443 answers the readiness probe, idle during the run.",
+  "repo": "https://github.com/prothegee/zix",
+  "enabled": true,
+  "tests": [
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": ["prothegee"]
+}

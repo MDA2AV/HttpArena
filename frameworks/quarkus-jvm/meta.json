@@ -1,7 +1,8 @@
 {
   "display_name": "quarkus-jvm",
   "language": "Java",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "tuned",
   "engine": "netty",
   "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
   "repo": "https://github.com/quarkusio/quarkus",

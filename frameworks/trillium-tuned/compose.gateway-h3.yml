@@ -1,0 +1,51 @@
+# gateway-h3 — same two-service stack as compose.gateway.yml, but the edge is
+# exercised over HTTP/3 (QUIC/UDP). Stock Caddy already binds 8443 on both tcp
+# and udp with `protocols h1 h2 h3`, so the proxy config is identical; only the
+# load generator differs (h2load-h3). The proxy->server upstream stays UDS h1.
+services:
+  proxy:
+    build:
+      context: ./proxy
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - LISTEN_UDS=/run/app/app.sock
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+      - STATIC_DIR=/data/static
+      - RUST_LOG=info
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
+
+volumes:
+  appsock:

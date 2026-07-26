@@ -1,5 +1,7 @@
 ---
 title: Async Database (Postgres)
+seo_title: "Async Database Benchmark (Postgres)"
+description: "Measures concurrent asynchronous Postgres queries over a network connection, exercising the framework's connection pooling and async I/O."
 ---
 
 Measures how efficiently a framework handles concurrent async database queries over a network connection with connection pooling.

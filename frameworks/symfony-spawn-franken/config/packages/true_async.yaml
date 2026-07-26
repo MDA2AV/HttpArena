@@ -1,0 +1,6 @@
+true_async:
+    db_pool:
+        enabled: true
+        min: 4
+        max: 64
+        healthcheck_interval: 30

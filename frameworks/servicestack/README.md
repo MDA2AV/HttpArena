@@ -18,7 +18,6 @@ One framework to power them all. Write your HTTP APIs once and take advantage of
 | `/baseline2` | GET | Sums query parameter values (HTTP/2 variant) |
 | `/json` | GET | Processes 50-item dataset, serializes JSON |
 | `/compression` | GET | Gzip-compressed large JSON response |
-| `/db` | GET | SQLite range query with JSON response |
 | `/upload` | POST | Receives 1 MB body, returns byte count |
 | `/static/{filename}` | GET | Serves preloaded static files with MIME types |
 

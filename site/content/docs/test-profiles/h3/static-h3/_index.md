@@ -1,5 +1,7 @@
 ---
 title: Static Files (HTTP/3)
+seo_title: "Static File Serving Benchmark (HTTP/3)"
+description: "Serves twenty static assets over QUIC, approximating a browser loading page resources over HTTP/3."
 ---
 
 Serves 20 static files of various types over QUIC, simulating a browser loading page assets over HTTP/3.

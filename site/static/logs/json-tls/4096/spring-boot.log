@@ -1,0 +1,23 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.5)
+
+2026-04-27T18:31:28.780Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : Starting Application v0.0.1-SNAPSHOT using Java 25.0.2 with PID 1 (/app/app.jar started by root in /app)
+2026-04-27T18:31:28.783Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : No active profile set, falling back to 1 default profile: "default"
+2026-04-27T18:31:29.727Z  INFO 1 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with ports 8443 (https), 8080 (http), 8081 (https)
+2026-04-27T18:31:29.742Z  INFO 1 --- [spring-boot] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-27T18:31:29.742Z  INFO 1 --- [spring-boot] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.20]
+2026-04-27T18:31:29.762Z  INFO 1 --- [spring-boot] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 917 ms
+2026-04-27T18:31:30.341Z  INFO 1 --- [spring-boot] [           main] o.a.t.util.net.NioEndpoint.certificate   : Connector [https-jsse-nio-8443], TLS virtual host [_default_], certificate type [UNDEFINED] configured from keystore [Set directly - location unknown] using alias [tomcat] with trust store [null]
+2026-04-27T18:31:30.356Z  INFO 1 --- [spring-boot] [           main] o.a.t.util.net.NioEndpoint.certificate   : Connector [https-jsse-nio-8081], TLS virtual host [_default_], certificate type [UNDEFINED] configured from key [/certs/server.key], certificate [/certs/server.crt] and certificate chain [null] with trust store [null]
+2026-04-27T18:31:30.360Z  INFO 1 --- [spring-boot] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on ports 8443 (https), 8080 (http), 8081 (https) with context path '/'
+2026-04-27T18:31:30.373Z  INFO 1 --- [spring-boot] [           main] com.httparena.spring.boot.Application    : Started Application in 1.965 seconds (process running for 2.487)
+2026-04-27T18:31:31.001Z  INFO 1 --- [spring-boot] [nio-8081-exec-5] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-27T18:31:31.001Z  INFO 1 --- [spring-boot] [nio-8081-exec-5] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-04-27T18:31:31.002Z  INFO 1 --- [spring-boot] [nio-8081-exec-5] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms

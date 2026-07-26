@@ -1,7 +1,8 @@
 {
   "display_name": "rage",
   "language": "Ruby",
-  "type": "tuned",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "iodine",
   "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
   "repo": "https://github.com/rage-rb/rage",
@@ -16,7 +17,8 @@
     "api-4",
     "api-16",
     "async-db",
+    "crud",
     "static"
   ],
-  "maintainers": []
+  "maintainers": ["p8"]
 }

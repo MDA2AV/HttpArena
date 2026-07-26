@@ -10,7 +10,8 @@
 # Emits one token per line — caller captures with `mapfile -t gc_args`.
 #
 # req_per_conn is only honored for endpoints that don't hardcode their own -r.
-# Today that's the empty (baseline/limited-conn) and api-4/api-16 cases.
+# Today that's the empty (baseline/limited-conn), api-4/api-16 and ws-echo
+# (echo-ws-limited) cases.
 gcannon_build_args() {
     local endpoint="$1" conns="$2" pipeline="$3" duration="$4" req_per_conn="${5:-0}"
     local -a args
@@ -45,6 +46,13 @@ gcannon_build_args() {
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
+        fortunes)
+            # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
+            # No --raw rotation: every request is the same GET; the per-request
+            # variance lives inside the handler (sort + render).
+            args=("http://localhost:$PORT/fortunes"
+                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
+            ;;
         json)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"
@@ -52,12 +60,17 @@ gcannon_build_args() {
             ;;
         json-compressed)
             args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/json-gzip-1.raw,$REQUESTS_DIR/json-gzip-5.raw,$REQUESTS_DIR/json-gzip-10.raw,$REQUESTS_DIR/json-gzip-15.raw,$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
+                  --raw "$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 25)
             ;;
         ws-echo)
             args=("http://localhost:$PORT/ws" --ws
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
+            # echo-ws-limited passes req_per_conn: gcannon's quota check sits
+            # above its ws/http branch, so -r caps frames per connection and
+            # retires the socket once drained. Each replacement connection
+            # redoes the HTTP/1.1 upgrade, which is what that profile measures.
+            [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
         crud)
             # CRUD mix: 75% single-item read + 15% update + 5% list + 5% create.

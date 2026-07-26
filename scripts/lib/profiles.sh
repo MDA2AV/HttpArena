@@ -17,13 +17,16 @@ declare -A PROFILES=(
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     [upload]="1|0|0-31,64-95|32,256|upload"
-    [api-4]="1|5|0-3|256|api-4"
+    [api-4]="1|5|0-1,64-65|256|api-4"
     [api-16]="1|5|0-7,64-71|1024|api-16"
     [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [crud]="1|200|1-31,65-95|4096|crud"
+    [fortunes]="1|0|0-31,64-95|1024|fortunes"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
+    [baseline-h2c]="1|0|0-31,64-95|256,1024,4096|h2c"
+    [json-h2c]="1|0|0-31,64-95|1024,4096|json-h2c"
     [baseline-h3]="1|0|0-31,64-95|64|h3"
     [static-h3]="1|0|0-31,64-95|64|static-h3"
     [unary-grpc]="1|0|0-31,64-95|256,1024|grpc"
@@ -34,6 +37,8 @@ declare -A PROFILES=(
     [gateway-h3]="1|0|0-31,64-95|64,256|gateway-h3"
     [production-stack]="1|0|0-31,64-95|256,1024|production-stack"
     [echo-ws]="1|0|0-31,64-95|512,4096,16384|ws-echo"
+    [echo-ws-pipeline]="16|0|0-31,64-95|512,4096,16384|ws-echo"
+    [echo-ws-limited]="1|10|0-31,64-95|512,4096|ws-echo"
 )
 
 PROFILE_ORDER=(
@@ -41,13 +46,15 @@ PROFILE_ORDER=(
     json json-comp json-tls
     upload api-4 api-16
     static async-db crud
+    fortunes
     baseline-h2 static-h2
+    baseline-h2c json-h2c
     baseline-h3 static-h3
     gateway-64 gateway-h3
     production-stack
     unary-grpc unary-grpc-tls
     stream-grpc stream-grpc-tls
-    echo-ws
+    echo-ws echo-ws-pipeline echo-ws-limited
 )
 
 # ── Parsing + validation ────────────────────────────────────────────────────
@@ -65,13 +72,13 @@ parse_profile() {
 }
 
 # Map an endpoint to the tool name that handles it.
-# Returns one of: gcannon, wrk, h2load, h2load-h3, ghz, oha
+# Returns one of: gcannon, wrk, h2load, h2load-h3, ghz
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
         static|json-tls)                    echo "wrk" ;;
-        # h2load for all HTTP/2 variants
-        h2|static-h2|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
+        # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
+        h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3
         h3|static-h3|gateway-h3)            echo "h2load-h3" ;;
         # ghz for real gRPC (streaming especially)

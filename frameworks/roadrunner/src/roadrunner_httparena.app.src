@@ -1,0 +1,18 @@
+{application, roadrunner_httparena, [
+    {description, "HttpArena entry for the Roadrunner HTTP server"},
+    {vsn, "0.1.0"},
+    {registered, [roadrunner_httparena_sup]},
+    {mod, {roadrunner_httparena_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        sasl,
+        ssl,
+        epgsql,
+        pooler,
+        roadrunner
+    ]},
+    {env, []},
+    {modules, []},
+    {licenses, ["Apache-2.0"]}
+]}.

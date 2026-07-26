@@ -1,0 +1,17 @@
+{
+  "display_name": "fleck",
+  "language": "C#",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "fleck",
+  "description": "C# websockets framework",
+  "repo": "https://github.com/statianzo/Fleck",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}

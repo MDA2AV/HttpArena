@@ -1,21 +1,21 @@
 require_relative 'app'
 
-# Rack middleware to handle unknown HTTP methods before Puma/Sinatra
-class MethodGuard
-  KNOWN = %w[GET POST PUT DELETE PATCH HEAD OPTIONS TRACE CONNECT].freeze
+# Threads marked as IO bound are allowed to go over Puma's max thread limit.
+class MarkAsIOBoundThreads
+  IOBoundPaths = %w[/baseline11 /baseline2 /async-db].map { [_1, nil] }.to_h.freeze
 
   def initialize(app)
     @app = app
   end
 
   def call(env)
-    if KNOWN.include?(env['REQUEST_METHOD'])
-      @app.call(env)
-    else
-      [405, { 'content-type' => 'text/plain', 'server' => 'sinatra' }, ['Method Not Allowed']]
+    if IOBoundPaths.has_key? env['PATH_INFO']
+      env["puma.mark_as_io_bound"].call
     end
+    @app.call(env)
   end
 end
 
-use MethodGuard
+use MarkAsIOBoundThreads
+use Rack::Deflater
 run App

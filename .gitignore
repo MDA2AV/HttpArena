@@ -1,22 +1,33 @@
-results/
+# Raw benchmark output at the repo root. Anchored: site/data/results/ holds
+# the published per-framework result files and must stay tracked.
+/results/
 site/public/
+site/generated/
 site/resources/
 
 # Build artifacts
 *.o
 *.exe
 .idea/
+.gradle/
 obj/
 bin/
+frameworks/*/build/
 !frameworks/fletch/bin/
 target/
 frameworks/blitz/zig-linux-*
 frameworks/blitz/.zig-cache
 frameworks/fletch/.dart_tool/
+!frameworks/hyperf/bin/
 
 # IDE settings
 *.user
 .vs/
+.vscode/
+.zed/
 
 # Ignore node modules anywhere in the repo
 node_modules/
+
+# macOS Finder metadata
+.DS_Store

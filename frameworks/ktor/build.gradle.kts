@@ -1,31 +1,36 @@
 plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.serialization") version "2.3.0"
-    id("io.ktor.plugin") version "3.4.1"
-    application
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    alias(ktorLibs.plugins.ktor)
 }
 
 group = "com.httparena"
 version = "1.0.0"
 
 application {
-    mainClass.set("com.httparena.ApplicationKt")
-}
-
-repositories {
-    mavenCentral()
+    mainClass = "com.httparena.ApplicationKt"
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:3.4.1")
-    implementation("io.ktor:ktor-server-netty:3.4.1")
-    implementation("io.ktor:ktor-server-compression:3.4.1")
-    implementation("io.ktor:ktor-server-default-headers:3.4.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-    implementation("org.xerial:sqlite-jdbc:3.47.2.0")
-    implementation("org.postgresql:postgresql:42.7.4")
-    implementation("com.zaxxer:HikariCP:6.2.1")
-    implementation("ch.qos.logback:logback-classic:1.5.15")
+    implementation(ktorLibs.server.core)
+    implementation(ktorLibs.server.netty)
+    implementation(ktorLibs.server.compression)
+    implementation(ktorLibs.server.defaultHeaders)
+    implementation(ktorLibs.server.contentNegotiation)
+    implementation(ktorLibs.serialization.kotlinx.json)
+    implementation(ktorLibs.server.websockets)
+    implementation(ktorLibs.server.htmlBuilder)
+
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.json)
+    implementation(libs.logback.classic)
+    implementation(libs.postgresql)
+    implementation(libs.hikaricp)
+    runtimeOnly(libs.netty.native.epoll)
+
+    testImplementation(kotlin("test"))
+    testImplementation(ktorLibs.server.testHost)
 }
 
 ktor {

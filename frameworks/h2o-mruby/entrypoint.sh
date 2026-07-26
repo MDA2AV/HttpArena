@@ -10,6 +10,13 @@ KEY_FILE=${TLS_KEY:-/certs/server.key}
 cat > /tmp/h2o.conf << EOF
 num-threads: ${NPROC}
 
+# Issue #364 tweak: kTLS offload when the host kernel supports it. h2o hands
+# the encrypt/decrypt step to the Linux kernel TLS module, which can use
+# sendfile-style zero-copy and cuts user↔kernel hops on the hot path.
+# "kernel" falls back to OFF on systems without kTLS, so it's safe to set
+# unconditionally.
+ssl-offload: kernel
+
 listen:
   port: 8080
 EOF
@@ -33,6 +40,12 @@ cat >> /tmp/h2o.conf << EOF
 
 hosts:
   default:
+    # Enable h2o's compress filter for compressible responses
+    # (application/json, text/*, application/javascript, …).
+    # Handles gzip/brotli negotiation based on Accept-Encoding so the
+    # json-comp profile works without changing the mruby handlers.
+    # Brotli listed first so clients that advertise both get br.
+    compress: [br, gzip]
     paths:
       "/pipeline":
         mruby.handler: |
@@ -113,6 +126,9 @@ hosts:
       "/static":
         file.dir: /data/static
         file.send-compressed: ON
+        # Issue #364 tweak: serve static files via io_uring. Non-blocking
+        # reads for file.dir — faster than pread() on kernels >= 5.1.
+        file.io_uring: ON
 EOF
 
 exec h2o -c /tmp/h2o.conf

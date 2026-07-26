@@ -1,0 +1,46 @@
+# Trillium-tuned gateway edge.
+#
+# Caddy terminates TLS + h1/h2/h3 on 8443, serves /static/* directly from disk
+# with precompressed sidecars, and forwards every dynamic endpoint to the
+# trillium-tuned server over a Unix domain socket (h1 + keepalive pool).
+#
+# Same neutral standard-proxy shape as the production entry; "tuned" here means
+# the *backend* is the optimized trillium-tuned server (sonic-rs, mimalloc,
+# tuned HttpConfig). Tuned rules also allow more aggressive proxy tuning, so the
+# keepalive pool is sized generously for the multiplexed gateway load.
+
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+https://localhost:8443 {
+	tls /certs/server.crt /certs/server.key
+
+	# Static assets served by Caddy directly from /data/static. `precompressed`
+	# prefers foo.br / foo.gz sidecars per Accept-Encoding, falling back to the
+	# raw file. (root /data + request /static/foo -> /data/static/foo.)
+	handle /static/* {
+		root * /data
+		file_server {
+			precompressed br gzip
+		}
+	}
+
+	# Dynamic endpoints -> trillium-tuned server over the shared UDS. Plain h1
+	# with a large keepalive pool: many independent streams fan out across the
+	# backend's per-core workers without h2c's single-connection HoL blocking.
+	handle {
+		reverse_proxy unix//run/app/app.sock {
+			transport http {
+				versions 1.1
+				keepalive 5m
+				keepalive_idle_conns 4096
+				keepalive_idle_conns_per_host 4096
+			}
+		}
+	}
+}

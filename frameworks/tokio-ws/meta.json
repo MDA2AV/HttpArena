@@ -1,0 +1,14 @@
+{
+  "display_name": "tokio-ws",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "tokio",
+  "description": "Hand-rolled WebSocket echo server on raw tokio — no WebSocket library. A current-thread runtime per core with SO_REUSEPORT sharding, a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and a manual frame parser/masking + echo write path.",
+  "repo": "https://github.com/tokio-rs/tokio",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": []
+}

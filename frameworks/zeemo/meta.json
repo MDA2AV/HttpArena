@@ -1,0 +1,16 @@
+{
+  "display_name": "zeemo",
+  "language": "Zig",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Bare-metal Zig HTTP/1.1 server on io_uring. One reactor process per logical CPU via SO_REUSEPORT, hand-written incremental parser, registered provided-buffer rings.",
+  "repo": "https://github.com/skylightis666/zeemo",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json"
+  ],
+  "maintainers": []
+}

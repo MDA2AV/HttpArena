@@ -1,10 +1,12 @@
 ---
 title: Validation
+seo_title: "Gateway H2 Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the Gateway H2 proxy and server stack before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `gateway-64` test. The validation script builds and starts the full compose stack from `compose.gateway.yml` before running checks.
 
-All requests are sent over HTTPS with HTTP/2 to port **8443** — the same port the load generator uses during benchmarking. This validates the full end-to-end path through the proxy (or directly to the server if no proxy is used), not just the server in isolation.
+All requests are sent over HTTPS with HTTP/2 to port **8443** - the same port the load generator uses during benchmarking. This validates the full end-to-end path through the proxy (or directly to the server if no proxy is used), not just the server in isolation.
 
 ## Stack startup
 
@@ -24,8 +26,8 @@ Sends a request to `https://localhost:8443/static/reset.css` and verifies the re
 
 Verifies correct `Content-Type` headers for representative file types over HTTPS with HTTP/2:
 
-- `GET /static/reset.css` — expects `Content-Type: text/css`
-- `GET /static/app.js` — expects `Content-Type: application/javascript`
+- `GET /static/reset.css` - expects `Content-Type: text/css`
+- `GET /static/app.js` - expects `Content-Type: application/javascript`
 
 Note: `text/javascript` is accepted as equivalent to `application/javascript` per RFC 9239.
 
@@ -44,7 +46,7 @@ Sends `GET /static/nonexistent.txt` over HTTP/2 and verifies the response is **H
 Sends `GET /json` over HTTP/2 and validates:
 
 - Response contains exactly **50 items**
-- Every item has a `total` field
+- Every item carries the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
 - Each `total` is correctly computed as `price * quantity` (rounded to 2 decimal places)
 
 This is the same validation as the [JSON Processing test](../../h1/isolated/json-processing/validation), but routed through the proxy.
@@ -88,9 +90,9 @@ Sends `GET /baseline2?a=<random>&b=<random>` with random values and verifies the
 
 The gateway-64 test relies on endpoint implementations that are validated individually in other test profiles:
 
-- `/json` — [JSON Processing validation](/docs/test-profiles/h1/isolated/json-processing/validation)
-- `/static/*` — [Static Files validation](/docs/test-profiles/h1/isolated/static/validation)
-- `/async-db` — [Async Database validation](/docs/test-profiles/h1/isolated/async-database/validation)
-- `/baseline2` — [Baseline H2 validation](/docs/test-profiles/h2/baseline-h2/validation)
+- `/json` - [JSON Processing validation](/docs/test-profiles/h1/isolated/json-processing/validation)
+- `/static/*` - [Static Files validation](/docs/test-profiles/h1/isolated/static/validation)
+- `/async-db` - [Async Database validation](/docs/test-profiles/h1/isolated/async-database/validation)
+- `/baseline2` - [Baseline H2 validation](/docs/test-profiles/h2/baseline-h2/validation)
 
 Frameworks subscribing to `gateway-64` should also subscribe to these individual tests to ensure each endpoint passes validation independently before testing through the proxy.

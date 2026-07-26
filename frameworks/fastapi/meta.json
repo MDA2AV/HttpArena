@@ -1,7 +1,8 @@
 {
   "display_name": "fastapi",
   "language": "Python",
-  "type": "production",
+  "type": "flagship",
+  "mode": "standard",
   "engine": "uvicorn",
   "description": "FastAPI async web framework on Uvicorn (uvloop)",
   "repo": "https://github.com/fastapi/fastapi",

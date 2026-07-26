@@ -1,0 +1,16 @@
+.{
+    .name = .zix_ws_arena,
+    .version = "0.1.0",
+    .fingerprint = 0xba3a8c57d2738130,
+    .minimum_zig_version = "0.16.0",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+    .dependencies = .{
+        .zix = .{
+            .path = "vendor/zix",
+        },
+    },
+}

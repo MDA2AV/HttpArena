@@ -1,0 +1,26 @@
+# HttpArena entry for mq-bridge — WebSocket echo on port 8080, path /ws.
+#
+# Uses mq-bridge's WebSocket consumer feeding a `websocket -> response` route:
+# each inbound frame is echoed back on the same connection via the route's Reply
+# disposition. Frame type (text/binary) is preserved through the
+# `ws_message_type` metadata the consumer attaches.
+[package]
+name = "httparena-mqbridge-ws"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "httparena-mqbridge-ws"
+path = "src/main.rs"
+
+[dependencies]
+mq-bridge = { git = "https://github.com/marcomq/mq-bridge", tag = "v0.2.21", default-features = false, features = ["websocket"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"

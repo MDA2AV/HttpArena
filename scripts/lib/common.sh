@@ -16,6 +16,7 @@ DATA_DIR="$ROOT_DIR/data"
 PORT=8080         # h1 plaintext, also h2c for gRPC
 H2PORT=8443       # h2 TLS, h3 QUIC
 H1TLS_PORT=8081   # h1 + TLS (json-tls profile)
+H2C_PORT=8082     # h2c prior-knowledge (baseline-h2c, json-h2c profiles)
 
 # Run settings — can be overridden via env vars at invocation time.
 DURATION="${DURATION:-5s}"
@@ -28,7 +29,23 @@ H3THREADS="${H3THREADS:-64}"
 GCANNON="${GCANNON:-gcannon}"
 GCANNON_IMAGE="${GCANNON_IMAGE:-gcannon:latest}"
 GCANNON_MODE="${GCANNON_MODE:-native}"
-GCANNON_CPUS="${GCANNON_CPUS:-32-63,96-127}"
+
+_AVAIL_CORES=$(nproc 2>/dev/null || echo 1)
+if [ -z "${GCANNON_CPUS:-}" ]; then
+    if [ "$_AVAIL_CORES" -ge 128 ]; then
+        GCANNON_CPUS="32-63,96-127"
+    else
+        # For smaller machines, just use the second half of cores for load gen, 
+        # or all cores if we only have 1 or 2.
+        if [ "$_AVAIL_CORES" -le 2 ]; then
+            GCANNON_CPUS="0-$((_AVAIL_CORES - 1))"
+        else
+            _HALF=$((_AVAIL_CORES / 2))
+            GCANNON_CPUS="$_HALF-$((_AVAIL_CORES - 1))"
+        fi
+    fi
+fi
+export GCANNON_CPUS
 
 H2LOAD="${H2LOAD:-h2load}"
 H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:latest}"
@@ -64,4 +81,45 @@ banner() {
     echo "=============================================="
     echo "=== $* ==="
     echo "=============================================="
+}
+
+# ── Failure diagnostics ─────────────────────────────────────────────────────
+#
+# Container logs are written to site/static/logs/ only by save_result(), which
+# a server that never became ready never reaches — and framework_stop() runs
+# `docker rm -f` moments later, so the evidence is gone. These print it while
+# it still exists. Bounded by FAIL_LOG_TAIL: a crash-looping server can emit
+# megabytes, and this output is also what lands in the PR comment, which
+# quotes the last 200 lines of the run.
+
+dump_container_logs() {
+    local ref="$1" label="${2:-$1}" n="${FAIL_LOG_TAIL:-120}" state logs
+    echo ""
+    # No container at all means an earlier step (build, or `docker run` itself)
+    # failed; asking for its logs would just echo docker's own error back.
+    if ! state=$(docker inspect -f 'status={{.State.Status}} exit={{.State.ExitCode}} oom={{.State.OOMKilled}} error={{.State.Error}}' \
+                 "$ref" 2>/dev/null); then
+        echo "─── $label — no such container: it was never created, so an earlier build or start step is what failed"
+        return 0
+    fi
+    echo "─── $label — $state"
+    logs=$(docker logs --tail "$n" "$ref" 2>&1) || true
+    if [ -n "$logs" ]; then
+        echo "─── $label — last $n log lines ───"
+        printf '%s\n' "$logs" | sed 's/^/  | /'
+        echo "─── $label — end of logs ───"
+    else
+        echo "─── $label — the container produced no output at all"
+    fi
+}
+
+# Every container in a compose project. `docker ps -a`, not `docker ps`: the
+# service that died is exactly the one missing from the running list.
+dump_compose_logs() {
+    local project="$1" id name
+    [ -n "$project" ] || return 0
+    for id in $(docker ps -aq --filter "label=com.docker.compose.project=$project" 2>/dev/null); do
+        name=$(docker inspect -f '{{.Name}}' "$id" 2>/dev/null | sed 's#^/##')
+        dump_container_logs "$id" "${name:-$id}"
+    done
 }

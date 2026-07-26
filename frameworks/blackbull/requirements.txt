@@ -1,0 +1,1 @@
+blackbull[compression]==0.33.1
