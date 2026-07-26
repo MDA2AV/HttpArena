@@ -19,6 +19,9 @@ concurrency:
 
 jobs:
   build:
+    # Don't deploy from forks (e.g. when syncing main from upstream). The
+    # GitHub Pages deployment isn't available on forks and the run would fail.
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -46,6 +49,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     environment:
       name: github-pages
