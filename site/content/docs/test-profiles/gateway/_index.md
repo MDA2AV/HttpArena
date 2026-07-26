@@ -1,6 +1,8 @@
 ---
 weight: 3
 title: Gateway
+seo_title: "Gateway Test Profiles"
+description: "Multi-service benchmark profiles: reverse proxy plus application server, with optional auth sidecars, caches and a database."
 ---
 
 Gateway test profiles benchmark multi-service deployments - proxy + server, with optional auth sidecars, caches, and databases. Unlike isolated tests that measure a single framework container, gateway tests measure the **end-to-end throughput of the entire stack** as a unit.

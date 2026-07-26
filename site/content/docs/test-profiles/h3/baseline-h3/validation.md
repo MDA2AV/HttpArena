@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "HTTP/3 Baseline Benchmark (QUIC) — Validation Checks"
+description: "The correctness checks validate.sh runs against the HTTP/3 baseline benchmark before a framework's results are accepted."
 ---
 
 The HTTP/3 baseline profile does not have dedicated validation checks in `validate.sh`. HTTP/3 (QUIC) validation relies on:

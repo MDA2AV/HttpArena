@@ -1,5 +1,7 @@
 ---
 title: h2load
+seo_title: "h2load — HTTP/2 Load Generator"
+description: "h2load from the nghttp2 project drives every HTTP/2 profile in HttpArena, with configurable concurrent streams per connection."
 ---
 
 [h2load](https://nghttp2.org/documentation/h2load-howto.html) is part of the nghttp2 project and is used for the `baseline-h2` profile. It supports HTTP/2 multiplexing with configurable concurrent streams per connection.

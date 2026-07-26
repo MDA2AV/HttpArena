@@ -40,6 +40,6 @@ class ApplicationController < ActionController::API
   end
 
   def self.pool_size
-    ENV.fetch('RAILS_MAX_THREADS', 4).to_i
+    ENV.fetch('RAILS_MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
   end
 end

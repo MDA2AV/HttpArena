@@ -1,5 +1,7 @@
 ---
 title: Running Locally
+seo_title: "Run the Benchmarks Locally"
+description: "Run the full HttpArena benchmark suite on your own machine, from prerequisites through to saving and comparing results."
 weight: 2
 ---
 

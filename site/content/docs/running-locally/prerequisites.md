@@ -1,5 +1,7 @@
 ---
 title: Prerequisites
+seo_title: "Prerequisites"
+description: "What to install before running HttpArena locally: Docker, the load generator toolchain, and the host settings the driver expects."
 weight: 1
 ---
 

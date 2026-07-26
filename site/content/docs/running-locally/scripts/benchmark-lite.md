@@ -1,5 +1,7 @@
 ---
 title: benchmark-lite.sh
+seo_title: "benchmark-lite.sh — Local Benchmark Driver"
+description: "The laptop-friendly benchmark driver: Docker-only load generators, no CPU pinning, reduced thread counts and a smaller profile subset."
 weight: 4
 ---
 

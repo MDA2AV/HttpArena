@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "HTTP/2 Cleartext Baseline Benchmark (h2c) — Validation Checks"
+description: "The correctness checks validate.sh runs against the HTTP/2 cleartext baseline benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `baseline-h2c` test. Port 8082 must be responding to a prior-knowledge h2 connection before checks begin.

@@ -1,6 +1,8 @@
 ---
 weight: 1
 title: Isolated
+seo_title: "Isolated HTTP/1.1 Benchmarks"
+description: "Single-endpoint benchmarks that measure one dimension at a time: throughput, JSON serialization, uploads, static files and database access."
 ---
 
 Single-endpoint benchmarks that measure framework performance on one task at a time.

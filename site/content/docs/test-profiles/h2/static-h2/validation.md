@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Static File Serving Benchmark (HTTP/2) — Validation Checks"
+description: "The correctness checks validate.sh runs against the HTTP/2 static file benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `static-h2` test. The HTTPS port (8443) must be responding before checks begin.

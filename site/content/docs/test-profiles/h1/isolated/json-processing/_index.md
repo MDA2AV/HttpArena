@@ -1,5 +1,7 @@
 ---
 title: JSON Processing
+seo_title: "JSON Processing Benchmark"
+description: "A typical API workload: load a dataset, compute derived fields and serialize the JSON response under load."
 ---
 
 Measures how efficiently a framework handles a typical real-world API workload: loading data, computing derived fields, and serializing a JSON response.

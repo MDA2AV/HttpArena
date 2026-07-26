@@ -1,5 +1,7 @@
 ---
 title: Tuned
+seo_title: "Tuned Mode Rules"
+description: "Tuned mode allows non-default configuration, experimental flags and optimizations beyond what a framework ships with by default."
 weight: 2
 ---
 

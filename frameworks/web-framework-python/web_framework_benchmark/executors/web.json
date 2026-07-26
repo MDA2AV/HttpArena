@@ -1,0 +1,28 @@
+{
+  "Baseline11": {
+    "api": "python",
+    "loadType": "initialization",
+    "route": "baseline11"
+  },
+  "JsonExecutor": {
+    "api": "python",
+    "loadType": "initialization",
+    "route": "json/{int:count}"
+  },
+  "Pipeline": {
+    "api": "python",
+    "loadType": "initialization",
+    "route": "pipeline"
+  },
+  "Upload": {
+    "api": "python",
+    "loadType": "dynamic",
+    "route": "upload"
+  },
+  "Ws": {
+    "api": "python",
+    "loadType": "initialization",
+    "route": "ws",
+    "webSocketExecutorName": "WebSocketEcho"
+  }
+}
