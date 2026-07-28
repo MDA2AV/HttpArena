@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Clone Hical（包含 HttpArena benchmark 文件在 docker/HttpArena/ 下）
 # HICAL_REF pin 到固定 commit，确保构建可复现；更新跑分时改此值
 ARG HICAL_REPO=https://github.com/Hical61/Hical.git
-ARG HICAL_REF=be8bf5db0ea87a409e22b50bb0b366c99eef35aa
+ARG HICAL_REF=dc50bed1465c511375e6ca6880dcae17198de448
 
 WORKDIR /src
 RUN git init . && \
