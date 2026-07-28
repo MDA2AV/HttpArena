@@ -618,6 +618,17 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
         $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: close\r\n\r\n' \
         "2" \
         "0"
+
+    # Lower-cased header field names. HTTP field names are case-insensitive
+    # (RFC 9110 §5.1), so a server that only matches "Content-Length" and
+    # ignores "content-length" would fail to read the body length here. Only
+    # meaningful over HTTP/1.1: HTTP/2 and HTTP/3 mandate lowercase names on
+    # the wire, so that casing is already exercised by every h2/h3 request.
+    # curl can't be forced to emit uppercase, so this must go over the socket.
+    echo "[test] baseline lower-cased headers"
+    check_fragmented "POST /baseline11 — lower-cased content-length" "75" "$BASELINE_DOCS" \
+        $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nhost: localhost\r\ncontent-type: text/plain\r\ncontent-length: 2\r\nconnection: close\r\n\r\n' \
+        "20"
 fi
 
 # ───── Pipelined (GET /pipeline) ─────
