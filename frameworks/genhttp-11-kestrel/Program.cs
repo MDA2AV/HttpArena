@@ -3,7 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 
 using genhttp;
 
-using GenHTTP.Engine.Internal;
+using GenHTTP.Engine.Kestrel;
 using GenHTTP.Modules.Compression;
 using Microsoft.Extensions.Logging.Abstractions;
 
