@@ -293,6 +293,14 @@
     "engine": "ioxide",
     "mode": "tuned"
   },
+  "genhttp-11-kestrel": {
+    "dir": "genhttp-11-kestrel",
+    "description": "Lightweight, embeddable and modular C# web server.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+    "type": "emerging",
+    "engine": "kestrel",
+    "mode": "tuned"
+  },
   "genhttp-11": {
     "dir": "genhttp-11",
     "description": "Lightweight, embeddable and modular C# web server.",
