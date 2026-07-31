@@ -8,6 +8,7 @@
   "repo": "https://github.com/c410-f3r/wtx",
   "enabled": true,
   "tests": [
+    "stream-grpc-tls",
     "unary-grpc-tls"
   ]
 }
