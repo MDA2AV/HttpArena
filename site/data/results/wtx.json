@@ -285,6 +285,44 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
+    },
+    "unary-grpc-tls-1024": {
+      "framework": "wtx",
+      "language": "Rust",
+      "rps": 2371712,
+      "avg_latency": "39.56ms",
+      "p99_latency": "1.17s",
+      "cpu": "6417.3%",
+      "memory": "904MiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "103.02MB/s",
+      "reconnects": 0,
+      "status_2xx": 12000866,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
+    "unary-grpc-tls-256": {
+      "framework": "wtx",
+      "language": "Rust",
+      "rps": 2409735,
+      "avg_latency": "10.27ms",
+      "p99_latency": "328.46ms",
+      "cpu": "6207.2%",
+      "memory": "542MiB",
+      "connections": 256,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "104.25MB/s",
+      "reconnects": 0,
+      "status_2xx": 12145065,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
     }
   }
 }
