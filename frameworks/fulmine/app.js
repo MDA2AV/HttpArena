@@ -19,6 +19,10 @@ if (cluster.isPrimary) {
 } else {
     const express = require('fulmine.js');
     const fs = require('fs');
+    const zlib = require('zlib');
+    // level 1: the arena measures throughput of compressed JSON, and the payloads are small
+    // enough that a higher level buys bytes nobody counts
+    const GZIP_OPTS = { level: 1 };
     const Database = require('better-sqlite3');
 
     const app = express();
@@ -99,7 +103,19 @@ if (cluster.isPrimary) {
                 total: d.price * d.quantity * m
             }));
             const body = JSON.stringify({ items, count });
-            res.set(SERVER_HDR).type('application/json').send(body);
+            // json-comp profile: negotiated per request, nothing without Accept-Encoding
+            const ae = req.headers['accept-encoding'] || '';
+            if (ae.includes('gzip')) {
+                res.set({ ...SERVER_HDR, 'content-encoding': 'gzip' })
+                    .type('application/json')
+                    .send(zlib.gzipSync(body, GZIP_OPTS));
+            } else if (ae.includes('br')) {
+                res.set({ ...SERVER_HDR, 'content-encoding': 'br' })
+                    .type('application/json')
+                    .send(zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }));
+            } else {
+                res.set(SERVER_HDR).type('application/json').send(body);
+            }
         } else {
             res.status(500).send('No dataset');
         }
