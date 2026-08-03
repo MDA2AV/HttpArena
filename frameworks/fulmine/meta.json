@@ -1,0 +1,25 @@
+{
+  "display_name": "fulmine",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "tuned",
+  "engine": "uwebsockets",
+  "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with the cluster module for multi-core scaling.",
+  "repo": "https://github.com/nigrosimone/fulmine.js",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static"
+  ],
+  "maintainers": [
+    "nigrosimone"
+  ]
+}
