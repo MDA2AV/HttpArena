@@ -1,8 +1,6 @@
 # fulmine
 
-A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster module for
-multi-core scaling. The application code is the one the `ultimate-express` entry uses, with the
-import changed: the two are compared on the same routes.
+A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster module for multi-core scaling.
 
 ## Stack
 
