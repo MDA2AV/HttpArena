@@ -1,0 +1,11 @@
+{
+  "name": "httparena-fastify",
+  "private": true,
+  "dependencies": {
+    "fastify": "^5.0.0",
+    "@fastify/compress": "^8.0.0",
+    "@fastify/static": "^8.0.0",
+    "better-sqlite3": "^13.0.2",
+    "pg": "^8.13.0"
+  }
+}
