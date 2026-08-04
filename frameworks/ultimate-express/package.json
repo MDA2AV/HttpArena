@@ -1,5 +1,5 @@
 {
-  "name": "httparena-express",
+  "name": "httparena-ultimate-express",
   "private": true,
   "dependencies": {
     "ultimate-express": "^2.0.0",
