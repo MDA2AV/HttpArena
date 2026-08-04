@@ -19,15 +19,16 @@ if (cluster.isPrimary) {
 } else {
     const express = require('express');
     const fs = require('fs');
-    const zlib = require('zlib');
-    // level 1: the arena measures throughput of compressed JSON, and the payloads are small
-    // enough that a higher level buys bytes nobody counts
-    const GZIP_OPTS = { level: 1 };
+    const compression = require('compression');
     const Database = require('better-sqlite3');
 
     const app = express();
     app.disable('x-powered-by');
     app.set('etag', false);
+    // standard mode: compression and static files go through the default middleware with its
+    // default settings, nothing hand-rolled
+    app.use(compression());
+    app.use('/static', express.static('/data/static'));
 
     const SERVER_HDR = { 'server': 'express' };
 
@@ -57,26 +58,6 @@ if (cluster.isPrimary) {
         } catch (e) {}
     }
 
-    // MIME types for static files
-    const MIME_TYPES = {
-        '.css': 'text/css', '.js': 'application/javascript', '.html': 'text/html',
-        '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json',
-    };
-
-    // Pre-load static files with pre-compressed variants
-    const staticFiles = {};
-    try {
-        for (const name of fs.readdirSync('/data/static')) {
-            if (name.endsWith('.br') || name.endsWith('.gz')) continue;
-            const buf = fs.readFileSync(`/data/static/${name}`);
-            const ext = name.slice(name.lastIndexOf('.'));
-            let br = null, gz = null;
-            try { br = fs.readFileSync(`/data/static/${name}.br`); } catch (_) {}
-            try { gz = fs.readFileSync(`/data/static/${name}.gz`); } catch (_) {}
-            staticFiles[name] = { buf, br, gz, ct: MIME_TYPES[ext] || 'application/octet-stream' };
-        }
-    } catch (e) {}
-
     function sumQuery(query) {
         let sum = 0;
         for (const k in query) {
@@ -103,19 +84,8 @@ if (cluster.isPrimary) {
                 total: d.price * d.quantity * m
             }));
             const body = JSON.stringify({ items, count });
-            // json-comp profile: negotiated per request, nothing without Accept-Encoding
-            const ae = req.headers['accept-encoding'] || '';
-            if (ae.includes('gzip')) {
-                res.set({ ...SERVER_HDR, 'content-encoding': 'gzip' })
-                    .type('application/json')
-                    .send(zlib.gzipSync(body, GZIP_OPTS));
-            } else if (ae.includes('br')) {
-                res.set({ ...SERVER_HDR, 'content-encoding': 'br' })
-                    .type('application/json')
-                    .send(zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }));
-            } else {
-                res.set(SERVER_HDR).type('application/json').send(body);
-            }
+            // json-comp negotiation belongs to the compression middleware mounted above
+            res.set(SERVER_HDR).type('application/json').send(body);
         } else {
             res.status(500).send('No dataset');
         }
@@ -190,19 +160,6 @@ if (cluster.isPrimary) {
             });
         } else {
             res.set(SERVER_HDR).type('text/plain').send(String(querySum));
-        }
-    });
-
-    app.get('/static/:filename', (req, res) => {
-        const sf = staticFiles[req.params.filename];
-        if (!sf) return res.status(404).send('Not found');
-        const ae = req.headers['accept-encoding'] || '';
-        if (sf.br && ae.includes('br')) {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-encoding': 'br', 'content-length': String(sf.br.length) }).send(sf.br);
-        } else if (sf.gz && ae.includes('gzip')) {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-encoding': 'gzip', 'content-length': String(sf.gz.length) }).send(sf.gz);
-        } else {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-length': String(sf.buf.length) }).send(sf.buf);
         }
     });
 

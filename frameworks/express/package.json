@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "express": "^5.0.0",
+    "compression": "^1.8.0",
     "better-sqlite3": "^13.0.2",
     "pg": "^8.13.0"
   }

@@ -20,10 +20,12 @@ Express 5 on node's own HTTP server, with the cluster module for multi-core scal
 | `/db` | GET | Reads from SQLite, read-only, memory mapped |
 | `/async-db` | GET | Reads from PostgreSQL through a pool of four |
 | `/upload` | POST | Counts the bytes of the request body |
-| `/static/:filename` | GET | Serves a preloaded file, brotli or gzip when the client accepts one |
+| `/static/:filename` | GET | Serves a file from disk through `express.static` |
 
 ## Notes
 
+- Standard mode: compression is the `compression` middleware and static files are
+  `express.static`, both with their default settings.
 - Plain Express 5 with no body parser mounted: the two POST endpoints read the request stream
   themselves, which is all they need.
 - `x-powered-by` and `etag` are off, so the responses carry exactly the headers the profiles ask
