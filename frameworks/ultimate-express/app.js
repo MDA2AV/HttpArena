@@ -63,17 +63,20 @@ if (cluster.isPrimary) {
         '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json',
     };
 
-    // Pre-load static files with pre-compressed variants
+    // No file data lives in memory, per the arena rules: this scans names only, so a request
+    // knows which pre-compressed variants exist and the content type. The bytes are read from
+    // disk on every request.
     const staticFiles = {};
     try {
         for (const name of fs.readdirSync('/data/static')) {
             if (name.endsWith('.br') || name.endsWith('.gz')) continue;
-            const buf = fs.readFileSync(`/data/static/${name}`);
             const ext = name.slice(name.lastIndexOf('.'));
-            let br = null, gz = null;
-            try { br = fs.readFileSync(`/data/static/${name}.br`); } catch (_) {}
-            try { gz = fs.readFileSync(`/data/static/${name}.gz`); } catch (_) {}
-            staticFiles[name] = { buf, br, gz, ct: MIME_TYPES[ext] || 'application/octet-stream' };
+            staticFiles[name] = {
+                path: `/data/static/${name}`,
+                br: fs.existsSync(`/data/static/${name}.br`),
+                gz: fs.existsSync(`/data/static/${name}.gz`),
+                ct: MIME_TYPES[ext] || 'application/octet-stream'
+            };
         }
     } catch (e) {}
 
@@ -198,13 +201,21 @@ if (cluster.isPrimary) {
         const sf = staticFiles[req.params.filename];
         if (!sf) return res.status(404).send('Not found');
         const ae = req.headers['accept-encoding'] || '';
+        let path = sf.path;
+        let encoding = null;
         if (sf.br && ae.includes('br')) {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-encoding': 'br', 'content-length': String(sf.br.length) }).send(sf.br);
+            path += '.br';
+            encoding = 'br';
         } else if (sf.gz && ae.includes('gzip')) {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-encoding': 'gzip', 'content-length': String(sf.gz.length) }).send(sf.gz);
-        } else {
-            res.set({ ...SERVER_HDR, 'content-type': sf.ct, 'content-length': String(sf.buf.length) }).send(sf.buf);
+            path += '.gz';
+            encoding = 'gzip';
         }
+        fs.readFile(path, (err, buf) => {
+            if (err) return res.status(404).send('Not found');
+            const headers = { ...SERVER_HDR, 'content-type': sf.ct, 'content-length': String(buf.length) };
+            if (encoding) headers['content-encoding'] = encoding;
+            res.set(headers).send(buf);
+        });
     });
 
     app.listen(8080);
