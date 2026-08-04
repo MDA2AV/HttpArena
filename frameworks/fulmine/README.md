@@ -20,7 +20,7 @@ A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster 
 | `/db` | GET | Reads from SQLite, read-only, memory mapped |
 | `/async-db` | GET | Reads from PostgreSQL through a pool of four |
 | `/upload` | POST | Counts the bytes of the request body |
-| `/static/:filename` | GET | Serves a preloaded file, brotli or gzip when the client accepts one |
+| `/static/:filename` | GET | Serves a file from disk, the brotli or gzip variant when the client accepts one |
 
 ## Notes
 
