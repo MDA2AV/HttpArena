@@ -2,7 +2,7 @@
   "name": "httparena-fulmine",
   "private": true,
   "dependencies": {
-    "fulmine.js": "^5.0.0",
+    "fulmine.js": "^5.1.3",
     "better-sqlite3": "^13.0.2",
     "pg": "^8.13.0"
   }
