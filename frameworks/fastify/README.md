@@ -20,11 +20,13 @@ Fastify 5 on node's own HTTP server, with the cluster module for multi-core scal
 | `/db` | GET | Reads from SQLite, read-only, memory mapped |
 | `/async-db` | GET | Reads from PostgreSQL through a pool of four |
 | `/upload` | POST | Counts the bytes of the request body |
-| `/static/:filename` | GET | Serves a preloaded file, brotli or gzip when the client accepts one |
+| `/static/:filename` | GET | Serves a file from disk through `@fastify/static` |
 
 ## Notes
 
+- Standard mode: compression is `@fastify/compress` and static files are `@fastify/static`, both
+  registered with their default settings.
 - The default body parsers are replaced with a single catch-all that hands the raw stream
   through, since the two POST endpoints only count or sum what arrives.
-- Logging is off, responses are plain strings and Buffers with the content type set by hand, so
-  no serializer or schema machinery runs per request.
+- Logging is off and responses are plain strings and Buffers with the content type set by hand,
+  so no serializer or schema machinery runs per request.

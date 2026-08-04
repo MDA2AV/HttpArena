@@ -17,13 +17,19 @@ if (cluster.isPrimary) {
     const numCPUs = getCPUCount();
     for (let i = 0; i < numCPUs; i++) cluster.fork();
 } else {
+    start();
+}
+
+async function start() {
     const fastify = require('fastify')({ logger: false });
     const fs = require('fs');
-    const zlib = require('zlib');
-    // level 1: the arena measures throughput of compressed JSON, and the payloads are small
-    // enough that a higher level buys bytes nobody counts
-    const GZIP_OPTS = { level: 1 };
     const Database = require('better-sqlite3');
+
+    // standard mode: compression and static files go through the official plugins with their
+    // default settings, nothing hand-rolled. Awaited, since a plugin registered without await
+    // only attaches its onRoute hook after the routes below would already exist
+    await fastify.register(require('@fastify/compress'));
+    await fastify.register(require('@fastify/static'), { root: '/data/static', prefix: '/static/' });
 
     // the two POST endpoints read the raw stream themselves, so every content type hands the
     // payload through untouched instead of going to a body parser
@@ -58,26 +64,6 @@ if (cluster.isPrimary) {
         } catch (e) {}
     }
 
-    // MIME types for static files
-    const MIME_TYPES = {
-        '.css': 'text/css', '.js': 'application/javascript', '.html': 'text/html',
-        '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json',
-    };
-
-    // Pre-load static files with pre-compressed variants
-    const staticFiles = {};
-    try {
-        for (const name of fs.readdirSync('/data/static')) {
-            if (name.endsWith('.br') || name.endsWith('.gz')) continue;
-            const buf = fs.readFileSync(`/data/static/${name}`);
-            const ext = name.slice(name.lastIndexOf('.'));
-            let br = null, gz = null;
-            try { br = fs.readFileSync(`/data/static/${name}.br`); } catch (_) {}
-            try { gz = fs.readFileSync(`/data/static/${name}.gz`); } catch (_) {}
-            staticFiles[name] = { buf, br, gz, ct: MIME_TYPES[ext] || 'application/octet-stream' };
-        }
-    } catch (e) {}
-
     function sumQuery(query) {
         let sum = 0;
         for (const k in query) {
@@ -104,19 +90,8 @@ if (cluster.isPrimary) {
                 total: d.price * d.quantity * m
             }));
             const body = JSON.stringify({ items, count });
-            // json-comp profile: negotiated per request, nothing without Accept-Encoding
-            const ae = request.headers['accept-encoding'] || '';
-            if (ae.includes('gzip')) {
-                reply.header('server', 'fastify').header('content-encoding', 'gzip')
-                    .type('application/json')
-                    .send(zlib.gzipSync(body, GZIP_OPTS));
-            } else if (ae.includes('br')) {
-                reply.header('server', 'fastify').header('content-encoding', 'br')
-                    .type('application/json')
-                    .send(zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }));
-            } else {
-                reply.header('server', 'fastify').type('application/json').send(body);
-            }
+            // json-comp negotiation belongs to @fastify/compress, registered above
+            reply.header('server', 'fastify').type('application/json').send(body);
         } else {
             reply.code(500).type('text/plain').send('No dataset');
         }
@@ -203,18 +178,5 @@ if (cluster.isPrimary) {
         }
     });
 
-    fastify.get('/static/:filename', (request, reply) => {
-        const sf = staticFiles[request.params.filename];
-        if (!sf) return reply.code(404).type('text/plain').send('Not found');
-        const ae = request.headers['accept-encoding'] || '';
-        if (sf.br && ae.includes('br')) {
-            reply.header('server', 'fastify').header('content-encoding', 'br').header('content-type', sf.ct).send(sf.br);
-        } else if (sf.gz && ae.includes('gzip')) {
-            reply.header('server', 'fastify').header('content-encoding', 'gzip').header('content-type', sf.ct).send(sf.gz);
-        } else {
-            reply.header('server', 'fastify').header('content-type', sf.ct).send(sf.buf);
-        }
-    });
-
-    fastify.listen({ port: 8080, host: '0.0.0.0' });
+    await fastify.listen({ port: 8080, host: '0.0.0.0' });
 }
