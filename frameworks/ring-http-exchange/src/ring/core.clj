@@ -6,6 +6,7 @@
             [jj.majavat.renderer :as renderer]
             [jj.sql.async-boa :as boa]
             [jj.sql.boa.query.vertx-pg :as vertx-adapter]
+            [jj.majavat.renderer :refer [->InputStreamRenderer]]
             [jj.tassu :refer [GET POST PUT async-route]]
             [jsonista.core :as json]
             [ring-http-exchange.core :as server]
@@ -61,7 +62,8 @@
 (def ^:private crud-create-query (boa/build-async-query adapter "sql/crud-create"))
 (def ^:private crud-update-query (boa/build-async-query adapter "sql/crud-update"))
 (def ^:private fortunes-query (boa/build-async-query adapter "sql/fortunes"))
-(def ^:private fortunes-render (majavat/build-html-renderer "fortunes.html"))
+(def ^:private fortunes-render (majavat/build-html-renderer "fortunes.html"
+                                                            {:renderer (->InputStreamRenderer)}))
 
 
 (def ^:private ^:const extension-map
