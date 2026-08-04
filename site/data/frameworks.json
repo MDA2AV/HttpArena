@@ -878,7 +878,7 @@
   },
   "ultimate-express": {
     "dir": "ultimate-express",
-    "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
+    "description": "ultimate-express (Express API on uWebSockets.js) with the cluster module for multi-core scaling.",
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "emerging",
     "engine": "uwebsockets",
