@@ -208,6 +208,14 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "express": {
+    "dir": "express",
+    "description": "Express 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/expressjs/express",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "fastapi": {
     "dir": "fastapi",
     "description": "FastAPI async web framework on Uvicorn (uvloop)",
