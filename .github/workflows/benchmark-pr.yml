@@ -151,7 +151,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No results to commit"
           else
-            git commit -m "Benchmark results: ${{ inputs.framework }} ${{ inputs.profile }}"
+            git commit -m "Benchmark results: ${{ inputs.framework }} ${{ inputs.profile }} [skip ci]"
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${PR_REPO}.git"
             git push origin HEAD:"${PR_BRANCH}" || echo "Warning: could not push to fork (permissions)"
           fi
