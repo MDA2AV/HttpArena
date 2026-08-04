@@ -3,7 +3,7 @@
   "private": true,
   "dependencies": {
     "ultimate-express": "^2.0.0",
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^13.0.2",
     "pg": "^8.13.0"
   }
 }
