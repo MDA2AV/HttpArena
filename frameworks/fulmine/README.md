@@ -17,8 +17,7 @@ A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster 
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset |
-| `/db` | GET | Reads from SQLite, read-only, memory mapped |
-| `/async-db` | GET | Reads from PostgreSQL through a pool of four |
+| `/async-db` | GET | Reads from PostgreSQL, prepared statement, pool sized under max_connections |
 | `/upload` | POST | Counts the bytes of the request body |
 | `/static/:filename` | GET | Serves a file from disk, the brotli or gzip variant when the client accepts one |
 

@@ -1,6 +1,6 @@
 FROM node:26-trixie-slim AS build
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates git python3 make g++ && \
+    apt-get install -y --no-install-recommends ca-certificates git && \
     rm -rf /var/lib/apt/lists/*
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
 WORKDIR /app

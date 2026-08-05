@@ -23,7 +23,6 @@ if (cluster.isPrimary) {
     // level 1: the arena measures throughput of compressed JSON, and the payloads are small
     // enough that a higher level buys bytes nobody counts
     const GZIP_OPTS = { level: 1 };
-    const Database = require('better-sqlite3');
 
     const app = express();
     app.disable('x-powered-by');
@@ -35,16 +34,6 @@ if (cluster.isPrimary) {
     let datasetItems;
     try {
         datasetItems = JSON.parse(fs.readFileSync(process.env.DATASET_PATH || '/data/dataset.json', 'utf8'));
-    } catch (e) {}
-
-    // SQLite
-    let dbStmt;
-    try {
-        if (fs.existsSync('/data/benchmark.db')) {
-            const db = new Database('/data/benchmark.db', { readonly: true });
-            db.pragma('mmap_size=268435456');
-            dbStmt = db.prepare('SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50');
-        }
     } catch (e) {}
 
     // PostgreSQL. Per-worker pool sized so workers x perWorker stays under Postgres
@@ -128,23 +117,6 @@ if (cluster.isPrimary) {
         }
     });
 
-    app.get('/db', (req, res) => {
-        if (!dbStmt) {
-            return res.set(SERVER_HDR).type('application/json').send('{"items":[],"count":0}');
-        }
-        const min = parseFloat(req.query.min) || 10;
-        const max = parseFloat(req.query.max) || 50;
-        const rows = dbStmt.all(min, max);
-        const items = rows.map(r => ({
-            id: r.id, name: r.name, category: r.category,
-            price: r.price, quantity: r.quantity, active: r.active === 1,
-            tags: JSON.parse(r.tags),
-            rating: { score: r.rating_score, count: r.rating_count }
-        }));
-        const body = JSON.stringify({ items, count: items.length });
-        res.set(SERVER_HDR).type('application/json').send(body);
-    });
-
     app.get('/async-db', async (req, res) => {
         if (!pgPool) {
             return res.set(SERVER_HDR).type('application/json').send('{"items":[],"count":0}');
@@ -155,10 +127,13 @@ if (cluster.isPrimary) {
         if (limit < 1) limit = 1;
         if (limit > 50) limit = 50;
         try {
-            const result = await pgPool.query(
-                'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
-                [min, max, limit]
-            );
+            // named, so pg prepares it once per connection and later executions skip the parse:
+            // the parameterized form alone re-parses on every call
+            const result = await pgPool.query({
+                name: 'items-by-price',
+                text: 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
+                values: [min, max, limit]
+            });
             const items = result.rows.map(r => ({
                 id: r.id, name: r.name, category: r.category,
                 price: r.price, quantity: r.quantity, active: r.active,
