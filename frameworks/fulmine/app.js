@@ -43,7 +43,14 @@ if (cluster.isPrimary) {
     const dbUrl = process.env.DATABASE_URL;
     if (dbUrl) {
         try {
-            const { Pool } = require('pg');
+            // the libpq bindings measure fastest of the node drivers at this row count
+            // (https://github.com/nigrosimone/postgres-benchmarks); the JS client is the fallback
+            let Pool;
+            try {
+                Pool = require('pg').native.Pool;
+            } catch (e) {
+                Pool = require('pg').Pool;
+            }
             const totalMax = parseInt(process.env.DATABASE_MAX_CONN ?? '', 10) || 256;
             const perWorker = Math.max(1, Math.floor(Math.min(totalMax, 240) / getCPUCount()));
             pgPool = new Pool({ connectionString: dbUrl, max: perWorker });
