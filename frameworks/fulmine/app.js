@@ -203,5 +203,16 @@ if (cluster.isPrimary) {
         });
     });
 
+    // WebSocket echo profiles, on µWS's own WebSocket server through the app's uwsApp handle.
+    // Every connection performs µWS's real upgrade handshake; the echo hands the incoming
+    // frame straight back without copying it out.
+    app.uwsApp.ws('/ws', {
+        // dataset echoes are tiny; the cap only guards against a misbehaving client
+        maxPayloadLength: 16 * 1024,
+        message: (ws, message, isBinary) => {
+            ws.send(message, isBinary);
+        }
+    });
+
     app.listen(8080);
 }
