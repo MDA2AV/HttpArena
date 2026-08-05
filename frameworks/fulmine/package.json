@@ -4,6 +4,7 @@
   "dependencies": {
     "fulmine.js": "^5.1.8",
     "pg": "^8.13.0",
-    "pg-native": "^3.8.0"
+    "pg-native": "^3.8.0",
+    "ioredis": "^5.4.1"
   }
 }

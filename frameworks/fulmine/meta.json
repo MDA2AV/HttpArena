@@ -20,7 +20,9 @@
     "static",
     "echo-ws",
     "echo-ws-pipeline",
-    "echo-ws-limited"
+    "echo-ws-limited",
+    "json-tls",
+    "crud"
   ],
   "maintainers": [
     "nigrosimone"
