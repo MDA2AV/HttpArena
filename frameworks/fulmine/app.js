@@ -47,13 +47,17 @@ if (cluster.isPrimary) {
         }
     } catch (e) {}
 
-    // PostgreSQL
+    // PostgreSQL. Per-worker pool sized so workers x perWorker stays under Postgres
+    // max_connections (256 default, 240 leaves a reserve): a flat 4 per worker saturated the
+    // server on a 64-core runner and every request paid the contention.
     let pgPool;
     const dbUrl = process.env.DATABASE_URL;
     if (dbUrl) {
         try {
             const { Pool } = require('pg');
-            pgPool = new Pool({ connectionString: dbUrl, max: 4 });
+            const totalMax = parseInt(process.env.DATABASE_MAX_CONN ?? '', 10) || 256;
+            const perWorker = Math.max(1, Math.floor(Math.min(totalMax, 240) / getCPUCount()));
+            pgPool = new Pool({ connectionString: dbUrl, max: perWorker });
         } catch (e) {}
     }
 
