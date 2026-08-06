@@ -1,4 +1,3 @@
-using System.IO.Pipelines;
 using System.Net;
 using Beskar.Networking.Transports.Ws;
 
@@ -11,7 +10,11 @@ internal static class Program
         var options = new WsTransportOptions
         {
             Path = "/ws",
-            KeepAliveInterval = TimeSpan.Zero
+            KeepAliveInterval = TimeSpan.Zero,
+            OnMessage = (session, payload, opcode) =>
+            {
+                _ = session.SendFrameAsync(payload, opcode);
+            }
         };
         options.TcpOptions.SocketOptions.IoQueueCount = Environment.ProcessorCount;
 
@@ -26,70 +29,6 @@ internal static class Program
         }
 
         Console.WriteLine("Application started.");
-
-        while (true)
-        {
-            var sessionResult = await listener.AcceptSessionAsync();
-            if (sessionResult.Failed)
-            {
-                break;
-            }
-
-            var session = sessionResult.Success;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    var streamResult = await session.AcceptStreamAsync();
-                    if (streamResult.Failed)
-                    {
-                        await session.DisposeAsync();
-                        return;
-                    }
-
-                    var stream = streamResult.Success;
-                    var reader = stream.Transport.Input;
-                    var writer = stream.Transport.Output;
-
-                    while (true)
-                    {
-                        if (!reader.TryRead(out var result))
-                        {
-                            result = await reader.ReadAsync();
-                        }
-                        var buffer = result.Buffer;
-
-                        if (!buffer.IsEmpty)
-                        {
-                            foreach (var segment in buffer)
-                            {
-                                var span = writer.GetSpan(segment.Length);
-                                segment.Span.CopyTo(span);
-                                writer.Advance(segment.Length);
-                            }
-                            await writer.FlushAsync();
-                            reader.AdvanceTo(buffer.End);
-                        }
-                        else
-                        {
-                            reader.AdvanceTo(buffer.Start, buffer.End);
-                        }
-
-                        if (result.IsCompleted || result.IsCanceled)
-                        {
-                            break;
-                        }
-                    }
-                }
-                catch
-                {
-                    // Catch connection resets or unexpected client drops cleanly
-                }
-                finally
-                {
-                    await session.DisposeAsync();
-                }
-            });
-        }
+        await Task.Delay(-1);
     }
 }
