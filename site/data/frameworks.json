@@ -131,6 +131,14 @@
     "engine": "seagreen",
     "mode": "standard"
   },
+  "beskar-websocket": {
+    "dir": "beskar-websocket",
+    "description": "High-performance WebSocket echo server built with Beskar.Networking.",
+    "repo": "https://github.com/MarvinDrude/Beskar.Networking",
+    "type": "experimental",
+    "engine": "beskar",
+    "mode": "standard"
+  },
   "bjoern": {
     "dir": "bjoern",
     "description": "A screamingly fast, ultra-lightweight WSGI server",
