@@ -68,25 +68,17 @@ if (cluster.isPrimary) {
     let redis;
     if (process.env.REDIS_URL) {
         try {
-            const { createClient } = require('@redis/client');
-            const client = createClient({
-                url: process.env.REDIS_URL,
-                // RESP3, because that is what carries the invalidation messages the cache below
-                // is kept honest by
-                RESP: 3,
-                // the read-through cache node-redis keeps in this process: a HIT is answered here
-                // and costs no round trip at all, and Redis tells this client when what it holds
-                // stops being true. Bounded and LRU because there is one process per core, and
-                // sixty-four unbounded caches would be the working-set problem the sidecar solved
-                clientSideCache: { ttl: CRUD_TTL_MS, maxEntries: 4096, evictPolicy: 'LRU' }
-            });
-            client.on('error', () => {});
-            // a promise here, where ioredis connected in the background. Until it settles the map
-            // below answers, which is what happens with no sidecar at all: a cache that is not
-            // ready yet is a miss, never an error
-            client.connect().then(() => { redis = client; }, () => {});
+            const Redis = require('ioredis');
+            redis = new Redis(process.env.REDIS_URL, { enableAutoPipelining: true });
+            redis.on('error', () => {});
         } catch (e) {}
     }
+    // @redis/client with its server-assisted client-side cache was measured here and is not worth
+    // having: crud went from 352k to 211k rps, p99 from 21ms to 44ms, and the CPU this entry used
+    // *fell* from 4502% to 3237% with no failed request, so the processes were waiting rather than
+    // working. That is the shape of a bottleneck that moved into Redis: tracking makes it hold an
+    // invalidation table per key per client and push a message to all sixty-four of them whenever
+    // one writes, and this test writes on every cache miss.
     const crudCache = new Map();
     const crudGet = (id) => {
         if (redis) return redis.get('crud:' + id);
@@ -95,22 +87,12 @@ if (cluster.isPrimary) {
         if (hit.until <= Date.now()) { crudCache.delete(id); return null; }
         return hit.json;
     };
-    // dropped from this process too, and after the write rather than before it: the invalidation
-    // Redis pushes is a round trip away, and a read on this same connection right after the write
-    // must not beat it home
-    const forget = (id) => {
-        if (redis.clientSideCache) redis.clientSideCache.invalidate('crud:' + id);
-    };
     const crudSet = (id, json) => {
-        if (redis) {
-            return redis
-                .set('crud:' + id, json, { expiration: { type: 'PX', value: CRUD_TTL_MS } })
-                .then((reply) => { forget(id); return reply; });
-        }
+        if (redis) return redis.set('crud:' + id, json, 'PX', CRUD_TTL_MS);
         crudCache.set(id, { json, until: Date.now() + CRUD_TTL_MS });
     };
     const crudDel = (id) => {
-        if (redis) return redis.del('crud:' + id).then((reply) => { forget(id); return reply; });
+        if (redis) return redis.del('crud:' + id);
         crudCache.delete(id);
     };
 
