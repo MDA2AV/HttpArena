@@ -29,6 +29,10 @@ if (cluster.isPrimary) {
     app.set('etag', false);
 
     const SERVER_HDR = { 'server': 'fulmine' };
+    // built once: the crud read path spread SERVER_HDR into a new object on every request, which
+    // is two allocations per read on the busiest route this entry has
+    const CACHE_HIT_HDR = { 'server': 'fulmine', 'x-cache': 'HIT' };
+    const CACHE_MISS_HDR = { 'server': 'fulmine', 'x-cache': 'MISS' };
 
     // Dataset
     let datasetItems;
@@ -60,15 +64,29 @@ if (cluster.isPrimary) {
     // CRUD cache. The sidecar Redis when the harness provides one: with one process per
     // core an in-process map would fragment the working set 64 ways and barely ever hit.
     // The cached value is the serialized body, so a HIT skips re-serialization too.
+    const CRUD_TTL_MS = 200;
     let redis;
     if (process.env.REDIS_URL) {
         try {
-            const Redis = require('ioredis');
-            redis = new Redis(process.env.REDIS_URL, { enableAutoPipelining: true });
-            redis.on('error', () => {});
+            const { createClient } = require('@redis/client');
+            const client = createClient({
+                url: process.env.REDIS_URL,
+                // RESP3, because that is what carries the invalidation messages the cache below
+                // is kept honest by
+                RESP: 3,
+                // the read-through cache node-redis keeps in this process: a HIT is answered here
+                // and costs no round trip at all, and Redis tells this client when what it holds
+                // stops being true. Bounded and LRU because there is one process per core, and
+                // sixty-four unbounded caches would be the working-set problem the sidecar solved
+                clientSideCache: { ttl: CRUD_TTL_MS, maxEntries: 4096, evictPolicy: 'LRU' }
+            });
+            client.on('error', () => {});
+            // a promise here, where ioredis connected in the background. Until it settles the map
+            // below answers, which is what happens with no sidecar at all: a cache that is not
+            // ready yet is a miss, never an error
+            client.connect().then(() => { redis = client; }, () => {});
         } catch (e) {}
     }
-    const CRUD_TTL_MS = 200;
     const crudCache = new Map();
     const crudGet = (id) => {
         if (redis) return redis.get('crud:' + id);
@@ -77,12 +95,22 @@ if (cluster.isPrimary) {
         if (hit.until <= Date.now()) { crudCache.delete(id); return null; }
         return hit.json;
     };
+    // dropped from this process too, and after the write rather than before it: the invalidation
+    // Redis pushes is a round trip away, and a read on this same connection right after the write
+    // must not beat it home
+    const forget = (id) => {
+        if (redis.clientSideCache) redis.clientSideCache.invalidate('crud:' + id);
+    };
     const crudSet = (id, json) => {
-        if (redis) return redis.set('crud:' + id, json, 'PX', CRUD_TTL_MS);
+        if (redis) {
+            return redis
+                .set('crud:' + id, json, { expiration: { type: 'PX', value: CRUD_TTL_MS } })
+                .then((reply) => { forget(id); return reply; });
+        }
         crudCache.set(id, { json, until: Date.now() + CRUD_TTL_MS });
     };
     const crudDel = (id) => {
-        if (redis) return redis.del('crud:' + id);
+        if (redis) return redis.del('crud:' + id).then((reply) => { forget(id); return reply; });
         crudCache.delete(id);
     };
 
@@ -230,7 +258,7 @@ if (cluster.isPrimary) {
         try {
             const cached = await crudGet(id);
             if (cached) {
-                return res.set({ ...SERVER_HDR, 'x-cache': 'HIT' }).type('application/json').send(cached);
+                return res.set(CACHE_HIT_HDR).type('application/json').send(cached);
             }
             const result = await pgPool.query({
                 name: 'crud-read',
@@ -240,7 +268,7 @@ if (cluster.isPrimary) {
             if (result.rows.length === 0) return res.status(404).set(SERVER_HDR).end();
             const json = JSON.stringify(itemShape(result.rows[0]));
             crudSet(id, json);
-            res.set({ ...SERVER_HDR, 'x-cache': 'MISS' }).type('application/json').send(json);
+            res.set(CACHE_MISS_HDR).type('application/json').send(json);
         } catch (e) {
             res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
         }
