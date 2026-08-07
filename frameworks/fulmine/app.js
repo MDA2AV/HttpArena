@@ -114,12 +114,19 @@ if (cluster.isPrimary) {
         crudCache.delete(id);
     };
 
-    // one shape for the two body-carrying crud verbs, read the way the other POST routes read
+    // one shape for the two body-carrying crud verbs, read the way the other POST routes read.
+    //
+    // The chunks are kept as buffers and joined at the end rather than added to a string as they
+    // arrive. Adding them decodes each chunk on its own, so a character whose UTF-8 bytes are split
+    // across two chunks becomes a replacement character on both sides of the cut. Nothing complains:
+    // the body still parses, it just no longer says what was sent. Measured against express.json()
+    // on this shape, the two are the same speed, so the hand-rolled reader is kept only because it
+    // answers a bad body with the empty 400 the profile expects.
     function readJsonBody(req, cb) {
-        let body = '';
-        req.on('data', chunk => body += chunk);
+        const chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
         req.on('end', () => {
-            try { cb(null, JSON.parse(body)); } catch (e) { cb(e); }
+            try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (e) { cb(e); }
         });
     }
 
