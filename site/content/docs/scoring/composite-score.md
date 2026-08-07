@@ -51,7 +51,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Mixed GET/POST with query parsing |
-| Pipelined | Yes | 16 requests batched per connection |
+| Pipelined | No (*) | 16 requests batched per connection. Reference-only - a raw I/O and middleware-efficiency indicator; HTTP/1.1 pipelining is disabled in modern browsers and proxies, so it no longer counts toward the composite ranking |
 | Short-lived | Yes | Connections closed after 10 requests |
 | JSON | Yes | Dataset processing and serialization |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
@@ -108,8 +108,9 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Echo | Yes | WebSocket echo throughput |
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
+| Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes is the only reference-only profile - shown for comparison but not counted in the composite score.
+Fortunes and Pipelined are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 ## Memory efficiency bonus
 

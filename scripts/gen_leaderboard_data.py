@@ -37,7 +37,7 @@ OUT = ROOT / "site" / "leaderboard" / "data.js"
 CATALOG = [
     ("Connection", [
         ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True),
-        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining.",         [512,4096,16384],[512,4096], True,True),
+        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False),
         ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True),
     ]),
     ("Workload", [
