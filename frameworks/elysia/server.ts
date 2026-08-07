@@ -1,5 +1,6 @@
 import { Elysia, status } from "elysia";
 import { staticPlugin } from "@elysiajs/static";
+import { gzipSync, brotliCompressSync } from "node:zlib";
 
 import { SQL } from "bun";
 
@@ -26,14 +27,88 @@ if (cluster.isPrimary) {
 		: undefined;
 	pg?.connect().catch((e) => console.error("pg connect failed:", e));
 
+	// standard mode: Elysia ships no official compression plugin, and the
+	// community ones (elysia-compress and its forks) import APIs removed in
+	// elysia >= 1.2.6 (vermaysha/elysia-compress#149; the repo is archived).
+	// The framework's documented compression mechanism is the mapResponse
+	// lifecycle hook — the block below is the official docs example
+	// (elysiajs.com/essential/life-cycle) extended with real Accept-Encoding
+	// negotiation. Compression runs per request through node:zlib at default
+	// settings: no caches, no pre-compressed bodies.
+	const encoder = new TextEncoder();
+	const THRESHOLD = 1024; // same default as the express/fastify middleware
+
+	// First acceptable encoding in the client's own order, honouring q=0.
+	const pickEncoding = (accept: string | undefined) => {
+		if (!accept) return null;
+		for (const part of accept.split(",")) {
+			const [name, ...params] = part.trim().split(";");
+			const enc = name.trim().toLowerCase();
+			if (enc !== "br" && enc !== "gzip") continue;
+			const q = params.find((p) => p.trim().startsWith("q="));
+			if (q && parseFloat(q.trim().slice(2)) <= 0) continue;
+			return enc;
+		}
+		return null;
+	};
+
 	new Elysia()
 		.headers({
 			server: "Elysia",
 		})
+		// The static plugin mounts BEFORE the compression hook on purpose:
+		// Elysia hooks only apply to routes registered after them, and letting
+		// mapResponse wrap the plugin's not-found flow swallows its 404 into
+		// an empty 200. Static files keep the default (uncompressed) path.
 		.use(staticPlugin({
 			assets: "/data/static",
 			prefix: "/static",
 		}))
+		.mapResponse(({ responseValue, set, headers }) => {
+			// Ready-made Responses and files pass through untouched.
+			if (responseValue instanceof Response || responseValue instanceof Blob)
+				return;
+
+			// Elysia custom-status objects (status() returns, plugin 404s):
+			// once a mapResponse hook is registered, falling through here
+			// loses the status and yields an empty 200 — map them explicitly.
+			const rv = responseValue as any;
+			if (typeof rv?.code === "number" && set.status !== 200) {
+				const inner = rv.response;
+				return new Response(
+					typeof inner === "string"
+						? inner
+						: inner != null
+							? JSON.stringify(inner)
+							: "",
+					{ status: rv.code },
+				);
+			}
+
+			// headers is absent on the error path — the hook must pass errors
+			// through, not throw its own 500.
+			const encoding = pickEncoding(headers?.["accept-encoding"]);
+			if (!encoding) return;
+
+			const isJson = typeof responseValue === "object";
+			const text = isJson
+				? JSON.stringify(responseValue)
+				: (responseValue?.toString() ?? "");
+			if (text.length < THRESHOLD) return;
+
+			set.headers["content-encoding"] = encoding;
+			const body = encoder.encode(text);
+			return new Response(
+				encoding === "br" ? brotliCompressSync(body) : gzipSync(body),
+				{
+					headers: {
+						"content-type": `${
+							isJson ? "application/json" : "text/plain"
+						}; charset=utf-8`,
+					},
+				},
+			);
+		})
 		.get("/pipeline", ({ set }) => {
 			set.headers["content-type"] = "text/plain";
 			return "ok";
@@ -63,7 +138,7 @@ if (cluster.isPrimary) {
 			for (const v of Object.values(query)) sum += +v || 0;
 			return sum;
 		})
-		.get("/json/:count", ({ params, query, headers, set }) => {
+		.get("/json/:count", ({ params, query }) => {
 			const count = Math.max(
 				0,
 				Math.min(+params.count || 0, datasetItems.length),
@@ -85,25 +160,8 @@ if (cluster.isPrimary) {
 				})),
 			};
 
-			const encoding = headers["accept-encoding"];
-			if (encoding) {
-				const index = encoding.indexOf(",");
-				const type =
-					index === -1 ? encoding : encoding.slice(0, index);
-
-				set.headers["content-type"] = "application/json";
-				if (type === "gzip") {
-					set.headers["content-encoding"] = "gzip";
-					return Bun.gzipSync(JSON.stringify(result));
-				} else if (encoding === "br") {
-					set.headers["content-encoding"] = "br";
-					return Bun.deflateSync(JSON.stringify(result));
-				} else if (encoding === "deflate") {
-					set.headers["content-encoding"] = "deflate";
-					return Bun.deflateSync(JSON.stringify(result));
-				}
-			}
-
+			// json-comp negotiation belongs to the compression plugin mounted
+			// above; the handler only serializes.
 			return result;
 		})
 		.get("/async-db", async ({ query }) => {
