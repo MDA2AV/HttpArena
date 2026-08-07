@@ -18,6 +18,7 @@
     "async-db",
     "crud",
     "static",
+    "static-tls",
     "echo-ws",
     "echo-ws-pipeline",
     "echo-ws-limited",
