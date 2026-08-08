@@ -36,12 +36,6 @@ internal static class Handler
             return;
         }
 
-        // Plaintext port: clear MSG_WAITALL (the kTLS path clears it itself at the handoff).
-        if (conn.ListenerPort != 8081)
-        {
-            conn.SendOpFlags = 0;
-        }
-
         var httpSession = new HttpSession(_dataSet, _staticAssets, _precompressed);
         PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
         ICrudCache? cache = _hasCache ? reactor.GetService<ICrudCache>() : null;
