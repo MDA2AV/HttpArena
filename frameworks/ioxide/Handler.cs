@@ -2,6 +2,7 @@ using ioxide;
 using ioxide.file;
 using ioxide.pg;
 using ioxide.tls;
+using ioxide.nghttp2;
 using ioxide.utils;
 
 namespace IoxideArena;
@@ -18,7 +19,7 @@ internal static class Handler
 
     public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasCache)
     {
-        _slab = config.WriteSlabSize;
+        _slab = config.Tcp!.WriteSlabSize;
         _dataSet = ds;
         _staticAssets = assets;
         _precompressed = precompressed;
@@ -27,8 +28,14 @@ internal static class Handler
         _hasCache = hasCache;
     }
 
-    public static async Task HandleAsync(Reactor reactor, Connection conn)
+    public static async Task HandleAsync(Reactor reactor, TcpConnection conn)
     {
+        if (conn.ListenerPort == 8443)
+        {
+            await ServeH2Async(reactor, conn);
+            return;
+        }
+
         var httpSession = new HttpSession(_dataSet, _staticAssets, _precompressed);
         PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
         ICrudCache? cache = _hasCache ? reactor.GetService<ICrudCache>() : null;
@@ -41,11 +48,9 @@ internal static class Handler
         {
             if (_hasTls && conn.ListenerPort == 8081)
             {
-                // Handshake over the ring, then kTLS TX: outbound writes below are
-                // plaintext and the kernel produces the records. Inbound stays
-                // userspace: each slice decrypts through the session. The client's
-                // first request can ride in with its Finished, so feed it here -
-                // the send-first loop below answers it before blocking on a read.
+                // OpenSSL both ways: inbound slices decrypt through the session, outbound
+                // goes through tls.Write. The client's first request can ride in with its
+                // Finished flight, so feed it before the loop parks on a read.
                 tls = await reactor.GetService<TlsService>().AcceptAsync(conn);
                 httpSession.Feed(tls.DrainPlaintext());
             }
@@ -143,7 +148,7 @@ internal static class Handler
                     while (dsent < httpSession.DirectLen)
                     {
                         int dchunk = Math.Min(httpSession.DirectLen - dsent, _slab);
-                        WriteDirect(conn, httpSession, dsent, dchunk);
+                        WriteDirect(conn, tls, httpSession, dsent, dchunk);
                         await conn.FlushAsync();
                         dsent += dchunk;
                     }
@@ -154,7 +159,8 @@ internal static class Handler
                 while (sent < httpSession.OutLen)
                 {
                     int chunk = Math.Min(httpSession.OutLen - sent, _slab);
-                    conn.Write(httpSession.Out.AsSpan(sent, chunk));
+                    if (tls is null) conn.Write(httpSession.Out.AsSpan(sent, chunk));
+                    else tls.Write(conn, httpSession.Out.AsSpan(sent, chunk));
                     await conn.FlushAsync();
                     sent += chunk;
                 }
@@ -177,7 +183,7 @@ internal static class Handler
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[r{reactor.Id}] http handler crash fd={conn.ClientFd}: {ex}");
+            Console.Error.WriteLine($"[{Thread.CurrentThread.Name}] http handler crash fd={conn.ClientFd}: {ex}");
         }
         finally
         {
@@ -189,19 +195,37 @@ internal static class Handler
     // Copy one slab-sized slice of the direct (baked static) response into the connection's write
     // slab - managed precompressed buffer or native identity response. Kept in a sync unsafe helper
     // so the native pointer never crosses an await in the async handler.
-    private static unsafe void WriteDirect(Connection conn, HttpSession s, int off, int len)
+    private static unsafe void WriteDirect(TcpConnection conn, TlsSession? tls, HttpSession s, int off, int len)
     {
-        if (s.DirectBytes != null)
+        var span = s.DirectBytes != null
+            ? s.DirectBytes.AsSpan(off, len)
+            : new ReadOnlySpan<byte>((void*)(s.DirectPtr + off), len);
+
+        if (tls is null) conn.Write(span);
+        else tls.Write(conn, span);
+    }
+
+    private static async Task ServeH2Async(Reactor reactor, TcpConnection conn)
+    {
+        TlsSession? session = null;
+        try
         {
-            conn.Write(s.DirectBytes.AsSpan(off, len));
+            session = await reactor.GetService<H2Tls>().Service.AcceptAsync(conn);
+            await using var pipe = new TlsConnectionDualPipe(conn, session, ownsSession: false);
+            await new Nghttp2Connection(pipe).RunBufferedAsync(Multiplexed.RouteH2);
         }
-        else
+        catch
         {
-            conn.Write(new ReadOnlySpan<byte>((void*)(s.DirectPtr + off), len));
+            // probe / handshake fault
+        }
+        finally
+        {
+            session?.Dispose();
+            conn.DecRef();
         }
     }
 
-    private static unsafe void FeedSlices(HttpSession s, Connection conn, TlsSession? tls, in RecvSnapshot snap)
+    private static unsafe void FeedSlices(HttpSession s, TcpConnection conn, TlsSession? tls, in RecvSnapshot snap)
     {
         while (conn.TryGetItem(snap, out SpscRecvRing.Item item))
         {
