@@ -151,7 +151,7 @@ internal static class Program
         Console.WriteLine($"[ioxide] {config.ReactorCount} reactors on :{config.Tcp!.Port} " +
                           $"(dataset={dataset.Count} items, static={(assets?.Count ?? 0)} files ({(precompressed?.Count ?? 0)} precompressed), " +
                           $"pg={(pg != null ? $"{pg.Host}:{pg.Port}/{pg.Database} pool={pg.PoolSize}" : "off")}, " +
-                          $"tls={(tls ? "h1 :8081, h2 :8443 (ktls tx), h3 udp:8443" : "off")}, " +
+                          $"tls={(tls ? "h1 :8081, h2 :8443 (full ktls), h3 udp:8443" : "off")}, " +
                           $"cache={(pg != null ? cacheBackend : "off")})");
 
         Multiplexed.Init(Directory.Exists(staticRoot) ? staticRoot : null);
@@ -181,12 +181,13 @@ internal static class Program
                 }
                 if (tls)
                 {
-                    // kTLS TX for h1 and h2: the handler / dual pipe write plaintext and the kernel
-                    // makes the records - fastest send path, and RX stays userspace (OpenSSL).
+                    // Full kTLS for h1 and h2: the kernel makes the records on send and decrypts
+                    // inbound, so recv delivers plaintext straight into ring memory. RX is
+                    // experimental (about one first connection in twelve fails the handoff).
                     TlsService.Start(reactorInstance, new TlsOptions
-                        { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true });
+                        { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true, KernelRx = true });
                     reactorInstance.AddService(new H2Tls(TlsService.Start(reactorInstance,
-                        new TlsOptions { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true, Alpn = ["h2"] },
+                        new TlsOptions { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true, KernelRx = true, Alpn = ["h2"] },
                         register: false)));
                 }
             };
