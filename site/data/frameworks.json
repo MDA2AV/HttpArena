@@ -669,6 +669,14 @@
     "engine": "robaho-httpserver",
     "mode": "standard"
   },
+  "ring": {
+    "dir": "ring",
+    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "repo": "https://github.com/ring-clojure/ring",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
   "ring-jetty9-adapter": {
     "dir": "ring-jetty9-adapter",
     "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
