@@ -1307,6 +1307,13 @@
       "response": true
     }
   },
+  "proxygen": {
+    "dir": "proxygen",
+    "description": "Meta's Proxygen HTTP engine: HTTPServer for HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, and RFC 6455 WebSockets, plus the mvfst-backed HQ server for HTTP/3 over QUIC.",
+    "repo": "https://github.com/facebook/proxygen",
+    "type": "engine",
+    "engine": "proxygen"
+  },
   "pyronova": {
     "dir": "pyronova",
     "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
