@@ -1,5 +1,9 @@
 using System.Text;
+using ioxide.nghttp2;
+using ioxide.nghttp3;
 using ioxide.tls;
+
+using Headers = System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<System.ReadOnlyMemory<byte>, System.ReadOnlyMemory<byte>>>;
 
 namespace IoxideArena;
 
@@ -8,14 +12,21 @@ internal sealed record H2Tls(TlsService Service);
 
 /// <summary>
 /// Routes shared by the h2 (:8443/tcp) and h3 (:8443/udp) servers: /baseline2 and /static/*.
-/// Static bodies are cached at startup with their content type, keyed for span lookups.
+/// Static assets are cached at startup with their precompressed .br/.gz variants and content
+/// type, and served by Accept-Encoding - the same negotiation the h1 static path does.
 /// </summary>
 internal static class Multiplexed
 {
-    private static readonly Dictionary<string, (byte[] Body, byte[] Type)> Assets = new(StringComparer.Ordinal);
-    private static Dictionary<string, (byte[] Body, byte[] Type)>.AlternateLookup<ReadOnlySpan<char>> _lookup;
+    private readonly record struct Asset(byte[] Body, byte[]? Br, byte[]? Gz, byte[] Type);
 
-    private static readonly byte[] ContentTypeName = "content-type"u8.ToArray();
+    private static readonly Dictionary<string, Asset> Assets = new(StringComparer.Ordinal);
+    private static Dictionary<string, Asset>.AlternateLookup<ReadOnlySpan<char>> _lookup;
+
+    private static readonly byte[] ContentType = "content-type"u8.ToArray();
+    private static readonly byte[] ContentEncoding = "content-encoding"u8.ToArray();
+    private static readonly byte[] AcceptEncoding = "accept-encoding"u8.ToArray();
+    private static readonly byte[] BrToken = "br"u8.ToArray();
+    private static readonly byte[] GzipToken = "gzip"u8.ToArray();
     private static readonly byte[] TextPlain = "text/plain"u8.ToArray();
     private static readonly byte[] NotFound = "not found"u8.ToArray();
 
@@ -23,53 +34,120 @@ internal static class Multiplexed
     {
         if (staticRoot != null)
         {
+            var acc = new Dictionary<string, (byte[]? Body, byte[]? Br, byte[]? Gz)>(StringComparer.Ordinal);
+
             foreach (var file in Directory.EnumerateFiles(staticRoot, "*", SearchOption.AllDirectories))
             {
                 var rel = Path.GetRelativePath(staticRoot, file).Replace('\\', '/');
-                Assets[rel] = (File.ReadAllBytes(file), TypeFor(rel));
+                var bytes = File.ReadAllBytes(file);
+
+                if (rel.EndsWith(".br", StringComparison.Ordinal))
+                {
+                    var b = rel[..^3];
+                    acc[b] = acc.GetValueOrDefault(b) with { Br = bytes };
+                }
+                else if (rel.EndsWith(".gz", StringComparison.Ordinal))
+                {
+                    var b = rel[..^3];
+                    acc[b] = acc.GetValueOrDefault(b) with { Gz = bytes };
+                }
+                else
+                {
+                    acc[rel] = acc.GetValueOrDefault(rel) with { Body = bytes };
+                }
+            }
+
+            foreach (var (name, v) in acc)
+            {
+                if (v.Body != null)
+                {
+                    Assets[name] = new Asset(v.Body, v.Br, v.Gz, TypeFor(name));
+                }
             }
         }
 
         _lookup = Assets.GetAlternateLookup<ReadOnlySpan<char>>();
     }
 
-    public static ioxide.nghttp2.Nghttp2Response RouteH2(ioxide.nghttp2.Nghttp2Request request)
+    public static Nghttp2Response RouteH2(Nghttp2Request request)
     {
-        var (status, body, type) = Route(request.Path.Span);
-        var response = new ioxide.nghttp2.Nghttp2Response { Status = status, Body = body };
-        response.Headers.Add(ContentTypeName, type);
+        var (status, body, type, encoding) = Route(request.Path.Span, request.Headers.AsSpan());
+        var response = new Nghttp2Response { Status = status, Body = body };
+        response.Headers.Add(ContentType, type);
+        if (encoding != null)
+        {
+            response.Headers.Add(ContentEncoding, encoding);
+        }
         return response;
     }
 
-    public static ioxide.nghttp3.Nghttp3Response RouteH3(ioxide.nghttp3.Nghttp3Request request)
+    public static Nghttp3Response RouteH3(Nghttp3Request request)
     {
-        var (status, body, type) = Route(request.Path.Span);
-        var response = new ioxide.nghttp3.Nghttp3Response { Status = status, Body = body };
-        response.Headers.Add(ContentTypeName, type);
+        var (status, body, type, encoding) = Route(request.Path.Span, request.Headers.AsSpan());
+        var response = new Nghttp3Response { Status = status, Body = body };
+        response.Headers.Add(ContentType, type);
+        if (encoding != null)
+        {
+            response.Headers.Add(ContentEncoding, encoding);
+        }
         return response;
     }
 
-    private static (int Status, byte[] Body, byte[] Type) Route(ReadOnlySpan<byte> path)
+    private static (int Status, byte[] Body, byte[] Type, byte[]? Encoding) Route(ReadOnlySpan<byte> path, Headers headers)
     {
         if (path.StartsWith("/baseline2"u8))
         {
-            long sum = SumQuery(path);
-            return (200, Encoding.ASCII.GetBytes(sum.ToString()), TextPlain);
+            return (200, Encoding.ASCII.GetBytes(SumQuery(path).ToString()), TextPlain, null);
         }
 
         if (path.StartsWith("/static/"u8))
         {
             var name = path[8..];
+            int q = name.IndexOf((byte)'?');
+            if (q >= 0)
+            {
+                name = name[..q];
+            }
+
             Span<char> chars = stackalloc char[name.Length];
-            System.Text.Ascii.ToUtf16(name, chars, out int written);
+            Ascii.ToUtf16(name, chars, out int written);
 
             if (_lookup.TryGetValue(chars[..written], out var asset))
             {
-                return (200, asset.Body, asset.Type);
+                var (body, encoding) = Negotiate(headers, asset);
+                return (200, body, asset.Type, encoding);
             }
         }
 
-        return (404, NotFound, TextPlain);
+        return (404, NotFound, TextPlain, null);
+    }
+
+    // Serve the precompressed variant the client accepts, br preferred over gzip, else identity.
+    private static (byte[] Body, byte[]? Encoding) Negotiate(Headers headers, in Asset asset)
+    {
+        bool br = false, gz = false;
+
+        foreach (var header in headers)
+        {
+            // h2/h3 header names are lowercase by spec, so an ordinal compare is enough.
+            if (header.Key.Span.SequenceEqual(AcceptEncoding))
+            {
+                var value = header.Value.Span;
+                br = value.IndexOf(BrToken) >= 0;
+                gz = value.IndexOf(GzipToken) >= 0;
+                break;
+            }
+        }
+
+        if (br && asset.Br != null)
+        {
+            return (asset.Br, BrToken);
+        }
+        if (gz && asset.Gz != null)
+        {
+            return (asset.Gz, GzipToken);
+        }
+        return (asset.Body, null);
     }
 
     // "?a=1&b=1" - every value after '=' up to the next '&' is an int; anything else is 0.
@@ -110,8 +188,6 @@ internal static class Multiplexed
         ".webp" => "image/webp"u8.ToArray(),
         ".png" => "image/png"u8.ToArray(),
         ".woff2" => "font/woff2"u8.ToArray(),
-        ".br" => "application/octet-stream"u8.ToArray(),
-        ".gz" => "application/octet-stream"u8.ToArray(),
         _ => TextPlain,
     };
 }
