@@ -420,6 +420,14 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "http-kit": {
+    "dir": "http-kit",
+    "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+    "repo": "https://github.com/http-kit/http-kit",
+    "type": "emerging",
+    "engine": "http-kit",
+    "mode": "standard"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
