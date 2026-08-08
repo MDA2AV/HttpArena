@@ -48,8 +48,9 @@ internal static class Handler
         {
             if (_hasTls && conn.ListenerPort == 8081)
             {
-                // OpenSSL both ways: inbound slices decrypt through the session, outbound
-                // goes through tls.Write. The client's first request can ride in with its
+                // Handshake over the ring, then kTLS TX: outbound writes below are plaintext
+                // and the kernel produces the records. Inbound stays userspace: each slice
+                // decrypts through the session. The client's first request can ride in with its
                 // Finished flight, so feed it before the loop parks on a read.
                 tls = await reactor.GetService<TlsService>().AcceptAsync(conn);
                 httpSession.Feed(tls.DrainPlaintext());
@@ -148,7 +149,7 @@ internal static class Handler
                     while (dsent < httpSession.DirectLen)
                     {
                         int dchunk = Math.Min(httpSession.DirectLen - dsent, _slab);
-                        WriteDirect(conn, tls, httpSession, dsent, dchunk);
+                        WriteDirect(conn, httpSession, dsent, dchunk);
                         await conn.FlushAsync();
                         dsent += dchunk;
                     }
@@ -159,8 +160,7 @@ internal static class Handler
                 while (sent < httpSession.OutLen)
                 {
                     int chunk = Math.Min(httpSession.OutLen - sent, _slab);
-                    if (tls is null) conn.Write(httpSession.Out.AsSpan(sent, chunk));
-                    else tls.Write(conn, httpSession.Out.AsSpan(sent, chunk));
+                    conn.Write(httpSession.Out.AsSpan(sent, chunk));
                     await conn.FlushAsync();
                     sent += chunk;
                 }
@@ -195,14 +195,16 @@ internal static class Handler
     // Copy one slab-sized slice of the direct (baked static) response into the connection's write
     // slab - managed precompressed buffer or native identity response. Kept in a sync unsafe helper
     // so the native pointer never crosses an await in the async handler.
-    private static unsafe void WriteDirect(TcpConnection conn, TlsSession? tls, HttpSession s, int off, int len)
+    private static unsafe void WriteDirect(TcpConnection conn, HttpSession s, int off, int len)
     {
-        var span = s.DirectBytes != null
-            ? s.DirectBytes.AsSpan(off, len)
-            : new ReadOnlySpan<byte>((void*)(s.DirectPtr + off), len);
-
-        if (tls is null) conn.Write(span);
-        else tls.Write(conn, span);
+        if (s.DirectBytes != null)
+        {
+            conn.Write(s.DirectBytes.AsSpan(off, len));
+        }
+        else
+        {
+            conn.Write(new ReadOnlySpan<byte>((void*)(s.DirectPtr + off), len));
+        }
     }
 
     private static async Task ServeH2Async(Reactor reactor, TcpConnection conn)

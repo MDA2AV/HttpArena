@@ -151,7 +151,7 @@ internal static class Program
         Console.WriteLine($"[ioxide] {config.ReactorCount} reactors on :{config.Tcp!.Port} " +
                           $"(dataset={dataset.Count} items, static={(assets?.Count ?? 0)} files ({(precompressed?.Count ?? 0)} precompressed), " +
                           $"pg={(pg != null ? $"{pg.Host}:{pg.Port}/{pg.Database} pool={pg.PoolSize}" : "off")}, " +
-                          $"tls={(tls ? "h1 :8081, h2 :8443, h3 udp:8443 (openssl)" : "off")}, " +
+                          $"tls={(tls ? "h1 :8081, h2 :8443 (ktls tx), h3 udp:8443" : "off")}, " +
                           $"cache={(pg != null ? cacheBackend : "off")})");
 
         Multiplexed.Init(Directory.Exists(staticRoot) ? staticRoot : null);
@@ -181,9 +181,12 @@ internal static class Program
                 }
                 if (tls)
                 {
-                    TlsService.Start(reactorInstance, new TlsOptions { CertificatePath = certPath, KeyPath = keyPath });
+                    // kTLS TX for h1 and h2: the handler / dual pipe write plaintext and the kernel
+                    // makes the records - fastest send path, and RX stays userspace (OpenSSL).
+                    TlsService.Start(reactorInstance, new TlsOptions
+                        { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true });
                     reactorInstance.AddService(new H2Tls(TlsService.Start(reactorInstance,
-                        new TlsOptions { CertificatePath = certPath, KeyPath = keyPath, Alpn = ["h2"] },
+                        new TlsOptions { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true, Alpn = ["h2"] },
                         register: false)));
                 }
             };
