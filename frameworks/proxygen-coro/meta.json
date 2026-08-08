@@ -1,0 +1,30 @@
+{
+  "display_name": "proxygen-coro",
+  "language": "C++",
+  "type": "engine",
+  "engine": "proxygen",
+  "description": "Meta's Proxygen native coroutine HTTPServer and HTTPSource APIs across HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, HTTP/3 QUIC, and RFC 6455 WebSockets.",
+  "repo": "https://github.com/facebook/proxygen",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "static",
+    "static-tls",
+    "pipelined",
+    "limited-conn",
+    "baseline-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "static-h2",
+    "baseline-h3",
+    "static-h3",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": []
+}
