@@ -7,10 +7,10 @@ on:
         description: 'PR number'
         required: true
       framework:
-        description: 'Framework to benchmark'
+        description: 'Framework(s) to benchmark — one name, a comma-separated list, or "all" for every enabled framework subscribed to the profile'
         required: true
       profile:
-        description: 'Profile (e.g. baseline, baseline-h2, leave empty for all)'
+        description: 'Profile (e.g. baseline, baseline-h2, leave empty for all — required when framework is "all")'
         required: false
         default: ''
       save:
@@ -18,7 +18,7 @@ on:
         required: false
         default: ''
       compare:
-        description: 'Compare against another framework instead of this one (e.g. genhttp)'
+        description: 'Compare against another framework instead of this one (e.g. genhttp) — single-framework runs only'
         required: false
         default: ''
 
@@ -26,9 +26,14 @@ permissions:
   contents: write
   pull-requests: write
 
+# Queue runs on the same PR instead of cancelling the one in flight — a second
+# /benchmark comment used to abort the first run mid-benchmark and silently
+# discard its --save results (#1084). GitHub keeps at most one *pending* run
+# per group, so batches beyond two should use /benchmark-multiple, which runs
+# everything in a single job.
 concurrency:
   group: benchmark-pr-${{ inputs.pr }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   runner-busy:
@@ -47,22 +52,69 @@ jobs:
     if: vars.RUNNER_LOCAL != 'true'
     runs-on: self-hosted
     environment: runner
+    # /benchmark-test over a popular profile legitimately runs for many hours.
+    timeout-minutes: 2880
     steps:
       - uses: actions/checkout@v5
         with:
           ref: refs/pull/${{ inputs.pr }}/head
           fetch-depth: 0
 
-      - name: Validate inputs
+      # Turn the framework input into the concrete list this run will benchmark.
+      # "all" expands to every enabled framework whose meta.json subscribes to
+      # the profile. Names are restricted to [A-Za-z0-9._-] — the list is
+      # word-split in later steps, and for "all" the names come from directory
+      # names on the PR head, which PR authors control.
+      - name: Resolve framework list
+        id: resolve
+        env:
+          FRAMEWORK: ${{ inputs.framework }}
+          PROFILE: ${{ inputs.profile }}
         run: |
-          if [ -z "${{ inputs.framework }}" ]; then
+          if [ -z "$FRAMEWORK" ]; then
             echo "Error: framework is required"
             exit 1
           fi
-          if [ ! -d "frameworks/${{ inputs.framework }}" ]; then
-            echo "Error: framework '${{ inputs.framework }}' not found"
+          if [ "$FRAMEWORK" = "all" ]; then
+            if [ -z "$PROFILE" ]; then
+              echo "Error: framework=all requires a profile (-t <test>)"
+              exit 1
+            fi
+            LIST=$(python3 -c '
+          import json, pathlib, re, sys
+          profile = sys.argv[1]
+          names = []
+          for meta in sorted(pathlib.Path("frameworks").glob("*/meta.json")):
+              name = meta.parent.name
+              if not re.match(r"^[A-Za-z0-9._-]{1,64}$", name):
+                  continue
+              try:
+                  m = json.load(open(meta))
+              except Exception:
+                  continue
+              if not m.get("enabled", True):
+                  continue
+              if profile in (m.get("tests") or []):
+                  names.append(name)
+          print(" ".join(names))
+          ' "$PROFILE")
+          else
+            LIST=$(printf '%s' "$FRAMEWORK" | tr ',' ' ')
+            for fw in $LIST; do
+              if [ ! -d "frameworks/$fw" ]; then
+                echo "Error: framework '$fw' not found"
+                exit 1
+              fi
+            done
+          fi
+          COUNT=$(echo $LIST | wc -w)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Error: no frameworks resolved"
             exit 1
           fi
+          echo "list=$LIST" >> "$GITHUB_OUTPUT"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Benchmarking $COUNT framework(s): $LIST"
 
       # When --save is requested, merge origin/main into the PR branch first.
       # The bot commits its results back to the PR head; on an old branch the
@@ -90,7 +142,7 @@ jobs:
         run: |
           docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f 2>/dev/null || true
           rm -rf results/
-          rm -rf /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data /tmp/bench_comparison.md /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt
+          rm -rf /tmp/bench_logs /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data /tmp/bench_comparison.md /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt
 
       - name: Fetch main branch data for comparison
         run: |
@@ -102,18 +154,33 @@ jobs:
           cp -r site/data /tmp/main_site_data
           cp -r /tmp/pr_site_data/* site/data/
 
+      # Frameworks run sequentially — each needs the whole machine. A failure
+      # doesn't stop the loop: the remaining frameworks still run, whatever was
+      # saved stays saved, and the job is flagged red at the end.
       - name: Run benchmarks
         id: bench
+        env:
+          LIST: ${{ steps.resolve.outputs.list }}
+          PROFILE: ${{ inputs.profile }}
         run: |
-          log=$(mktemp)
-          # Always save results to disk for comparison; only commit if --save requested
-          ./scripts/benchmark.sh "${{ inputs.framework }}" "${{ inputs.profile }}" --save 2>&1 | tee "$log"
-          echo "log_file=$log" >> "$GITHUB_OUTPUT"
+          set -o pipefail
+          mkdir -p /tmp/bench_logs
+          FAILED=""
+          for fw in $LIST; do
+            echo "::group::benchmark $fw"
+            # Always save results to disk for comparison; only commit if --save requested
+            if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
+              echo "::error::benchmark.sh failed for $fw"
+              FAILED="${FAILED:+$FAILED }$fw"
+            fi
+            echo "::endgroup::"
+          done
+          echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
 
       - name: Compare with main
-        id: compare
         env:
-          FRAMEWORK: ${{ inputs.framework }}
+          LIST: ${{ steps.resolve.outputs.list }}
+          COUNT: ${{ steps.resolve.outputs.count }}
           PROFILE: ${{ inputs.profile }}
           COMPARE: ${{ inputs.compare }}
         run: |
@@ -124,9 +191,11 @@ jobs:
             cp -r /tmp/main_site_data/* site/data/ 2>/dev/null || true
           fi
           compare_args=()
-          [ -n "$COMPARE" ] && compare_args=(--compare "$COMPARE")
-          comparison=$(./scripts/compare.sh "$FRAMEWORK" "$PROFILE" "${compare_args[@]}" 2>/dev/null || echo "")
-          echo "$comparison" > /tmp/bench_comparison.md
+          # --compare rebases the deltas on another entry — meaningful only 1:1.
+          [ -n "$COMPARE" ] && [ "$COUNT" = "1" ] && compare_args=(--compare "$COMPARE")
+          for fw in $LIST; do
+            ./scripts/compare.sh "$fw" "$PROFILE" "${compare_args[@]}" > "/tmp/bench_logs/$fw.compare.md" 2>/dev/null || true
+          done
           # Restore benchmark site/data (not original PR data)
           if [ -d /tmp/bench_site_data ]; then
             cp -r /tmp/bench_site_data/* site/data/ 2>/dev/null || true
@@ -134,6 +203,11 @@ jobs:
 
       - name: Commit saved results
         if: inputs.save == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIST: ${{ steps.resolve.outputs.list }}
+          COUNT: ${{ steps.resolve.outputs.count }}
+          PROFILE: ${{ inputs.profile }}
         run: |
           PR_DATA=$(gh api "/repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq '.head.ref + " " + .head.repo.full_name')
           PR_BRANCH=$(echo "$PR_DATA" | awk '{print $1}')
@@ -141,44 +215,60 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          find site/static/logs -name "${{ inputs.framework }}.log" -exec git add -f {} +
-          git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
           # Results are one file per framework (#751), so a run only ever stages
-          # its own — two PRs benchmarking different frameworks no longer touch
-          # the same file. The filename is the slugified display_name.
-          SLUG=$(python3 -c "import json,re,sys;n=json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('display_name',sys.argv[1]);print((re.sub(r'[^A-Za-z0-9._-]+','-',n).strip('-') or 'unnamed').lower())" "$FRAMEWORK")
-          git add -f "site/data/results/${SLUG}.json" 2>/dev/null || true
+          # the frameworks it benchmarked — everything lands in a single commit.
+          # The filename is the slugified display_name.
+          for fw in $LIST; do
+            find site/static/logs -name "$fw.log" -exec git add -f {} + 2>/dev/null || true
+            SLUG=$(python3 -c "import json,re,sys;n=json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('display_name',sys.argv[1]);print((re.sub(r'[^A-Za-z0-9._-]+','-',n).strip('-') or 'unnamed').lower())" "$fw" 2>/dev/null || echo "")
+            [ -n "$SLUG" ] && git add -f "site/data/results/${SLUG}.json" 2>/dev/null || true
+          done
+          git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No results to commit"
           else
-            git commit -m "Benchmark results: ${{ inputs.framework }} ${{ inputs.profile }} [skip ci]"
+            if [ "$COUNT" = "1" ]; then
+              MSG="Benchmark results: $LIST $PROFILE [skip ci]"
+            else
+              MSG="Benchmark results: $COUNT frameworks (${PROFILE:-all tests}) [skip ci]"
+            fi
+            git commit -m "$MSG"
             git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${PR_REPO}.git"
             git push origin HEAD:"${PR_BRANCH}" || echo "Warning: could not push to fork (permissions)"
           fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FRAMEWORK: ${{ inputs.framework }}
 
       - name: Post results to PR
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIST: ${{ steps.resolve.outputs.list }}
+          COUNT: ${{ steps.resolve.outputs.count }}
+          FAILED: ${{ steps.bench.outputs.failed }}
+          PROFILE: ${{ inputs.profile }}
+          COMPARE: ${{ inputs.compare }}
+          FW_INPUT: ${{ inputs.framework }}
         run: |
-          log="${{ steps.bench.outputs.log_file }}"
-          profile="${{ inputs.profile }}"
-          profile_label="${profile:-all tests}"
-          fw="${{ inputs.framework }}"
+          if [ -z "$LIST" ]; then
+            echo "No frameworks were resolved; nothing to post."
+            exit 0
+          fi
+          profile_label="${PROFILE:-all tests}"
 
-          # Build markdown table with results and deltas
+          # Build the per-framework markdown: results table with deltas, plus a
+          # collapsed log (full tail for single runs, failures only for multi).
           python3 -c '
           import sys, re, os
 
-          log_file, fw, comparison_file = sys.argv[1], sys.argv[2], sys.argv[3]
+          logs_dir = "/tmp/bench_logs"
+          failed = set(sys.argv[1].split())
+          fws = sys.argv[2:]
 
-          # Parse deltas from compare.sh output
-          deltas = {}
-          if os.path.exists(comparison_file):
-              with open(comparison_file) as f:
+          def parse_deltas(path):
+              # Parse deltas from compare.sh output
+              deltas = {}
+              if not os.path.exists(path):
+                  return deltas
+              with open(path, errors="replace") as f:
                   comp = f.read()
               cur_profile = None
               conn_cols = []
@@ -203,53 +293,104 @@ jobs:
                           idx = i * 2 + 2
                           if idx < len(cells):
                               deltas.setdefault(cur_profile + "/" + conns, {})["mem"] = cells[idx]
+              return deltas
 
-          # Parse log for results
-          rows = []
-          cur_profile = None
-          cur_conns = None
-          with open(log_file) as f:
-              for line in f:
-                  line = line.rstrip()
-                  m = re.match(r"^=== " + re.escape(fw) + r" / (.+) / (\d+)c .* ===$", line)
-                  if m:
-                      cur_profile = m.group(1)
-                      cur_conns = m.group(2)
-                      continue
-                  if cur_profile and re.match(r"^=== Best:", line):
-                      m2 = re.match(r"^=== Best: (\d+) req/s \(CPU: ([\d.]+)%, Mem: ([^\)]+)\)", line)
-                      if m2:
-                          rps = int(m2.group(1))
-                          cpu = m2.group(2)
-                          mem = m2.group(3)
-                          key = cur_profile + "/" + cur_conns
-                          d = deltas.get(key, {})
-                          rps_str = "{:,}".format(rps)
-                          d_rps = d.get("rps", "")
-                          d_mem = d.get("mem", "")
-                          rows.append((cur_profile, cur_conns, rps_str, cpu + "%", mem, d_rps, d_mem))
-                      cur_profile = None
+          def parse_rows(path, fw):
+              # Parse the benchmark log for per-profile best results
+              rows = []
+              if not os.path.exists(path):
+                  return rows
+              cur_profile = None
+              cur_conns = None
+              with open(path, errors="replace") as f:
+                  for line in f:
+                      line = line.rstrip()
+                      m = re.match(r"^=== " + re.escape(fw) + r" / (.+) / (\d+)c .* ===$", line)
+                      if m:
+                          cur_profile = m.group(1)
+                          cur_conns = m.group(2)
+                          continue
+                      if cur_profile and re.match(r"^=== Best:", line):
+                          m2 = re.match(r"^=== Best: (\d+) req/s \(CPU: ([\d.]+)%, Mem: ([^\)]+)\)", line)
+                          if m2:
+                              rows.append((cur_profile, cur_conns, int(m2.group(1)), m2.group(2), m2.group(3)))
+                          cur_profile = None
+              return rows
 
-          # Build table
+          def table(rows, deltas):
+              out = ["| Test | Conn | RPS | CPU | Mem | Δ RPS | Δ Mem |",
+                     "|------|------|-----|-----|-----|-------|-------|"]
+              for prof, conns, rps, cpu, mem in rows:
+                  d = deltas.get(prof + "/" + conns, {})
+                  out.append("| {} | {} | {:,} | {}% | {} | {} | {} |".format(
+                      prof, conns, rps, cpu, mem, d.get("rps", ""), d.get("mem", "")))
+              return "\n".join(out)
+
+          def tail(path, n):
+              if not os.path.exists(path):
+                  return ""
+              with open(path, errors="replace") as f:
+                  return "".join(f.readlines()[-n:])
+
+          def details(summary, text):
+              return "<details><summary>" + summary + "</summary>\n\n```\n" + text + "\n```\n</details>"
+
+          if len(fws) == 1:
+              fw = fws[0]
+              rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
+              deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
+              head = table(rows, deltas) if rows else "No results captured"
+              body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + ".log", 200))
+          else:
+              heads = []
+              extras = []
+              for fw in fws:
+                  rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
+                  deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
+                  mark = "❌" if fw in failed else "✅"
+                  head = "### " + mark + " `" + fw + "`\n\n"
+                  head += table(rows, deltas) if rows else "_No results captured._"
+                  extra = ""
+                  if fw in failed:
+                      extra = "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + ".log", 60))
+                  heads.append(head)
+                  extras.append(extra)
+              body = "\n\n".join(h + e for h, e in zip(heads, extras))
+              # GitHub comments cap at 65536 chars: drop the log tails first,
+              # then hard-truncate as a last resort.
+              if len(body) > 60000:
+                  body = "\n\n".join(heads)
+              if len(body) > 60000:
+                  body = body[:60000] + "\n\n… (truncated)"
+
           with open("/tmp/bench_body.txt", "w") as out:
-              out.write("| Test | Conn | RPS | CPU | Mem | \u0394 RPS | \u0394 Mem |\n")
-              out.write("|------|------|-----|-----|-----|-------|-------|\n")
-              for prof, conns, rps, cpu, mem, d_rps, d_mem in rows:
-                  out.write("| {} | {} | {} | {} | {} | {} | {} |\n".format(
-                      prof, conns, rps, cpu, mem, d_rps, d_mem))
-          ' "$log" "$fw" /tmp/bench_comparison.md
+              out.write(body)
+          ' "$FAILED" $LIST
 
           body="## Benchmark Results"$'\n\n'
-          body+="**Framework:** \`${fw}\` | **Test:** \`${profile_label}\`"
-          [ -n "${{ inputs.compare }}" ] && body+=" | **Compared to:** \`${{ inputs.compare }}\`"
+          if [ "$COUNT" = "1" ]; then
+            body+="**Framework:** \`$LIST\` | **Test:** \`$profile_label\`"
+            [ -n "$COMPARE" ] && body+=" | **Compared to:** \`$COMPARE\`"
+          else
+            if [ "$FW_INPUT" = "all" ]; then
+              body+="**Frameworks:** all subscribed to \`$PROFILE\` — $COUNT total"
+            else
+              body+="**Frameworks:** $COUNT | **Test:** \`$profile_label\`"
+            fi
+            if [ -n "$FAILED" ]; then
+              body+=" | **Failed:** $(echo "$FAILED" | wc -w)"
+            fi
+          fi
           body+=$'\n\n'
           body+=$(cat /tmp/bench_body.txt 2>/dev/null || echo "No results captured")
-          body+=$'\n\n'
-
-          body+="<details><summary>Full log</summary>"$'\n\n```\n'
-          tail -200 "$log" >> /tmp/bench_full.txt 2>/dev/null || true
-          body+=$(cat /tmp/bench_full.txt 2>/dev/null || echo "No log")
-          body+=$'\n```\n</details>'
 
           gh pr comment "${{ inputs.pr }}" --repo "${{ github.repository }}" --body "$body"
-          rm -f "$log" /tmp/bench_table.txt /tmp/bench_full.txt /tmp/bench_comparison.md /tmp/pr_site_data /tmp/main_site_data 2>/dev/null || true
+          rm -rf /tmp/bench_logs /tmp/bench_body.txt /tmp/bench_full.txt /tmp/bench_table.txt /tmp/bench_comparison.md /tmp/pr_site_data /tmp/main_site_data /tmp/bench_site_data 2>/dev/null || true
+
+      - name: Flag failed frameworks
+        if: steps.bench.outputs.failed != ''
+        env:
+          FAILED: ${{ steps.bench.outputs.failed }}
+        run: |
+          echo "::error::Benchmark failed for: $FAILED"
+          exit 1

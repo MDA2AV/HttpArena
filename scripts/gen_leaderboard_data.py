@@ -37,7 +37,7 @@ OUT = ROOT / "site" / "leaderboard" / "data.js"
 CATALOG = [
     ("Connection", [
         ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True),
-        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining.",         [512,4096,16384],[512,4096], True,True),
+        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False),
         ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True),
     ]),
     ("Workload", [
@@ -46,6 +46,7 @@ CATALOG = [
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True),
         ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False),
         ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False),
+        ("static-tls","Static TLS",      "20-file static serving over TLS.",         [1024,4096,6800],    [1024,4096,6800],True,False),
     ]),
     ("Database", [
         ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True),
@@ -100,6 +101,7 @@ PROFILE_DOC = {
     "json-tls":         "test-profiles/h1/isolated/json-tls/implementation",
     "upload":           "test-profiles/h1/isolated/upload/implementation",
     "static":           "test-profiles/h1/isolated/static/implementation",
+    "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",

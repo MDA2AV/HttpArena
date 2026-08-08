@@ -358,6 +358,7 @@
   .cm td.pc.empty{color:var(--line-soft); text-align:center; font-family:var(--sans)}
   .cm td.pc.lead .crps{font-weight:700}
   .cm td.pc.nc{opacity:.4}
+  .cm th.pcol.refcol{opacity:.45}
   /* flexible trailing column absorbs leftover width (keeps the box filled) */
   .cm .spacer{width:auto; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
   .cm .sticky{position:sticky}
@@ -1008,7 +1009,9 @@
     // avg rps/mem/bw over each profile's scored conns; tpl avg for api.
     var avg={},amem={},abw={},atpl={};
     D.profiles.forEach(function(p){
-      if(p.scored===false) return;
+      // Reference-only profiles (scored:false — pipelined, fortunes) aggregate
+      // too: they render as faded columns in the matrix, they just never enter
+      // the composite sum (#1058).
       var pid=p.id, sums={},ms={},bs={},cn={},ts={};
       p.scoredConns.forEach(function(c){
         (D.results[pid+'-'+c]||[]).forEach(function(r){
@@ -1027,7 +1030,7 @@
   function computeComposite(){
     if(!AGG) AGG=aggregate();
     var A=AGG, useMem=state.useMem;
-    var pids=[]; D.profiles.forEach(function(p){ if(p.scored!==false && (state.scope==='all'||familyOf(p)===state.scope)) pids.push(p.id); });
+    var pids=[]; D.profiles.forEach(function(p){ if(state.scope==='all'||familyOf(p)===state.scope) pids.push(p.id); });
     // Two different questions, previously answered by one predicate:
     //
     //   outOfLeague — is this entry ranked somewhere else entirely? Types are
@@ -1199,7 +1202,7 @@
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'+ar('fw')+'</th>'
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(TIP.score)+'">Composite'+ar('score')+'</th>';
-    pids.forEach(function(pid){ var p=PROF[pid]; th+='<th class="num pcol" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
+    pids.forEach(function(pid){ var p=PROF[pid]; var ref=p.scored===false; th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
     th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
@@ -1215,7 +1218,7 @@
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
         var inner='<span class="pcv"><span class="crps">'+fmtK(cell.rps)+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'">'+inner+'</td>'; }
-        else { tr+='<td class="num pc nc" title="ran but not counted toward this type’s composite">'+inner+'</td>'; }
+        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile — not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
