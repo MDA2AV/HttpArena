@@ -661,6 +661,14 @@
     "engine": "robaho-httpserver",
     "mode": "standard"
   },
+  "ring-jetty9-adapter": {
+    "dir": "ring-jetty9-adapter",
+    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+    "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
   "ringzero-ws": {
     "dir": "ringzero-ws",
     "description": "Hand-rolled WebSocket echo server on raw io_uring (liburing) \u2014 no WebSocket library. Multishot accept + multishot recv into a provided buffer ring for zero-copy ingest, one ring per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking.",
