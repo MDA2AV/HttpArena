@@ -1,14 +1,15 @@
-FROM node:22 AS build
+FROM node:26-trixie-slim AS build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates git python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
 WORKDIR /app
 COPY package.json .
 RUN npm install --omit=dev
 
-FROM ubuntu:24.04
+FROM node:26-trixie-slim
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl && \
-    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules

@@ -8,8 +8,8 @@ pb-rs = { default-features = false, version = "0.10" }
 
 [dependencies]
 quick-protobuf = { default-features = false, version = "0.8" }
-tokio = { default-features = false, features = ["macros", "rt-multi-thread"], version = "1.0" }
-wtx = { default-features = false, features = ["grpc-server", "http-server-framework", "optimizations", "optioned-server", "quick-protobuf", "tokio"], version = "0.47" }
+tokio = { default-features = false, features = ["full"], version = "1.0" }
+wtx = { default-features = false, features = ["grpc-server", "optimizations-std", "quick-protobuf", "tokio"], version = "0.49" }
 
 [profile.release]
 codegen-units = 1

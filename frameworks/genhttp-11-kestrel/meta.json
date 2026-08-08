@@ -24,6 +24,7 @@
     "static-h3",
     "echo-ws",
     "echo-ws-pipeline",
+    "echo-ws-limited",
     "api-4",
     "api-16"
   ],

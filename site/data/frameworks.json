@@ -131,6 +131,14 @@
     "engine": "seagreen",
     "mode": "standard"
   },
+  "beskar-websocket": {
+    "dir": "beskar-websocket",
+    "description": "High-performance WebSocket echo server built with Beskar.Networking.",
+    "repo": "https://github.com/MarvinDrude/Beskar.Networking",
+    "type": "experimental",
+    "engine": "beskar",
+    "mode": "standard"
+  },
   "bjoern": {
     "dir": "bjoern",
     "description": "A screamingly fast, ultra-lightweight WSGI server",
@@ -208,6 +216,14 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "express": {
+    "dir": "express",
+    "description": "Express 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/expressjs/express",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "fastapi": {
     "dir": "fastapi",
     "description": "FastAPI async web framework on Uvicorn (uvloop)",
@@ -230,6 +246,14 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "epoll"
+  },
+  "fastify": {
+    "dir": "fastify",
+    "description": "Fastify 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/fastify/fastify",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
   },
   "fastpysgi-asgi": {
     "dir": "fastpysgi-asgi",
@@ -283,6 +307,14 @@
     "repo": "https://github.com/true-async/php-async",
     "type": "emerging",
     "engine": "frankenphp",
+    "mode": "tuned"
+  },
+  "fulmine": {
+    "dir": "fulmine",
+    "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
     "mode": "tuned"
   },
   "genhttp-11-ioxide": {
@@ -878,7 +910,7 @@
   },
   "ultimate-express": {
     "dir": "ultimate-express",
-    "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
+    "description": "ultimate-express (Express API on uWebSockets.js) with the cluster module for multi-core scaling.",
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "emerging",
     "engine": "uwebsockets",

@@ -161,7 +161,7 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls"; then
+if has_test "json-tls" || has_test "static-tls"; then
     needs_h1tls=true
 fi
 
@@ -183,7 +183,7 @@ if has_test "gateway-64" || has_test "gateway-h3"; then
     docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
 fi
 
-if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
+if has_test "static" || has_test "static-tls" || has_test "static-h2" || has_test "static-h3" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
@@ -1099,6 +1099,84 @@ if has_test "static"; then
 
     check_status "GET /static/nonexistent.txt" "404" "$STATIC_DOCS" \
         -s "http://localhost:$PORT/static/nonexistent.txt"
+fi
+
+
+# ───── Static Files TLS (GET /static/* over HTTP/1.1 + TLS on :8081) ─────
+
+if has_test "static-tls"; then
+    STATICTLS_DOCS="$DOCS_BASE/h1/isolated/static-tls/validation"
+    echo "[test] static-tls endpoint"
+
+    # Must negotiate HTTP/1.1 (not h2) via ALPN on :8081
+    stls_proto=$(curl -sk --max-time 30 --http1.1 -o /dev/null -w '%{http_version}' "https://localhost:$H1TLS_PORT/static/reset.css" 2>/dev/null || echo "0")
+    if [ "$stls_proto" = "1.1" ]; then
+        echo "  PASS [static-tls protocol negotiation] (HTTP/$stls_proto over TLS)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static-tls protocol negotiation]: expected 1.1, got HTTP/$stls_proto" "$STATICTLS_DOCS"
+    fi
+
+    check_header "GET /static/reset.css Content-Type (TLS)" "Content-Type" "text/css" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/reset.css"
+
+    check_header "GET /static/app.js Content-Type (TLS)" "Content-Type" "application/javascript" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/app.js"
+
+    check_header "GET /static/manifest.json Content-Type (TLS)" "Content-Type" "application/json" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/manifest.json"
+
+    # Verify file sizes match actual files on disk
+    stls_fail=false
+    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
+        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
+        actual_size=$(curl -sk --max-time 30 -o /dev/null -w '%{size_download}' "https://localhost:$H1TLS_PORT/static/$sf" || echo "0")
+        if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
+            true
+        else
+            fail_with_link "[static-tls/$sf size]: expected $expected_size bytes, got $actual_size" "$STATICTLS_DOCS"
+            stls_fail=true
+        fi
+    done
+    if [ "$stls_fail" = "false" ]; then
+        echo "  PASS [static-tls file sizes] (20 files verified)"
+        PASS=$((PASS + 1))
+    fi
+
+    # Verify compression works when Accept-Encoding is sent — for each file, if server compresses, decompressed size must match original
+    stls_comp_fail=false
+    stls_comp_count=0
+    stls_comp_skip=0
+    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
+        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
+        _hdr_tmp=$(mktemp)
+        _body_tmp=$(mktemp)
+        curl -sk --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "https://localhost:$H1TLS_PORT/static/$sf" || true
+        comp_enc=$(grep -i "^content-encoding:" "$_hdr_tmp" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
+        decompressed=$(wc -c < "$_body_tmp")
+        rm -f "$_hdr_tmp" "$_body_tmp"
+        if [ -n "$comp_enc" ]; then
+            if [ "$decompressed" -eq "$expected_size" ] 2>/dev/null; then
+                stls_comp_count=$((stls_comp_count + 1))
+            else
+                fail_with_link "[static-tls/$sf compression]: Content-Encoding: $comp_enc but decompressed size $decompressed != expected $expected_size" "$STATICTLS_DOCS"
+                stls_comp_fail=true
+            fi
+        else
+            stls_comp_skip=$((stls_comp_skip + 1))
+        fi
+    done
+    if [ "$stls_comp_fail" = "false" ]; then
+        if [ "$stls_comp_count" -gt 0 ]; then
+            echo "  PASS [static-tls compression] ($stls_comp_count files compressed, $stls_comp_skip skipped)"
+            PASS=$((PASS + 1))
+        else
+            echo "  SKIP [static-tls compression] (server does not compress static files)"
+        fi
+    fi
+
+    check_status "GET /static/nonexistent.txt (TLS)" "404" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/nonexistent.txt"
 fi
 
 

@@ -20,6 +20,7 @@ declare -A PROFILES=(
     [api-4]="1|5|0-1,64-65|256|api-4"
     [api-16]="1|5|0-7,64-71|1024|api-16"
     [static]="1|200|0-31,64-95|1024,4096,6800|static"
+    [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [crud]="1|200|1-31,65-95|4096|crud"
     [fortunes]="1|0|0-31,64-95|1024|fortunes"
@@ -45,7 +46,7 @@ PROFILE_ORDER=(
     baseline pipelined limited-conn
     json json-comp json-tls
     upload api-4 api-16
-    static async-db crud
+    static static-tls async-db crud
     fortunes
     baseline-h2 static-h2
     baseline-h2c json-h2c
@@ -76,7 +77,7 @@ parse_profile() {
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
-        static|json-tls)                    echo "wrk" ;;
+        static|static-tls|json-tls)         echo "wrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3

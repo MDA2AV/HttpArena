@@ -11,9 +11,9 @@
 #   • Threads default to nproc/2 (not 64), so a 4-core laptop gets 2
 #     threads instead of 64.
 #   • Fixed, reasonable connection counts per profile (mostly 512).
-#   • Smaller profile subset — skips api-4/16, json-tls, gateway-64,
-#     stream-grpc/stream-grpc-tls (they need either specific hardware
-#     topology or extra setup).
+#   • Smaller profile subset — skips api-4/16, json-tls, static-tls,
+#     gateway-64, stream-grpc/stream-grpc-tls (they need either specific
+#     hardware topology or extra setup).
 #   • --load-threads <N>  override THREADS/H2THREADS/H3THREADS in one shot.
 #
 # The pre-refactor version lives at scripts/old/benchmark-lite-old.sh.
@@ -69,7 +69,7 @@ source "$SOURCE_DIR/tools/ghz.sh"
 # Differences vs the full set:
 #   • cpu_limit is always empty (no pinning, container gets all cores)
 #   • conn_list is one fixed value per profile (no 256,1024 sweeps)
-#   • skipped profiles: api-4, api-16, json-tls, gateway-64, stream-grpc*
+#   • skipped profiles: api-4, api-16, json-tls, static-tls, gateway-64, stream-grpc*
 
 unset PROFILES PROFILE_ORDER
 declare -A PROFILES=(
