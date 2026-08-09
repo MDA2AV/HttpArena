@@ -91,11 +91,13 @@ internal static class Program
         var dsPath = Environment.GetEnvironmentVariable("IOXIDE_DATASET") ?? "/data/dataset.json";
         var dataset = Dataset.Load(dsPath);
 
-        // Static assets: baked snapshots (full response precomputed per file).
+        // Static assets: every file under the root opened ONCE, descriptors shared across
+        // reactors and read positionally off the ring. Nothing is cached in memory and no HTTP is
+        // baked - the response header is framed in HttpSession and the body is read straight into
+        // the connection's write slab, so header and body leave in one flush with no copy.
         var staticRoot = Environment.GetEnvironmentVariable("IOXIDE_STATIC") ?? "/data/static";
-        // Bake every file (largest is ~300 KB vendor.js; default threshold is 256 KB).
         StaticAssets? assets = Directory.Exists(staticRoot)
-            ? new StaticAssets(staticRoot, maxCachedFileBytes: 1 << 20)
+            ? new StaticAssets(staticRoot)   // descriptors only; bodies are read off the ring per request
             : null;
         // Precompressed variants are baked here (HTTP), not in ioxide.file.
         Precompressed? precompressed = Directory.Exists(staticRoot) ? new Precompressed(staticRoot) : null;

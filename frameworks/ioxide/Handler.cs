@@ -2,7 +2,7 @@ using ioxide;
 using ioxide.file;
 using ioxide.pg;
 using ioxide.tls;
-using ioxide.nghttp2;
+using ioxide.http2;
 using ioxide.utils;
 
 namespace IoxideArena;
@@ -161,10 +161,25 @@ internal static class Handler
                 {
                     int chunk = Math.Min(httpSession.OutLen - sent, _slab);
                     conn.Write(httpSession.Out.AsSpan(sent, chunk));
+
+                    // The static header is the tail of Out, so the file goes into the slab right
+                    // behind it and header + body leave in ONE flush - no reader buffer and no
+                    // copy of the body, which is the whole point of ReadFileAsync. The slab grows
+                    // to fit; ioxide.file only hands out a descriptor and a length.
+                    if (sent + chunk == httpSession.OutLen && httpSession.PendingStaticFd != 0)
+                    {
+                        int n = await conn.ReadFileAsync(httpSession.PendingStaticFd,
+                                                         (int)httpSession.PendingStaticLen, fileOffset: 0);
+                        conn.AdvanceWrite(n);
+                        httpSession.PendingStaticFd = 0;
+                        if (httpSession.PendingStaticClose) httpSession.WantClose = true;
+                    }
+
                     await conn.FlushAsync();
                     sent += chunk;
                 }
                 httpSession.OutLen = 0;
+                httpSession.PendingStaticFd = 0;
 
                 if (httpSession.WantClose || (tls?.Closed ?? false))
                     return;
@@ -214,7 +229,7 @@ internal static class Handler
         {
             session = await reactor.GetService<H2Tls>().Service.AcceptAsync(conn);
             await using var pipe = new TlsConnectionDualPipe(conn, session, ownsSession: false);
-            await new Nghttp2Connection(pipe).RunBufferedAsync(Multiplexed.RouteH2);
+            await new Http2Connection(pipe).RunBufferedAsync(Multiplexed.RouteH2);
         }
         catch
         {

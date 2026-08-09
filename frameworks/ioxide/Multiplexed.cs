@@ -1,5 +1,5 @@
 using System.Text;
-using ioxide.nghttp2;
+using ioxide.http2;
 using ioxide.nghttp3;
 using ioxide.tls;
 
@@ -69,10 +69,10 @@ internal static class Multiplexed
         _lookup = Assets.GetAlternateLookup<ReadOnlySpan<char>>();
     }
 
-    public static Nghttp2Response RouteH2(Nghttp2Request request)
+    public static Http2Response RouteH2(Http2Request request)
     {
         var (status, body, type, encoding) = Route(request.Path.Span, request.Headers.AsSpan());
-        var response = new Nghttp2Response { Status = status, Body = body };
+        var response = new Http2Response { Status = status, Body = body };
         response.Headers.Add(ContentType, type);
         if (encoding != null)
         {
