@@ -170,6 +170,50 @@
     "engine": "bun",
     "mode": "tuned"
   },
+  "Cardigan": {
+    "dir": "cardigan",
+    "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
+    "repo": "https://github.com/phjeltman/cardigan",
+    "type": "engine",
+    "engine": "io_uring",
+    "variants": [
+      {
+        "dir": "cardigan-grpc",
+        "description": "Cardigan gRPC over cleartext HTTP/2 prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-grpc-tls",
+        "description": "Cardigan gRPC over HTTP/2 and TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2",
+        "description": "Cardigan HTTP/2 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2c",
+        "description": "Cardigan HTTP/2 over cleartext prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-json-tls",
+        "description": "Cardigan HTTP/1.1 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      }
+    ]
+  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
@@ -574,6 +618,14 @@
     "engine": "v8",
     "mode": "tuned"
   },
+  "pedestal": {
+    "dir": "pedestal",
+    "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
+    "repo": "https://github.com/pedestal/pedestal",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
   "phoenix-bandit": {
     "dir": "phoenix-bandit",
     "description": "High-performance Elixir framework using Phoenix and Bandit HTTP server, leveraging Erlang/OTP for concurrent networking and asynchronous database operations.",
@@ -669,18 +721,18 @@
     "engine": "robaho-httpserver",
     "mode": "standard"
   },
-  "ring": {
-    "dir": "ring",
-    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
-    "repo": "https://github.com/ring-clojure/ring",
-    "type": "emerging",
-    "engine": "Jetty",
-    "mode": "standard"
-  },
   "ring-jetty9-adapter": {
     "dir": "ring-jetty9-adapter",
     "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
     "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
+  "ring": {
+    "dir": "ring",
+    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "repo": "https://github.com/ring-clojure/ring",
     "type": "emerging",
     "engine": "Jetty",
     "mode": "standard"
