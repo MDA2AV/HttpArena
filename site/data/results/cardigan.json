@@ -136,6 +136,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "Cardigan",
+      "language": "Java",
+      "rps": 994112,
+      "avg_latency": "4.80ms",
+      "p99_latency": "434.17ms",
+      "cpu": "6454.2%",
+      "memory": "6.8GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "5.15GB",
+      "reconnects": 0,
+      "status_2xx": 5065982,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "limited-conn-4096": {
       "framework": "Cardigan",
       "language": "Java",
