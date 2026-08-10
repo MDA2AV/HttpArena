@@ -1,0 +1,16 @@
+{
+  "display_name": "Cardigan",
+  "language": "Java",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Cardigan HTTP/2 over TLS.",
+  "repo": "https://github.com/phjeltman/cardigan",
+  "enabled": true,
+  "tests": [
+    "baseline-h2",
+    "static-h2"
+  ],
+  "maintainers": [
+    "phjeltman"
+  ]
+}

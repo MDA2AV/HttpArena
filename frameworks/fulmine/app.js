@@ -29,6 +29,10 @@ if (cluster.isPrimary) {
     app.set('etag', false);
 
     const SERVER_HDR = { 'server': 'fulmine' };
+    // built once: the crud read path spread SERVER_HDR into a new object on every request, which
+    // is two allocations per read on the busiest route this entry has
+    const CACHE_HIT_HDR = { 'server': 'fulmine', 'x-cache': 'HIT' };
+    const CACHE_MISS_HDR = { 'server': 'fulmine', 'x-cache': 'MISS' };
 
     // Dataset
     let datasetItems;
@@ -60,6 +64,7 @@ if (cluster.isPrimary) {
     // CRUD cache. The sidecar Redis when the harness provides one: with one process per
     // core an in-process map would fragment the working set 64 ways and barely ever hit.
     // The cached value is the serialized body, so a HIT skips re-serialization too.
+    const CRUD_TTL_MS = 200;
     let redis;
     if (process.env.REDIS_URL) {
         try {
@@ -68,7 +73,12 @@ if (cluster.isPrimary) {
             redis.on('error', () => {});
         } catch (e) {}
     }
-    const CRUD_TTL_MS = 200;
+    // @redis/client with its server-assisted client-side cache was measured here and is not worth
+    // having: crud went from 352k to 211k rps, p99 from 21ms to 44ms, and the CPU this entry used
+    // *fell* from 4502% to 3237% with no failed request, so the processes were waiting rather than
+    // working. That is the shape of a bottleneck that moved into Redis: tracking makes it hold an
+    // invalidation table per key per client and push a message to all sixty-four of them whenever
+    // one writes, and this test writes on every cache miss.
     const crudCache = new Map();
     const crudGet = (id) => {
         if (redis) return redis.get('crud:' + id);
@@ -86,12 +96,19 @@ if (cluster.isPrimary) {
         crudCache.delete(id);
     };
 
-    // one shape for the two body-carrying crud verbs, read the way the other POST routes read
+    // one shape for the two body-carrying crud verbs, read the way the other POST routes read.
+    //
+    // The chunks are kept as buffers and joined at the end rather than added to a string as they
+    // arrive. Adding them decodes each chunk on its own, so a character whose UTF-8 bytes are split
+    // across two chunks becomes a replacement character on both sides of the cut. Nothing complains:
+    // the body still parses, it just no longer says what was sent. Measured against express.json()
+    // on this shape, the two are the same speed, so the hand-rolled reader is kept only because it
+    // answers a bad body with the empty 400 the profile expects.
     function readJsonBody(req, cb) {
-        let body = '';
-        req.on('data', chunk => body += chunk);
+        const chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
         req.on('end', () => {
-            try { cb(null, JSON.parse(body)); } catch (e) { cb(e); }
+            try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (e) { cb(e); }
         });
     }
 
@@ -230,7 +247,7 @@ if (cluster.isPrimary) {
         try {
             const cached = await crudGet(id);
             if (cached) {
-                return res.set({ ...SERVER_HDR, 'x-cache': 'HIT' }).type('application/json').send(cached);
+                return res.set(CACHE_HIT_HDR).type('application/json').send(cached);
             }
             const result = await pgPool.query({
                 name: 'crud-read',
@@ -240,7 +257,7 @@ if (cluster.isPrimary) {
             if (result.rows.length === 0) return res.status(404).set(SERVER_HDR).end();
             const json = JSON.stringify(itemShape(result.rows[0]));
             crudSet(id, json);
-            res.set({ ...SERVER_HDR, 'x-cache': 'MISS' }).type('application/json').send(json);
+            res.set(CACHE_MISS_HDR).type('application/json').send(json);
         } catch (e) {
             res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
         }

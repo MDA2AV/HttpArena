@@ -170,6 +170,50 @@
     "engine": "bun",
     "mode": "tuned"
   },
+  "Cardigan": {
+    "dir": "cardigan",
+    "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
+    "repo": "https://github.com/phjeltman/cardigan",
+    "type": "engine",
+    "engine": "io_uring",
+    "variants": [
+      {
+        "dir": "cardigan-grpc",
+        "description": "Cardigan gRPC over cleartext HTTP/2 prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-grpc-tls",
+        "description": "Cardigan gRPC over HTTP/2 and TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2",
+        "description": "Cardigan HTTP/2 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2c",
+        "description": "Cardigan HTTP/2 over cleartext prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-json-tls",
+        "description": "Cardigan HTTP/1.1 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      }
+    ]
+  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
@@ -420,6 +464,14 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "http-kit": {
+    "dir": "http-kit",
+    "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+    "repo": "https://github.com/http-kit/http-kit",
+    "type": "emerging",
+    "engine": "http-kit",
+    "mode": "standard"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
@@ -445,7 +497,7 @@
   },
   "ioxide": {
     "dir": "ioxide",
-    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static rides ioxide.file's baked asset snapshots.",
+    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file, ioxide.http2, ioxide.ngtcp2, ioxide.nghttp3). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; TLS terminates ring-natively (kTLS transmit offload, OpenSSL receive) on :8081, h2 over TLS (pure-C# ioxide.http2) on :8443, and HTTP/3 over QUIC (ngtcp2 + nghttp3) on udp:8443; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static on h1 reads the file descriptor straight into the connection's write slab (ioxide.file hands out descriptors, not bytes), so header and body leave in one flush with no intermediate buffer; h2/h3 serve the same assets from memory.",
     "repo": "https://github.com/MDA2AV/ioxide",
     "type": "engine",
     "engine": "io_uring"
@@ -566,6 +618,14 @@
     "engine": "v8",
     "mode": "tuned"
   },
+  "pedestal": {
+    "dir": "pedestal",
+    "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
+    "repo": "https://github.com/pedestal/pedestal",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
   "phoenix-bandit": {
     "dir": "phoenix-bandit",
     "description": "High-performance Elixir framework using Phoenix and Bandit HTTP server, leveraging Erlang/OTP for concurrent networking and asynchronous database operations.",
@@ -659,6 +719,22 @@
     "repo": "https://github.com/ruroru/ring-http-exchange",
     "type": "emerging",
     "engine": "robaho-httpserver",
+    "mode": "standard"
+  },
+  "ring-jetty9-adapter": {
+    "dir": "ring-jetty9-adapter",
+    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+    "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
+  "ring": {
+    "dir": "ring",
+    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "repo": "https://github.com/ring-clojure/ring",
+    "type": "emerging",
+    "engine": "Jetty",
     "mode": "standard"
   },
   "ringzero-ws": {

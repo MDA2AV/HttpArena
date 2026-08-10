@@ -1,0 +1,16 @@
+{
+  "display_name": "Cardigan",
+  "language": "Java",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Cardigan gRPC over cleartext HTTP/2 prior knowledge.",
+  "repo": "https://github.com/phjeltman/cardigan",
+  "enabled": true,
+  "tests": [
+    "unary-grpc",
+    "stream-grpc"
+  ],
+  "maintainers": [
+    "phjeltman"
+  ]
+}

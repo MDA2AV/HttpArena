@@ -1,0 +1,16 @@
+{
+  "display_name": "Cardigan",
+  "language": "Java",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Cardigan gRPC over HTTP/2 and TLS.",
+  "repo": "https://github.com/phjeltman/cardigan",
+  "enabled": true,
+  "tests": [
+    "unary-grpc-tls",
+    "stream-grpc-tls"
+  ],
+  "maintainers": [
+    "phjeltman"
+  ]
+}
