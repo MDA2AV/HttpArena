@@ -23,7 +23,9 @@
     "echo-ws-pipeline",
     "echo-ws-limited",
     "json-tls",
-    "crud"
+    "crud",
+    "gateway-64",
+    "gateway-h3"
   ],
   "maintainers": [
     "nigrosimone"
