@@ -336,7 +336,9 @@ if (cluster.isPrimary) {
         }
     });
 
-    app.get('/static/:filename', (req, res) => {
+    // shared by the plaintext listener and the TLS one on 8081, as the JSON route is: static-tls
+    // asks for the same files over TLS
+    const registerStaticRoute = (target) => target.get('/static/:filename', (req, res) => {
         const sf = staticFiles[req.params.filename];
         if (!sf) return res.status(404).send('Not found');
         const ae = req.headers['accept-encoding'] || '';
@@ -356,6 +358,7 @@ if (cluster.isPrimary) {
             res.set(headers).send(buf);
         });
     });
+    registerStaticRoute(app);
 
     // WebSocket echo profiles, on µWS's own WebSocket server through the app's uwsApp handle.
     // Every connection performs µWS's real upgrade handshake; the echo hands the incoming
@@ -368,8 +371,8 @@ if (cluster.isPrimary) {
         }
     });
 
-    // json-tls profile: the same JSON route over uWS's native TLS on 8081. The certs are
-    // mounted by the harness for the TLS profiles; without them there is simply no listener.
+    // json-tls and static-tls profiles: the same two routes over uWS's native TLS on 8081. The
+    // certs are mounted by the harness for the TLS profiles; without them there is no listener.
     if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
         const tlsApp = express({
             uwsOptions: {
@@ -380,6 +383,7 @@ if (cluster.isPrimary) {
         tlsApp.disable('x-powered-by');
         tlsApp.set('etag', false);
         registerJsonRoute(tlsApp);
+        registerStaticRoute(tlsApp);
         tlsApp.listen(8081);
     }
 
