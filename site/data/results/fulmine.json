@@ -285,6 +285,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "fortunes-1024": {
+      "framework": "fulmine",
+      "language": "JS",
+      "rps": 70272,
+      "avg_latency": "13.30ms",
+      "p99_latency": "20.00ms",
+      "cpu": "6500.8%",
+      "memory": "4.3GiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "1.63GB/s",
+      "reconnects": 0,
+      "status_2xx": 351361,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "gateway-64-1024": {
       "framework": "fulmine",
       "language": "JS",
