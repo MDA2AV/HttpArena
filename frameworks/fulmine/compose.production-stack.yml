@@ -1,9 +1,14 @@
 # production-stack: edge + cache + authsvc + server, on a 64 logical CPU budget.
 #
-#   edge     (caddy)  - 16, terminates TLS and h2 and serves /static off disk
+#   edge     (caddy)  - 32, terminates TLS and h2 and serves /static off disk
 #   cache    (redis)  -  2, single threaded on the data path, so more would sit idle
 #   authsvc  (rust)   -  8, one HMAC per /api request and nothing else
-#   server   (node)   - 38, the rest: JSON, Postgres, Redis client, one worker per core
+#   server   (node)   - 22, the rest: JSON, Postgres, Redis client, one worker per core
+#
+# The edge gets the larger half because it is what saturates: the first run gave the whole stack
+# 1537% of CPU against the 1600% its sixteen logical CPUs allow, so the edge was pegged and the
+# other three sat idle. Terminating TLS under multiplexed h2 is the expensive half here, and it is
+# the knob to sweep first through EDGE_CPUSET and SERVER_CPUSET.
 #
 # All four on host networking, so what goes between them is loopback rather than a bridge.
 # Redis binds 6379, authsvc 9090, server 8080, the edge 8443.
@@ -11,7 +16,7 @@ services:
   edge:
     build: ./proxy-production
     network_mode: host
-    cpuset: "${EDGE_CPUSET:-0-7,64-71}"
+    cpuset: "${EDGE_CPUSET:-0-15,64-79}"
     ulimits:
       memlock: -1
       nofile:
@@ -29,7 +34,7 @@ services:
   cache:
     image: redis:7-alpine
     network_mode: host
-    cpuset: "${CACHE_CPUSET:-8,72}"
+    cpuset: "${CACHE_CPUSET:-16,80}"
     ulimits:
       memlock: -1
       nofile:
@@ -45,7 +50,7 @@ services:
   authsvc:
     build: ../_shared/authsvc
     network_mode: host
-    cpuset: "${AUTH_CPUSET:-9-12,73-76}"
+    cpuset: "${AUTH_CPUSET:-17-20,81-84}"
     ulimits:
       memlock: -1
       nofile:
@@ -62,7 +67,7 @@ services:
       context: .
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "${SERVER_CPUSET:-13-31,77-95}"
+    cpuset: "${SERVER_CPUSET:-21-31,85-95}"
     ulimits:
       memlock: -1
       nofile:
