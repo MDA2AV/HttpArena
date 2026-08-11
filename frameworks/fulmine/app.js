@@ -20,9 +20,11 @@ if (cluster.isPrimary) {
     const express = require('fulmine.js');
     const fs = require('fs');
     const zlib = require('zlib');
-    // level 1: the arena measures throughput of compressed JSON, and the payloads are small
-    // enough that a higher level buys bytes nobody counts
+    // json-comp counts the bytes twice over, rps * (minBpr/myBpr)^2, so brotli is preferred where
+    // the client offers it: q3 is 12% smaller than gzip level 1 here for 24us more per request.
+    // Gzip stays for a client that asks only for gzip, where the level is not worth the CPU.
     const GZIP_OPTS = { level: 1 };
+    const BROTLI_OPTS = { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } };
 
     const app = express();
     app.disable('x-powered-by');
@@ -164,14 +166,14 @@ if (cluster.isPrimary) {
             const body = JSON.stringify({ items, count });
             // json-comp profile: negotiated per request, nothing without Accept-Encoding
             const ae = req.headers['accept-encoding'] || '';
-            if (ae.includes('gzip')) {
+            if (ae.includes('br')) {
+                res.set({ ...SERVER_HDR, 'content-encoding': 'br' })
+                    .type('application/json')
+                    .send(zlib.brotliCompressSync(body, BROTLI_OPTS));
+            } else if (ae.includes('gzip')) {
                 res.set({ ...SERVER_HDR, 'content-encoding': 'gzip' })
                     .type('application/json')
                     .send(zlib.gzipSync(body, GZIP_OPTS));
-            } else if (ae.includes('br')) {
-                res.set({ ...SERVER_HDR, 'content-encoding': 'br' })
-                    .type('application/json')
-                    .send(zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }));
             } else {
                 res.set(SERVER_HDR).type('application/json').send(body);
             }
