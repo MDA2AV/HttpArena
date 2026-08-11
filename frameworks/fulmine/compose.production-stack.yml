@@ -1,0 +1,81 @@
+# production-stack: edge + cache + authsvc + server, on a 64 logical CPU budget.
+#
+#   edge     (caddy)  - 16, terminates TLS and h2 and serves /static off disk
+#   cache    (redis)  -  2, single threaded on the data path, so more would sit idle
+#   authsvc  (rust)   -  8, one HMAC per /api request and nothing else
+#   server   (node)   - 38, the rest: JSON, Postgres, Redis client, one worker per core
+#
+# All four on host networking, so what goes between them is loopback rather than a bridge.
+# Redis binds 6379, authsvc 9090, server 8080, the edge 8443.
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "${EDGE_CPUSET:-0-7,64-71}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - authsvc
+      - server
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "${CACHE_CPUSET:-8,72}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "${AUTH_CPUSET:-9-12,73-76}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-13-31,77-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - REDIS_URL=redis://127.0.0.1:6379
+      - DATASET_PATH=/data/dataset.json
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    depends_on:
+      - cache

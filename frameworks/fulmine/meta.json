@@ -25,7 +25,8 @@
     "json-tls",
     "crud",
     "gateway-64",
-    "gateway-h3"
+    "gateway-h3",
+    "production-stack"
   ],
   "maintainers": [
     "nigrosimone"

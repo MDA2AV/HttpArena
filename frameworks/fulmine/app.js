@@ -151,7 +151,7 @@ if (cluster.isPrimary) {
     });
 
     // shared by the plaintext listener and the TLS one on 8081: same handler, same shapes
-    const registerJsonRoute = (target) => target.get('/json/:count', (req, res) => {
+    const registerJsonRoute = (target, path = '/json/:count') => target.get(path, (req, res) => {
         if (datasetItems) {
             let count = parseInt(req.params.count, 10) || 0;
             if (count < 0) count = 0;
@@ -242,7 +242,9 @@ if (cluster.isPrimary) {
         }
     });
 
-    app.get('/crud/items/:id', async (req, res) => {
+    // the cache-aside read, registered under /crud for the crud profile and under /api for
+    // production-stack, which asks for the same thing behind the edge's JWT check
+    const itemRead = async (req, res) => {
         if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
         const id = parseInt(req.params.id, 10);
         if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
@@ -263,7 +265,8 @@ if (cluster.isPrimary) {
         } catch (e) {
             res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
         }
-    });
+    };
+    app.get('/crud/items/:id', itemRead);
 
     app.post('/crud/items', (req, res) => {
         if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
@@ -308,6 +311,76 @@ if (cluster.isPrimary) {
                 res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
             }
         });
+    });
+
+    // ── production-stack ──────────────────────────────────────────────────
+    // Four services, and this is the server behind them. The edge terminates TLS, serves
+    // /static/* itself and sends /api/* past the shared JWT verifier first, so nothing here
+    // checks a token: what arrives is already authorised and carries X-User-Id.
+    const USER_TTL_MS = 30000;
+    const userGet = (id) => {
+        if (redis) return redis.get('user:' + id);
+        const hit = crudCache.get('user:' + id);
+        if (!hit) return null;
+        if (hit.until <= Date.now()) { crudCache.delete('user:' + id); return null; }
+        return hit.json;
+    };
+    const userSet = (id, json) => {
+        if (redis) return redis.set('user:' + id, json, 'PX', USER_TTL_MS);
+        crudCache.set('user:' + id, { json, until: Date.now() + USER_TTL_MS });
+    };
+
+    app.get('/public/baseline', (req, res) => {
+        res.set(SERVER_HDR).type('text/plain').send(String(sumQuery(req.query)));
+    });
+    registerJsonRoute(app, '/public/json/:count');
+    app.get('/api/items/:id', itemRead);
+
+    // 204 and no body, unlike the crud PUT this otherwise mirrors. The cache entry goes after
+    // the row is written, so the next read misses and repopulates from Postgres.
+    app.post('/api/items/:id', (req, res) => {
+        if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
+        readJsonBody(req, async (err, body) => {
+            if (err) return res.status(400).set(SERVER_HDR).end();
+            try {
+                const result = await pgPool.query({
+                    name: 'crud-update',
+                    text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
+                    values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
+                });
+                if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
+                await crudDel(id);
+                res.status(204).set(SERVER_HDR).end();
+            } catch (e) {
+                res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
+            }
+        });
+    });
+
+    app.get('/api/me', async (req, res) => {
+        if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+        const id = parseInt(req.headers['x-user-id'], 10);
+        if (!Number.isFinite(id)) return res.status(401).set(SERVER_HDR).end();
+        try {
+            const cached = await userGet(id);
+            if (cached) {
+                return res.set(CACHE_HIT_HDR).type('application/json').send(cached);
+            }
+            const result = await pgPool.query({
+                name: 'user-read',
+                text: 'SELECT id, name, email, plan FROM users WHERE id = $1 LIMIT 1',
+                values: [id]
+            });
+            if (result.rows.length === 0) return res.status(404).set(SERVER_HDR).end();
+            const u = result.rows[0];
+            const json = JSON.stringify({ id: u.id, name: u.name, email: u.email, plan: u.plan });
+            userSet(id, json);
+            res.set(CACHE_MISS_HDR).type('application/json').send(json);
+        } catch (e) {
+            res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
+        }
     });
 
     app.post('/upload', (req, res) => {
