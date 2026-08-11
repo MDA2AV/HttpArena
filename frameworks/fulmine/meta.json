@@ -26,7 +26,8 @@
     "crud",
     "gateway-64",
     "gateway-h3",
-    "production-stack"
+    "production-stack",
+    "fortunes"
   ],
   "maintainers": [
     "nigrosimone"

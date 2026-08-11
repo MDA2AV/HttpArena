@@ -183,6 +183,28 @@ if (cluster.isPrimary) {
     });
     registerJsonRoute(app);
 
+    // fortunes is the one profile here that measures a template engine, so it goes through
+    // res.render and a real EJS template rather than the string building the tuned rules would
+    // also allow: rendering it by hand would measure something the profile is not asking about.
+    app.set('views', __dirname + '/views');
+    app.set('view engine', 'ejs');
+    const RUNTIME_FORTUNE = 'Additional fortune added at request time.';
+
+    app.get('/fortunes', async (req, res) => {
+        if (!pgPool) return res.status(500).set(SERVER_HDR).type('text/plain').send('DB not available');
+        try {
+            const result = await pgPool.query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' });
+            const rows = result.rows.map(r => ({ id: r.id, message: r.message }));
+            rows.push({ id: 0, message: RUNTIME_FORTUNE });
+            // ordinal, not locale aware: the synthetic rows carry em-dashes, and localeCompare
+            // would order them by collation rules the profile does not ask for
+            rows.sort((a, b) => (a.message < b.message ? -1 : a.message > b.message ? 1 : 0));
+            res.set(SERVER_HDR).render('fortunes', { fortunes: rows });
+        } catch (e) {
+            res.status(500).set(SERVER_HDR).type('text/plain').send('query failed');
+        }
+    });
+
     app.get('/async-db', async (req, res) => {
         if (!pgPool) {
             return res.set(SERVER_HDR).type('application/json').send('{"items":[],"count":0}');
