@@ -359,7 +359,7 @@
     "repo": "https://github.com/nigrosimone/fulmine.js",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "tuned"
+    "mode": "standard"
   },
   "genhttp-11-ioxide": {
     "dir": "genhttp-11-ioxide",
