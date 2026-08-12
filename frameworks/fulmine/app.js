@@ -20,15 +20,24 @@ if (cluster.isPrimary) {
     const express = require('fulmine.js');
     const fs = require('fs');
     const zlib = require('zlib');
-    // json-comp counts the bytes twice over, rps * (minBpr/myBpr)^2, so brotli is preferred where
-    // the client offers it: q3 is 12% smaller than gzip level 1 here for 24us more per request.
-    // Gzip stays for a client that asks only for gzip, where the level is not worth the CPU.
-    const GZIP_OPTS = { level: 1 };
-    const BROTLI_OPTS = { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } };
+
+    // The framework's own compression middleware, which negotiates br and gzip per request and
+    // takes the compression module's options. json-comp counts the bytes twice over,
+    // rps * (minBpr/myBpr)^2, so brotli is worth its extra microseconds where the client offers
+    // it: q3 is 12% smaller than gzip level 1 here. Mounted on the json route rather than on the
+    // app, because that is the only route the profiles ask to compress.
+    const compress = express.compression({
+        level: 1,
+        brotli: { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }
+    });
 
     const app = express();
     app.disable('x-powered-by');
+    // documented under Performance tips as the setting for an API whose responses are never
+    // revalidated, which is every profile here: nothing sends a conditional request
     app.set('etag', false);
+    // the static rules want every request to reach the disk, so the small-file cache is off
+    app.set('file cache', false);
 
     const SERVER_HDR = { 'server': 'fulmine' };
     // built once: the crud read path spread SERVER_HDR into a new object on every request, which
@@ -98,44 +107,9 @@ if (cluster.isPrimary) {
         crudCache.delete(id);
     };
 
-    // one shape for the two body-carrying crud verbs, read the way the other POST routes read.
-    //
-    // The chunks are kept as buffers and joined at the end rather than added to a string as they
-    // arrive. Adding them decodes each chunk on its own, so a character whose UTF-8 bytes are split
-    // across two chunks becomes a replacement character on both sides of the cut. Nothing complains:
-    // the body still parses, it just no longer says what was sent. Measured against express.json()
-    // on this shape, the two are the same speed, so the hand-rolled reader is kept only because it
-    // answers a bad body with the empty 400 the profile expects.
-    function readJsonBody(req, cb) {
-        const chunks = [];
-        req.on('data', chunk => chunks.push(chunk));
-        req.on('end', () => {
-            try { cb(null, JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (e) { cb(e); }
-        });
-    }
-
-    // MIME types for static files
-    const MIME_TYPES = {
-        '.css': 'text/css', '.js': 'application/javascript', '.html': 'text/html',
-        '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.json': 'application/json',
-    };
-
-    // No file data lives in memory, per the arena rules: this scans names only, so a request
-    // knows which pre-compressed variants exist and the content type. The bytes are read from
-    // disk on every request.
-    const staticFiles = {};
-    try {
-        for (const name of fs.readdirSync('/data/static')) {
-            if (name.endsWith('.br') || name.endsWith('.gz')) continue;
-            const ext = name.slice(name.lastIndexOf('.'));
-            staticFiles[name] = {
-                path: `/data/static/${name}`,
-                br: fs.existsSync(`/data/static/${name}.br`),
-                gz: fs.existsSync(`/data/static/${name}.gz`),
-                ct: MIME_TYPES[ext] || 'application/octet-stream'
-            };
-        }
-    } catch (e) {}
+    // what the two body-carrying crud verbs read with. The error handler at the bottom turns the
+    // 400 it raises on a bad body into the empty answer the profile expects
+    const readJson = express.json();
 
     function sumQuery(query) {
         let sum = 0;
@@ -151,7 +125,7 @@ if (cluster.isPrimary) {
     });
 
     // shared by the plaintext listener and the TLS one on 8081: same handler, same shapes
-    const registerJsonRoute = (target, path = '/json/:count') => target.get(path, (req, res) => {
+    const registerJsonRoute = (target, path = '/json/:count') => target.get(path, compress, (req, res) => {
         if (datasetItems) {
             let count = parseInt(req.params.count, 10) || 0;
             if (count < 0) count = 0;
@@ -163,20 +137,9 @@ if (cluster.isPrimary) {
                 tags: d.tags, rating: d.rating,
                 total: d.price * d.quantity * m
             }));
-            const body = JSON.stringify({ items, count });
-            // json-comp profile: negotiated per request, nothing without Accept-Encoding
-            const ae = req.headers['accept-encoding'] || '';
-            if (ae.includes('br')) {
-                res.set({ ...SERVER_HDR, 'content-encoding': 'br' })
-                    .type('application/json')
-                    .send(zlib.brotliCompressSync(body, BROTLI_OPTS));
-            } else if (ae.includes('gzip')) {
-                res.set({ ...SERVER_HDR, 'content-encoding': 'gzip' })
-                    .type('application/json')
-                    .send(zlib.gzipSync(body, GZIP_OPTS));
-            } else {
-                res.set(SERVER_HDR).type('application/json').send(body);
-            }
+            // the middleware compresses this when the request asked for it, and leaves it alone
+            // when it did not: the json profile sends no Accept-Encoding, json-comp sends one
+            res.set(SERVER_HDR).type('application/json').send(JSON.stringify({ items, count }));
         } else {
             res.status(500).send('No dataset');
         }
@@ -268,49 +231,45 @@ if (cluster.isPrimary) {
     };
     app.get('/crud/items/:id', itemRead);
 
-    app.post('/crud/items', (req, res) => {
+    app.post('/crud/items', readJson, async (req, res) => {
         if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
-        readJsonBody(req, async (err, body) => {
-            if (err) return res.status(400).set(SERVER_HDR).end();
-            try {
-                const result = await pgPool.query({
-                    name: 'crud-create',
-                    text: 'INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) ' +
-                        "VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0) " +
-                        'ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 RETURNING id',
-                    values: [body.id, body.name ?? 'New Product', body.category ?? 'test', body.price ?? 0, body.quantity ?? 0]
-                });
-                res.status(201).set(SERVER_HDR).type('application/json').send(JSON.stringify({
-                    id: result.rows[0].id, name: body.name, category: body.category,
-                    price: body.price, quantity: body.quantity
-                }));
-            } catch (e) {
-                res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"insert failed"}');
-            }
-        });
+        const body = req.body;
+        try {
+            const result = await pgPool.query({
+                name: 'crud-create',
+                text: 'INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) ' +
+                    "VALUES ($1, $2, $3, $4, $5, true, '[\"bench\"]', 0, 0) " +
+                    'ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 RETURNING id',
+                values: [body.id, body.name ?? 'New Product', body.category ?? 'test', body.price ?? 0, body.quantity ?? 0]
+            });
+            res.status(201).set(SERVER_HDR).type('application/json').send(JSON.stringify({
+                id: result.rows[0].id, name: body.name, category: body.category,
+                price: body.price, quantity: body.quantity
+            }));
+        } catch (e) {
+            res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"insert failed"}');
+        }
     });
 
-    app.put('/crud/items/:id', (req, res) => {
+    app.put('/crud/items/:id', readJson, async (req, res) => {
         if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
         const id = parseInt(req.params.id, 10);
         if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
-        readJsonBody(req, async (err, body) => {
-            if (err) return res.status(400).set(SERVER_HDR).end();
-            try {
-                const result = await pgPool.query({
-                    name: 'crud-update',
-                    text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
-                    values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
-                });
-                if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
-                await crudDel(id);
-                res.set(SERVER_HDR).type('application/json').send(JSON.stringify({
-                    id, name: body.name, price: body.price, quantity: body.quantity
-                }));
-            } catch (e) {
-                res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
-            }
-        });
+        const body = req.body;
+        try {
+            const result = await pgPool.query({
+                name: 'crud-update',
+                text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
+                values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
+            });
+            if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
+            await crudDel(id);
+            res.set(SERVER_HDR).type('application/json').send(JSON.stringify({
+                id, name: body.name, price: body.price, quantity: body.quantity
+            }));
+        } catch (e) {
+            res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
+        }
     });
 
     // ── production-stack ──────────────────────────────────────────────────
@@ -338,25 +297,23 @@ if (cluster.isPrimary) {
 
     // 204 and no body, unlike the crud PUT this otherwise mirrors. The cache entry goes after
     // the row is written, so the next read misses and repopulates from Postgres.
-    app.post('/api/items/:id', (req, res) => {
+    app.post('/api/items/:id', readJson, async (req, res) => {
         if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
         const id = parseInt(req.params.id, 10);
         if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
-        readJsonBody(req, async (err, body) => {
-            if (err) return res.status(400).set(SERVER_HDR).end();
-            try {
-                const result = await pgPool.query({
-                    name: 'crud-update',
-                    text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
-                    values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
-                });
-                if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
-                await crudDel(id);
-                res.status(204).set(SERVER_HDR).end();
-            } catch (e) {
-                res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
-            }
-        });
+        const body = req.body;
+        try {
+            const result = await pgPool.query({
+                name: 'crud-update',
+                text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
+                values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
+            });
+            if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
+            await crudDel(id);
+            res.status(204).set(SERVER_HDR).end();
+        } catch (e) {
+            res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
+        }
     });
 
     app.get('/api/me', async (req, res) => {
@@ -412,28 +369,32 @@ if (cluster.isPrimary) {
     });
 
     // shared by the plaintext listener and the TLS one on 8081, as the JSON route is: static-tls
-    // asks for the same files over TLS
-    const registerStaticRoute = (target) => target.get('/static/:filename', (req, res) => {
-        const sf = staticFiles[req.params.filename];
-        if (!sf) return res.status(404).send('Not found');
-        const ae = req.headers['accept-encoding'] || '';
-        let path = sf.path;
-        let encoding = null;
-        if (sf.br && ae.includes('br')) {
-            path += '.br';
-            encoding = 'br';
-        } else if (sf.gz && ae.includes('gzip')) {
-            path += '.gz';
-            encoding = 'gzip';
-        }
-        fs.readFile(path, (err, buf) => {
-            if (err) return res.status(404).send('Not found');
-            const headers = { ...SERVER_HDR, 'content-type': sf.ct, 'content-length': String(buf.length) };
-            if (encoding) headers['content-encoding'] = encoding;
-            res.set(headers).send(buf);
-        });
-    });
+    // asks for the same files over TLS.
+    //
+    // preCompressed is the framework's documented way of serving the .br and .gz files the harness
+    // leaves on disk next to the originals: the middleware negotiates between them, keeps the
+    // content type of the name that was asked for and gives each variant its own ETag. Nothing is
+    // held in memory, and with "file cache" off every request reads the file it answers with.
+    const registerStaticRoute = (target) =>
+        target.use(
+            '/static',
+            express.static('/data/static', {
+                preCompressed: true,
+                index: false,
+                fallthrough: false,
+                setHeaders: (res) => res.setHeader('server', 'fulmine')
+            })
+        );
     registerStaticRoute(app);
+
+    // What express.json() raises on a body that will not parse, and what express.static raises for
+    // a file that is not there: both carry the status the profile expects, and neither wants the
+    // framework's error page in the body
+    const answerError = (err, req, res, next) => {
+        if (res.headersSent) return next(err);
+        res.status(err.status || err.statusCode || 500).set(SERVER_HDR).end();
+    };
+    app.use(answerError);
 
     // WebSocket echo profiles, on µWS's own WebSocket server through the app's uwsApp handle.
     // Every connection performs µWS's real upgrade handshake; the echo hands the incoming
@@ -457,8 +418,10 @@ if (cluster.isPrimary) {
         });
         tlsApp.disable('x-powered-by');
         tlsApp.set('etag', false);
+        tlsApp.set('file cache', false);
         registerJsonRoute(tlsApp);
         registerStaticRoute(tlsApp);
+        tlsApp.use(answerError);
         tlsApp.listen(8081);
     }
 
