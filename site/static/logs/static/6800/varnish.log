@@ -1,0 +1,5 @@
+Debug: Version: varnish-9.0.3 revision 0a625649cd40af4b6c10be5e58a2e89a5e275baa
+Debug: Platform: Linux,6.17.0-22-generic,x86_64,-jnone,-smalloc,-sdefault,-hcritbit
+Debug: Child (20) Started
+Child launched OK
+Info: Child (20) said Child starts
