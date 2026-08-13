@@ -1,0 +1,18 @@
+{
+  "display_name": "Varnish",
+  "language": "C",
+  "engine": "varnishd",
+  "type": "infrastructure",
+  "description": "Varnish Cache HTTP accelerator with native TLS/H2 termination (-A). A custom vmod (Rust, varnish-rs) computes /baseline11 and /baseline2 in-process; vmod-fileserver serves /static.",
+  "repo": "https://github.com/varnish/varnish",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "static",
+    "baseline-h2",
+    "static-h2"
+  ],
+  "maintainers": ["guillaume.quintard@varnish-software.com"]
+}
