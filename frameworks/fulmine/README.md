@@ -1,6 +1,6 @@
 # fulmine
 
-A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster module for multi-core scaling.
+A drop-in replacement for Express 5 running on uWebSockets.js, with its own `cluster` option for multi-core scaling.
 
 ## Stack
 
@@ -36,3 +36,9 @@ because they are where the framework differs from Express rather than where it i
 - `express.static(dir, { preCompressed: true })` is the framework's documented way of serving the
   `.br` and `.gz` files the harness leaves on disk. `app.set("file cache", false)` turns off the
   small-file cache, so every request reads the file it answers with.
+- `express({ cluster: "auto" })` is the framework's own fork, so there is no cluster boilerplate in
+  the entry: one worker per usable core, each binding the same port with uWS's shared flag, which
+  is `SO_REUSEPORT`. The kernel picks which worker gets a connection and the primary is not in the
+  path, unlike node's `cluster` with an `http.Server`, where the primary accepts and passes each
+  connection on. "auto" reads the cgroup quota first, so the worker count is the container's cores
+  and not the host's.
