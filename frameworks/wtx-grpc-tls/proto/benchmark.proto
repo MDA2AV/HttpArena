@@ -5,6 +5,12 @@ service BenchmarkService {
   rpc GetSum (SumRequest) returns (SumReply);
 }
 
+message StreamRequest {
+  int32 a = 1;
+  int32 b = 2;
+  int32 count = 3;
+}
+
 message SumRequest {
   int32 a = 1;
   int32 b = 2;
