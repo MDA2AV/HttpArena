@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 ENV PROCESS_MULTIPLIER=1
 ENV EVENT_LOOP=Select
@@ -6,8 +6,7 @@ ENV EVENT_LOOP=Select
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -yqq && apt-get install -yqq software-properties-common > /dev/null
-RUN LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php > /dev/null && \
-    apt-get update -yqq > /dev/null && apt-get upgrade -yqq > /dev/null
+RUN apt-get update -yqq > /dev/null && apt-get upgrade -yqq > /dev/null
 
 RUN apt-get install -yqq php8.5-cli php8.5-xml > /dev/null
 
