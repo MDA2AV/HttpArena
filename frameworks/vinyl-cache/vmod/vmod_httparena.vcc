@@ -1,0 +1,14 @@
+$Module httparena 3 "HttpArena benchmark helper"
+
+DESCRIPTION
+===========
+
+Small helper vmod for HttpArena benchmark endpoints: sums the integer
+values found in a URL's query string plus the (POST) request body,
+used to answer ``/baseline11``.
+
+$Function STRING baseline_sum(STRING url)
+
+Sum the integer values of every ``key=value`` pair in the query string
+of `url`, plus the request body if there is one, and return the total
+as a string.
