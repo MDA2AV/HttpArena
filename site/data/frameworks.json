@@ -401,6 +401,14 @@
     "engine": "genhttp",
     "mode": "standard"
   },
+  "gin": {
+    "dir": "gin",
+    "description": "Gin web framework on the Go net/http server, default configuration. Routing and path/query binding through the Gin API, encoding/json via c.JSON, gzip through the gin-contrib/gzip middleware.",
+    "repo": "https://github.com/gin-gonic/gin",
+    "type": "flagship",
+    "engine": "net/http",
+    "mode": "standard"
+  },
   "go-fasthttp": {
     "dir": "go-fasthttp",
     "description": "High-performance Go HTTP server using fasthttp with zero-allocation design and buffer reuse.",
