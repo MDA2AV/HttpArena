@@ -3,8 +3,7 @@ FROM ubuntu:26.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -yqq && apt-get install -yqq software-properties-common > /dev/null
-RUN LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php > /dev/null && \
-    apt-get update -yqq > /dev/null && apt-get upgrade -yqq > /dev/null
+RUN apt-get update -yqq > /dev/null && apt-get upgrade -yqq > /dev/null
 
 RUN apt-get install -yqq php8.5-cli php8.5-xml php8.5-zip php8.5-pgsql> /dev/null
 
