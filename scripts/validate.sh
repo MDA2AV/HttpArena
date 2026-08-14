@@ -331,15 +331,27 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
             fi
             # gRPC servers speak h2c on $PORT (or h2+TLS on $H2PORT) and never
             # answer the HTTP/1.1 probe above, so a gRPC-only framework used to
-            # time out here and fail while perfectly healthy. Any HTTP response
-            # counts as "up" — a bare GET to a gRPC server correctly returns
-            # 415 (unsupported content-type), which is still curl exit 0.
+            # time out here and fail while perfectly healthy.
+            #
+            # The probe is a real gRPC call rather than a bare GET. Not every
+            # gRPC server answers an unrouted GET: wtx resets the connection
+            # (curl exit 56) while being perfectly healthy, so a GET-based
+            # probe reintroduces exactly the bug this block fixes. A POST to
+            # GetSum is a request every conforming server must route. Any
+            # HTTP response counts as up — even UNIMPLEMENTED from a
+            # stream-only framework, which is still curl exit 0.
             if [ "$needs_grpc" = "true" ] && \
-               curl -s --http2-prior-knowledge --max-time 2 -o /dev/null -w '' "http://localhost:$PORT/" 2>/dev/null; then
+               curl -s --http2-prior-knowledge --max-time 2 -o /dev/null \
+                    -X POST --data-binary "@$ROOT_DIR/requests/grpc-sum.bin" \
+                    -H 'content-type: application/grpc' -H 'te: trailers' \
+                    "http://localhost:$PORT/benchmark.BenchmarkService/GetSum" 2>/dev/null; then
                 break
             fi
             if [ "$needs_grpc_tls" = "true" ] && \
-               curl -sk --http2 --max-time 2 -o /dev/null -w '' "https://localhost:$H2PORT/" 2>/dev/null; then
+               curl -sk --http2 --max-time 2 -o /dev/null \
+                    -X POST --data-binary "@$ROOT_DIR/requests/grpc-sum.bin" \
+                    -H 'content-type: application/grpc' -H 'te: trailers' \
+                    "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" 2>/dev/null; then
                 break
             fi
             if [ "$i" -eq 30 ]; then
