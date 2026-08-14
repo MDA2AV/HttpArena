@@ -123,6 +123,14 @@
     "engine": "kestrel",
     "mode": "standard"
   },
+  "axum": {
+    "dir": "axum",
+    "description": "Axum 0.8 on hyper with the multi-threaded Tokio runtime, default configuration. Routing and path/query extractors through the Axum API, serde_json via the Json response, gzip through the tower-http compression layer.",
+    "repo": "https://github.com/tokio-rs/axum",
+    "type": "flagship",
+    "engine": "hyper",
+    "mode": "standard"
+  },
   "bananabread": {
     "dir": "bananabread",
     "description": "Seagreen \u2014 a TypeScript port of GenHTTP \u2014 on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
@@ -236,12 +244,28 @@
     "engine": "deno",
     "mode": "tuned"
   },
+  "django": {
+    "dir": "django",
+    "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
+    "repo": "https://github.com/django/django",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
+  },
   "dogrider": {
     "dir": "dogrider",
     "description": "GenHTTP websockets with zerg backend",
     "repo": "https://github.com/MDA2AV/dogrider",
     "type": "emerging",
     "engine": "zerg",
+    "mode": "standard"
+  },
+  "echo": {
+    "dir": "echo",
+    "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
+    "repo": "https://github.com/labstack/echo",
+    "type": "flagship",
+    "engine": "net/http",
     "mode": "standard"
   },
   "effinitive": {
@@ -355,11 +379,11 @@
   },
   "fulmine": {
     "dir": "fulmine",
-    "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with the cluster module for multi-core scaling.",
+    "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
     "repo": "https://github.com/nigrosimone/fulmine.js",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "tuned"
+    "mode": "standard"
   },
   "genhttp-11-ioxide": {
     "dir": "genhttp-11-ioxide",
@@ -399,6 +423,14 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "genhttp",
+    "mode": "standard"
+  },
+  "gin": {
+    "dir": "gin",
+    "description": "Gin web framework on the Go net/http server, default configuration. Routing and path/query binding through the Gin API, encoding/json via c.JSON, gzip through the gin-contrib/gzip middleware.",
+    "repo": "https://github.com/gin-gonic/gin",
+    "type": "flagship",
+    "engine": "net/http",
     "mode": "standard"
   },
   "go-fasthttp": {
@@ -525,6 +557,14 @@
     "engine": "netty",
     "mode": "standard"
   },
+  "laravel": {
+    "dir": "laravel",
+    "description": "Laravel 13 served by Laravel Octane on FrankenPHP, the first-party production runtime documented by Laravel. Routing and request handling through the Laravel API, responses via the response()/json() helpers, gzip and brotli through the Caddy encode directive Octane generates.",
+    "repo": "https://github.com/laravel/laravel",
+    "type": "flagship",
+    "engine": "frankenphp",
+    "mode": "standard"
+  },
   "libreactorng": {
     "dir": "libreactorng",
     "description": "libreactorng \u2014 Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
@@ -601,6 +641,14 @@
         "mode": "standard"
       }
     ]
+  },
+  "nestjs": {
+    "dir": "nestjs",
+    "description": "NestJS 11 on the Express platform adapter, default configuration. Routing and parameter decorators through the Nest API, controller return values serialized by the framework, gzip through the compression middleware the Nest docs recommend.",
+    "repo": "https://github.com/nestjs/nest",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
   },
   "ngx-php": {
     "dir": "ngx-php",

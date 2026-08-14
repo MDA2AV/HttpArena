@@ -19,7 +19,8 @@
     "api-16",
     "async-db",
     "crud",
-    "static"
+    "static",
+    "static-tls"
   ],
   "maintainers": ["p8"]
 }

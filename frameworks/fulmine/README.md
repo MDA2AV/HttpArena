@@ -1,6 +1,6 @@
 # fulmine
 
-A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster module for multi-core scaling.
+A drop-in replacement for Express 5 running on uWebSockets.js, with its own `cluster` option for multi-core scaling.
 
 ## Stack
 
@@ -19,14 +19,28 @@ A drop-in replacement for Express 5 running on uWebSockets.js, with the cluster 
 | `/json/:count` | GET | Serializes a slice of the dataset |
 | `/async-db` | GET | Reads from PostgreSQL, prepared statement, pool sized under max_connections |
 | `/upload` | POST | Counts the bytes of the request body |
-| `/static/:filename` | GET | Serves a file from disk, the brotli or gzip variant when the client accepts one |
+| `/static/*` | GET | `express.static()` with `preCompressed`, so the `.br` or `.gz` on disk is served when the client accepts one |
 
 ## Notes
 
-Two things this entry relies on that are worth naming, because they are where the framework differs
-from Express rather than where it is the same:
+This is a standard entry: every route goes through a documented framework API, with no hand-rolled
+compression, no suffix lookup and nothing held in memory. Four things it relies on are worth naming,
+because they are where the framework differs from Express rather than where it is the same:
 
-- Routes with a parameter, `/json/:count` and `/static/:filename`, are handed to the µWS router
-  rather than matched in JavaScript.
+- Routes with a parameter, `/json/:count` among them, are handed to the µWS router rather than
+  matched in JavaScript.
 - A handler simple enough to be read at registration time is compiled into a µWS declarative
-  response. `/pipeline` is one, so it is answered without entering JavaScript.
+  response. `/pipeline` is one, so it is answered without entering JavaScript. "Simple enough" means
+  every argument is a literal, which is why its headers are written out instead of coming from the
+  shared `SERVER_HDR`: the compiler reads the source and cannot see into a closure.
+- `express.compression()` is the framework's own, taking the compression module's options: it is
+  mounted on the json route, which is the only one the profiles ask to compress.
+- `express.static(dir, { preCompressed: true })` is the framework's documented way of serving the
+  `.br` and `.gz` files the harness leaves on disk. `app.set("file cache", false)` turns off the
+  small-file cache, so every request reads the file it answers with.
+- `express({ cluster: "auto" })` is the framework's own fork, so there is no cluster boilerplate in
+  the entry: one worker per usable core, each binding the same port with uWS's shared flag, which
+  is `SO_REUSEPORT`. The kernel picks which worker gets a connection and the primary is not in the
+  path, unlike node's `cluster` with an `http.Server`, where the primary accepts and passes each
+  connection on. "auto" reads the cgroup quota first, so the worker count is the container's cores
+  and not the host's.

@@ -1,0 +1,52 @@
+# fulmine production-stack edge.
+#
+# Caddy terminates TLS and h2 on 8443 and splits the three paths the profile defines:
+# /static/* off disk here, /public/* straight to the server, /api/* past the shared JWT
+# verifier first. The server itself never sees a token, only the X-User-Id that survives.
+
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2
+	}
+}
+
+https://localhost:8443 {
+	tls /certs/server.crt /certs/server.key
+
+	handle /static/* {
+		root * /data
+		file_server {
+			precompressed br gzip
+		}
+	}
+
+	handle /public/* {
+		reverse_proxy 127.0.0.1:8080 {
+			transport http {
+				versions 1.1
+				keepalive 5m
+				keepalive_idle_conns 2048
+				keepalive_idle_conns_per_host 2048
+			}
+		}
+	}
+
+	# authsvc answers 200 with X-User-Id or 401, and forward_auth passes its refusal straight
+	# back, so an unauthenticated /api/* never reaches the server at all.
+	handle /api/* {
+		forward_auth 127.0.0.1:9090 {
+			uri /_auth
+			copy_headers X-User-Id
+		}
+		reverse_proxy 127.0.0.1:8080 {
+			transport http {
+				versions 1.1
+				keepalive 5m
+				keepalive_idle_conns 2048
+				keepalive_idle_conns_per_host 2048
+			}
+		}
+	}
+}

@@ -20,6 +20,7 @@
     "async-db",
     "crud",
     "static",
+    "static-tls",
     "static-h2",
     "static-h3",
     "echo-ws",

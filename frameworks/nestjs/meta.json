@@ -1,0 +1,19 @@
+{
+  "display_name": "nestjs",
+  "language": "TS",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "nodehttp",
+  "description": "NestJS 11 on the Express platform adapter, default configuration. Routing and parameter decorators through the Nest API, controller return values serialized by the framework, gzip through the compression middleware the Nest docs recommend.",
+  "repo": "https://github.com/nestjs/nest",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
