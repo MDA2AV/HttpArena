@@ -25,26 +25,10 @@ jobs:
             | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "frameworks=$frameworks" >> "$GITHUB_OUTPUT"
 
-  runner-busy:
-    needs: detect
-    if: needs.detect.outputs.frameworks != '[]' && vars.RUNNER_LOCAL == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Post runner-busy notice
-        run: |
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --repo "${{ github.repository }}" \
-            --body "⏸️ Runner is currently performing local benchmark runs and is disabled for GitHub Actions, please try later or check our Discord announcements on runner state for more info."
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   validate:
     needs: detect
-    if: needs.detect.outputs.frameworks != '[]' && vars.RUNNER_LOCAL != 'true'
-    runs-on: self-hosted
-    # environment: runner  # uncomment to require approval for validation runs
+    if: needs.detect.outputs.frameworks != '[]'
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       matrix:
