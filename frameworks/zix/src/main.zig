@@ -1,11 +1,12 @@
-//! HttpArena: zix
+//! localbench: zix
 //!
 //! zix.Http1 (.URING), Router-only: every request goes through the engine's
 //! parser and the comptime Router, one handler module per route
 //! (src/handlers/). TLS rides tls_port (dual listener, one worker fleet).
-//! async-db and crud run over engine-worker lanes (dbpg.zig): each worker
-//! owns a pipelined postgres connection on its own ring. crud reads also
-//! check the in-process cache (crudcache.zig).
+//! /static is served by the engine from public_dir. async-db and crud run
+//! over engine-worker lanes (dbpg.zig): each worker owns a pipelined postgres
+//! connection on its own ring. crud reads also check the in-process cache
+//! (crudcache.zig).
 
 const std = @import("std");
 const zix = @import("zix");
@@ -13,12 +14,12 @@ const zix = @import("zix");
 const baseline = @import("handlers/baseline.zig");
 const pipeline = @import("handlers/pipeline.zig");
 const upload = @import("handlers/upload.zig");
-const static = @import("handlers/static.zig");
 const json = @import("handlers/json.zig");
 const asyncdb = @import("handlers/asyncdb.zig");
 const crud = @import("handlers/crud.zig");
 
 const dbpg = @import("shared/dbpg.zig");
+const paths = @import("shared/paths.zig");
 
 // --------------------------------------------------------- //
 
@@ -27,19 +28,13 @@ const Routes = zix.Http1.Router(&[_]zix.Http1.Route{
     .{ .path = pipeline.PATH, .handler = pipeline.RESPONSE },
     .{ .path = upload.PATH, .handler = upload.RESPONSE },
     .{ .path = asyncdb.PATH, .handler = asyncdb.RESPONSE },
-    .{ .path = static.PATH, .handler = static.RESPONSE, .kind = .PREFIX },
     .{ .path = json.PATH, .handler = json.RESPONSE, .kind = .PREFIX },
     .{ .path = crud.PATH, .handler = crud.RESPONSE, .kind = .PREFIX },
 });
 
 pub fn main(process: std.process.Init) !void {
-    var json_alloc = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
-    defer json_alloc.deinit();
-
     var tls_alloc = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
     defer tls_alloc.deinit();
-
-    try json.init(json_alloc.allocator());
 
     // DB endpoints: lanes open lazily per engine worker once DATABASE_URL is
     // present (non-DB profiles open nothing, DB routes answer 503).
@@ -47,8 +42,8 @@ pub fn main(process: std.process.Init) !void {
     dbpg.start();
 
     var tls = zix.Tls.Context.init(tls_alloc.allocator(), process.io, .{
-        .cert_path = "/etc/zix-tls/server.cert",
-        .key_path = "/etc/zix-tls/server.key",
+        .cert_path = paths.TLS_CERT,
+        .key_path = paths.TLS_KEY,
         .alpn = &.{.HTTP_1_1},
         .min_version = .TLS_1_3,
     }) catch |e| {
@@ -74,8 +69,12 @@ pub fn main(process: std.process.Init) !void {
         //
         .compress = true,
         //
+        .public_dir = paths.DATA_DIR,
+        .public_dir_cache_ttl_ms = 200 * 1,
+        //
         .kernel_backlog = 16 * 1024,
         .max_recv_buf = 8 * 1024,
+        .max_request_body = 24 * 1024 * 1024,
         //
         .uring_send_buf_size = 16 * 1024,
         .uring_idle_pool_floor = 16,

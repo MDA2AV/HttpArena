@@ -6,7 +6,7 @@ ARG TARGETARCH
 ARG RETRY_DELAY=3
 ARG TIMEOUT_SEC=180
 ARG ZIG_VERSION=0.16.0
-ARG ZIX_VERSION=0.5.x-rc2
+ARG ZIX_VERSION=0.5.x
 RUN apk add --no-cache ca-certificates curl git tar xz openssl
 
 WORKDIR /server
@@ -55,7 +55,7 @@ RUN set -eu; \
     zig build \
     -Dtarget="${ZIG_TARGET}" \
     -Dcpu="${ZIG_CPU}+aes+pclmul+adx" \
-    --release=fast --summary line;
+    --release=fast --summary failures;
 
 # Self-signed Ed25519 cert generated at image build, baked at /etc/zix-tls.
 RUN set -eu; \
