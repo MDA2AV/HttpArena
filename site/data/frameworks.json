@@ -236,6 +236,14 @@
     "engine": "deno",
     "mode": "tuned"
   },
+  "django": {
+    "dir": "django",
+    "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
+    "repo": "https://github.com/django/django",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
+  },
   "dogrider": {
     "dir": "dogrider",
     "description": "GenHTTP websockets with zerg backend",
