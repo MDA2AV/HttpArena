@@ -8,7 +8,7 @@
   "kernel": "6.17.0-22-generic",
   "docker": "29.3.0",
   "docker_runtime": "runc",
-  "governor": "powersave",
+  "governor": "performance",
   "tcp": {
     "lo_mtu": "1500",
     "congestion": "cubic",
