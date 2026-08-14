@@ -1,0 +1,1170 @@
+[2026-08-13T18:24:27Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-08-13T18:24:27Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:33Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:35Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:37Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:42Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:43Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:44Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:44Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:44Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:47Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }
+[2026-08-13T18:24:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }

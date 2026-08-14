@@ -1,7 +1,7 @@
 name: Notify Framework Maintainers
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - 'frameworks/**'
 
@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
           fetch-depth: 0
 
       - name: Detect changed frameworks and notify maintainers

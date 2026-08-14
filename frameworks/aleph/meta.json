@@ -18,6 +18,7 @@
     "api-16",
     "async-db",
     "static",
+    "static-tls",
     "fortunes",
     "crud"
   ]

@@ -1,0 +1,19 @@
+{
+  "display_name": "gin",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "net/http",
+  "description": "Gin web framework on the Go net/http server, default configuration. Routing and path/query binding through the Gin API, encoding/json via c.JSON, gzip through the gin-contrib/gzip middleware.",
+  "repo": "https://github.com/gin-gonic/gin",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
