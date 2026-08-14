@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -yqq && apt-get install -yqq software-properties-common > /dev/null
 RUN apt-get update -yqq > /dev/null && apt-get upgrade -yqq > /dev/null
 
-RUN apt-get install -yqq php8.5-cli php8.5-xml php8.5-zip php8.5-pgsql> /dev/null
+RUN apt-get install -yqq zip unzip php8.5-cli php8.5-xml php8.5-zip php8.5-pgsql php8.5-zip> /dev/null
 
 COPY --from=composer/composer:latest-bin --link /composer /usr/local/bin/composer
 
