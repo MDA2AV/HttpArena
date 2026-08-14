@@ -1,6 +1,6 @@
 {
 	"require": {
-		"workerman/workerman": "dev-master"
+		"workerman/workerman": "^v5.2.2"
 	},
 	"autoload": {
 		"psr-4": {
