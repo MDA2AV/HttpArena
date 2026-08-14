@@ -107,7 +107,8 @@ $https->name = 'bench';
 
 $https->onMessage = static function ($connection, $request) {
 
-    if(str_starts_with($request->path(), '/json/')) {
+    $path = $request->path();
+    if(str_starts_with($path, '/json/')) {
         $count = explode('/', $request->path())[2];
         $m = $request->get('m', 1);
         $total = [];
