@@ -123,6 +123,14 @@
     "engine": "kestrel",
     "mode": "standard"
   },
+  "axum": {
+    "dir": "axum",
+    "description": "Axum 0.8 on hyper with the multi-threaded Tokio runtime, default configuration. Routing and path/query extractors through the Axum API, serde_json via the Json response, gzip through the tower-http compression layer.",
+    "repo": "https://github.com/tokio-rs/axum",
+    "type": "flagship",
+    "engine": "hyper",
+    "mode": "standard"
+  },
   "bananabread": {
     "dir": "bananabread",
     "description": "Seagreen \u2014 a TypeScript port of GenHTTP \u2014 on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
