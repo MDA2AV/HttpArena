@@ -1523,15 +1523,18 @@ grpc_check_sum() {
         -D "$hdr" -o "$body" -w '%{http_version}' "$url" 2>/dev/null || echo "0")
 
     # grpc-status arrives as a trailer (or a header on trailers-only errors);
-    # -D captures both. Absent means the RPC never completed cleanly.
-    status=$(grep -i '^grpc-status:' "$hdr" | tail -1 | tr -d '\r' | awk '{print $2}')
+    # -D captures both. Absent is tolerated — the decoded payload is checked
+    # either way — but the `|| true` is load-bearing, not cosmetic: this script
+    # runs under `set -euo pipefail`, so a non-matching grep would abort the
+    # whole run silently, mid-test, with no output at all.
+    status=$({ grep -i '^grpc-status:' "$hdr" || true; } | tail -1 | tr -d '\r' | awk '{print $2}')
     result=$(grpc_decode_reply "$body")
 
     if [ "$proto" != "2" ]; then
         fail_with_link "[$label]: responded over HTTP/$proto, expected HTTP/2 — gRPC requires HTTP/2" "$docs"
     elif [ -n "$status" ] && [ "$status" != "0" ]; then
         local gmsg
-        gmsg=$(grep -i '^grpc-message:' "$hdr" | tail -1 | tr -d '\r' | cut -d' ' -f2-)
+        gmsg=$({ grep -i '^grpc-message:' "$hdr" || true; } | tail -1 | tr -d '\r' | cut -d' ' -f2-)
         fail_with_link "[$label]: grpc-status=$status${gmsg:+ ($gmsg)}, expected 0" "$docs"
     elif [ "$result" = "$expected" ]; then
         echo "  PASS [$label] (a=$a b=$b -> $result)"
@@ -1539,7 +1542,7 @@ grpc_check_sum() {
     else
         fail_with_link "[$label]: GetSum(a=$a, b=$b) returned '$result', expected $expected" "$docs"
         echo "        ─── response frame (hex) ───"
-        xxd "$body" 2>/dev/null | head -4 | sed 's/^/        /'
+        { xxd "$body" 2>/dev/null | head -4 | sed 's/^/        /'; } || true
     fi
     rm -f "$req" "$hdr" "$body"
 }
@@ -1674,14 +1677,14 @@ grpc_check_stream() {
         -H 'content-type: application/grpc' -H 'te: trailers' \
         -D "$hdr" -o "$body" -w '%{http_version}' "$url" 2>/dev/null || echo "0")
 
-    status=$(grep -i '^grpc-status:' "$hdr" | tail -1 | tr -d '\r' | awk '{print $2}')
+    status=$({ grep -i '^grpc-status:' "$hdr" || true; } | tail -1 | tr -d '\r' | awk '{print $2}')
     verdict=$(grpc_decode_stream "$body" "$expected" "$count")
 
     if [ "$proto" != "2" ]; then
         fail_with_link "[$label]: responded over HTTP/$proto, expected HTTP/2 — gRPC requires HTTP/2" "$docs"
     elif [ -n "$status" ] && [ "$status" != "0" ]; then
         local gmsg
-        gmsg=$(grep -i '^grpc-message:' "$hdr" | tail -1 | tr -d '\r' | cut -d' ' -f2-)
+        gmsg=$({ grep -i '^grpc-message:' "$hdr" || true; } | tail -1 | tr -d '\r' | cut -d' ' -f2-)
         fail_with_link "[$label]: grpc-status=$status${gmsg:+ ($gmsg)}, expected 0" "$docs"
     elif [ "$verdict" = "OK" ]; then
         echo "  PASS [$label] (a=$a b=$b count=$count -> $expected..$((expected + count - 1)))"
