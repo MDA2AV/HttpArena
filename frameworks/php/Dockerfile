@@ -7,7 +7,7 @@ RUN apt-get update -yqq && apt-get install -yqq software-properties-common >/dev
 RUN apt-get update -yqq > /dev/null && apt-get upgrade -yqq > /dev/null && \
     apt-get install -yqq wget git libxml2-dev systemtap-sdt-dev nginx-extras \
                     zlib1g-dev libpcre3-dev libargon2-dev libsodium-dev libkrb5-dev \
-                    php8.5-fpm php8.5-cli php8.5-pgsql > /dev/null
+                    php8.5-fpm php8.5-cli php8.5-pgsql
 
 COPY conf/* /etc/php/8.5/fpm/
 COPY src/ src/
