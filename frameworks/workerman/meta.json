@@ -12,7 +12,6 @@
     "pipelined",
     "limited-conn",
     "json",
-    "json-comp",
     "json-tls",
     "static",
     "static-tls",

@@ -69,23 +69,8 @@ $http_worker->onMessage = static function ($connection, $request) {
             $total[] = $item;
         }
 
-        $result = json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $header = [];
-        if($encoding = $request->header('accept-encoding', '')) {
-            if(str_contains($encoding, 'br')) {
-                $result = brotli_compress($result, 1);
-                $header = ['Content-Encoding' => 'br'];
-            } elseif (str_contains($encoding, 'gzip')) {
-                $result = gzencode($result, 1);
-                $header = ['Content-Encoding' => 'gzip'];
-            }
-        }
-
-        return new Response (
-            200,
-            ['Content-Type' => 'application/json'] + $header,
-            $result
-        );
+        $connection->headers = ['Content-Type' => 'application/json'];
+        return $connection->send(json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     //Serve static files
