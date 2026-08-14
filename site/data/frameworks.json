@@ -244,6 +244,14 @@
     "engine": "zerg",
     "mode": "standard"
   },
+  "echo": {
+    "dir": "echo",
+    "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
+    "repo": "https://github.com/labstack/echo",
+    "type": "flagship",
+    "engine": "net/http",
+    "mode": "standard"
+  },
   "effinitive": {
     "dir": "effinitive",
     "description": "Ultra-high-performance custom HTTP server for .NET 10 \u2014 built from scratch for maximum speed.",
