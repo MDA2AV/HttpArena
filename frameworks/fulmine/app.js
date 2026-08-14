@@ -127,8 +127,12 @@ function sumQuery(query) {
     return sum;
 }
 
+// Written out rather than through SERVER_HDR, and that is the whole of it: with every argument a
+// literal, the framework compiles this handler into a uWS declarative response at listen() and the
+// route is answered without entering JavaScript. A closure it cannot read keeps it on the ordinary
+// path, which is what SERVER_HDR was doing here.
 app.get('/pipeline', (req, res) => {
-    res.set(SERVER_HDR).type('text/plain').send('ok');
+    res.set({ 'server': 'fulmine' }).type('text/plain').send('ok');
 });
 
 // shared by the plaintext listener and the TLS one on 8081: same handler, same shapes

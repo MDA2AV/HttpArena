@@ -30,7 +30,9 @@ because they are where the framework differs from Express rather than where it i
 - Routes with a parameter, `/json/:count` among them, are handed to the µWS router rather than
   matched in JavaScript.
 - A handler simple enough to be read at registration time is compiled into a µWS declarative
-  response. `/pipeline` is one, so it is answered without entering JavaScript.
+  response. `/pipeline` is one, so it is answered without entering JavaScript. "Simple enough" means
+  every argument is a literal, which is why its headers are written out instead of coming from the
+  shared `SERVER_HDR`: the compiler reads the source and cannot see into a closure.
 - `express.compression()` is the framework's own, taking the compression module's options: it is
   mounted on the json route, which is the only one the profiles ask to compress.
 - `express.static(dir, { preCompressed: true })` is the framework's documented way of serving the
