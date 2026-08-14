@@ -8,6 +8,8 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 16 HTTP requests are sent back-to-back on each connection before waiting for responses. Uses a lightweight `GET /pipeline` endpoint that returns a fixed `ok` response, isolating raw I/O throughput from application logic.
 
+**This test is reference-only - it does not contribute to the composite score.** HTTP/1.1 pipelining is disabled in modern browsers and unsupported by mainstream proxies, so the profile is kept as a raw I/O and middleware-efficiency indicator (issue #1058). Results still appear on the board as a faded column.
+
 **Connections:** 512, 4,096
 
 ## Expected request/response

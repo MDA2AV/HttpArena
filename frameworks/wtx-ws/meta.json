@@ -8,6 +8,7 @@
   "enabled": true,
   "tests": [
     "echo-ws",
-    "echo-ws-pipeline"
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ]
 }

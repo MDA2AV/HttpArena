@@ -21,7 +21,8 @@
     "api-4",
     "api-16",
     "echo-ws",
-    "echo-ws-pipeline"
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": [
     "MDA2AV"

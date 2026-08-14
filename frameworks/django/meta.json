@@ -1,0 +1,19 @@
+{
+  "display_name": "django",
+  "language": "Python",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "uvicorn",
+  "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
+  "repo": "https://github.com/django/django",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
