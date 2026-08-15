@@ -1318,6 +1318,14 @@
     "engine": "Netty",
     "mode": "standard"
   },
+  "vibe.d": {
+    "dir": "vibed",
+    "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation.",
+    "repo": "https://github.com/vibe-d/vibe.d",
+    "type": "emerging",
+    "engine": "vibe.d",
+    "mode": "standard"
+  },
   "Vinyl Cache": {
     "dir": "vinyl-cache",
     "description": "Vinyl Cache HTTP accelerator.",
