@@ -1028,6 +1028,14 @@
     "engine": "netty (grpc)",
     "mode": "tuned"
   },
+  "starlette": {
+    "dir": "starlette",
+    "description": "Starlette 1.6 on uvicorn (uvloop), one worker per core, same uvicorn configuration as the fastapi entry. Routing through Starlette routes, JSON through JSONResponse, gzip through the Starlette GZipMiddleware.",
+    "repo": "https://github.com/encode/starlette",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
+  },
   "swerver": {
     "dir": "swerver",
     "description": "swerver as an engine: no pre-computed response bodies (pre-encoded registry off), JSON serialized per request through the framework's std.json-based ctx.jsonValue, static files served from an in-memory cache with precompressed .br/.gz negotiation, and the native async PostgreSQL client (pipelined, prepared-statement cache, park/resume) for async-db and fortunes. Single-threaded event loop per worker, SO_REUSEPORT fork fan-out, one multi-listener process for the four protocol ports, native HTTP/1.1 + HTTP/2 + HTTP/3 (QUIC), kqueue/epoll/io_uring backends.",
