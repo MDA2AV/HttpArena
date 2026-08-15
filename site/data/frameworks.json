@@ -1302,6 +1302,13 @@
     "engine": "Netty",
     "mode": "standard"
   },
+  "Vinyl Cache": {
+    "dir": "vinyl-cache",
+    "description": "Vinyl Cache HTTP accelerator.",
+    "repo": "https://code.vinyl-cache.org/vinyl-cache/vinyl-cache",
+    "type": "engine",
+    "engine": "vinyld"
+  },
   "WebFramework C": {
     "dir": "web-framework-cc",
     "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
