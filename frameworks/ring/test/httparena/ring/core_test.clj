@@ -1,6 +1,7 @@
 (ns httparena.ring.core-test
   (:require
    [clojure.data.json :as json]
+   [clojure.string :as str]
    [clojure.test :as test :refer [are deftest is]]
    [hikari-cp.core :as hikari]
    [httparena.ring.core :as core]
@@ -41,10 +42,49 @@
                                             :params {"m" "3"}}))
                           :key-fn keyword)))))
 
+(def fortune-rows
+  [{:id 11 :message "<script>alert(\"xss\");</script>"}
+   {:id 12 :message "フレームワークのベンチマーク"}
+   {:id 1 :message "fortune: No such file or directory"}
+   {:id 6 :message "Emacs is a nice operating system — Tom Christaensen"}])
+
+(defn- fortunes-body []
+  (with-redefs [core/datasource! (constantly ::database)
+                jdbc/execute! (constantly fortune-rows)]
+    (core/app {:request-method :get :uri "/fortunes" :params {}})))
+
+(deftest fortunes-renders-a-full-html-document
+  (let [{:keys [status headers body]} (fortunes-body)]
+    (is (= 200 status))
+    (is (= "text/html; charset=utf-8" (get headers "Content-Type")))
+    (is (str/starts-with? body "<!DOCTYPE html>"))
+    (is (= (+ 2 (count fortune-rows))
+           (count (re-seq #"<tr" body))))))
+
+(deftest fortunes-appends-the-runtime-row
+  (is (str/includes? (:body (fortunes-body))
+                     "<td>0</td><td>Additional fortune added at request time.</td>")))
+
+(deftest fortunes-escapes-html-in-messages
+  (let [body (:body (fortunes-body))]
+    (is (str/includes? body "&lt;script&gt;"))
+    (is (not (str/includes? body "<script>alert")))
+    (is (str/includes? body "&quot;xss&quot;"))))
+
+(deftest fortunes-sorts-by-message-in-ordinal-order
+  (is (= ["<script>alert(\"xss\");</script>"
+          "Additional fortune added at request time."
+          "Emacs is a nice operating system — Tom Christaensen"
+          "fortune: No such file or directory"
+          "フレームワークのベンチマーク"]
+         (mapv :message
+               (sort-by :message (conj fortune-rows core/runtime-fortune))))))
+
 (deftest declared-routes-reject-unsupported-methods
   (are [request] (= 405 (:status (core/app request)))
     {:request-method :post :uri "/json/1" :params {}}
     {:request-method :post :uri "/async-db" :params {}}
+    {:request-method :post :uri "/fortunes" :params {}}
     {:request-method :get :uri "/upload" :params {}}
     {:request-method :post :uri "/pipeline" :params {}}
     {:request-method :post :uri "/static/app.js" :params {}}))

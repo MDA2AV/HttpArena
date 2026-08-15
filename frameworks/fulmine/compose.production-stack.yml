@@ -27,9 +27,14 @@ services:
     volumes:
       - ${CERTS_DIR}:/certs:ro
       - ${DATA_DIR}/static:/data/static:ro
+    # authsvc has to be answering, not merely started: the edge asks it about every /api request,
+    # so if it is not there the run measures 5xx from the edge and never reaches the server. That
+    # is what the 5.11.0 run did, 260987 of them, and it read on the board as a 44% drop.
     depends_on:
-      - authsvc
-      - server
+      authsvc:
+        condition: service_healthy
+      server:
+        condition: service_started
 
   cache:
     image: redis:7-alpine
@@ -61,6 +66,16 @@ services:
     environment:
       - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
       - AUTHSVC_LISTEN=0.0.0.0:9090
+    # /_health is the sidecar's own endpoint and wget is busybox's, so this needs nothing the
+    # image does not already carry. The probe is rare once the stack is up, and every second only
+    # while it is coming up, so it costs the measurement nothing.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/_health"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
   server:
     build:

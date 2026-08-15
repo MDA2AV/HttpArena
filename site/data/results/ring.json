@@ -61,6 +61,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "fortunes-1024": {
+      "framework": "ring",
+      "language": "Clojure",
+      "rps": 29031,
+      "avg_latency": "25.26ms",
+      "p99_latency": "131.90ms",
+      "cpu": "6237.0%",
+      "memory": "8.8GiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "692.86MB/s",
+      "reconnects": 0,
+      "status_2xx": 145155,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "json-4096": {
       "framework": "ring",
       "language": "Clojure",

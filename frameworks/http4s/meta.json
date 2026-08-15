@@ -1,0 +1,19 @@
+{
+  "display_name": "http4s",
+  "language": "Scala",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "Ember",
+  "description": "http4s 0.23 on the Ember server with cats-effect, default configuration. Routing through the http4s DSL, circe JSON, gzip through the http4s GZip middleware.",
+  "repo": "https://github.com/http4s/http4s",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
