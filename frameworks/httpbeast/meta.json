@@ -1,0 +1,19 @@
+{
+  "display_name": "httpbeast",
+  "language": "Nim",
+  "type": "flagship",
+  "mode": "tuned",
+  "engine": "httpbeast",
+  "description": "HttpBeast 0.4.2 called directly, the epoll server Jester and Prologue are both built on. One event loop per core, each thread with its own SO_REUSEPORT listener, no primary process. Routing, JSON and gzip are written in the entry because the server ships none of them: json-comp gzips through zippy on Accept-Encoding, which is what makes the mode tuned. Nim 2.2.4, -d:release with ORC.",
+  "repo": "https://github.com/dom96/httpbeast",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
