@@ -457,6 +457,14 @@
     "engine": "fasthttp",
     "mode": "standard"
   },
+  "go-stdlib": {
+    "dir": "go-stdlib",
+    "description": "The Go standard library net/http server with no framework, default configuration. Routing through the ServeMux method and wildcard patterns of Go 1.22, JSON through encoding/json, gzip written by hand with compress/gzip because the standard library ships no compression middleware.",
+    "repo": "https://github.com/golang/go",
+    "type": "flagship",
+    "engine": "net/http",
+    "mode": "tuned"
+  },
   "go-websocket": {
     "dir": "go-websocket",
     "description": "Go WebSocket echo server using gobwas/ws",
