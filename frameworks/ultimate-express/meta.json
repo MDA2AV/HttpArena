@@ -4,7 +4,7 @@
   "type": "emerging",
   "mode": "tuned",
   "engine": "uwebsockets",
-  "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
+  "description": "ultimate-express (Express API on uWebSockets.js) with the cluster module for multi-core scaling.",
   "repo": "https://github.com/dimdenGD/ultimate-express",
   "enabled": true,
   "tests": [

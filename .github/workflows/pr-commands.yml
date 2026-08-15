@@ -34,7 +34,7 @@ jobs:
           gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="eyes"
           gh pr comment "${{ github.event.issue.number }}" \
             --repo "${{ github.repository }}" \
-            --body "👋 \`/benchmark\` request received. A collaborator will review and approve the run."
+            --body "👋 Benchmark request received. A collaborator will review and approve the run."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -53,28 +53,25 @@ jobs:
         run: |
           PR="$PR_NUMBER"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
-          AUTO_FRAMEWORK=$(gh api "/repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u | head -1)
 
-          # Parse flags: -f <framework> -t <test>
-          EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-f\s+\K\S+' || echo "")
-          EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-t\s+\K\S+' || echo "")
-
-          # Fallback: positional arg (legacy: /benchmark baseline)
-          if [ -z "$EXPLICIT_FW" ] && [ -z "$EXPLICIT_TEST" ]; then
-            EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+\K[^-]\S*' || echo "")
+          # Which command? Longest name first — they all share the /benchmark prefix.
+          if echo "$COMMENT_BODY" | grep -q '/benchmark-multiple'; then
+            COMMAND="multiple"
+          elif echo "$COMMENT_BODY" | grep -q '/benchmark-test'; then
+            COMMAND="test"
+          else
+            COMMAND="single"
           fi
 
-          # Parse --compare <framework>: baseline the deltas on another entry's
-          # published results instead of this framework's own (#741).
-          COMPARE_FW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*--compare[= ]\K\S+' || echo "")
+          # Frameworks this PR touches — the auto-detect fallback when -f is omitted.
+          CHANGED=$(gh api "/repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u || true)
 
-          # Parse --save flag
+          # Shared flags: -t <test>, --save
+          EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark[a-z-]*\s+.*-t\s+\K\S+' || echo "")
           SAVE_FLAG=""
           if echo "$COMMENT_BODY" | grep -q '\-\-save'; then
             SAVE_FLAG="true"
           fi
-
-          FRAMEWORK="${EXPLICIT_FW:-$AUTO_FRAMEWORK}"
 
           # These values come from a PR comment, which anyone can write, and are
           # interpolated into later steps. Restrict them to the characters a
@@ -82,14 +79,57 @@ jobs:
           # crafted comment cannot smuggle shell syntax through
           # (e.g. `--compare a";touch${IFS}/tmp/x;#`). Anything else becomes empty.
           safe() { printf '%s' "$1" | grep -oP '^[A-Za-z0-9._-]{1,64}$' || true; }
-          FRAMEWORK=$(safe "$FRAMEWORK")
           EXPLICIT_TEST=$(safe "$EXPLICIT_TEST")
-          COMPARE_FW=$(safe "$COMPARE_FW")
+
+          COMPARE_FW=""
+          case "$COMMAND" in
+            single)
+              # Parse flags: -f <framework>
+              EXPLICIT_FW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*-f\s+\K\S+' || echo "")
+              # Fallback: positional arg (legacy: /benchmark baseline)
+              if [ -z "$EXPLICIT_FW" ] && [ -z "$EXPLICIT_TEST" ]; then
+                EXPLICIT_TEST=$(safe "$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+\K[^-]\S*' || echo "")")
+              fi
+              # Parse --compare <framework>: baseline the deltas on another entry's
+              # published results instead of this framework's own (#741).
+              COMPARE_FW=$(safe "$(echo "$COMMENT_BODY" | grep -oP '/benchmark\s+.*--compare[= ]\K\S+' || echo "")")
+              FRAMEWORK=$(safe "${EXPLICIT_FW:-$(echo "$CHANGED" | head -1)}")
+              ;;
+            multiple)
+              # /benchmark-multiple -f a,b,c — or, with no -f, every framework the
+              # PR touches. One run, one results commit at the end (#1084).
+              RAW=$(echo "$COMMENT_BODY" | grep -oP '/benchmark-multiple\s+.*-f\s+\K\S+' || echo "")
+              [ -n "$RAW" ] || RAW=$(echo "$CHANGED" | paste -sd, -)
+              FRAMEWORK=""
+              for fw in $(echo "$RAW" | tr ',' ' '); do
+                fw=$(safe "$fw")
+                [ -z "$fw" ] && continue
+                case ",$FRAMEWORK," in
+                  *",$fw,"*) ;;
+                  *) FRAMEWORK="${FRAMEWORK:+$FRAMEWORK,}$fw" ;;
+                esac
+              done
+              ;;
+            test)
+              # /benchmark-test -t <test> — every enabled framework subscribed to
+              # the test; always saves. The list is resolved in benchmark-pr.yml
+              # from the meta.json files on the PR head.
+              if [ -z "$EXPLICIT_TEST" ]; then
+                gh pr comment "$PR" --repo "$REPO" \
+                  --body "⚠️ \`/benchmark-test\` needs a test: \`/benchmark-test -t <test>\`. It benchmarks every enabled framework subscribed to that test and saves the results."
+                exit 1
+              fi
+              FRAMEWORK="all"
+              SAVE_FLAG="true"
+              ;;
+          esac
+
           echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
           echo "profile=$EXPLICIT_TEST" >> "$GITHUB_OUTPUT"
           echo "save=$SAVE_FLAG" >> "$GITHUB_OUTPUT"
           echo "compare=$COMPARE_FW" >> "$GITHUB_OUTPUT"
-          echo "Detected framework: $FRAMEWORK (auto: $AUTO_FRAMEWORK, explicit: $EXPLICIT_FW)"
+          echo "Command: $COMMAND"
+          echo "Framework(s): $FRAMEWORK"
           echo "Profile: $EXPLICIT_TEST, Save: $SAVE_FLAG, Compare: ${COMPARE_FW:-<own published results>}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -149,6 +189,6 @@ jobs:
       - name: No framework detected
         if: steps.parse.outputs.framework == ''
         run: |
-          gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to test. Either modify files under \`frameworks/<name>/\` or specify explicitly: \`/benchmark -f <framework> -t <test>\`"
+          gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to test. Either modify files under \`frameworks/<name>/\` or specify explicitly: \`/benchmark -f <framework> -t <test>\` (or \`/benchmark-multiple -f <fw1>,<fw2>\` for several)."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -12,6 +12,7 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "static",
     "api-4",
     "api-16",

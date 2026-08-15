@@ -1,0 +1,19 @@
+{
+  "display_name": "plug-cowboy",
+  "language": "Elixir",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "Cowboy",
+  "description": "Plug on the Cowboy adapter without Phoenix. Routing through Plug.Router, Jason JSON encoding, gzip through the cowboy_compress_h stream handler.",
+  "repo": "https://github.com/elixir-plug/plug_cowboy",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

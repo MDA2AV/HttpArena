@@ -2,6 +2,7 @@ using ioxide;
 using ioxide.file;
 using ioxide.pg;
 using ioxide.tls;
+using ioxide.http2;
 using ioxide.utils;
 
 namespace IoxideArena;
@@ -18,7 +19,7 @@ internal static class Handler
 
     public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasCache)
     {
-        _slab = config.WriteSlabSize;
+        _slab = config.Tcp!.WriteSlabSize;
         _dataSet = ds;
         _staticAssets = assets;
         _precompressed = precompressed;
@@ -27,8 +28,14 @@ internal static class Handler
         _hasCache = hasCache;
     }
 
-    public static async Task HandleAsync(Reactor reactor, Connection conn)
+    public static async Task HandleAsync(Reactor reactor, TcpConnection conn)
     {
+        if (conn.ListenerPort == 8443)
+        {
+            await ServeH2Async(reactor, conn);
+            return;
+        }
+
         var httpSession = new HttpSession(_dataSet, _staticAssets, _precompressed);
         PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
         ICrudCache? cache = _hasCache ? reactor.GetService<ICrudCache>() : null;
@@ -41,11 +48,10 @@ internal static class Handler
         {
             if (_hasTls && conn.ListenerPort == 8081)
             {
-                // Handshake over the ring, then kTLS TX: outbound writes below are
-                // plaintext and the kernel produces the records. Inbound stays
-                // userspace: each slice decrypts through the session. The client's
-                // first request can ride in with its Finished, so feed it here -
-                // the send-first loop below answers it before blocking on a read.
+                // Handshake over the ring, then kTLS TX: outbound writes below are plaintext
+                // and the kernel produces the records. Inbound stays userspace: each slice
+                // decrypts through the session. The client's first request can ride in with its
+                // Finished flight, so feed it before the loop parks on a read.
                 tls = await reactor.GetService<TlsService>().AcceptAsync(conn);
                 httpSession.Feed(tls.DrainPlaintext());
             }
@@ -155,10 +161,25 @@ internal static class Handler
                 {
                     int chunk = Math.Min(httpSession.OutLen - sent, _slab);
                     conn.Write(httpSession.Out.AsSpan(sent, chunk));
+
+                    // The static header is the tail of Out, so the file goes into the slab right
+                    // behind it and header + body leave in ONE flush - no reader buffer and no
+                    // copy of the body, which is the whole point of ReadFileAsync. The slab grows
+                    // to fit; ioxide.file only hands out a descriptor and a length.
+                    if (sent + chunk == httpSession.OutLen && httpSession.PendingStaticFd != 0)
+                    {
+                        int n = await conn.ReadFileAsync(httpSession.PendingStaticFd,
+                                                         (int)httpSession.PendingStaticLen, fileOffset: 0);
+                        conn.AdvanceWrite(n);
+                        httpSession.PendingStaticFd = 0;
+                        if (httpSession.PendingStaticClose) httpSession.WantClose = true;
+                    }
+
                     await conn.FlushAsync();
                     sent += chunk;
                 }
                 httpSession.OutLen = 0;
+                httpSession.PendingStaticFd = 0;
 
                 if (httpSession.WantClose || (tls?.Closed ?? false))
                     return;
@@ -177,7 +198,7 @@ internal static class Handler
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[r{reactor.Id}] http handler crash fd={conn.ClientFd}: {ex}");
+            Console.Error.WriteLine($"[{Thread.CurrentThread.Name}] http handler crash fd={conn.ClientFd}: {ex}");
         }
         finally
         {
@@ -189,7 +210,7 @@ internal static class Handler
     // Copy one slab-sized slice of the direct (baked static) response into the connection's write
     // slab - managed precompressed buffer or native identity response. Kept in a sync unsafe helper
     // so the native pointer never crosses an await in the async handler.
-    private static unsafe void WriteDirect(Connection conn, HttpSession s, int off, int len)
+    private static unsafe void WriteDirect(TcpConnection conn, HttpSession s, int off, int len)
     {
         if (s.DirectBytes != null)
         {
@@ -201,7 +222,27 @@ internal static class Handler
         }
     }
 
-    private static unsafe void FeedSlices(HttpSession s, Connection conn, TlsSession? tls, in RecvSnapshot snap)
+    private static async Task ServeH2Async(Reactor reactor, TcpConnection conn)
+    {
+        TlsSession? session = null;
+        try
+        {
+            session = await reactor.GetService<H2Tls>().Service.AcceptAsync(conn);
+            await using var pipe = new TlsConnectionDualPipe(conn, session, ownsSession: false);
+            await new Http2Connection(pipe).RunBufferedAsync(Multiplexed.RouteH2);
+        }
+        catch
+        {
+            // probe / handshake fault
+        }
+        finally
+        {
+            session?.Dispose();
+            conn.DecRef();
+        }
+    }
+
+    private static unsafe void FeedSlices(HttpSession s, TcpConnection conn, TlsSession? tls, in RecvSnapshot snap)
     {
         while (conn.TryGetItem(snap, out SpscRecvRing.Item item))
         {

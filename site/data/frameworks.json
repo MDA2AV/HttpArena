@@ -123,12 +123,28 @@
     "engine": "kestrel",
     "mode": "standard"
   },
+  "axum": {
+    "dir": "axum",
+    "description": "Axum 0.8 on hyper with the multi-threaded Tokio runtime, default configuration. Routing and path/query extractors through the Axum API, serde_json via the Json response, gzip through the tower-http compression layer.",
+    "repo": "https://github.com/tokio-rs/axum",
+    "type": "flagship",
+    "engine": "hyper",
+    "mode": "standard"
+  },
   "bananabread": {
     "dir": "bananabread",
     "description": "Seagreen \u2014 a TypeScript port of GenHTTP \u2014 on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
     "repo": "https://github.com/dotnet-web-stack/Seagreen",
     "type": "emerging",
     "engine": "seagreen",
+    "mode": "standard"
+  },
+  "beskar-websocket": {
+    "dir": "beskar-websocket",
+    "description": "High-performance WebSocket echo server built with Beskar.Networking.",
+    "repo": "https://github.com/MarvinDrude/Beskar.Networking",
+    "type": "experimental",
+    "engine": "beskar",
     "mode": "standard"
   },
   "bjoern": {
@@ -162,6 +178,50 @@
     "engine": "bun",
     "mode": "tuned"
   },
+  "Cardigan": {
+    "dir": "cardigan",
+    "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
+    "repo": "https://github.com/phjeltman/cardigan",
+    "type": "engine",
+    "engine": "io_uring",
+    "variants": [
+      {
+        "dir": "cardigan-grpc",
+        "description": "Cardigan gRPC over cleartext HTTP/2 prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-grpc-tls",
+        "description": "Cardigan gRPC over HTTP/2 and TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2",
+        "description": "Cardigan HTTP/2 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2c",
+        "description": "Cardigan HTTP/2 over cleartext prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-json-tls",
+        "description": "Cardigan HTTP/1.1 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      }
+    ]
+  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
@@ -184,12 +244,36 @@
     "engine": "deno",
     "mode": "tuned"
   },
+  "django": {
+    "dir": "django",
+    "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
+    "repo": "https://github.com/django/django",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
+  },
   "dogrider": {
     "dir": "dogrider",
     "description": "GenHTTP websockets with zerg backend",
     "repo": "https://github.com/MDA2AV/dogrider",
     "type": "emerging",
     "engine": "zerg",
+    "mode": "standard"
+  },
+  "drogon": {
+    "dir": "drogon",
+    "description": "Drogon on the trantor event loop, one event loop per core. Routing and path/query params through the Drogon API, jsoncpp serialization, gzip through the built-in response compression.",
+    "repo": "https://github.com/drogonframework/drogon",
+    "type": "flagship",
+    "engine": "trantor",
+    "mode": "standard"
+  },
+  "echo": {
+    "dir": "echo",
+    "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
+    "repo": "https://github.com/labstack/echo",
+    "type": "flagship",
+    "engine": "net/http",
     "mode": "standard"
   },
   "effinitive": {
@@ -206,6 +290,14 @@
     "repo": "https://github.com/elysiajs/elysia",
     "type": "flagship",
     "engine": "jsc",
+    "mode": "standard"
+  },
+  "express": {
+    "dir": "express",
+    "description": "Express 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/expressjs/express",
+    "type": "flagship",
+    "engine": "nodehttp",
     "mode": "standard"
   },
   "fastapi": {
@@ -231,6 +323,14 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "fastify": {
+    "dir": "fastify",
+    "description": "Fastify 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/fastify/fastify",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "fastpysgi-asgi": {
     "dir": "fastpysgi-asgi",
     "description": "An ultra fast WSGI/ASGI server for Python",
@@ -244,6 +344,14 @@
     "repo": "https://github.com/remittor/fastpysgi",
     "type": "engine",
     "engine": "libuv"
+  },
+  "fiber": {
+    "dir": "fiber",
+    "description": "Fiber 3 on fasthttp, default configuration. Routing and path/query binding through the Fiber API, JSON via c.JSON, gzip through the Fiber compress middleware.",
+    "repo": "https://github.com/gofiber/fiber",
+    "type": "flagship",
+    "engine": "fasthttp",
+    "mode": "standard"
   },
   "fishcake": {
     "dir": "fishcake",
@@ -285,12 +393,28 @@
     "engine": "frankenphp",
     "mode": "tuned"
   },
+  "fulmine": {
+    "dir": "fulmine",
+    "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "standard"
+  },
   "genhttp-11-ioxide": {
     "dir": "genhttp-11-ioxide",
     "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Uses GenHTTP's published ioxide engine packages (GenHTTP.Engine.Ioxide / GenHTTP.Modules.IoxideFiles, PR #860, merged). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
+    "mode": "tuned"
+  },
+  "genhttp-11-kestrel": {
+    "dir": "genhttp-11-kestrel",
+    "description": "Lightweight, embeddable and modular C# web server.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+    "type": "emerging",
+    "engine": "kestrel",
     "mode": "tuned"
   },
   "genhttp-11": {
@@ -315,6 +439,14 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "genhttp",
+    "mode": "standard"
+  },
+  "gin": {
+    "dir": "gin",
+    "description": "Gin web framework on the Go net/http server, default configuration. Routing and path/query binding through the Gin API, encoding/json via c.JSON, gzip through the gin-contrib/gzip middleware.",
+    "repo": "https://github.com/gin-gonic/gin",
+    "type": "flagship",
+    "engine": "net/http",
     "mode": "standard"
   },
   "go-fasthttp": {
@@ -380,6 +512,30 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "http-kit": {
+    "dir": "http-kit",
+    "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+    "repo": "https://github.com/http-kit/http-kit",
+    "type": "emerging",
+    "engine": "http-kit",
+    "mode": "standard"
+  },
+  "http4k": {
+    "dir": "http4k",
+    "description": "http4k 6 on the Undertow backend, default configuration. Routing and path/query access through the http4k API, Jackson JSON, gzip through the http4k GZip server filter.",
+    "repo": "https://github.com/http4k/http4k",
+    "type": "flagship",
+    "engine": "Undertow",
+    "mode": "standard"
+  },
+  "http4s": {
+    "dir": "http4s",
+    "description": "http4s 0.23 on the Ember server with cats-effect, default configuration. Routing through the http4s DSL, circe JSON, gzip through the http4s GZip middleware.",
+    "repo": "https://github.com/http4s/http4s",
+    "type": "flagship",
+    "engine": "Ember",
+    "mode": "standard"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
@@ -405,7 +561,7 @@
   },
   "ioxide": {
     "dir": "ioxide",
-    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static rides ioxide.file's baked asset snapshots.",
+    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file, ioxide.http2, ioxide.ngtcp2, ioxide.nghttp3). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; TLS terminates ring-natively (kTLS transmit offload, OpenSSL receive) on :8081, h2 over TLS (pure-C# ioxide.http2) on :8443, and HTTP/3 over QUIC (ngtcp2 + nghttp3) on udp:8443; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static on h1 reads the file descriptor straight into the connection's write slab (ioxide.file hands out descriptors, not bytes), so header and body leave in one flush with no intermediate buffer; h2/h3 serve the same assets from memory.",
     "repo": "https://github.com/MDA2AV/ioxide",
     "type": "engine",
     "engine": "io_uring"
@@ -416,6 +572,14 @@
     "repo": "https://github.com/Cobra007-star-source/IRIS",
     "type": "engine",
     "engine": "epoll"
+  },
+  "koa": {
+    "dir": "koa",
+    "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
+    "repo": "https://github.com/koajs/koa",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "standard"
   },
   "ktor-ghost": {
     "dir": "ktor-ghost",
@@ -433,12 +597,36 @@
     "engine": "netty",
     "mode": "standard"
   },
+  "lapis": {
+    "dir": "lapis",
+    "description": "Lapis on OpenResty with LuaJIT, one nginx worker per core. Routing and params through the Lapis application API, cjson serialization, gzip through the nginx gzip directive.",
+    "repo": "https://github.com/leafo/lapis",
+    "type": "flagship",
+    "engine": "OpenResty",
+    "mode": "standard"
+  },
+  "laravel": {
+    "dir": "laravel",
+    "description": "Laravel 13 served by Laravel Octane on FrankenPHP, the first-party production runtime documented by Laravel. Routing and request handling through the Laravel API, responses via the response()/json() helpers, gzip and brotli through the Caddy encode directive Octane generates.",
+    "repo": "https://github.com/laravel/laravel",
+    "type": "flagship",
+    "engine": "frankenphp",
+    "mode": "standard"
+  },
   "libreactorng": {
     "dir": "libreactorng",
     "description": "libreactorng \u2014 Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
     "repo": "https://github.com/fredrikwidlund/libreactorng",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "litestar": {
+    "dir": "litestar",
+    "description": "Litestar 2 on uvicorn with uvloop and httptools, one worker per core. Routing and parameter injection through the Litestar API, msgspec JSON serialization, gzip through the Litestar compression config.",
+    "repo": "https://github.com/litestar-org/litestar",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
   },
   "lute": {
     "dir": "lute",
@@ -510,6 +698,14 @@
       }
     ]
   },
+  "nestjs": {
+    "dir": "nestjs",
+    "description": "NestJS 11 on the Express platform adapter, default configuration. Routing and parameter decorators through the Nest API, controller return values serialized by the framework, gzip through the compression middleware the Nest docs recommend.",
+    "repo": "https://github.com/nestjs/nest",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "ngx-php": {
     "dir": "ngx-php",
     "description": "Embedded PHP scripting language module for nginx.",
@@ -525,6 +721,14 @@
     "type": "emerging",
     "engine": "v8",
     "mode": "tuned"
+  },
+  "pedestal": {
+    "dir": "pedestal",
+    "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
+    "repo": "https://github.com/pedestal/pedestal",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
   },
   "phoenix-bandit": {
     "dir": "phoenix-bandit",
@@ -548,6 +752,14 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "picoev"
+  },
+  "plug-cowboy": {
+    "dir": "plug-cowboy",
+    "description": "Plug on the Cowboy adapter without Phoenix. Routing through Plug.Router, Jason JSON encoding, gzip through the cowboy_compress_h stream handler.",
+    "repo": "https://github.com/elixir-plug/plug_cowboy",
+    "type": "flagship",
+    "engine": "Cowboy",
+    "mode": "standard"
   },
   "pyronova": {
     "dir": "pyronova",
@@ -621,6 +833,22 @@
     "engine": "robaho-httpserver",
     "mode": "standard"
   },
+  "ring-jetty9-adapter": {
+    "dir": "ring-jetty9-adapter",
+    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+    "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
+  "ring": {
+    "dir": "ring",
+    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "repo": "https://github.com/ring-clojure/ring",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
   "ringzero-ws": {
     "dir": "ringzero-ws",
     "description": "Hand-rolled WebSocket echo server on raw io_uring (liburing) \u2014 no WebSocket library. Multishot accept + multishot recv into a provided buffer ring for zero-copy ingest, one ring per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking.",
@@ -649,6 +877,14 @@
     "repo": "https://github.com/sparckles/Robyn",
     "type": "emerging",
     "engine": "uvloop",
+    "mode": "standard"
+  },
+  "rocket": {
+    "dir": "rocket",
+    "description": "Rocket 0.5 on hyper with the multi-threaded Tokio runtime, default configuration. Routing, path and query guards through the Rocket API, serde_json via the Json responder.",
+    "repo": "https://github.com/rwf2/Rocket",
+    "type": "flagship",
+    "engine": "hyper",
     "mode": "standard"
   },
   "roda": {
@@ -735,6 +971,14 @@
     "type": "emerging",
     "engine": "sisk",
     "mode": "tuned"
+  },
+  "slim": {
+    "dir": "slim",
+    "description": "Slim 4 with slim/psr7 on FrankenPHP in classic per-request mode. Routing and PSR-7 request/response through the Slim API, json_encode per request, gzip through the FrankenPHP encode directive.",
+    "repo": "https://github.com/slimphp/Slim",
+    "type": "flagship",
+    "engine": "FrankenPHP",
+    "mode": "standard"
   },
   "slimeweb": {
     "dir": "slimeweb",
@@ -870,7 +1114,7 @@
   },
   "ultimate-express": {
     "dir": "ultimate-express",
-    "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
+    "description": "ultimate-express (Express API on uWebSockets.js) with the cluster module for multi-core scaling.",
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "emerging",
     "engine": "uwebsockets",
@@ -890,6 +1134,14 @@
     "repo": "https://github.com/Kludex/uvicorn",
     "type": "engine",
     "engine": "uvloop"
+  },
+  "uWebSockets.js": {
+    "dir": "uwebsockets",
+    "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Routing and body handling through the uWS App API, JSON.stringify per request, gzip through the Node zlib bindings.",
+    "repo": "https://github.com/uNetworking/uWebSockets.js",
+    "type": "flagship",
+    "engine": "uWebSockets",
+    "mode": "standard"
   },
   "vanilla-epoll": {
     "dir": "vanilla-epoll",
@@ -926,6 +1178,42 @@
     "type": "engine",
     "engine": "veb"
   },
+  "vertx": {
+    "dir": "vertx",
+    "description": "Eclipse Vert.x 5 with vertx-web on Netty, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option.",
+    "repo": "https://github.com/eclipse-vertx/vert.x",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard"
+  },
+  "WebFramework C": {
+    "dir": "web-framework-cc",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
+  "WebFramework C++": {
+    "dir": "web-framework-cpp",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
+  "WebFramework C#": {
+    "dir": "web-framework-csharp",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
+  "WebFramework Python": {
+    "dir": "web-framework-python",
+    "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+    "repo": "https://github.com/LazyPanda07/WebFramework",
+    "type": "production",
+    "engine": "WebFramework"
+  },
   "workerman-websocket": {
     "dir": "workerman-websocket",
     "description": "An asynchronous event driven PHP socket framework. Supports HTTP, Websocket, SSL and other custom protocols.",
@@ -950,6 +1238,14 @@
     "engine": "wtx",
     "mode": "standard",
     "variants": [
+      {
+        "dir": "wtx-grpc-tls",
+        "description": "WTX - gRPC Server",
+        "repo": "https://github.com/c410-f3r/wtx",
+        "type": "emerging",
+        "engine": "wtx",
+        "mode": "standard"
+      },
       {
         "dir": "wtx-http2",
         "description": "WTX - HTTP/2 Framework Server",

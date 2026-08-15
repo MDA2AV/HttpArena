@@ -14,12 +14,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libboost-all-dev libssl-dev libgtest-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone Hical 项目源码（包含 HttpArena benchmark 文件在 docker/HttpArena/ 下）
+# Clone Hical（包含 HttpArena benchmark 文件在 docker/HttpArena/ 下）
+# HICAL_REF pin 到固定 commit，确保构建可复现；更新跑分时改此值
 ARG HICAL_REPO=https://github.com/Hical61/Hical.git
-ARG HICAL_REF=main
+ARG HICAL_REF=3f97b6db29405d413a0645529fcc036a5d52ebc6
 
 WORKDIR /src
-RUN git clone --depth 1 --branch ${HICAL_REF} ${HICAL_REPO} .
+RUN git init . && \
+    git remote add origin ${HICAL_REPO} && \
+    git fetch --depth 1 origin ${HICAL_REF} && \
+    git checkout FETCH_HEAD
 
 RUN cmake -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \

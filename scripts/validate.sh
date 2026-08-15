@@ -161,13 +161,29 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls"; then
+if has_test "json-tls" || has_test "static-tls"; then
     needs_h1tls=true
 fi
 
 needs_h2c=false
 if has_test "baseline-h2c" || has_test "json-h2c"; then
     needs_h2c=true
+fi
+
+# gRPC rides HTTP/2: the plaintext profiles use h2c on $PORT (already
+# published), the -tls ones use h2+ALPN on :8443 exactly like baseline-h2.
+# Those need the same certs mount and port publish, so fold them into
+# needs_h2 — without this a grpc-tls framework starts with no /certs and an
+# unreachable 8443, and cannot be validated even once the probe below works.
+needs_grpc=false
+needs_grpc_tls=false
+if has_test "unary-grpc" || has_test "stream-grpc" \
+   || has_test "unary-grpc-tls" || has_test "stream-grpc-tls"; then
+    needs_grpc=true
+fi
+if has_test "unary-grpc-tls" || has_test "stream-grpc-tls"; then
+    needs_grpc_tls=true
+    needs_h2=true
 fi
 
 if ($needs_h2 || $needs_h1tls) && [ -d "$CERTS_DIR" ]; then
@@ -183,7 +199,7 @@ if has_test "gateway-64" || has_test "gateway-h3"; then
     docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
 fi
 
-if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
+if has_test "static" || has_test "static-tls" || has_test "static-h2" || has_test "static-h3" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
@@ -311,6 +327,31 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
             fi
             if [ "$need_h2c_probe" = "true" ] && \
                curl -s --http2-prior-knowledge --max-time 2 -o /dev/null -w '' "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null; then
+                break
+            fi
+            # gRPC servers speak h2c on $PORT (or h2+TLS on $H2PORT) and never
+            # answer the HTTP/1.1 probe above, so a gRPC-only framework used to
+            # time out here and fail while perfectly healthy.
+            #
+            # The probe is a real gRPC call rather than a bare GET. Not every
+            # gRPC server answers an unrouted GET: wtx resets the connection
+            # (curl exit 56) while being perfectly healthy, so a GET-based
+            # probe reintroduces exactly the bug this block fixes. A POST to
+            # GetSum is a request every conforming server must route. Any
+            # HTTP response counts as up — even UNIMPLEMENTED from a
+            # stream-only framework, which is still curl exit 0.
+            if [ "$needs_grpc" = "true" ] && \
+               curl -s --http2-prior-knowledge --max-time 2 -o /dev/null \
+                    -X POST --data-binary "@$ROOT_DIR/requests/grpc-sum.bin" \
+                    -H 'content-type: application/grpc' -H 'te: trailers' \
+                    "http://localhost:$PORT/benchmark.BenchmarkService/GetSum" 2>/dev/null; then
+                break
+            fi
+            if [ "$needs_grpc_tls" = "true" ] && \
+               curl -sk --http2 --max-time 2 -o /dev/null \
+                    -X POST --data-binary "@$ROOT_DIR/requests/grpc-sum.bin" \
+                    -H 'content-type: application/grpc' -H 'te: trailers' \
+                    "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" 2>/dev/null; then
                 break
             fi
             if [ "$i" -eq 30 ]; then
@@ -618,6 +659,17 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
         $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\nConnection: close\r\n\r\n' \
         "2" \
         "0"
+
+    # Lower-cased header field names. HTTP field names are case-insensitive
+    # (RFC 9110 §5.1), so a server that only matches "Content-Length" and
+    # ignores "content-length" would fail to read the body length here. Only
+    # meaningful over HTTP/1.1: HTTP/2 and HTTP/3 mandate lowercase names on
+    # the wire, so that casing is already exercised by every h2/h3 request.
+    # curl can't be forced to emit uppercase, so this must go over the socket.
+    echo "[test] baseline lower-cased headers"
+    check_fragmented "POST /baseline11 — lower-cased content-length" "75" "$BASELINE_DOCS" \
+        $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nhost: localhost\r\ncontent-type: text/plain\r\ncontent-length: 2\r\nconnection: close\r\n\r\n' \
+        "20"
 fi
 
 # ───── Pipelined (GET /pipeline) ─────
@@ -1091,6 +1143,84 @@ if has_test "static"; then
 fi
 
 
+# ───── Static Files TLS (GET /static/* over HTTP/1.1 + TLS on :8081) ─────
+
+if has_test "static-tls"; then
+    STATICTLS_DOCS="$DOCS_BASE/h1/isolated/static-tls/validation"
+    echo "[test] static-tls endpoint"
+
+    # Must negotiate HTTP/1.1 (not h2) via ALPN on :8081
+    stls_proto=$(curl -sk --max-time 30 --http1.1 -o /dev/null -w '%{http_version}' "https://localhost:$H1TLS_PORT/static/reset.css" 2>/dev/null || echo "0")
+    if [ "$stls_proto" = "1.1" ]; then
+        echo "  PASS [static-tls protocol negotiation] (HTTP/$stls_proto over TLS)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static-tls protocol negotiation]: expected 1.1, got HTTP/$stls_proto" "$STATICTLS_DOCS"
+    fi
+
+    check_header "GET /static/reset.css Content-Type (TLS)" "Content-Type" "text/css" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/reset.css"
+
+    check_header "GET /static/app.js Content-Type (TLS)" "Content-Type" "application/javascript" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/app.js"
+
+    check_header "GET /static/manifest.json Content-Type (TLS)" "Content-Type" "application/json" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/manifest.json"
+
+    # Verify file sizes match actual files on disk
+    stls_fail=false
+    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
+        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
+        actual_size=$(curl -sk --max-time 30 -o /dev/null -w '%{size_download}' "https://localhost:$H1TLS_PORT/static/$sf" || echo "0")
+        if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
+            true
+        else
+            fail_with_link "[static-tls/$sf size]: expected $expected_size bytes, got $actual_size" "$STATICTLS_DOCS"
+            stls_fail=true
+        fi
+    done
+    if [ "$stls_fail" = "false" ]; then
+        echo "  PASS [static-tls file sizes] (20 files verified)"
+        PASS=$((PASS + 1))
+    fi
+
+    # Verify compression works when Accept-Encoding is sent — for each file, if server compresses, decompressed size must match original
+    stls_comp_fail=false
+    stls_comp_count=0
+    stls_comp_skip=0
+    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
+        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
+        _hdr_tmp=$(mktemp)
+        _body_tmp=$(mktemp)
+        curl -sk --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "https://localhost:$H1TLS_PORT/static/$sf" || true
+        comp_enc=$(grep -i "^content-encoding:" "$_hdr_tmp" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
+        decompressed=$(wc -c < "$_body_tmp")
+        rm -f "$_hdr_tmp" "$_body_tmp"
+        if [ -n "$comp_enc" ]; then
+            if [ "$decompressed" -eq "$expected_size" ] 2>/dev/null; then
+                stls_comp_count=$((stls_comp_count + 1))
+            else
+                fail_with_link "[static-tls/$sf compression]: Content-Encoding: $comp_enc but decompressed size $decompressed != expected $expected_size" "$STATICTLS_DOCS"
+                stls_comp_fail=true
+            fi
+        else
+            stls_comp_skip=$((stls_comp_skip + 1))
+        fi
+    done
+    if [ "$stls_comp_fail" = "false" ]; then
+        if [ "$stls_comp_count" -gt 0 ]; then
+            echo "  PASS [static-tls compression] ($stls_comp_count files compressed, $stls_comp_skip skipped)"
+            PASS=$((PASS + 1))
+        else
+            echo "  SKIP [static-tls compression] (server does not compress static files)"
+        fi
+    fi
+
+    check_status "GET /static/nonexistent.txt (TLS)" "404" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/nonexistent.txt"
+fi
+
+
 # ───── Static Files H2 (GET /static/* over HTTP/2 + TLS) ─────
 
 if has_test "static-h2"; then
@@ -1327,6 +1457,281 @@ print(f'{len(items)} {total} {page} {has_rating}')
     else
         fail_with_link "[PUT /crud/items/200001]: status=$crud_put_status, cache_after=$crud_after_put" "$CRUD_DOCS"
     fi
+fi
+
+# ───── gRPC unary (benchmark.BenchmarkService/GetSum) ─────
+#
+# Mirrors exactly what the benchmark does: h2load POSTs a length-prefixed
+# SumRequest to /benchmark.BenchmarkService/GetSum with
+# `content-type: application/grpc` + `te: trailers`, over h2c on $PORT
+# (unary-grpc) or h2+TLS on $H2PORT (unary-grpc-tls). Server reflection is
+# not required — the frame is built here, so no grpcurl dependency.
+#
+# Wire format: 1 byte compressed-flag (0) + 4 bytes big-endian length +
+# protobuf body. SumRequest{a=1,b=2} / SumReply{result=1}, all int32 varints.
+
+# Encode a SumRequest frame for (a, b) to stdout.
+grpc_encode_req() {
+    python3 -c '
+import sys, struct
+def varint(n):
+    out = bytearray()
+    while True:
+        b = n & 0x7f
+        n >>= 7
+        out.append(b | 0x80 if n else b)
+        if not n:
+            return bytes(out)
+msg = b"\x08" + varint(int(sys.argv[1])) + b"\x10" + varint(int(sys.argv[2]))
+sys.stdout.buffer.write(b"\x00" + struct.pack(">I", len(msg)) + msg)
+' "$1" "$2"
+}
+
+# Decode SumReply.result from a response frame file; prints ERR:<reason> on
+# anything malformed so the caller can report the actual bytes it got.
+grpc_decode_reply() {
+    python3 -c '
+import sys
+data = open(sys.argv[1], "rb").read()
+if len(data) < 5:
+    print("ERR:short-frame(%d bytes)" % len(data)); sys.exit(0)
+if data[0] != 0:
+    print("ERR:compressed-flag=%d" % data[0]); sys.exit(0)
+n = int.from_bytes(data[1:5], "big")
+msg = data[5:5 + n]
+if len(msg) != n:
+    print("ERR:truncated(len=%d,got=%d)" % (n, len(msg))); sys.exit(0)
+if not msg:
+    print(0); sys.exit(0)          # proto3 omits result when it is 0
+if msg[0] != 0x08:
+    print("ERR:tag=0x%02x" % msg[0]); sys.exit(0)
+val = shift = 0
+i = 1
+while i < len(msg):
+    byte = msg[i]; i += 1
+    val |= (byte & 0x7f) << shift
+    if not byte & 0x80:
+        print(val); sys.exit(0)
+    shift += 7
+print("ERR:bad-varint")
+' "$1"
+}
+
+# One unary call with a randomized sum. Verifies grpc-status, the decoded
+# result, and that the response really was HTTP/2.
+grpc_check_sum() {
+    local label="$1" url="$2" docs="$3"
+    shift 3
+    local a=$((RANDOM % 900 + 100))
+    local b=$((RANDOM % 900 + 100))
+    local expected=$((a + b))
+    local req hdr body proto status result
+    req=$(mktemp); hdr=$(mktemp); body=$(mktemp)
+
+    grpc_encode_req "$a" "$b" > "$req"
+    proto=$(curl -s --max-time 30 "$@" \
+        -X POST --data-binary "@$req" \
+        -H 'content-type: application/grpc' -H 'te: trailers' \
+        -D "$hdr" -o "$body" -w '%{http_version}' "$url" 2>/dev/null || echo "0")
+
+    # grpc-status arrives as a trailer (or a header on trailers-only errors);
+    # -D captures both. Absent is tolerated — the decoded payload is checked
+    # either way — but the `|| true` is load-bearing, not cosmetic: this script
+    # runs under `set -euo pipefail`, so a non-matching grep would abort the
+    # whole run silently, mid-test, with no output at all.
+    status=$({ grep -i '^grpc-status:' "$hdr" || true; } | tail -1 | tr -d '\r' | awk '{print $2}')
+    result=$(grpc_decode_reply "$body")
+
+    if [ "$proto" != "2" ]; then
+        fail_with_link "[$label]: responded over HTTP/$proto, expected HTTP/2 — gRPC requires HTTP/2" "$docs"
+    elif [ -n "$status" ] && [ "$status" != "0" ]; then
+        local gmsg
+        gmsg=$({ grep -i '^grpc-message:' "$hdr" || true; } | tail -1 | tr -d '\r' | cut -d' ' -f2-)
+        fail_with_link "[$label]: grpc-status=$status${gmsg:+ ($gmsg)}, expected 0" "$docs"
+    elif [ "$result" = "$expected" ]; then
+        echo "  PASS [$label] (a=$a b=$b -> $result)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[$label]: GetSum(a=$a, b=$b) returned '$result', expected $expected" "$docs"
+        echo "        ─── response frame (hex) ───"
+        { xxd "$body" 2>/dev/null | head -4 | sed 's/^/        /'; } || true
+    fi
+    rm -f "$req" "$hdr" "$body"
+}
+
+if has_test "unary-grpc"; then
+    GRPC_DOCS="$DOCS_BASE/grpc/unary/validation"
+    echo "[test] unary-grpc endpoint (h2c on :$PORT)"
+
+    grpc_check_sum "GetSum over h2c" \
+        "http://localhost:$PORT/benchmark.BenchmarkService/GetSum" "$GRPC_DOCS" \
+        --http2-prior-knowledge
+
+    # Anti-cheat: a canned reply passes a single fixed input, so fire a second
+    # independent random pair — the server must actually add its arguments.
+    grpc_check_sum "GetSum over h2c (second random pair)" \
+        "http://localhost:$PORT/benchmark.BenchmarkService/GetSum" "$GRPC_DOCS" \
+        --http2-prior-knowledge
+fi
+
+if has_test "unary-grpc-tls"; then
+    GRPC_TLS_DOCS="$DOCS_BASE/grpc/unary/validation"
+    echo "[test] unary-grpc-tls endpoint (h2+TLS on :$H2PORT)"
+
+    # The main probe may have cleared on the plaintext listener; give the TLS
+    # one a moment of its own before asserting against it.
+    for i in $(seq 1 10); do
+        if curl -sk --http2 --max-time 2 -o /dev/null "https://localhost:$H2PORT/" 2>/dev/null; then
+            break
+        fi
+        sleep 1
+    done
+
+    grpc_check_sum "GetSum over h2+TLS" \
+        "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" "$GRPC_TLS_DOCS" \
+        -k --http2
+
+    grpc_check_sum "GetSum over h2+TLS (second random pair)" \
+        "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" "$GRPC_TLS_DOCS" \
+        -k --http2
+fi
+
+# ───── gRPC server streaming (benchmark.BenchmarkService/StreamSum) ─────
+#
+# StreamRequest{a,b,count} -> the server emits `count` SumReply frames on one
+# stream, the i-th carrying `result = a + b + i` (docs: test-profiles/grpc/
+# stream/implementation). ghz drives this in the benchmark; here the reply
+# frames arrive concatenated in the response body, so correctness is "exactly
+# `count` frames carrying sum+0 .. sum+count-1, in order".
+#
+# Asserting the sequence rather than just the frame count is deliberate: a
+# server that emits `count` copies of a single precomputed reply skips the
+# per-message work the profile exists to measure, and would otherwise pass.
+
+# Encode a StreamRequest frame for (a, b, count).
+grpc_encode_stream_req() {
+    python3 -c '
+import sys, struct
+def varint(n):
+    out = bytearray()
+    while True:
+        b = n & 0x7f
+        n >>= 7
+        out.append(b | 0x80 if n else b)
+        if not n:
+            return bytes(out)
+msg = (b"\x08" + varint(int(sys.argv[1]))
+       + b"\x10" + varint(int(sys.argv[2]))
+       + b"\x18" + varint(int(sys.argv[3])))
+sys.stdout.buffer.write(b"\x00" + struct.pack(">I", len(msg)) + msg)
+' "$1" "$2" "$3"
+}
+
+# Verify a body of concatenated reply frames against the expected sequence.
+# Prints "OK" on success, otherwise ERR:<reason> describing the first problem.
+# Args: <body_file> <expected_base_sum> <expected_count>
+grpc_decode_stream() {
+    python3 -c '
+import sys
+data = open(sys.argv[1], "rb").read()
+base, count = int(sys.argv[2]), int(sys.argv[3])
+vals, i = [], 0
+while i < len(data):
+    if i + 5 > len(data):
+        print("ERR:trailing-bytes(%d)" % (len(data) - i)); sys.exit(0)
+    n = int.from_bytes(data[i+1:i+5], "big")
+    msg = data[i+5:i+5+n]
+    if len(msg) != n:
+        print("ERR:truncated-frame(want=%d,got=%d)" % (n, len(msg))); sys.exit(0)
+    i += 5 + n
+    if not msg:
+        vals.append(0); continue
+    if msg[0] != 0x08:
+        print("ERR:tag=0x%02x" % msg[0]); sys.exit(0)
+    val = shift = 0
+    j = 1
+    while j < len(msg):
+        byte = msg[j]; j += 1
+        val |= (byte & 0x7f) << shift
+        if not byte & 0x80:
+            break
+        shift += 7
+    vals.append(val)
+if len(vals) != count:
+    print("ERR:emitted %d frame(s), expected %d" % (len(vals), count)); sys.exit(0)
+expected = [base + k for k in range(count)]
+if vals != expected:
+    if len(set(vals)) == 1:
+        print("ERR:all %d frames carried %d - expected the sequence %d..%d "
+              "(result = a+b+i)" % (len(vals), vals[0], base, base + count - 1))
+    else:
+        print("ERR:got %s, expected %s" % (vals, expected))
+    sys.exit(0)
+print("OK")
+' "$1" "$2" "$3"
+}
+
+# Args: <label> <url> <docs> <count|auto> [curl args...]
+# "auto" randomizes count so it can't be special-cased either.
+grpc_check_stream() {
+    local label="$1" url="$2" docs="$3" count="$4"
+    shift 4
+    local a=$((RANDOM % 900 + 100))
+    local b=$((RANDOM % 900 + 100))
+    [ "$count" = "auto" ] && count=$((RANDOM % 8 + 3))
+    local expected=$((a + b))
+    local req hdr body proto status verdict
+
+    req=$(mktemp); hdr=$(mktemp); body=$(mktemp)
+    grpc_encode_stream_req "$a" "$b" "$count" > "$req"
+    proto=$(curl -s --max-time 30 "$@" \
+        -X POST --data-binary "@$req" \
+        -H 'content-type: application/grpc' -H 'te: trailers' \
+        -D "$hdr" -o "$body" -w '%{http_version}' "$url" 2>/dev/null || echo "0")
+
+    status=$({ grep -i '^grpc-status:' "$hdr" || true; } | tail -1 | tr -d '\r' | awk '{print $2}')
+    verdict=$(grpc_decode_stream "$body" "$expected" "$count")
+
+    if [ "$proto" != "2" ]; then
+        fail_with_link "[$label]: responded over HTTP/$proto, expected HTTP/2 — gRPC requires HTTP/2" "$docs"
+    elif [ -n "$status" ] && [ "$status" != "0" ]; then
+        local gmsg
+        gmsg=$({ grep -i '^grpc-message:' "$hdr" || true; } | tail -1 | tr -d '\r' | cut -d' ' -f2-)
+        fail_with_link "[$label]: grpc-status=$status${gmsg:+ ($gmsg)}, expected 0" "$docs"
+    elif [ "$verdict" = "OK" ]; then
+        echo "  PASS [$label] (a=$a b=$b count=$count -> $expected..$((expected + count - 1)))"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[$label]: StreamSum(a=$a, b=$b, count=$count) — ${verdict#ERR:}" "$docs"
+    fi
+    rm -f "$req" "$hdr" "$body"
+}
+
+if has_test "stream-grpc"; then
+    GRPC_STREAM_DOCS="$DOCS_BASE/grpc/stream/validation"
+    echo "[test] stream-grpc endpoint (h2c on :$PORT)"
+    grpc_check_stream "StreamSum over h2c" \
+        "http://localhost:$PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_DOCS" \
+        auto --http2-prior-knowledge
+
+    # The benchmark drives count=5000. A framework that truncates long streams
+    # or drops trailing messages under flow control still passes the short
+    # check above, so exercise the real depth once.
+    grpc_check_stream "StreamSum over h2c (count=5000, benchmark depth)" \
+        "http://localhost:$PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_DOCS" \
+        5000 --http2-prior-knowledge
+fi
+
+if has_test "stream-grpc-tls"; then
+    GRPC_STREAM_TLS_DOCS="$DOCS_BASE/grpc/stream/validation"
+    echo "[test] stream-grpc-tls endpoint (h2+TLS on :$H2PORT)"
+    grpc_check_stream "StreamSum over h2+TLS" \
+        "https://localhost:$H2PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_TLS_DOCS" \
+        auto -k --http2
+
+    grpc_check_stream "StreamSum over h2+TLS (count=5000, benchmark depth)" \
+        "https://localhost:$H2PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_TLS_DOCS" \
+        5000 -k --http2
 fi
 
 # ───── WebSocket Echo (ws://localhost/ws) ─────

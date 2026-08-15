@@ -202,6 +202,9 @@ framework_wait_ready() {
         static)
             probe_url="http://localhost:$PORT/static/reset.css"
             ;;
+        static-tls)
+            probe_url="https://localhost:$H1TLS_PORT/static/reset.css"
+            ;;
         json)
             probe_url="http://localhost:$PORT/json/1"
             ;;

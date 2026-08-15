@@ -1,0 +1,23 @@
+{
+  "display_name": "fastify",
+  "language": "JS",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "nodehttp",
+  "description": "Fastify 5 on node:http with the cluster module for multi-core scaling.",
+  "repo": "https://github.com/fastify/fastify",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static"
+  ],
+  "maintainers": []
+}

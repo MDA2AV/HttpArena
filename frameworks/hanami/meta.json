@@ -1,0 +1,19 @@
+{
+  "display_name": "hanami",
+  "language": "Ruby",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "Puma",
+  "description": "Hanami 2.3 actions and router on Puma, one worker per core. Routing and params through the Hanami API, JSON generated per request, gzip through Rack::Deflater.",
+  "repo": "https://github.com/hanami/hanami",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

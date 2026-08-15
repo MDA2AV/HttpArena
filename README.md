@@ -8,7 +8,7 @@ Hi, thank you for visiting or contributing to our project, we are always looking
 
 HTTP framework benchmark platform.
 
-29 test profiles. 64-core dedicated hardware. Same conditions for every framework.
+30 test profiles. 64-core dedicated hardware. Same conditions for every framework.
 
 [View Leaderboard](https://www.http-arena.com/) | [Documentation](https://www.http-arena.com/#doc=) | [Add a Framework](https://www.http-arena.com/#doc=add-framework)
 
@@ -23,8 +23,11 @@ HTTP framework benchmark platform.
 | `/benchmark -f <framework> --save` | Run and save results (updates the leaderboard on merge) |
 | `/benchmark -f <framework> -t <test> --save` | Run one test and save results |
 | `/benchmark -f <framework> --compare <other>` | Measure the deltas against another framework instead of this one |
+| `/benchmark-multiple -f <fw1>,<fw2>,...` | Benchmark several frameworks in one run — takes `-t` and `--save` too; saved results land in a single commit |
+| `/benchmark-multiple --save` | No `-f` needed: benchmark and save every framework the PR touches |
+| `/benchmark-test -t <test>` | Benchmark **all** enabled frameworks subscribed to `<test>` and save the results |
 
-Always specify `-f <framework>`; the flags combine in any order. Results come back as a comment with a per-profile table of RPS, p99, CPU and memory.
+For `/benchmark`, always specify `-f <framework>`; the flags combine in any order. Results come back as a comment with a per-profile table of RPS, p99, CPU and memory — one table per framework on multi runs. A new benchmark comment while a run is in flight queues behind it (one deep) instead of cancelling it. For multi-framework PRs (dependency bumps, same-language refactors) prefer `/benchmark-multiple`, which runs everything in a single job and commits all saved results together, so no run overwrites another. `--compare` works on single-framework runs only.
 
 **What the deltas are measured against.** By default, this framework's own results published on `main` - answering *"did this change help?"*. When you are tuning a variant or a successor entry, `--compare` re-bases them on another entry instead:
 
@@ -40,8 +43,8 @@ The reply states which baseline it used, and profiles the other framework does n
 
 | Category | Profiles | Description |
 |----------|----------|-------------|
-| Connection | `baseline`, `pipelined`, `limited-conn` | Mixed GET/POST with query parsing (512/4K conns), 16× batched pipelining, short-lived connections that close after 10 requests |
-| Workload | `json`, `json-comp`, `json-tls`, `upload`, `static` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, 20 MB body ingestion, 20-file static asset serving |
+| Connection | `baseline`, `pipelined` *, `limited-conn` | Mixed GET/POST with query parsing (512/4K conns), 16× batched pipelining (reference-only, shown faded, excluded from the composite score), short-lived connections that close after 10 requests |
+| Workload | `json`, `json-comp`, `json-tls`, `upload`, `static`, `static-tls` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, 20 MB body ingestion, 20-file static asset serving (plaintext and TLS) |
 | Database | `async-db`, `crud` | Async Postgres sequential scan; realistic REST API with cached reads, list, upsert, update, and optional Redis cache |
 | Templates | `fortunes` * | DB query + HTML template render (TechEmpower-style Fortunes). Reference-only — measures template-engine throughput, not part of the composite score |
 | Multi-endpoint | `api-4`, `api-16` | Mixed baseline + JSON + async-db at CPU-budget cliffs (4 and 16 logical CPUs, i.e. 2 and 8 full SMT cores) |
@@ -149,4 +152,4 @@ Another badge variants:
       </a>
     </td>
   </tr>
-</table>
+</table> 

@@ -1,8 +1,7 @@
 # genhttp-11-ioxide
 
 [GenHTTP 11](https://github.com/Kaliumhexacyanoferrat/GenHTTP) running on a custom
-**io_uring** server engine (the [ioxide](https://github.com/MDA2AV/ioxide) runtime)
-instead of GenHTTP's default socket engine.
+**io_uring** server engine (the [ioxide](https://github.com/MDA2AV/ioxide) runtime) instead of GenHTTP's default socket engine.
 
 The engine runs GenHTTP's own HTTP/1.1 conversation directly on ioxide's per-connection
 duplex pipe — thread-per-core, one io_uring reactor per core, with chunked transfer-encoding,
