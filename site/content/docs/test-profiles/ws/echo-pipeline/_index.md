@@ -1,5 +1,7 @@
 ---
 title: Echo Pipelined (WebSocket)
+seo_title: "Pipelined WebSocket Echo Benchmark"
+description: "Measures WebSocket echo throughput with sixteen messages sent back to back before the first reply is read."
 ---
 
 Measures WebSocket echo throughput with pipelining. Each connection upgrades via HTTP/1.1, then sends 16 messages back-to-back before waiting for the echoes.

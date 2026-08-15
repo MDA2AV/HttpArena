@@ -1,5 +1,7 @@
 ---
 title: Baseline (HTTP/3)
+seo_title: "HTTP/3 Baseline Benchmark (QUIC)"
+description: "Measures raw request throughput over QUIC, the UDP-based transport behind HTTP/3."
 ---
 
 Tests raw throughput over QUIC, the UDP-based transport protocol that powers HTTP/3.

@@ -1,104 +1,27 @@
+V panic: array.get: index out of range (i,a.len):4, 4
+ v hash: 84a76d7
+    pid: 0x1
+    tid: 0x31
+sh: 1: addr2line: not found
+/server(+0x6665f) [0x61ee9b49365f]
+sh: 1: addr2line: not found
+/server(+0x5aab0) [0x61ee9b487ab0]
+sh: 1: addr2line: not found
+/server(+0x35768) [0x61ee9b462768]
+sh: 1: addr2line: not found
+/server(+0x3463a) [0x61ee9b46163a]
 listening on http://0.0.0.0:8080/
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
-ERROR: send() failed with errno=104
+sh: 1: addr2line: not found
+/server(+0x24d93) [0x61ee9b451d93]
+sh: 1: addr2line: not found
+/server(+0x27f3d) [0x61ee9b454f3d]
+sh: 1: addr2line: not found
+/server(+0x11413) [0x61ee9b43e413]
+sh: 1: addr2line: not found
+/server(+0xfa3f) [0x61ee9b43ca3f]
+sh: 1: addr2line: not found
+/server(+0x6b805) [0x61ee9b498805]
+sh: 1: addr2line: not found
+/lib/x86_64-linux-gnu/libc.so.6(+0x92b7b) [0x743902f5db7b]
+sh: 1: addr2line: not found
+/lib/x86_64-linux-gnu/libc.so.6(+0x1107f8) [0x743902fdb7f8]

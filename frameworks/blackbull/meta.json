@@ -18,7 +18,8 @@
     "json-comp",
     "json-tls",
     "upload",
-    "static"
+    "static",
+    "static-tls"
   ],
   "maintainers": []
 }

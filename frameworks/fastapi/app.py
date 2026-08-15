@@ -9,7 +9,6 @@ import asyncpg
 from fastapi import FastAPI, Request, Response, Path, Query, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.applications import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
 
 
@@ -74,15 +73,7 @@ async def lifespan(application: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-app.add_middleware(GZipMiddleware, minimum_size=1, compresslevel=5)
-
-class ServerHeaderMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        response.headers["Server"] = "FastAPI"
-        return response 
-
-app.add_middleware(ServerHeaderMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 
 
 # -- Routes ------------------------------------------------------------------

@@ -1,0 +1,21 @@
+{
+  "display_name": "ring",
+  "language": "Clojure",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "Jetty",
+  "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+  "repo": "https://github.com/ring-clojure/ring",
+  "maintainers": [],
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "static",
+    "async-db"
+  ]
+}

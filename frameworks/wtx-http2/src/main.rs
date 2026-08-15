@@ -1,56 +1,36 @@
 use serde::Serialize;
 use wtx::{
   codec::i64_string,
-  collection::{ArrayVectorU8, Vector},
+  collections::{ArrayVectorU8, Vector},
   http::{
-    Header, HttpRecvParams, KnownHeaderName, MsgBufferString, MsgDataMut, StatusCode,
-    server_framework::{
-      JsonReply, PathOwned, Router, ServerFrameworkBuilder, State, VerbatimParams, get, 
+    Header, HttpRecvParams, KnownHeaderName, MsgDataMut, StatusCode,
+    http2_server_framework::{
+      Http2ServerFramework, HttpRouter, JsonReply, Path, State, VerbatimParams, get,
     },
   },
   misc::Wrapper,
   sync::Arc,
+  tls::TlsConfig,
 };
 
-fn main() {
+fn main() -> wtx::Result<()> {
   let dataset = load_dataset();
-  let threads = std::thread::available_parallelism().map(|el| el.get()).unwrap_or(1);
-  let mut handlers = Vector::new();
-  for _ in 0..threads {
-    let dataset_thread = dataset.clone();
-    let handle = std::thread::spawn(|| {
-      tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap().block_on(async {
-        let router = Router::paths(wtx::paths!(
-          ("/baseline2", get(endpoint_baseline2)),
-          ("/json/{count}", get(endpoint_json)),
-        )).unwrap();
-        let _rslt = ServerFrameworkBuilder::new(HttpRecvParams::with_permissive_params(), router)
-          .with_conn_aux(move || Ok(ConnAux { dataset: dataset_thread.clone() }))
-          .tokio(
-            "0.0.0.0:8082",
-            |_error| {},
-            |_| Ok(()),
-            |_stream| Ok(()),
-            |_error| {},
-          )
-          .await;
-      })
-    });
-    handlers.push(handle).unwrap();
-  }
-  for handle in handlers {
-    handle.join().unwrap();
-  }
+  let router = HttpRouter::paths(wtx::paths!(
+    ("/baseline2", get(endpoint_baseline2)),
+    ("/json/{count}", get(endpoint_json)),
+  ))?;
+  Http2ServerFramework::tokio(TlsConfig::plaintext())?
+    .set_data(ConnAux { dataset })
+    .set_http_recv_params(HttpRecvParams::with_permissive_params())
+    .run_in_threads("0.0.0.0:8082", router)
 }
 
-#[derive(Clone, wtx::ConnAux)]
+#[derive(Clone, wtx::Lease)]
 struct ConnAux {
   dataset: Arc<Vector<DatasetItem>>,
 }
 
-async fn endpoint_baseline2(
-  state: State<'_, ConnAux, (), MsgBufferString>,
-) -> wtx::Result<VerbatimParams> {
+async fn endpoint_baseline2(state: State<'_, ConnAux>) -> wtx::Result<VerbatimParams> {
   let mut sum: i64 = 0;
   for (_, value) in state.req.msg_data.uri.query_params() {
     sum = sum.wrapping_add(value.parse()?);
@@ -65,8 +45,8 @@ async fn endpoint_baseline2(
 }
 
 async fn endpoint_json(
-  state: State<'_, ConnAux, (), MsgBufferString>,
-  PathOwned(count): PathOwned<usize>,
+  state: State<'_, ConnAux>,
+  Path(count): Path<usize>,
 ) -> wtx::Result<JsonReply> {
   let mut m: f64 = 1.0;
   for (key, value) in state.req.msg_data.uri.query_params() {
@@ -76,10 +56,10 @@ async fn endpoint_json(
     m = f64::from(value.parse::<i32>()?);
     break;
   }
-  let dataset_len = state.conn_aux.dataset.len();
+  let dataset_len = state.data.dataset.len();
   let clamped = if count > dataset_len { dataset_len } else { count };
   state.req.msg_data.clear();
-  let items = state.conn_aux.dataset.iter().take(clamped).map(move |el| {
+  let items = state.data.dataset.iter().take(clamped).map(move |el| {
     Ok(ProcessedItem {
       id: el.id,
       name: &el.name,

@@ -1,0 +1,32 @@
+{
+  "display_name": "fastendpoints",
+  "language": "C#",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "kestrel",
+  "description": "FastEndpoints (REPR-pattern endpoint framework on ASP.NET Core) using .NET 10 with Kestrel.",
+  "repo": "https://github.com/FastEndpoints/FastEndpoints",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "static-tls",
+    "async-db",
+    "crud",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

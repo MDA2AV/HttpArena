@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Short-lived Connection Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the short-lived connection benchmark before a framework's results are accepted."
 ---
 
 The short-lived connection profile uses the same `/baseline11` endpoint as the baseline test. Its validation is covered by the [Baseline validation](../../baseline/validation) checks, which run for every framework subscribed to either `baseline` or `limited-conn`.

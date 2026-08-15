@@ -1,0 +1,11 @@
+{
+  "display_name": "WebFramework Python",
+  "language": "Pyton",
+  "engine": "WebFramework",
+  "type": "production",
+  "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
+  "repo": "https://github.com/LazyPanda07/WebFramework",
+  "enabled": true,
+  "tests": [ "baseline", "limited-conn", "pipelined", "json", "upload", "static", "echo-ws" ],
+  "maintainers": [ "LazyPanda07" ]
+}

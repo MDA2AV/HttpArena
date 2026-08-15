@@ -1,0 +1,21 @@
+{
+  "display_name": "pedestal",
+  "language": "Clojure",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "Jetty",
+  "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
+  "repo": "https://github.com/pedestal/pedestal",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "static",
+    "async-db"
+  ],
+  "maintainers": []
+}

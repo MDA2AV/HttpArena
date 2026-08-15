@@ -46,6 +46,15 @@ internal sealed unsafe partial class HttpSession
     // /async-db parks the parser here; the handler runs the query and resumes.
     public bool PendingDb;
     public bool PendingDbClose;
+
+    // A static file the handler must read off the ring. ioxide.file no longer bakes HTTP
+    // responses (0.4.167 made it io_uring reads only), so the header is framed here and the body
+    // is read straight into the connection's write slab by the handler - no intermediate buffer
+    // and no copy. Legal on the TLS ports too, because kTLS transmit is on: the slab is supposed
+    // to hold plaintext there and the kernel makes the records on send.
+    public int  PendingStaticFd;
+    public long PendingStaticLen;
+    public bool PendingStaticClose;
     private long _dbMin = 10, _dbMax = 50;
     private int _dbLimit = 50;
     private int _dbClOff;
@@ -259,10 +268,24 @@ internal sealed unsafe partial class HttpSession
                 if (OutLen == 0 && !HasDirect) { DirectBytes = pre; DirectLen = pre.Length; }
                 else AppendOut(pre);
             }
-            else if (_assets != null && _assets.TryGet(path[7..], out AssetCache.Asset asset) && asset.Response != 0)
+            else if (_assets != null && _assets.TryGet(path[7..], out AssetCache.Asset asset))
             {
-                if (OutLen == 0 && !HasDirect) { DirectPtr = asset.Response; DirectLen = asset.ResponseLength; }
-                else AppendOut(new ReadOnlySpan<byte>((void*)asset.Response, asset.ResponseLength));
+                // Header now, body later: the handler reads the file into the write slab right
+                // after this header lands in it, so both leave in ONE flush with no copy of the
+                // body anywhere. Only one file can be pending per batch, so a second static hit
+                // in the same pipeline falls through to the header-only path and is served on the
+                // next pass.
+                AppendOut("HTTP/1.1 200 OK\r\nContent-Type: "u8);
+                AppendOut(MimeFor(asset.Path));
+                AppendOut("\r\nContent-Length: "u8);
+                Span<byte> len = stackalloc byte[20];
+                Utf8Formatter.TryFormat(asset.Length, len, out int lw);
+                AppendOut(len[..lw]);
+                AppendOut(close ? "\r\nConnection: close\r\n\r\n"u8 : "\r\n\r\n"u8);
+
+                PendingStaticFd    = asset.Fd;
+                PendingStaticLen   = asset.Length;
+                PendingStaticClose = close;
             }
             else
             {
@@ -293,6 +316,22 @@ internal sealed unsafe partial class HttpSession
             WriteResp(num[..n], close);
         }
     }
+
+    // ioxide.file hands back a descriptor and a length; the content type is HTTP's business, so
+    // it is decided here rather than baked into the asset.
+    private static ReadOnlySpan<byte> MimeFor(string path) => Path.GetExtension(path) switch
+    {
+        ".html" => "text/html"u8,
+        ".css"  => "text/css"u8,
+        ".js"   => "application/javascript"u8,
+        ".json" => "application/json"u8,
+        ".svg"  => "image/svg+xml"u8,
+        ".png"  => "image/png"u8,
+        ".jpg"  => "image/jpeg"u8,
+        ".webp" => "image/webp"u8,
+        ".txt"  => "text/plain"u8,
+        _       => "application/octet-stream"u8,
+    };
 
     private void WriteResp(ReadOnlySpan<byte> body, bool close)
     {

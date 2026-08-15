@@ -1,5 +1,7 @@
 ---
 title: WebSocket
+seo_title: "WebSocket Load Generation"
+description: "HttpArena drives its WebSocket profiles with gcannon in --ws mode, reusing the same io_uring engine as the HTTP/1.1 tests."
 ---
 
 HttpArena drives the `echo-ws` profile with **gcannon in `--ws` mode**. The same io_uring engine documented under [HTTP/1.1 → gcannon](../h1/gcannon/) is reused here - worker threads, per-thread provided-buffer rings, multishot receives, per-connection state - with a frame-aware send/recv loop layered on top. Using one tool across transports keeps the client-side ceiling, threading model, and CPU-pinning behavior consistent so differences in the measurement land on the server, not the generator.
@@ -49,7 +51,7 @@ gcannon reports WebSocket results with the same layout as HTTP requests, except 
   WS frames: 2400000
 ```
 
-The parser (`gcannon_parse ws-echo`) records `frames received` as the `status_2xx` equivalent and divides by the measured duration to produce the headline RPS number shown on the [WebSocket leaderboard](/leaderboards/websocket/). One echo round-trip counts as one unit - the frames-received count from the client side, not frames-sent, because the metric is "how many echoes the framework completed," not "how many messages the benchmarker pushed into the socket."
+The parser (`gcannon_parse ws-echo`) records `frames received` as the `status_2xx` equivalent and divides by the measured duration to produce the headline RPS number shown on the [WebSocket leaderboard](https://www.http-arena.com/#scope=ws). One echo round-trip counts as one unit - the frames-received count from the client side, not frames-sent, because the metric is "how many echoes the framework completed," not "how many messages the benchmarker pushed into the socket."
 
 ## Why not a dedicated WebSocket tool
 

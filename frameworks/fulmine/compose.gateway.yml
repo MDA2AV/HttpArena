@@ -1,0 +1,46 @@
+# gateway-64 - stock Caddy (TLS + h2 on 8443) in front of the fulmine server,
+# forwarding the dynamic endpoints over loopback h1 with keepalive. The server
+# gets no certs here, so it comes up cleartext on 8080 only.
+#
+# The CPU split is the knob worth sweeping, via PROXY_CPUSET / SERVER_CPUSET.
+# Terminating TLS under multiplexed h2 is usually the heavier half, so the
+# proxy starts with the same share as the server rather than less.
+services:
+  proxy:
+    build:
+      context: ./proxy
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR}/static:/data/static:ro

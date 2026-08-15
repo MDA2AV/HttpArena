@@ -1,0 +1,21 @@
+{
+  "display_name": "ring-jetty9-adapter",
+  "language": "Clojure",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "Jetty",
+  "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+  "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "static",
+    "async-db"
+  ],
+  "maintainers": []
+}

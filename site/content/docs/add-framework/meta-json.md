@@ -1,5 +1,7 @@
 ---
 title: meta.json
+seo_title: "meta.json Reference"
+description: "Every field in a framework's meta.json: display name, language, type, mode, engine, maintainers, and the tests the entry subscribes to."
 ---
 
 Create a `meta.json` file in your framework directory:
@@ -26,7 +28,7 @@ Create a `meta.json` file in your framework directory:
 | `display_name` | Name shown on the leaderboard |
 | `language` | Programming language (e.g., `Go`, `Rust`, `C#`, `Java`) |
 | `engine` | HTTP server engine (e.g., `Kestrel`, `Tomcat`, `hyper`) |
-| `type` | `flagship`, `emerging` or `experimental` for frameworks, `engine` for bare-metal implementations, `infrastructure` for reverse proxies / static-file servers |
+| `type` | `flagship`, `emerging` or `experimental` for frameworks, `engine` for bare-metal implementations |
 | `mode` | Frameworks only: `standard` (default - idiomatic, production-style usage) or `tuned` (non-default config / optimizations) |
 | `description` | Shown in the framework detail popup on the leaderboard |
 | `repo` | Link to the framework's source repository |

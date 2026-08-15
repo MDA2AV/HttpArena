@@ -1,5 +1,5 @@
 FROM rust:1.95 AS build
-RUN rustup default nightly-2026-05-07
+RUN rustup default nightly-2026-06-27
 WORKDIR /app
 COPY Cargo.toml build.rs ./
 COPY proto ./proto

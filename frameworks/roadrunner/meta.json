@@ -19,6 +19,7 @@
     "api-4",
     "api-16",
     "static",
+    "static-tls",
     "fortunes",
     "crud",
     "baseline-h2",

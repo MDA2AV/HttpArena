@@ -1,7 +1,9 @@
 ---
 title: Implementation Guidelines
+seo_title: "HTTP/2 Baseline Benchmark (TLS) — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP/2 TLS baseline benchmark."
 ---
-{{< type-rules production="Must use the framework standard HTTP/2 + TLS configuration. No custom ALPN settings or TLS cipher tuning." tuned="May optimize TLS settings, HTTP/2 stream limits, window sizes, and connection parameters." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard HTTP/2 + TLS configuration. No custom ALPN settings or TLS cipher tuning." tuned="May optimize TLS settings, HTTP/2 stream limits, window sizes, and connection parameters." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 Same workload as the HTTP/1.1 baseline - query parameter parsing and sum computation - but over encrypted HTTP/2 connections using TLS and ALPN negotiation.

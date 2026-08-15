@@ -8,6 +8,7 @@ using GenHTTP.Engine.Ioxide;
 using GenHTTP.Modules.Compression;
 
 using ioxide;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // Reactor count follows the available CPUs (api-4 / api-16 control this via cpuset pinning);
 // override with IOXIDE_REACTORS.
@@ -62,6 +63,7 @@ var host = Host.Create(
         },
         onReactorStart,
         connectionFactory)
+    .Logging(NullLoggerFactory.Instance)
     .Handler(Project.Create())
     .Compression(CompressedContent.Default());
 

@@ -1,5 +1,7 @@
 ---
 title: Frameworks
+seo_title: "Framework Entry Rules and Maturity Tiers"
+description: "How framework entries are grouped into the Flagship, Emerging and Experimental tiers, and what each tier requires of a submission."
 weight: 1
 ---
 

@@ -1,5 +1,7 @@
 ---
 title: HTTP/3
+seo_title: "HTTP/3 Load Generation"
+description: "How HttpArena generates HTTP/3 traffic over QUIC, and why a custom ngtcp2 build replaced the previous tool."
 ---
 
 {{< cards >}}

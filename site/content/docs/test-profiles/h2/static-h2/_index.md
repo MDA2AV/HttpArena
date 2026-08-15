@@ -1,5 +1,7 @@
 ---
 title: Static Files (HTTP/2)
+seo_title: "Static File Serving Benchmark (HTTP/2)"
+description: "Serves twenty static assets over HTTP/2 with TLS, approximating a browser page load across multiplexed streams."
 ---
 
 Serves 20 static files of various types and sizes over HTTP/2 with TLS, simulating a realistic browser page load with multiplexed streams.

@@ -1,5 +1,7 @@
 ---
 title: Directory Structure
+seo_title: "Framework Directory Structure"
+description: "The files every HttpArena entry provides under frameworks/, and what each one is used for during build, validation and benchmarking."
 ---
 
 Create a directory under `frameworks/` with your framework's name:

@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Pipelined WebSocket Echo Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the pipelined WebSocket echo benchmark before a framework's results are accepted."
 ---
 
 The same `validate-ws.py` checks executed for the [Echo](../echo/validation/) profile apply here - pipelining is a load-generator behavior, not a separate server contract. The endpoint and frame semantics are identical, so a server that passes the Echo validation passes for Echo Pipelined as well.
