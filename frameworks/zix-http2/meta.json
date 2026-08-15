@@ -3,7 +3,7 @@
   "language": "Zig",
   "type": "engine",
   "engine": "zix.Http2 URING Dispatch Model",
-  "description": "Zig HTTP/2 server on the zix.Http2 raw engine, .URING dispatch: shared-nothing per-core io_uring with SO_REUSEPORT, per-worker stream-slot pool. Dual listener (config.tls_port): h2c 8082 plus h2 over TLS 1.3 (ALPN h2) on 8443, one process.",
+  "description": "HTTP/2 on the zix.Http2 raw engine, .URING dispatch: per-worker SO_REUSEPORT io_uring loops, per-worker stream-slot pool, comptime Router. Dual listener: h2c 8082, h2 over TLS 1.3 (ALPN h2) on 8443, one process. No response cache and no startup pre-serialization anywhere: json serializes every field per request, static is the engine's public_dir.",
   "repo": "https://github.com/prothegee/zix",
   "enabled": true,
   "tests": [
@@ -12,5 +12,7 @@
     "baseline-h2c",
     "json-h2c"
   ],
-  "maintainers": ["prothegee"]
+  "maintainers": [
+    "prothegee"
+  ]
 }
