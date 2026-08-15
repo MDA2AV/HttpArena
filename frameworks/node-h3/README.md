@@ -1,4 +1,4 @@
-# h3
+# node-h3
 
 H3 v2 on node's own HTTP server, with the cluster module for multi-core scaling.
 

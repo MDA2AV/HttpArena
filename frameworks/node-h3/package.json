@@ -1,5 +1,5 @@
 {
-  "name": "httparena-h3",
+  "name": "httparena-node-h3",
   "private": true,
   "type": "module",
   "dependencies": {
