@@ -143,7 +143,7 @@
     "dir": "beskar-websocket",
     "description": "High-performance WebSocket echo server built with Beskar.Networking.",
     "repo": "https://github.com/MarvinDrude/Beskar.Networking",
-    "type": "experimental",
+    "type": "emerging",
     "engine": "beskar",
     "mode": "standard"
   },
