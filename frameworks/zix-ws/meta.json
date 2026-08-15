@@ -3,12 +3,15 @@
   "language": "Zig",
   "type": "engine",
   "engine": "zix.Http1 WebSocket URING Dispatch Model",
-  "description": "Zig WebSocket echo on the zix.Http1 engine-owned WebSocket path, .URING dispatch: GET /ws upgrades, WebSocket.serve echoes inside the engine, a pipelined burst coalesced into one write.",
-  "repo": "https://codeberg.org/prothegee/zix",
+  "description": "WebSocket echo on the zix.Http1 engine, .URING dispatch. GET /ws upgrades and the engine drives the frame pump: frames are echoed on readiness and a pipelined burst leaves as one write. No cache anywhere, echo is per connection.",
+  "repo": "https://github.com/prothegee/zix",
   "enabled": true,
   "tests": [
     "echo-ws",
-    "echo-ws-pipeline"
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
-  "maintainers": ["prothegee"]
+  "maintainers": [
+    "prothegee"
+  ]
 }
