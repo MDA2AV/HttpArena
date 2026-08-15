@@ -1,0 +1,19 @@
+{
+  "display_name": "litestar",
+  "language": "Python",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "uvicorn",
+  "description": "Litestar 2 on uvicorn with uvloop and httptools, one worker per core. Routing and parameter injection through the Litestar API, msgspec JSON serialization, gzip through the Litestar compression config.",
+  "repo": "https://github.com/litestar-org/litestar",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

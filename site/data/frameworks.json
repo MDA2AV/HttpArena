@@ -345,6 +345,14 @@
     "type": "engine",
     "engine": "libuv"
   },
+  "fiber": {
+    "dir": "fiber",
+    "description": "Fiber 3 on fasthttp, default configuration. Routing and path/query binding through the Fiber API, JSON via c.JSON, gzip through the Fiber compress middleware.",
+    "repo": "https://github.com/gofiber/fiber",
+    "type": "flagship",
+    "engine": "fasthttp",
+    "mode": "standard"
+  },
   "fishcake": {
     "dir": "fishcake",
     "description": "CodeGreen, a 1:1 Kotlin port of GenHTTP, on its internal Netty-based engine with kotlinx.serialization and JDBC (HikariCP).",
@@ -612,6 +620,14 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "litestar": {
+    "dir": "litestar",
+    "description": "Litestar 2 on uvicorn with uvloop and httptools, one worker per core. Routing and parameter injection through the Litestar API, msgspec JSON serialization, gzip through the Litestar compression config.",
+    "repo": "https://github.com/litestar-org/litestar",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
+  },
   "lute": {
     "dir": "lute",
     "description": "Lute standalone Luau runtime",
@@ -863,6 +879,14 @@
     "engine": "uvloop",
     "mode": "standard"
   },
+  "rocket": {
+    "dir": "rocket",
+    "description": "Rocket 0.5 on hyper with the multi-threaded Tokio runtime, default configuration. Routing, path and query guards through the Rocket API, serde_json via the Json responder.",
+    "repo": "https://github.com/rwf2/Rocket",
+    "type": "flagship",
+    "engine": "hyper",
+    "mode": "standard"
+  },
   "roda": {
     "dir": "roda",
     "description": "Roda routing tree web toolkit",
@@ -1111,6 +1135,14 @@
     "type": "engine",
     "engine": "uvloop"
   },
+  "uWebSockets.js": {
+    "dir": "uwebsockets",
+    "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Routing and body handling through the uWS App API, JSON.stringify per request, gzip through the Node zlib bindings.",
+    "repo": "https://github.com/uNetworking/uWebSockets.js",
+    "type": "flagship",
+    "engine": "uWebSockets",
+    "mode": "standard"
+  },
   "vanilla-epoll": {
     "dir": "vanilla-epoll",
     "description": "vanilla is a minimalist, high-performance HTTP server written in V: multi-threaded, non-blocking epoll I/O, lock-free, copy-free, SO_REUSEPORT. Handlers are pure (request)->[]u8 returning raw response bytes. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding; json-tls terminates TLS 1.3 (Mbed TLS 4) on :8081 with ALPN http/1.1, reusing the same allocation-free /json serializer; static assets are preloaded into memory; fortunes renders the DB rows + a runtime row with HTML escaping; async-db uses the stdlib db.pg ConnectionPool. Pinned V 0.5.1 (prebuilt release). crud uses an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update) \u2014 no Redis required.",
@@ -1145,6 +1177,14 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "veb"
+  },
+  "vertx": {
+    "dir": "vertx",
+    "description": "Eclipse Vert.x 5 with vertx-web on Netty, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option.",
+    "repo": "https://github.com/eclipse-vertx/vert.x",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard"
   },
   "WebFramework C": {
     "dir": "web-framework-cc",

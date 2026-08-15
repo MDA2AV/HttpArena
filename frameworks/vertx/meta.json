@@ -1,0 +1,19 @@
+{
+  "display_name": "vertx",
+  "language": "Java",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "Netty",
+  "description": "Eclipse Vert.x 5 with vertx-web on Netty, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option.",
+  "repo": "https://github.com/eclipse-vertx/vert.x",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
