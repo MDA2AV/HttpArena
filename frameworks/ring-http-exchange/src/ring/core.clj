@@ -3,7 +3,6 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [jj.majavat :as majavat]
-            [jj.majavat.renderer :as renderer]
             [jj.sql.async-boa :as boa]
             [jj.sql.boa.query.vertx-pg :as vertx-adapter]
             [jj.tassu :refer [GET POST PUT async-route]]
@@ -37,10 +36,7 @@
 (def ^:private ^:const not-found-body "Not found")
 (def ^:private ^:const dataset-path "/data/dataset.json")
 (def ^:private ^:const static-dir "/data/static")
-(def ^:private ^:const param-min "min")
-(def ^:private ^:const param-max "max")
-(def ^:private ^:const param-limit "limit")
-(def ^:private ^:const param-m "m")
+(def ^:private ^:const default-category "electronics")
 (def ^:private ^:const pg-prefix "postgres://")
 (def ^:private ^:const pg-replace "postgresql://")
 
@@ -89,32 +85,23 @@
 (defn- process-item [item ^long m]
   (assoc item :total (* (:price item) (:quantity item) m)))
 
-(defn- parse-qs [^String qs]
-  (when qs
-    (loop [i 0 m (transient {})]
-      (if (>= i (.length qs))
-        (persistent! m)
-        (let [amp (.indexOf qs (int \&) i)
-              end (if (neg? amp) (.length qs) amp)
-              eq (.indexOf qs (int \=) i)]
-          (if (and (>= eq 0) (< eq end))
-            (recur (inc end) (assoc! m (subs qs i eq) (subs qs (inc eq) end)))
-            (recur (inc end) m)))))))
+(defn- qp-value
+  ^String [params k]
+  (let [v (k params)]
+    (cond
+      (string? v) v
+      (vector? v) (let [last-v (peek v)] (when (string? last-v) last-v))
+      :else nil)))
 
-(defn- sum-params [^String qs]
-  (if (nil? qs)
-    0
-    (loop [i 0 total-sum 0]
-      (if (>= i (.length qs))
-        total-sum
-        (let [amp (.indexOf qs (int \&) i)
-              end (if (neg? amp) (.length qs) amp)
-              eq (.indexOf qs (int \=) i)]
-          (if (and (>= eq 0) (< eq end))
-            (recur (inc end)
-                   (+ total-sum
-                      (safe-parse-long (subs qs (inc eq) end) 0)))
-            (recur (inc end) total-sum)))))))
+(defn- param-long [v]
+  (cond
+    (string? v) (safe-parse-long v 0)
+    (vector? v) (reduce (fn [total x] (+ total (param-long x))) 0 v)
+    :else 0))
+
+(defn- sum-query-params
+  [params]
+  (reduce-kv (fn [total _ v] (+ total (param-long v))) 0 params))
 
 (defn- gzip-bytes [^bytes data]
   (let [baos (ByteArrayOutputStream. (alength data))
@@ -219,19 +206,17 @@
         nil))))
 
 (defn- handle-baseline-get [req respond _raise]
-  (respond (text-response (sum-params (:query-string req)))))
+  (respond (text-response (sum-query-params (:query-params req)))))
 
 (defn- handle-baseline-post [req respond _raise]
-  (let [s (sum-params (:query-string req))
+  (let [s (sum-query-params (:query-params req))
         b (slurp (:body req))
         n (safe-parse-long (str/trim b) 0)]
     (respond (text-response (+ s n)))))
 
-(defn- handle-json [dataset req respond _raise]
+(defn- handle-json [dataset m req respond _raise]
   (let [requested (safe-parse-long (get-in req [:params :count]) 50)
         n (min requested (long (clojure.core/count dataset)))
-        params (parse-qs (:query-string req))
-        m (safe-parse-long (get params param-m) 1)
         items (map #(process-item % m) (subvec dataset 0 n))
         body-bytes (json/write-value-as-bytes
                      {:items items :count (clojure.core/count items)})]
@@ -245,10 +230,10 @@
     (respond (text-response (.transferTo in (OutputStream/nullOutputStream))))))
 
 (defn- handle-pg [pg-pool req respond _raise]
-  (let [params (parse-qs (:query-string req))
-        min-p (safe-parse-double (get params param-min) 10.0)
-        max-p (safe-parse-double (get params param-max) 50.0)
-        limit (safe-parse-long (get params param-limit) 50)]
+  (let [params (:query-params req)
+        min-p (safe-parse-double (qp-value params :min) 10.0)
+        max-p (safe-parse-double (qp-value params :max) 50.0)
+        limit (safe-parse-long (qp-value params :limit) 50)]
     (pg-query pg-pool {:min min-p :max max-p :limit limit}
               (fn [rows]
                 (let [items (map transform-pg-row rows)]
@@ -292,11 +277,10 @@
    :tags     (json/read-value (str (:tags row)))
    :rating   {:score (long (:rating_score row)) :count (long (:rating_count row))}})
 
-(defn- handle-crud-list [pg-pool req respond raise]
-  (let [params (parse-qs (:query-string req))
-        category (or (get params "category") "electronics")
-        page (max 1 (safe-parse-long (get params "page") 1))
-        limit (max 1 (min 50 (safe-parse-long (get params "limit") 10)))
+(defn- handle-crud-list [pg-pool category req respond raise]
+  (let [params (:query-params req)
+        page (max 1 (safe-parse-long (qp-value params :page) 1))
+        limit (max 1 (min 50 (safe-parse-long (qp-value params :limit) 10)))
         offset (* (dec page) limit)]
     (crud-list-query pg-pool {:category category :limit limit :offset offset}
                      (fn [rows]
@@ -373,15 +357,29 @@
                 :body    f})
       (respond {:status 404 :body not-found-body}))))
 
+(defn- json-multiplier [req]
+  (safe-parse-long (qp-value (:query-params req) :m) 1))
+
 (defn- build-handler [{:keys [dataset pg-pool]}]
   (async-route
     {"/baseline11"       [(GET handle-baseline-get)
                           (POST handle-baseline-post)]
-     "/json/:count"      [(GET (fn [req res rej] (handle-json dataset req res rej)))]
+     "/json/:count"      [{:method       :get
+                           :query-params "m=:m"
+                           :handler      (fn [req res rej]
+                                           (handle-json dataset (json-multiplier req) req res rej))}
+                          (GET (fn [req res rej] (handle-json dataset 1 req res rej)))]
      "/upload"           [(POST handle-upload)]
      "/async-db"         [(GET (fn [req res rej] (handle-pg pg-pool req res rej)))]
      "/fortunes"         [(GET (fn [_ res rej] (handle-fortunes pg-pool res rej)))]
-     "/crud/items"       [(GET (fn [req res rej] (handle-crud-list pg-pool req res rej)))
+     "/crud/items"       [{:method       :get
+                           :query-params "category=:category"
+                           :handler      (fn [req res rej]
+                                           (handle-crud-list pg-pool
+                                                             (or (qp-value (:query-params req) :category)
+                                                                 default-category)
+                                                             req res rej))}
+                          (GET (fn [req res rej] (handle-crud-list pg-pool default-category req res rej)))
                           (POST (fn [req res rej] (handle-crud-create pg-pool req res rej)))]
      "/crud/items/:id"   [(GET (fn [req res rej] (handle-crud-read pg-pool req res rej)))
                           (PUT (fn [req res rej] (handle-crud-update pg-pool req res rej)))]
