@@ -123,12 +123,28 @@
     "engine": "kestrel",
     "mode": "standard"
   },
+  "axum": {
+    "dir": "axum",
+    "description": "Axum 0.8 on hyper with the multi-threaded Tokio runtime, default configuration. Routing and path/query extractors through the Axum API, serde_json via the Json response, gzip through the tower-http compression layer.",
+    "repo": "https://github.com/tokio-rs/axum",
+    "type": "flagship",
+    "engine": "hyper",
+    "mode": "standard"
+  },
   "bananabread": {
     "dir": "bananabread",
     "description": "Seagreen \u2014 a TypeScript port of GenHTTP \u2014 on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
     "repo": "https://github.com/dotnet-web-stack/Seagreen",
     "type": "emerging",
     "engine": "seagreen",
+    "mode": "standard"
+  },
+  "beskar-websocket": {
+    "dir": "beskar-websocket",
+    "description": "High-performance WebSocket echo server built with Beskar.Networking.",
+    "repo": "https://github.com/MarvinDrude/Beskar.Networking",
+    "type": "experimental",
+    "engine": "beskar",
     "mode": "standard"
   },
   "bjoern": {
@@ -162,6 +178,50 @@
     "engine": "bun",
     "mode": "tuned"
   },
+  "Cardigan": {
+    "dir": "cardigan",
+    "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
+    "repo": "https://github.com/phjeltman/cardigan",
+    "type": "engine",
+    "engine": "io_uring",
+    "variants": [
+      {
+        "dir": "cardigan-grpc",
+        "description": "Cardigan gRPC over cleartext HTTP/2 prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-grpc-tls",
+        "description": "Cardigan gRPC over HTTP/2 and TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2",
+        "description": "Cardigan HTTP/2 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-h2c",
+        "description": "Cardigan HTTP/2 over cleartext prior knowledge.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      },
+      {
+        "dir": "cardigan-json-tls",
+        "description": "Cardigan HTTP/1.1 over TLS.",
+        "repo": "https://github.com/phjeltman/cardigan",
+        "type": "engine",
+        "engine": "io_uring"
+      }
+    ]
+  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
@@ -184,12 +244,28 @@
     "engine": "deno",
     "mode": "tuned"
   },
+  "django": {
+    "dir": "django",
+    "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
+    "repo": "https://github.com/django/django",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
+  },
   "dogrider": {
     "dir": "dogrider",
     "description": "GenHTTP websockets with zerg backend",
     "repo": "https://github.com/MDA2AV/dogrider",
     "type": "emerging",
     "engine": "zerg",
+    "mode": "standard"
+  },
+  "echo": {
+    "dir": "echo",
+    "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
+    "repo": "https://github.com/labstack/echo",
+    "type": "flagship",
+    "engine": "net/http",
     "mode": "standard"
   },
   "effinitive": {
@@ -206,6 +282,14 @@
     "repo": "https://github.com/elysiajs/elysia",
     "type": "flagship",
     "engine": "jsc",
+    "mode": "standard"
+  },
+  "express": {
+    "dir": "express",
+    "description": "Express 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/expressjs/express",
+    "type": "flagship",
+    "engine": "nodehttp",
     "mode": "standard"
   },
   "fastapi": {
@@ -230,6 +314,14 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "epoll"
+  },
+  "fastify": {
+    "dir": "fastify",
+    "description": "Fastify 5 on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/fastify/fastify",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
   },
   "fastpysgi-asgi": {
     "dir": "fastpysgi-asgi",
@@ -285,12 +377,28 @@
     "engine": "frankenphp",
     "mode": "tuned"
   },
+  "fulmine": {
+    "dir": "fulmine",
+    "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "standard"
+  },
   "genhttp-11-ioxide": {
     "dir": "genhttp-11-ioxide",
     "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Uses GenHTTP's published ioxide engine packages (GenHTTP.Engine.Ioxide / GenHTTP.Modules.IoxideFiles, PR #860, merged). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
+    "mode": "tuned"
+  },
+  "genhttp-11-kestrel": {
+    "dir": "genhttp-11-kestrel",
+    "description": "Lightweight, embeddable and modular C# web server.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+    "type": "emerging",
+    "engine": "kestrel",
     "mode": "tuned"
   },
   "genhttp-11": {
@@ -315,6 +423,14 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "genhttp",
+    "mode": "standard"
+  },
+  "gin": {
+    "dir": "gin",
+    "description": "Gin web framework on the Go net/http server, default configuration. Routing and path/query binding through the Gin API, encoding/json via c.JSON, gzip through the gin-contrib/gzip middleware.",
+    "repo": "https://github.com/gin-gonic/gin",
+    "type": "flagship",
+    "engine": "net/http",
     "mode": "standard"
   },
   "go-fasthttp": {
@@ -380,6 +496,14 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "http-kit": {
+    "dir": "http-kit",
+    "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+    "repo": "https://github.com/http-kit/http-kit",
+    "type": "emerging",
+    "engine": "http-kit",
+    "mode": "standard"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
@@ -405,7 +529,7 @@
   },
   "ioxide": {
     "dir": "ioxide",
-    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static rides ioxide.file's baked asset snapshots.",
+    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file, ioxide.http2, ioxide.ngtcp2, ioxide.nghttp3). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; TLS terminates ring-natively (kTLS transmit offload, OpenSSL receive) on :8081, h2 over TLS (pure-C# ioxide.http2) on :8443, and HTTP/3 over QUIC (ngtcp2 + nghttp3) on udp:8443; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static on h1 reads the file descriptor straight into the connection's write slab (ioxide.file hands out descriptors, not bytes), so header and body leave in one flush with no intermediate buffer; h2/h3 serve the same assets from memory.",
     "repo": "https://github.com/MDA2AV/ioxide",
     "type": "engine",
     "engine": "io_uring"
@@ -431,6 +555,14 @@
     "repo": "https://github.com/ktorio/ktor",
     "type": "flagship",
     "engine": "netty",
+    "mode": "standard"
+  },
+  "laravel": {
+    "dir": "laravel",
+    "description": "Laravel 13 served by Laravel Octane on FrankenPHP, the first-party production runtime documented by Laravel. Routing and request handling through the Laravel API, responses via the response()/json() helpers, gzip and brotli through the Caddy encode directive Octane generates.",
+    "repo": "https://github.com/laravel/laravel",
+    "type": "flagship",
+    "engine": "frankenphp",
     "mode": "standard"
   },
   "libreactorng": {
@@ -510,6 +642,14 @@
       }
     ]
   },
+  "nestjs": {
+    "dir": "nestjs",
+    "description": "NestJS 11 on the Express platform adapter, default configuration. Routing and parameter decorators through the Nest API, controller return values serialized by the framework, gzip through the compression middleware the Nest docs recommend.",
+    "repo": "https://github.com/nestjs/nest",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "ngx-php": {
     "dir": "ngx-php",
     "description": "Embedded PHP scripting language module for nginx.",
@@ -525,6 +665,14 @@
     "type": "emerging",
     "engine": "v8",
     "mode": "tuned"
+  },
+  "pedestal": {
+    "dir": "pedestal",
+    "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
+    "repo": "https://github.com/pedestal/pedestal",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
   },
   "phoenix-bandit": {
     "dir": "phoenix-bandit",
@@ -619,6 +767,22 @@
     "repo": "https://github.com/ruroru/ring-http-exchange",
     "type": "emerging",
     "engine": "robaho-httpserver",
+    "mode": "standard"
+  },
+  "ring-jetty9-adapter": {
+    "dir": "ring-jetty9-adapter",
+    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+    "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+    "type": "emerging",
+    "engine": "Jetty",
+    "mode": "standard"
+  },
+  "ring": {
+    "dir": "ring",
+    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "repo": "https://github.com/ring-clojure/ring",
+    "type": "emerging",
+    "engine": "Jetty",
     "mode": "standard"
   },
   "ringzero-ws": {
@@ -870,7 +1034,7 @@
   },
   "ultimate-express": {
     "dir": "ultimate-express",
-    "description": "ultimate-express (Express API on uWebSockets.js) with single-process threading.",
+    "description": "ultimate-express (Express API on uWebSockets.js) with the cluster module for multi-core scaling.",
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "emerging",
     "engine": "uwebsockets",
@@ -978,6 +1142,14 @@
     "engine": "wtx",
     "mode": "standard",
     "variants": [
+      {
+        "dir": "wtx-grpc-tls",
+        "description": "WTX - gRPC Server",
+        "repo": "https://github.com/c410-f3r/wtx",
+        "type": "emerging",
+        "engine": "wtx",
+        "mode": "standard"
+      },
       {
         "dir": "wtx-http2",
         "description": "WTX - HTTP/2 Framework Server",

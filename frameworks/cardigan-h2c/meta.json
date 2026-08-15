@@ -1,0 +1,15 @@
+{
+  "display_name": "Cardigan",
+  "language": "Java",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Cardigan HTTP/2 over cleartext prior knowledge.",
+  "repo": "https://github.com/phjeltman/cardigan",
+  "enabled": true,
+  "tests": [
+    "baseline-h2c"
+  ],
+  "maintainers": [
+    "phjeltman"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "display_name": "echo",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "net/http",
+  "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
+  "repo": "https://github.com/labstack/echo",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

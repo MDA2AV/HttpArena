@@ -28,6 +28,11 @@ wrk_build_args() {
                   -s "$REQUESTS_DIR/static-rotate.lua"
                   "http://localhost:$PORT")
             ;;
+        static-tls)
+            cmd+=(-t "$THREADS" -c "$conns" -d "$duration"
+                  -s "$REQUESTS_DIR/static-rotate.lua"
+                  "https://localhost:$H1TLS_PORT")
+            ;;
         json-tls)
             cmd+=(-t "$THREADS" -c "$conns" -d "$duration"
                   -s "$REQUESTS_DIR/json-tls-rotate.lua"

@@ -5,6 +5,8 @@ using ioxide.utils;
 using ioxide.pg;
 using ioxide.file;
 using ioxide.tls;
+using ioxide.nghttp3;
+using ioxide.ngtcp2;
 using ioxide.redis;
 using StackExchange.Redis;
 using Microsoft.Extensions.Caching.Memory;
@@ -62,26 +64,40 @@ internal static class Program
         int recvKb = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RECV_KB"), out int rk) && rk > 0 ? rk : 16;
         int ringEntries = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RING_ENTRIES"), out int re) && re > 0 ? re : 256;
 
+        // h1 TLS terminates on :8081, h2 on :8443/tcp, h3 on :8443/udp - all OpenSSL in
+        // userspace, the fastest backend on loopback.
+        using var quic = tls ? new QuicEngine(certPath, keyPath, cidLength: 8, alpn: ["h3"]) : null;
+
         var config = new ServerConfig
         {
-            Port              = port,
-            ExtraPorts        = tls ? [(ushort)8081] : [],
-            ReactorCount      = reactors,
-            Incremental       = false,
-            RecvBufferSize    = recvKb * 1024,
-            BufferRingEntries = ringEntries,
-            // 128 KB so a static response fits one slab and the handler sends it without chunk-flushing.
-            WriteSlabSize     = 128 * 1024,
+            ReactorCount   = reactors,
+            RecvBufferSize = recvKb * 1024,
+            RecvSlots      = ringEntries,
+            Tcp = new TcpOptions
+            {
+                Port       = port,
+                ExtraPorts = tls ? [(ushort)8081, (ushort)8443] : [],
+                // 128 KB so a static response fits one slab and the handler sends it without chunk-flushing.
+                WriteSlabSize = 128 * 1024,
+            },
+            Quic = quic == null ? null : new QuicOptions
+            {
+                Port = 8443,
+                LocalCidLength = 8,
+                ConnectionFactory = quic.CreateFactory(),
+            },
         };
 
         var dsPath = Environment.GetEnvironmentVariable("IOXIDE_DATASET") ?? "/data/dataset.json";
         var dataset = Dataset.Load(dsPath);
 
-        // Static assets: baked snapshots (full response precomputed per file).
+        // Static assets: every file under the root opened ONCE, descriptors shared across
+        // reactors and read positionally off the ring. Nothing is cached in memory and no HTTP is
+        // baked - the response header is framed in HttpSession and the body is read straight into
+        // the connection's write slab, so header and body leave in one flush with no copy.
         var staticRoot = Environment.GetEnvironmentVariable("IOXIDE_STATIC") ?? "/data/static";
-        // Bake every file (largest is ~300 KB vendor.js; default threshold is 256 KB).
         StaticAssets? assets = Directory.Exists(staticRoot)
-            ? new StaticAssets(staticRoot, maxCachedFileBytes: 1 << 20)
+            ? new StaticAssets(staticRoot)   // descriptors only; bodies are read off the ring per request
             : null;
         // Precompressed variants are baked here (HTTP), not in ioxide.file.
         Precompressed? precompressed = Directory.Exists(staticRoot) ? new Precompressed(staticRoot) : null;
@@ -134,12 +150,13 @@ internal static class Program
             ? ConnectionMultiplexer.Connect($"{redis!.Host}:{redis.Port}")
             : null;
 
-        Console.WriteLine($"[ioxide] {config.ReactorCount} reactors on :{config.Port} " +
+        Console.WriteLine($"[ioxide] {config.ReactorCount} reactors on :{config.Tcp!.Port} " +
                           $"(dataset={dataset.Count} items, static={(assets?.Count ?? 0)} files ({(precompressed?.Count ?? 0)} precompressed), " +
                           $"pg={(pg != null ? $"{pg.Host}:{pg.Port}/{pg.Database} pool={pg.PoolSize}" : "off")}, " +
-                          $"tls={(tls ? "8081 (ktls tx)" : "off")}, " +
+                          $"tls={(tls ? "h1 :8081, h2 :8443 (full ktls), h3 udp:8443" : "off")}, " +
                           $"cache={(pg != null ? cacheBackend : "off")})");
 
+        Multiplexed.Init(Directory.Exists(staticRoot) ? staticRoot : null);
         Handler.Init(config, dataset, assets, precompressed, pg != null, tls, pg != null);
 
         var threads = new Thread[config.ReactorCount];
@@ -166,11 +183,22 @@ internal static class Program
                 }
                 if (tls)
                 {
-                    TlsService.Start(reactorInstance, new TlsOptions { CertificatePath = certPath, KeyPath = keyPath });
+                    // Full kTLS for h1 and h2: the kernel makes the records on send and decrypts
+                    // inbound, so recv delivers plaintext straight into ring memory. RX is
+                    // experimental (about one first connection in twelve fails the handoff).
+                    TlsService.Start(reactorInstance, new TlsOptions
+                        { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true, KernelRx = true });
+                    reactorInstance.AddService(new H2Tls(TlsService.Start(reactorInstance,
+                        new TlsOptions { CertificatePath = certPath, KeyPath = keyPath, KernelTx = true, KernelRx = true, Alpn = ["h2"] },
+                        register: false)));
                 }
             };
             
-            reactor.Handle = Handler.HandleAsync;
+            reactor.TcpHandle = Handler.HandleAsync;
+            if (tls)
+            {
+                reactor.QuicHandle = (_, qc) => new Nghttp3Connection(qc).RunBufferedAsync(Multiplexed.RouteH3);
+            }
             threads[i] = new Thread(reactor.Run) { Name = $"reactor-{i}", IsBackground = false };
             threads[i].Start();
         }
