@@ -713,6 +713,14 @@
     "type": "engine",
     "engine": "picoev"
   },
+  "plug-cowboy": {
+    "dir": "plug-cowboy",
+    "description": "Plug on the Cowboy adapter without Phoenix. Routing through Plug.Router, Jason JSON encoding, gzip through the cowboy_compress_h stream handler.",
+    "repo": "https://github.com/elixir-plug/plug_cowboy",
+    "type": "flagship",
+    "engine": "Cowboy",
+    "mode": "standard"
+  },
   "pyronova": {
     "dir": "pyronova",
     "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
