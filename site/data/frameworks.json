@@ -926,6 +926,14 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "sanic": {
+    "dir": "sanic",
+    "description": "Sanic 25.3 on its own server with uvloop and httptools, one worker per core through the Sanic worker manager. Routing through the Sanic router, JSON through the ujson response, streamed uploads. Sanic ships no compression middleware, so gzip is hand-rolled in a response middleware, hence tuned.",
+    "repo": "https://github.com/sanic-org/sanic",
+    "type": "flagship",
+    "engine": "sanic",
+    "mode": "tuned"
+  },
   "sark": {
     "dir": "sark",
     "description": "sark \u2014 Rust HTTP on the dope io_uring runtime: thread-per-core, zero-copy parsing, type-safe routing, cartel-pg for Postgres. No serde, no tokio, no Arc/atomic.",
