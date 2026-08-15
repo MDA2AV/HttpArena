@@ -481,6 +481,14 @@
     "engine": "h2o",
     "mode": "tuned"
   },
+  "hanami": {
+    "dir": "hanami",
+    "description": "Hanami 2.3 actions and router on Puma, one worker per core. Routing and params through the Hanami API, JSON generated per request, gzip through Rack::Deflater.",
+    "repo": "https://github.com/hanami/hanami",
+    "type": "flagship",
+    "engine": "Puma",
+    "mode": "standard"
+  },
   "helidon-production": {
     "dir": "helidon-production",
     "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
@@ -542,6 +550,14 @@
     "repo": "https://github.com/hummingbird-project/hummingbird",
     "type": "flagship",
     "engine": "hummingbird",
+    "mode": "tuned"
+  },
+  "hyper-express": {
+    "dir": "hyper-express",
+    "description": "hyper-express (Express-like API on uWebSockets.js) with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/kartikk221/hyper-express",
+    "type": "emerging",
+    "engine": "uwebsockets",
     "mode": "tuned"
   },
   "hyper": {
