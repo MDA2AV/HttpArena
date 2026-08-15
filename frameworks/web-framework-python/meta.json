@@ -1,6 +1,6 @@
 {
   "display_name": "WebFramework Python",
-  "language": "Pyton",
+  "language": "Python",
   "engine": "WebFramework",
   "type": "production",
   "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
