@@ -1,0 +1,19 @@
+{
+  "display_name": "uWebSockets.js",
+  "language": "JS",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "uWebSockets",
+  "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Routing and body handling through the uWS App API, JSON.stringify per request, gzip through the Node zlib bindings.",
+  "repo": "https://github.com/uNetworking/uWebSockets.js",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
