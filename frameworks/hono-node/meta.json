@@ -1,0 +1,19 @@
+{
+  "display_name": "hono-node",
+  "language": "TS",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "nodehttp",
+  "description": "Hono on node:http through @hono/node-server, with the cluster module for multi-core scaling.",
+  "repo": "https://github.com/honojs/node-server",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
