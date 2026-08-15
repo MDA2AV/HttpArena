@@ -1,7 +1,7 @@
 {
   "display_name": "bun",
   "language": "TS",
-  "type": "flagship",
+  "type": "engine",
   "mode": "standard",
   "engine": "bun",
   "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the port.",
