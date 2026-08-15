@@ -1,0 +1,18 @@
+{
+  "display_name": "rocket",
+  "language": "Rust",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "hyper",
+  "description": "Rocket 0.5 on hyper with the multi-threaded Tokio runtime, default configuration. Routing, path and query guards through the Rocket API, serde_json via the Json responder.",
+  "repo": "https://github.com/rwf2/Rocket",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload"
+  ],
+  "maintainers": []
+}
