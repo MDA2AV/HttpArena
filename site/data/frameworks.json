@@ -244,6 +244,14 @@
     "engine": "deno",
     "mode": "tuned"
   },
+  "deno": {
+    "dir": "deno",
+    "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
+    "repo": "https://github.com/denoland/deno",
+    "type": "flagship",
+    "engine": "deno",
+    "mode": "standard"
+  },
   "django": {
     "dir": "django",
     "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
