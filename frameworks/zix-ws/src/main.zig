@@ -1,4 +1,4 @@
-//! localbench: zix-ws
+//! zix-ws
 //!
 //! zix.Http1 WebSocket (.URING), Router-only: one handler module per route
 //! (src/handlers/). GET /ws upgrades, then the engine drives the echo loop:
