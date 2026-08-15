@@ -1,0 +1,19 @@
+{
+  "display_name": "vapor",
+  "language": "Swift",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "SwiftNIO",
+  "description": "Vapor 4 on SwiftNIO, default configuration. Routing and parameter decoding through the Vapor API, Codable JSON responses, gzip through the server response compression setting.",
+  "repo": "https://github.com/vapor/vapor",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
