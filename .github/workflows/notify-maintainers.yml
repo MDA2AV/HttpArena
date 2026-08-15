@@ -13,17 +13,18 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      # No ref: on pull_request_target the default is the base branch, which is the only side this
+      # job needs. It reads meta.json to know who to ping, and that must come from the base anyway.
       - uses: actions/checkout@v5
-        with:
-          ref: refs/pull/${{ github.event.pull_request.number }}/head
-          fetch-depth: 0
 
       - name: Detect changed frameworks and notify maintainers
         run: |
-          frameworks=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+          frameworks=$(gh api \
+            "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+            --paginate --jq '.[].filename' \
             | grep '^frameworks/' \
             | cut -d'/' -f2 \
-            | sort -u)
+            | sort -u || true)
 
           if [ -z "$frameworks" ]; then
             echo "No framework changes detected"

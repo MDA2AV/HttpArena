@@ -9,7 +9,8 @@
    [next.jdbc.result-set :as rs]
    [ring.adapter.jetty :as jetty]
    [ring.middleware.params :as params]
-   [ring.util.response :as response])
+   [ring.util.response :as response]
+   [selmer.parser :as selmer])
   (:import
    [java.io InputStream OutputStream]
    [java.net URI]
@@ -22,12 +23,16 @@
 (set! *warn-on-reflection* true)
 
 (def json-content-type "application/json")
+(def html-content-type "text/html; charset=utf-8")
 (def static-root "/data/static")
 (def async-db-query
   "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count
    FROM items
    WHERE price BETWEEN ? AND ?
    LIMIT ?")
+(def fortunes-query "SELECT id, message FROM fortune")
+(def runtime-fortune
+  {:id 0 :message "Additional fortune added at request time."})
 (def static-content-types
   {"css" "text/css"
    "js" "application/javascript"
@@ -111,6 +116,11 @@
    :headers {"Content-Type" json-content-type}
    :body (json/write-str body)})
 
+(defn html-response [status body]
+  {:status status
+   :headers {"Content-Type" html-content-type}
+   :body body})
+
 (defn empty-response []
   (json-response 200 {:items []
                       :count 0}))
@@ -171,6 +181,24 @@
           (empty-response)))
       (empty-response))))
 
+(defonce fortunes-template
+  (delay (selmer/parse selmer/parse-file "fortunes.html" {})))
+
+(defn render-fortunes [fortunes]
+  (selmer/render-template @fortunes-template {:fortunes fortunes}))
+
+(defn fortunes-handler [_request]
+  (if-let [database (datasource!)]
+    (try
+      (let [rows     (jdbc/execute! database
+                                    [fortunes-query]
+                                    {:builder-fn rs/as-unqualified-lower-maps})
+            fortunes (sort-by :message (conj rows runtime-fortune))]
+        (html-response 200 (render-fortunes fortunes)))
+      (catch Exception _
+        (text-response 500 "fortunes unavailable")))
+    (text-response 500 "fortunes unavailable")))
+
 (defn static-filename [uri]
   (when (str/starts-with? uri "/static/")
     (let [filename (subs uri 8)]
@@ -223,6 +251,9 @@
           "/async-db" (if (= :get method)
                                     (async-db-handler request)
                                     (method-not-allowed-response))
+          "/fortunes" (if (= :get method)
+                        (fortunes-handler request)
+                        (method-not-allowed-response))
           "/upload" (if (= :post method)
                       (text-response 200 (str (count-stream-bytes (:body request))))
                       (method-not-allowed-response))

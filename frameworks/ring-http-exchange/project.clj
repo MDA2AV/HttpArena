@@ -11,7 +11,7 @@
                  [org.clojars.jj/async-boa-sql "1.0.11"]
                  [org.clojars.jj/vertx-pg-client-async-boa-adapter "1.0.1"]
                  [metosin/jsonista "1.0.0"]
-                 [org.clojars.jj/majavat "2.0.2"]
+                 [org.clojars.jj/majavat "2.5.3"]
                  [io.github.robaho/httpserver "1.0.29"]
                  [org.clojure/core.cache "1.2.263"]]
 
