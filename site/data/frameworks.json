@@ -659,6 +659,14 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "javalin": {
+    "dir": "javalin",
+    "description": "Javalin 7 on embedded Jetty 12, default configuration. Routing and path params through the Javalin router, JSON through ctx.json with the bundled Jackson mapper, gzip through Javalin's own CompressionStrategy.",
+    "repo": "https://github.com/javalin/javalin",
+    "type": "flagship",
+    "engine": "jetty",
+    "mode": "standard"
+  },
   "koa": {
     "dir": "koa",
     "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
