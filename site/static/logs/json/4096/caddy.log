@@ -1,0 +1,3 @@
+{"level":"info","ts":1786816963.052475,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+{"level":"info","ts":1786816963.0545633,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"info","ts":1786816963.056066,"msg":"redirected default logger","from":"stderr","to":"discard"}
