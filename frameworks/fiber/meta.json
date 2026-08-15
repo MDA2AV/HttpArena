@@ -1,0 +1,19 @@
+{
+  "display_name": "fiber",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "fasthttp",
+  "description": "Fiber 3 on fasthttp, default configuration. Routing and path/query binding through the Fiber API, JSON via c.JSON, gzip through the Fiber compress middleware.",
+  "repo": "https://github.com/gofiber/fiber",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
