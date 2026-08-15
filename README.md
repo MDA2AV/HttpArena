@@ -106,6 +106,52 @@ Another badge variants:
 - WebSocket: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg`
 - gRPC: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg`
 
+### Rank badge
+
+The badges above say you were benchmarked. This one says how you did, and it
+re-renders itself every time the board is republished:
+
+> **HTTP Arena H/1.1** · `#6 of 71`
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#q=actix)
+```
+
+Swap `actix` for your entry and `h1` for the family you want:
+
+| Family | `<family>` | Composite it reports |
+|---|---|---|
+| HTTP/1.1 | `h1` | Connection, Workload, Database and Multi-endpoint profiles |
+| HTTP/2 | `h2` | the HTTP/2 profiles |
+| HTTP/3 | `h3` | the HTTP/3 profiles |
+| Gateway | `gw` | reverse-proxy and production-stack profiles |
+| gRPC | `grpc` | unary and streaming, plaintext and TLS |
+| WebSocket | `ws` | the echo profiles |
+
+`<framework>` is your entry's name on the board, lowercased, with anything
+outside `A-Z a-z 0-9 . _ -` turned into `-` — the same name as your file in
+[`site/data/results/`](site/data/results). The full list of what is published,
+with every rank in it, is at
+[`/badge/index.json`](https://www.http-arena.com/badge/index.json).
+
+A few things worth knowing before you paste it:
+
+- **The rank is against your own tier.** `flagship` and `emerging` rank together
+  as one field, because that is the board's default view. `engine` entries rank
+  among engines, over the profile subset engines are scored on. That way a
+  framework's ceiling is never set by an engine's result, or the reverse.
+- **It only exists where you scored.** No result in a family means no badge for
+  it, and a family with a single entry in your tier publishes nothing — a rank
+  is worth showing once there was somebody to beat.
+- **It follows the default board.** Same scoring as the page it links to, with
+  the memory-efficiency and rescale toggles off. Follow the link and you land on
+  the view the number came from.
+- **It updates on deploy, then when GitHub's cache lets it.** README images are
+  proxied through Camo, so a new rank can take a few hours to show up.
+
+Shields' usual styling works — append `&style=flat-square`, `&logo=rust`, and so
+on to the `img.shields.io` URL.
+
 ---
 
 <div align="left">

@@ -22,6 +22,7 @@ import shutil
 import posixpath
 import html as _html
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "site" / "data"
@@ -918,6 +919,250 @@ def write_sitemap(content):
     return len(urls)
 
 
+# ── README badges (shields.io endpoint) ──────────────────────────────────────
+# A framework's rank in one composite family, as a JSON document shields.io
+# renders into an SVG. The maintainer pastes one URL and it follows the board.
+#
+# The scoring below is a port of computeComposite() in site/leaderboard/index.html
+# and MUST track it. It is pinned to the board's *default* state — the score a
+# visitor sees when they click through from the badge and touch nothing:
+#
+#     useMem=false   rescale=false   showTuned=true   q=''
+#
+# so the only client-side knob left is the type filter, which the leagues below
+# reproduce. If the board's defaults or its scoring change, change this too;
+# check-badge-parity.js diffs the two and is what should catch the drift.
+
+BADGE_OUT = GEN / "badge"
+
+
+def _slug(name):
+    """URL segment for a display name. Two gateway entries carry spaces and a
+    '+', so names can't go in a path as-is. Same rule rebuild_site_data.py uses
+    for result filenames, so /badge/<slug>/ lines up with results/<slug>.json."""
+    return (re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "unnamed").lower()
+
+# category -> family key. Mirrors familyOf() in index.html; anything unlisted is
+# HTTP/1.1 (Connection, Workload, Database, Multi-endpoint).
+FAMILY_OF_CAT = {"Gateway": "gw", "HTTP/2": "h2", "HTTP/3": "h3",
+                 "gRPC": "grpc", "WebSocket": "ws"}
+FAMILY_LABEL = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3",
+                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+
+# Leagues are the board's type filter. flagship+emerging is its default view and
+# ranks as one field; engine entries are scored on their own profile subset, so
+# a framework's 100 is never set by an engine's result (and vice versa).
+LEAGUES = [("flagship", "emerging"), ("engine",), ("experimental",)]
+
+# A rank is only worth publishing if something was beaten to earn it.
+BADGE_MIN_FIELD = 2
+
+# api-4/api-16 template mix — MIXW in index.html.
+MIXW = {"baseline": 0.15, "json": 1, "upload": 10, "static": 2, "async_db": 10}
+
+_MEM_RE = re.compile(r"([\d.]+)\s*([KMG]i?B)", re.I)
+_BW_RE = re.compile(r"([\d.]+)\s*([KMG]?B)/s", re.I)
+
+
+def _mem(s):
+    """"512 MiB" -> MiB. Mirrors mem() in index.html."""
+    m = _MEM_RE.search(str(s or ""))
+    if not m:
+        return 0.0
+    v, u = float(m.group(1)), m.group(2).upper()[0]
+    return v * 1024 if u == "G" else v if u == "M" else v / 1024 if u == "K" else v
+
+
+def _bw(s):
+    """"12.30MB/s" -> bytes/s. Mirrors bw() in index.html."""
+    m = _BW_RE.search(str(s or ""))
+    if not m:
+        return 0.0
+    v, u = float(m.group(1)), m.group(2).upper()[0]
+    return v * 1e9 if u == "G" else v * 1e6 if u == "M" else v * 1e3 if u == "K" else v
+
+
+def badge_aggregate(profiles, results):
+    """Average rps/mem/bw (and the api template mix) over each profile's scored
+    conns. Port of aggregate() in index.html."""
+    avg, amem, abw, atpl = {}, {}, {}, {}
+    for p in profiles:
+        pid = p["id"]
+        sums, ms, bs, cn, ts = {}, {}, {}, {}, {}
+        for c in p["scoredConns"]:
+            for r in results.get(f"{pid}-{c}", []):
+                fw = r["fw"]
+                sums[fw] = sums.get(fw, 0) + (r.get("rps") or 0)
+                cn[fw] = cn.get(fw, 0) + 1
+                ms[fw] = ms.get(fw, 0) + _mem(r.get("memory"))
+                bs[fw] = bs.get(fw, 0) + _bw(r.get("bandwidth"))
+                if pid in ("api-4", "api-16"):
+                    t = ts.setdefault(fw, dict.fromkeys(MIXW, 0.0) | {"n": 0})
+                    for k in MIXW:
+                        t[k] += r.get("tpl_" + k) or 0
+                    t["n"] += 1
+        avg[pid] = {fw: sums[fw] / cn[fw] for fw in sums}
+        amem[pid] = {fw: ms[fw] / cn[fw] for fw in sums}
+        abw[pid] = {fw: bs[fw] / cn[fw] for fw in sums}
+        if pid in ("api-4", "api-16"):
+            atpl[pid] = {fw: {k: t[k] / t["n"] for k in MIXW} for fw, t in ts.items()}
+    return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
+
+
+def badge_composite(agg, profiles, meta, scope, types):
+    """Composite scores for one family and one league, best first.
+
+    Port of computeComposite() at the board's default state. Returns
+    [(framework, score)] for entries that actually scored in this family;
+    an entry present only through a reference-only profile (pipelined,
+    fortunes) sums to 0 and is dropped — there is no rank to report.
+    """
+    prof = {p["id"]: p for p in profiles}
+    pids = [p["id"] for p in profiles
+            if FAMILY_OF_CAT.get(p["category"], "h1") == scope]
+    if not pids:
+        return []
+
+    A = agg
+    in_league = lambda fw: meta.get(fw, {}).get("type", "emerging") in types
+
+    def is_scored(pid, fw):
+        p = prof[pid]
+        if not p["scored"]:
+            return False
+        if meta.get(fw, {}).get("type", "emerging") == "engine":
+            return bool(p["engineScored"])
+        return True
+
+    # json-comp is scored on bandwidth-adjusted rps: the best compressor sets the
+    # bar and everyone else is penalised by the square of their size ratio.
+    min_bpr = None
+    if "json-comp" in pids and A["avg"].get("json-comp"):
+        cand = []
+        for fw, rps in A["avg"]["json-comp"].items():
+            b = A["bw"]["json-comp"].get(fw, 0)
+            if in_league(fw) and rps > 0 and b > 0:
+                cand.append(b / rps)
+        if cand:
+            min_bpr = min(cand)
+
+    def eff(pid, fw):
+        rps = A["avg"].get(pid, {}).get(fw, 0)
+        if rps <= 0:
+            return 0.0
+        t = A["tpl"].get(pid, {}).get(fw)
+        if pid in ("api-4", "api-16") and t:
+            return sum(t[k] * w for k, w in MIXW.items())
+        if pid == "json-comp" and min_bpr is not None:
+            b = A["bw"][pid].get(fw, 0)
+            if b > 0:
+                return rps * (min_bpr / (b / rps)) ** 2
+        return rps
+
+    max_r = {}
+    for pid in pids:
+        vals = [eff(pid, fw) for fw in A["avg"].get(pid, {}) if in_league(fw)]
+        max_r[pid] = max(vals, default=0.0)
+
+    rows = []
+    fwset = {fw for pid in pids for fw in A["avg"].get(pid, {})}
+    for fw in fwset:
+        if not in_league(fw):
+            continue
+        score = 0.0
+        for pid in pids:
+            rps = A["avg"].get(pid, {}).get(fw, 0)
+            if rps > 0 and max_r[pid] > 0 and is_scored(pid, fw):
+                score += (eff(pid, fw) / max_r[pid]) * 100
+        if score > 0:
+            rows.append((fw, score))
+    rows.sort(key=lambda r: (-r[1], r[0]))
+    return rows
+
+
+def _badge_link(fw, scope, types):
+    """Deep link to the exact board view the rank came from. Parameter order and
+    the omit-the-default rule follow writeHash() in index.html, so the URL the
+    badge points at is the one the board would write for that view itself."""
+    parts = []
+    if scope != "h1":
+        parts.append("scope=" + scope)
+    if sorted(types) != ["emerging", "flagship"]:
+        parts.append("type=" + ",".join(sorted(types)))
+    parts.append("q=" + quote(fw, safe=""))
+    return SITE + "/#" + "&".join(parts)
+
+
+def _badge_color(rank, total):
+    """Rank tier, scaled to the field so a 12-entry family isn't graded like a
+    90-entry one. Gold for the win, then decile / quartile / half."""
+    if rank == 1:
+        return "e3b341"
+    pct = rank / total
+    if rank <= 3 or pct <= 0.10:
+        return "brightgreen"
+    if pct <= 0.25:
+        return "green"
+    if pct <= 0.50:
+        return "yellowgreen"
+    return "blue"
+
+
+def write_badges(profiles, results, meta):
+    """One shields.io endpoint document per (framework, family) it ranks in,
+    at /badge/<framework>/<family>.json, plus an index of everything written."""
+    if BADGE_OUT.exists():
+        shutil.rmtree(BADGE_OUT)
+    agg = badge_aggregate(profiles, results)
+
+    index, written = {}, 0
+    for scope in FAMILY_LABEL:
+        for types in LEAGUES:
+            rows = badge_composite(agg, profiles, meta, scope, types)
+            total = len(rows)
+            if total < BADGE_MIN_FIELD:
+                continue    # "#1 of 1" says nothing; skip until the field fills out
+            prev_score, prev_rank = None, 0
+            for i, (fw, score) in enumerate(rows):
+                # Competition ranking: equal scores share a rank (1, 2, 2, 4).
+                if prev_score is not None and abs(prev_score - score) < 1e-9:
+                    rank = prev_rank
+                else:
+                    rank = i + 1
+                prev_score, prev_rank = score, rank
+                slug = _slug(fw)
+                doc = {
+                    "schemaVersion": 1,
+                    "label": "HTTP Arena " + FAMILY_LABEL[scope],
+                    "message": f"#{rank} of {total}",
+                    "color": _badge_color(rank, total),
+                    "labelColor": "1f2937",
+                    "cacheSeconds": 3600,
+                }
+                path = BADGE_OUT / slug / f"{scope}.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(doc, separators=(",", ":")) + "\n",
+                                encoding="utf-8")
+                written += 1
+                # The maintainer should not have to assemble any of this: the
+                # index carries the finished line to paste, deep-linked to the
+                # view that produced the number.
+                link = _badge_link(fw, scope, types)
+                shield = ("https://img.shields.io/endpoint?url="
+                          f"{SITE}/badge/{slug}/{scope}.json")
+                e = index.setdefault(slug, {"framework": fw, "scopes": {}})
+                e["scopes"][scope] = {
+                    "rank": rank, "of": total, "score": round(score, 1),
+                    "link": link,
+                    "markdown": f"[![HTTP Arena {FAMILY_LABEL[scope]}]({shield})]({link})",
+                }
+
+    BADGE_OUT.mkdir(parents=True, exist_ok=True)
+    (BADGE_OUT / "index.json").write_text(
+        json.dumps(index, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    return written, len(index)
+
+
 def main():
     global RESULTS
     RESULTS = load_results()
@@ -984,6 +1229,7 @@ def main():
     n_pages = build_doc_pages(docs_tree, docs_content)
     n_search, search_bytes = write_search_index(docs_tree, docs_content)
     n_urls = write_sitemap(docs_content)
+    n_badges, n_badge_fw = write_badges(profiles, results, meta)
 
     n_rows = sum(len(v) for v in results.values())
     print(f"wrote {OUT.relative_to(ROOT)} - {len(profiles)} profiles, "
@@ -991,6 +1237,7 @@ def main():
     print(f"wrote {DOCS_OUT.relative_to(ROOT)}/ - {n_pages} static doc pages")
     print(f"wrote {(OUT.parent / 'search.js').relative_to(ROOT)} - {n_search} indexed pages, {search_bytes // 1024} KB")
     print(f"wrote {(GEN / 'sitemap.xml').relative_to(ROOT)} - {n_urls} URLs")
+    print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {n_badge_fw} frameworks")
 
 
 if __name__ == "__main__":
