@@ -21,7 +21,6 @@ sub vcl_synth {
     set resp.http.Content-Type = "text/plain";
 
     if (req.url == "/pipeline") {
-        unset resp.http.Content-Type;
         synthetic("ok");
     } else if (req.url ~ "^/baseline(11|2)(\?|$)") {
         synthetic(httparena.baseline_sum());
