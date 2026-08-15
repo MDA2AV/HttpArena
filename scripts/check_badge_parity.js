@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+//
+// The badge ranks are produced by a Python port (write_badges() in
+// gen_leaderboard_data.py) of the board's client-side scoring. Two copies of
+// one formula drift, and the drift is silent: the badge keeps rendering, it
+// just stops agreeing with the page it links to.
+//
+// So run the real thing. This lifts the scoring functions out of
+// site/leaderboard/index.html verbatim — no reimplementation — evaluates them
+// against the same data.js the browser gets, and diffs every rank against
+// site/generated/badge/index.json.
+//
+//     node scripts/check_badge_parity.js
+//
+// Non-zero exit on any disagreement. Run it after gen_leaderboard_data.py.
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..');
+const HTML = path.join(ROOT, 'site/leaderboard/index.html');
+const DATA = path.join(ROOT, 'site/leaderboard/data.js');
+const INDEX = path.join(ROOT, 'site/generated/badge/index.json');
+
+for (const f of [HTML, DATA, INDEX]) {
+  if (!fs.existsSync(f)) {
+    console.error(`missing ${path.relative(ROOT, f)} — run scripts/gen_leaderboard_data.py first`);
+    process.exit(2);
+  }
+}
+
+// ── lift the scoring out of the page ────────────────────────────────────────
+// Anchored on the section comments and the one-line helpers. If a rename breaks
+// an anchor this throws rather than silently checking nothing.
+const src = fs.readFileSync(HTML, 'utf8');
+function grab(re, what) {
+  const m = src.match(re);
+  if (!m) {
+    console.error(`could not lift ${what} out of index.html — the anchor moved.`);
+    console.error('Re-point the regex in this script at the renamed code; do not skip the check.');
+    process.exit(2);
+  }
+  return m[0];
+}
+const composite = grab(/\/\/ ── COMPOSITE scoring[\s\S]*?(?=\/\/ ── render)/, 'the composite block');
+const familyOf = grab(/^\s*function familyOf\(p\)\{.*$/m, 'familyOf()');
+const memFn = grab(/^\s*function mem\(s\)\{.*$/m, 'mem()');
+const bwFn = grab(/^\s*function bw\(s\)\{.*$/m, 'bw()');
+
+// ── the data the browser would have ─────────────────────────────────────────
+const window = {};
+new Function('window', fs.readFileSync(DATA, 'utf8'))(window);
+const D = window.LB_DATA;
+
+// Everything the lifted code reaches for that lives elsewhere in the page.
+// state is pinned to the board's defaults — the view a visitor lands on when
+// they follow the badge and touch nothing.
+const stubs = `
+  var PROF = {}; D.profiles.forEach(function(p){ PROF[p.id]=p; });
+  function typeOf(fw){ return (D.meta[fw] && D.meta[fw].type) || 'emerging'; }
+  function modeOf(fw){ return (D.meta[fw] && D.meta[fw].mode) || 'standard'; }
+  function langOf(fw){ return ''; }
+  function matchQ(fw){ return true; }              // state.q is '' — no search filter
+  var state = { useMem:false, rescale:false, showTuned:true, q:'', scope:'h1', types:[] };
+`;
+const run = new Function('D', `
+  ${stubs}
+  ${familyOf}
+  ${memFn}
+  ${bwFn}
+  ${composite}
+  return function(scope, types){
+    state.scope = scope; state.types = types;   // AGG is state-independent, so its cache is safe
+    return computeComposite();
+  };
+`)(D);
+
+// ── rank the same way write_badges() does ───────────────────────────────────
+const FAMILIES = ['h1', 'h2', 'h3', 'gw', 'grpc', 'ws'];
+const LEAGUES = [['flagship', 'emerging'], ['engine'], ['experimental']];
+const MIN_FIELD = 2;
+
+function ranked(scope, types) {
+  const rows = run(scope, types).rows
+    .filter(r => r.score > 0)
+    .sort((a, b) => (b.score - a.score) || (a.fw < b.fw ? -1 : a.fw > b.fw ? 1 : 0));
+  const out = new Map();
+  let prevScore = null, prevRank = 0;
+  rows.forEach((r, i) => {
+    const rank = (prevScore !== null && Math.abs(prevScore - r.score) < 1e-9) ? prevRank : i + 1;
+    prevScore = r.score; prevRank = rank;
+    out.set(r.fw, { rank, of: rows.length, score: r.score });
+  });
+  return out;
+}
+
+// Same rule as _slug() in gen_leaderboard_data.py / rebuild_site_data.py.
+const slug = n => (n.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed').toLowerCase();
+
+const emitted = JSON.parse(fs.readFileSync(INDEX, 'utf8'));
+const problems = [];
+let checked = 0;
+
+for (const scope of FAMILIES) {
+  for (const types of LEAGUES) {
+    const expect = ranked(scope, types);
+    for (const [fw, e] of expect) {
+      const got = emitted[slug(fw)] && emitted[slug(fw)].scopes[scope];
+      if (e.of < MIN_FIELD) {
+        if (got) problems.push(`${fw} ${scope}: badge emitted for a field of ${e.of} (min ${MIN_FIELD})`);
+        continue;
+      }
+      checked++;
+      if (!got) { problems.push(`${fw} ${scope}: board ranks it #${e.rank} of ${e.of}, no badge emitted`); continue; }
+      if (got.rank !== e.rank || got.of !== e.of) {
+        problems.push(`${fw} ${scope}: badge says #${got.rank} of ${got.of}, board says #${e.rank} of ${e.of}`);
+      }
+      if (Math.abs(got.score - e.score) > 0.05) {
+        problems.push(`${fw} ${scope}: badge score ${got.score}, board score ${e.score.toFixed(1)}`);
+      }
+    }
+  }
+}
+
+// And the other direction — a badge the board would not produce at all.
+for (const [s, entry] of Object.entries(emitted)) {
+  for (const scope of Object.keys(entry.scopes)) {
+    const seen = LEAGUES.some(types => ranked(scope, types).has(entry.framework));
+    if (!seen) problems.push(`${entry.framework} ${scope}: badge emitted but the board ranks no such entry`);
+  }
+}
+
+if (problems.length) {
+  console.error(`badge parity: ${problems.length} disagreement(s) with site/leaderboard/index.html\n`);
+  problems.slice(0, 40).forEach(p => console.error('  ' + p));
+  if (problems.length > 40) console.error(`  ... and ${problems.length - 40} more`);
+  console.error('\nThe Python port in gen_leaderboard_data.py has drifted from the board. Fix the port.');
+  process.exit(1);
+}
+
+console.log(`badge parity ok — ${checked} ranks match site/leaderboard/index.html`);
