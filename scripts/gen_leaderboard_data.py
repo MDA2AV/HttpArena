@@ -957,6 +957,14 @@ LEAGUES = [("flagship", "emerging"), ("engine",), ("experimental",)]
 # A rank is only worth publishing if something was beaten to earn it.
 BADGE_MIN_FIELD = 2
 
+# How long shields.io may hold a rendered badge. 300 is its floor — lower values
+# are clamped back up to it. This was an hour, which put a stale rank in front of
+# every embed for up to an hour after a deploy on top of GitHub's own Camo cache.
+# The extra cost is shields re-reading a ~130-byte static file on Pages twelve
+# times as often, which is nothing; on GitHub, Camo still dominates, but anywhere
+# outside it (docs sites, dashboards) the badge is now near-live.
+BADGE_CACHE_SECONDS = 300
+
 # Label-side colour, carrying the entry's tier. Same four hues as the board's
 # type swatch next to every framework name, but in the darker tone the board
 # uses for type *text* (.b-* / .type-filter .on in index.html) rather than the
@@ -1235,7 +1243,7 @@ def write_badges(profiles, results, meta):
             "message": f"#{rank} of {total}" + (f" ({lang})" if lang else ""),
             "color": _badge_color(rank, total),
             "labelColor": TYPE_COLOR.get(tier, TYPE_COLOR_FALLBACK),
-            "cacheSeconds": 3600,
+            "cacheSeconds": BADGE_CACHE_SECONDS,
         }
         path = BADGE_OUT / slug / f"{name}.json"
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -171,8 +171,9 @@ A few things worth knowing before you paste it:
   the memory-efficiency and rescale toggles off. Follow the link and you land on
   the field the rank was measured against — the whole league, not your row on
   its own, so `#6 of 83` arrives with the other 82 around it.
-- **It updates on deploy, then when GitHub's cache lets it.** README images are
-  proxied through Camo, so a new rank can take a few hours to show up.
+- **It updates on deploy, then when the caches let it.** shields holds a rank
+  for 5 minutes, and GitHub proxies README images through Camo, which holds
+  one for a few hours. Nothing to re-paste either way.
 
 Shields' usual styling works — append `&style=flat-square`, `&logo=rust`, and so
 on to the `img.shields.io` URL.

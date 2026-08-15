@@ -131,9 +131,19 @@ but get no badge of their own: there is no placing to claim.
 
 ## Freshness
 
-The endpoints are regenerated whenever the site deploys. After that, GitHub
-serves README images through its Camo proxy, which caches them, so a changed
-rank can take a few hours to appear on GitHub itself.
+The endpoints are regenerated whenever the site deploys — including every time
+a benchmark result is saved, since results live under `site/`. Two caches sit in
+front of that:
+
+| | Holds a stale rank for |
+|---|---|
+| shields.io | 5 minutes (`cacheSeconds`, at its floor) |
+| GitHub Camo | a few hours |
+
+So a new rank is visible almost immediately wherever the badge is embedded
+directly, and takes a few hours to turn over inside a GitHub README. Nothing to
+re-paste either way. To see the current value straight away, add any parameter
+to the shields URL — `&style=flat-square` — which makes a fresh cache key.
 
 ## Styling
 
