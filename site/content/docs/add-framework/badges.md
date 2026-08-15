@@ -38,6 +38,27 @@ under `markdown`.
 `site/data/results/`, so `aspnet-minimal + nginx` becomes
 `aspnet-minimal-nginx`.
 
+## Ranked among your own language
+
+Optional, and a second badge rather than a replacement. Append `-<language>` to
+the family and the badge reads **`#1 of 6 (Rust)`**:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1&lang=Rust)
+```
+
+The language segment is the board's own language name, lowercased, with `#`
+spelled out as `sharp` and `++` as `pp`: `C#` → `csharp`, `C++` → `cpp`,
+`TS` → `ts`, `JS` → `js`. Your ready-made line is in
+[`/badge/index.json`](https://www.http-arena.com/badge/index.json) under
+`scopes.<family>.byLanguage.markdown`.
+
+This is a **filter, not a rescore**. Scores and order are identical to the
+overall badge; only the field is narrowed, so the two can never disagree about
+who is ahead of whom. The link opens the board filtered to that language —
+`#lang=Rust` — which is an exact match, unlike the search box, so the field on
+the page is the field the badge claims.
+
 ## What the colours mean
 
 The two halves are read separately. The **right** half is placement — gold for

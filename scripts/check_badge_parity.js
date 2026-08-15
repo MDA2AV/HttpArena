@@ -56,13 +56,17 @@ const D = window.LB_DATA;
 // Everything the lifted code reaches for that lives elsewhere in the page.
 // state is pinned to the board's defaults — the view a visitor lands on when
 // they follow the badge and touch nothing.
+// langOf is real here, not a stub returning '': the board's state.lang filter
+// goes through it, and the language rank badges are checked against that filter.
 const stubs = `
   var PROF = {}; D.profiles.forEach(function(p){ PROF[p.id]=p; });
+  var FWLANG = {};
+  Object.keys(D.results).forEach(function(k){ D.results[k].forEach(function(r){ if(r.lang) FWLANG[r.fw]=r.lang; }); });
   function typeOf(fw){ return (D.meta[fw] && D.meta[fw].type) || 'emerging'; }
   function modeOf(fw){ return (D.meta[fw] && D.meta[fw].mode) || 'standard'; }
-  function langOf(fw){ return ''; }
+  function langOf(fw){ return FWLANG[fw] || ''; }
   function matchQ(fw){ return true; }              // state.q is '' — no search filter
-  var state = { useMem:false, rescale:false, showTuned:true, q:'', scope:'h1', types:[] };
+  var state = { useMem:false, rescale:false, showTuned:true, q:'', lang:'', scope:'h1', types:[] };
 `;
 const run = new Function('D', `
   ${stubs}
@@ -70,8 +74,8 @@ const run = new Function('D', `
   ${memFn}
   ${bwFn}
   ${composite}
-  return function(scope, types){
-    state.scope = scope; state.types = types;   // AGG is state-independent, so its cache is safe
+  return function(scope, types, lang){
+    state.scope = scope; state.types = types; state.lang = lang || '';   // AGG is state-independent, so its cache is safe
     return computeComposite();
   };
 `)(D);
@@ -86,8 +90,8 @@ const MIN_FIELD = 2;
 // compared a filtered board against an identically-filtered port and passed
 // while the published field was one short of the board's. Whatever the board
 // renders as a row is the field, and that is what gets compared.
-function ranked(scope, types) {
-  const rows = run(scope, types).rows
+function ranked(scope, types, lang) {
+  const rows = run(scope, types, lang).rows
     .sort((a, b) => (b.score - a.score) || (a.fw < b.fw ? -1 : a.fw > b.fw ? 1 : 0));
   const out = new Map();
   let prevScore = null, prevRank = 0;
@@ -98,6 +102,11 @@ function ranked(scope, types) {
   });
   return out;
 }
+
+// Every language present, from the same rows the board reads it from.
+const FWLANG = {};
+Object.keys(D.results).forEach(k => D.results[k].forEach(r => { if (r.lang) FWLANG[r.fw] = r.lang; }));
+const LANGS = [...new Set(Object.values(FWLANG))].sort();
 
 // Same rule as _slug() in gen_leaderboard_data.py / rebuild_site_data.py.
 const slug = n => (n.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed').toLowerCase();
@@ -128,6 +137,26 @@ for (const scope of FAMILIES) {
       }
       if (Math.abs(got.score - e.score) > 0.05) {
         problems.push(`${fw} ${scope}: badge score ${got.score}, board score ${e.score.toFixed(1)}`);
+      }
+    }
+
+    // The language variant, checked against the board's own lang= filter rather
+    // than against a subset this script computes — otherwise "#1 of 6 (Rust)"
+    // would only ever be compared with itself.
+    for (const lang of LANGS) {
+      const expect = ranked(scope, types, lang);
+      for (const [fw, e] of expect) {
+        const got = emitted[slug(fw)] && emitted[slug(fw)].scopes[scope]
+                 && emitted[slug(fw)].scopes[scope].byLanguage;
+        if (e.of < MIN_FIELD || e.score <= 0) {
+          if (got) problems.push(`${fw} ${scope} (${lang}): badge emitted for a field of ${e.of}, score ${e.score.toFixed(1)}`);
+          continue;
+        }
+        checked++;
+        if (!got) { problems.push(`${fw} ${scope} (${lang}): board ranks it #${e.rank} of ${e.of}, no language badge emitted`); continue; }
+        if (got.rank !== e.rank || got.of !== e.of) {
+          problems.push(`${fw} ${scope} (${lang}): badge says #${got.rank} of ${got.of}, board says #${e.rank} of ${e.of}`);
+        }
       }
     }
   }

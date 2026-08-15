@@ -110,6 +110,21 @@ outside `A-Z a-z 0-9 . _ -` turned into `-` — the same name as your file in
 with every rank in it, is at
 [`/badge/index.json`](https://www.http-arena.com/badge/index.json).
 
+### Ranked among your own language
+
+Optional. Append `-<language>` to the family for a badge reading
+**`#1 of 6 (Rust)`** — same scores and same order, counting only entries in your
+language:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1&lang=Rust)
+```
+
+The language is lowercased, with `#` spelled `sharp` and `++` spelled `pp` — so
+`C#` is `csharp`, `C++` is `cpp`, `TS` is `ts`. It links to the board filtered to
+that language, so the field is the one you can count there. Your line is in
+`index.json` under `scopes.<family>.byLanguage.markdown`.
+
 The two halves say different things. The right half is how you placed — gold for
 first, then shading down by how far into the field you are. The left half is
 which tier you competed in, in the same colours the board uses for the little

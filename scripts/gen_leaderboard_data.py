@@ -22,6 +22,7 @@ import shutil
 import posixpath
 import html as _html
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "site" / "data"
@@ -1103,7 +1104,25 @@ def badge_composite(agg, profiles, meta, scope, types):
     return rows
 
 
-def _badge_link(scope, types):
+def _lang_slug(lang):
+    """URL segment for a language name. Not _slug(): that maps C, C# and C++ all
+    onto "c", so a C# entry's badge would sit at .../h1-c.json. The punctuation
+    is spelled out first, which is also how these read aloud."""
+    s = lang.lower().replace("++", "pp").replace("#", "sharp")
+    return re.sub(r"[^a-z0-9._-]+", "-", s).strip("-") or "unknown"
+
+
+def _fw_languages(results):
+    """framework -> language, from the result rows the board itself reads."""
+    lang = {}
+    for rows in results.values():
+        for r in rows:
+            if r.get("lang"):
+                lang[r["fw"]] = r["lang"]
+    return lang
+
+
+def _badge_link(scope, types, lang=None):
     """Deep link to the board view the rank was taken in — the whole field, not
     the one entry. Following a badge should show what "#6 of 83" was measured
     against; filtering to the framework alone just restates the badge.
@@ -1124,6 +1143,11 @@ def _badge_link(scope, types):
         parts.append("scope=" + scope)
     parts.append("type=" + ",".join(sorted(types)))
     parts.append("tuned=1")
+    if lang:
+        # lang=, not q=. The search box matches substrings across name, language
+        # and engine, so q=C pulls in 73 of 78 entries and q=V pulls 33 — the
+        # denominator would not survive being counted.
+        parts.append("lang=" + quote(lang, safe=""))
     return SITE + "/#" + "&".join(parts)
 
 
@@ -1143,61 +1167,101 @@ def _badge_color(rank, total):
 
 
 def write_badges(profiles, results, meta):
-    """One shields.io endpoint document per (framework, family) it ranks in,
-    at /badge/<framework>/<family>.json, plus an index of everything written."""
+    """shields.io endpoint documents, plus an index of everything written.
+
+    Two badges per (framework, family): the overall rank in its tier at
+    /badge/<framework>/<family>.json, and — optional, for maintainers who want
+    it — its rank among entries in the same language, at
+    /badge/<framework>/<family>-<language>.json, reading "#1 of 17 (JS)".
+
+    The language variant is a filter, not a rescore: same scores, same order,
+    counting only same-language entries. That is what the board does with a
+    language filter and rescale off, so the two still agree.
+    """
     if BADGE_OUT.exists():
         shutil.rmtree(BADGE_OUT)
     agg = badge_aggregate(profiles, results)
+    fw_lang = _fw_languages(results)
+
+    # A language added later must not land on an existing slug — two languages
+    # sharing one would silently overwrite each other's badges.
+    by_slug = {}
+    for lang in sorted(set(fw_lang.values())):
+        by_slug.setdefault(_lang_slug(lang), []).append(lang)
+    clashes = {s: v for s, v in by_slug.items() if len(v) > 1}
+    if clashes:
+        raise SystemExit(f"badge: languages share a URL slug, fix _lang_slug(): {clashes}")
 
     index, written = {}, 0
+
+    def emit(fw, slug, tier, scope, types, rank, total, score, lang=None):
+        """One endpoint document + its index entry."""
+        nonlocal written
+        suffix = f"-{_lang_slug(lang)}" if lang else ""
+        name = f"{scope}{suffix}"
+        doc = {
+            "schemaVersion": 1,
+            "label": "HTTP Arena " + FAMILY_LABEL[scope],
+            "message": f"#{rank} of {total}" + (f" ({lang})" if lang else ""),
+            "color": _badge_color(rank, total),
+            "labelColor": TYPE_COLOR.get(tier, TYPE_COLOR_FALLBACK),
+            "cacheSeconds": 3600,
+        }
+        path = BADGE_OUT / slug / f"{name}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(doc, separators=(",", ":")) + "\n", encoding="utf-8")
+        written += 1
+        # The maintainer should not have to assemble any of this: the index
+        # carries the finished line to paste, deep-linked to the view that
+        # produced the number.
+        link = _badge_link(scope, types, lang)
+        shield = f"https://img.shields.io/endpoint?url={SITE}/badge/{slug}/{name}.json"
+        e = index.setdefault(slug, {"framework": fw, "type": tier,
+                                    "language": fw_lang.get(fw, ""), "scopes": {}})
+        entry = {"rank": rank, "of": total, "score": round(score, 1), "link": link,
+                 "markdown": f"[![HTTP Arena {FAMILY_LABEL[scope]}]({shield})]({link})"}
+        if lang:
+            e["scopes"].setdefault(scope, {})["byLanguage"] = entry
+        else:
+            entry["byLanguage"] = e["scopes"].get(scope, {}).get("byLanguage")
+            if entry["byLanguage"] is None:
+                del entry["byLanguage"]
+            e["scopes"][scope] = entry
+
+    def ranked(rows):
+        """(fw, rank, total, score) with competition ranking — ties share a rank."""
+        out, prev_score, prev_rank = [], None, 0
+        for i, (fw, score) in enumerate(rows):
+            rank = prev_rank if (prev_score is not None and abs(prev_score - score) < 1e-9) else i + 1
+            prev_score, prev_rank = score, rank
+            out.append((fw, rank, len(rows), score))
+        return out
+
     for scope in FAMILY_LABEL:
         for types in LEAGUES:
             rows = badge_composite(agg, profiles, meta, scope, types)
-            total = len(rows)
-            if total < BADGE_MIN_FIELD:
-                continue    # "#1 of 1" says nothing; skip until the field fills out
-            prev_score, prev_rank = None, 0
-            for i, (fw, score) in enumerate(rows):
-                # Competition ranking: equal scores share a rank (1, 2, 2, 4).
-                if prev_score is not None and abs(prev_score - score) < 1e-9:
-                    rank = prev_rank
-                else:
-                    rank = i + 1
-                prev_score, prev_rank = score, rank
-                # Counted in the field above, but no badge of its own: a 0 here
-                # means the entry ran nothing that scores in this family, so a
-                # "#31 of 31" would read as a placing it never competed for.
-                if score <= 0:
+            if len(rows) >= BADGE_MIN_FIELD:
+                for fw, rank, total, score in ranked(rows):
+                    # Counted in the field above, but no badge of its own: a 0
+                    # means the entry ran nothing that scores in this family, so
+                    # "#31 of 31" would read as a placing it never competed for.
+                    if score <= 0:
+                        continue
+                    emit(fw, _slug(fw), meta.get(fw, {}).get("type", "emerging"),
+                         scope, types, rank, total, score)
+
+            # Same league, same scores, narrowed to one language — re-ranked
+            # within that subset rather than rescored, so a language badge and
+            # the overall one can never disagree about who is ahead of whom.
+            for lang in sorted({fw_lang.get(fw, "") for fw, _ in rows} - {""}):
+                sub = [(fw, sc) for fw, sc in rows if fw_lang.get(fw) == lang]
+                if len(sub) < BADGE_MIN_FIELD:
                     continue
-                slug = _slug(fw)
-                # Two independent readings: the label side is which tier the
-                # entry competes in, the message side is how it placed there.
-                tier = meta.get(fw, {}).get("type", "emerging")
-                doc = {
-                    "schemaVersion": 1,
-                    "label": "HTTP Arena " + FAMILY_LABEL[scope],
-                    "message": f"#{rank} of {total}",
-                    "color": _badge_color(rank, total),
-                    "labelColor": TYPE_COLOR.get(tier, TYPE_COLOR_FALLBACK),
-                    "cacheSeconds": 3600,
-                }
-                path = BADGE_OUT / slug / f"{scope}.json"
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(doc, separators=(",", ":")) + "\n",
-                                encoding="utf-8")
-                written += 1
-                # The maintainer should not have to assemble any of this: the
-                # index carries the finished line to paste, deep-linked to the
-                # view that produced the number.
-                link = _badge_link(scope, types)
-                shield = ("https://img.shields.io/endpoint?url="
-                          f"{SITE}/badge/{slug}/{scope}.json")
-                e = index.setdefault(slug, {"framework": fw, "type": tier, "scopes": {}})
-                e["scopes"][scope] = {
-                    "rank": rank, "of": total, "score": round(score, 1),
-                    "link": link,
-                    "markdown": f"[![HTTP Arena {FAMILY_LABEL[scope]}]({shield})]({link})",
-                }
+                for fw, rank, total, score in ranked(sub):
+                    if score <= 0:
+                        continue
+                    emit(fw, _slug(fw), meta.get(fw, {}).get("type", "emerging"),
+                         scope, types, rank, total, score, lang)
 
     BADGE_OUT.mkdir(parents=True, exist_ok=True)
     (BADGE_OUT / "index.json").write_text(

@@ -503,7 +503,12 @@
   function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws'}[p.category]||'h1'; }
   var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Workload','Database','Multi-endpoint']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
   var expanded=new Set(['composite']);
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', useMem:false, scope:'h1', showTuned:true, rescale:false };
+  // state.lang is an exact language filter, distinct from the q search box: q
+  // matches substrings across name/language/engine, which is fine for typing but
+  // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
+  // 33. The language rank badges link here, so the field they claim has to be
+  // the field the page shows.
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -887,7 +892,7 @@
   }
 
   function pickScope(scope){
-    state.view='composite'; state.scope=scope; state.sortKey='score'; state.sortDir=-1; state.q=''; document.getElementById('q').value='';
+    state.view='composite'; state.scope=scope; state.sortKey='score'; state.sortDir=-1; state.q=''; state.lang=''; document.getElementById('q').value='';
     expanded.add('composite');
     buildNav(); renderHead(); render();
   }
@@ -933,6 +938,16 @@
       rs.setAttribute('data-tip','Off: each profile is worth 100 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
       rs.onclick=function(){ state.rescale=!state.rescale; rs.classList.toggle('on', state.rescale); render(); };
       ctl.appendChild(rs);
+      // Arriving on #lang=X (from a language rank badge) filters the board to
+      // one language. Say so, and make it one click to leave - a filter with no
+      // visible cause reads as missing data.
+      if(state.lang){
+        var lf=document.createElement('div'); lf.className='toggle on';
+        lf.innerHTML='<span class="sw"><i></i></span> '+esc(state.lang)+' only';
+        lf.setAttribute('data-tip','Showing only '+esc(state.lang)+' entries. Click to show every language again.');
+        lf.onclick=function(){ state.lang=''; renderHead(); render(); };
+        ctl.appendChild(lf);
+      }
     } else {
       var p=PROF[state.profile];
       cat.textContent=p.category; title.textContent=p.label;
@@ -1047,7 +1062,7 @@
     // once filtered to Ruby). The `rescale` toggle restores that behaviour for
     // when comparing a subset against itself is the point.
     function outOfLeague(fw){ return state.types.indexOf(typeOf(fw))<0; }
-    function hidden(fw){ if(!state.showTuned && modeOf(fw)==='tuned') return true; return !matchQ(fw); }
+    function hidden(fw){ if(!state.showTuned && modeOf(fw)==='tuned') return true; if(state.lang && langOf(fw)!==state.lang) return true; return !matchQ(fw); }
     function excl(fw){ return outOfLeague(fw) || hidden(fw); }
     var exclFromScale = state.rescale ? excl : outOfLeague;
     var minBpr=null;
@@ -1121,6 +1136,7 @@
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
+    if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
     var nh=p.length?('#'+p.join('&')):'';
     if(location.hash!==nh){ try{ history.replaceState(null,'', nh||(location.pathname+location.search)); }catch(e){} }
@@ -1132,6 +1148,7 @@
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }
     if(p.hasOwnProperty('tuned')) state.showTuned = p.tuned!=='0';
+    state.lang = p.lang || '';
     state.q = p.q || '';
     if(p.p && PROF[p.p]){
       state.view='profile'; state.profile=p.p;
