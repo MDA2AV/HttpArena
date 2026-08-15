@@ -1,0 +1,15 @@
+{
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "slim/psr7": "^1.7",
+        "slim/slim": "^4.15"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
