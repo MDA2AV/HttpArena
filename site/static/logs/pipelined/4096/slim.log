@@ -1,0 +1,15 @@
+{"level":"info","ts":1786794405.527459,"msg":"maxprocs: Leaving GOMAXPROCS=64: CPU quota undefined"}
+{"level":"info","ts":1786794405.527473,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":243039537561,"previous":9223372036854775807}
+{"level":"info","ts":1786794405.527476,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+{"level":"info","ts":1786794405.5274775,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1786794405.5274806,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1786794405.5276399,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1786794405.5277166,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x1f3fe3ece400"}
+{"level":"info","ts":1786794405.623071,"logger":"frankenphp","msg":"FrankenPHP started 🐘","php_version":"8.5.9","num_threads":128,"max_threads":128,"max_requests":0}
+{"level":"warn","ts":1786794405.6234288,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"warn","ts":1786794405.6234345,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"info","ts":1786794405.6234372,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1786794405.63523,"msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+{"level":"info","ts":1786794405.6352425,"msg":"serving initial configuration"}
+{"level":"info","ts":1786794405.6381674,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/data/caddy"}
+{"level":"info","ts":1786794405.6410398,"logger":"tls","msg":"finished cleaning storage units"}

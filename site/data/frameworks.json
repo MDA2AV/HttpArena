@@ -260,6 +260,14 @@
     "engine": "zerg",
     "mode": "standard"
   },
+  "drogon": {
+    "dir": "drogon",
+    "description": "Drogon on the trantor event loop, one event loop per core. Routing and path/query params through the Drogon API, jsoncpp serialization, gzip through the built-in response compression.",
+    "repo": "https://github.com/drogonframework/drogon",
+    "type": "flagship",
+    "engine": "trantor",
+    "mode": "standard"
+  },
   "echo": {
     "dir": "echo",
     "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
@@ -504,6 +512,14 @@
     "engine": "http-kit",
     "mode": "standard"
   },
+  "http4k": {
+    "dir": "http4k",
+    "description": "http4k 6 on the Undertow backend, default configuration. Routing and path/query access through the http4k API, Jackson JSON, gzip through the http4k GZip server filter.",
+    "repo": "https://github.com/http4k/http4k",
+    "type": "flagship",
+    "engine": "Undertow",
+    "mode": "standard"
+  },
   "http4s": {
     "dir": "http4s",
     "description": "http4s 0.23 on the Ember server with cats-effect, default configuration. Routing through the http4s DSL, circe JSON, gzip through the http4s GZip middleware.",
@@ -548,6 +564,14 @@
     "repo": "https://github.com/Cobra007-star-source/IRIS",
     "type": "engine",
     "engine": "epoll"
+  },
+  "koa": {
+    "dir": "koa",
+    "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
+    "repo": "https://github.com/koajs/koa",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "standard"
   },
   "ktor-ghost": {
     "dir": "ktor-ghost",
@@ -923,6 +947,14 @@
     "type": "emerging",
     "engine": "sisk",
     "mode": "tuned"
+  },
+  "slim": {
+    "dir": "slim",
+    "description": "Slim 4 with slim/psr7 on FrankenPHP in classic per-request mode. Routing and PSR-7 request/response through the Slim API, json_encode per request, gzip through the FrankenPHP encode directive.",
+    "repo": "https://github.com/slimphp/Slim",
+    "type": "flagship",
+    "engine": "FrankenPHP",
+    "mode": "standard"
   },
   "slimeweb": {
     "dir": "slimeweb",

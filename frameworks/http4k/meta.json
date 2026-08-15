@@ -1,0 +1,19 @@
+{
+  "display_name": "http4k",
+  "language": "Kotlin",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "Undertow",
+  "description": "http4k 6 on the Undertow backend, default configuration. Routing and path/query access through the http4k API, Jackson JSON, gzip through the http4k GZip server filter.",
+  "repo": "https://github.com/http4k/http4k",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
