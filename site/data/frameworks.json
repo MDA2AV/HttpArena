@@ -557,6 +557,14 @@
     "engine": "netty",
     "mode": "standard"
   },
+  "lapis": {
+    "dir": "lapis",
+    "description": "Lapis on OpenResty with LuaJIT, one nginx worker per core. Routing and params through the Lapis application API, cjson serialization, gzip through the nginx gzip directive.",
+    "repo": "https://github.com/leafo/lapis",
+    "type": "flagship",
+    "engine": "OpenResty",
+    "mode": "standard"
+  },
   "laravel": {
     "dir": "laravel",
     "description": "Laravel 13 served by Laravel Octane on FrankenPHP, the first-party production runtime documented by Laravel. Routing and request handling through the Laravel API, responses via the response()/json() helpers, gzip and brotli through the Caddy encode directive Octane generates.",
