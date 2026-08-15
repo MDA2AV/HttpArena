@@ -1114,6 +1114,14 @@
     "type": "engine",
     "engine": "veb"
   },
+  "vertx": {
+    "dir": "vertx",
+    "description": "Eclipse Vert.x 5 with vertx-web on Netty, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option.",
+    "repo": "https://github.com/eclipse-vertx/vert.x",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard"
+  },
   "WebFramework C": {
     "dir": "web-framework-cc",
     "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
