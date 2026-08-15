@@ -82,10 +82,12 @@
   .type-filter button[data-type="emerging"].on{background:rgba(59,115,196,.16); color:#2b5694}
   .type-filter button[data-type="experimental"].on{background:rgba(217,142,43,.16); color:#8a5a12}
   .type-filter button[data-type="engine"].on{background:rgba(203,95,81,.15); color:#b0463a}
+  .type-filter button[data-type="infrastructure"].on{background:rgba(47,147,168,.18); color:#277482}
   html[data-theme="dark"] .type-filter button[data-type="flagship"].on{background:rgba(46,158,106,.24); color:#5cc596}
   html[data-theme="dark"] .type-filter button[data-type="emerging"].on{background:rgba(59,115,196,.30); color:#9bbdec}
   html[data-theme="dark"] .type-filter button[data-type="experimental"].on{background:rgba(217,142,43,.28); color:#e8b066}
   html[data-theme="dark"] .type-filter button[data-type="engine"].on{background:rgba(203,95,81,.24); color:#e89384}
+  html[data-theme="dark"] .type-filter button[data-type="infrastructure"].on{background:rgba(47,147,168,.24); color:#6cc3d2}
 
   .layout{display:grid; grid-template-columns:264px 1fr; align-items:start}
   .nav{position:sticky; top:57px; align-self:start; height:calc(100vh - 57px); overflow-y:auto; border-right:1px solid var(--line); padding:.9rem .7rem 3rem; background:transparent; scrollbar-width:thin; scrollbar-color:var(--line) transparent}
@@ -274,6 +276,7 @@
   .tsq-emerging{background:#3b73c4}
   .tsq-experimental{background:#d98e2b}
   .tsq-engine{background:#cb5f51}
+  .tsq-infrastructure{background:#2f93a8}
   /* 'tuned' mode cue - yellow ring around the type square / badge */
   .tsq.tuned, .badge.tuned{position:relative}
   .tsq.tuned::after, .badge.tuned::after{content:""; position:absolute; top:0; bottom:0; right:calc(100% + 2px); width:4px; background:#c89a3c}
@@ -282,6 +285,7 @@
   .b-emerging{background:rgba(59,115,196,.14); color:#2b5694} html[data-theme="dark"] .b-emerging{color:#9bbdec}
   .b-experimental{background:rgba(217,142,43,.14); color:#8a5a12} html[data-theme="dark"] .b-experimental{color:#e8b066}
   .b-engine{background:rgba(203,95,81,.13); color:#b0463a} html[data-theme="dark"] .b-engine{color:#e89384}
+  .b-infrastructure{background:rgba(47,147,168,.14); color:#277482} html[data-theme="dark"] .b-infrastructure{color:#6cc3d2}
 
   .meter{position:relative; display:flex; flex-direction:column; align-items:flex-end; gap:.28rem; padding:.5rem .55rem !important}
   .meter .v{font-family:var(--mono); font-variant-numeric:tabular-nums; font-weight:600; font-size:.85rem}
@@ -429,6 +433,7 @@
       <button data-type="experimental" data-tip="Very new, unproven work. Ranked with frameworks but hidden until you select it.">Experimental</button>
       <span class="tf-div" aria-hidden="true"></span>
       <button data-type="engine" data-tip="Bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.">Engine</button>
+      <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
       <span class="tf-div" aria-hidden="true"></span>
       <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow ring).">Tuned</button>
     </div>
@@ -537,12 +542,13 @@
     if(pos.length && !pos.some(hit)) return false;
     return true;
   }
-  function typeAbbr(t){ return {flagship:'flagship', emerging:'emerging', experimental:'experimental', engine:'engine'}[t] || t; }
+  function typeAbbr(t){ return {flagship:'flagship', emerging:'emerging', experimental:'experimental', engine:'engine', infrastructure:'infra'}[t] || t; }
   var TYPE_TIP={
     flagship:'Flagship - mature framework with an active development team, a solid ecosystem, and an established community around it; covers a complete test category.',
     emerging:'Emerging - a real framework that doesn’t yet meet the full flagship bar (younger, minimal, or partial coverage).',
     experimental:'Experimental - very new, unproven work. Ranked with frameworks but hidden until selected.',
-    engine:'Engine - bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.'
+    engine:'Engine - bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.',
+    infrastructure:'Infrastructure - reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.'
   };
   function typeTip(t){ return TYPE_TIP[t]||t; }
   var TIP={
@@ -1008,25 +1014,49 @@
   }
   function saveTypes(){ try{ localStorage.setItem('lb-types', JSON.stringify(state.types)); }catch(e){} }
   function saveTuned(){ try{ localStorage.setItem('lb-showtuned', state.showTuned?'1':'0'); }catch(e){} }
-  // flagship/emerging combine; engine is exclusive (selected alone). Never empty.
+  // flagship/emerging/experimental combine (one framework pool); engine and
+  // infrastructure are exclusive - each is its own league, selected alone.
+  // Never empty.
+  var EXCLUSIVE_TYPES=['engine','infrastructure'];
+  function isExclusiveType(t){ return EXCLUSIVE_TYPES.indexOf(t)>=0; }
   function toggleType(t){
     var s=state.types.slice();
-    if(t==='engine'){ s=[t]; }
-    else if(s.indexOf('engine')>=0){ s=[t]; }
+    if(isExclusiveType(t)){ s=[t]; }
+    else if(s.some(isExclusiveType)){ s=[t]; }
     else { var i=s.indexOf(t); if(i>=0){ if(s.length>1) s.splice(i,1); } else { s.push(t); } }
     state.types=s; saveTypes(); render();
   }
 
   // ── COMPOSITE scoring (mirrors the canonical board) ─────
   var MIXW={baseline:0.15, json:1, upload:10, static:2, async_db:10};
-  function isScored(pid,fw){ var p=PROF[pid]; if(!p||p.scored===false) return false; var t=typeOf(fw); if(t==='engine')return !!p.engineScored; return true; }
+  // Which profiles count toward the composite, per league. Frameworks use the
+  // global `scored` flag, engines `engineScored`, infrastructure `infraScored`.
+  //
+  // Infrastructure is the one league whose set is not a subset of the framework
+  // set: proxies are scored on Pipelined, which frameworks treat as
+  // reference-only (#1058). So its flag is read on its own rather than behind
+  // the `scored` short-circuit the way engineScored is - gating it would drop
+  // the profile from the infra composite without anything saying so.
+  function scoredForType(pid,t){
+    var p=PROF[pid]; if(!p) return false;
+    if(t==='infrastructure') return !!p.infraScored;
+    if(p.scored===false) return false;
+    if(t==='engine') return !!p.engineScored;
+    return true;
+  }
+  function isScored(pid,fw){ return scoredForType(pid, typeOf(fw)); }
+  // The league the current view ranks. The exclusive types name themselves; any
+  // framework selection shares the one framework scored set.
+  function leagueType(){ for(var i=0;i<EXCLUSIVE_TYPES.length;i++){ if(state.types.indexOf(EXCLUSIVE_TYPES[i])>=0) return EXCLUSIVE_TYPES[i]; } return 'flagship'; }
   function aggregate(){
     // avg rps/mem/bw over each profile's scored conns; tpl avg for api.
     var avg={},amem={},abw={},atpl={};
     D.profiles.forEach(function(p){
       // Reference-only profiles (scored:false — pipelined, fortunes) aggregate
       // too: they render as faded columns in the matrix, they just never enter
-      // the composite sum (#1058).
+      // the framework composite sum (#1058). Load-bearing for infrastructure,
+      // whose composite does count Pipelined — scoredForType() can only pick a
+      // profile up if there is an average here for it.
       var pid=p.id, sums={},ms={},bs={},cn={},ts={};
       p.scoredConns.forEach(function(c){
         (D.results[pid+'-'+c]||[]).forEach(function(r){
@@ -1219,7 +1249,7 @@
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'+ar('fw')+'</th>'
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(TIP.score)+'">Composite'+ar('score')+'</th>';
-    pids.forEach(function(pid){ var p=PROF[pid]; var ref=p.scored===false; th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
+    pids.forEach(function(pid){ var p=PROF[pid]; var ref=!scoredForType(pid, leagueType()); th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
     th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
@@ -1335,7 +1365,7 @@
     if(e.target.closest('a')) return;
     var row=e.target.closest('[data-fw-row]'); if(row) openModal(row.getAttribute('data-fw-row'));
   });
-  try{ var _vt=['flagship','emerging','experimental','engine']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
+  try{ var _vt=['flagship','emerging','experimental','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
   document.getElementById('typeFilter').addEventListener('click', function(e){ var b=e.target.closest('button[data-type]'); if(!b) return; toggleType(b.getAttribute('data-type')); });
   try{ var _st=localStorage.getItem('lb-showtuned'); if(_st!==null) state.showTuned=_st==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });

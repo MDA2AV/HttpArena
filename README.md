@@ -153,6 +153,7 @@ square next to every framework name:
 | 🟦 | `emerging` | flagship + emerging, as one field |
 | 🟧 | `experimental` | other experimental entries |
 | 🟥 | `engine` | other engines, on the profiles engines are scored on |
+| 🟦 | `infrastructure` | other proxies / static-file servers, on the profiles infrastructure is scored on |
 
 A few things worth knowing before you paste it:
 

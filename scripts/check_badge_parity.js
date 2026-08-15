@@ -85,7 +85,7 @@ const run = new Function('D', `
 
 // ── rank the same way write_badges() does ───────────────────────────────────
 const FAMILIES = ['h1', 'h2', 'h3', 'gw', 'grpc', 'ws'];
-const LEAGUES = [['flagship', 'emerging'], ['engine'], ['experimental']];
+const LEAGUES = [['flagship', 'emerging'], ['engine'], ['experimental'], ['infrastructure']];
 const MIN_FIELD = 2;
 
 // NO score filter here. An earlier version dropped rows scoring 0 before

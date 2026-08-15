@@ -194,6 +194,13 @@
     "engine": "bun",
     "mode": "standard"
   },
+  "caddy": {
+    "dir": "caddy",
+    "description": "Caddy with custom Go handler modules compiled in via xcaddy: httparena for /baseline11 and /baseline2, httparena_json for /json/{count}, serializing the JSON body per request from the dataset read at provision time. Native file_server for /static. HTTP/1.1 on :8080, h1 over TLS on :8081, h2 and h3 on :8443.",
+    "repo": "https://github.com/caddyserver/caddy",
+    "type": "infrastructure",
+    "engine": "caddy"
+  },
   "Cardigan": {
     "dir": "cardigan",
     "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
@@ -521,6 +528,13 @@
     "engine": "h2o",
     "mode": "tuned"
   },
+  "h2o": {
+    "dir": "h2o",
+    "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support. Handlers answer /baseline11, /baseline2, /json/{count} \u2014 serialized per request from the dataset parsed at startup \u2014 and /static from files preloaded at boot. TLS on :8081 (HTTP/1.1) and :8443 (h2). No HTTP/3: libh2o's QUIC stack is not wired up in this embedded server.",
+    "repo": "https://github.com/h2o/h2o",
+    "type": "infrastructure",
+    "engine": "h2o"
+  },
   "hanami": {
     "dir": "hanami",
     "description": "Hanami 2.3 actions and router on Puma, one worker per core. Routing and params through the Hanami API, JSON generated per request, gzip through Rack::Deflater.",
@@ -769,6 +783,13 @@
     "type": "flagship",
     "engine": "nodehttp",
     "mode": "standard"
+  },
+  "nginx": {
+    "dir": "nginx",
+    "description": "Nginx with a custom C handler module, compiled with -O3 -march=native. The module answers /baseline11, /baseline2 and /json/{count}, serializing the JSON body per request from the dataset parsed at worker startup; /static/* is served by nginx core's sendfile path. TLS via quictls: HTTP/1.1 on :8081, h2 and h3 on :8443.",
+    "repo": "https://github.com/nginx/nginx",
+    "type": "infrastructure",
+    "engine": "nginx"
   },
   "ngx-php": {
     "dir": "ngx-php",
