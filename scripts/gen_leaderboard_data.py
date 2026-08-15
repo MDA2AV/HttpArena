@@ -22,7 +22,6 @@ import shutil
 import posixpath
 import html as _html
 from pathlib import Path
-from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "site" / "data"
@@ -1080,16 +1079,27 @@ def badge_composite(agg, profiles, meta, scope, types):
     return rows
 
 
-def _badge_link(fw, scope, types):
-    """Deep link to the exact board view the rank came from. Parameter order and
-    the omit-the-default rule follow writeHash() in index.html, so the URL the
-    badge points at is the one the board would write for that view itself."""
+def _badge_link(scope, types):
+    """Deep link to the board view the rank was taken in — the whole field, not
+    the one entry. Following a badge should show what "#6 of 83" was measured
+    against; filtering to the framework alone just restates the badge.
+
+    Every parameter is written out even where it matches a default, which is
+    where this deliberately parts company with writeHash(). The board restores
+    lb-types and lb-showtuned from localStorage *before* restoreFromHash() runs
+    (index.html:1321-1325), and the hash only overrides what it actually
+    carries — so a link that omits type= lands a returning visitor on whatever
+    league they last filtered to, which for a flagship badge can be a table its
+    framework is not in. Spelling it out costs a few characters and makes the
+    destination independent of the visitor.
+
+    Parameter order still follows writeHash(): scope, type, tuned.
+    """
     parts = []
     if scope != "h1":
         parts.append("scope=" + scope)
-    if sorted(types) != ["emerging", "flagship"]:
-        parts.append("type=" + ",".join(sorted(types)))
-    parts.append("q=" + quote(fw, safe=""))
+    parts.append("type=" + ",".join(sorted(types)))
+    parts.append("tuned=1")
     return SITE + "/#" + "&".join(parts)
 
 
@@ -1147,7 +1157,7 @@ def write_badges(profiles, results, meta):
                 # The maintainer should not have to assemble any of this: the
                 # index carries the finished line to paste, deep-linked to the
                 # view that produced the number.
-                link = _badge_link(fw, scope, types)
+                link = _badge_link(scope, types)
                 shield = ("https://img.shields.io/endpoint?url="
                           f"{SITE}/badge/{slug}/{scope}.json")
                 e = index.setdefault(slug, {"framework": fw, "scopes": {}})

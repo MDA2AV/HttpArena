@@ -14,7 +14,7 @@ itself each time the leaderboard is republished — you paste it once.
 ## Paste it
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#q=actix)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
 ```
 
 Replace `actix` with your entry and `h1` with the family you want. The exact
@@ -43,7 +43,8 @@ under `markdown`.
 The rank comes from the [composite score](/docs/scoring/composite-score/) for
 that family — the same sum of normalized per-profile scores the board shows,
 computed the same way, at the board's default settings. Following the badge
-lands you on the view it was taken from.
+lands you on the field it was measured against — the whole league for that
+family, not your entry on its own, so `#6 of 83` has the other 82 next to it.
 
 **You are ranked inside your own tier.** `flagship` and `emerging` entries rank
 together as one field, because that is the board's default view. `engine`

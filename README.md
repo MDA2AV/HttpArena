@@ -87,10 +87,10 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 Benchmarked here? Put your rank in your own README. It re-renders itself every
 time the board is republished, so you paste it once and never touch it again:
 
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#q=actix)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#q=actix)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
 ```
 
 Swap `actix` for your entry and `h1` for the family you want:
@@ -121,7 +121,8 @@ A few things worth knowing before you paste it:
   is worth showing once there was somebody to beat.
 - **It follows the default board.** Same scoring as the page it links to, with
   the memory-efficiency and rescale toggles off. Follow the link and you land on
-  the view the number came from.
+  the field the rank was measured against — the whole league, not your row on
+  its own, so `#6 of 83` arrives with the other 82 around it.
 - **It updates on deploy, then when GitHub's cache lets it.** README images are
   proxied through Camo, so a new rank can take a few hours to show up.
 
