@@ -750,6 +750,14 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "mojolicious": {
+    "dir": "mojolicious",
+    "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
+    "repo": "https://github.com/mojolicious/mojo",
+    "type": "flagship",
+    "engine": "mojolicious",
+    "mode": "standard"
+  },
   "mq-bridge-py": {
     "dir": "mq-bridge-py",
     "description": "mq-bridge Python bindings (mq_bridge_py). A single http->response route dispatches on request metadata while HTTP framing stays in Rust; cleartext HTTP/1.1 + h2c run on 8080/8082, optional TLS listeners serve HTTP/2 on 8443 and HTTP/1.1 on 8081, and the inline-response fast path keeps responses off the GIL so the Python handler runs only the per-request dispatch.",
