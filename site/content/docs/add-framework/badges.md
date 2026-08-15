@@ -38,6 +38,23 @@ under `markdown`.
 `site/data/results/`, so `aspnet-minimal + nginx` becomes
 `aspnet-minimal-nginx`.
 
+## What the colours mean
+
+The two halves are read separately. The **right** half is placement — gold for
+first, then shading down by how far into the field the entry sits. The **left**
+half is the tier it competed in, in the same four colours the board uses for the
+type swatch beside every framework name:
+
+| | Tier | Ranked against |
+|---|---|---|
+| 🟩 | `flagship` | flagship + emerging, as one field |
+| 🟦 | `emerging` | flagship + emerging, as one field |
+| 🟧 | `experimental` | other experimental entries |
+| 🟥 | `engine` | other engines, on the profiles engines are scored on |
+
+The tier is also in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
+as `type`, next to each entry's ranks.
+
 ## What the number means
 
 The rank comes from the [composite score](/docs/scoring/composite-score/) for

@@ -110,6 +110,18 @@ outside `A-Z a-z 0-9 . _ -` turned into `-` — the same name as your file in
 with every rank in it, is at
 [`/badge/index.json`](https://www.http-arena.com/badge/index.json).
 
+The two halves say different things. The right half is how you placed — gold for
+first, then shading down by how far into the field you are. The left half is
+which tier you competed in, in the same colours the board uses for the little
+square next to every framework name:
+
+| | Tier | Ranked against |
+|---|---|---|
+| 🟩 | `flagship` | flagship + emerging, as one field |
+| 🟦 | `emerging` | flagship + emerging, as one field |
+| 🟧 | `experimental` | other experimental entries |
+| 🟥 | `engine` | other engines, on the profiles engines are scored on |
+
 A few things worth knowing before you paste it:
 
 - **The rank is against your own tier.** `flagship` and `emerging` rank together

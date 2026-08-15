@@ -956,6 +956,21 @@ LEAGUES = [("flagship", "emerging"), ("engine",), ("experimental",)]
 # A rank is only worth publishing if something was beaten to earn it.
 BADGE_MIN_FIELD = 2
 
+# Label-side colour, carrying the entry's tier. Same four hues as the board's
+# type swatch next to every framework name, but in the darker tone the board
+# uses for type *text* (.b-* / .type-filter .on in index.html) rather than the
+# swatch fill (.tsq-*). Shields paints badge text white and does not adapt to
+# the background, and the swatch fills fail against it — experimental worst at
+# 2.7:1, flagship 3.4:1. These four all clear 4.5:1 while staying the same
+# colour family the board taught the reader.
+TYPE_COLOR = {
+    "flagship":     "1b7a4e",   # green
+    "emerging":     "2b5694",   # blue
+    "experimental": "8a5a12",   # amber
+    "engine":       "b0463a",   # terracotta
+}
+TYPE_COLOR_FALLBACK = "1f2937"
+
 # api-4/api-16 template mix — MIXW in index.html.
 MIXW = {"baseline": 0.15, "json": 1, "upload": 10, "static": 2, "async_db": 10}
 
@@ -1141,12 +1156,15 @@ def write_badges(profiles, results, meta):
                     rank = i + 1
                 prev_score, prev_rank = score, rank
                 slug = _slug(fw)
+                # Two independent readings: the label side is which tier the
+                # entry competes in, the message side is how it placed there.
+                tier = meta.get(fw, {}).get("type", "emerging")
                 doc = {
                     "schemaVersion": 1,
                     "label": "HTTP Arena " + FAMILY_LABEL[scope],
                     "message": f"#{rank} of {total}",
                     "color": _badge_color(rank, total),
-                    "labelColor": "1f2937",
+                    "labelColor": TYPE_COLOR.get(tier, TYPE_COLOR_FALLBACK),
                     "cacheSeconds": 3600,
                 }
                 path = BADGE_OUT / slug / f"{scope}.json"
@@ -1160,7 +1178,7 @@ def write_badges(profiles, results, meta):
                 link = _badge_link(scope, types)
                 shield = ("https://img.shields.io/endpoint?url="
                           f"{SITE}/badge/{slug}/{scope}.json")
-                e = index.setdefault(slug, {"framework": fw, "scopes": {}})
+                e = index.setdefault(slug, {"framework": fw, "type": tier, "scopes": {}})
                 e["scopes"][scope] = {
                     "rank": rank, "of": total, "score": round(score, 1),
                     "link": link,
