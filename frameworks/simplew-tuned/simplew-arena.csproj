@@ -10,8 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="10.0.2" />
-    <PackageReference Include="SimpleW" Version="26.1.0-alpha.20260717-1999" />
-    <PackageReference Include="SimpleW.Engine.Ioxide" Version="26.1.0-alpha.20260717-2001" />    
+    <PackageReference Include="SimpleW" Version="26.1.0-alpha.20260812-2015" />
+    <PackageReference Include="SimpleW.Engine.Ioxide" Version="26.1.0-alpha.20260812-2017" />    
   </ItemGroup>
 
 </Project>

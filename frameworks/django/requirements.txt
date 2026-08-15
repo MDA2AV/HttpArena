@@ -1,0 +1,2 @@
+Django==6.1
+uvicorn[standard]==0.52.3

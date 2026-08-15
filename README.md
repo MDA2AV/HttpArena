@@ -152,4 +152,4 @@ Another badge variants:
       </a>
     </td>
   </tr>
-</table>
+</table> 
