@@ -29,6 +29,12 @@ jobs:
       - name: Generate leaderboard data
         run: python3 scripts/gen_leaderboard_data.py
 
+      # The README badges carry a rank computed by a Python port of the board's
+      # own scoring. Publishing a badge that disagrees with the page it links to
+      # is worse than publishing none, so a drifted port fails the deploy.
+      - name: Check badge ranks against the board
+        run: node scripts/check_badge_parity.js
+
       - name: Assemble site — standalone leaderboard at root
         working-directory: site
         run: |
@@ -41,6 +47,7 @@ jobs:
           cp -r root/. public/                                                       # 404.html, robots.txt, favicon.ico/.svg, and the /leaderboard/ -> / redirect
           cp -r generated/docs public/docs                                          # pre-rendered Knowledge Base pages (real /docs/<id>/ URLs) + docs.css
           cp generated/sitemap.xml public/sitemap.xml                               # root + every /docs/<id>/ (generated, replaces the old static one)
+          cp -r generated/badge public/badge                                        # shields.io endpoints behind the README badges, /badge/<fw>/<family>.json
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
