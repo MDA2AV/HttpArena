@@ -1,0 +1,14 @@
+{
+	"name": "vibed-arena",
+	"description": "HttpArena entry for vibe.d",
+	"license": "MIT",
+	"targetType": "executable",
+	"targetName": "server",
+	"dependencies": {
+		"vibe-d:http": "0.10.3",
+		"vibe-stream:tls": "1.4.1"
+	},
+	"subConfigurations": {
+		"vibe-stream:tls": "notls"
+	}
+}
