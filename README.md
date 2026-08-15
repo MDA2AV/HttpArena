@@ -87,10 +87,10 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 Benchmarked here? Put your rank in your own README. It re-renders itself every
 time the board is republished, so you paste it once and never touch it again:
 
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
 Swap `actix` for your entry and `h1` for the family you want:
@@ -117,13 +117,30 @@ Optional. Append `-<language>` to the family for a badge reading
 language:
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1&lang=Rust)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
 ```
 
 The language is lowercased, with `#` spelled `sharp` and `++` spelled `pp` — so
 `C#` is `csharp`, `C++` is `cpp`, `TS` is `ts`. It links to the board filtered to
 that language, so the field is the one you can count there. Your line is in
 `index.json` under `scopes.<family>.byLanguage.markdown`.
+
+### Counting tuned entries in
+
+Also optional. By default the field is **standard configurations only**, so the
+number compares like for like. Append `-with-tuned` to count tuned entries too:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+```
+
+It combines with the language suffix — `h1-rust-with-tuned.json`. Every variant
+is in `index.json` under `scopes.<family>`, keyed `default`, `withTuned`,
+`byLanguage` and `byLanguageWithTuned`.
+
+If your own entry is tuned, its default URL already counts tuned entries — it
+cannot be ranked in a field it is excluded from — so `h1.json` and
+`h1-with-tuned.json` give it the same number.
 
 The two halves say different things. The right half is how you placed — gold for
 first, then shading down by how far into the field you are. The left half is
