@@ -1,5 +1,7 @@
 ---
 title: Manual load testing
+seo_title: "Manual Load Testing"
+description: "Start a framework container yourself, exercise individual endpoints, and run a load generator outside the benchmark harness."
 weight: 4
 ---
 

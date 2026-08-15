@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+Symbol.alias_method(:to_s, :name)
 # Our Rack application to be executed by rackup
 
 require 'rack'

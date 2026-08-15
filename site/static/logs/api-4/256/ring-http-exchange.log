@@ -1,12 +1,12 @@
-May 17, 2026 6:08:25 PM robaho.net.httpserver.ServerImpl <init>
+Aug 03, 2026 5:32:52 PM robaho.net.httpserver.ServerImpl <init>
 INFO: [http:8080] server bound to /0.0.0.0:8080 with backlog 8192
-May 17, 2026 6:08:25 PM robaho.net.httpserver.ServerImpl start
+Aug 03, 2026 5:32:52 PM robaho.net.httpserver.ServerImpl start
 INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@5cf8676a as executor
 Server running on port 8080
-May 17, 2026 6:08:25 PM robaho.net.httpserver.ServerImpl <init>
+Aug 03, 2026 5:32:52 PM robaho.net.httpserver.ServerImpl <init>
 INFO: [https:8081] server bound to /0.0.0.0:8081 with backlog 8192
-May 17, 2026 6:08:25 PM robaho.net.httpserver.ServerImpl start
+Aug 03, 2026 5:32:52 PM robaho.net.httpserver.ServerImpl start
 INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@54336976 as executor
 Server running on port 8081 (TLS)
-May 17, 2026 6:09:16 PM robaho.net.httpserver.HttpConnection close
-WARNING: closing connection: remote /127.0.0.1:3660 with 0 requests
+Aug 03, 2026 5:33:08 PM robaho.net.httpserver.HttpConnection close
+WARNING: closing connection: remote /127.0.0.1:5200 with 0 requests

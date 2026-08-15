@@ -1,10 +1,14 @@
 ---
 title: Implementation Guidelines
+seo_title: "HTTP Pipelining Benchmark (16x) — Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP pipelining benchmark."
 ---
-{{< type-rules production="Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations." tuned="May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations." tuned="May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
 16 HTTP requests are sent back-to-back on each connection before waiting for responses. Uses a lightweight `GET /pipeline` endpoint that returns a fixed `ok` response, isolating raw I/O throughput from application logic.
+
+**This test is reference-only - it does not contribute to the composite score.** HTTP/1.1 pipelining is disabled in modern browsers and unsupported by mainstream proxies, so the profile is kept as a raw I/O and middleware-efficiency indicator (issue #1058). Results still appear on the board as a faded column.
 
 **Connections:** 512, 4,096
 

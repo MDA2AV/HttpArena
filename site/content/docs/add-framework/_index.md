@@ -1,5 +1,7 @@
 ---
 title: Add a Framework
+seo_title: "Add a Framework to HttpArena"
+description: "Submit a framework to HttpArena: create a Dockerfile, declare metadata, implement the required endpoints, and open a pull request."
 weight: 1
 ---
 

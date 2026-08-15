@@ -11,5 +11,5 @@ RUN dotnet publish -c Release --no-self-contained -o /app/out
 FROM mcr.microsoft.com/dotnet/runtime:11.0-preview
 WORKDIR /app
 COPY --from=build /app/out ./
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8443 8443/udp
 ENTRYPOINT ["dotnet", "ioxide-arena.dll"]

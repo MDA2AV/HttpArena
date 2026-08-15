@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Compressed JSON Benchmark (gzip and Brotli) — Validation Checks"
+description: "The correctness checks validate.sh runs against the compressed JSON benchmark before a framework's results are accepted."
 ---
 
 The validation script (`scripts/validate.sh`) runs these checks for the `json-comp` test profile. All must pass for a framework to be considered valid for this benchmark.

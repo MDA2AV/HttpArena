@@ -1,5 +1,7 @@
 ---
 title: h2load-h3
+seo_title: "h2load-h3 — HTTP/3 QUIC Load Generator"
+description: "A custom h2load build linked against ngtcp2 that drives HttpArena's HTTP/3 profiles over QUIC with ALPN negotiation."
 ---
 
 [h2load](https://nghttp2.org/documentation/h2load-howto.html) is part of the nghttp2 project. HttpArena uses a custom build that links against [ngtcp2](https://github.com/ngtcp2/ngtcp2), [nghttp3](https://github.com/ngtcp2/nghttp3), and [quictls](https://github.com/quictls/openssl) to enable HTTP/3 (QUIC) support. This build is invoked as `h2load-h3` and drives both `baseline-h3` and `static-h3` profiles.

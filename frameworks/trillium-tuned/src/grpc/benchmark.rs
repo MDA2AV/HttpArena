@@ -1,19 +1,19 @@
 use std::sync::Arc;
 use trillium::{Conn, Handler, Method, Upgrade};
 use trillium_grpc::{
-    BidiConn, BidiResponder, GrpcServerConn, Prost, Server, ServiceClient, Status,
-    Stream, StreamingConn, UnaryConn, prepare_grpc_conn,
+    BidiResponder, GrpcServerConn, Prost, Server, Status, Stream, prepare_grpc_conn,
+    prost,
 };
-#[derive(Clone, Copy, PartialEq, Eq, Hash, ::trillium_grpc::prost::Message)]
-#[prost(prost_path = "::trillium_grpc::prost")]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, prost::Message)]
+#[prost(prost_path = "prost")]
 pub struct SumRequest {
     #[prost(int32, tag = "1")]
     pub a: i32,
     #[prost(int32, tag = "2")]
     pub b: i32,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Hash, ::trillium_grpc::prost::Message)]
-#[prost(prost_path = "::trillium_grpc::prost")]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, prost::Message)]
+#[prost(prost_path = "prost")]
 pub struct StreamRequest {
     #[prost(int32, tag = "1")]
     pub a: i32,
@@ -22,8 +22,8 @@ pub struct StreamRequest {
     #[prost(int32, tag = "3")]
     pub count: i32,
 }
-#[derive(Clone, Copy, PartialEq, Eq, Hash, ::trillium_grpc::prost::Message)]
-#[prost(prost_path = "::trillium_grpc::prost")]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, prost::Message)]
+#[prost(prost_path = "prost")]
 pub struct SumReply {
     #[prost(int32, tag = "1")]
     pub result: i32,
@@ -124,39 +124,5 @@ impl<T: BenchmarkService> Handler for BenchmarkServiceServer<T> {
     }
     async fn upgrade(&self, upgrade: Upgrade) {
         trillium_grpc::drive_bidi_upgrade(upgrade).await;
-    }
-}
-pub struct BenchmarkServiceClient(::trillium_grpc::trillium_client::Client);
-impl From<::trillium_grpc::trillium_client::Client> for BenchmarkServiceClient {
-    fn from(client: ::trillium_grpc::trillium_client::Client) -> Self {
-        Self(trillium_grpc::with_service_prefix(client, "benchmark.BenchmarkService"))
-    }
-}
-impl ServiceClient for BenchmarkServiceClient {
-    fn client(&self) -> &::trillium_grpc::trillium_client::Client {
-        &self.0
-    }
-    fn client_mut(&mut self) -> &mut ::trillium_grpc::trillium_client::Client {
-        &mut self.0
-    }
-}
-impl BenchmarkServiceClient {
-    pub fn get_sum(&self, request: SumRequest) -> UnaryConn<SumRequest, SumReply> {
-        UnaryConn::unary::<Prost>(&self.0, "GetSum", request)
-    }
-    pub fn stream_sum(
-        &self,
-        request: StreamRequest,
-    ) -> StreamingConn<StreamRequest, SumReply> {
-        StreamingConn::server_streaming::<Prost>(&self.0, "StreamSum", request)
-    }
-    pub fn collect_sum(
-        &self,
-        requests: impl Stream<Item = SumRequest> + Send + 'static,
-    ) -> UnaryConn<SumRequest, SumReply> {
-        UnaryConn::client_streaming::<Prost>(&self.0, "CollectSum", requests)
-    }
-    pub fn echo_sum(&self) -> BidiConn<SumRequest, SumReply> {
-        BidiConn::bidi::<Prost>(&self.0, "EchoSum")
     }
 }

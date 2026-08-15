@@ -18,6 +18,7 @@
     "async-db",
     "crud",
     "static",
+    "static-tls",
     "api-4",
     "api-16"
   ],

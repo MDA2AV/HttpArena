@@ -11,9 +11,9 @@
 #   • Threads default to nproc/2 (not 64), so a 4-core laptop gets 2
 #     threads instead of 64.
 #   • Fixed, reasonable connection counts per profile (mostly 512).
-#   • Smaller profile subset — skips api-4/16, json-tls, gateway-64,
-#     stream-grpc/stream-grpc-tls (they need either specific hardware
-#     topology or extra setup).
+#   • Smaller profile subset — skips api-4/16, json-tls, static-tls,
+#     gateway-64, stream-grpc/stream-grpc-tls (they need either specific
+#     hardware topology or extra setup).
 #   • --load-threads <N>  override THREADS/H2THREADS/H3THREADS in one shot.
 #
 # The pre-refactor version lives at scripts/old/benchmark-lite-old.sh.
@@ -69,7 +69,7 @@ source "$SOURCE_DIR/tools/ghz.sh"
 # Differences vs the full set:
 #   • cpu_limit is always empty (no pinning, container gets all cores)
 #   • conn_list is one fixed value per profile (no 256,1024 sweeps)
-#   • skipped profiles: api-4, api-16, json-tls, gateway-64, stream-grpc*
+#   • skipped profiles: api-4, api-16, json-tls, static-tls, gateway-64, stream-grpc*
 
 unset PROFILES PROFILE_ORDER
 declare -A PROFILES=(
@@ -210,7 +210,7 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
 
     local need_pg=false
     if framework_subscribes_to async-db; then need_pg=true; fi
-    $need_pg && postgres_start
+    if $need_pg; then postgres_start; fi
 
     local profiles_to_run
     if [ -n "$PROFILE_FILTER" ]; then
@@ -232,7 +232,10 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
         done
     done
 
-    $need_pg && postgres_stop
+    # `if` rather than `$need_pg && postgres_stop`: as the function's last
+    # statement, the &&-list would make run_framework return 1 for non-DB
+    # frameworks and kill the script under `set -e` after a successful run.
+    if $need_pg; then postgres_stop; fi
 }
 
 # ── Single (profile, conns) iteration ──────────────────────────────────────
@@ -251,6 +254,7 @@ run_one() {
     framework_start "$endpoint" "$PROF_CPU"
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
+        dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
         framework_stop
         return 1
     fi

@@ -1,5 +1,7 @@
 ---
 title: Server Streaming (gRPC)
+seo_title: "Server-Streaming gRPC Benchmark"
+description: "Measures server-streaming gRPC throughput in messages per second, with many replies emitted on a single HTTP/2 stream."
 ---
 
 Measures gRPC **server-streaming** throughput in messages per second. Each call sends one request and the server emits N replies on the same HTTP/2 stream. Runs over both h2c (port 8080) and h2 TLS (port 8443).

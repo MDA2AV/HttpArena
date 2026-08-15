@@ -1,0 +1,18 @@
+{
+  "display_name": "beskar-websocket",
+  "language": "C#",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "beskar",
+  "description": "High-performance WebSocket echo server built with Beskar.Networking.",
+  "repo": "https://github.com/MarvinDrude/Beskar.Networking",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": [
+    "MarvinDrude"
+  ]
+}

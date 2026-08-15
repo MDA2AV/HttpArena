@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "Gateway H2 Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the Gateway H2 proxy and server stack before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `gateway-64` test. The validation script builds and starts the full compose stack from `compose.gateway.yml` before running checks.

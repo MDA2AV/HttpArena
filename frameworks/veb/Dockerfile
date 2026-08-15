@@ -5,15 +5,19 @@ RUN apt-get -qq update && \
         ca-certificates git build-essential libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# Pinned, reproducible V at master commit cef604a26 (built from source). No release
-# tag carries the modern stdlib this framework needs: the pooled Go-style `db.pg`
-# (vlang/v#27265). cef604a26 also carries the Boehm GC free-space-divisor fix
-# (vlang/v#27560, fixes vlang/v#27555) that recovers the default-GC throughput
-# regression seen in the c0624b2..6c4d26f range. `make` bootstraps via the matching
-# vc; if a much later rebuild ever fails to bootstrap, pin vlang/vc to the commit
-# cut for this V.
+# Pinned, reproducible V at master commit 84a76d791 (built from source). This is the
+# `fasthttp: refactor toward the vanilla architecture` commit (vlang/v#27771): veb now
+# runs on the parallel fasthttp backend (one SO_REUSEPORT epoll listener per core, a
+# zero-copy append handler, deterministic request framing that reassembles TCP-fragmented
+# AND chunked requests, and sendfile(2) static bodies). That reassembly + chunked decode
+# is what lets veb subscribe to the baseline profile now (the old single-threaded backend
+# could not). It also carries the pooled Go-style `db.pg` (vlang/v#27265) and the Boehm GC
+# free-space-divisor fix (vlang/v#27560, fixes vlang/v#27555); cef604a26 (the previous pin)
+# is an ancestor. No later master commit touches vlib/veb or vlib/fasthttp, so this pin is
+# exactly the modules the server was validated against. `make` bootstraps via the matching
+# vc; if a much later rebuild ever fails to bootstrap, pin vlang/vc to the commit cut for this V.
 RUN git clone https://github.com/vlang/v /opt/v && \
-    cd /opt/v && git checkout cef604a26 && \
+    cd /opt/v && git checkout 84a76d791 && \
     make && ln -s /opt/v/v /usr/local/bin/v
 
 WORKDIR /app

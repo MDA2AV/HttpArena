@@ -1,5 +1,7 @@
 ---
 title: Validation
+seo_title: "JSON over HTTP/2 Cleartext Benchmark — Validation Checks"
+description: "The correctness checks validate.sh runs against the JSON over HTTP/2 cleartext benchmark before a framework's results are accepted."
 ---
 
 The following checks are executed by `validate.sh` for every framework subscribed to the `json-h2c` test. Port 8082 must already be answering h2c prior-knowledge before these checks begin (the `baseline-h2c` anti-cheat block covers the h1-rejection check - this block assumes it has passed).

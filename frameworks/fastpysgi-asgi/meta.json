@@ -8,6 +8,7 @@
   "enabled": true,
   "tests": [
     "baseline",
+    "pipelined",
     "limited-conn",
     "json",
     "json-comp",
@@ -16,6 +17,7 @@
     "api-4",
     "api-16",
     "static",
+    "static-tls",
     "async-db"
   ],
   "maintainers": [ "remittor" ]
