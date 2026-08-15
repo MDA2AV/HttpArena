@@ -1309,6 +1309,14 @@
     "type": "engine",
     "engine": "vinyld"
   },
+  "warp": {
+    "dir": "warp",
+    "description": "Warp 3.3 serving a plain WAI Application on the threaded GHC runtime, default configuration, one capability per core. Routing on the WAI request path, JSON through the aeson encoding API, gzip through the wai-extra Gzip middleware.",
+    "repo": "https://github.com/yesodweb/wai",
+    "type": "flagship",
+    "engine": "warp",
+    "mode": "standard"
+  },
   "WebFramework C": {
     "dir": "web-framework-cc",
     "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
