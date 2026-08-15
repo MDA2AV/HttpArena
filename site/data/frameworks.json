@@ -260,6 +260,14 @@
     "engine": "zerg",
     "mode": "standard"
   },
+  "drogon": {
+    "dir": "drogon",
+    "description": "Drogon on the trantor event loop, one event loop per core. Routing and path/query params through the Drogon API, jsoncpp serialization, gzip through the built-in response compression.",
+    "repo": "https://github.com/drogonframework/drogon",
+    "type": "flagship",
+    "engine": "trantor",
+    "mode": "standard"
+  },
   "echo": {
     "dir": "echo",
     "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
