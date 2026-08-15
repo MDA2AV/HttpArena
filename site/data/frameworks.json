@@ -738,6 +738,14 @@
     "engine": "nginx",
     "mode": "tuned"
   },
+  "node-h3": {
+    "dir": "node-h3",
+    "description": "H3 v2, the unjs framework under Nitro and Nuxt, served on node:http by srvx with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/h3js/h3",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "node-websocket": {
     "dir": "node-websocket",
     "description": "Node.js WebSocket echo server using ws package",
