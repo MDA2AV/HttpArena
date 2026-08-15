@@ -1,4 +1,4 @@
-//! localbench: zix
+//! zix
 //!
 //! zix.Http1 (.URING), Router-only: every request goes through the engine's
 //! parser and the comptime Router, one handler module per route
