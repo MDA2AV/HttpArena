@@ -1,0 +1,21 @@
+{
+  "display_name": "h2o",
+  "language": "C",
+  "type": "infrastructure",
+  "engine": "h2o",
+  "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support. Handlers answer /baseline11, /baseline2, /json/{count} — serialized per request from the dataset parsed at startup — and /static from files preloaded at boot. TLS on :8081 (HTTP/1.1) and :8443 (h2). No HTTP/3: libh2o's QUIC stack is not wired up in this embedded server.",
+  "repo": "https://github.com/h2o/h2o",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-tls",
+    "static",
+    "static-tls",
+    "baseline-h2",
+    "static-h2"
+  ],
+  "maintainers": []
+}

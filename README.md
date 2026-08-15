@@ -87,10 +87,10 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 Benchmarked here? Put your rank in your own README. It re-renders itself every
 time the board is republished, so you paste it once and never touch it again:
 
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
 Swap `actix` for your entry and `h1` for the family you want:
@@ -110,6 +110,38 @@ outside `A-Z a-z 0-9 . _ -` turned into `-` — the same name as your file in
 with every rank in it, is at
 [`/badge/index.json`](https://www.http-arena.com/badge/index.json).
 
+### Ranked among your own language
+
+Optional. Append `-<language>` to the family for a badge reading
+**`#1 of 6 (Rust)`** — same scores and same order, counting only entries in your
+language:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
+```
+
+The language is lowercased, with `#` spelled `sharp` and `++` spelled `pp` — so
+`C#` is `csharp`, `C++` is `cpp`, `TS` is `ts`. It links to the board filtered to
+that language, so the field is the one you can count there. Your line is in
+`index.json` under `scopes.<family>.byLanguage.markdown`.
+
+### Counting tuned entries in
+
+Also optional. By default the field is **standard configurations only**, so the
+number compares like for like. Append `-with-tuned` to count tuned entries too:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+```
+
+It combines with the language suffix — `h1-rust-with-tuned.json`. Every variant
+is in `index.json` under `scopes.<family>`, keyed `default`, `withTuned`,
+`byLanguage` and `byLanguageWithTuned`.
+
+If your own entry is tuned, its default URL already counts tuned entries — it
+cannot be ranked in a field it is excluded from — so `h1.json` and
+`h1-with-tuned.json` give it the same number.
+
 The two halves say different things. The right half is how you placed — gold for
 first, then shading down by how far into the field you are. The left half is
 which tier you competed in, in the same colours the board uses for the little
@@ -121,6 +153,7 @@ square next to every framework name:
 | 🟦 | `emerging` | flagship + emerging, as one field |
 | 🟧 | `experimental` | other experimental entries |
 | 🟥 | `engine` | other engines, on the profiles engines are scored on |
+| 🟦 | `infrastructure` | other proxies / static-file servers, on the profiles infrastructure is scored on |
 
 A few things worth knowing before you paste it:
 
@@ -139,8 +172,9 @@ A few things worth knowing before you paste it:
   the memory-efficiency and rescale toggles off. Follow the link and you land on
   the field the rank was measured against — the whole league, not your row on
   its own, so `#6 of 83` arrives with the other 82 around it.
-- **It updates on deploy, then when GitHub's cache lets it.** README images are
-  proxied through Camo, so a new rank can take a few hours to show up.
+- **It updates on deploy, then when the caches let it.** shields holds a rank
+  for 5 minutes, and GitHub proxies README images through Camo, which holds
+  one for a few hours. Nothing to re-paste either way.
 
 Shields' usual styling works — append `&style=flat-square`, `&logo=rust`, and so
 on to the `img.shields.io` URL.

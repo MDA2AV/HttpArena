@@ -22,6 +22,7 @@ import shutil
 import posixpath
 import html as _html
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "site" / "data"
@@ -32,56 +33,62 @@ OUT = ROOT / "site" / "leaderboard" / "data.js"
 #   id, label, category, blurb,
 #   explorer:  conn counts shown in the explorer (all useful runs),
 #   scored:    conn counts that feed the composite (canonical scored set),
-#   s/es:      scored / engineScored eligibility flags.
+#   s/es/is:   scored / engineScored / infraScored eligibility flags.
 # scored conns are always a subset of explorer conns.
+#
+# The three flags are three leagues, not three strictness levels. engineScored
+# narrows the framework set — an engine is scored on a subset of what a
+# framework is. infraScored does not: proxies are scored on Pipelined, which
+# frameworks stopped scoring in #1058, so `is` is read on its own rather than
+# behind `s`. scoredForType() in index.html is the one place that decides.
 CATALOG = [
     ("Connection", [
-        ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True),
-        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False),
-        ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True),
+        ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True,True),
+        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False,True),
+        ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True,True),
     ]),
     ("Workload", [
-        ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False),
-        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False),
-        ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True),
-        ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False),
-        ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False),
-        ("static-tls","Static TLS",      "20-file static serving over TLS.",         [1024,4096,6800],    [1024,4096,6800],True,False),
+        ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
+        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
+        ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
+        ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False,False),
+        ("static",    "Static",          "20-file static asset serving.",            [1024,4096,6800,16384],[1024,4096,6800],True,False,True),
+        ("static-tls","Static TLS",      "20-file static serving over TLS.",         [1024,4096,6800],    [1024,4096,6800],True,False,True),
     ]),
     ("Database", [
-        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True),
-        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False),
-        ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False),
+        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True,False),
+        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False,False),
+        ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("Multi-endpoint", [
-        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False),
-        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False),
+        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False,False),
+        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
     ]),
     ("HTTP/2", [
-        ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True),
-        ("static-h2",    "Static",         "Static assets over h2 multiplexing.",    [256,1024],     [256,1024],     True,True),
-        ("baseline-h2c", "Baseline (h2c)", "Baseline over cleartext h2.",            [256,1024,4096],[256,1024,4096],True,True),
-        ("json-h2c",     "JSON (h2c)",     "JSON over cleartext h2.",                [1024,4096],    [1024,4096],    True,False),
+        ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,True),
+        ("static-h2",    "Static",         "Static assets over h2 multiplexing.",    [256,1024],     [256,1024],     True,True,True),
+        ("baseline-h2c", "Baseline (h2c)", "Baseline over cleartext h2.",            [256,1024,4096],[256,1024,4096],True,True,False),
+        ("json-h2c",     "JSON (h2c)",     "JSON over cleartext h2.",                [1024,4096],    [1024,4096],    True,False,False),
     ]),
     ("HTTP/3", [
-        ("baseline-h3", "Baseline", "Baseline over QUIC + TLS 1.3.",                 [64], [64], True,True),
-        ("static-h3",   "Static",   "Static assets over QUIC.",                      [64], [64], True,True),
+        ("baseline-h3", "Baseline", "Baseline over QUIC + TLS 1.3.",                 [64], [64], True,True,True),
+        ("static-h3",   "Static",   "Static assets over QUIC.",                      [64], [64], True,True,True),
     ]),
     ("gRPC", [
-        ("unary-grpc",     "Unary",     "Unary gRPC over plaintext h2.",             [256,1024],[256,1024],True,True),
-        ("unary-grpc-tls", "Unary TLS", "Unary gRPC over TLS.",                      [256,1024],[256,1024],True,True),
-        ("stream-grpc",    "Stream",    "Server-streaming gRPC, plaintext.",         [64],      [64],      True,True),
-        ("stream-grpc-tls","Stream TLS","Server-streaming gRPC over TLS.",           [64],      [64],      True,True),
+        ("unary-grpc",     "Unary",     "Unary gRPC over plaintext h2.",             [256,1024],[256,1024],True,True,False),
+        ("unary-grpc-tls", "Unary TLS", "Unary gRPC over TLS.",                      [256,1024],[256,1024],True,True,False),
+        ("stream-grpc",    "Stream",    "Server-streaming gRPC, plaintext.",         [64],      [64],      True,True,False),
+        ("stream-grpc-tls","Stream TLS","Server-streaming gRPC over TLS.",           [64],      [64],      True,True,False),
     ]),
     ("Gateway", [
-        ("gateway-64", "Gateway (H2)", "Reverse proxy + server, mixed h2.",          [256,512,1024],[512,1024],True,True),
-        ("gateway-h3", "Gateway (H3)", "Reverse proxy + server over h3.",            [64,256],      [64,256],  True,True),
-        ("production-stack", "Production Stack", "Edge + Redis + JWT auth + server.",[256,1024],[256,1024],True,True),
+        ("gateway-64", "Gateway (H2)", "Reverse proxy + server, mixed h2.",          [256,512,1024],[512,1024],True,True,False),
+        ("gateway-h3", "Gateway (H3)", "Reverse proxy + server over h3.",            [64,256],      [64,256],  True,True,False),
+        ("production-stack", "Production Stack", "Edge + Redis + JWT auth + server.",[256,1024],[256,1024],True,True,False),
     ]),
     ("WebSocket", [
-        ("echo-ws",          "Echo",           "WebSocket echo throughput.",         [512,4096,16384],[512,4096,16384],True,True),
-        ("echo-ws-pipeline", "Echo Pipelined", "Batched WebSocket echo.",            [512,4096,16384],[512,4096,16384],True,True),
-        ("echo-ws-limited",  "Echo Short-lived","WebSocket echo, 10 messages per connection.", [512,4096],[512,4096],True,True),
+        ("echo-ws",          "Echo",           "WebSocket echo throughput.",         [512,4096,16384],[512,4096,16384],True,True,False),
+        ("echo-ws-pipeline", "Echo Pipelined", "Batched WebSocket echo.",            [512,4096,16384],[512,4096,16384],True,True,False),
+        ("echo-ws-limited",  "Echo Short-lived","WebSocket echo, 10 messages per connection.", [512,4096],[512,4096],True,True,False),
     ]),
 ]
 
@@ -452,6 +459,12 @@ def _md_to_html(body, curdir, ids):
 
 def _typerules(a, curdir, ids):
     spec = [("standard", "Standard", "#22c55e"), ("tuned", "Tuned", "#eab308"), ("engine", "Engine", "#dc2626")]
+    # Infrastructure is scored on 11 of the profiles, not all of them, so its tab
+    # appears only where the page actually states a rule for it. The other three
+    # always render — an empty Standard panel is a page to fix, an absent
+    # Infrastructure one just means proxies don't run that profile.
+    if a.get("infrastructure"):
+        spec.append(("infrastructure", "Infrastructure", "#0891b2"))
     tabs = panels = ""
     for idx, (k, lbl, col) in enumerate(spec):
         act = " active" if idx == 0 else ""
@@ -949,12 +962,22 @@ FAMILY_LABEL = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3",
                 "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
 
 # Leagues are the board's type filter. flagship+emerging is its default view and
-# ranks as one field; engine entries are scored on their own profile subset, so
-# a framework's 100 is never set by an engine's result (and vice versa).
-LEAGUES = [("flagship", "emerging"), ("engine",), ("experimental",)]
+# ranks as one field; engine and infrastructure entries are each scored on their
+# own profile set, so a framework's 100 is never set by an engine's or a proxy's
+# result (and vice versa).
+LEAGUES = [("flagship", "emerging"), ("engine",), ("experimental",),
+           ("infrastructure",)]
 
 # A rank is only worth publishing if something was beaten to earn it.
 BADGE_MIN_FIELD = 2
+
+# How long shields.io may hold a rendered badge. 300 is its floor — lower values
+# are clamped back up to it. This was an hour, which put a stale rank in front of
+# every embed for up to an hour after a deploy on top of GitHub's own Camo cache.
+# The extra cost is shields re-reading a ~130-byte static file on Pages twelve
+# times as often, which is nothing; on GitHub, Camo still dominates, but anywhere
+# outside it (docs sites, dashboards) the badge is now near-live.
+BADGE_CACHE_SECONDS = 300
 
 # Label-side colour, carrying the entry's tier. Same four hues as the board's
 # type swatch next to every framework name, but in the darker tone the board
@@ -964,10 +987,11 @@ BADGE_MIN_FIELD = 2
 # 2.7:1, flagship 3.4:1. These four all clear 4.5:1 while staying the same
 # colour family the board taught the reader.
 TYPE_COLOR = {
-    "flagship":     "1b7a4e",   # green
-    "emerging":     "2b5694",   # blue
-    "experimental": "8a5a12",   # amber
-    "engine":       "b0463a",   # terracotta
+    "flagship":       "1b7a4e",   # green
+    "emerging":       "2b5694",   # blue
+    "experimental":   "8a5a12",   # amber
+    "engine":         "b0463a",   # terracotta
+    "infrastructure": "277482",   # teal — 5.4:1 on white
 }
 TYPE_COLOR_FALLBACK = "1f2937"
 
@@ -1023,13 +1047,16 @@ def badge_aggregate(profiles, results):
     return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
 
 
-def badge_composite(agg, profiles, meta, scope, types):
+def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=None,
+                    fw_lang=None):
     """Composite scores for one family and one league, best first.
 
-    Port of computeComposite() at the board's default state. Returns
-    [(framework, score)] for entries that actually scored in this family;
-    an entry present only through a reference-only profile (pipelined,
-    fortunes) sums to 0 and is dropped — there is no rank to report.
+    Port of computeComposite(). `show_tuned` and `lang` are the board's two
+    display filters, and they behave here the way they behave there with rescale
+    off: they narrow *who is listed*, never what anyone scored. The normalizing
+    maxima below are deliberately taken over the whole league — that is what
+    keeps a framework's number identical whether or not tuned entries are in
+    view, and what stops the badge disagreeing with the page it links to.
     """
     prof = {p["id"]: p for p in profiles}
     pids = [p["id"] for p in profiles
@@ -1038,13 +1065,30 @@ def badge_composite(agg, profiles, meta, scope, types):
         return []
 
     A = agg
+    fw_lang = fw_lang or {}
+    # outOfLeague in index.html: a separate competition, so excluded from the
+    # normalizing maxima as well as from the listing.
     in_league = lambda fw: meta.get(fw, {}).get("type", "emerging") in types
 
+    def shown(fw):
+        """hidden() in index.html — display only, never touches the maxima."""
+        if not show_tuned and meta.get(fw, {}).get("mode", "standard") == "tuned":
+            return False
+        if lang and fw_lang.get(fw) != lang:
+            return False
+        return True
+
     def is_scored(pid, fw):
+        """scoredForType() in index.html. infraScored is read before the
+        `scored` short-circuit, not behind it: the infra set is not a subset of
+        the framework set — it counts Pipelined, which frameworks do not."""
         p = prof[pid]
+        t = meta.get(fw, {}).get("type", "emerging")
+        if t == "infrastructure":
+            return bool(p["infraScored"])
         if not p["scored"]:
             return False
-        if meta.get(fw, {}).get("type", "emerging") == "engine":
+        if t == "engine":
             return bool(p["engineScored"])
         return True
 
@@ -1081,7 +1125,7 @@ def badge_composite(agg, profiles, meta, scope, types):
     rows = []
     fwset = {fw for pid in pids for fw in A["avg"].get(pid, {})}
     for fw in fwset:
-        if not in_league(fw):
+        if not in_league(fw) or not shown(fw):
             continue
         score, any_result = 0.0, False
         for pid in pids:
@@ -1103,7 +1147,25 @@ def badge_composite(agg, profiles, meta, scope, types):
     return rows
 
 
-def _badge_link(scope, types):
+def _lang_slug(lang):
+    """URL segment for a language name. Not _slug(): that maps C, C# and C++ all
+    onto "c", so a C# entry's badge would sit at .../h1-c.json. The punctuation
+    is spelled out first, which is also how these read aloud."""
+    s = lang.lower().replace("++", "pp").replace("#", "sharp")
+    return re.sub(r"[^a-z0-9._-]+", "-", s).strip("-") or "unknown"
+
+
+def _fw_languages(results):
+    """framework -> language, from the result rows the board itself reads."""
+    lang = {}
+    for rows in results.values():
+        for r in rows:
+            if r.get("lang"):
+                lang[r["fw"]] = r["lang"]
+    return lang
+
+
+def _badge_link(scope, types, lang=None, show_tuned=False):
     """Deep link to the board view the rank was taken in — the whole field, not
     the one entry. Following a badge should show what "#6 of 83" was measured
     against; filtering to the framework alone just restates the badge.
@@ -1123,7 +1185,12 @@ def _badge_link(scope, types):
     if scope != "h1":
         parts.append("scope=" + scope)
     parts.append("type=" + ",".join(sorted(types)))
-    parts.append("tuned=1")
+    parts.append("tuned=1" if show_tuned else "tuned=0")
+    if lang:
+        # lang=, not q=. The search box matches substrings across name, language
+        # and engine, so q=C pulls in 73 of 78 entries and q=V pulls 33 — the
+        # denominator would not survive being counted.
+        parts.append("lang=" + quote(lang, safe=""))
     return SITE + "/#" + "&".join(parts)
 
 
@@ -1143,61 +1210,117 @@ def _badge_color(rank, total):
 
 
 def write_badges(profiles, results, meta):
-    """One shields.io endpoint document per (framework, family) it ranks in,
-    at /badge/<framework>/<family>.json, plus an index of everything written."""
+    """shields.io endpoint documents, plus an index of everything written.
+
+    Path is /badge/<framework>/<family>[-<language>][-with-tuned].json:
+
+        h1.json                  rank among standard entries      (the default)
+        h1-with-tuned.json       rank with tuned entries counted
+        h1-rust.json             ...same, narrowed to one language
+        h1-rust-with-tuned.json
+
+    Both suffixes are filters, not rescores: same scores, same order, a smaller
+    field. That is what the board does with rescale off, so a badge and the page
+    it links to never disagree about who is ahead of whom.
+
+    The default excludes tuned entries, so the number compares like-for-like
+    against stock configurations. A tuned entry has no place in that field, so
+    for those the default *is* the tuned-inclusive ranking — the smallest field
+    the entry actually belongs to. Otherwise /badge/<tuned-entry>/h1.json would
+    have to 404, and it is a URL people have already pasted.
+    """
     if BADGE_OUT.exists():
         shutil.rmtree(BADGE_OUT)
     agg = badge_aggregate(profiles, results)
+    fw_lang = _fw_languages(results)
+
+    # A language added later must not land on an existing slug — two languages
+    # sharing one would silently overwrite each other's badges.
+    by_slug = {}
+    for lang in sorted(set(fw_lang.values())):
+        by_slug.setdefault(_lang_slug(lang), []).append(lang)
+    clashes = {s: v for s, v in by_slug.items() if len(v) > 1}
+    if clashes:
+        raise SystemExit(f"badge: languages share a URL slug, fix _lang_slug(): {clashes}")
 
     index, written = {}, 0
+
+    is_tuned = lambda fw: meta.get(fw, {}).get("mode", "standard") == "tuned"
+
+    def emit(fw, scope, types, rank, total, score, lang=None, with_tuned=False,
+             alias=False):
+        """One endpoint document + its index entry.
+
+        `alias` writes the default filename for a tuned entry, whose ranking can
+        only come from the tuned-inclusive field.
+        """
+        nonlocal written
+        slug, tier = _slug(fw), meta.get(fw, {}).get("type", "emerging")
+        name = scope + (f"-{_lang_slug(lang)}" if lang else "") \
+                     + ("-with-tuned" if with_tuned and not alias else "")
+        doc = {
+            "schemaVersion": 1,
+            "label": "HTTP Arena " + FAMILY_LABEL[scope],
+            "message": f"#{rank} of {total}" + (f" ({lang})" if lang else ""),
+            "color": _badge_color(rank, total),
+            "labelColor": TYPE_COLOR.get(tier, TYPE_COLOR_FALLBACK),
+            "cacheSeconds": BADGE_CACHE_SECONDS,
+        }
+        path = BADGE_OUT / slug / f"{name}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(doc, separators=(",", ":")) + "\n", encoding="utf-8")
+        written += 1
+        # The maintainer should not have to assemble any of this: the index
+        # carries the finished line to paste, deep-linked to the view that
+        # produced the number.
+        link = _badge_link(scope, types, lang, with_tuned)
+        shield = f"https://img.shields.io/endpoint?url={SITE}/badge/{slug}/{name}.json"
+        e = index.setdefault(slug, {"framework": fw, "type": tier,
+                                    "language": fw_lang.get(fw, ""),
+                                    "tuned": is_tuned(fw), "scopes": {}})
+        entry = {"rank": rank, "of": total, "score": round(score, 1), "link": link,
+                 "markdown": f"[![HTTP Arena {FAMILY_LABEL[scope]}]({shield})]({link})"}
+        key = ("withTuned" if with_tuned and not alias else "default")
+        if lang:
+            key = "byLanguage" + ("WithTuned" if with_tuned and not alias else "")
+        e["scopes"].setdefault(scope, {})[key] = entry
+
+    def ranked(rows):
+        """(fw, rank, total, score) with competition ranking — ties share a rank."""
+        out, prev_score, prev_rank = [], None, 0
+        for i, (fw, score) in enumerate(rows):
+            rank = prev_rank if (prev_score is not None and abs(prev_score - score) < 1e-9) else i + 1
+            prev_score, prev_rank = score, rank
+            out.append((fw, rank, len(rows), score))
+        return out
+
+    def publish(rows, scope, types, lang, with_tuned):
+        if len(rows) < BADGE_MIN_FIELD:
+            return
+        for fw, rank, total, score in ranked(rows):
+            # Counted in the field above, but no badge of its own: a 0 means the
+            # entry ran nothing that scores in this family, so "#31 of 31" would
+            # read as a placing it never competed for.
+            if score <= 0:
+                continue
+            # A tuned entry is absent from the default field entirely, so its
+            # place in the tuned-inclusive one is also what its default URL
+            # serves. Written twice rather than left to 404.
+            if with_tuned and is_tuned(fw):
+                emit(fw, scope, types, rank, total, score, lang, True, alias=True)
+            emit(fw, scope, types, rank, total, score, lang, with_tuned)
+
     for scope in FAMILY_LABEL:
         for types in LEAGUES:
-            rows = badge_composite(agg, profiles, meta, scope, types)
-            total = len(rows)
-            if total < BADGE_MIN_FIELD:
-                continue    # "#1 of 1" says nothing; skip until the field fills out
-            prev_score, prev_rank = None, 0
-            for i, (fw, score) in enumerate(rows):
-                # Competition ranking: equal scores share a rank (1, 2, 2, 4).
-                if prev_score is not None and abs(prev_score - score) < 1e-9:
-                    rank = prev_rank
-                else:
-                    rank = i + 1
-                prev_score, prev_rank = score, rank
-                # Counted in the field above, but no badge of its own: a 0 here
-                # means the entry ran nothing that scores in this family, so a
-                # "#31 of 31" would read as a placing it never competed for.
-                if score <= 0:
-                    continue
-                slug = _slug(fw)
-                # Two independent readings: the label side is which tier the
-                # entry competes in, the message side is how it placed there.
-                tier = meta.get(fw, {}).get("type", "emerging")
-                doc = {
-                    "schemaVersion": 1,
-                    "label": "HTTP Arena " + FAMILY_LABEL[scope],
-                    "message": f"#{rank} of {total}",
-                    "color": _badge_color(rank, total),
-                    "labelColor": TYPE_COLOR.get(tier, TYPE_COLOR_FALLBACK),
-                    "cacheSeconds": 3600,
-                }
-                path = BADGE_OUT / slug / f"{scope}.json"
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(doc, separators=(",", ":")) + "\n",
-                                encoding="utf-8")
-                written += 1
-                # The maintainer should not have to assemble any of this: the
-                # index carries the finished line to paste, deep-linked to the
-                # view that produced the number.
-                link = _badge_link(scope, types)
-                shield = ("https://img.shields.io/endpoint?url="
-                          f"{SITE}/badge/{slug}/{scope}.json")
-                e = index.setdefault(slug, {"framework": fw, "type": tier, "scopes": {}})
-                e["scopes"][scope] = {
-                    "rank": rank, "of": total, "score": round(score, 1),
-                    "link": link,
-                    "markdown": f"[![HTTP Arena {FAMILY_LABEL[scope]}]({shield})]({link})",
-                }
+            for with_tuned in (False, True):
+                rows = badge_composite(agg, profiles, meta, scope, types,
+                                       show_tuned=with_tuned)
+                publish(rows, scope, types, None, with_tuned)
+                for lang in sorted({fw_lang.get(fw, "") for fw, _ in rows} - {""}):
+                    sub = badge_composite(agg, profiles, meta, scope, types,
+                                          show_tuned=with_tuned, lang=lang,
+                                          fw_lang=fw_lang)
+                    publish(sub, scope, types, lang, with_tuned)
 
     BADGE_OUT.mkdir(parents=True, exist_ok=True)
     (BADGE_OUT / "index.json").write_text(
@@ -1224,7 +1347,7 @@ def main():
 
     profiles, results = [], {}
     for category, entries in CATALOG:
-        for pid, label, blurb, explorer, scored, s, es in entries:
+        for pid, label, blurb, explorer, scored, s, es, isf in entries:
             present = []
             for c in explorer:
                 rows = RESULTS.get(f"{pid}-{c}")
@@ -1250,7 +1373,7 @@ def main():
                     "id": pid, "label": label, "category": category, "blurb": blurb,
                     "conns": present,
                     "scoredConns": [c for c in scored if c in present],
-                    "scored": s, "engineScored": es,
+                    "scored": s, "engineScored": es, "infraScored": isf,
                 }
                 docid = PROFILE_DOC.get(pid)
                 if docid and docid in docs_content:

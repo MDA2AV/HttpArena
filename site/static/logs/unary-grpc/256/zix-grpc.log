@@ -1,0 +1,2 @@
+info(zix_grpc): listening on :::8080 (io_uring-mux/64)
+info(zix_grpc): dual listener: grpc TLS on :::8443 (same workers, on-ring)
