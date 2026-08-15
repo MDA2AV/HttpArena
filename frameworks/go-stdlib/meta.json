@@ -1,0 +1,19 @@
+{
+  "display_name": "go-stdlib",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "tuned",
+  "engine": "net/http",
+  "description": "The Go standard library net/http server with no framework, default configuration. Routing through the ServeMux method and wildcard patterns of Go 1.22, JSON through encoding/json, gzip written by hand with compress/gzip because the standard library ships no compression middleware.",
+  "repo": "https://github.com/golang/go",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
