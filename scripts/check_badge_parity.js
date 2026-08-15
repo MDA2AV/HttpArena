@@ -74,8 +74,11 @@ const run = new Function('D', `
   ${memFn}
   ${bwFn}
   ${composite}
-  return function(scope, types, lang){
-    state.scope = scope; state.types = types; state.lang = lang || '';   // AGG is state-independent, so its cache is safe
+  return function(scope, types, lang, showTuned){
+    // AGG is state-independent, so its cache survives these being flipped.
+    state.scope = scope; state.types = types;
+    state.lang = lang || '';
+    state.showTuned = !!showTuned;
     return computeComposite();
   };
 `)(D);
@@ -90,8 +93,8 @@ const MIN_FIELD = 2;
 // compared a filtered board against an identically-filtered port and passed
 // while the published field was one short of the board's. Whatever the board
 // renders as a row is the field, and that is what gets compared.
-function ranked(scope, types, lang) {
-  const rows = run(scope, types, lang).rows
+function ranked(scope, types, lang, showTuned) {
+  const rows = run(scope, types, lang, showTuned).rows
     .sort((a, b) => (b.score - a.score) || (a.fw < b.fw ? -1 : a.fw > b.fw ? 1 : 0));
   const out = new Map();
   let prevScore = null, prevRank = 0;
@@ -112,63 +115,65 @@ const LANGS = [...new Set(Object.values(FWLANG))].sort();
 const slug = n => (n.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'unnamed').toLowerCase();
 
 const emitted = JSON.parse(fs.readFileSync(INDEX, 'utf8'));
+const isTuned = fw => (D.meta[fw] && D.meta[fw].mode) === 'tuned';
 const problems = [];
 let checked = 0;
 
+// Which key in index.json a given (language, tuned) combination should land on.
+function indexKey(lang, withTuned) {
+  if (lang) return withTuned ? 'byLanguageWithTuned' : 'byLanguage';
+  return withTuned ? 'withTuned' : 'default';
+}
+
+// Every published combination, checked against the board configured the same
+// way. The board is the authority for all four — nothing here recomputes a
+// subset of its own, which is how the field count went wrong in #1153.
 for (const scope of FAMILIES) {
   for (const types of LEAGUES) {
-    const expect = ranked(scope, types);
-    for (const [fw, e] of expect) {
-      const got = emitted[slug(fw)] && emitted[slug(fw)].scopes[scope];
-      if (e.of < MIN_FIELD) {
-        if (got) problems.push(`${fw} ${scope}: badge emitted for a field of ${e.of} (min ${MIN_FIELD})`);
-        continue;
-      }
-      // Counted in the field, but deliberately given no badge of its own —
-      // nothing it ran scores in this family, so it has no placing to claim.
-      if (e.score <= 0) {
-        if (got) problems.push(`${fw} ${scope}: badge emitted for an entry scoring 0`);
-        continue;
-      }
-      checked++;
-      if (!got) { problems.push(`${fw} ${scope}: board ranks it #${e.rank} of ${e.of}, no badge emitted`); continue; }
-      if (got.rank !== e.rank || got.of !== e.of) {
-        problems.push(`${fw} ${scope}: badge says #${got.rank} of ${got.of}, board says #${e.rank} of ${e.of}`);
-      }
-      if (Math.abs(got.score - e.score) > 0.05) {
-        problems.push(`${fw} ${scope}: badge score ${got.score}, board score ${e.score.toFixed(1)}`);
-      }
-    }
-
-    // The language variant, checked against the board's own lang= filter rather
-    // than against a subset this script computes — otherwise "#1 of 6 (Rust)"
-    // would only ever be compared with itself.
-    for (const lang of LANGS) {
-      const expect = ranked(scope, types, lang);
-      for (const [fw, e] of expect) {
-        const got = emitted[slug(fw)] && emitted[slug(fw)].scopes[scope]
-                 && emitted[slug(fw)].scopes[scope].byLanguage;
-        if (e.of < MIN_FIELD || e.score <= 0) {
-          if (got) problems.push(`${fw} ${scope} (${lang}): badge emitted for a field of ${e.of}, score ${e.score.toFixed(1)}`);
-          continue;
-        }
-        checked++;
-        if (!got) { problems.push(`${fw} ${scope} (${lang}): board ranks it #${e.rank} of ${e.of}, no language badge emitted`); continue; }
-        if (got.rank !== e.rank || got.of !== e.of) {
-          problems.push(`${fw} ${scope} (${lang}): badge says #${got.rank} of ${got.of}, board says #${e.rank} of ${e.of}`);
+    for (const withTuned of [false, true]) {
+      for (const lang of [null, ...LANGS]) {
+        const expect = ranked(scope, types, lang, withTuned);
+        const where = `${scope}${lang ? ` (${lang})` : ''}${withTuned ? ' [with-tuned]' : ''}`;
+        for (const [fw, e] of expect) {
+          const sc = emitted[slug(fw)] && emitted[slug(fw)].scopes[scope];
+          const got = sc && sc[indexKey(lang, withTuned)];
+          if (e.of < MIN_FIELD || e.score <= 0) {
+            if (got) problems.push(`${fw} ${where}: badge emitted for a field of ${e.of}, score ${e.score.toFixed(1)}`);
+            continue;
+          }
+          checked++;
+          if (!got) { problems.push(`${fw} ${where}: board ranks it #${e.rank} of ${e.of}, no badge emitted`); continue; }
+          if (got.rank !== e.rank || got.of !== e.of) {
+            problems.push(`${fw} ${where}: badge says #${got.rank} of ${got.of}, board says #${e.rank} of ${e.of}`);
+          }
+          if (Math.abs(got.score - e.score) > 0.05) {
+            problems.push(`${fw} ${where}: badge score ${got.score}, board score ${e.score.toFixed(1)}`);
+          }
         }
       }
     }
   }
 }
 
-// And the other direction — a badge the board would not produce at all.
+// A tuned entry is absent from the default (tuned-excluded) field, so its
+// default URL is served from the tuned-inclusive ranking instead of 404ing.
+// Check that alias really does mirror the with-tuned number.
 for (const [s, entry] of Object.entries(emitted)) {
-  for (const scope of Object.keys(entry.scopes)) {
-    const seen = LEAGUES.some(types => ranked(scope, types).has(entry.framework));
-    if (!seen) problems.push(`${entry.framework} ${scope}: badge emitted but the board ranks no such entry`);
+  if (!isTuned(entry.framework)) continue;
+  for (const [scope, sc] of Object.entries(entry.scopes)) {
+    if (!sc.default) continue;
+    if (!sc.withTuned) { problems.push(`${entry.framework} ${scope}: tuned entry has a default badge but no with-tuned ranking to alias`); continue; }
+    if (sc.default.rank !== sc.withTuned.rank || sc.default.of !== sc.withTuned.of) {
+      problems.push(`${entry.framework} ${scope}: tuned entry default says #${sc.default.rank} of ${sc.default.of}, with-tuned says #${sc.withTuned.rank} of ${sc.withTuned.of}`);
+    }
   }
 }
+
+// Nothing else is needed to prove tuned entries are excluded from the default
+// field: the loop above already resolves the `default` key against the board
+// run with showTuned=false, so a default badge carrying the tuned-inclusive
+// field shows up there as a plain rank mismatch. A league with no tuned entries
+// in it legitimately has both fields the same size.
 
 if (problems.length) {
   console.error(`badge parity: ${problems.length} disagreement(s) with site/leaderboard/index.html\n`);

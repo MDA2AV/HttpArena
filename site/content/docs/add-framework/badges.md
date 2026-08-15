@@ -14,13 +14,13 @@ itself each time the leaderboard is republished — you paste it once.
 ## Paste it
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
 Replace `actix` with your entry and `h1` with the family you want. The exact
 line for your framework, already assembled and deep-linked to the right view of
 the board, is in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
-under `markdown`.
+under `scopes.<family>.default.markdown`.
 
 ## Families
 
@@ -44,7 +44,7 @@ Optional, and a second badge rather than a replacement. Append `-<language>` to
 the family and the badge reads **`#1 of 6 (Rust)`**:
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1&lang=Rust)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
 ```
 
 The language segment is the board's own language name, lowercased, with `#`
@@ -52,6 +52,34 @@ spelled out as `sharp` and `++` as `pp`: `C#` → `csharp`, `C++` → `cpp`,
 `TS` → `ts`, `JS` → `js`. Your ready-made line is in
 [`/badge/index.json`](https://www.http-arena.com/badge/index.json) under
 `scopes.<family>.byLanguage.markdown`.
+
+## Counting tuned entries in
+
+Also optional. The default field is **standard configurations only**, so the
+number compares like for like — a stock server is not ranked against someone
+else's hand-tuned build. Append `-with-tuned` to count tuned entries as well:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+```
+
+The suffixes combine, so the full set for one family is:
+
+| File | Field |
+|---|---|
+| `h1.json` | standard entries |
+| `h1-with-tuned.json` | standard + tuned |
+| `h1-rust.json` | standard, one language |
+| `h1-rust-with-tuned.json` | standard + tuned, one language |
+
+Each is in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
+under `scopes.<family>`, keyed `default`, `withTuned`, `byLanguage` and
+`byLanguageWithTuned`.
+
+**If your entry is itself tuned**, it has no place in the standard-only field,
+so its default URL serves the tuned-inclusive ranking instead — `h1.json` and
+`h1-with-tuned.json` give it the same number. Nothing to change, and no URL
+stops working.
 
 This is a **filter, not a rescore**. Scores and order are identical to the
 overall badge; only the field is narrowed, so the two can never disagree about

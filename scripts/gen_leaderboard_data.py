@@ -1024,13 +1024,16 @@ def badge_aggregate(profiles, results):
     return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
 
 
-def badge_composite(agg, profiles, meta, scope, types):
+def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=None,
+                    fw_lang=None):
     """Composite scores for one family and one league, best first.
 
-    Port of computeComposite() at the board's default state. Returns
-    [(framework, score)] for entries that actually scored in this family;
-    an entry present only through a reference-only profile (pipelined,
-    fortunes) sums to 0 and is dropped — there is no rank to report.
+    Port of computeComposite(). `show_tuned` and `lang` are the board's two
+    display filters, and they behave here the way they behave there with rescale
+    off: they narrow *who is listed*, never what anyone scored. The normalizing
+    maxima below are deliberately taken over the whole league — that is what
+    keeps a framework's number identical whether or not tuned entries are in
+    view, and what stops the badge disagreeing with the page it links to.
     """
     prof = {p["id"]: p for p in profiles}
     pids = [p["id"] for p in profiles
@@ -1039,7 +1042,18 @@ def badge_composite(agg, profiles, meta, scope, types):
         return []
 
     A = agg
+    fw_lang = fw_lang or {}
+    # outOfLeague in index.html: a separate competition, so excluded from the
+    # normalizing maxima as well as from the listing.
     in_league = lambda fw: meta.get(fw, {}).get("type", "emerging") in types
+
+    def shown(fw):
+        """hidden() in index.html — display only, never touches the maxima."""
+        if not show_tuned and meta.get(fw, {}).get("mode", "standard") == "tuned":
+            return False
+        if lang and fw_lang.get(fw) != lang:
+            return False
+        return True
 
     def is_scored(pid, fw):
         p = prof[pid]
@@ -1082,7 +1096,7 @@ def badge_composite(agg, profiles, meta, scope, types):
     rows = []
     fwset = {fw for pid in pids for fw in A["avg"].get(pid, {})}
     for fw in fwset:
-        if not in_league(fw):
+        if not in_league(fw) or not shown(fw):
             continue
         score, any_result = 0.0, False
         for pid in pids:
@@ -1122,7 +1136,7 @@ def _fw_languages(results):
     return lang
 
 
-def _badge_link(scope, types, lang=None):
+def _badge_link(scope, types, lang=None, show_tuned=False):
     """Deep link to the board view the rank was taken in — the whole field, not
     the one entry. Following a badge should show what "#6 of 83" was measured
     against; filtering to the framework alone just restates the badge.
@@ -1142,7 +1156,7 @@ def _badge_link(scope, types, lang=None):
     if scope != "h1":
         parts.append("scope=" + scope)
     parts.append("type=" + ",".join(sorted(types)))
-    parts.append("tuned=1")
+    parts.append("tuned=1" if show_tuned else "tuned=0")
     if lang:
         # lang=, not q=. The search box matches substrings across name, language
         # and engine, so q=C pulls in 73 of 78 entries and q=V pulls 33 — the
@@ -1169,14 +1183,22 @@ def _badge_color(rank, total):
 def write_badges(profiles, results, meta):
     """shields.io endpoint documents, plus an index of everything written.
 
-    Two badges per (framework, family): the overall rank in its tier at
-    /badge/<framework>/<family>.json, and — optional, for maintainers who want
-    it — its rank among entries in the same language, at
-    /badge/<framework>/<family>-<language>.json, reading "#1 of 17 (JS)".
+    Path is /badge/<framework>/<family>[-<language>][-with-tuned].json:
 
-    The language variant is a filter, not a rescore: same scores, same order,
-    counting only same-language entries. That is what the board does with a
-    language filter and rescale off, so the two still agree.
+        h1.json                  rank among standard entries      (the default)
+        h1-with-tuned.json       rank with tuned entries counted
+        h1-rust.json             ...same, narrowed to one language
+        h1-rust-with-tuned.json
+
+    Both suffixes are filters, not rescores: same scores, same order, a smaller
+    field. That is what the board does with rescale off, so a badge and the page
+    it links to never disagree about who is ahead of whom.
+
+    The default excludes tuned entries, so the number compares like-for-like
+    against stock configurations. A tuned entry has no place in that field, so
+    for those the default *is* the tuned-inclusive ranking — the smallest field
+    the entry actually belongs to. Otherwise /badge/<tuned-entry>/h1.json would
+    have to 404, and it is a URL people have already pasted.
     """
     if BADGE_OUT.exists():
         shutil.rmtree(BADGE_OUT)
@@ -1194,11 +1216,19 @@ def write_badges(profiles, results, meta):
 
     index, written = {}, 0
 
-    def emit(fw, slug, tier, scope, types, rank, total, score, lang=None):
-        """One endpoint document + its index entry."""
+    is_tuned = lambda fw: meta.get(fw, {}).get("mode", "standard") == "tuned"
+
+    def emit(fw, scope, types, rank, total, score, lang=None, with_tuned=False,
+             alias=False):
+        """One endpoint document + its index entry.
+
+        `alias` writes the default filename for a tuned entry, whose ranking can
+        only come from the tuned-inclusive field.
+        """
         nonlocal written
-        suffix = f"-{_lang_slug(lang)}" if lang else ""
-        name = f"{scope}{suffix}"
+        slug, tier = _slug(fw), meta.get(fw, {}).get("type", "emerging")
+        name = scope + (f"-{_lang_slug(lang)}" if lang else "") \
+                     + ("-with-tuned" if with_tuned and not alias else "")
         doc = {
             "schemaVersion": 1,
             "label": "HTTP Arena " + FAMILY_LABEL[scope],
@@ -1214,19 +1244,17 @@ def write_badges(profiles, results, meta):
         # The maintainer should not have to assemble any of this: the index
         # carries the finished line to paste, deep-linked to the view that
         # produced the number.
-        link = _badge_link(scope, types, lang)
+        link = _badge_link(scope, types, lang, with_tuned)
         shield = f"https://img.shields.io/endpoint?url={SITE}/badge/{slug}/{name}.json"
         e = index.setdefault(slug, {"framework": fw, "type": tier,
-                                    "language": fw_lang.get(fw, ""), "scopes": {}})
+                                    "language": fw_lang.get(fw, ""),
+                                    "tuned": is_tuned(fw), "scopes": {}})
         entry = {"rank": rank, "of": total, "score": round(score, 1), "link": link,
                  "markdown": f"[![HTTP Arena {FAMILY_LABEL[scope]}]({shield})]({link})"}
+        key = ("withTuned" if with_tuned and not alias else "default")
         if lang:
-            e["scopes"].setdefault(scope, {})["byLanguage"] = entry
-        else:
-            entry["byLanguage"] = e["scopes"].get(scope, {}).get("byLanguage")
-            if entry["byLanguage"] is None:
-                del entry["byLanguage"]
-            e["scopes"][scope] = entry
+            key = "byLanguage" + ("WithTuned" if with_tuned and not alias else "")
+        e["scopes"].setdefault(scope, {})[key] = entry
 
     def ranked(rows):
         """(fw, rank, total, score) with competition ranking — ties share a rank."""
@@ -1237,31 +1265,33 @@ def write_badges(profiles, results, meta):
             out.append((fw, rank, len(rows), score))
         return out
 
+    def publish(rows, scope, types, lang, with_tuned):
+        if len(rows) < BADGE_MIN_FIELD:
+            return
+        for fw, rank, total, score in ranked(rows):
+            # Counted in the field above, but no badge of its own: a 0 means the
+            # entry ran nothing that scores in this family, so "#31 of 31" would
+            # read as a placing it never competed for.
+            if score <= 0:
+                continue
+            # A tuned entry is absent from the default field entirely, so its
+            # place in the tuned-inclusive one is also what its default URL
+            # serves. Written twice rather than left to 404.
+            if with_tuned and is_tuned(fw):
+                emit(fw, scope, types, rank, total, score, lang, True, alias=True)
+            emit(fw, scope, types, rank, total, score, lang, with_tuned)
+
     for scope in FAMILY_LABEL:
         for types in LEAGUES:
-            rows = badge_composite(agg, profiles, meta, scope, types)
-            if len(rows) >= BADGE_MIN_FIELD:
-                for fw, rank, total, score in ranked(rows):
-                    # Counted in the field above, but no badge of its own: a 0
-                    # means the entry ran nothing that scores in this family, so
-                    # "#31 of 31" would read as a placing it never competed for.
-                    if score <= 0:
-                        continue
-                    emit(fw, _slug(fw), meta.get(fw, {}).get("type", "emerging"),
-                         scope, types, rank, total, score)
-
-            # Same league, same scores, narrowed to one language — re-ranked
-            # within that subset rather than rescored, so a language badge and
-            # the overall one can never disagree about who is ahead of whom.
-            for lang in sorted({fw_lang.get(fw, "") for fw, _ in rows} - {""}):
-                sub = [(fw, sc) for fw, sc in rows if fw_lang.get(fw) == lang]
-                if len(sub) < BADGE_MIN_FIELD:
-                    continue
-                for fw, rank, total, score in ranked(sub):
-                    if score <= 0:
-                        continue
-                    emit(fw, _slug(fw), meta.get(fw, {}).get("type", "emerging"),
-                         scope, types, rank, total, score, lang)
+            for with_tuned in (False, True):
+                rows = badge_composite(agg, profiles, meta, scope, types,
+                                       show_tuned=with_tuned)
+                publish(rows, scope, types, None, with_tuned)
+                for lang in sorted({fw_lang.get(fw, "") for fw, _ in rows} - {""}):
+                    sub = badge_composite(agg, profiles, meta, scope, types,
+                                          show_tuned=with_tuned, lang=lang,
+                                          fw_lang=fw_lang)
+                    publish(sub, scope, types, lang, with_tuned)
 
     BADGE_OUT.mkdir(parents=True, exist_ok=True)
     (BADGE_OUT / "index.json").write_text(
