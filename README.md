@@ -84,34 +84,10 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 
 ## Add the badge
 
-Benchmarked on HttpArena? Add the badge to your project's README — it links to the live leaderboard and adapts to light & dark themes automatically.
+Benchmarked here? Put your rank in your own README. It re-renders itself every
+time the board is republished, so you paste it once and never touch it again:
 
-```md
-[![Benchmarked by HttpArena](https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg)](https://www.http-arena.com/)
-```
-
-Prefer HTML, e.g. to set the size:
-
-```html
-<a href="https://www.http-arena.com/">
-  <img src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" alt="Benchmarked by HttpArena" height="44">
-</a>
-```
-
-Another badge variants:
-- Http/1.1: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h1.svg`
-- Http/2: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h2.svg`
-- Http/3: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h3.svg`
-- Gateway: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-gateway.svg`
-- WebSocket: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg`
-- gRPC: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg`
-
-### Rank badge
-
-The badges above say you were benchmarked. This one says how you did, and it
-re-renders itself every time the board is republished:
-
-> **HTTP Arena H/1.1** · `#6 of 71`
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#q=actix)
 
 ```md
 [![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#q=actix)
@@ -151,51 +127,3 @@ A few things worth knowing before you paste it:
 
 Shields' usual styling works — append `&style=flat-square`, `&logo=rust`, and so
 on to the `img.shields.io` URL.
-
----
-
-<div align="left">
-  <a href="https://www.http-arena.com/">
-    <img alt="Benchmarked by HttpArena" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" width="235">
-  </a>
-</div>
-
-<br>
-
-
-<table>
-  <tr>
-    <td align="">
-      <a href="https://www.http-arena.com/#sort=rps:-1&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h1.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=h2&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h2.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=h3&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h3.svg" width="235">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=gw&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-gateway.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=grpc&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=ws&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg" width="235">
-      </a>
-    </td>
-  </tr>
-</table> 

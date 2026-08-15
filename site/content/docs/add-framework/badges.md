@@ -66,9 +66,3 @@ rank can take a few hours to appear on GitHub itself.
 The endpoints are plain [shields.io](https://shields.io) documents, so shields'
 own options work — append `&style=flat-square`, `&logo=rust`, `&labelColor=…` to
 the `img.shields.io` URL.
-
-## The static badges
-
-If you want the plain "Benchmarked by HttpArena" wordmark instead of a rank, the
-variants are listed in the
-[project README](https://github.com/MDA2AV/HttpArena#add-the-badge).
