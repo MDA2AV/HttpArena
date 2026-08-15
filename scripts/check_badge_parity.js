@@ -81,9 +81,13 @@ const FAMILIES = ['h1', 'h2', 'h3', 'gw', 'grpc', 'ws'];
 const LEAGUES = [['flagship', 'emerging'], ['engine'], ['experimental']];
 const MIN_FIELD = 2;
 
+// NO score filter here. An earlier version dropped rows scoring 0 before
+// comparing, which is exactly what the generator was doing wrong — so the check
+// compared a filtered board against an identically-filtered port and passed
+// while the published field was one short of the board's. Whatever the board
+// renders as a row is the field, and that is what gets compared.
 function ranked(scope, types) {
   const rows = run(scope, types).rows
-    .filter(r => r.score > 0)
     .sort((a, b) => (b.score - a.score) || (a.fw < b.fw ? -1 : a.fw > b.fw ? 1 : 0));
   const out = new Map();
   let prevScore = null, prevRank = 0;
@@ -109,6 +113,12 @@ for (const scope of FAMILIES) {
       const got = emitted[slug(fw)] && emitted[slug(fw)].scopes[scope];
       if (e.of < MIN_FIELD) {
         if (got) problems.push(`${fw} ${scope}: badge emitted for a field of ${e.of} (min ${MIN_FIELD})`);
+        continue;
+      }
+      // Counted in the field, but deliberately given no badge of its own —
+      // nothing it ran scores in this family, so it has no placing to claim.
+      if (e.score <= 0) {
+        if (got) problems.push(`${fw} ${scope}: badge emitted for an entry scoring 0`);
         continue;
       }
       checked++;

@@ -1083,12 +1083,21 @@ def badge_composite(agg, profiles, meta, scope, types):
     for fw in fwset:
         if not in_league(fw):
             continue
-        score = 0.0
+        score, any_result = 0.0, False
         for pid in pids:
             rps = A["avg"].get(pid, {}).get(fw, 0)
-            if rps > 0 and max_r[pid] > 0 and is_scored(pid, fw):
-                score += (eff(pid, fw) / max_r[pid]) * 100
-        if score > 0:
+            if rps > 0 and max_r[pid] > 0:
+                # `any_result` is the board's row test and is deliberately wider
+                # than the score: an entry whose only results in this family sit
+                # on profiles that do not count for its tier still occupies a
+                # row, at 0. pico is one — an engine whose h1 results are json
+                # (not engineScored) and pipelined (reference-only). Dropping
+                # those rows here made the badge's field one short of what the
+                # board renders, which is a number people can count (#1149).
+                any_result = True
+                if is_scored(pid, fw):
+                    score += (eff(pid, fw) / max_r[pid]) * 100
+        if any_result:
             rows.append((fw, score))
     rows.sort(key=lambda r: (-r[1], r[0]))
     return rows
@@ -1155,6 +1164,11 @@ def write_badges(profiles, results, meta):
                 else:
                     rank = i + 1
                 prev_score, prev_rank = score, rank
+                # Counted in the field above, but no badge of its own: a 0 here
+                # means the entry ran nothing that scores in this family, so a
+                # "#31 of 31" would read as a placing it never competed for.
+                if score <= 0:
+                    continue
                 slug = _slug(fw)
                 # Two independent readings: the label side is which tier the
                 # entry competes in, the message side is how it placed there.

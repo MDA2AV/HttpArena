@@ -131,6 +131,10 @@ A few things worth knowing before you paste it:
 - **It only exists where you scored.** No result in a family means no badge for
   it, and a family with a single entry in your tier publishes nothing — a rank
   is worth showing once there was somebody to beat.
+- **The field is every row the board lists.** `of 31` is what you get counting
+  engine rows on the linked page, including any entry sitting at 0 because
+  nothing it ran scores for its tier. Those occupy a place in the field but get
+  no badge of their own.
 - **It follows the default board.** Same scoring as the page it links to, with
   the memory-efficiency and rescale toggles off. Follow the link and you land on
   the field the rank was measured against — the whole league, not your row on
