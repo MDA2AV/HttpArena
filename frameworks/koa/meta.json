@@ -1,0 +1,19 @@
+{
+  "display_name": "koa",
+  "language": "JS",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "node:http",
+  "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
+  "repo": "https://github.com/koajs/koa",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

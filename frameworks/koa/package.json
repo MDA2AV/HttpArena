@@ -1,0 +1,9 @@
+{
+  "name": "httparena-koa",
+  "private": true,
+  "dependencies": {
+    "@koa/router": "^15.7.0",
+    "koa": "^3.2.1",
+    "koa-compress": "^5.2.2"
+  }
+}

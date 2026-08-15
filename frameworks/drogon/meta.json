@@ -1,0 +1,19 @@
+{
+  "display_name": "drogon",
+  "language": "C++",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "trantor",
+  "description": "Drogon on the trantor event loop, one event loop per core. Routing and path/query params through the Drogon API, jsoncpp serialization, gzip through the built-in response compression.",
+  "repo": "https://github.com/drogonframework/drogon",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
