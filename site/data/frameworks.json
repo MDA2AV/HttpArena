@@ -549,6 +549,14 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "koa": {
+    "dir": "koa",
+    "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
+    "repo": "https://github.com/koajs/koa",
+    "type": "flagship",
+    "engine": "node:http",
+    "mode": "standard"
+  },
   "ktor-ghost": {
     "dir": "ktor-ghost",
     "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, Ghost Serializer, JDK 21.",
