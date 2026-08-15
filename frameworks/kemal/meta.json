@@ -1,0 +1,19 @@
+{
+  "display_name": "kemal",
+  "language": "Crystal",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "crystal-http",
+  "description": "Kemal 1.12 on the Crystal HTTP::Server, default configuration, one process per core sharing port 8080 through SO_REUSEPORT. Routing through the Kemal radix tree, JSON written into the response with JSON::Builder, gzip through the handler that gzip true installs.",
+  "repo": "https://github.com/kemalcr/kemal",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
