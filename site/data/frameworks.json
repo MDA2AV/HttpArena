@@ -504,6 +504,14 @@
     "engine": "http-kit",
     "mode": "standard"
   },
+  "http4s": {
+    "dir": "http4s",
+    "description": "http4s 0.23 on the Ember server with cats-effect, default configuration. Routing through the http4s DSL, circe JSON, gzip through the http4s GZip middleware.",
+    "repo": "https://github.com/http4s/http4s",
+    "type": "flagship",
+    "engine": "Ember",
+    "mode": "standard"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
@@ -555,6 +563,14 @@
     "repo": "https://github.com/ktorio/ktor",
     "type": "flagship",
     "engine": "netty",
+    "mode": "standard"
+  },
+  "lapis": {
+    "dir": "lapis",
+    "description": "Lapis on OpenResty with LuaJIT, one nginx worker per core. Routing and params through the Lapis application API, cjson serialization, gzip through the nginx gzip directive.",
+    "repo": "https://github.com/leafo/lapis",
+    "type": "flagship",
+    "engine": "OpenResty",
     "mode": "standard"
   },
   "laravel": {
