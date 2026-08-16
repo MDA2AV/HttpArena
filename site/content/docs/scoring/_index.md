@@ -10,4 +10,5 @@ How HttpArena computes the composite score that ranks frameworks across all test
 
 {{< cards >}}
   {{< card link="composite-score" title="Composite Score" subtitle="Sum of per-profile normalized scores (0–100 each) across all scored profiles, with an optional memory-efficiency bonus." icon="chart-bar" >}}
+  {{< card link="matcher" title="Framework Matcher" subtitle="How the weights you set on /match/ become a ranking, and what each dimension is measured on." icon="adjustments" >}}
 {{< /cards >}}

@@ -741,7 +741,7 @@ def board_chrome():
     # generated page has, so it is lifted separately rather than riding along
     # inside .top-links. Same rule as the rest of the chrome: read the board,
     # never retype it.
-    fwbtn = re.search(r'<a class="fw-btn".*?</a>', html, re.S)
+    fwbtn = re.findall(r'<a class="fw-btn".*?</a>', html, re.S)
     if not (brand and links and style and fwbtn):
         raise SystemExit(f"gen: cannot read site chrome from {BOARD.relative_to(ROOT)} - "
                          "expected .brand, .top-links, .fw-btn and a <style> block")
@@ -752,7 +752,7 @@ def board_chrome():
     # the board's brand link drives its in-page router; on a doc page it goes home
     brand_html = brand.group(1).strip().replace('href="#" id="brandHome"', 'href="/"')
     return (brand_html, links.group(1).strip(), "\n".join(shared),
-            fwbtn.group(0).strip())
+            "".join(b.strip() for b in fwbtn))
 
 
 # Resolved once at import: the board's chrome, shared by every generated page.
@@ -1027,7 +1027,8 @@ def write_sitemap(content, fw_entries=(), lang_pages=()):
                                "site/data/frameworks.json")
     newest = max(dates.values(), default=None)
 
-    urls = [(SITE + "/", newest), (SITE + "/frameworks/", newest)]
+    urls = [(SITE + "/", newest), (SITE + "/frameworks/", newest),
+            (SITE + "/match/", newest)]
     # A framework page is dated from the whole corpus, not from its own results
     # file. Its headline is "rank N of M" across six families, recomputed every
     # build, so any other entry being added or re-run changes this page too.
@@ -1121,6 +1122,16 @@ MIXW = {"baseline": 0.15, "json": 1, "upload": 10, "static": 2, "async_db": 10}
 
 _MEM_RE = re.compile(r"([\d.]+)\s*([KMG]i?B)", re.I)
 _BW_RE = re.compile(r"([\d.]+)\s*([KMG]?B)/s", re.I)
+_LAT_RE = re.compile(r"([\d.]+)\s*(us|ms|s)", re.I)
+
+
+def _lat(s):
+    """"1.06ms" -> microseconds. Mirrors lat() in index.html."""
+    m = _LAT_RE.search(str(s or ""))
+    if not m:
+        return 0.0
+    v, u = float(m.group(1)), m.group(2).lower()
+    return v if u == "us" else v * 1e3 if u == "ms" else v * 1e6
 
 
 def _mem(s):
@@ -1143,11 +1154,15 @@ def _bw(s):
 
 def badge_aggregate(profiles, results):
     """Average rps/mem/bw (and the api template mix) over each profile's scored
-    conns. Port of aggregate() in index.html."""
-    avg, amem, abw, atpl = {}, {}, {}, {}
+    conns. Port of aggregate() in index.html.
+
+    cpu and p99 ride along for the matcher, which weighs them; nothing in the
+    badge path reads them and they do not touch a composite.
+    """
+    avg, amem, abw, atpl, acpu, ap99 = {}, {}, {}, {}, {}, {}
     for p in profiles:
         pid = p["id"]
-        sums, ms, bs, cn, ts = {}, {}, {}, {}, {}
+        sums, ms, bs, cn, ts, cs, ls = {}, {}, {}, {}, {}, {}, {}
         for c in p["scoredConns"]:
             for r in results.get(f"{pid}-{c}", []):
                 fw = r["fw"]
@@ -1155,6 +1170,9 @@ def badge_aggregate(profiles, results):
                 cn[fw] = cn.get(fw, 0) + 1
                 ms[fw] = ms.get(fw, 0) + _mem(r.get("memory"))
                 bs[fw] = bs.get(fw, 0) + _bw(r.get("bandwidth"))
+                cs[fw] = cs.get(fw, 0) + (float(str(r.get("cpu") or 0).rstrip("%") or 0)
+                                          if str(r.get("cpu") or "").strip() else 0.0)
+                ls[fw] = ls.get(fw, 0) + _lat(r.get("p99_latency"))
                 if pid in ("api-4", "api-16"):
                     t = ts.setdefault(fw, dict.fromkeys(MIXW, 0.0) | {"n": 0})
                     for k in MIXW:
@@ -1163,9 +1181,61 @@ def badge_aggregate(profiles, results):
         avg[pid] = {fw: sums[fw] / cn[fw] for fw in sums}
         amem[pid] = {fw: ms[fw] / cn[fw] for fw in sums}
         abw[pid] = {fw: bs[fw] / cn[fw] for fw in sums}
+        acpu[pid] = {fw: cs[fw] / cn[fw] for fw in sums}
+        ap99[pid] = {fw: ls[fw] / cn[fw] for fw in sums}
         if pid in ("api-4", "api-16"):
             atpl[pid] = {fw: {k: t[k] / t["n"] for k in MIXW} for fw, t in ts.items()}
-    return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
+    return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl, "cpu": acpu, "p99": ap99}
+
+
+def _scored_for(prof, meta, pid, fw):
+    """scoredForType() in index.html. infraScored is read before the `scored`
+    short-circuit, not behind it: the infra set is not a subset of the framework
+    set — it counts Pipelined, which frameworks do not."""
+    p = prof[pid]
+    t = meta.get(fw, {}).get("type", "emerging")
+    if t == "infrastructure":
+        return bool(p["infraScored"])
+    if not p["scored"]:
+        return False
+    if t == "engine":
+        return bool(p["engineScored"])
+    return True
+
+
+def _eff_fn(A, in_league):
+    """eff() in index.html: the number a profile is actually ranked on.
+
+    Plain average rps, except for the two profiles the board adjusts — the
+    api-4/api-16 template mix, and json-comp, which is scored on
+    bandwidth-adjusted rps: the best compressor sets the bar and everyone else
+    is penalised by the square of their size ratio. The compression bar is per
+    league, which is why this takes `in_league` rather than a finished set.
+    """
+    min_bpr = None
+    if A["avg"].get("json-comp"):
+        cand = []
+        for fw, rps in A["avg"]["json-comp"].items():
+            b = A["bw"]["json-comp"].get(fw, 0)
+            if in_league(fw) and rps > 0 and b > 0:
+                cand.append(b / rps)
+        if cand:
+            min_bpr = min(cand)
+
+    def eff(pid, fw):
+        rps = A["avg"].get(pid, {}).get(fw, 0)
+        if rps <= 0:
+            return 0.0
+        t = A["tpl"].get(pid, {}).get(fw)
+        if pid in ("api-4", "api-16") and t:
+            return sum(t[k] * w for k, w in MIXW.items())
+        if pid == "json-comp" and min_bpr is not None:
+            b = A["bw"][pid].get(fw, 0)
+            if b > 0:
+                return rps * (min_bpr / (b / rps)) ** 2
+        return rps
+
+    return eff
 
 
 def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=None,
@@ -1199,44 +1269,8 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
             return False
         return True
 
-    def is_scored(pid, fw):
-        """scoredForType() in index.html. infraScored is read before the
-        `scored` short-circuit, not behind it: the infra set is not a subset of
-        the framework set — it counts Pipelined, which frameworks do not."""
-        p = prof[pid]
-        t = meta.get(fw, {}).get("type", "emerging")
-        if t == "infrastructure":
-            return bool(p["infraScored"])
-        if not p["scored"]:
-            return False
-        if t == "engine":
-            return bool(p["engineScored"])
-        return True
-
-    # json-comp is scored on bandwidth-adjusted rps: the best compressor sets the
-    # bar and everyone else is penalised by the square of their size ratio.
-    min_bpr = None
-    if "json-comp" in pids and A["avg"].get("json-comp"):
-        cand = []
-        for fw, rps in A["avg"]["json-comp"].items():
-            b = A["bw"]["json-comp"].get(fw, 0)
-            if in_league(fw) and rps > 0 and b > 0:
-                cand.append(b / rps)
-        if cand:
-            min_bpr = min(cand)
-
-    def eff(pid, fw):
-        rps = A["avg"].get(pid, {}).get(fw, 0)
-        if rps <= 0:
-            return 0.0
-        t = A["tpl"].get(pid, {}).get(fw)
-        if pid in ("api-4", "api-16") and t:
-            return sum(t[k] * w for k, w in MIXW.items())
-        if pid == "json-comp" and min_bpr is not None:
-            b = A["bw"][pid].get(fw, 0)
-            if b > 0:
-                return rps * (min_bpr / (b / rps)) ** 2
-        return rps
+    is_scored = lambda pid, fw: _scored_for(prof, meta, pid, fw)
+    eff = _eff_fn(A, in_league)
 
     max_r = {}
     for pid in pids:
@@ -2455,6 +2489,433 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, round_name, wi
     return entries, cards, sorted(lang_pages, key=str.lower)
 
 
+# ── the matcher: /match/ ─────────────────────────────────────────────────────
+# The board answers "who is fastest overall". It does not answer "what should I
+# use", because that depends on what the reader is building: a JSON API on two
+# cores and a WebSocket fan-out with 16 GB of RAM do not want the same entry.
+# The matcher turns the table around - the reader weighs what matters and the
+# page ranks every entry against those weights.
+#
+# Nothing new is measured. Every dimension below is built out of the same
+# normalized eff() the composite sums, inside the entry's own league, so a
+# dimension score and the board's column agree. The weights only decide how the
+# dimensions are combined, which is why they live in the URL and not in the data.
+#
+#   fam   the family composite, as a percentage of the league leader's
+#   prof  the mean of the normalized rps over the listed profiles
+#   res   a cost, scored as best/own so lower is better: memory, CPU per
+#         request, p99 - averaged over every profile the entry is scored on
+MATCH_DIMS = [
+    ("Protocol", [
+        ("h1", "HTTP/1.1", "fam", "h1",
+         "Connection, workload, database and multi-endpoint profiles."),
+        ("h2", "HTTP/2", "fam", "h2", "Baseline and static over h2, TLS and cleartext."),
+        ("h3", "HTTP/3", "fam", "h3", "Baseline and static over QUIC."),
+        ("grpc", "gRPC", "fam", "grpc", "Unary and server-streaming, plaintext and TLS."),
+        ("ws", "WebSocket", "fam", "ws", "Echo throughput, batched and short-lived."),
+        ("gw", "Gateway", "fam", "gw",
+         "Reverse proxy and the four-service production stack."),
+    ]),
+    ("Workload", [
+        ("json", "JSON APIs", "prof", ("json", "json-h2c", "json-tls"),
+         "Per-request JSON serialization, cleartext and TLS."),
+        ("db", "Database", "prof", ("async-db", "crud"),
+         "Async Postgres and a REST API with cached reads and writes."),
+        ("static", "Static files", "prof", ("static", "static-tls", "static-h2", "static-h3"),
+         "20-file asset serving over every protocol."),
+        ("tls", "TLS everywhere", "prof",
+         ("json-tls", "static-tls", "baseline-h2", "unary-grpc-tls", "stream-grpc-tls"),
+         "The profiles that run over TLS."),
+        ("compress", "Compression", "prof", ("json-comp",),
+         "gzip/brotli negotiation, scored on bandwidth-adjusted throughput."),
+        ("upload", "Large uploads", "prof", ("upload",), "20 MB request-body ingestion."),
+        ("churn", "Connection churn", "prof", ("limited-conn", "echo-ws-limited"),
+         "Connections that close after 10 requests or messages."),
+        ("smallbox", "Few cores", "prof", ("api-4", "api-16"),
+         "A mixed API with the server capped at 4 and 16 CPUs."),
+    ]),
+    ("Cost", [
+        ("mem", "Low memory", "res", "mem", "Resident memory, against the lightest in the field."),
+        ("cpu", "Low CPU per request", "res", "cpu",
+         "CPU spent per request, so a fast entry is not punished for being busy."),
+        ("p99", "Low tail latency", "res", "p99", "p99 latency, against the fastest in the field."),
+    ]),
+]
+
+# Starting points, so the page is useful before the reader understands it.
+MATCH_PRESETS = [
+    ("JSON API", {"h1": 5, "json": 5, "db": 3, "p99": 3}),
+    ("Public API over TLS", {"h1": 4, "h2": 4, "tls": 5, "json": 4, "compress": 3}),
+    ("Static & CDN edge", {"static": 5, "h2": 3, "h3": 3, "mem": 3, "compress": 2}),
+    ("Realtime / WebSocket", {"ws": 5, "churn": 3, "p99": 4, "mem": 2}),
+    ("Small container", {"mem": 5, "cpu": 5, "smallbox": 4, "h1": 3}),
+    ("Edge / reverse proxy", {"gw": 5, "h2": 3, "h3": 3, "tls": 3}),
+]
+
+LEAGUE_LABEL = {"flagship+emerging": "Frameworks",
+                "experimental": "Experimental",
+                "engine": "Engines",
+                "infrastructure": "Proxies & static servers"}
+
+
+def _league_key(types):
+    return "+".join(types)
+
+
+def match_scores(agg, profiles, meta):
+    """{framework: (league key, {dimension: 0-100})}.
+
+    Every number is taken inside the entry's own league, which is also why the
+    page makes the league a choice and not a filter: a 100 among frameworks and
+    a 100 among reverse proxies are two different competitions, and averaging
+    across them would compare two scales that never met.
+    """
+    prof = {p["id"]: p for p in profiles}
+    out = {}
+    for types in LEAGUES:
+        in_league = lambda fw: meta.get(fw, {}).get("type", "emerging") in types
+        eff = _eff_fn(agg, in_league)
+        members = sorted({fw for pid in agg["avg"] for fw in agg["avg"][pid] if in_league(fw)})
+        if not members:
+            continue
+
+        fam = {}
+        for scope in SCOPE_NAME:
+            rows = dict(badge_composite(agg, profiles, meta, scope, types, show_tuned=True))
+            top = max(rows.values(), default=0.0)
+            fam[scope] = ({fw: rows.get(fw, 0.0) / top * 100 for fw in members}
+                          if top > 0 else {})
+
+        # Per profile: the normalized rps, and the three costs as best/own. Only
+        # over entries the profile is scored for - an engine is not ranked on a
+        # profile engines do not run, in either direction.
+        pnorm, cost = {}, {"mem": {}, "cpu": {}, "p99": {}}
+        for p in profiles:
+            pid = p["id"]
+            vals = {fw: eff(pid, fw) for fw in members
+                    if _scored_for(prof, meta, pid, fw) and eff(pid, fw) > 0}
+            top = max(vals.values(), default=0.0)
+            pnorm[pid] = {fw: v / top * 100 for fw, v in vals.items()} if top > 0 else {}
+            for key in cost:
+                raw = {}
+                for fw in vals:
+                    v = agg[key].get(pid, {}).get(fw, 0.0)
+                    # CPU is a rate, not a total: 6771% at 1.3M rps is cheaper
+                    # than 700% at 100k, and scoring the raw percentage would
+                    # hand the win to whatever server did the least work.
+                    if key == "cpu":
+                        rps = agg["avg"].get(pid, {}).get(fw, 0.0)
+                        v = v / rps if rps > 0 else 0.0
+                    if v > 0:
+                        raw[fw] = v
+                best = min(raw.values(), default=0.0)
+                if best > 0:
+                    for fw, v in raw.items():
+                        cost[key].setdefault(fw, []).append(min(1.0, best / v) * 100)
+
+        key = _league_key(types)
+        for fw in members:
+            d = {}
+            for _group, dims in MATCH_DIMS:
+                for did, _label, kind, spec, _blurb in dims:
+                    if kind == "fam":
+                        vs = [fam[spec].get(fw, 0.0)]
+                    elif kind == "prof":
+                        vs = [pnorm[pid][fw] for pid in spec
+                              if pid in pnorm and fw in pnorm[pid]]
+                    else:
+                        vs = cost[spec].get(fw, [])
+                    # No result on anything a dimension covers is a zero, not a
+                    # missing value: asking for HTTP/3 and getting an entry that
+                    # does not speak it is the answer being wrong.
+                    d[did] = round(sum(vs) / len(vs), 1) if vs else 0.0
+            out[fw] = (key, d)
+    return out
+
+
+def _match_payload(scores, meta, fw_lang):
+    groups = [{"g": group,
+               "d": [{"id": did, "l": label, "b": blurb} for did, label, _k, _s, blurb in dims]}
+              for group, dims in MATCH_DIMS]
+    entries = []
+    for fw in sorted(scores, key=str.lower):
+        league, dims = scores[fw]
+        m = meta.get(fw, {})
+        entries.append({"n": fw, "s": _slug(fw), "l": fw_lang.get(fw) or m.get("language", ""),
+                        "t": m.get("type", "emerging"), "lg": league,
+                        "tu": 1 if m.get("mode") == "tuned" else 0, "d": dims})
+    langs = sorted({e_["l"] for e_ in entries if e_["l"]}, key=str.lower)
+    leagues = [[_league_key(t), LEAGUE_LABEL[_league_key(t)]] for t in LEAGUES
+               if any(e_["lg"] == _league_key(t) for e_ in entries)]
+    presets = [{"l": label, "w": w} for label, w in MATCH_PRESETS]
+    return {"groups": groups, "presets": presets, "leagues": leagues,
+            "langs": langs, "entries": entries}
+
+
+_MATCH_CSS = """
+.mx-lead{color:var(--text-2); max-width:62ch}
+.mx{display:grid; grid-template-columns:320px minmax(0,1fr); gap:1.6rem; margin-top:1.4rem; align-items:start}
+@media (max-width:900px){ .mx{grid-template-columns:1fr} }
+.mx-panel{position:sticky; top:5rem; border:1px solid var(--line); border-radius:12px;
+  background:var(--panel); padding:1rem 1.05rem}
+@media (max-width:900px){ .mx-panel{position:static} }
+.mx-h{font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); margin:1.1rem 0 .5rem}
+.mx-h:first-child{margin-top:0}
+.mx-chips{display:flex; flex-wrap:wrap; gap:.32rem}
+.mx-chip{font-size:.72rem; font-weight:600; padding:.24rem .55rem; border-radius:99px;
+  border:1px solid var(--line); background:var(--bg); color:var(--text-2); cursor:pointer}
+.mx-chip:hover{border-color:var(--accent); color:var(--accent)}
+.mx-chip.on{background:var(--accent-weak); border-color:var(--accent); color:var(--accent)}
+.mx-langs{max-height:132px; overflow:auto; padding-right:.2rem}
+.mx-row{display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin:.55rem 0 .1rem}
+.mx-row label{font-size:.8rem; font-weight:600; color:var(--text)}
+.mx-row .mx-w{font-family:var(--mono); font-size:.7rem; color:var(--muted); flex:none}
+.mx-row .mx-w.on{color:var(--accent)}
+.mx input[type=range]{width:100%; accent-color:var(--accent); margin:0 0 .1rem}
+.mx-blurb{font-size:.68rem; color:var(--muted); margin:0 0 .45rem}
+.mx-foot{display:flex; gap:.5rem; margin-top:1.1rem}
+.mx-btn{font-size:.76rem; font-weight:600; padding:.4rem .7rem; border-radius:8px;
+  border:1px solid var(--line); background:var(--bg); color:var(--text-2); cursor:pointer}
+.mx-btn:hover{border-color:var(--accent); color:var(--accent)}
+.mx-count{font-size:.78rem; color:var(--muted); margin:0 0 .7rem}
+.mx-card{display:grid; grid-template-columns:34px minmax(0,1fr) 84px; gap:.7rem; align-items:center;
+  border:1px solid var(--line); border-radius:11px; padding:.6rem .8rem; margin-bottom:.5rem;
+  background:var(--panel)}
+.mx-card:hover{border-color:var(--accent)}
+.mx-card .mx-rank{font-family:var(--mono); font-size:.9rem; color:var(--muted); text-align:center}
+.mx-card.top .mx-rank{color:var(--gold); font-weight:700}
+.mx-name{font-weight:700; font-size:.95rem; color:var(--text)}
+.mx-name a{color:inherit} .mx-name a:hover{color:var(--accent)}
+.mx-meta{font-size:.72rem; color:var(--text-2); margin-top:.1rem}
+.mx-why{display:flex; flex-wrap:wrap; gap:.28rem; margin-top:.4rem}
+.mx-why span{font-size:.66rem; padding:.14rem .4rem; border-radius:6px; background:var(--panel-2);
+  color:var(--text-2)}
+.mx-why span.bad{background:rgba(203,95,81,.14); color:#a5402f}
+html[data-theme="dark"] .mx-why span.bad{color:#e8917f}
+.mx-score{text-align:right}
+.mx-score b{font-family:var(--mono); font-size:1.05rem; color:var(--text)}
+.mx-score .bar{display:block; height:4px; background:var(--bar-track); border-radius:2px; margin-top:.25rem}
+.mx-score .bar i{display:block; height:100%; background:var(--accent); border-radius:2px}
+.mx-empty{border:1px dashed var(--line); border-radius:12px; padding:2rem 1rem; text-align:center;
+  color:var(--muted); font-size:.86rem}
+"""
+
+_MATCH_JS = r"""
+(function(){
+  var M=window.LB_MATCH, E=M.entries;
+  var DIM={}; M.groups.forEach(function(g){ g.d.forEach(function(d){ DIM[d.id]=d; }); });
+  var TYPE={flagship:'Flagship', emerging:'Emerging', experimental:'Experimental',
+            engine:'Engine', infrastructure:'Infrastructure'};
+  var st={w:{}, lg:M.leagues[0][0], langs:[], tuned:true};
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function readHash(){
+    var h=location.hash.slice(1); if(!h) return;
+    var p={}; h.split('&').forEach(function(s){ var i=s.indexOf('='); if(i>0) p[s.slice(0,i)]=decodeURIComponent(s.slice(i+1)); });
+    if(p.w){ st.w={}; p.w.split(',').forEach(function(x){ var kv=x.split(':'); if(DIM[kv[0]]){ var v=+kv[1]; if(v>0) st.w[kv[0]]=Math.min(5,v); } }); }
+    if(p.lg && M.leagues.some(function(l){return l[0]===p.lg;})) st.lg=p.lg;
+    if(p.lang) st.langs=p.lang.split(',').filter(Boolean);
+    if(p.hasOwnProperty('tuned')) st.tuned = p.tuned!=='0';
+  }
+  var _t; function writeHash(){
+    clearTimeout(_t); _t=setTimeout(function(){
+      var p=[], w=Object.keys(st.w).filter(function(k){return st.w[k]>0;});
+      if(w.length) p.push('w='+w.map(function(k){return k+':'+st.w[k];}).join(','));
+      if(st.lg!==M.leagues[0][0]) p.push('lg='+encodeURIComponent(st.lg));
+      if(st.langs.length) p.push('lang='+encodeURIComponent(st.langs.join(',')));
+      if(!st.tuned) p.push('tuned=0');
+      var nh=p.length?('#'+p.join('&')):'';
+      if(location.hash!==nh){ try{ history.replaceState(null,'', nh||location.pathname); }catch(e){} }
+    }, 120);
+  }
+
+  function panel(){
+    var h='<div class="mx-h">Start from</div><div class="mx-chips" id="mxPresets">';
+    M.presets.forEach(function(p,i){ h+='<button class="mx-chip" data-preset="'+i+'">'+esc(p.l)+'</button>'; });
+    h+='</div><div class="mx-h">Compare</div><div class="mx-chips" id="mxLeagues">';
+    M.leagues.forEach(function(l){ h+='<button class="mx-chip'+(st.lg===l[0]?' on':'')+'" data-lg="'+esc(l[0])+'">'+esc(l[1])+'</button>'; });
+    h+='</div><div class="mx-h">Language</div><div class="mx-chips mx-langs" id="mxLangs">';
+    M.langs.forEach(function(l){ h+='<button class="mx-chip'+(st.langs.indexOf(l)>=0?' on':'')+'" data-lang="'+esc(l)+'">'+esc(l)+'</button>'; });
+    h+='</div><div class="mx-chips" style="margin-top:.5rem"><button class="mx-chip'+(st.tuned?' on':'')+'" id="mxTuned">Include tuned entries</button></div>';
+    M.groups.forEach(function(g){
+      h+='<div class="mx-h">'+esc(g.g)+'</div>';
+      g.d.forEach(function(d){
+        var v=st.w[d.id]||0;
+        h+='<div class="mx-row" title="'+esc(d.b)+'"><label for="s-'+d.id+'">'+esc(d.l)+'</label>'
+         + '<span class="mx-w'+(v?' on':'')+'" id="w-'+d.id+'">'+(v?v:'off')+'</span></div>'
+         + '<input type="range" min="0" max="5" step="1" value="'+v+'" id="s-'+d.id+'" data-dim="'+d.id+'" title="'+esc(d.b)+'">';
+      });
+    });
+    h+='<div class="mx-foot"><button class="mx-btn" id="mxReset">Reset</button>'
+     + '<button class="mx-btn" id="mxCopy">Copy link</button></div>';
+    document.getElementById('mxPanel').innerHTML=h;
+    wire();
+  }
+
+  function wire(){
+    document.querySelectorAll('#mxPanel input[type=range]').forEach(function(inp){
+      inp.oninput=function(){
+        var v=+inp.value, id=inp.dataset.dim;
+        if(v>0) st.w[id]=v; else delete st.w[id];
+        var lab=document.getElementById('w-'+id);
+        lab.textContent=v?v:'off'; lab.className='mx-w'+(v?' on':'');
+        run();
+      };
+    });
+    document.querySelectorAll('[data-preset]').forEach(function(b){
+      b.onclick=function(){ st.w=Object.assign({}, M.presets[+b.dataset.preset].w); panel(); run(); };
+    });
+    document.querySelectorAll('[data-lg]').forEach(function(b){
+      b.onclick=function(){ st.lg=b.dataset.lg; panel(); run(); };
+    });
+    document.querySelectorAll('[data-lang]').forEach(function(b){
+      b.onclick=function(){
+        var l=b.dataset.lang, i=st.langs.indexOf(l);
+        if(i>=0) st.langs.splice(i,1); else st.langs.push(l);
+        b.classList.toggle('on'); run();
+      };
+    });
+    var t=document.getElementById('mxTuned');
+    t.onclick=function(){ st.tuned=!st.tuned; t.classList.toggle('on', st.tuned); run(); };
+    document.getElementById('mxReset').onclick=function(){
+      st={w:{}, lg:M.leagues[0][0], langs:[], tuned:true}; panel(); run(); };
+    document.getElementById('mxCopy').onclick=function(){
+      try{ navigator.clipboard.writeText(location.href); }catch(e){}
+    };
+  }
+
+  function run(){
+    writeHash();
+    var keys=Object.keys(st.w).filter(function(k){return st.w[k]>0;});
+    var out=document.getElementById('mxOut'), cnt=document.getElementById('mxCount');
+    if(!keys.length){
+      cnt.textContent='';
+      out.innerHTML='<div class="mx-empty">Move a slider, or pick a starting point above.</div>';
+      return;
+    }
+    var total=keys.reduce(function(a,k){ return a+st.w[k]; }, 0);
+    var rows=[];
+    E.forEach(function(en){
+      if(en.lg!==st.lg) return;
+      if(!st.tuned && en.tu) return;
+      if(st.langs.length && st.langs.indexOf(en.l)<0) return;
+      var s=0, parts=[];
+      keys.forEach(function(k){
+        var v=en.d[k]||0; s+=st.w[k]*v;
+        parts.push({k:k, v:v, c:st.w[k]*v});
+      });
+      rows.push({e:en, s:s/total, p:parts});
+    });
+    rows.sort(function(a,b){ return b.s-a.s || (a.e.n<b.e.n?-1:1); });
+    // Strong and weak are read against the field, not against a fixed number.
+    // The cost dimensions are ratios to the single best entry, so on p99 almost
+    // everyone sits under 40 and a fixed threshold called the whole board weak.
+    var pct={};
+    keys.forEach(function(k){
+      var sorted=rows.map(function(r){ return r.e.d[k]||0; }).sort(function(a,b){ return a-b; });
+      pct[k]=function(v){
+        var lo=0, hi=sorted.length;
+        while(lo<hi){ var mid=(lo+hi)>>1; if(sorted[mid]<v) lo=mid+1; else hi=mid; }
+        return sorted.length>1 ? lo/(sorted.length-1)*100 : 100;
+      };
+    });
+    cnt.textContent=rows.length+(rows.length===1?' entry matches':' entries match')
+      +' · weights: '+keys.map(function(k){ return DIM[k].l+' '+st.w[k]; }).join(', ');
+    if(!rows.length){ out.innerHTML='<div class="mx-empty">Nothing matches these filters.</div>'; return; }
+    var top=rows[0].s||1;
+    out.innerHTML=rows.slice(0,15).map(function(r,i){
+      var strong=r.p.slice().sort(function(a,b){return b.c-a.c;})
+                  .filter(function(x){ return pct[x.k](x.v)>=70; }).slice(0,3);
+      var weak=r.p.filter(function(x){ return st.w[x.k]>=3 && pct[x.k](x.v)<25; })
+                  .sort(function(a,b){return a.v-b.v;}).slice(0,2);
+      var why=strong.map(function(x){ return '<span>'+esc(DIM[x.k].l)+' '+Math.round(x.v)+'</span>'; })
+              .concat(weak.map(function(x){ return '<span class="bad">weak: '+esc(DIM[x.k].l)+' '+Math.round(x.v)+'</span>'; }))
+              .join('');
+      return '<div class="mx-card'+(i===0?' top':'')+'">'
+        + '<div class="mx-rank">'+(i+1)+'</div>'
+        + '<div><div class="mx-name"><a href="/frameworks/'+encodeURIComponent(r.e.s)+'/">'+esc(r.e.n)+'</a></div>'
+        + '<div class="mx-meta">'+esc([r.e.l, TYPE[r.e.t]||r.e.t, r.e.tu?'tuned':''].filter(Boolean).join(' · '))+'</div>'
+        + '<div class="mx-why">'+why+'</div></div>'
+        + '<div class="mx-score"><b>'+Math.round(r.s)+'</b>'
+        + '<span class="bar"><i style="width:'+Math.max(2,Math.round(r.s/top*100))+'%"></i></span></div>'
+        + '</div>';
+    }).join('');
+  }
+
+  readHash();
+  if(!Object.keys(st.w).length) st.w=Object.assign({}, M.presets[0].w);
+  panel(); run();
+  window.addEventListener('hashchange', function(){ readHash(); panel(); run(); });
+})();
+"""
+
+
+def build_match_page(scores, meta, fw_lang, round_name, n_entries):
+    """/match/ - the weighted matcher. One page, its own data, no data.js."""
+    e = _html.escape
+    payload = _match_payload(scores, meta, fw_lang)
+    url = SITE + "/match/"
+    title = "Which web framework should I use? Pick by what you need"
+    desc = ("Weigh throughput, protocol support, database, TLS, memory and tail latency, "
+            f"and see which of {n_entries} benchmarked frameworks, engines and reverse "
+            "proxies fits your workload best.")
+    graph = [
+        {"@type": "WebApplication", "@id": url + "#app", "name": "HttpArena framework matcher",
+         "url": url, "applicationCategory": "DeveloperApplication",
+         "operatingSystem": "Any", "description": desc,
+         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+         "isPartOf": {"@id": SITE + "/#website"}, "publisher": {"@id": SITE + "/#org"}},
+        {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Matcher", "item": url}]},
+    ] + _org_nodes()
+    head = ('<!doctype html><html lang="en" data-theme=""><head>'
+            '<meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            + _THEME_INIT
+            + "<title>" + e(title) + " – HttpArena</title>"
+            + '<meta name="description" content="' + e(desc) + '">'
+            + '<link rel="canonical" href="' + url + '">'
+            + '<link rel="icon" href="/favicon.ico" sizes="any">'
+            + '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+            + '<meta property="og:type" content="website">'
+            + '<meta property="og:site_name" content="HttpArena">'
+            + '<meta property="og:title" content="' + e(title) + '">'
+            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:url" content="' + url + '">'
+            + _jsonld({"@context": "https://schema.org", "@graph": graph})
+            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + "<style>" + _MATCH_CSS + "</style>"
+            + "</head>")
+    header = ('<body><header class="top">'
+              '<div class="brand">' + _CHROME[0] + '</div>'
+              '<a class="brand-sub" href="/match/">Matcher</a>'
+              '<div class="top-links">' + _CHROME[1] + '</div>'
+              '</header>')
+    # The list is drawn by the script, but the reader arriving without one still
+    # gets the method and the links out - the same deal the board makes.
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+            '<article class="doc-wrap"><h1 class="doc-title">Find your framework</h1>'
+            '<div class="doc-body"><p class="mx-lead">Say how much each thing matters and '
+            'the page ranks every entry against it. Scores are the ones the '
+            '<a href="/">leaderboard</a> already measures, normalized against the best of '
+            'the field, so nothing here is a new opinion about who is fast. '
+            '<a href="/docs/scoring/matcher/">How the match is computed</a>.</p></div>'
+            '<div class="mx">'
+            '<aside class="mx-panel" id="mxPanel"></aside>'
+            '<section><p class="mx-count" id="mxCount"></p><div id="mxOut"></div>'
+            '<p class="mx-lead" style="font-size:.78rem;margin-top:1rem">' + e(round_name)
+            + ', ' + str(n_entries) + ' entries. A dimension an entry has no result for '
+            'counts as zero: if you asked for it, not having it is the answer. '
+            '<a href="/frameworks/">Browse every entry</a>.</p></section>'
+            '</div></article></main></div>')
+    return (head + header + body
+            + "<script>window.LB_MATCH=" + json.dumps(payload, separators=(",", ":")) + ";</script>"
+            + "<script>" + _MATCH_JS + "</script>"
+            + _THEME_TOGGLE + "</body></html>")
+
+
 def build_og_images(content, trails, rows, fw_lang, round_name):
     """One card for the board and one per doc. Returns the root card's URL (or
     "" when Pillow is missing), plus how many were written."""
@@ -2568,6 +3029,12 @@ def main():
                                                         badge_index, round_name, has_og)
     n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages)
 
+    mscores = match_scores(agg, profiles, meta)
+    match_dir = GEN / "match"
+    match_dir.mkdir(parents=True, exist_ok=True)
+    (match_dir / "index.html").write_text(
+        build_match_page(mscores, meta, fw_lang, round_name, len(mscores)), encoding="utf-8")
+
     # og cards go in after build_doc_pages: that one clears site/generated/docs/
     # before it writes, and the per-doc cards live inside it.
     og_url, n_cards = build_og_images(docs_content, trails, board, fw_lang, round_name)
@@ -2589,6 +3056,8 @@ def main():
     print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {len(badge_index)} frameworks")
     print(f"wrote {FW_OUT.relative_to(ROOT)}/ - {len(fw_entries)} framework pages "
           f"+ {len(lang_pages)} language summaries + index")
+    print(f"wrote {(GEN / 'match').relative_to(ROOT)}/ - matcher over {len(mscores)} entries, "
+          f"{sum(len(d) for _l, d in mscores.values())} dimension scores")
     print(f"wrote {(GEN / 'index.html').relative_to(ROOT)} - board with the "
           f"{SCOPE_NAME[DEFAULT_SCOPE]} composite ({len(board)} entries) pre-rendered, "
           f"{index_bytes // 1024} KB")
