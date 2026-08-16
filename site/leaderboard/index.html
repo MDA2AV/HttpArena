@@ -498,10 +498,13 @@
     </main>
   </div>
 
-<script src="data.js"></script>
-<script src="search.js"></script>
+<!-- deferred so the browser can paint the pre-rendered ranking before it spends
+     anything parsing 700KB of results. search.js is not here at all: it is the
+     Knowledge Base index, 290KB for a search box most visits never touch, and
+     initNavSearch() fetches it the first time someone uses it. -->
+<script defer src="data.js"></script>
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   "use strict";
   var D = window.LB_DATA;
   var LB_DOCS = window.LB_DOCS || {};
@@ -580,6 +583,9 @@
     document.addEventListener('mouseout', function(e){ var el=e.target.closest?e.target.closest('[data-tip]'):null; if(el && !el.contains(e.relatedTarget)) tip.style.display='none'; });
     document.addEventListener('scroll', function(){ tip.style.display='none'; }, true);
   }
+  // URL segment for an entry's own page under /frameworks/. Must stay in step
+  // with _slug() in gen_leaderboard_data.py, which is what names the directory.
+  function slugOf(fw){ return String(fw).replace(/[^A-Za-z0-9._-]+/g,'-').replace(/^-|-$/g,'').toLowerCase() || 'unnamed'; }
   function openModal(fw){
     var m=D.meta[fw]||{}, lang=langOf(fw)||m.language||'', c=lc(lang), t=m.type||'emerging', dir=m.dir||fw;
     var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
@@ -589,6 +595,7 @@
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
     h+='<div class="modal-links">';
+    h+='<a href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>';
     if(m.repo) h+='<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>';
     h+='<a href="'+impl+'" target="_blank" rel="noopener"><span>Benchmark implementation</span><span>↗</span></a>';
     if(state.view==='profile' && state.profile && state.conns){
@@ -889,13 +896,26 @@
   // Clear before navigating: pickDoc/pickProfile rebuild the tree, and the
   // user should land back on a normal menu showing where they now are.
   function openSel(i){ var hit=SHITS[i]; if(!hit) return; var go=hit.e.go; clearSearch(); go(); }
+  // The Knowledge Base index is only needed by this box, so it is fetched the
+  // first time the box is used and never on a visit that ignores it.
+  var _searchReq=null, _searchCb=null;
+  function ensureSearch(cb){
+    if(window.LB_SEARCH){ if(cb) cb(); return; }
+    _searchCb=cb;
+    if(_searchReq) return;
+    _searchReq=document.createElement('script'); _searchReq.src='search.js';
+    _searchReq.onload=function(){ var f=_searchCb; _searchCb=null; if(f) f(); };
+    _searchReq.onerror=function(){ _searchReq=null; };
+    document.head.appendChild(_searchReq);
+  }
   function initNavSearch(){
     var inp=document.getElementById('navq'), box=document.getElementById('navResults');
     if(!inp||!box) return;
     var t;
+    inp.addEventListener('focus', function(){ ensureSearch(null); }, {once:true});
     inp.addEventListener('input', function(){
       clearTimeout(t); var v=inp.value.trim();
-      t=setTimeout(function(){ renderSearch(v); }, 90);
+      t=setTimeout(function(){ if(!v) renderSearch(v); else ensureSearch(function(){ renderSearch(v); }); }, 90);
     });
     inp.addEventListener('keydown', function(e){
       if(e.key==='ArrowDown'){ e.preventDefault(); moveSel(1); }
@@ -1386,7 +1406,7 @@
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
-})();
+});
 </script>
 </body>
 </html>

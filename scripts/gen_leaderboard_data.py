@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import subprocess
 import posixpath
 import html as _html
 from pathlib import Path
@@ -752,15 +753,23 @@ _CHROME = board_chrome()
 
 _THEME_INIT = ("<script>try{var t=localStorage.getItem('lb-theme');"
                "if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>")
-_NAV_JS = ("<script src=\"/search.js\"></script>"
-           "<script>(function(){"
+# search.js is the whole Knowledge Base as text - 290KB - and it was loaded on
+# every doc page for a search box most readers never open. It is fetched on the
+# first use of the box instead.
+_NAV_JS = ("<script>(function(){"
            # accordion: same behaviour as the board's toggleGrp
            "document.querySelectorAll('.nav-grp-h .caret').forEach(function(c){"
            "c.onclick=function(e){e.preventDefault();e.stopPropagation();"
            "c.closest('.nav-grp').classList.toggle('open');};});"
            # page search over the index the generator emits
            "var inp=document.getElementById('navq'),box=document.getElementById('navResults'),"
-           "tree=document.getElementById('navTree');if(!inp||!window.LB_SEARCH)return;"
+           "tree=document.getElementById('navTree');if(!inp)return;"
+           "var req=null,cb=null;"
+           "function need(f){if(window.LB_SEARCH){f();return;}cb=f;if(req)return;"
+           "req=document.createElement('script');req.src='/search.js';"
+           "req.onload=function(){var g=cb;cb=null;if(g)g();};"
+           "req.onerror=function(){req=null;};document.head.appendChild(req);}"
+           "inp.addEventListener('focus',function(){need(function(){});},{once:true});"
            "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
            "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
            "function snip(x,t){var i=x.toLowerCase().indexOf(t);if(i<0)return esc(x.slice(0,110));"
@@ -786,7 +795,8 @@ _NAV_JS = ("<script src=\"/search.js\"></script>"
            "+'<span class=\"nav-res-c\">'+esc(e.c||'')+'</span>'"
            "+'<span class=\"nav-res-s\">'+snip((e.d||'')+' '+(e.x||''),terms[0])+'</span></a>';});"
            "box.innerHTML=h;}"
-           "var t;inp.addEventListener('input',function(){clearTimeout(t);t=setTimeout(run,90);});"
+           "var t;inp.addEventListener('input',function(){clearTimeout(t);"
+           "t=setTimeout(function(){if(!inp.value.trim())run();else need(run);},90);});"
            "inp.addEventListener('keydown',function(e){if(e.key==='Escape'){inp.value='';run();inp.blur();}});"
            "})();</script>")
 
@@ -874,6 +884,10 @@ def _docs_css():
 /* wider than the board's 264px rail: this tree goes five levels deep and
    each level costs .8rem of indent, so names would truncate. */
 .docs-layout{display:grid;grid-template-columns:320px 1fr;align-items:start}
+/* framework pages have no sidebar to sit next to */
+.docs-layout.one-col{grid-template-columns:1fr;justify-items:center}
+.docs-layout.one-col .doc-main{width:100%}
+.fw-kind{color:var(--muted);font-size:.78rem}
 .doc-main{min-width:0;padding:1.6rem 2rem 4rem;max-width:900px}
 .doc-wrap{max-width:none}
 .nav-grp-link{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit;text-decoration:none}
@@ -936,21 +950,76 @@ def write_search_index(tree, content):
     # <script src>, and the deploy copies them to the site root the same way.
     out = OUT.parent / "search.js"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("window.LB_SEARCH = " + json.dumps(entries, separators=(",", ":")) + ";\n",
-                   encoding="utf-8")
+    out.write_text(js_payload("LB_SEARCH", entries), encoding="utf-8")
     return len(entries), out.stat().st_size
 
 
-def write_sitemap(content):
-    """Root + every /docs/<id>/. Replaces the old Hugo-generated /old/ sitemap."""
-    urls = [SITE + "/"] + [SITE + _doc_url(did) for did in sorted(content.keys())]
-    body = "".join("<url><loc>%s</loc></url>" % u for u in urls)
+def _last_commit_dates(*prefixes):
+    """path -> the date it was last committed, in one `git log` pass.
+
+    Wanted for <lastmod>, which is only worth publishing if it is true: a crawler
+    that is told a page changed and finds it did not learns to ignore the field.
+    A shallow clone cannot answer this - it holds one commit and would date the
+    whole site to the last deploy - so it answers nothing and the sitemap goes
+    out without lastmod rather than with a lie."""
+    try:
+        shallow = _git(["git", "rev-parse", "--is-shallow-repository"])
+        if shallow.strip() == "true":
+            print("[warn] shallow clone - sitemap goes out without lastmod "
+                  "(set fetch-depth: 0 to get it)")
+            return {}
+        out = _git(["git", "log", "--pretty=format:%cI", "--name-only",
+                               "--", *prefixes])
+    except Exception as exc:                                   # no git, no history
+        print(f"[warn] no git dates for the sitemap: {exc}")
+        return {}
+
+    dates, when = {}, None
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line[:1].isdigit() and "T" in line and "/" not in line:
+            when = line[:10]
+        elif when:
+            dates.setdefault(line, when)                       # newest commit first
+    return dates
+
+
+def _git(args):
+    return subprocess.run(args, cwd=ROOT, capture_output=True, text=True,
+                          encoding="utf-8", check=True).stdout
+
+
+def _doc_source_path(did):
+    """The markdown a doc id came from, for its commit date."""
+    section = DOCS / did / "_index.md" if did else DOCS / "_index.md"
+    page = DOCS / (did + ".md")
+    src = section if section.exists() else page
+    return src.relative_to(ROOT).as_posix()
+
+
+def write_sitemap(content, fw_entries=()):
+    """Root, /frameworks/, every framework and every /docs/<id>/."""
+    dates = _last_commit_dates("site/content/docs", "site/data/results")
+    newest = max(dates.values(), default=None)
+
+    urls = [(SITE + "/", newest), (SITE + "/frameworks/", newest)]
+    for fw, _lang, _kind in fw_entries:
+        urls.append((SITE + _fw_url(fw),
+                     dates.get(f"site/data/results/{_slug(fw)}.json", newest)))
+    for did in sorted(content):
+        urls.append((SITE + _doc_url(did), dates.get(_doc_source_path(did))))
+
+    body = "".join("<url><loc>%s</loc>%s</url>"
+                   % (loc, f"<lastmod>{mod}</lastmod>" if mod else "")
+                   for loc, mod in urls)
     GEN.mkdir(parents=True, exist_ok=True)
     (GEN / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + body + "</urlset>\n",
         encoding="utf-8")
-    return len(urls)
+    return len(urls), sum(1 for _, mod in urls if mod)
 
 
 # ── README badges (shields.io endpoint) ──────────────────────────────────────
@@ -1573,6 +1642,24 @@ def _ranking_node(scope, rows):
     }
 
 
+def js_payload(name, payload):
+    """`window.<name> = JSON.parse('...')`, the form the board's data ships in.
+
+    V8 parses a JSON string roughly three times faster than the equivalent
+    object literal: measured on this payload, compile plus execute went from
+    18.1ms to 5.6ms (medians of nine cold runs, node 26). It is main-thread time
+    on every visit and it costs nothing to save.
+
+    The JSON goes inside single quotes, because it is full of double ones and
+    escaping them all is what makes this trick cost 16% of the file elsewhere.
+    ensure_ascii keeps the output free of raw line terminators, so a backslash
+    and an apostrophe are the only characters left to escape - 62 of them in
+    722KB, and the file comes out byte for byte the same size as the literal.
+    """
+    body = json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
+    return f"window.{name} = JSON.parse('" + body.replace("\\", "\\\\").replace("'", "\\'") + "');\n"
+
+
 def write_data_json(payload):
     """The same document data.js assigns to window.LB_DATA, as plain JSON.
 
@@ -1590,7 +1677,7 @@ def _rank_lines(rows, fw_lang, limit=None):
             for i, (fw, score) in enumerate(rows[:limit] if limit else rows)]
 
 
-def write_llms_txt(tree, content, families, fw_lang, current, round_name):
+def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_entries=()):
     """/llms.txt and /llms-full.txt.
 
     Same reason as the prerender, for the readers the prerender cannot reach:
@@ -1623,6 +1710,15 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name):
             short += [f"Full field: {SITE}/llms-full.txt", ""]
         full += [title, "", "```", *_rank_lines(rows, fw_lang), "```", ""]
 
+    frameworks = []
+    if fw_entries:
+        frameworks = [f"## Frameworks ({len(fw_entries)} entries, one results page each)", ""]
+        for fw, lang, kind in fw_entries:
+            frameworks.append(f"- [{fw}]({SITE}{_fw_url(fw)}): "
+                              + ", ".join(x for x in [lang, TYPE_LABEL.get(kind, kind)] if x)
+                              + ". Rank per family and every per-profile number.")
+        frameworks.append("")
+
     docs = ["## Documentation", ""]
     for did in sorted(content):
         d = content[did]
@@ -1640,10 +1736,10 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name):
             "every server implementation, Dockerfile and validation rule.",
             ""]
 
-    short += docs + data + ["## Full text", "",
-                            f"- [llms-full.txt]({SITE}/llms-full.txt): the whole Knowledge Base "
-                            "and the full ranking of every family.", ""]
-    full += data + ["## Knowledge Base", ""]
+    short += frameworks + docs + data + ["## Full text", "",
+                                         f"- [llms-full.txt]({SITE}/llms-full.txt): the whole "
+                                         "Knowledge Base and the full ranking of every family.", ""]
+    full += frameworks + data + ["## Knowledge Base", ""]
     for did in sorted(content):
         d = content[did]
         text = _html.unescape(re.sub(r"<[^>]+>", " ", d["html"]))
@@ -1663,17 +1759,20 @@ def _static_board(rows, fw_lang, round_name):
     body = []
     for i, (fw, score) in enumerate(rows):
         rank = i + 1
-        body.append('<tr><td class="n%s">%d</td><td>%s</td><td class="sb-lang">%s</td>'
-                    '<td class="n">%.0f</td></tr>'
-                    % (" r%d" % rank if rank <= 3 else "", rank,
+        # the name links to the entry's own page: the only internal links to
+        # those pages that exist without running a script
+        body.append('<tr><td class="n%s">%d</td><td><a href="%s">%s</a></td>'
+                    '<td class="sb-lang">%s</td><td class="n">%.0f</td></tr>'
+                    % (" r%d" % rank if rank <= 3 else "", rank, _fw_url(fw),
                        _html.escape(fw), _html.escape(fw_lang.get(fw, "") or ""), score))
     others = ", ".join(SCOPE_NAME[s] for s in SCOPE_NAME if s != DEFAULT_SCOPE)
     return ('<table class="sb"><thead><tr><th>#</th><th>Framework</th><th>Language</th>'
             '<th class="n">Composite</th></tr></thead><tbody>' + "".join(body) + "</tbody></table>"
             '<p class="sb-note">' + _html.escape(round_name) + ", " + str(len(rows)) +
             " entries, best first. The interactive board - per-profile numbers, memory efficiency, "
-            "the other families (" + _html.escape(others) + ") - needs JavaScript; the same "
-            'rankings are also published as text at <a href="/llms.txt">/llms.txt</a>.</p>')
+            "the other families (" + _html.escape(others) + ") - needs JavaScript; every entry has "
+            'a <a href="/frameworks/">page of its own</a>, and the same rankings are published as '
+            'text at <a href="/llms.txt">/llms.txt</a>.</p>')
 
 
 def build_index_page(rows, fw_lang, current, round_name, n_profiles, og_url):
@@ -1725,6 +1824,262 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, og_url):
     GEN.mkdir(parents=True, exist_ok=True)
     (GEN / "index.html").write_text(out, encoding="utf-8")
     return (GEN / "index.html").stat().st_size
+
+
+# ── a page per framework ─────────────────────────────────────────────────────
+# The board is one URL. Every state it can be in is a #hash, and a hash is not a
+# page: "axum benchmark" has nowhere to land, and a framework that is in here has
+# nothing of its own to be found by. These pages are that missing half - one URL
+# per entry, carrying its rank in every family it runs and every number behind
+# it, from the same data the board draws.
+
+FW_OUT = GEN / "frameworks"
+
+TYPE_LABEL = {"flagship": "Flagship", "emerging": "Emerging",
+              "experimental": "Experimental", "engine": "Engine",
+              "infrastructure": "Infrastructure"}
+
+
+def _fw_url(fw):
+    return "/frameworks/" + _slug(fw) + "/"
+
+
+def _league_of(kind):
+    for league in LEAGUES:
+        if kind in league:
+            return league
+    return LEAGUES[0]
+
+
+def fw_rankings(agg, profiles, meta, fw_lang):
+    """(family, league) -> ordered rows. A page has to quote the rank of its own
+    league: an engine is not scored against frameworks and saying otherwise would
+    contradict both the board and the badge."""
+    out = {}
+    for scope in SCOPE_NAME:
+        for league in LEAGUES:
+            rows = badge_composite(agg, profiles, meta, scope, league,
+                                   show_tuned=True, fw_lang=fw_lang)
+            if rows:
+                out[(scope, league)] = rows
+    return out
+
+
+def _fw_ranks(fw, kind, rankings):
+    """[(family, rank, field size, score)] over the families this entry runs."""
+    league, out = _league_of(kind), []
+    for scope in SCOPE_NAME:
+        rows = rankings.get((scope, league)) or []
+        for i, (name, score) in enumerate(rows):
+            if name == fw:
+                out.append((scope, i + 1, len(rows), score))
+                break
+    return out
+
+
+def _fw_results(fw, profiles, results):
+    """[(profile, conns, row)] in catalog order - every run this entry has."""
+    out = []
+    for p in profiles:
+        for c in p["conns"]:
+            for r in results.get(f"{p['id']}-{c}", []):
+                if r["fw"] == fw:
+                    out.append((p, c, r))
+                    break
+    return out
+
+
+def _fw_body(fw, m, lang, ranks, runs, round_name):
+    e = _html.escape
+    facts = [TYPE_LABEL.get(m.get("type", "emerging"), m.get("type", "")), lang]
+    if m.get("engine") and m["engine"] != fw:
+        facts.append("engine: " + m["engine"])
+    facts.append("tuned configuration" if m.get("mode") == "tuned" else "standard configuration")
+    out = ["<p>" + e(" · ".join(x for x in facts if x)) + "</p>"]
+    if m.get("desc"):
+        out.append("<p>" + e(m["desc"]) + "</p>")
+
+    links = []
+    if m.get("repo"):
+        links.append('<li><a href="%s" rel="noopener">Official repository</a></li>' % e(m["repo"]))
+    links.append('<li><a href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/%s" '
+                 'rel="noopener">Benchmark implementation</a></li>' % quote(m.get("dir") or fw))
+    links.append('<li><a href="/">Open the leaderboard</a></li>')
+    out.append("<ul>" + "".join(links) + "</ul>")
+
+    if ranks:
+        out.append('<h2 id="rank">Composite rank</h2>')
+        out.append("<p>Each profile of a family is worth 100 to the entry that leads it, and the "
+                   "composite is the sum over the family. The field is this entry's own league: "
+                   "engines and reverse proxies are scored apart from frameworks. "
+                   '<a href="/docs/scoring/composite-score/">How it works</a>.</p>')
+        rows = "".join(
+            '<tr><td><a href="/#scope=%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
+            % (scope, e(SCOPE_NAME[scope]), rank, field, score)
+            for scope, rank, field, score in ranks)
+        out.append("<table><thead><tr><th>Family</th><th>Rank</th><th>Composite</th></tr></thead>"
+                   "<tbody>" + rows + "</tbody></table>")
+
+    if runs:
+        out.append('<h2 id="results">Every result</h2>')
+        out.append("<p>%s, %d runs. Requests per second is the best of three; latency, CPU and "
+                   "memory come from that run.</p>" % (e(round_name), len(runs)))
+        body = "".join(
+            "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>"
+            "<td>%s</td></tr>"
+            % (e(p["category"]), e(p["label"]), f"{c:,}",
+               f"{round(r.get('rps') or 0):,}" if r.get("rps") else "-",
+               e(r.get("avg_latency") or "-"), e(r.get("p99_latency") or "-"),
+               e(r.get("cpu") or "-"), e(r.get("memory") or "-"))
+            for p, c, r in runs)
+        out.append("<table><thead><tr><th>Category</th><th>Profile</th><th>Conns</th>"
+                   "<th>Req/sec</th><th>Avg</th><th>p99</th><th>CPU</th><th>Memory</th></tr></thead>"
+                   "<tbody>" + body + "</tbody></table>")
+
+    out.append('<p><a href="/docs/">How the benchmark is run</a> · '
+               '<a href="/docs/hardware/">The machine</a> · '
+               '<a href="/docs/add-framework/">Add or fix an entry</a></p>')
+    return '<div class="doc-body">' + "".join(out) + "</div>"
+
+
+def _fw_page(fw, m, lang, ranks, runs, round_name, og_url):
+    e = _html.escape
+    url = SITE + _fw_url(fw)
+    title = f"{fw} benchmark results"
+    # the main family when the entry runs it, its first one otherwise. Quoting
+    # whichever rank happens to be best would read as picked, and be picked
+    lead = next((r for r in ranks if r[0] == DEFAULT_SCOPE), ranks[0] if ranks else None)
+    desc = (f"{fw}" + (f" ({lang})" if lang else "") + " in the HttpArena benchmark: "
+            + (f"ranked {lead[1]} of {lead[2]} on {SCOPE_NAME[lead[0]]}, " if lead else "")
+            + f"throughput, latency, CPU and memory over {len(runs)} runs on the same machine.")
+    graph = [
+        {"@type": "WebPage", "@id": url + "#page", "name": title, "description": desc,
+         "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
+         "publisher": {"@id": SITE + "/#org"}, "about": {"@id": url + "#software"},
+         "mainEntityOfPage": url},
+        {"@type": "SoftwareApplication", "@id": url + "#software", "name": fw,
+         "applicationCategory": "DeveloperApplication",
+         **({"programmingLanguage": lang} if lang else {}),
+         **({"codeRepository": m["repo"]} if m.get("repo") else {}),
+         **({"description": m["desc"]} if m.get("desc") else {})},
+        {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Frameworks",
+             "item": SITE + "/frameworks/"},
+            {"@type": "ListItem", "position": 2, "name": fw, "item": url}]},
+    ] + _org_nodes()
+    head = ('<!doctype html><html lang="en" data-theme=""><head>'
+            '<meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            + _THEME_INIT
+            + "<title>" + e(title) + " – HttpArena</title>"
+            + '<meta name="description" content="' + e(desc) + '">'
+            + '<link rel="canonical" href="' + url + '">'
+            + '<link rel="icon" href="/favicon.ico" sizes="any">'
+            + '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+            + '<meta property="og:type" content="article">'
+            + '<meta property="og:site_name" content="HttpArena">'
+            + '<meta property="og:title" content="' + e(title) + '">'
+            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:url" content="' + url + '">'
+            + _og_meta(og_url)
+            + _jsonld({"@context": "https://schema.org", "@graph": graph})
+            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + "</head>")
+    header = ('<body><header class="top">'
+              '<div class="brand">' + _CHROME[0] + '</div>'
+              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
+              '<div class="top-links">' + _CHROME[1] + '</div>'
+              '</header>')
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
+            + _fw_body(fw, m, lang, ranks, runs, round_name)
+            + "</article></main></div>")
+    return head + header + body + _THEME_TOGGLE + "</body></html>"
+
+
+def _fw_index_page(entries):
+    """/frameworks/ - one link per entry, grouped by language. Also the page that
+    makes every framework page reachable by following links from the board."""
+    e = _html.escape
+    url = SITE + "/frameworks/"
+    title = "Every framework in the benchmark"
+    desc = (f"All {len(entries)} frameworks, HTTP engines and reverse proxies measured by "
+            "HttpArena, with a results page each.")
+    by_lang = {}
+    for fw, lang, kind in entries:
+        by_lang.setdefault(lang or "Other", []).append((fw, kind))
+    sections = []
+    for lang in sorted(by_lang, key=lambda x: (x == "Other", x.lower())):
+        items = "".join('<li><a href="%s">%s</a> <span class="fw-kind">%s</span></li>'
+                        % (_fw_url(fw), e(fw), e(TYPE_LABEL.get(kind, kind)))
+                        for fw, kind in sorted(by_lang[lang], key=lambda x: x[0].lower()))
+        sections.append("<h2>" + e(lang) + "</h2><ul>" + items + "</ul>")
+    graph = [
+        {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
+         "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
+         "publisher": {"@id": SITE + "/#org"}},
+    ] + _org_nodes()
+    head = ('<!doctype html><html lang="en" data-theme=""><head>'
+            '<meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            + _THEME_INIT
+            + "<title>" + e(title) + " – HttpArena</title>"
+            + '<meta name="description" content="' + e(desc) + '">'
+            + '<link rel="canonical" href="' + url + '">'
+            + '<link rel="icon" href="/favicon.ico" sizes="any">'
+            + '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+            + '<meta property="og:type" content="website">'
+            + '<meta property="og:site_name" content="HttpArena">'
+            + '<meta property="og:title" content="' + e(title) + '">'
+            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:url" content="' + url + '">'
+            + _jsonld({"@context": "https://schema.org", "@graph": graph})
+            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + "</head>")
+    header = ('<body><header class="top">'
+              '<div class="brand">' + _CHROME[0] + '</div>'
+              '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
+              '<div class="top-links">' + _CHROME[1] + '</div>'
+              '</header>')
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
+            '<div class="doc-body"><p>' + e(desc) + " Ranks and every per-profile number live on "
+            'the page of each entry; the <a href="/">leaderboard</a> compares them.</p>'
+            + "".join(sections) + "</div></article></main></div>")
+    return head + header + body + _THEME_TOGGLE + "</body></html>"
+
+
+def build_fw_pages(profiles, results, meta, fw_lang, rankings, round_name, with_og):
+    """A page per framework that has results, plus the index over them."""
+    if FW_OUT.exists():
+        shutil.rmtree(FW_OUT)
+    FW_OUT.mkdir(parents=True, exist_ok=True)
+
+    named = sorted({r["fw"] for rows in results.values() for r in rows})
+    entries, cards = [], 0
+    for fw in named:
+        m = meta.get(fw, {})
+        kind = m.get("type", "emerging")
+        lang = fw_lang.get(fw) or m.get("language", "")
+        ranks = _fw_ranks(fw, kind, rankings)
+        runs = _fw_results(fw, profiles, results)
+        og_url = (_fw_url(fw) + "og.png") if with_og else ""
+        dest = FW_OUT / _slug(fw)
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "index.html").write_text(
+            _fw_page(fw, m, lang, ranks, runs, round_name, og_url), encoding="utf-8")
+        if with_og:
+            _og_card(dest / "og.png", "Benchmark results", fw,
+                     [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
+                      for s, rank, field, _ in ranks],
+                     " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
+                                            round_name, "www.http-arena.com"] if x),
+                     blurb=m.get("desc", ""))
+            cards += 1
+        entries.append((fw, lang, kind))
+
+    (FW_OUT / "index.html").write_text(_fw_index_page(entries), encoding="utf-8")
+    return entries, cards
 
 
 def build_og_images(content, trails, rows, fw_lang, round_name):
@@ -1814,15 +2169,15 @@ def main():
                "profiles": profiles, "results": results, "docs": docs_tree,
                "rounds": build_rounds()}
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text("window.LB_DATA = " + json.dumps(payload, separators=(",", ":")) + ";\n")
+    OUT.write_text(js_payload("LB_DATA", payload))
 
     # Docs are pre-rendered to real /docs/<id>/ pages (SEO); the SPA links out to
     # them. LB_DATA still carries the docs *tree* for the sidebar labels, but the
     # doc *content* is no longer shipped as docs.js.
+    has_og = _og_ready()
     trails = _crumb_trails(docs_tree)
-    n_pages = build_doc_pages(docs_tree, docs_content, trails, with_og=_og_ready())
+    n_pages = build_doc_pages(docs_tree, docs_content, trails, with_og=has_og)
     n_search, search_bytes = write_search_index(docs_tree, docs_content)
-    n_urls = write_sitemap(docs_content)
     n_badges, n_badge_fw = write_badges(profiles, results, meta)
 
     # The board's default view, and the same view for the other five families.
@@ -1836,28 +2191,36 @@ def main():
     board = dict(families)[DEFAULT_SCOPE]
     round_name = payload["rounds"]["name"]
 
+    rankings = fw_rankings(agg, profiles, meta, fw_lang)
+    fw_entries, n_fw_cards = build_fw_pages(profiles, results, meta, fw_lang, rankings,
+                                            round_name, has_og)
+    n_urls, n_dated = write_sitemap(docs_content, fw_entries)
+
     # og cards go in after build_doc_pages: that one clears site/generated/docs/
     # before it writes, and the per-doc cards live inside it.
     og_url, n_cards = build_og_images(docs_content, trails, board, fw_lang, round_name)
     json_bytes = write_data_json(payload)
     index_bytes = build_index_page(board, fw_lang, current, round_name, len(profiles), og_url)
     llms_bytes, llms_full_bytes = write_llms_txt(docs_tree, docs_content, families,
-                                                 fw_lang, current, round_name)
+                                                 fw_lang, current, round_name, fw_entries)
 
     n_rows = sum(len(v) for v in results.values())
     print(f"wrote {OUT.relative_to(ROOT)} - {len(profiles)} profiles, "
           f"{len(results)} views, {n_rows} rows, {OUT.stat().st_size // 1024} KB")
     print(f"wrote {DOCS_OUT.relative_to(ROOT)}/ - {n_pages} static doc pages")
     print(f"wrote {(OUT.parent / 'search.js').relative_to(ROOT)} - {n_search} indexed pages, {search_bytes // 1024} KB")
-    print(f"wrote {(GEN / 'sitemap.xml').relative_to(ROOT)} - {n_urls} URLs")
+    print(f"wrote {(GEN / 'sitemap.xml').relative_to(ROOT)} - {n_urls} URLs, "
+          f"{n_dated} with lastmod")
     print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {n_badge_fw} frameworks")
+    print(f"wrote {FW_OUT.relative_to(ROOT)}/ - {len(fw_entries)} framework pages + index")
     print(f"wrote {(GEN / 'index.html').relative_to(ROOT)} - board with the "
           f"{SCOPE_NAME[DEFAULT_SCOPE]} composite ({len(board)} entries) pre-rendered, "
           f"{index_bytes // 1024} KB")
     print(f"wrote {(GEN / 'data.json').relative_to(ROOT)} - {json_bytes // 1024} KB")
     print(f"wrote {(GEN / 'llms.txt').relative_to(ROOT)} - {llms_bytes // 1024} KB, "
           f"llms-full.txt {llms_full_bytes // 1024} KB")
-    print(f"wrote {n_cards} og:image cards" if n_cards else "no og:image cards (Pillow missing)")
+    print(f"wrote {n_cards + n_fw_cards} og:image cards"
+          if n_cards else "no og:image cards (Pillow missing)")
 
 
 if __name__ == "__main__":

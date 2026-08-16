@@ -24,7 +24,12 @@ jobs:
     if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
+      # Full history: the sitemap dates each page from the last commit that
+      # touched its source, and a shallow clone can only say "today" for
+      # everything. Without it the generator drops lastmod rather than guess.
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       # Only the og:image cards need it. The generator runs fine without it and
       # simply leaves the cards (and the tags pointing at them) out, so a local
@@ -54,6 +59,7 @@ jobs:
           cp -r generated/docs public/docs                                          # pre-rendered Knowledge Base pages (real /docs/<id>/ URLs) + docs.css
           cp generated/sitemap.xml public/sitemap.xml                               # root + every /docs/<id>/ (generated, replaces the old static one)
           cp -r generated/badge public/badge                                        # shields.io endpoints behind the README badges, /badge/<fw>/<family>.json
+          cp -r generated/frameworks public/frameworks                              # a real page per entry at /frameworks/<slug>/, plus the index over them
           cp generated/data.json public/data.json                                   # every result as plain JSON: what the Dataset structured data points at
           cp generated/llms.txt generated/llms-full.txt public/                     # the ranking and the Knowledge Base as text, for readers that never run JS
           if [ -f generated/og.png ]; then cp generated/og.png public/og.png; fi    # social card for the board; the per-doc ones ride along inside generated/docs
