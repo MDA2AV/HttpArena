@@ -606,6 +606,14 @@
     "engine": "Ember",
     "mode": "standard"
   },
+  "http.jl": {
+    "dir": "httpjl",
+    "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware.",
+    "repo": "https://github.com/JuliaWeb/HTTP.jl",
+    "type": "emerging",
+    "engine": "http.jl",
+    "mode": "tuned"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
@@ -729,6 +737,14 @@
     "type": "engine",
     "engine": "may-minihttp"
   },
+  "micronaut": {
+    "dir": "micronaut",
+    "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Jackson, gzip through the Netty server compression the framework enables by itself.",
+    "repo": "https://github.com/micronaut-projects/micronaut-core",
+    "type": "flagship",
+    "engine": "netty",
+    "mode": "standard"
+  },
   "minima-sync": {
     "dir": "minima-sync",
     "description": "A synchronous single-issuer io_uring HTTP/1.1 server on Minima's io_uring bindings, NativeAOT-compiled. One pinned reactor thread per core (SO_REUSEPORT, SINGLE_ISSUER|DEFER_TASKRUN); multishot accept + single-shot recv into per-connection buffers (parse-in-place); responses serialized straight into the send buffer; recv/send alternate fully inline \u2014 no async, no thread pool, no GC on the hot path. JSON serialized per request from the model.",
@@ -749,6 +765,14 @@
     "repo": "",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "mojolicious": {
+    "dir": "mojolicious",
+    "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
+    "repo": "https://github.com/mojolicious/mojo",
+    "type": "flagship",
+    "engine": "mojolicious",
+    "mode": "standard"
   },
   "mq-bridge-py": {
     "dir": "mq-bridge-py",
@@ -1302,12 +1326,28 @@
     "engine": "Netty",
     "mode": "standard"
   },
+  "vibe.d": {
+    "dir": "vibed",
+    "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation.",
+    "repo": "https://github.com/vibe-d/vibe.d",
+    "type": "emerging",
+    "engine": "vibe.d",
+    "mode": "standard"
+  },
   "Vinyl Cache": {
     "dir": "vinyl-cache",
     "description": "Vinyl Cache HTTP accelerator.",
     "repo": "https://code.vinyl-cache.org/vinyl-cache/vinyl-cache",
     "type": "engine",
     "engine": "vinyld"
+  },
+  "warp": {
+    "dir": "warp",
+    "description": "Warp 3.3 serving a plain WAI Application on the threaded GHC runtime, default configuration, one capability per core. Routing on the WAI request path, JSON through the aeson encoding API, gzip through the wai-extra Gzip middleware.",
+    "repo": "https://github.com/yesodweb/wai",
+    "type": "flagship",
+    "engine": "warp",
+    "mode": "standard"
   },
   "WebFramework C": {
     "dir": "web-framework-cc",
@@ -1400,6 +1440,14 @@
     "repo": "https://github.com/skylightis666/zeemo",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "zio-http": {
+    "dir": "zio-http",
+    "description": "ZIO HTTP 3.11 on the Netty backend with ZIO 2, default configuration. Routing through the Routes DSL, JSON through zio-json, gzip through the server's own response compression.",
+    "repo": "https://github.com/zio/zio-http",
+    "type": "flagship",
+    "engine": "netty",
+    "mode": "standard"
   },
   "zix": {
     "dir": "zix",

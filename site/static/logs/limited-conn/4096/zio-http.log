@@ -1,0 +1,2 @@
+timestamp=2026-08-15T19:40:18.435837682Z level=INFO thread=#zio-fiber-6643970 message="Starting the server..." location=<empty>.Main.run file=Main.scala line=125
+timestamp=2026-08-15T19:40:18.537895844Z level=INFO thread=#zio-fiber-6643970 message="Server started" location=<empty>.Main.run file=Main.scala line=125
