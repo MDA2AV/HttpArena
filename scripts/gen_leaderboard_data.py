@@ -1919,6 +1919,23 @@ def _lang_url(lang):
 
 
 
+def _published_rank(scope_entry):
+    """The rank to quote for one entry and family: the smallest published field
+    it actually belongs to.
+
+    `default` is the tuned-excluded field and is right for almost everyone. Two
+    kinds of entry have none. A tuned entry is absent from that field, and
+    write_badges already aliases the tuned-inclusive one into `default` for it.
+    The mirror case has no alias: a standard entry whose tuned-excluded field
+    holds only itself is skipped by BADGE_MIN_FIELD, so nothing is published
+    under `default` at all - effinitive, the one standard entry among two
+    experimental ones. Reading `default` alone dropped the Composite rank
+    section off its page and had the language summary claim it had no composite,
+    when it has 808 on H/1.1.
+    """
+    return (scope_entry or {}).get("default") or (scope_entry or {}).get("withTuned")
+
+
 def _fw_ranks(fw, badge_index):
     """[(family, rank, field size, score, board link)] straight out of the badge index.
 
@@ -1939,7 +1956,7 @@ def _fw_ranks(fw, badge_index):
     scopes = (badge_index.get(_slug(fw)) or {}).get("scopes", {})
     out = []
     for scope in SCOPE_NAME:
-        d = (scopes.get(scope) or {}).get("default")
+        d = _published_rank(scopes.get(scope))
         if d:
             out.append((scope, d["rank"], d["of"], d["score"], d["link"]))
     return out
@@ -2262,7 +2279,10 @@ def _lang_page(lang, scopes, all_entries, round_name):
                   "ranking, so its rank is taken from the field that includes tuned "
                   "entries and counts more of them.</p>")
     if rest:
-        intro += ("<p>%s %s no composite in any family yet, so %s below the tables only.</p>"
+        # "no composite" was wrong for an entry that has one but no publishable
+        # rank; what these are missing is a place in a field worth ranking in.
+        intro += ("<p>%s %s no published rank in any family yet, so %s below the "
+                  "tables only.</p>"
                   % (", ".join(e(x) for x in rest),
                      "has" if len(rest) == 1 else "have",
                      "it is listed" if len(rest) == 1 else "they are listed"))
@@ -2416,7 +2436,8 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, round_name, wi
             rows = []
             for fw, kind in members:
                 sc = ((badge_index.get(_slug(fw)) or {}).get("scopes", {}).get(scope)) or {}
-                d, bl = sc.get("default"), sc.get("byLanguage")
+                d = _published_rank(sc)
+                bl = sc.get("byLanguage") or sc.get("byLanguageWithTuned")
                 if d:
                     tuned = bool((badge_index.get(_slug(fw)) or {}).get("tuned"))
                     rows.append((fw, kind, tuned, d["score"], d["rank"], d["of"], d["link"],
