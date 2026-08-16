@@ -797,13 +797,30 @@ _THEME_TOGGLE = ("<script>var b=document.getElementById('theme');if(b)b.onclick=
                  "try{localStorage.setItem('lb-theme',n);}catch(e){}};</script>")
 
 
-def _doc_page(did, title, body_html, tree, seo_title="", description=""):
+def _doc_page(did, title, body_html, tree, seo_title="", description="",
+              crumbs=None, og_url=""):
     url = SITE + _doc_url(did)
     # Authored metadata wins; the scraped first paragraph stays as the fallback
     # so a page that hasn't been given frontmatter yet still renders sensibly.
     desc = description or _meta_desc(body_html)
     t = _html.escape(seo_title or title)
     d = _html.escape(desc)
+    # A doc is an article by one publisher, sitting somewhere in a tree. The
+    # breadcrumb is the half that shows: search results print the trail instead
+    # of the bare URL, which is what tells a reader that a page five levels deep
+    # is documentation and not a stray file.
+    graph = [
+        {"@type": "TechArticle", "@id": url + "#article", "headline": seo_title or title,
+         "name": title, "description": desc, "url": url, "inLanguage": "en",
+         "mainEntityOfPage": url, "isPartOf": {"@id": SITE + "/#website"},
+         "publisher": {"@id": SITE + "/#org"},
+         "about": {"@id": SITE + "/#dataset"}},
+    ] + _org_nodes()
+    if crumbs:
+        graph.append({"@type": "BreadcrumbList", "@id": url + "#crumbs",
+                      "itemListElement": [{"@type": "ListItem", "position": i + 1,
+                                           "name": name, "item": SITE + href}
+                                          for i, (name, href) in enumerate(crumbs)]})
     head = ('<!doctype html><html lang="en" data-theme=""><head>'
             '<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -818,6 +835,8 @@ def _doc_page(did, title, body_html, tree, seo_title="", description=""):
             + '<meta property="og:title" content="' + t + '">'
             + '<meta property="og:description" content="' + d + '">'
             + '<meta property="og:url" content="' + url + '">'
+            + _og_meta(og_url)
+            + _jsonld({"@context": "https://schema.org", "@graph": graph})
             + '<link rel="stylesheet" href="/docs/docs.css">'
             + "</head>")
     # Same markup and classes as the board's header, so crossing between /
@@ -862,7 +881,7 @@ def _docs_css():
 """
 
 
-def build_doc_pages(tree, content):
+def build_doc_pages(tree, content, trails=None, with_og=False):
     """Write a real static page per doc under site/generated/docs/<id>/index.html."""
     if not tree:
         return 0
@@ -870,9 +889,12 @@ def build_doc_pages(tree, content):
         shutil.rmtree(DOCS_OUT)
     DOCS_OUT.mkdir(parents=True, exist_ok=True)
     (DOCS_OUT / "docs.css").write_text(_docs_css(), encoding="utf-8")
+    trails = trails or {}
     for did, d in content.items():
         page = _doc_page(did, d["t"] or "Knowledge Base", d["html"], tree,
-                         seo_title=d.get("st", ""), description=d.get("d", ""))
+                         seo_title=d.get("st", ""), description=d.get("d", ""),
+                         crumbs=trails.get(did),
+                         og_url=(_doc_url(did) + "og.png") if with_og else "")
         dest = (DOCS_OUT / did / "index.html") if did else (DOCS_OUT / "index.html")
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page, encoding="utf-8")
@@ -1328,6 +1350,412 @@ def write_badges(profiles, results, meta):
     return written, len(index)
 
 
+# ── off-site visibility: social cards, structured data, llms.txt, prerender ──
+# The board is drawn by data.js, so whatever does not run JavaScript arrives on
+# an empty page. Google renders and catches up; the crawlers behind the AI
+# answers do not, and neither does a single link unfurler on X, Reddit, Discord
+# or Slack. The ranking, which is the whole reason the site exists, is invisible
+# to all of them, and so is every framework name in it.
+#
+# Three things fix that and none of them change what a visitor sees:
+#   - the default view (H/1.1 composite, the same one the badges are pinned to)
+#     is written into index.html at build time and overwritten by renderComposite
+#     on boot, so the page has its ranking in the HTML;
+#   - every page gets an og:image and a JSON-LD node, so a shared link unfurls
+#     and the results are declared as a Dataset;
+#   - /llms.txt and /llms-full.txt carry the same ranking and the Knowledge Base
+#     as plain text, for readers that will never run a script.
+
+OG_SIZE = (1200, 630)
+OG_BG = (26, 27, 30)
+OG_ACCENT = (138, 180, 248)
+OG_TEXT = (232, 234, 237)
+OG_MUTED = (154, 160, 166)
+
+SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
+              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+SCOPE_BLURB = {"h1": "all HTTP/1.1 profiles", "h2": "all HTTP/2 profiles",
+               "h3": "all HTTP/3 profiles", "gw": "the gateway & production-stack profiles",
+               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles"}
+# The board's own default: view=composite, scope=h1, flagship+emerging, tuned
+# shown, useMem and rescale off. Prerendering anything else would show a crawler
+# a page no visitor lands on.
+DEFAULT_SCOPE = "h1"
+DEFAULT_TYPES = ("flagship", "emerging")
+
+SITE_DESC = ("Independent webserver benchmarks across every major framework and protocol "
+             "(H1, H2, H3, gRPC, WebSocket) in multiple categories.")
+
+
+def _og_ready():
+    """Whether this machine can draw the cards. Pillow is a deploy-time
+    dependency and a local run without it should still produce a site: the
+    pages simply come out without og:image rather than not at all."""
+    try:
+        import PIL  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def _og_font(size, bold=False):
+    from PIL import ImageFont
+    names = ("DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf") if bold else \
+            ("DejaVuSans.ttf", "LiberationSans-Regular.ttf")
+    for base in ("/usr/share/fonts/truetype/dejavu/",
+                 "/usr/share/fonts/truetype/liberation/", ""):
+        for n in names:
+            try:
+                return ImageFont.truetype(base + n, size)
+            except OSError:
+                continue
+    try:
+        return ImageFont.load_default(size=size)   # Pillow >= 10.1: scalable
+    except TypeError:
+        return ImageFont.load_default()
+
+
+def _og_wrap(draw, text, font, width, maxlines):
+    lines, cur = [], ""
+    for word in str(text).split():
+        nxt = (cur + " " + word).strip()
+        if cur and draw.textlength(nxt, font=font) > width:
+            lines.append(cur)
+            cur = word
+            if len(lines) == maxlines:
+                lines[-1] = lines[-1].rstrip(" .") + "…"
+                return lines
+        else:
+            cur = nxt
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def _og_card(dest, kicker, title, rows, footer, blurb=""):
+    """A 1200x630 card in the board's dark palette: wordmark, kicker, title, and
+    an optional monospaced block (the top of the ranking, on the root card)."""
+    from PIL import Image, ImageDraw
+    img = Image.new("RGB", OG_SIZE, OG_BG)
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, OG_SIZE[0], 9], fill=OG_ACCENT)
+
+    mark = _og_font(36, bold=True)
+    d.text((72, 58), "Http", font=mark, fill=OG_ACCENT)
+    d.text((72 + d.textlength("Http", font=mark), 58), "Arena", font=mark, fill=OG_TEXT)
+
+    y = 158
+    if kicker:
+        f = _og_font(26)
+        d.text((72, y), _og_wrap(d, kicker, f, 1056, 1)[0], font=f, fill=OG_MUTED)
+        y += 46
+
+    # The ranking needs half the card, so a title sharing the space with one gets
+    # two lines and a smaller face; a doc title, which is alone here, gets three.
+    size, lead, maxlines = (54, 66, 2) if rows else (62, 76, 3)
+    ft = _og_font(size, bold=True)
+    for line in _og_wrap(d, title, ft, 1056, maxlines):
+        d.text((72, y), line, font=ft, fill=OG_TEXT)
+        y += lead
+
+    if blurb and not rows:
+        fb = _og_font(29)
+        y += 18
+        for line in _og_wrap(d, blurb, fb, 1056, 4):
+            d.text((72, y), line, font=fb, fill=OG_MUTED)
+            y += 40
+
+    if rows:
+        y = max(y + 22, 350)
+        fr = _og_font(29, bold=True)
+        for i, (name, right) in enumerate(rows[:5]):
+            d.text((72, y), f"{i + 1}.", font=fr, fill=OG_MUTED)
+            d.text((122, y), name, font=fr, fill=OG_TEXT)
+            d.text((1128 - d.textlength(right, font=fr), y), right, font=fr, fill=OG_ACCENT)
+            y += 40
+
+    if footer:
+        f = _og_font(23)
+        d.text((72, 566), _og_wrap(d, footer, f, 1056, 1)[0], font=f, fill=OG_MUTED)
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    # Flat background, four ink colours and the antialiasing between them: a
+    # palette holds all of it and is a quarter of the truecolor file. 132 cards
+    # ship with the site, so it is worth the one line.
+    img = img.convert("P", palette=Image.ADAPTIVE, colors=64)
+    img.save(dest, "PNG", optimize=True)
+
+
+def _og_meta(url):
+    """og:image tags for one page, or nothing when the cards were not drawn."""
+    if not url:
+        return ""
+    return ('<meta property="og:image" content="' + SITE + url + '">'
+            '<meta property="og:image:width" content="1200">'
+            '<meta property="og:image:height" content="630">'
+            '<meta name="twitter:card" content="summary_large_image">')
+
+
+def _jsonld(payload):
+    """A ld+json block. The escape is the one thing that matters here: an
+    unescaped </script> inside the JSON ends the block early."""
+    body = json.dumps(payload, separators=(",", ":")).replace("</", "<\\/")
+    return '<script type="application/ld+json">' + body + "</script>"
+
+
+def _crumb_trails(tree):
+    """doc id -> [(title, url), ...] from the root of the Knowledge Base down to
+    the page itself. Same walk the search index does, kept separate because that
+    one only needs the label and this one needs the links too."""
+    trails = {}
+
+    def walk(node, trail):
+        here = trail + [(node["t"], _doc_url(node["u"]))]
+        trails[node["u"]] = here
+        for child in node.get("c") or []:
+            walk(child, here)
+
+    if tree:
+        walk(tree, [])
+    return trails
+
+
+def _org_nodes():
+    """The two nodes every page's graph points at, so the site is one publisher
+    and not one anonymous publisher per page."""
+    return [
+        {"@type": "Organization", "@id": SITE + "/#org", "name": "HttpArena",
+         "url": SITE + "/", "logo": SITE + "/favicon.svg",
+         "sameAs": ["https://github.com/MDA2AV/HttpArena"]},
+        {"@type": "WebSite", "@id": SITE + "/#website", "url": SITE + "/",
+         "name": "HttpArena", "inLanguage": "en",
+         "publisher": {"@id": SITE + "/#org"}},
+    ]
+
+
+def _dataset_node(current, n_frameworks, n_profiles, round_name):
+    """The results, declared as a dataset. This is the one piece of structured
+    data with a channel of its own behind it - Google Dataset Search indexes
+    Dataset nodes, and a benchmark is exactly what it is looking for."""
+    hw = " ".join(x for x in [current.get("cpu", ""), current.get("os", "")] if x)
+    return {
+        "@type": "Dataset", "@id": SITE + "/#dataset",
+        "name": "HttpArena web server benchmark results",
+        "description": (f"Throughput, latency, CPU and memory for {n_frameworks} web frameworks, "
+                        f"HTTP engines and reverse proxies over {n_profiles} benchmark profiles "
+                        f"(HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket), every entry run on the "
+                        f"same machine{' - ' + hw if hw else ''}."),
+        "url": SITE + "/", "isAccessibleForFree": True, "inLanguage": "en",
+        "license": "https://github.com/MDA2AV/HttpArena/blob/main/LICENSE",
+        "creator": {"@id": SITE + "/#org"}, "publisher": {"@id": SITE + "/#org"},
+        "keywords": ["web server benchmark", "http benchmark", "framework performance",
+                     "requests per second", "latency", "HTTP/2", "HTTP/3", "gRPC", "WebSocket"],
+        "measurementTechnique": ("Closed-loop load generation against containerised servers pinned "
+                                 "to dedicated cores on a single machine, one connection count per run."),
+        "variableMeasured": [{"@type": "PropertyValue", "name": n} for n in
+                             ("Requests per second", "Average latency", "p99 latency",
+                              "CPU utilisation", "Peak memory", "Bandwidth")],
+        "version": round_name,
+        "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json",
+                          "contentUrl": SITE + "/data.json",
+                          "name": "Every published result, as one JSON document"}],
+    }
+
+
+def _ranking_node(scope, rows):
+    return {
+        "@type": "ItemList", "@id": SITE + "/#ranking-" + scope,
+        "name": SCOPE_NAME[scope] + " composite ranking",
+        "itemListOrder": "https://schema.org/ItemListOrderDescending",
+        "numberOfItems": len(rows),
+        "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": fw}
+                            for i, (fw, _) in enumerate(rows[:20])],
+    }
+
+
+def write_data_json(payload):
+    """The same document data.js assigns to window.LB_DATA, as plain JSON.
+
+    data.js is a script and can only be consumed by running it; this is the file
+    the Dataset node above points at, and the one anybody scripting against the
+    results should read."""
+    GEN.mkdir(parents=True, exist_ok=True)
+    out = GEN / "data.json"
+    out.write_text(json.dumps(payload, separators=(",", ":")) + "\n", encoding="utf-8")
+    return out.stat().st_size
+
+
+def _rank_lines(rows, fw_lang, limit=None):
+    return ["%3d. %-26s %-14s %6.0f" % (i + 1, fw, fw_lang.get(fw, "") or "-", score)
+            for i, (fw, score) in enumerate(rows[:limit] if limit else rows)]
+
+
+def write_llms_txt(tree, content, families, fw_lang, current, round_name):
+    """/llms.txt and /llms-full.txt.
+
+    Same reason as the prerender, for the readers the prerender cannot reach:
+    the board has six families and only the default one can be written into the
+    page. Here all six fit, as text, next to a link to every doc."""
+    trails = _crumb_trails(tree)
+    hw = current.get("cpu", "")
+    head = [
+        "# HttpArena",
+        "",
+        "> " + SITE_DESC,
+        "",
+        "Every entry runs in a container on the same machine"
+        + (f" ({hw}, {current.get('cores', '?')} cores)" if hw else "")
+        + ", pinned to dedicated cores, one connection count per run. Round: " + round_name + ".",
+        "",
+        "The leaderboard at " + SITE + "/ is rendered client-side, so the ranking below is the "
+        "same data as text. Scores are the composite: each profile is worth 100 to the best entry "
+        "in the field and a framework's score is the sum over the profiles of that family.",
+        "",
+    ]
+
+    short, full = list(head), list(head)
+    for scope, rows in families:
+        if not rows:
+            continue
+        title = f"## {SCOPE_NAME[scope]} composite ranking - flagship and emerging, {len(rows)} entries"
+        short += [title, "", "```", *_rank_lines(rows, fw_lang, 20), "```", ""]
+        if len(rows) > 20:
+            short += [f"Full field: {SITE}/llms-full.txt", ""]
+        full += [title, "", "```", *_rank_lines(rows, fw_lang), "```", ""]
+
+    docs = ["## Documentation", ""]
+    for did in sorted(content):
+        d = content[did]
+        crumb = " > ".join(t for t, _ in trails.get(did, [])[:-1])
+        desc = d.get("d") or _meta_desc(d["html"])
+        docs.append(f"- [{d['t'] or 'Knowledge Base'}]({SITE}{_doc_url(did)})"
+                    + (f" ({crumb})" if crumb else "") + (f": {desc}" if desc else ""))
+    docs.append("")
+
+    data = ["## Data", "",
+            f"- [data.json]({SITE}/data.json): every published result in one JSON document, "
+            "the same one the board reads.",
+            f"- [Badge endpoints]({SITE}/badge/index.json): per-framework rank, as shields.io endpoints.",
+            f"- [Source and framework entries](https://github.com/MDA2AV/HttpArena): "
+            "every server implementation, Dockerfile and validation rule.",
+            ""]
+
+    short += docs + data + ["## Full text", "",
+                            f"- [llms-full.txt]({SITE}/llms-full.txt): the whole Knowledge Base "
+                            "and the full ranking of every family.", ""]
+    full += data + ["## Knowledge Base", ""]
+    for did in sorted(content):
+        d = content[did]
+        text = _html.unescape(re.sub(r"<[^>]+>", " ", d["html"]))
+        text = re.sub(r"[ \t]+", " ", text)
+        text = re.sub(r"\n\s*\n\s*\n+", "\n\n", text).strip()
+        full += [f"### {d['t'] or 'Knowledge Base'}", "", f"Source: {SITE}{_doc_url(did)}", "",
+                 text, ""]
+
+    GEN.mkdir(parents=True, exist_ok=True)
+    (GEN / "llms.txt").write_text("\n".join(short), encoding="utf-8")
+    (GEN / "llms-full.txt").write_text("\n".join(full), encoding="utf-8")
+    return (GEN / "llms.txt").stat().st_size, (GEN / "llms-full.txt").stat().st_size
+
+
+def _static_board(rows, fw_lang, round_name):
+    """The default view as a plain table, for the HTML."""
+    body = []
+    for i, (fw, score) in enumerate(rows):
+        rank = i + 1
+        body.append('<tr><td class="n%s">%d</td><td>%s</td><td class="sb-lang">%s</td>'
+                    '<td class="n">%.0f</td></tr>'
+                    % (" r%d" % rank if rank <= 3 else "", rank,
+                       _html.escape(fw), _html.escape(fw_lang.get(fw, "") or ""), score))
+    others = ", ".join(SCOPE_NAME[s] for s in SCOPE_NAME if s != DEFAULT_SCOPE)
+    return ('<table class="sb"><thead><tr><th>#</th><th>Framework</th><th>Language</th>'
+            '<th class="n">Composite</th></tr></thead><tbody>' + "".join(body) + "</tbody></table>"
+            '<p class="sb-note">' + _html.escape(round_name) + ", " + str(len(rows)) +
+            " entries, best first. The interactive board - per-profile numbers, memory efficiency, "
+            "the other families (" + _html.escape(others) + ") - needs JavaScript; the same "
+            'rankings are also published as text at <a href="/llms.txt">/llms.txt</a>.</p>')
+
+
+def build_index_page(rows, fw_lang, current, round_name, n_profiles, og_url):
+    """site/generated/index.html: the board with its default view already in it.
+
+    Written from the checked-in page rather than replacing it, so the source
+    stays the thing you open locally. Every marker is required to appear exactly
+    once: if the board's markup moves, this fails the deploy instead of quietly
+    shipping an empty page again."""
+    src = (ROOT / "site" / "leaderboard" / "index.html").read_text(encoding="utf-8")
+
+    def once(html, needle, repl, what):
+        if html.count(needle) != 1:
+            raise SystemExit(f"[fatal] prerender: expected exactly one {what} in "
+                             f"site/leaderboard/index.html, found {html.count(needle)}")
+        return html.replace(needle, repl, 1)
+
+    graph = _org_nodes() + [
+        _dataset_node(current, len(rows), n_profiles, round_name),
+        _ranking_node(DEFAULT_SCOPE, rows),
+    ]
+    head = ('<meta property="og:type" content="website">'
+            '<meta property="og:site_name" content="HttpArena">'
+            '<meta property="og:title" content="HTTP Web Server Benchmarks – HttpArena">'
+            '<meta property="og:description" content="' + _html.escape(SITE_DESC) + '">'
+            '<meta property="og:url" content="' + SITE + '/">'
+            + _og_meta(og_url)
+            + _jsonld({"@context": "https://schema.org", "@graph": graph}))
+
+    # The three header fields renderHead() fills for the default view, filled
+    # with the same strings so the pre-rendered page and the rendered one say
+    # the same thing.
+    blurb = ("Normalized score summed across " + SCOPE_BLURB[DEFAULT_SCOPE] +
+             " (each profile worth 100 to its leader in the full field, so filtering does not "
+             'change the numbers), per framework type. Higher is better. '
+             '<a href="/docs/scoring/composite-score/">How it works →</a>')
+
+    out = once(src, "</head>", head + "</head>", "</head>")
+    out = once(out, '<div class="cat" id="pcat"></div>',
+               '<div class="cat" id="pcat">Composite ranking</div>', "#pcat")
+    out = once(out, '<h1 id="ptitle"></h1>',
+               '<h1 id="ptitle">' + SCOPE_NAME[DEFAULT_SCOPE] + "</h1>", "#ptitle")
+    out = once(out, '<p id="pblurb"></p>', '<p id="pblurb">' + blurb + "</p>", "#pblurb")
+    out = once(out, '<span class="count" id="count"></span>',
+               '<span class="count" id="count">' + str(len(rows)) + " frameworks</span>", "#count")
+    out = once(out, '<div id="rows"></div>',
+               '<div id="rows">' + _static_board(rows, fw_lang, round_name) + "</div>", "#rows")
+
+    GEN.mkdir(parents=True, exist_ok=True)
+    (GEN / "index.html").write_text(out, encoding="utf-8")
+    return (GEN / "index.html").stat().st_size
+
+
+def build_og_images(content, trails, rows, fw_lang, round_name):
+    """One card for the board and one per doc. Returns the root card's URL (or
+    "" when Pillow is missing), plus how many were written."""
+    if not _og_ready():
+        print("[warn] Pillow not installed - no og:image cards, pages ship without them")
+        # an earlier run's card would otherwise stay behind, with no page left
+        # pointing at it
+        (GEN / "og.png").unlink(missing_ok=True)
+        return "", 0
+
+    GEN.mkdir(parents=True, exist_ok=True)
+    top = [(fw, "%.0f" % score) for fw, score in rows[:5]]
+    _og_card(GEN / "og.png",
+             "Composite ranking · " + SCOPE_NAME[DEFAULT_SCOPE],
+             "Which web framework is actually fastest?",
+             top,
+             f"{len(rows)} entries · {round_name} · www.http-arena.com")
+    written = 1
+
+    for did, d in content.items():
+        crumb = " › ".join(t for t, _ in trails.get(did, [])[:-1]) or "Knowledge Base"
+        _og_card(DOCS_OUT / did / "og.png" if did else DOCS_OUT / "og.png",
+                 crumb, d["t"] or "Knowledge Base", [],
+                 "HttpArena Knowledge Base · www.http-arena.com",
+                 blurb=d.get("d") or _meta_desc(d["html"]))
+        written += 1
+    return "/og.png", written
+
+
 def main():
     global RESULTS
     RESULTS = load_results()
@@ -1391,10 +1819,30 @@ def main():
     # Docs are pre-rendered to real /docs/<id>/ pages (SEO); the SPA links out to
     # them. LB_DATA still carries the docs *tree* for the sidebar labels, but the
     # doc *content* is no longer shipped as docs.js.
-    n_pages = build_doc_pages(docs_tree, docs_content)
+    trails = _crumb_trails(docs_tree)
+    n_pages = build_doc_pages(docs_tree, docs_content, trails, with_og=_og_ready())
     n_search, search_bytes = write_search_index(docs_tree, docs_content)
     n_urls = write_sitemap(docs_content)
     n_badges, n_badge_fw = write_badges(profiles, results, meta)
+
+    # The board's default view, and the same view for the other five families.
+    # Same port of computeComposite() the badges use, so the ranking written into
+    # the page cannot disagree with the one the page draws over it.
+    agg = badge_aggregate(profiles, results)
+    fw_lang = _fw_languages(results)
+    families = [(scope, badge_composite(agg, profiles, meta, scope, DEFAULT_TYPES,
+                                        show_tuned=True, fw_lang=fw_lang))
+                for scope in SCOPE_NAME]
+    board = dict(families)[DEFAULT_SCOPE]
+    round_name = payload["rounds"]["name"]
+
+    # og cards go in after build_doc_pages: that one clears site/generated/docs/
+    # before it writes, and the per-doc cards live inside it.
+    og_url, n_cards = build_og_images(docs_content, trails, board, fw_lang, round_name)
+    json_bytes = write_data_json(payload)
+    index_bytes = build_index_page(board, fw_lang, current, round_name, len(profiles), og_url)
+    llms_bytes, llms_full_bytes = write_llms_txt(docs_tree, docs_content, families,
+                                                 fw_lang, current, round_name)
 
     n_rows = sum(len(v) for v in results.values())
     print(f"wrote {OUT.relative_to(ROOT)} - {len(profiles)} profiles, "
@@ -1403,6 +1851,13 @@ def main():
     print(f"wrote {(OUT.parent / 'search.js').relative_to(ROOT)} - {n_search} indexed pages, {search_bytes // 1024} KB")
     print(f"wrote {(GEN / 'sitemap.xml').relative_to(ROOT)} - {n_urls} URLs")
     print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {n_badge_fw} frameworks")
+    print(f"wrote {(GEN / 'index.html').relative_to(ROOT)} - board with the "
+          f"{SCOPE_NAME[DEFAULT_SCOPE]} composite ({len(board)} entries) pre-rendered, "
+          f"{index_bytes // 1024} KB")
+    print(f"wrote {(GEN / 'data.json').relative_to(ROOT)} - {json_bytes // 1024} KB")
+    print(f"wrote {(GEN / 'llms.txt').relative_to(ROOT)} - {llms_bytes // 1024} KB, "
+          f"llms-full.txt {llms_full_bytes // 1024} KB")
+    print(f"wrote {n_cards} og:image cards" if n_cards else "no og:image cards (Pillow missing)")
 
 
 if __name__ == "__main__":

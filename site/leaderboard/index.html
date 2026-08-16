@@ -243,6 +243,18 @@
   .tfilter button.on{background:var(--text); color:var(--bg); border-color:var(--text)}
   .count{margin-left:auto; color:var(--muted); font-size:.8rem; font-variant-numeric:tabular-nums}
 
+  /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
+     away by renderComposite() as soon as data.js has been parsed. It is what a
+     reader without JavaScript gets, and what paints first for everyone else. */
+  .sb{width:100%; border-collapse:collapse; font-size:.86rem}
+  .sb th,.sb td{padding:.44rem .55rem; border-bottom:1px solid var(--line-soft); text-align:left}
+  .sb th{color:var(--muted); font-size:.72rem; font-weight:650; letter-spacing:.02em; text-transform:uppercase}
+  .sb td.n,.sb th.n{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums}
+  .sb td.r1{color:var(--gold); font-weight:700} .sb td.r2{color:var(--silver); font-weight:700} .sb td.r3{color:var(--bronze); font-weight:700}
+  .sb .sb-lang{color:var(--text-2)}
+  .sb-note{color:var(--muted); font-size:.78rem; margin:.9rem 0 0}
+  .sb-note a{color:var(--accent)}
+
   .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
   .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
   .thead{position:sticky; top:57px; z-index:10; background:var(--bg); padding:.1rem 0 .55rem; border-bottom:1px solid var(--line); font-size:.72rem; font-weight:650; color:var(--muted); letter-spacing:.02em; text-transform:uppercase}
