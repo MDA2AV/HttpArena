@@ -2039,13 +2039,17 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url=""):
 def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url=""):
     e = _html.escape
     url = SITE + _fw_url(fw)
-    title = f"{fw} benchmark results"
+    title = f"{fw} performance benchmark & ranking"
     # the main family when the entry runs it, its first one otherwise. Quoting
     # whichever rank happens to be best would read as picked, and be picked
     lead = next((r for r in ranks if r[0] == DEFAULT_SCOPE), ranks[0] if ranks else None)
-    desc = (f"{fw}" + (f" ({lang})" if lang else "") + " in the HttpArena benchmark: "
-            + (f"ranked {lead[1]} of {lead[2]} on {SCOPE_NAME[lead[0]]}, " if lead else "")
-            + f"throughput, latency, CPU and memory over {len(runs)} runs on the same machine.")
+    # "web framework" vs "HTTP server" mirrors the wording the lang pages use,
+    # so a search snippet for this entry and for its language list read as the
+    # same vocabulary rather than two different ways of describing one thing.
+    kind_word = "web framework" if kind_has_mode(m.get("type", "emerging")) else "HTTP server"
+    desc = (f"{fw}" + (f" ({lang})" if lang else "") + f" {kind_word} performance: "
+            + (f"ranked {lead[1]} of {lead[2]} in HttpArena, " if lead else "benchmarked in HttpArena, ")
+            + f"compared on throughput, latency, CPU and memory over {len(runs)} runs.")
     graph = [
         {"@type": "WebPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
@@ -2300,9 +2304,10 @@ def _fw_index_page(entries, lang_pages=()):
     makes every framework page reachable by following links from the board."""
     e = _html.escape
     url = SITE + "/frameworks/"
-    title = "Every framework in the benchmark"
-    desc = (f"All {len(entries)} frameworks, HTTP engines and reverse proxies measured by "
-            "HttpArena, with a results page each.")
+    title = "Web framework & HTTP server benchmarks: full list"
+    desc = (f"Browse the full list of {len(entries)} web frameworks, HTTP engines "
+            "and reverse proxies benchmarked by HttpArena, compared by language "
+            "and performance.")
     by_lang = {}
     for fw, lang, kind in entries:
         by_lang.setdefault(lang or "Other", []).append((fw, kind))
