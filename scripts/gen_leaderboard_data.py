@@ -2169,21 +2169,18 @@ def _lang_page(lang, scopes, all_entries, round_name):
     """
     e = _html.escape
     url = SITE + _lang_url(lang)
-    title = lang + " web framework benchmarks"
+    title = lang + " web framework benchmarks: performance comparison"
     n = len(all_entries)
-    fams = ", ".join(SCOPE_NAME[s] for s in scopes)
     faq = _lang_faq(lang, scopes, n, round_name)
     lead_row = (scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else None))
-    lead_fw = lead_row[0][0] if lead_row else ""
-    # Description leads with the answer rather than describing the page: it is
-    # the search snippet, and the first line an assistant reads.
-    desc = ((f"The fastest {lang} "
-             + ("web framework" if kind_has_mode(lead_row[0][1]) else "HTTP server")
-             + f" in HttpArena is {lead_fw} "
-               f"(composite {lead_row[0][3]:.0f} on {SCOPE_NAME[DEFAULT_SCOPE]}). "
-             if lead_row else "")
-            + f"All {n} {lang} entr{'y' if n == 1 else 'ies'} compared on {fams}: "
-              f"composite score, rank overall and rank among {lang}.")
+    # Kept short on purpose: this is the search-snippet and og:description, not
+    # the page. The composite-score sentence with its numbers belongs to the
+    # on-page "answer" paragraph below, which a reader (or an assistant) reaches
+    # after clicking through; stuffing that detail into the tag just makes the
+    # snippet unreadable.
+    desc = (f"Which {lang} web framework is fastest? See the full list of {n} "
+            f"{lang} web frameworks and HTTP servers, compared by performance "
+            f"in a composite score table.")
 
     tables = []
     for scope, rows in scopes.items():
