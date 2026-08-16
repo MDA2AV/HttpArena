@@ -236,16 +236,9 @@ if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-1
     docker_args+=(-e "DATABASE_MAX_CONN=256")
 fi
 
-# Start Redis sidecar if needed
-if has_test "crud"; then
-
-    REDIS_CONTAINER="httparena-redis"
-    REDIS_URL="redis://localhost:6379"
-    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
-    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
-    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
-    REDIS_CPUSET="${REDIS_CPUSET:-}"
-
+# A function rather than inline, because the production-stack check has to hand
+# the port back and then restart it — see _prodstack_yield_redis below.
+redis_sidecar_start() {
     echo "[redis] Starting Redis sidecar${REDIS_CPUSET:+ (cpuset=$REDIS_CPUSET)}"
     docker rm -f "$REDIS_CONTAINER" 2>/dev/null || true
     docker run -d --rm --name "$REDIS_CONTAINER" --network host \
@@ -265,14 +258,28 @@ if has_test "crud"; then
             >/dev/null
 
     # Wait for PING to succeed.
+    local i
     for i in $(seq 1 30); do
         if docker exec "$REDIS_CONTAINER" redis-cli ping 2>/dev/null | grep -q PONG; then
             echo "[redis] Ready"
-            break
+            return 0
         fi
-        [ "$i" -eq 30 ] && { echo "FAIL: Redis sidecar not ready"; exit 1; }
         sleep 1
     done
+    return 1
+}
+
+# Start Redis sidecar if needed
+if has_test "crud"; then
+
+    REDIS_CONTAINER="httparena-redis"
+    REDIS_URL="redis://localhost:6379"
+    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
+    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
+    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
+    REDIS_CPUSET="${REDIS_CPUSET:-}"
+
+    redis_sidecar_start || { echo "FAIL: Redis sidecar not ready"; exit 1; }
     docker_args+=(-e "REDIS_URL=$REDIS_URL")
 fi
 
@@ -1948,6 +1955,31 @@ fi
 # api returns 401 without a cookie) and the authenticated path (api
 # returns 200 with a pre-seeded session cookie).
 
+# The stack ships its own Redis on the host's 6379, and the validate sidecar
+# above already holds it whenever the entry subscribes to crud — fulmine is
+# subscribed to both. The benchmark driver handles this in gateway.sh
+# (_gateway_yield_redis); validate.sh has its own compose handling and needs the
+# same. It used to go unnoticed because the server depended on the cache with
+# the short list form and started anyway; now that the compose files wait for a
+# healthy cache, an unavailable port fails the stack instead of quietly
+# validating against the wrong Redis.
+PRODSTACK_STOPPED_REDIS=false
+
+_prodstack_yield_redis() {
+    PRODSTACK_STOPPED_REDIS=false
+    [ -n "${REDIS_CONTAINER:-}" ] || return 0
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$REDIS_CONTAINER" || return 0
+    echo "[production-stack] stopping the validate redis sidecar: the stack ships its own cache on 6379"
+    docker rm -f "$REDIS_CONTAINER" >/dev/null 2>&1 || true
+    PRODSTACK_STOPPED_REDIS=true
+}
+
+_prodstack_restore_redis() {
+    [ "$PRODSTACK_STOPPED_REDIS" = true ] || return 0
+    PRODSTACK_STOPPED_REDIS=false
+    redis_sidecar_start || echo "[warn] redis sidecar did not come back up"
+}
+
 _validate_production_stack() {
     local compose_file="$1"
     local docs_url="$2"
@@ -1957,9 +1989,10 @@ _validate_production_stack() {
 
     local gw_project="httparena-validate-gw-${profile}-${FRAMEWORK}"
     if [ -f "$compose_file" ]; then
+        _prodstack_yield_redis
         echo "[$profile] Building and starting compose stack..."
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
-            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: $profile compose up"; dump_stack_logs "$gw_project"; FAIL=$((FAIL + 1)); return; }
+            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: $profile compose up"; dump_stack_logs "$gw_project"; _prodstack_restore_redis; FAIL=$((FAIL + 1)); return; }
     else
         echo "  FAIL [$profile]: compose file not found at $compose_file"
         FAIL=$((FAIL + 1))
@@ -2155,6 +2188,9 @@ print(f'{count} {valid} {correct_totals}')
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
             docker compose -f "$compose_file" -p "$gw_project" down --remove-orphans 2>/dev/null || true
     fi
+    # The stack has released 6379; give it back to the sidecar for whatever
+    # runs after this.
+    _prodstack_restore_redis
 }
 
 if has_test "production-stack"; then
