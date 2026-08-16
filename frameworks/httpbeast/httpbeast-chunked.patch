@@ -1,0 +1,73 @@
+diff --git a/src/httpbeast.nim b/src/httpbeast.nim
+index af1dc26..3d398b5 100644
+--- a/src/httpbeast.nim
++++ b/src/httpbeast.nim
+@@ -197,12 +197,54 @@ proc slowHeadersCheck(data: ptr Data): bool =
+ 
+     data.headersFinishPos = -1
+ 
++proc hasChunkedEncoding(data: ptr Data): bool =
++  # True when the header block declares Transfer-Encoding: chunked.
++  let lower = data.data[0 ..< data.headersFinishPos].toLowerAscii()
++  let te = lower.find("\c\ltransfer-encoding:")
++  if te == -1: return false
++  var lineEnd = lower.find("\c\l", te + 2)
++  if lineEnd == -1: lineEnd = lower.len
++  return lower[te ..< lineEnd].contains("chunked")
++
++proc chunkedBodyComplete(data: ptr Data): bool =
++  # Walks the chunks buffered so far. The body is complete once the zero
++  # size last chunk and its final CRLF are in the buffer. Trailers are not
++  # supported, an empty trailer section is all the benchmark traffic has.
++  var i = data.headersFinishPos
++  while true:
++    var size = 0
++    var digits = 0
++    while i < data.data.len:
++      case data.data[i]
++      of '0'..'9': size = size * 16 + (ord(data.data[i]) - ord('0'))
++      of 'a'..'f': size = size * 16 + (ord(data.data[i]) - ord('a') + 10)
++      of 'A'..'F': size = size * 16 + (ord(data.data[i]) - ord('A') + 10)
++      else: break
++      inc digits
++      inc i
++    if digits == 0 or digits > 15: return false
++    # The rest of the size line (chunk extensions) up to its CRLF.
++    while i < data.data.len and data.data[i] != '\l': inc i
++    if i >= data.data.len: return false
++    inc i
++    if size == 0:
++      # Zero chunk seen, the terminating CRLF must be buffered too.
++      return data.data.len >= i + 2
++    # The chunk data and its CRLF must be buffered before the next size line.
++    i += size + 2
++    if i > data.data.len: return false
++
+ proc bodyInTransit(data: ptr Data): bool =
+   assert methodNeedsBody(data), "Calling bodyInTransit now is inefficient."
+   assert data.headersFinished
+ 
+   if data.headersFinishPos == -1: return false
+ 
++  if hasChunkedEncoding(data):
++    # There is no Content-Length, the body ends at the zero size chunk.
++    # The handler gets the raw chunked bytes and decodes them itself.
++    return not chunkedBodyComplete(data)
++
+   var trueLen = parseContentLength(data.data, start=0)
+ 
+   let bodyLen = data.data.len - data.headersFinishPos
+@@ -267,7 +309,12 @@ proc processEvents(selector: Selector[Data],
+           data.data.setLen(origLen + ret)
+           for i in 0 ..< ret: data.data[origLen+i] = buf[i]
+ 
+-          if data.data.len >= 4 and fastHeadersCheck(data) or slowHeadersCheck(data):
++          # A method with a body must take the slow check: the fast one only
++          # looks at the buffer tail, so the CRLFCRLF ending a chunked body
++          # would move headersFinishPos past the body.
++          if data.data.len >= 4 and
++              (if methodNeedsBody(data): slowHeadersCheck(data)
++               else: fastHeadersCheck(data)):
+             # First line and headers for request received.
+             data.headersFinished = true
+             when not defined(release):

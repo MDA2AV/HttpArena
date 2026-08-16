@@ -114,6 +114,45 @@ proc acceptsGzip(req: Request): bool =
   let accepted: string = headers.get().getOrDefault("accept-encoding")
   result = accepted.toLowerAscii().contains("gzip")
 
+proc isChunked(req: Request): bool =
+  let headers = req.headers
+  if headers.isNone:
+    return false
+  let te: string = headers.get().getOrDefault("transfer-encoding")
+  result = te.toLowerAscii().contains("chunked")
+
+proc dechunk(raw: string): string =
+  ## Chunked transfer decoding by hand: hex size line, that many bytes, CRLF,
+  ## until the zero size chunk. httpbeast only reads a body by Content-Length,
+  ## so the build patches it (httpbeast-chunked.patch) to buffer a chunked
+  ## payload until the last chunk and hand it over raw, decoding happens here.
+  var i = 0
+  while i < raw.len:
+    var size = 0
+    var digits = 0
+    while i < raw.len:
+      case raw[i]
+      of '0'..'9': size = size * 16 + (ord(raw[i]) - ord('0'))
+      of 'a'..'f': size = size * 16 + (ord(raw[i]) - ord('a') + 10)
+      of 'A'..'F': size = size * 16 + (ord(raw[i]) - ord('A') + 10)
+      else: break
+      inc digits
+      inc i
+    if digits == 0 or digits > 15: break
+    # rest of the size line (chunk extensions) and its CRLF
+    while i < raw.len and raw[i] != '\l': inc i
+    inc i
+    if size == 0: break
+    if size > raw.len - i: size = raw.len - i  # truncated payload
+    if size > 0: result.add(raw[i ..< i + size])
+    i += size + 2  # chunk data and its CRLF
+
+proc requestBody(req: Request): string =
+  let body = req.body
+  if body.isNone:
+    return ""
+  if isChunked(req): dechunk(body.get()) else: body.get()
+
 proc onRequest(req: Request): Future[void] {.gcsafe.} =
   let httpMethod = req.httpMethod
   if httpMethod.isNone:
@@ -150,16 +189,13 @@ proc onRequest(req: Request): Future[void] {.gcsafe.} =
   of HttpPost:
     if route == "/baseline11":
       var total = sumQuery(target, qmark)
-      let body = req.body
-      if body.isSome:
-        let text = body.get().strip()
-        var n = 0
-        if parseIntIn(text, 0, text.len, n):
-          total += n
+      let text = requestBody(req).strip()
+      var n = 0
+      if parseIntIn(text, 0, text.len, n):
+        total += n
       req.send(Http200, $total, hdrText)
     elif route == "/upload":
-      let body = req.body
-      req.send(Http200, $(if body.isSome: body.get().len else: 0), hdrText)
+      req.send(Http200, $requestBody(req).len, hdrText)
     else:
       req.send(Http404)
   else:

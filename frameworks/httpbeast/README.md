@@ -33,6 +33,8 @@ directly.
   This is what makes the mode `tuned`: httpbeast has no compression middleware
 - The dataset is read once before the threads start; a missing file leaves an
   empty list instead of failing the boot
-- httpbeast reads a request body by `Content-Length` only. It does not decode
-  `Transfer-Encoding: chunked`, so a chunked body reaches the handler empty and
-  the chunked case of the baseline profile answers with the query sum alone
+- httpbeast reads a request body by `Content-Length` only and would answer a
+  chunked request before the body arrived. The build applies
+  `httpbeast-chunked.patch` to the pinned source: the read loop waits for the
+  zero size last chunk and keeps the header end position stable. The handler
+  then gets the raw chunked bytes and `main.nim` decodes them by hand
