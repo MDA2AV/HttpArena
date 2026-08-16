@@ -21,6 +21,7 @@ GATEWAY_ACTIVE_PROFILE=""
 GATEWAY_ACTIVE_FRAMEWORK=""
 GATEWAY_CONTAINERS=""
 GATEWAY_CONTAINER_COUNT=0
+GATEWAY_STOPPED_REDIS=false
 
 _gateway_env() {
     # All compose invocations need the same env vars for interpolation.
@@ -96,6 +97,28 @@ _gateway_dump_logs() {
              | awk -F'|' -v p="$project" '$2 == p { print $1 " " $3 }')
 }
 
+# The harness Redis sidecar and a stack's own `cache` both want the host's
+# 6379, and redis_start runs once for the whole run whenever the entry
+# subscribes to crud — so for any entry subscribed to both crud and
+# production-stack the two collide on every run. It was invisible because the
+# server depended on `cache` with the short form, which only waits for the
+# container to start: the cache died, the server carried on against the
+# harness Redis, and the profile published numbers measured against a cache it
+# never configured. The compose files now wait for a healthy cache, which turns
+# that into a failure; this gives the port up so it can succeed instead.
+_gateway_yield_redis() {
+    local compose_file="$1" project="$2"
+    GATEWAY_STOPPED_REDIS=false
+    command -v redis_stop >/dev/null 2>&1 || return 0
+    [ -n "${REDIS_CONTAINER:-}" ] || return 0
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$REDIS_CONTAINER" || return 0
+    _gateway_env docker compose -f "$compose_file" -p "$project" config --services 2>/dev/null \
+        | grep -qx "cache" || return 0
+    info "stopping the harness redis sidecar: this stack ships its own cache on the same port"
+    redis_stop
+    GATEWAY_STOPPED_REDIS=true
+}
+
 gateway_up() {
     local framework="$1"
     local profile="${2:-gateway-64}"
@@ -110,6 +133,7 @@ gateway_up() {
     _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" \
         down --remove-orphans 2>/dev/null || true
     _gateway_clear_stale "$GATEWAY_PROJECT"
+    _gateway_yield_redis "$compose_file" "$GATEWAY_PROJECT"
 
     info "starting gateway compose stack: $framework ($profile)"
     # --build forces compose to rebuild from source if any file in the
@@ -137,6 +161,16 @@ gateway_down() {
     # Tear down whatever gateway stack is currently active. Callers can
     # pass (framework, profile) explicitly, but the normal cleanup path
     # (EXIT trap, post-run teardown) relies on the state gateway_up stored.
+    # Before the early returns: if this stack took the harness Redis's port,
+    # give it back even when there is no active stack left to tear down. The
+    # subshell keeps redis_start's `fail` from exiting the caller, since this
+    # also runs from the cleanup trap.
+    if [ "$GATEWAY_STOPPED_REDIS" = true ]; then
+        GATEWAY_STOPPED_REDIS=false
+        info "restarting the harness redis sidecar"
+        ( redis_start ) || warn "redis sidecar did not come back up"
+    fi
+
     local framework="${1:-$GATEWAY_ACTIVE_FRAMEWORK}"
     local profile="${2:-$GATEWAY_ACTIVE_PROFILE}"
     [ -n "$framework" ] || return 0
