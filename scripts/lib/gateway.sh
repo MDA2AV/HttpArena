@@ -54,6 +54,48 @@ _gateway_expected_containers() {
     esac
 }
 
+# Remove containers belonging to any *other* httparena compose stack.
+#
+# Every gateway and production stack runs network_mode: host on the same fixed
+# ports - edge 8443, authsvc 9090, server 8080 - so two of them cannot coexist.
+# The `down` in gateway_up only clears this framework's own project, which means
+# a stack left behind by another entry, or by a run killed between profiles,
+# outlives it. Whichever service loses the race then dies on bind and takes the
+# whole stack with it: in #1182 that was authsvc exiting 101 with
+# "bind 0.0.0.0:9090: Address in use", reported only as "exited (101)".
+#
+# Matches on the compose project label, so the harness's own `docker run`
+# sidecars (httparena-postgres, httparena-redis) carry no such label and are
+# left alone. Running containers only - a stopped one holds no port.
+# `|` rather than a space: an unlabelled container prints an empty field, and
+# with whitespace splitting its name would shift into the label's position and
+# match the httparena- test by accident.
+_gateway_clear_stale() {
+    local keep="$1" listing stale
+    listing=$(docker ps --format '{{.ID}}|{{.Label "com.docker.compose.project"}}|{{.Names}}' 2>/dev/null)
+    stale=$(printf '%s\n' "$listing" \
+            | awk -F'|' -v keep="$keep" '$2 ~ /^httparena-/ && $2 != keep { print $1 }')
+    [ -n "$stale" ] || return 0
+    warn "another httparena compose stack is still up; removing it so this one can bind its ports"
+    printf '%s\n' "$listing" \
+        | awk -F'|' -v keep="$keep" '$2 ~ /^httparena-/ && $2 != keep { print "  stale: " $3 }'
+    # shellcheck disable=SC2086
+    docker rm -f -v $stale >/dev/null 2>&1 || true
+}
+
+# Print what each container of the failed stack said. compose reports the exit
+# code and nothing else, so the reason - a bind conflict, a missing env var, a
+# crash loop - was never in the run log. Reuses dump_container_logs so the
+# output matches what a single-container failure already produces.
+_gateway_dump_logs() {
+    local project="$1" line id name
+    while read -r id name; do
+        [ -n "$id" ] || continue
+        dump_container_logs "$id" "$name"
+    done < <(docker ps -a --format '{{.ID}}|{{.Label "com.docker.compose.project"}}|{{.Names}}' 2>/dev/null \
+             | awk -F'|' -v p="$project" '$2 == p { print $1 " " $3 }')
+}
+
 gateway_up() {
     local framework="$1"
     local profile="${2:-gateway-64}"
@@ -67,13 +109,16 @@ gateway_up() {
 
     _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" \
         down --remove-orphans 2>/dev/null || true
+    _gateway_clear_stale "$GATEWAY_PROJECT"
 
     info "starting gateway compose stack: $framework ($profile)"
     # --build forces compose to rebuild from source if any file in the
     # build context changed. Without this, an edit to a service Dockerfile
     # or Program.cs silently falls back to a stale image from the last run.
-    _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" up --build -d \
-        || fail "gateway compose up failed"
+    if ! _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" up --build -d; then
+        _gateway_dump_logs "$GATEWAY_PROJECT"
+        fail "gateway compose up failed"
+    fi
 
     # Discover running container IDs for stats collection.
     sleep 2
