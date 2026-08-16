@@ -298,6 +298,13 @@
   /* 'tuned' mode cue - yellow ring around the type square / badge */
   .tsq.tuned, .badge.tuned{position:relative}
   .tsq.tuned::after, .badge.tuned::after{content:""; position:absolute; top:0; bottom:0; right:calc(100% + 2px); width:4px; background:#c89a3c}
+  /* medals - how many golds/silvers/bronzes the entry holds. Dropped below 820px,
+     where the name column halves and the count is not worth what it would cost. */
+  .mdls{display:inline-flex; align-items:center; gap:.3rem; flex:none; cursor:default}
+  .mdl{display:inline-flex; align-items:center; gap:.1rem; font-size:.7rem; line-height:1}
+  .mdl b{font-family:var(--mono); font-size:.68rem; font-weight:700}
+  .mdl-gold b{color:var(--gold)} .mdl-silver b{color:var(--silver)} .mdl-bronze b{color:var(--bronze)}
+  @media (max-width:820px){ .mdls{display:none} }
   .fw .lang, .cm .fwcell .lang{width:3rem; flex:none; overflow:hidden; text-overflow:ellipsis}
   .b-flagship{background:rgba(46,158,106,.13); color:#1b7a4e} html[data-theme="dark"] .b-flagship{color:#5cc596}
   .b-emerging{background:rgba(59,115,196,.14); color:#2b5694} html[data-theme="dark"] .b-emerging{color:#9bbdec}
@@ -320,7 +327,7 @@
   .stattip span{display:flex; justify-content:space-between; gap:.7rem}
   .stattip b{color:var(--text); font-weight:600}
   .statwrap:hover .stattip{display:flex}
-  #tip{position:fixed; z-index:100; display:none; max-width:280px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.5rem .65rem; font-size:.74rem; line-height:1.45; font-weight:500; pointer-events:none}
+  #tip{position:fixed; z-index:100; display:none; white-space:pre-line; max-width:280px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.5rem .65rem; font-size:.74rem; line-height:1.45; font-weight:500; pointer-events:none}
 
   /* row-click info modal */
   .row, .cm tbody tr{cursor:pointer}
@@ -333,6 +340,14 @@
   .modal-h h3{margin:0; font-size:1.2rem; font-weight:750; letter-spacing:-.01em}
   .modal-meta{color:var(--text-2); font-size:.8rem; margin-bottom:.8rem}
   .modal-desc{color:var(--text-2); font-size:.86rem; line-height:1.55; margin:0 0 1.1rem}
+  .modal-sub{font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 .45rem}
+  .modal-mdl{display:flex; flex-direction:column; gap:.15rem; margin:0 0 1.1rem; max-height:196px; overflow:auto}
+  .modal-mdl a{display:flex; align-items:center; gap:.55rem; padding:.3rem .35rem; border-radius:7px}
+  .modal-mdl a:hover{background:var(--panel-2)}
+  .modal-mdl .mi{flex:none; font-size:.9rem}
+  .modal-mdl .mw{flex:1; min-width:0; font-size:.8rem; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .modal-mdl .mw em{display:block; font-style:normal; font-size:.68rem; font-weight:500; color:var(--muted)}
+  .modal-mdl .mr{flex:none; font-family:var(--mono); font-size:.7rem; color:var(--text-2)}
   .modal-links{display:flex; flex-direction:column; gap:.5rem}
   .modal-links a{display:flex; align-items:center; justify-content:space-between; gap:.5rem; color:var(--accent); font-weight:600; font-size:.86rem; padding:.55rem .75rem; border:1px solid var(--line); border-radius:9px; transition:background .12s, border-color .12s}
   .modal-links a:hover{background:var(--accent-weak); border-color:var(--accent)}
@@ -388,12 +403,14 @@
   .cm tbody td.sticky{z-index:2}
   .cm .rankh,.cm .rankc{left:0; width:44px; min-width:44px; text-align:left; color:var(--muted); font-family:var(--mono); font-variant-numeric:tabular-nums}
   .cm .rankc.r1{color:var(--gold);font-weight:700} .cm .rankc.r2{color:var(--silver);font-weight:700} .cm .rankc.r3{color:var(--bronze);font-weight:700}
-  .cm .fwh,.cm .fwcell{left:44px; width:303px; min-width:303px; max-width:303px; text-align:left}
+  /* 53px wider than it was, which is what a full 🥇n 🥈n 🥉n cluster takes -
+     the name column keeps the room it had. */
+  .cm .fwh,.cm .fwcell{left:44px; width:356px; min-width:356px; max-width:356px; text-align:left}
   .cm .fwcell .fl{display:flex; align-items:center; gap:.45rem}
   .cm .fwcell .nm{font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
   .cm .fwcell .lang{flex:none; font-size:.72rem; white-space:nowrap}
   .cm .fwcell .nm a:hover{color:var(--accent)}
-  .cm .scoreh,.cm .scorec{left:347px; width:104px; min-width:104px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
+  .cm .scoreh,.cm .scorec{left:400px; width:104px; min-width:104px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
   .cm .scoreh + th, .cm .scorec + td{padding-left:1.3rem}
   .cm .scorec .sc{display:flex; flex-direction:column; align-items:flex-start; gap:.12rem}
   .cm .scorec .sc b{font-weight:600; color:var(--text); font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.80rem}
@@ -528,6 +545,11 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // ── maps ─────────────────────────────────────────────────
   var PROF = {}; D.profiles.forEach(function(p){ PROF[p.id]=p; });
+  // Medals, gold first, computed at build time by gen_leaderboard_data.py out of
+  // the same fields the badges rank. Deliberately not recomputed against the
+  // filters in view: an entry holds a medal, it does not stop holding it while
+  // someone is looking at another league.
+  var ACHV = D.achievements || {};
   var FWLANG = {};
   Object.keys(D.results).forEach(function(k){ D.results[k].forEach(function(r){ if(r.lang) FWLANG[r.fw]=r.lang; }); });
 
@@ -555,6 +577,26 @@ document.addEventListener('DOMContentLoaded', function(){
   function repoOf(fw){ return D.meta[fw] && D.meta[fw].repo; }
   function langOf(fw){ return FWLANG[fw] || ''; }
   function engineOf(fw){ return (D.meta[fw] && D.meta[fw].engine) || ''; }
+
+  // ── medals ───────────────────────────────────────────────
+  var MEDALS=['gold','silver','bronze'];
+  var MEDAL_ICO={gold:'🥇',silver:'🥈',bronze:'🥉'};
+  var AXIS_LABEL={family:'Family composite', language:'Within its language', profile:'Test profile'};
+  function medalsOf(fw){ return ACHV[fw] || []; }
+  function medalTip(list){
+    var l=list.slice(0,8).map(function(a){ return MEDAL_ICO[a.medal]+' '+a.group+' · '+a.label+' - '+a.rank+' of '+a.of; });
+    if(list.length>l.length) l.push('+'+(list.length-l.length)+' more - open the entry');
+    return l.join('\n');
+  }
+  function medalChips(fw){
+    var list=medalsOf(fw); if(!list.length) return '';
+    var h='';
+    MEDALS.forEach(function(m){
+      var n=list.filter(function(a){ return a.medal===m; }).length;
+      if(n) h+='<span class="mdl mdl-'+m+'">'+MEDAL_ICO[m]+'<b>'+n+'</b></span>';
+    });
+    return '<span class="mdls" data-tip="'+esc(medalTip(list))+'">'+h+'</span>';
+  }
   // Search: comma-separated terms matched against name/language/engine. Positive
   // terms are OR'd; a "!term" excludes any match. Show if (no positive terms or
   // one matches) AND no negative term matches.
@@ -607,6 +649,16 @@ document.addEventListener('DOMContentLoaded', function(){
       + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+tunedRing(fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(fw))+'">'+typeAbbr(t)+'</span></div>'
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
+    var mdl=medalsOf(fw);
+    if(mdl.length){
+      h+='<div class="modal-sub">Achievements</div><div class="modal-mdl">';
+      mdl.forEach(function(a){
+        h+='<a href="'+esc(a.link)+'"><span class="mi">'+MEDAL_ICO[a.medal]+'</span>'
+         + '<span class="mw">'+esc(a.group+' · '+a.label)+'<em>'+esc(AXIS_LABEL[a.axis])+'</em></span>'
+         + '<span class="mr">'+a.rank+' of '+a.of+'</span></a>';
+      });
+      h+='</div>';
+    }
     h+='<div class="modal-links">';
     h+='<a href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>';
     if(m.repo) h+='<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>';
@@ -1313,7 +1365,7 @@ document.addEventListener('DOMContentLoaded', function(){
       var fav=favs.has(r.fw);
       var tr='<tr class="'+(fav?'fav':'')+'" data-fw-row="'+esc(r.fw)+'">'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
-        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span></span></td>'
+        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
         + '<td class="sticky scorec" title="raw composite '+r.score.toFixed(1)+'"><span class="sc"><b>'+r.score.toFixed(0)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
         var cell=r.cells[pid];

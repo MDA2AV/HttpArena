@@ -1168,6 +1168,66 @@ def badge_aggregate(profiles, results):
     return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
 
 
+def _scored_for(prof, meta, pid, fw):
+    """scoredForType() in index.html. infraScored is read before the `scored`
+    short-circuit, not behind it: the infra set is not a subset of the framework
+    set — it counts Pipelined, which frameworks do not."""
+    p = prof[pid]
+    t = meta.get(fw, {}).get("type", "emerging")
+    if t == "infrastructure":
+        return bool(p["infraScored"])
+    if not p["scored"]:
+        return False
+    if t == "engine":
+        return bool(p["engineScored"])
+    return True
+
+
+def _eff_fn(A, in_league):
+    """eff() in index.html: the number a profile is actually ranked on.
+
+    Plain average rps, except for the two profiles the board adjusts — the
+    api-4/api-16 template mix, and json-comp, which is scored on
+    bandwidth-adjusted rps: the best compressor sets the bar and everyone else
+    is penalised by the square of their size ratio. The compression bar is per
+    league, which is why this takes `in_league` rather than a finished set.
+    """
+    min_bpr = None
+    if A["avg"].get("json-comp"):
+        cand = []
+        for fw, rps in A["avg"]["json-comp"].items():
+            b = A["bw"]["json-comp"].get(fw, 0)
+            if in_league(fw) and rps > 0 and b > 0:
+                cand.append(b / rps)
+        if cand:
+            min_bpr = min(cand)
+
+    def eff(pid, fw):
+        rps = A["avg"].get(pid, {}).get(fw, 0)
+        if rps <= 0:
+            return 0.0
+        t = A["tpl"].get(pid, {}).get(fw)
+        if pid in ("api-4", "api-16") and t:
+            return sum(t[k] * w for k, w in MIXW.items())
+        if pid == "json-comp" and min_bpr is not None:
+            b = A["bw"][pid].get(fw, 0)
+            if b > 0:
+                return rps * (min_bpr / (b / rps)) ** 2
+        return rps
+
+    return eff
+
+
+def _ranked(rows):
+    """(fw, rank, total, score) with competition ranking — ties share a rank."""
+    out, prev_score, prev_rank = [], None, 0
+    for i, (fw, score) in enumerate(rows):
+        rank = prev_rank if (prev_score is not None and abs(prev_score - score) < 1e-9) else i + 1
+        prev_score, prev_rank = score, rank
+        out.append((fw, rank, len(rows), score))
+    return out
+
+
 def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=None,
                     fw_lang=None):
     """Composite scores for one family and one league, best first.
@@ -1199,44 +1259,8 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
             return False
         return True
 
-    def is_scored(pid, fw):
-        """scoredForType() in index.html. infraScored is read before the
-        `scored` short-circuit, not behind it: the infra set is not a subset of
-        the framework set — it counts Pipelined, which frameworks do not."""
-        p = prof[pid]
-        t = meta.get(fw, {}).get("type", "emerging")
-        if t == "infrastructure":
-            return bool(p["infraScored"])
-        if not p["scored"]:
-            return False
-        if t == "engine":
-            return bool(p["engineScored"])
-        return True
-
-    # json-comp is scored on bandwidth-adjusted rps: the best compressor sets the
-    # bar and everyone else is penalised by the square of their size ratio.
-    min_bpr = None
-    if "json-comp" in pids and A["avg"].get("json-comp"):
-        cand = []
-        for fw, rps in A["avg"]["json-comp"].items():
-            b = A["bw"]["json-comp"].get(fw, 0)
-            if in_league(fw) and rps > 0 and b > 0:
-                cand.append(b / rps)
-        if cand:
-            min_bpr = min(cand)
-
-    def eff(pid, fw):
-        rps = A["avg"].get(pid, {}).get(fw, 0)
-        if rps <= 0:
-            return 0.0
-        t = A["tpl"].get(pid, {}).get(fw)
-        if pid in ("api-4", "api-16") and t:
-            return sum(t[k] * w for k, w in MIXW.items())
-        if pid == "json-comp" and min_bpr is not None:
-            b = A["bw"][pid].get(fw, 0)
-            if b > 0:
-                return rps * (min_bpr / (b / rps)) ** 2
-        return rps
+    is_scored = lambda pid, fw: _scored_for(prof, meta, pid, fw)
+    eff = _eff_fn(A, in_league)
 
     max_r = {}
     for pid in pids:
@@ -1406,19 +1430,10 @@ def write_badges(profiles, results, meta):
             key = "byLanguage" + ("WithTuned" if with_tuned and not alias else "")
         e["scopes"].setdefault(scope, {})[key] = entry
 
-    def ranked(rows):
-        """(fw, rank, total, score) with competition ranking — ties share a rank."""
-        out, prev_score, prev_rank = [], None, 0
-        for i, (fw, score) in enumerate(rows):
-            rank = prev_rank if (prev_score is not None and abs(prev_score - score) < 1e-9) else i + 1
-            prev_score, prev_rank = score, rank
-            out.append((fw, rank, len(rows), score))
-        return out
-
     def publish(rows, scope, types, lang, with_tuned):
         if len(rows) < BADGE_MIN_FIELD:
             return
-        for fw, rank, total, score in ranked(rows):
+        for fw, rank, total, score in _ranked(rows):
             # Counted in the field above, but no badge of its own: a 0 means the
             # entry ran nothing that scores in this family, so "#31 of 31" would
             # read as a placing it never competed for.
@@ -1447,6 +1462,109 @@ def write_badges(profiles, results, meta):
     (BADGE_OUT / "index.json").write_text(
         json.dumps(index, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     return written, index
+
+
+# ── achievements ────────────────────────────────────────────────────────────
+# A medal is a top-three place in a field the site already publishes: the badge
+# index for the family composites, overall and within one language, and the
+# per-profile ranking the board draws. Nothing is rescored here, so a medal, a
+# badge and the table a visitor is looking at cannot disagree.
+#
+# Every medal is taken in the entry's own league and, for a profile, only where
+# that profile counts for its tier - an engine holds no medal on a profile it is
+# not scored on. The tuned rule is _published_rank()'s: a standard entry is
+# placed in the field without tuned entries, a tuned one in the field with them.
+MEDAL_NAME = {1: "gold", 2: "silver", 3: "bronze"}
+MEDAL_ORDER = {"gold": 0, "silver": 1, "bronze": 2}
+AXIS_ORDER = {"family": 0, "language": 1, "profile": 2}
+
+# A podium takes three, which is more than BADGE_MIN_FIELD asks of a rank: "#1
+# of 2" is a fair thing to say and a poor thing to call a gold medal.
+MEDAL_MIN_FIELD = 3
+
+
+def _medal(rank, total):
+    """A place is only a medal when someone was beaten for it, so bronze needs a
+    field of 4 - bronze of three is last place."""
+    if total < MEDAL_MIN_FIELD or rank >= total:
+        return None
+    return MEDAL_NAME.get(rank)
+
+
+def _profile_link(pid, conn, types, show_tuned):
+    """Deep link to the profile view the medal was taken in. Spelled out the way
+    _badge_link() spells it, and for the same reason: the board restores its
+    league filter from localStorage, so a link that omits it can land a visitor
+    on a table the entry is not in."""
+    return SITE + "/#" + "&".join(["p=" + pid, "conns=%d" % conn,
+                                   "type=" + ",".join(sorted(types)),
+                                   "tuned=1" if show_tuned else "tuned=0"])
+
+
+def profile_medals(agg, profiles, meta):
+    """{framework: [medal]} - top three of every profile."""
+    prof = {p["id"]: p for p in profiles}
+    is_tuned = lambda fw: meta.get(fw, {}).get("mode", "standard") == "tuned"
+    out = {}
+    for types in LEAGUES:
+        in_league = lambda fw: meta.get(fw, {}).get("type", "emerging") in types
+        eff = _eff_fn(agg, in_league)
+        for p in profiles:
+            pid = p["id"]
+            if not p["scoredConns"]:
+                continue
+            field = [(fw, eff(pid, fw)) for fw in agg["avg"].get(pid, {})
+                     if in_league(fw) and _scored_for(prof, meta, pid, fw)]
+            field = [(fw, v) for fw, v in field if v > 0]
+            for with_tuned in (False, True):
+                rows = sorted((r for r in field if with_tuned or not is_tuned(r[0])),
+                              key=lambda r: (-r[1], r[0]))
+                for fw, rank, total, _v in _ranked(rows):
+                    if is_tuned(fw) != with_tuned:
+                        continue
+                    m = _medal(rank, total)
+                    if m:
+                        out.setdefault(fw, []).append(
+                            {"medal": m, "rank": rank, "of": total, "axis": "profile",
+                             "group": p["category"], "label": p["label"],
+                             "link": _profile_link(pid, p["scoredConns"][0], types,
+                                                   with_tuned)})
+    return out
+
+
+def composite_medals(badge_index, meta):
+    """{framework: [medal]} - top three of a family composite, and top three of
+    a family among the entries written in the same language."""
+    out = {}
+    for e in badge_index.values():
+        fw = e["framework"]
+        for scope, sc in e["scopes"].items():
+            for axis, d in (("family", _published_rank(sc)),
+                            ("language", sc.get("byLanguage") or sc.get("byLanguageWithTuned"))):
+                if not d:
+                    continue
+                m = _medal(d["rank"], d["of"])
+                if not m:
+                    continue
+                group = "Composite" if axis == "family" else (
+                    e["language"] or meta.get(fw, {}).get("language", "") or "Language")
+                out.setdefault(fw, []).append(
+                    {"medal": m, "rank": d["rank"], "of": d["of"], "axis": axis,
+                     "group": group, "label": SCOPE_NAME[scope], "link": d["link"]})
+    return out
+
+
+def compute_achievements(agg, profiles, meta, badge_index):
+    """{framework: [medal]}, gold first. Fed to the board and written into every
+    framework page, so both read one list."""
+    out = {}
+    for src in (composite_medals(badge_index, meta), profile_medals(agg, profiles, meta)):
+        for fw, items in src.items():
+            out.setdefault(fw, []).extend(items)
+    for items in out.values():
+        items.sort(key=lambda a: (MEDAL_ORDER[a["medal"]], AXIS_ORDER[a["axis"]],
+                                  a["group"], a["label"]))
+    return out
 
 
 # ── off-site visibility: social cards, structured data, llms.txt, prerender ──
@@ -1974,7 +2092,40 @@ def _fw_results(fw, profiles, results):
     return out
 
 
-def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url=""):
+MEDAL_ICON = {"gold": "🥇", "silver": "🥈", "bronze": "🥉"}
+MEDAL_LABEL = {"gold": "Gold", "silver": "Silver", "bronze": "Bronze"}
+AXIS_LABEL = {"family": "Family composite", "language": "Within its language",
+              "profile": "Test profile"}
+
+
+def _medal_counts(items):
+    """[(medal, how many)] gold first, medals the entry does not hold left out."""
+    return [(m, sum(1 for a in items if a["medal"] == m))
+            for m in ("gold", "silver", "bronze")
+            if any(a["medal"] == m for a in items)]
+
+
+def _fw_achievements(items):
+    """The Achievements section of a framework page."""
+    e = _html.escape
+    head = " · ".join("%s %d %s" % (MEDAL_ICON[m], n, MEDAL_LABEL[m])
+                      for m, n in _medal_counts(items))
+    rows = "".join(
+        '<tr><td>%s %s</td><td>%s</td><td>%s</td><td><a href="%s">%d of %d</a></td></tr>'
+        % (MEDAL_ICON[a["medal"]], MEDAL_LABEL[a["medal"]], e(AXIS_LABEL[a["axis"]]),
+           e(a["group"] + " · " + a["label"]), e(a["link"]), a["rank"], a["of"])
+        for a in items)
+    return ('<h2 id="achievements">Achievements</h2>'
+            "<p>" + e(head) + ". Top three of a field, taken in this entry's own league: "
+            "the family composite, the same composite among entries written in the same "
+            "language, and each test profile it is scored on. Every field is the one the "
+            "badges publish, so a medal and a badge always say the same thing. "
+            '<a href="/docs/scoring/achievements/">How medals are awarded</a>.</p>'
+            "<table><thead><tr><th>Medal</th><th>Award</th><th>Field</th><th>Rank</th>"
+            "</tr></thead><tbody>" + rows + "</tbody></table>")
+
+
+def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=()):
     e = _html.escape
     facts = [TYPE_LABEL.get(m.get("type", "emerging"), m.get("type", "")), lang]
     if m.get("engine") and m["engine"] != fw:
@@ -2000,6 +2151,9 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url=""):
                      % (lang_url, e(lang)))
     links.append('<li><a href="/">Open the leaderboard</a></li>')
     out.append("<ul>" + "".join(links) + "</ul>")
+
+    if achievements:
+        out.append(_fw_achievements(achievements))
 
     if ranks:
         out.append('<h2 id="rank">Composite rank</h2>')
@@ -2036,7 +2190,7 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url=""):
     return '<div class="doc-body">' + "".join(out) + "</div>"
 
 
-def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url=""):
+def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievements=()):
     e = _html.escape
     url = SITE + _fw_url(fw)
     title = f"{fw} performance benchmark & ranking"
@@ -2090,7 +2244,7 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url=""):
               '</header>')
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
-            + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url)
+            + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements)
             + "</article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
@@ -2362,7 +2516,8 @@ def _fw_index_page(entries, lang_pages=()):
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
-def build_fw_pages(profiles, results, meta, fw_lang, badge_index, round_name, with_og):
+def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
+                   round_name, with_og):
     """A page per framework that has results, plus the index over them."""
     if FW_OUT.exists():
         shutil.rmtree(FW_OUT)
@@ -2418,7 +2573,8 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, round_name, wi
         dest = FW_OUT / _slug(fw)
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "index.html").write_text(
-            _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url), encoding="utf-8")
+            _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
+                     achievements.get(fw, ())), encoding="utf-8")
         if with_og:
             _og_card(dest / "og.png", "Benchmark results", fw,
                      [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
@@ -2538,9 +2694,15 @@ def main():
                     print(f"[warn] profile '{pid}' -> implementation doc '{docid}' not found")
                 profiles.append(prof)
 
+    # Badges first: the medals are read out of the index it returns, and they
+    # ship inside the board's own payload.
+    n_badges, badge_index = write_badges(profiles, results, meta)
+    agg = badge_aggregate(profiles, results)
+    achievements = compute_achievements(agg, profiles, meta, badge_index)
+
     payload = {"current": current, "langColors": langcolors, "meta": meta,
                "profiles": profiles, "results": results, "docs": docs_tree,
-               "rounds": build_rounds()}
+               "achievements": achievements, "rounds": build_rounds()}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(js_payload("LB_DATA", payload))
 
@@ -2551,12 +2713,10 @@ def main():
     trails = _crumb_trails(docs_tree)
     n_pages = build_doc_pages(docs_tree, docs_content, trails, with_og=has_og)
     n_search, search_bytes = write_search_index(docs_tree, docs_content)
-    n_badges, badge_index = write_badges(profiles, results, meta)
 
     # The board's default view, and the same view for the other five families.
     # Same port of computeComposite() the badges use, so the ranking written into
     # the page cannot disagree with the one the page draws over it.
-    agg = badge_aggregate(profiles, results)
     fw_lang = _fw_languages(results)
     families = [(scope, badge_composite(agg, profiles, meta, scope, DEFAULT_TYPES,
                                         show_tuned=True, fw_lang=fw_lang))
@@ -2565,7 +2725,8 @@ def main():
     round_name = payload["rounds"]["name"]
 
     fw_entries, n_fw_cards, lang_pages = build_fw_pages(profiles, results, meta, fw_lang,
-                                                        badge_index, round_name, has_og)
+                                                        badge_index, achievements,
+                                                        round_name, has_og)
     n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages)
 
     # og cards go in after build_doc_pages: that one clears site/generated/docs/
