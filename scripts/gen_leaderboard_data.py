@@ -693,7 +693,7 @@ _SHARED_EXACT = {
     ":root", "html", "body", "a", "*",
     ".top", ".brand", ".brand-name", ".brand-name b", ".brand-name:hover",
     ".icon-btn", ".icon-btn:hover", ".icon-btn svg", ".top-links",
-    ".top-link", ".top-link:hover",
+    ".fw-btn", ".fw-btn svg", ".fw-btn:hover",
 }
 _SHARED_PREFIX = (".doc-", ".type-rules", ".tr-sq", ".nav", ".ns-box", ".caret")
 
@@ -737,16 +737,22 @@ def board_chrome():
     brand = re.search(r'<div class="brand">(.*?)</div>', html, re.S)
     links = re.search(r'<div class="top-links">(.*?)</div>', html, re.S)
     style = re.search(r"<style>(.*?)</style>", html, re.S)
-    if not (brand and links and style):
+    # The Frameworks button lives beside the board's round selector, which no
+    # generated page has, so it is lifted separately rather than riding along
+    # inside .top-links. Same rule as the rest of the chrome: read the board,
+    # never retype it.
+    fwbtn = re.search(r'<a class="fw-btn".*?</a>', html, re.S)
+    if not (brand and links and style and fwbtn):
         raise SystemExit(f"gen: cannot read site chrome from {BOARD.relative_to(ROOT)} - "
-                         "expected .brand, .top-links and a <style> block")
+                         "expected .brand, .top-links, .fw-btn and a <style> block")
     shared = [r for r in _top_level_rules(style.group(1)) if _is_shared(r)]
     if len(shared) < 40:
         raise SystemExit(f"gen: only {len(shared)} shared CSS rules found in "
                          f"{BOARD.relative_to(ROOT)} - the selector list is stale")
     # the board's brand link drives its in-page router; on a doc page it goes home
     brand_html = brand.group(1).strip().replace('href="#" id="brandHome"', 'href="/"')
-    return brand_html, links.group(1).strip(), "\n".join(shared)
+    return (brand_html, links.group(1).strip(), "\n".join(shared),
+            fwbtn.group(0).strip())
 
 
 # Resolved once at import: the board's chrome, shared by every generated page.
@@ -864,7 +870,8 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
     header = ('<body><header class="top">'
               '<div class="brand">' + _CHROME[0] + '</div>'
               '<a class="brand-sub" href="/docs/">Knowledge Base</a>'
-              '<div class="top-links">' + _CHROME[1] + '</div>'
+              + _CHROME[3]
+              + '<div class="top-links">' + _CHROME[1] + '</div>'
               '</header>')
     body = ('<div class="docs-layout">'
             '<aside class="nav">' + _sidebar(tree, did) + '</aside>'
@@ -898,6 +905,8 @@ def _docs_css():
 .fw-kind{color:var(--muted);font-size:.78rem}
 /* the "compare these N entries" line under each language heading on /frameworks/ */
 .fw-compare{margin:-.4rem 0 .6rem;font-size:.85rem}
+/* the one-sentence answer at the top of a language page, before any table */
+.lead-answer{font-size:1.02rem;line-height:1.6;padding:.85rem 1rem;margin:0 0 1rem;border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 8px 8px 0}
 .doc-main{min-width:0;padding:1.6rem 2rem 4rem;max-width:900px}
 .doc-wrap{max-width:none}
 .nav-grp-link{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit;text-decoration:none}
@@ -1888,6 +1897,16 @@ def kind_has_mode(kind):
     return kind in MODE_TYPES
 
 
+# What an entry of this tier is, in a sentence. Used where prose would otherwise
+# call a reverse proxy a web framework.
+_KIND_NOUN = {"engine": "an HTTP engine",
+              "infrastructure": "a reverse proxy or static-file server"}
+
+
+def _a_kind(kind):
+    return _KIND_NOUN.get(kind, "a web framework")
+
+
 def _fw_url(fw):
     return "/frameworks/" + _slug(fw) + "/"
 
@@ -2055,6 +2074,73 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url=""):
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
+def _lang_faq(lang, scopes, n_entries, round_name):
+    """[(question, answer)] for one language, generated from its own rows.
+
+    "fastest <language> web framework" is the question these pages exist to
+    answer, and it is a question people type and assistants get asked. Neither
+    reads a table cell: they quote a sentence. So the answers are written out as
+    sentences, from the same rows the tables are built from, and emitted again
+    as FAQPage data so a machine reading the markup gets the same numbers.
+
+    "Fastest" is the word people use; the composite is what is actually being
+    compared, so each answer names it rather than letting the word stand alone.
+    """
+    e = _html.escape
+    qa = []
+    lead = scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else None)
+    if lead:
+        fw, kind, tuned, score, rank, of, _link, lrank, lof = lead[0]
+        # nginx is not a C web framework and swerver is not a Zig one. Ask the
+        # question the leader can actually answer, and answer the framework one
+        # separately with the quickest entry that is a framework.
+        is_fw = kind_has_mode(kind)
+        qa.append((
+            f"What is the fastest {lang} web framework?" if is_fw
+            else f"What is the fastest {lang} HTTP server?",
+            f"{fw}"
+            + ("" if is_fw else f", {_a_kind(kind)},")
+            + f" leads the {lang} entries in HttpArena with a composite score of "
+              f"{score:.0f} on {SCOPE_NAME[DEFAULT_SCOPE]}, measured over {round_name}. "
+              f"The composite sums a normalized score across the profiles of a family, "
+              f"where the leader of each profile scores 100. Against every language, "
+              f"{fw} ranks {rank} of {of} in its own league."
+            + (f" It is a tuned entry, so it is ranked in the field that includes "
+               f"tuned configurations." if tuned else "")))
+        if not is_fw:
+            top_fw = next((r for r in lead if kind_has_mode(r[1])), None)
+            if top_fw:
+                qa.append((
+                    f"What is the fastest {lang} web framework?",
+                    f"{top_fw[0]}, with a composite of {top_fw[3]:.0f} on "
+                    f"{SCOPE_NAME[DEFAULT_SCOPE]}. {fw} scores higher but is "
+                    f"{_a_kind(kind)}, not a framework, and is ranked in its own league."))
+    for scope, rows in scopes.items():
+        if scope == DEFAULT_SCOPE or not rows:
+            continue
+        fw, _k, _t, score, rank, of, _l, _lr, _lo = rows[0]
+        qa.append((
+            f"What is the fastest {lang} {SCOPE_NAME[scope]} server?",
+            f"{fw}, with a composite of {score:.0f} on {SCOPE_NAME[scope]} and "
+            f"{rank} of {of} against all languages in its league."))
+    qa.append((
+        f"How many {lang} web frameworks are benchmarked?",
+        f"{n_entries} {lang} " + ("entry is" if n_entries == 1 else "entries are")
+        + f" measured, covering {', '.join(SCOPE_NAME[s] for s in scopes) or 'no family'}"
+          f". Every one runs on the same machine, in the same round ({round_name}), "
+          f"against the same profiles."))
+    if lead:
+        fw = lead[0][0]
+        qa.append((
+            f"Is {lang} fast for web servers?",
+            f"The quickest {lang} entry, {fw}, places {lead[0][4]} of {lead[0][5]} on "
+            f"{SCOPE_NAME[DEFAULT_SCOPE]} across every language in its league, so that "
+            f"placing is the honest answer for {lang} at its best rather than for "
+            f"{lang} in general. The tables below show the spread across all "
+            f"{n_entries} " + ("entry" if n_entries == 1 else "entries") + "."))
+    return [(e(q), e(a)) for q, a in qa]
+
+
 def _lang_page(lang, scopes, all_entries, round_name):
     """/frameworks/lang/<language>/ - one language's entries, compared family by family.
 
@@ -2069,8 +2155,18 @@ def _lang_page(lang, scopes, all_entries, round_name):
     title = lang + " web framework benchmarks"
     n = len(all_entries)
     fams = ", ".join(SCOPE_NAME[s] for s in scopes)
-    desc = (f"{n} {lang} web framework{'s' if n != 1 else ''} benchmarked by HttpArena, "
-            f"compared on {fams}: composite score, rank overall and rank among {lang}.")
+    faq = _lang_faq(lang, scopes, n, round_name)
+    lead_row = (scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else None))
+    lead_fw = lead_row[0][0] if lead_row else ""
+    # Description leads with the answer rather than describing the page: it is
+    # the search snippet, and the first line an assistant reads.
+    desc = ((f"The fastest {lang} "
+             + ("web framework" if kind_has_mode(lead_row[0][1]) else "HTTP server")
+             + f" in HttpArena is {lead_fw} "
+               f"(composite {lead_row[0][3]:.0f} on {SCOPE_NAME[DEFAULT_SCOPE]}). "
+             if lead_row else "")
+            + f"All {n} {lang} entr{'y' if n == 1 else 'ies'} compared on {fams}: "
+              f"composite score, rank overall and rank among {lang}.")
 
     tables = []
     for scope, rows in scopes.items():
@@ -2103,7 +2199,10 @@ def _lang_page(lang, scopes, all_entries, round_name):
             {"@type": "ListItem", "position": 1, "name": "Frameworks",
              "item": SITE + "/frameworks/"},
             {"@type": "ListItem", "position": 2, "name": lang, "item": url}]},
-    ] + _org_nodes()
+    ] + ([{"@type": "FAQPage", "@id": url + "#faq", "mainEntity": [
+            {"@type": "Question", "name": q,
+             "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}]
+         if faq else []) + _org_nodes()
     head = ('<!doctype html><html lang="en" data-theme=""><head>'
             '<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -2126,6 +2225,27 @@ def _lang_page(lang, scopes, all_entries, round_name):
               '<a class="brand-sub" href="/frameworks/">Frameworks</a>'
               '<div class="top-links">' + _CHROME[1] + '</div>'
               '</header>')
+    # The answer first, in a sentence, before any table. Both a reader skimming
+    # and an assistant summarising take the first paragraph.
+    answer = ""
+    if lead_row:
+        fw, kind, tuned, score, rank, of, link, _lr, _lo = lead_row[0]
+        is_fw = kind_has_mode(kind)
+        extra = ""
+        if not is_fw:
+            top_fw = next((r for r in lead_row if kind_has_mode(r[1])), None)
+            if top_fw:
+                extra = (' The quickest %s <i>framework</i> is <a href="%s"><b>%s</b></a>, '
+                         'at %.0f.' % (e(lang), _fw_url(top_fw[0]), e(top_fw[0]), top_fw[3]))
+        answer = ('<p class="lead-answer">The fastest %s %s in HttpArena is '
+                  '<a href="%s"><b>%s</b></a>%s, with a composite of %.0f on %s &mdash; '
+                  '<a href="%s">%d of %d</a> against every language in its league. '
+                  'Measured over %s, every entry on the same machine.%s%s</p>'
+                  % (e(lang), "web framework" if is_fw else "HTTP server",
+                     _fw_url(fw), e(fw), "" if is_fw else " (%s)" % e(_a_kind(kind)),
+                     score, e(SCOPE_NAME[DEFAULT_SCOPE]),
+                     e(link), rank, of, e(round_name),
+                     " This is a tuned entry." if tuned else "", extra))
     intro = ("<p>Every %s entry in the benchmark, compared on the composite score of each "
              "family. The composite sums a normalized score over the profiles of that family, "
              "where the leader of each profile scores 100. Rank overall is the entry's place in "
@@ -2148,7 +2268,9 @@ def _lang_page(lang, scopes, all_entries, round_name):
                      "it is listed" if len(rest) == 1 else "they are listed"))
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
-            '<div class="doc-body">' + intro + "".join(tables)
+            '<div class="doc-body">' + answer + intro + "".join(tables)
+            + ("<h2 id=\"faq\">Questions</h2>"
+               + "".join('<h3>%s</h3><p>%s</p>' % (q, a) for q, a in faq) if faq else "")
             + "<h2>Every " + e(lang) + " entry</h2><ul>" + every + "</ul>"
             + '<p>' + e(round_name) + ' · <a href="/frameworks/">All languages</a> · '
               '<a href="/">Open the leaderboard</a></p>'
