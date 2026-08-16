@@ -31,6 +31,7 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
 4. **Host tuning** (`scripts/lib/system.sh`):
    - CPU governor → `performance` via `cpupower` (falls back to writing `/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor`).
    - `net.core.somaxconn=65535`, `tcp_max_syn_backlog=65535`, `netdev_max_backlog=65535`, `rmem_max=wmem_max=7500000` (QUIC).
+   - `ip_local_port_range=1024 65535`, and `ip_local_reserved_ports=5432,6379,8080,8081,8082,8443,9090` so the widened range cannot hand a service's own port to an outbound socket. See [Kernel tuning](../../../hardware/#kernel-tuning-applied-per-run).
    - `ip link set lo mtu 1500` - realistic Ethernet MTU, not the kernel's default 65536.
    - `systemctl restart docker` - guarantees every subsequent container starts from a fresh daemon state.
    - `echo 3 > /proc/sys/vm/drop_caches`.
