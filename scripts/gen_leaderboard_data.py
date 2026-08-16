@@ -2731,9 +2731,23 @@ _MATCH_JS = r"""
     }, 120);
   }
 
+  // A preset stays lit while the weights are still its own, and goes out by
+  // itself the moment a slider moves it off them. Derived rather than
+  // remembered, so a link with weights in it lights the right one on arrival.
+  function isPreset(w){
+    var a=Object.keys(w).filter(function(k){return w[k]>0;}).sort();
+    var b=Object.keys(st.w).filter(function(k){return st.w[k]>0;}).sort();
+    return a.length===b.length && a.every(function(k,i){ return k===b[i] && w[k]===st.w[k]; });
+  }
+  function syncPresets(){
+    document.querySelectorAll('[data-preset]').forEach(function(b){
+      b.classList.toggle('on', isPreset(M.presets[+b.dataset.preset].w));
+    });
+  }
+
   function panel(){
     var h='<div class="mx-h">Start from</div><div class="mx-chips" id="mxPresets">';
-    M.presets.forEach(function(p,i){ h+='<button class="mx-chip" data-preset="'+i+'">'+esc(p.l)+'</button>'; });
+    M.presets.forEach(function(p,i){ h+='<button class="mx-chip'+(isPreset(p.w)?' on':'')+'" data-preset="'+i+'">'+esc(p.l)+'</button>'; });
     h+='</div><div class="mx-h">Compare</div><div class="mx-chips" id="mxLeagues">';
     M.leagues.forEach(function(l){ h+='<button class="mx-chip'+(st.lg===l[0]?' on':'')+'" data-lg="'+esc(l[0])+'">'+esc(l[1])+'</button>'; });
     h+='</div><div class="mx-h">Language</div><div class="mx-chips mx-langs" id="mxLangs">';
@@ -2788,6 +2802,7 @@ _MATCH_JS = r"""
 
   function run(){
     writeHash();
+    syncPresets();
     var keys=Object.keys(st.w).filter(function(k){return st.w[k]>0;});
     var out=document.getElementById('mxOut'), cnt=document.getElementById('mxCount');
     if(!keys.length){
