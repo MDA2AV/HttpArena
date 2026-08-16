@@ -34,8 +34,16 @@ jobs:
       # Only the og:image cards need it. The generator runs fine without it and
       # simply leaves the cards (and the tags pointing at them) out, so a local
       # run still produces the whole site.
+      #
+      # continue-on-error keeps that true here: `run:` executes under `bash -e`,
+      # so a PyPI hiccup or a runner image that starts enforcing PEP 668
+      # (externally-managed-environment) would otherwise fail the job before the
+      # generator runs and stop the site updating at all. Losing the cards for
+      # one deploy is the smaller failure. Pinned so the deploy job, which holds
+      # pages:write and id-token:write, does not pull an unreviewed release.
       - name: Install Pillow (social cards)
-        run: python3 -m pip install --quiet --disable-pip-version-check pillow
+        continue-on-error: true
+        run: python3 -m pip install --quiet --disable-pip-version-check 'pillow==11.3.0'
 
       - name: Generate leaderboard data
         run: python3 scripts/gen_leaderboard_data.py

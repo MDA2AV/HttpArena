@@ -768,7 +768,11 @@ _NAV_JS = ("<script>(function(){"
            "function need(f){if(window.LB_SEARCH){f();return;}cb=f;if(req)return;"
            "req=document.createElement('script');req.src='/search.js';"
            "req.onload=function(){var g=cb;cb=null;if(g)g();};"
-           "req.onerror=function(){req=null;};document.head.appendChild(req);}"
+           # Run the pending callback on failure too, so the box answers "no
+           # page matches" instead of staying blank forever, and clear req so
+           # the next keystroke can retry the fetch.
+           "req.onerror=function(){req=null;var g=cb;cb=null;if(g)g();};"
+           "document.head.appendChild(req);}"
            "inp.addEventListener('focus',function(){need(function(){});},{once:true});"
            "function esc(s){return String(s).replace(/[&<>\"]/g,function(c){"
            "return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}"
@@ -779,7 +783,10 @@ _NAV_JS = ("<script>(function(){"
            "function run(){var q=inp.value.trim().toLowerCase();"
            "if(!q){box.style.display='none';tree.style.display='';inp.setAttribute('aria-expanded','false');return;}"
            "var terms=q.split(/\\s+/).filter(Boolean),hits=[];"
-           "window.LB_SEARCH.forEach(function(e){var t=(e.t||'').toLowerCase(),"
+           # Guarded the way the board's buildSearchIndex() guards it: a script
+           # that loads but defines nothing (proxy error page, blocked fetch)
+           # would otherwise throw on every keystroke for the rest of the visit.
+           "(window.LB_SEARCH||[]).forEach(function(e){var t=(e.t||'').toLowerCase(),"
            "b=((e.d||'')+' '+(e.x||'')).toLowerCase(),sc=0;"
            "for(var i=0;i<terms.length;i++){var ti=t.indexOf(terms[i]),bi=b.indexOf(terms[i]);"
            "if(ti<0&&bi<0)return;sc+=ti===0?60:ti>0?35:0;if(bi>=0)sc+=5;}"
@@ -1001,13 +1008,22 @@ def _doc_source_path(did):
 
 def write_sitemap(content, fw_entries=()):
     """Root, /frameworks/, every framework and every /docs/<id>/."""
-    dates = _last_commit_dates("site/content/docs", "site/data/results")
+    # frameworks.json is in here because it supplies the type, mode, language,
+    # repo and description on every framework page - dating those pages from the
+    # results alone missed metadata edits entirely.
+    dates = _last_commit_dates("site/content/docs", "site/data/results",
+                               "site/data/frameworks.json")
     newest = max(dates.values(), default=None)
 
     urls = [(SITE + "/", newest), (SITE + "/frameworks/", newest)]
+    # A framework page is dated from the whole corpus, not from its own results
+    # file. Its headline is "rank N of M" across six families, recomputed every
+    # build, so any other entry being added or re-run changes this page too.
+    # Dating it from its own results said "unchanged for three weeks" on 69 of
+    # them while the number on the page moved - which is the untrue lastmod this
+    # function exists to avoid, just in the other direction.
     for fw, _lang, _kind in fw_entries:
-        urls.append((SITE + _fw_url(fw),
-                     dates.get(f"site/data/results/{_slug(fw)}.json", newest)))
+        urls.append((SITE + _fw_url(fw), newest))
     for did in sorted(content):
         urls.append((SITE + _doc_url(did), dates.get(_doc_source_path(did))))
 
@@ -1416,7 +1432,7 @@ def write_badges(profiles, results, meta):
     BADGE_OUT.mkdir(parents=True, exist_ok=True)
     (BADGE_OUT / "index.json").write_text(
         json.dumps(index, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    return written, len(index)
+    return written, index
 
 
 # ── off-site visibility: social cards, structured data, llms.txt, prerender ──
@@ -1602,15 +1618,16 @@ def _org_nodes():
     ]
 
 
-def _dataset_node(current, n_frameworks, n_profiles, round_name):
-    """The results, declared as a dataset. This is the one piece of structured
-    data with a channel of its own behind it - Google Dataset Search indexes
-    Dataset nodes, and a benchmark is exactly what it is looking for."""
+def _dataset_node(current, n_entries, n_profiles, round_name):
+    """`n_entries` is every entry the dataset covers, not the default board view.
+    It was the latter, so the sentence claimed its 97 flagship-and-emerging rows
+    included "HTTP engines and reverse proxies" — two tiers that field excludes
+    by definition — while the data.json it points at carried all of them."""
     hw = " ".join(x for x in [current.get("cpu", ""), current.get("os", "")] if x)
     return {
         "@type": "Dataset", "@id": SITE + "/#dataset",
         "name": "HttpArena web server benchmark results",
-        "description": (f"Throughput, latency, CPU and memory for {n_frameworks} web frameworks, "
+        "description": (f"Throughput, latency, CPU and memory for {n_entries} web frameworks, "
                         f"HTTP engines and reverse proxies over {n_profiles} benchmark profiles "
                         f"(HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket), every entry run on the "
                         f"same machine{' - ' + hw if hw else ''}."),
@@ -1632,13 +1649,16 @@ def _dataset_node(current, n_frameworks, n_profiles, round_name):
 
 
 def _ranking_node(scope, rows):
+    # numberOfItems counts what the list actually carries. It used to report the
+    # whole field while serialising the top 20, so the node contradicted itself.
+    listed = rows[:20]
     return {
         "@type": "ItemList", "@id": SITE + "/#ranking-" + scope,
-        "name": SCOPE_NAME[scope] + " composite ranking",
+        "name": SCOPE_NAME[scope] + " composite ranking (top %d)" % len(listed),
         "itemListOrder": "https://schema.org/ItemListOrderDescending",
-        "numberOfItems": len(rows),
+        "numberOfItems": len(listed),
         "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": fw}
-                            for i, (fw, _) in enumerate(rows[:20])],
+                            for i, (fw, _) in enumerate(listed)],
     }
 
 
@@ -1775,7 +1795,7 @@ def _static_board(rows, fw_lang, round_name):
             'text at <a href="/llms.txt">/llms.txt</a>.</p>')
 
 
-def build_index_page(rows, fw_lang, current, round_name, n_profiles, og_url):
+def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries, og_url):
     """site/generated/index.html: the board with its default view already in it.
 
     Written from the checked-in page rather than replacing it, so the source
@@ -1784,6 +1804,15 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, og_url):
     shipping an empty page again."""
     src = (ROOT / "site" / "leaderboard" / "index.html").read_text(encoding="utf-8")
 
+    # once() fails the deploy when the board's markup moves, but an empty
+    # ranking used to sail through it: a 0-row table, "0 frameworks", a 0-item
+    # ItemList and a blank social card, all with exit status 0. That is the same
+    # "quietly shipping an empty page" this function was written to stop, just
+    # reached through the data rather than the markup.
+    if not rows:
+        raise SystemExit("[fatal] prerender: the default composite view is empty - "
+                         "refusing to publish a board with no ranking")
+
     def once(html, needle, repl, what):
         if html.count(needle) != 1:
             raise SystemExit(f"[fatal] prerender: expected exactly one {what} in "
@@ -1791,10 +1820,16 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, og_url):
         return html.replace(needle, repl, 1)
 
     graph = _org_nodes() + [
-        _dataset_node(current, len(rows), n_profiles, round_name),
+        _dataset_node(current, n_entries, n_profiles, round_name),
         _ranking_node(DEFAULT_SCOPE, rows),
     ]
-    head = ('<meta property="og:type" content="website">'
+    # The theme has to be applied before the first paint. Every other page this
+    # generator writes inlines _THEME_INIT in its head; the board did not need it
+    # while #rows was empty, because only bare chrome could flash. Now that a
+    # full ranking paints before any script runs, a dark-mode reader would watch
+    # the whole table render light and then invert.
+    head = (_THEME_INIT
+            + '<meta property="og:type" content="website">'
             '<meta property="og:site_name" content="HttpArena">'
             '<meta property="og:title" content="HTTP Web Server Benchmarks – HttpArena">'
             '<meta property="og:description" content="' + _html.escape(SITE_DESC) + '">'
@@ -1839,41 +1874,44 @@ TYPE_LABEL = {"flagship": "Flagship", "emerging": "Emerging",
               "experimental": "Experimental", "engine": "Engine",
               "infrastructure": "Infrastructure"}
 
+# Standard/Tuned is a framework distinction. Engines and reverse proxies have no
+# mode in meta.json, so nothing should claim one on their behalf.
+MODE_TYPES = ("flagship", "emerging", "experimental")
+
+
+def kind_has_mode(kind):
+    return kind in MODE_TYPES
+
 
 def _fw_url(fw):
     return "/frameworks/" + _slug(fw) + "/"
 
 
-def _league_of(kind):
-    for league in LEAGUES:
-        if kind in league:
-            return league
-    return LEAGUES[0]
 
 
-def fw_rankings(agg, profiles, meta, fw_lang):
-    """(family, league) -> ordered rows. A page has to quote the rank of its own
-    league: an engine is not scored against frameworks and saying otherwise would
-    contradict both the board and the badge."""
-    out = {}
+def _fw_ranks(fw, badge_index):
+    """[(family, rank, field size, score, board link)] straight out of the badge index.
+
+    Read from write_badges()' own index rather than recomputed. The badge is
+    already this project's published answer to "where does this entry place",
+    and it applies four rules a second implementation got wrong: competition
+    ranking so ties share a place, no rank from a field of one, nothing for an
+    entry whose composite is 0 (it never competed), and the tuned-excluded
+    field for standard entries with the tuned-inclusive one aliased in for
+    tuned ones. The link comes from the same place, so the page deep-links to
+    the board view the number was taken in — filtered to the right league —
+    instead of to whatever the visitor last looked at.
+
+    A page that disagrees with the badge about the same entry is worse than a
+    page that omits the number, and these were disagreeing on all 71 standard
+    H/1.1 entries.
+    """
+    scopes = (badge_index.get(_slug(fw)) or {}).get("scopes", {})
+    out = []
     for scope in SCOPE_NAME:
-        for league in LEAGUES:
-            rows = badge_composite(agg, profiles, meta, scope, league,
-                                   show_tuned=True, fw_lang=fw_lang)
-            if rows:
-                out[(scope, league)] = rows
-    return out
-
-
-def _fw_ranks(fw, kind, rankings):
-    """[(family, rank, field size, score)] over the families this entry runs."""
-    league, out = _league_of(kind), []
-    for scope in SCOPE_NAME:
-        rows = rankings.get((scope, league)) or []
-        for i, (name, score) in enumerate(rows):
-            if name == fw:
-                out.append((scope, i + 1, len(rows), score))
-                break
+        d = (scopes.get(scope) or {}).get("default")
+        if d:
+            out.append((scope, d["rank"], d["of"], d["score"], d["link"]))
     return out
 
 
@@ -1894,7 +1932,13 @@ def _fw_body(fw, m, lang, ranks, runs, round_name):
     facts = [TYPE_LABEL.get(m.get("type", "emerging"), m.get("type", "")), lang]
     if m.get("engine") and m["engine"] != fw:
         facts.append("engine: " + m["engine"])
-    facts.append("tuned configuration" if m.get("mode") == "tuned" else "standard configuration")
+    # mode is a framework-only field. Engines and reverse proxies never declare
+    # one, and the board's modal shows nothing for them, so asserting "standard
+    # configuration" on all 44 of them made the crawlable page say something the
+    # interactive board does not.
+    if kind_has_mode(m.get("type", "emerging")):
+        facts.append("tuned configuration" if m.get("mode") == "tuned"
+                     else "standard configuration")
     out = ["<p>" + e(" · ".join(x for x in facts if x)) + "</p>"]
     if m.get("desc"):
         out.append("<p>" + e(m["desc"]) + "</p>")
@@ -1914,9 +1958,9 @@ def _fw_body(fw, m, lang, ranks, runs, round_name):
                    "engines and reverse proxies are scored apart from frameworks. "
                    '<a href="/docs/scoring/composite-score/">How it works</a>.</p>')
         rows = "".join(
-            '<tr><td><a href="/#scope=%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
-            % (scope, e(SCOPE_NAME[scope]), rank, field, score)
-            for scope, rank, field, score in ranks)
+            '<tr><td><a href="%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
+            % (e(link), e(SCOPE_NAME[scope]), rank, field, score)
+            for scope, rank, field, score, link in ranks)
         out.append("<table><thead><tr><th>Family</th><th>Rank</th><th>Composite</th></tr></thead>"
                    "<tbody>" + rows + "</tbody></table>")
 
@@ -2049,19 +2093,42 @@ def _fw_index_page(entries):
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
-def build_fw_pages(profiles, results, meta, fw_lang, rankings, round_name, with_og):
+def build_fw_pages(profiles, results, meta, fw_lang, badge_index, round_name, with_og):
     """A page per framework that has results, plus the index over them."""
     if FW_OUT.exists():
         shutil.rmtree(FW_OUT)
     FW_OUT.mkdir(parents=True, exist_ok=True)
 
     named = sorted({r["fw"] for rows in results.values() for r in rows})
+
+    # Results published under a name frameworks.json does not carry: meta.get()
+    # would hand it the "emerging" default and the page would assert a tier its
+    # own meta.json contradicts, in the sitemap and in a SoftwareApplication
+    # node. zix-grpc and zix-ws hit this - they share the display_name "zix" but
+    # publish results under their directory name. Skip and report; the board
+    # still lists them.
+    unknown = [fw for fw in named if fw not in meta]
+    if unknown:
+        print("[warn] no frameworks.json entry for " + ", ".join(unknown)
+              + " - no page written (results published under a name that is not"
+                " a display_name)")
+        named = [fw for fw in named if fw in meta]
+
+    # Two display names collapsing to one slug would silently overwrite each
+    # other's directory. write_badges guards the language analogue the same way.
+    by_slug = {}
+    for fw in named:
+        by_slug.setdefault(_slug(fw), []).append(fw)
+    clashes = {s: v for s, v in by_slug.items() if len(v) > 1}
+    if clashes:
+        raise SystemExit(f"frameworks: entries share a URL slug, fix _slug(): {clashes}")
+
     entries, cards = [], 0
     for fw in named:
-        m = meta.get(fw, {})
+        m = meta[fw]
         kind = m.get("type", "emerging")
         lang = fw_lang.get(fw) or m.get("language", "")
-        ranks = _fw_ranks(fw, kind, rankings)
+        ranks = _fw_ranks(fw, badge_index)
         runs = _fw_results(fw, profiles, results)
         og_url = (_fw_url(fw) + "og.png") if with_og else ""
         dest = FW_OUT / _slug(fw)
@@ -2071,7 +2138,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, rankings, round_name, with_
         if with_og:
             _og_card(dest / "og.png", "Benchmark results", fw,
                      [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
-                      for s, rank, field, _ in ranks],
+                      for s, rank, field, _, _link in ranks],
                      " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
                                             round_name, "www.http-arena.com"] if x),
                      blurb=m.get("desc", ""))
@@ -2178,7 +2245,7 @@ def main():
     trails = _crumb_trails(docs_tree)
     n_pages = build_doc_pages(docs_tree, docs_content, trails, with_og=has_og)
     n_search, search_bytes = write_search_index(docs_tree, docs_content)
-    n_badges, n_badge_fw = write_badges(profiles, results, meta)
+    n_badges, badge_index = write_badges(profiles, results, meta)
 
     # The board's default view, and the same view for the other five families.
     # Same port of computeComposite() the badges use, so the ranking written into
@@ -2191,8 +2258,7 @@ def main():
     board = dict(families)[DEFAULT_SCOPE]
     round_name = payload["rounds"]["name"]
 
-    rankings = fw_rankings(agg, profiles, meta, fw_lang)
-    fw_entries, n_fw_cards = build_fw_pages(profiles, results, meta, fw_lang, rankings,
+    fw_entries, n_fw_cards = build_fw_pages(profiles, results, meta, fw_lang, badge_index,
                                             round_name, has_og)
     n_urls, n_dated = write_sitemap(docs_content, fw_entries)
 
@@ -2200,7 +2266,10 @@ def main():
     # before it writes, and the per-doc cards live inside it.
     og_url, n_cards = build_og_images(docs_content, trails, board, fw_lang, round_name)
     json_bytes = write_data_json(payload)
-    index_bytes = build_index_page(board, fw_lang, current, round_name, len(profiles), og_url)
+    # Every entry the dataset covers, not the default board view — see _dataset_node.
+    n_entries = len({r["fw"] for rows_ in results.values() for r in rows_})
+    index_bytes = build_index_page(board, fw_lang, current, round_name, len(profiles),
+                                   n_entries, og_url)
     llms_bytes, llms_full_bytes = write_llms_txt(docs_tree, docs_content, families,
                                                  fw_lang, current, round_name, fw_entries)
 
@@ -2211,7 +2280,7 @@ def main():
     print(f"wrote {(OUT.parent / 'search.js').relative_to(ROOT)} - {n_search} indexed pages, {search_bytes // 1024} KB")
     print(f"wrote {(GEN / 'sitemap.xml').relative_to(ROOT)} - {n_urls} URLs, "
           f"{n_dated} with lastmod")
-    print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {n_badge_fw} frameworks")
+    print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {len(badge_index)} frameworks")
     print(f"wrote {FW_OUT.relative_to(ROOT)}/ - {len(fw_entries)} framework pages + index")
     print(f"wrote {(GEN / 'index.html').relative_to(ROOT)} - board with the "
           f"{SCOPE_NAME[DEFAULT_SCOPE]} composite ({len(board)} entries) pre-rendered, "

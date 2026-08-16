@@ -511,7 +511,13 @@ document.addEventListener('DOMContentLoaded', function(){
   // Run-logs are deployed at /logs/ (the board is the root site). Locally,
   // serve site/ and open /leaderboard/ so ../static/logs/ reaches site/static/logs/.
   var LOGBASE = (location.protocol==='file:' || location.pathname.indexOf('/leaderboard/')>=0) ? '../static/logs/' : '/logs/';
-  if(!D){ document.getElementById('rows').innerHTML='<div class="empty">data.js not found - run scripts/gen_leaderboard_data.py</div>'; return; }
+  // Keep whatever is already in #rows: the deploy pre-renders the default
+  // ranking into it, and data.js failing to load is precisely when that
+  // fallback earns its keep. Only an empty #rows (a local checkout that has
+  // never run the generator) gets the build instruction.
+  if(!D){ var _r=document.getElementById('rows');
+          if(_r && !_r.firstElementChild) _r.innerHTML='<div class="empty">data.js not found - run scripts/gen_leaderboard_data.py</div>';
+          return; }
 
   // ── maps ─────────────────────────────────────────────────
   var PROF = {}; D.profiles.forEach(function(p){ PROF[p.id]=p; });
@@ -806,11 +812,14 @@ document.addEventListener('DOMContentLoaded', function(){
   // prebuilt index file, no dependency. Built on the first keystroke and then
   // cached — it is only ~5 ms over the whole corpus, but there is no reason to
   // spend it on visitors who never search.
-  var SIDX=null, SHITS=[], SSEL=-1;
+  var SIDX=null, SIDX_HAS_DOCS=false, SHITS=[], SSEL=-1;
 
   function buildSearchIndex(){
-    if(SIDX) return SIDX;
-    SIDX=[];
+    // Rebuild once the Knowledge Base arrives: search.js is fetched lazily, so
+    // an index built before it landed holds only profiles and views, and
+    // memoizing that would make the docs permanently unsearchable.
+    if(SIDX && (SIDX_HAS_DOCS || !window.LB_SEARCH)) return SIDX;
+    SIDX=[]; SIDX_HAS_DOCS=!!window.LB_SEARCH;
     // Docs come from search.js — plain text prepared by the generator. They are
     // real pages now (/docs/<id>/), so a hit navigates out rather than rendering
     // in place; the entry carries its own crumb, so no tree walk is needed.
@@ -898,6 +907,10 @@ document.addEventListener('DOMContentLoaded', function(){
   function openSel(i){ var hit=SHITS[i]; if(!hit) return; var go=hit.e.go; clearSearch(); go(); }
   // The Knowledge Base index is only needed by this box, so it is fetched the
   // first time the box is used and never on a visit that ignores it.
+  // The callback re-reads the input rather than closing over the query it was
+  // created with: on a slow connection the box can be cleared before search.js
+  // lands, and a captured string would re-open the panel with results for a
+  // query that is no longer there.
   var _searchReq=null, _searchCb=null;
   function ensureSearch(cb){
     if(window.LB_SEARCH){ if(cb) cb(); return; }
@@ -905,7 +918,10 @@ document.addEventListener('DOMContentLoaded', function(){
     if(_searchReq) return;
     _searchReq=document.createElement('script'); _searchReq.src='search.js';
     _searchReq.onload=function(){ var f=_searchCb; _searchCb=null; if(f) f(); };
-    _searchReq.onerror=function(){ _searchReq=null; };
+    // Run the callback anyway: buildSearchIndex() still indexes the profiles
+    // and composite views from LB_DATA, so the box keeps working without the
+    // Knowledge Base instead of silently returning nothing forever.
+    _searchReq.onerror=function(){ _searchReq=null; var f=_searchCb; _searchCb=null; if(f) f(); };
     document.head.appendChild(_searchReq);
   }
   function initNavSearch(){
@@ -915,7 +931,7 @@ document.addEventListener('DOMContentLoaded', function(){
     inp.addEventListener('focus', function(){ ensureSearch(null); }, {once:true});
     inp.addEventListener('input', function(){
       clearTimeout(t); var v=inp.value.trim();
-      t=setTimeout(function(){ if(!v) renderSearch(v); else ensureSearch(function(){ renderSearch(v); }); }, 90);
+      t=setTimeout(function(){ if(!v) renderSearch(v); else ensureSearch(function(){ renderSearch(inp.value.trim()); }); }, 90);
     });
     inp.addEventListener('keydown', function(e){
       if(e.key==='ArrowDown'){ e.preventDefault(); moveSel(1); }
