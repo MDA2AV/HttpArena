@@ -44,7 +44,7 @@ RUN set -ex; \
 
 COPY --from=build /out/ /
 COPY default.vcl /etc/vinyl/default.vcl
-COPY --chmod=0755 entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 
 EXPOSE 8080
 
