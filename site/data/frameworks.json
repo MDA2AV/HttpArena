@@ -1338,7 +1338,7 @@
     "dir": "vinyl-cache",
     "description": "Vinyl Cache HTTP accelerator.",
     "repo": "https://code.vinyl-cache.org/vinyl-cache/vinyl-cache",
-    "type": "engine",
+    "type": "infrastructure",
     "engine": "vinyld"
   },
   "warp": {

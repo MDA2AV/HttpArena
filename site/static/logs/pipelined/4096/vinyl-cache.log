@@ -1,5 +1,5 @@
-Debug: Version: vinyl-cache-9.0.1 revision 423648c4cb6b225b3268ffc337354ea938f5efee
-Debug: Platform: Linux,6.17.0-22-generic,x86_64,-jnone,-smalloc,-sdefault,-hcritbit
+Debug: Version: vinyl-cache-trunk revision 4c225ee6943cfd132b43b3f54e1e755bd88e4290
+Debug: Platform: Linux,6.17.0-22-generic,x86_64,-jnone,-smalloc,-sdefault,-ssynth,-hcritbit
 Debug: Child (17) Started
 Child launched OK
 Info: Child (17) said Child starts
