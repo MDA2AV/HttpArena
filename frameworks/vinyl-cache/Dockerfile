@@ -10,6 +10,7 @@ RUN set -ex; \
         gcc \
         make \
         git \
+        patch \
         python3 \
         python3-docutils \
         python3-sphinx \
@@ -25,6 +26,7 @@ COPY vmod/ /tmp/vinyl-cache/vmod/
 
 RUN set -ex; \
     cd /tmp/vinyl-cache; \
+    patch -p1 <vmod/0001-Add-httparena-vmod-to-vmod-Makefile.am.patch; \
     ./autogen.sh; \
     ./configure --prefix=/usr --sbindir=/usr/bin; \
     make -j"$(nproc)"; \
