@@ -12,7 +12,6 @@ sub vcl_init {
 sub vcl_recv {
     if (req.url ~ "^/static/") {
         set req.backend_hint = static.backend();
-        return (pass);
     } else {
         return (synth(200));
     }
