@@ -1304,7 +1304,7 @@
     "type": "engine",
     "engine": "epoll"
   },
-  "Varnish": {
+  "varnish": {
     "dir": "varnish",
     "description": "Varnish Cache HTTP accelerator with native TLS/H2 termination (-A). A custom vmod (Rust, varnish-rs) computes /baseline11 and /baseline2 in-process; vmod-fileserver serves /static.",
     "repo": "https://github.com/varnish/varnish",
