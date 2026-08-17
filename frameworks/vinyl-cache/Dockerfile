@@ -18,7 +18,7 @@ RUN set -ex; \
         ncurses-devel \
         libedit-devel; \
     cd /tmp; \
-    git clone --recurse-submodules --branch vinyl-cache-9.0.1 \
+    git clone --recurse-submodules --branch main \
         https://code.vinyl-cache.org/vinyl-cache/vinyl-cache.git vinyl-cache
 
 COPY vmod/ /tmp/vinyl-cache/vmod/

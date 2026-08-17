@@ -11,5 +11,5 @@
     "pipelined",
     "limited-conn"
   ],
-  "maintainers": ["gquintard"]
+  "maintainers": ["gquintard", "nigoroll"]
 }
