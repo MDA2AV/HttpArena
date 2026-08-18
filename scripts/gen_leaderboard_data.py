@@ -16,6 +16,7 @@ Run after scripts/rebuild_site_data.py (or any time site/data changes):
 """
 
 from __future__ import annotations
+import functools
 import json
 import re
 import shutil
@@ -822,7 +823,7 @@ _THEME_TOGGLE = ("<script>var b=document.getElementById('theme');if(b)b.onclick=
 
 
 def _doc_page(did, title, body_html, tree, seo_title="", description="",
-              crumbs=None, og_url=""):
+              crumbs=None, og_url="", updated=""):
     url = SITE + _doc_url(did)
     # Authored metadata wins; the scraped first paragraph stays as the fallback
     # so a page that hasn't been given frontmatter yet still renders sensibly.
@@ -838,7 +839,8 @@ def _doc_page(did, title, body_html, tree, seo_title="", description="",
          "name": title, "description": desc, "url": url, "inLanguage": "en",
          "mainEntityOfPage": url, "isPartOf": {"@id": SITE + "/#website"},
          "publisher": {"@id": SITE + "/#org"},
-         "about": {"@id": SITE + "/#dataset"}},
+         "about": {"@id": SITE + "/#dataset"},
+         **({"dateModified": updated} if updated else {})},
     ] + _org_nodes()
     if crumbs:
         graph.append({"@type": "BreadcrumbList", "@id": url + "#crumbs",
@@ -905,6 +907,12 @@ def _docs_css():
 .fw-kind{color:var(--muted);font-size:.78rem}
 /* the "compare these N entries" line under each language heading on /frameworks/ */
 .fw-compare{margin:-.4rem 0 .6rem;font-size:.85rem}
+/* the head-to-head picker and its table */
+.cmp-pick{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
+.cmp-pick select{font:inherit;font-size:.9rem;padding:.35rem .5rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.doc-body td.n,.doc-body th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* the date the numbers were last published, on every generated page */
+.updated{color:var(--muted);font-size:.82rem;margin-top:1.6rem}
 /* the one-sentence answer at the top of a language page, before any table */
 .lead-answer{font-size:1.02rem;line-height:1.6;padding:.85rem 1rem;margin:0 0 1rem;border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 8px 8px 0}
 .doc-main{min-width:0;padding:1.6rem 2rem 4rem;max-width:900px}
@@ -927,7 +935,8 @@ def build_doc_pages(tree, content, trails=None, with_og=False):
         page = _doc_page(did, d["t"] or "Knowledge Base", d["html"], tree,
                          seo_title=d.get("st", ""), description=d.get("d", ""),
                          crumbs=trails.get(did),
-                         og_url=(_doc_url(did) + "og.png") if with_og else "")
+                         og_url=(_doc_url(did) + "og.png") if with_og else "",
+                         updated=_site_dates().get(_doc_source_path(did), ""))
         dest = (DOCS_OUT / did / "index.html") if did else (DOCS_OUT / "index.html")
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(page, encoding="utf-8")
@@ -973,6 +982,7 @@ def write_search_index(tree, content):
     return len(entries), out.stat().st_size
 
 
+@functools.lru_cache(maxsize=None)
 def _last_commit_dates(*prefixes):
     """path -> the date it was last committed, in one `git log` pass.
 
@@ -1005,6 +1015,32 @@ def _last_commit_dates(*prefixes):
     return dates
 
 
+SITE_SOURCES = ("site/content/docs", "site/data/results", "site/data/frameworks.json")
+
+
+def _site_dates():
+    """The commit dates every page date is taken from - one git pass, cached."""
+    return _last_commit_dates(*SITE_SOURCES)
+
+
+def _site_updated():
+    """The day the newest published source changed, or "" without git history.
+
+    dateModified on a benchmark page is a claim about the numbers, so it is the
+    date of the data and not the date of the build. A deploy that only changes
+    the generator must not move it."""
+    return max(_site_dates().values(), default="")
+
+
+def _updated_line(date, extra=""):
+    """The visible date. Same string as dateModified, so a reader and a crawler
+    are told the same day."""
+    if not date:
+        return extra and "<p>" + extra + "</p>"
+    return ('<p class="updated">Results updated <time datetime="%s">%s</time>%s</p>'
+            % (date, date, " · " + extra if extra else ""))
+
+
 def _git(args):
     return subprocess.run(args, cwd=ROOT, capture_output=True, text=True,
                           encoding="utf-8", check=True).stdout
@@ -1018,16 +1054,20 @@ def _doc_source_path(did):
     return src.relative_to(ROOT).as_posix()
 
 
-def write_sitemap(content, fw_entries=(), lang_pages=()):
-    """Root, /frameworks/, every language summary, every framework and every /docs/<id>/."""
+def write_sitemap(content, fw_entries=(), lang_pages=(), compare_pages=()):
+    """Root, /frameworks/, /compare/, every language summary and comparison, every
+    framework and every /docs/<id>/."""
     # frameworks.json is in here because it supplies the type, mode, language,
     # repo and description on every framework page - dating those pages from the
     # results alone missed metadata edits entirely.
-    dates = _last_commit_dates("site/content/docs", "site/data/results",
-                               "site/data/frameworks.json")
+    dates = _site_dates()
     newest = max(dates.values(), default=None)
 
     urls = [(SITE + "/", newest), (SITE + "/frameworks/", newest)]
+    if compare_pages:
+        urls.append((SITE + "/compare/", newest))
+    for lang in compare_pages:
+        urls.append((SITE + _compare_url(lang), newest))
     # A framework page is dated from the whole corpus, not from its own results
     # file. Its headline is "rank N of M" across six families, recomputed every
     # build, so any other entry being added or re-run changes this page too.
@@ -1591,6 +1631,12 @@ OG_MUTED = (154, 160, 166)
 
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
               "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+# The board's <h1> per family. renderHead() writes the same strings, so the
+# pre-rendered heading and the rendered one match.
+SCOPE_H1 = {"h1": "HTTP/1.1 web server benchmarks", "h2": "HTTP/2 web server benchmarks",
+            "h3": "HTTP/3 web server benchmarks",
+            "gw": "Gateway and production stack benchmarks",
+            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks"}
 SCOPE_BLURB = {"h1": "all HTTP/1.1 profiles", "h2": "all HTTP/2 profiles",
                "h3": "all HTTP/3 profiles", "gw": "the gateway & production-stack profiles",
                "grpc": "all gRPC profiles", "ws": "all WebSocket profiles"}
@@ -1774,6 +1820,7 @@ def _dataset_node(current, n_entries, n_profiles, round_name):
                              ("Requests per second", "Average latency", "p99 latency",
                               "CPU utilisation", "Peak memory", "Bandwidth")],
         "version": round_name,
+        **({"dateModified": _site_updated()} if _site_updated() else {}),
         "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json",
                           "contentUrl": SITE + "/data.json",
                           "name": "Every published result, as one JSON document"}],
@@ -1789,7 +1836,11 @@ def _ranking_node(scope, rows):
         "name": SCOPE_NAME[scope] + " composite ranking (top %d)" % len(listed),
         "itemListOrder": "https://schema.org/ItemListOrderDescending",
         "numberOfItems": len(listed),
-        "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": fw}
+        # Every listed entry has a page of its own, so the list points at it. A
+        # ListItem with a name and no url is a string in a list; with one it is
+        # the same ranking the reader can click through.
+        "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": fw,
+                             "url": SITE + _fw_url(fw)}
                             for i, (fw, _) in enumerate(listed)],
     }
 
@@ -1829,7 +1880,8 @@ def _rank_lines(rows, fw_lang, limit=None):
             for i, (fw, score) in enumerate(rows[:limit] if limit else rows)]
 
 
-def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_entries=()):
+def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_entries=(),
+                   compare_pages=()):
     """/llms.txt and /llms-full.txt.
 
     Same reason as the prerender, for the readers the prerender cannot reach:
@@ -1871,6 +1923,14 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
                               + ". Rank per family and every per-profile number.")
         frameworks.append("")
 
+    compare = []
+    if compare_pages:
+        compare = ["## Head-to-head comparisons", ""]
+        for lang, n in compare_pages:
+            compare.append(f"- [{lang}]({SITE}{_compare_url(lang)}): every profile of any two "
+                           f"of the {n} {lang} entries, side by side.")
+        compare.append("")
+
     docs = ["## Documentation", ""]
     for did in sorted(content):
         d = content[did]
@@ -1888,10 +1948,10 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
             "every server implementation, Dockerfile and validation rule.",
             ""]
 
-    short += frameworks + docs + data + ["## Full text", "",
+    short += frameworks + compare + docs + data + ["## Full text", "",
                                          f"- [llms-full.txt]({SITE}/llms-full.txt): the whole "
                                          "Knowledge Base and the full ranking of every family.", ""]
-    full += frameworks + data + ["## Knowledge Base", ""]
+    full += frameworks + compare + data + ["## Knowledge Base", ""]
     for did in sorted(content):
         d = content[did]
         text = _html.unescape(re.sub(r"<[^>]+>", " ", d["html"]))
@@ -1927,7 +1987,105 @@ def _static_board(rows, fw_lang, round_name):
             'text at <a href="/llms.txt">/llms.txt</a>.</p>')
 
 
-def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries, og_url):
+def _faq_html(qa):
+    """The questions as headings and paragraphs. Both halves are already escaped."""
+    return "".join("<h3>%s</h3><p>%s</p>" % (q, a) for q, a in qa)
+
+
+def _faq_text(html):
+    """One answer as text. These are JSON strings, not markup: a <b> and an
+    "&amp;" both reach the reader as themselves."""
+    return _html.unescape(re.sub(r"<[^>]+>", "", html)).strip()
+
+
+def _faq_node(url, qa):
+    """FAQPage over the same pairs the page prints."""
+    return {"@type": "FAQPage", "@id": url + "#faq",
+            "mainEntity": [{"@type": "Question", "name": _faq_text(q),
+                            "acceptedAnswer": {"@type": "Answer", "text": _faq_text(a)}}
+                           for q, a in qa]}
+
+
+def _board_faq(rows, fw_lang, current, round_name, n_profiles, n_entries):
+    """The questions the board answers, answered in sentences.
+
+    The board is a table and a table is not an answer: "what is the fastest web
+    framework" is the query this page competes for and nothing on it said so in
+    a sentence. Every number here comes from the ranking that was just written
+    into the page, so the prose cannot drift from the table above it."""
+    e = _html.escape
+    top = [(fw, score, fw_lang.get(fw, "")) for fw, score in rows[:3]]
+    lead = top[0]
+    # best entry of each language, in board order, so "which language" is
+    # answered from the ranking rather than from an opinion
+    by_lang, seen = [], set()
+    for fw, score in rows:
+        lang = fw_lang.get(fw, "")
+        if lang and lang not in seen:
+            seen.add(lang)
+            by_lang.append((lang, fw, score))
+    hw = current.get("cpu", "")
+    qa = [
+        ("What is the fastest web framework?",
+         "%s%s leads the %s composite with %.0f, ahead of %s and %s. The composite adds a "
+         "normalized score over every profile of the family, where the leader of each profile "
+         "scores 100, so it ranks an entry over the whole suite instead of on one test."
+         % (e(lead[0]), " (%s)" % e(lead[2]) if lead[2] else "", SCOPE_NAME[DEFAULT_SCOPE],
+            lead[1], ", ".join("%s (%.0f)" % (e(f), sc) for f, sc, _l in top[1:2]),
+            ", ".join("%s (%.0f)" % (e(f), sc) for f, sc, _l in top[2:3]))),
+        ("Which language has the fastest web frameworks?",
+         "%s, through %s. The quickest entry of each language on %s: %s."
+         % (e(lead[2] or "-"), e(lead[0]), SCOPE_NAME[DEFAULT_SCOPE],
+            ", ".join("%s %s (%.0f)" % (e(lang), e(fw), sc)
+                      for lang, fw, sc in by_lang[:8]))),
+        ("How many web frameworks are benchmarked?",
+         "%d entries - web frameworks, HTTP engines and reverse proxies - over %d test "
+         "profiles. The ranking above is the %d flagship and emerging frameworks scored on %s; "
+         "engines and reverse proxies are ranked in their own league."
+         % (n_entries, n_profiles, len(rows), SCOPE_NAME[DEFAULT_SCOPE])),
+        ("How are the benchmarks run?",
+         "Every entry runs in a container on the same machine%s, pinned to dedicated cores, one "
+         "connection count per run. Requests per second is the best of three runs; latency, CPU "
+         "and memory come from that run. Round: %s."
+         % (" (%s, %s cores)" % (e(hw), e(current.get("cores", "?"))) if hw else "",
+            e(round_name))),
+        ("Can I add my own framework?",
+         "Yes. Every entry is a directory in the public repository with its own Dockerfile and "
+         "its own implementation of the profiles, and a pull request that adds one is benchmarked "
+         "on the same machine as everything else."),
+    ]
+    return qa
+
+
+def _board_seo(rows, fw_lang, current, round_name, n_profiles, n_entries,
+               lang_pages, updated):
+    """The copy under the board: what the page measures, the questions in
+    sentences, and a link to every hub. #boardSeo is empty in the source page
+    and filled here, so only the deployed board carries it."""
+    e = _html.escape
+    qa = _board_faq(rows, fw_lang, current, round_name, n_profiles, n_entries)
+    langs = "".join('<li><a href="%s">%s web framework benchmarks</a></li>'
+                    % (_lang_url(l), e(l)) for l in lang_pages)
+    return qa, (
+        "<h2>What HttpArena measures</h2>"
+        "<p>Every framework, HTTP engine and reverse proxy in the ranking above runs the same "
+        "%d test profiles - plain and pipelined requests, JSON, compression, TLS, uploads, static "
+        "files, Postgres, templates and mixed endpoints - on one dedicated machine, in a "
+        "container pinned to its own cores. Nothing is self-reported: the implementations are in "
+        "the public repository and the raw numbers behind every row are published with them.</p>"
+        "<h2>Questions</h2>" % n_profiles
+        + _faq_html(qa)
+        + "<h2>Browse by language</h2><ul>" + langs + "</ul>"
+        + '<p><a href="/frameworks/">Every entry, one page each</a> · '
+          '<a href="/compare/">Head-to-head comparisons</a> · '
+          '<a href="/docs/">How the benchmark works</a> · '
+          '<a href="/docs/add-framework/">Add a framework</a> · '
+          '<a href="/llms.txt">The rankings as text</a></p>'
+        + _updated_line(updated))
+
+
+def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries,
+                     og_url, lang_pages=(), updated=""):
     """site/generated/index.html: the board with its default view already in it.
 
     Written from the checked-in page rather than replacing it, so the source
@@ -1951,9 +2109,12 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries, 
                              f"site/leaderboard/index.html, found {html.count(needle)}")
         return html.replace(needle, repl, 1)
 
+    qa, seo = _board_seo(rows, fw_lang, current, round_name, n_profiles, n_entries,
+                         lang_pages, updated)
     graph = _org_nodes() + [
         _dataset_node(current, n_entries, n_profiles, round_name),
         _ranking_node(DEFAULT_SCOPE, rows),
+        _faq_node(SITE + "/", qa),
     ]
     # The theme has to be applied before the first paint. Every other page this
     # generator writes inlines _THEME_INIT in its head; the board did not need it
@@ -1981,12 +2142,14 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries, 
     out = once(out, '<div class="cat" id="pcat"></div>',
                '<div class="cat" id="pcat">Composite ranking</div>', "#pcat")
     out = once(out, '<h1 id="ptitle"></h1>',
-               '<h1 id="ptitle">' + SCOPE_NAME[DEFAULT_SCOPE] + "</h1>", "#ptitle")
+               '<h1 id="ptitle">' + SCOPE_H1[DEFAULT_SCOPE] + "</h1>", "#ptitle")
     out = once(out, '<p id="pblurb"></p>', '<p id="pblurb">' + blurb + "</p>", "#pblurb")
     out = once(out, '<span class="count" id="count"></span>',
                '<span class="count" id="count">' + str(len(rows)) + " frameworks</span>", "#count")
     out = once(out, '<div id="rows"></div>',
                '<div id="rows">' + _static_board(rows, fw_lang, round_name) + "</div>", "#rows")
+    out = once(out, '<section class="board-seo" id="boardSeo"></section>',
+               '<section class="board-seo" id="boardSeo">' + seo + "</section>", "#boardSeo")
 
     GEN.mkdir(parents=True, exist_ok=True)
     (GEN / "index.html").write_text(out, encoding="utf-8")
@@ -2125,7 +2288,59 @@ def _fw_achievements(items):
             "</tr></thead><tbody>" + rows + "</tbody></table>")
 
 
-def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=()):
+def _fw_neighbours(fw, scopes):
+    """(family, rows, index of fw) for the language field this entry sits in.
+
+    Its own family when it runs one, the first it appears in otherwise. An entry
+    page used to link nowhere except its language summary, which left every one
+    of them a leaf: the entries directly around it are the pages a reader wants
+    next, and the ones a crawler needs to reach the rest of the language from
+    here."""
+    for scope in [DEFAULT_SCOPE] + [x for x in scopes if x != DEFAULT_SCOPE]:
+        rows = scopes.get(scope) or []
+        for i, r in enumerate(rows):
+            if r[0] == fw:
+                return scope, rows, i
+    return "", [], -1
+
+
+def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
+    """The entries either side of this one, and the leader of its language."""
+    e = _html.escape
+    scope, rows, i = _fw_neighbours(fw, scopes)
+    cmp_url = _compare_url(lang)
+    links = ("<p>" + ('<a href="%s">Compare %s with any %s entry</a> · '
+                      % (cmp_url, e(fw), e(lang)) if has_compare else "")
+             + ('<a href="%s">Every %s entry, ranked</a>' % (lang_url, e(lang))
+                if lang_url else "") + "</p>")
+    # Nothing to put in a table: the links still belong on the page, a heading
+    # over "there is nothing to compare" does not.
+    if i < 0 or len(rows) < 2:
+        return links if lang else ""
+    mine = rows[i][3]
+    near = list(range(max(0, i - 2), i)) + list(range(i + 1, min(len(rows), i + 3)))
+    if 0 not in near and i != 0:
+        near = [0] + near
+    body = "".join(
+        '<tr><td><a href="%s">%s</a></td><td class="n">%.0f</td><td class="n">%s</td>%s</tr>'
+        % (_fw_url(rows[j][0]), e(rows[j][0]), rows[j][3],
+           ("+%.0f%%" if rows[j][3] >= mine else "%.0f%%")
+           % ((rows[j][3] - mine) / mine * 100 if mine else 0),
+           ('<td><a href="%s#%s-vs-%s">head to head</a></td>'
+            % (cmp_url, quote(fw), quote(rows[j][0]))) if has_compare else "")
+        for j in sorted(set(near)))
+    return ("<h2 id=\"compare\">Compared with</h2>"
+            "<p>The %s entries around %s on the %s composite, and the one leading them.%s</p>"
+            % (e(lang), e(fw), SCOPE_NAME.get(scope, scope),
+               " The last column shows every profile side by side." if has_compare else "")
+            + "<table><thead><tr><th>Entry</th><th class=\"n\">Composite</th>"
+              "<th class=\"n\">vs %s</th>%s</tr></thead><tbody>"
+              % (e(fw), "<th></th>" if has_compare else "")
+            + body + "</tbody></table>" + links)
+
+
+def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
+             lang_scopes=None, updated="", has_compare=False):
     e = _html.escape
     facts = [TYPE_LABEL.get(m.get("type", "emerging"), m.get("type", "")), lang]
     if m.get("engine") and m["engine"] != fw:
@@ -2184,13 +2399,18 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=())
                    "<th>Req/sec</th><th>Avg</th><th>p99</th><th>CPU</th><th>Memory</th></tr></thead>"
                    "<tbody>" + body + "</tbody></table>")
 
-    out.append('<p><a href="/docs/">How the benchmark is run</a> · '
-               '<a href="/docs/hardware/">The machine</a> · '
-               '<a href="/docs/add-framework/">Add or fix an entry</a></p>')
+    if lang and lang_scopes:
+        out.append(_fw_compare(fw, lang, lang_scopes, lang_url, has_compare))
+
+    out.append(_updated_line(updated,
+                             '<a href="/docs/">How the benchmark is run</a> · '
+                             '<a href="/docs/hardware/">The machine</a> · '
+                             '<a href="/docs/add-framework/">Add or fix an entry</a>'))
     return '<div class="doc-body">' + "".join(out) + "</div>"
 
 
-def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievements=()):
+def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievements=(),
+             lang_scopes=None, updated="", has_compare=False):
     e = _html.escape
     url = SITE + _fw_url(fw)
     title = f"{fw} performance benchmark & ranking"
@@ -2208,7 +2428,8 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
         {"@type": "WebPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
          "publisher": {"@id": SITE + "/#org"}, "about": {"@id": url + "#software"},
-         "mainEntityOfPage": url},
+         "mainEntityOfPage": url,
+         **({"dateModified": updated} if updated else {})},
         {"@type": "SoftwareApplication", "@id": url + "#software", "name": fw,
          "applicationCategory": "DeveloperApplication",
          **({"programmingLanguage": lang} if lang else {}),
@@ -2244,7 +2465,8 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
               '</header>')
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
-            + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements)
+            + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements,
+                       lang_scopes, updated, has_compare)
             + "</article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
@@ -2316,7 +2538,8 @@ def _lang_faq(lang, scopes, n_entries, round_name):
     return [(e(q), e(a)) for q, a in qa]
 
 
-def _lang_page(lang, scopes, all_entries, round_name):
+def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
+               has_compare=False):
     """/frameworks/lang/<language>/ - one language's entries, compared family by family.
 
     Every number is read out of the badge index, the same source the entry pages
@@ -2363,18 +2586,24 @@ def _lang_page(lang, scopes, all_entries, round_name):
     every = "".join('<li><a href="%s">%s</a></li>' % (_fw_url(fw), e(fw))
                     for fw, _k in sorted(all_entries, key=lambda x: x[0].lower()))
 
+    ranked = scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else [])
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
-         "publisher": {"@id": SITE + "/#org"}},
+         "publisher": {"@id": SITE + "/#org"},
+         **({"dateModified": updated} if updated else {})},
         {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "Frameworks",
              "item": SITE + "/frameworks/"},
             {"@type": "ListItem", "position": 2, "name": lang, "item": url}]},
-    ] + ([{"@type": "FAQPage", "@id": url + "#faq", "mainEntity": [
-            {"@type": "Question", "name": q,
-             "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}]
-         if faq else []) + _org_nodes()
+    ] + (([{"@type": "ItemList", "@id": url + "#ranking",
+           "name": lang + " " + SCOPE_NAME[DEFAULT_SCOPE] + " composite ranking",
+           "itemListOrder": "https://schema.org/ItemListOrderDescending",
+           "numberOfItems": len(ranked),
+           "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": r[0],
+                                "url": SITE + _fw_url(r[0])}
+                               for i, r in enumerate(ranked)]}] if ranked else [])
+         + ([_faq_node(url, faq)] if faq else [])) + _org_nodes()
     head = ('<!doctype html><html lang="en" data-theme=""><head>'
             '<meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -2418,7 +2647,9 @@ def _lang_page(lang, scopes, all_entries, round_name):
                      score, e(SCOPE_NAME[DEFAULT_SCOPE]),
                      e(link), rank, of, e(round_name),
                      " This is a tuned entry." if tuned else "", extra))
-    intro = ("<p>Every %s entry in the benchmark, compared on the composite score of each "
+    intro = ('<p><a href="%s">Compare any two %s entries profile by profile →</a></p>'
+             % (_compare_url(lang), e(lang)) if has_compare else "")
+    intro += ("<p>Every %s entry in the benchmark, compared on the composite score of each "
              "family. The composite sums a normalized score over the profiles of that family, "
              "where the leader of each profile scores 100. Rank overall is the entry's place in "
              "its own league across all languages; rank among %s narrows the same field to this "
@@ -2444,16 +2675,21 @@ def _lang_page(lang, scopes, all_entries, round_name):
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body">' + answer + intro + "".join(tables)
-            + ("<h2 id=\"faq\">Questions</h2>"
-               + "".join('<h3>%s</h3><p>%s</p>' % (q, a) for q, a in faq) if faq else "")
+            + ("<h2 id=\"faq\">Questions</h2>" + _faq_html(faq) if faq else "")
             + "<h2>Every " + e(lang) + " entry</h2><ul>" + every + "</ul>"
-            + '<p>' + e(round_name) + ' · <a href="/frameworks/">All languages</a> · '
-              '<a href="/">Open the leaderboard</a></p>'
+            + ('<h2>Other languages</h2><p>' + " · ".join(
+                '<a href="%s">%s</a>' % (_lang_url(x), e(x)) for x in siblings if x != lang)
+               + "</p>" if siblings else "")
+            + _updated_line(updated, e(round_name) + " · "
+                            + ('<a href="%s">Compare two %s entries</a> · '
+                               % (_compare_url(lang), e(lang)) if has_compare else "")
+                            + '<a href="/frameworks/">All languages</a> · '
+                              '<a href="/">Open the leaderboard</a>')
             + "</div></article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
-def _fw_index_page(entries, lang_pages=()):
+def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
     """/frameworks/ - one link per entry, grouped by language. Also the page that
     makes every framework page reachable by following links from the board."""
     e = _html.escape
@@ -2475,16 +2711,21 @@ def _fw_index_page(entries, lang_pages=()):
         heading = ('<a href="%s">%s</a>' % (_lang_url(lang), e(lang))
                    if lang in lang_pages else e(lang))
         n = len(by_lang[lang])
-        compare = ('<p class="fw-compare"><a href="%s">%s →</a></p>'
+        compare = ('<p class="fw-compare"><a href="%s">%s →</a>'
                    % (_lang_url(lang),
                       ("See the %s summary" % e(lang)) if n == 1
                       else "Compare the %d %s entries" % (n, e(lang)))
-                   if lang in lang_pages else "")
+                   + (' · <a href="%s">head to head</a>' % _compare_url(lang)
+                      if lang in compare_langs else "")
+                   + "</p>" if lang in lang_pages else "")
         sections.append("<h2>" + heading + "</h2>" + compare + "<ul>" + items + "</ul>")
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
-         "publisher": {"@id": SITE + "/#org"}},
+         "publisher": {"@id": SITE + "/#org"},
+         **({"dateModified": updated} if updated else {})},
+        {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Frameworks", "item": url}]},
     ] + _org_nodes()
     head = ('<!doctype html><html lang="en" data-theme=""><head>'
             '<meta charset="utf-8">'
@@ -2511,13 +2752,381 @@ def _fw_index_page(entries, lang_pages=()):
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body"><p>' + e(desc) + " Ranks and every per-profile number live on "
-            'the page of each entry; the <a href="/">leaderboard</a> compares them.</p>'
-            + "".join(sections) + "</div></article></main></div>")
+            'the page of each entry; the <a href="/">leaderboard</a> compares them, and '
+            '<a href="/compare/">the comparisons</a> put any two of one language side by side.</p>'
+            + "".join(sections)
+            + _updated_line(updated) + "</div></article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
+# -- head to head -------------------------------------------------------------
+# "actix vs axum" is a question people type, and the board answers it only after
+# two filter clicks nobody finds. One page per language holds every pair of that
+# language: the default pair is written into the HTML, the picker swaps in any
+# other from the numbers embedded beside it. Per language and not per pair on
+# purpose - 155 entries make 11,935 pairs, and a page each would be eleven
+# thousand tables with nothing of their own to say.
+
+COMPARE_OUT = GEN / "compare"
+
+
+def _compare_url(lang):
+    return "/compare/" + _lang_slug(lang) + "/"
+
+
+def _cmp_views(profiles, results, entries):
+    """[(view key, profile, conns)] every view at least two of these entries ran."""
+    out = []
+    for p in profiles:
+        for c in p["conns"]:
+            key = f"{p['id']}-{c}"
+            have = sum(1 for r in results.get(key, []) if r["fw"] in entries)
+            if have >= 2:
+                out.append((key, p, c))
+    return out
+
+
+def _cmp_data(views, results, entries):
+    """fw -> view key -> [rps, avg, p99, cpu, memory], the numbers the picker draws."""
+    data = {fw: {} for fw in entries}
+    for key, _p, _c in views:
+        for r in results.get(key, []):
+            if r["fw"] in data and r.get("rps"):
+                data[r["fw"]][key] = [round(r["rps"]), r.get("avg_latency") or "",
+                                      r.get("p99_latency") or "", r.get("cpu") or "",
+                                      r.get("memory") or ""]
+    return data
+
+
+def _cmp_wins(data, views, a, b):
+    """(views a leads, views b leads, views both ran) on requests per second."""
+    wa = wb = both = 0
+    for key, _p, _c in views:
+        ra, rb = data[a].get(key), data[b].get(key)
+        if not ra or not rb:
+            continue
+        both += 1
+        if ra[0] > rb[0]:
+            wa += 1
+        elif rb[0] > ra[0]:
+            wb += 1
+    return wa, wb, both
+
+
+def _cmp_table(data, views, a, b):
+    e = _html.escape
+    body = []
+    for key, p, c in views:
+        ra, rb = data[a].get(key), data[b].get(key)
+        if not ra or not rb:
+            continue
+        d = (ra[0] - rb[0]) / rb[0] * 100 if rb[0] else 0
+        body.append('<tr><td>%s</td><td>%s</td><td class="n">%s</td><td class="n">%s</td>'
+                    '<td class="n">%s</td><td class="n">%s</td><td class="n">%s</td></tr>'
+                    % (e(p["label"]), f"{c:,}", f"{ra[0]:,}", f"{rb[0]:,}",
+                       ("+%.0f%%" if d >= 0 else "%.0f%%") % d, e(ra[2] or "-"), e(rb[2] or "-")))
+    if not body:
+        return "<p>These two entries share no test profile.</p>"
+    return ('<table class="cmp-table"><thead><tr><th>Profile</th><th>Conns</th>'
+            '<th class="n">%s req/sec</th><th class="n">%s req/sec</th><th class="n">Delta</th>'
+            '<th class="n">%s p99</th><th class="n">%s p99</th></tr></thead><tbody>'
+            % (e(a), e(b), e(a), e(b)) + "".join(body) + "</tbody></table>")
+
+
+def _cmp_verdict(data, views, scores, a, b):
+    """One sentence on who is ahead, from the profile wins and the composite."""
+    e = _html.escape
+    wa, wb, both = _cmp_wins(data, views, a, b)
+    if not both:
+        return ("%s and %s share no test profile, so there is nothing to compare directly."
+                % (e(a), e(b)))
+    lead, other, wl, wo = (a, b, wa, wb) if wa >= wb else (b, a, wb, wa)
+    out = ("<b>%s</b> is quicker than <b>%s</b> on %d of the %d profiles they both run"
+           % (e(lead), e(other), wl, both))
+    out += (", and behind on %d." % wo) if wo else "."
+    sa, sb = scores.get(a), scores.get(b)
+    if sa and sb:
+        out += (" On the %s composite they score %.0f and %.0f."
+                % (SCOPE_NAME[DEFAULT_SCOPE], sa, sb))
+    return out
+
+
+def _cmp_faq(data, views, scores, pairs, lang):
+    e = _html.escape
+    qa = [("Is %s faster than %s?" % (e(a), e(b)),
+           _cmp_verdict(data, views, scores, a, b)
+           + " Both run on the same machine, in the same round, against the same profiles.")
+          for a, b in pairs[:4]]
+    if scores:
+        top = max(scores, key=lambda k: scores[k])
+        qa.append(("Which %s framework is fastest overall?" % e(lang),
+                   "%s holds the highest %s composite of the %s entries, at %.0f. The composite "
+                   "is throughput over the whole suite; if a service is one shape of workload, "
+                   "compare that profile on its own in the table above, because the order "
+                   "changes." % (e(top), SCOPE_NAME[DEFAULT_SCOPE], e(lang), scores[top])))
+    return qa
+
+
+_CMP_JS = """<script>
+(function(){
+  var D=window.CMP, views=D.v, data=D.d, sel=D.e;
+  var a=document.getElementById('cmpA'), b=document.getElementById('cmpB'),
+      out=document.getElementById('cmpOut'), head=document.getElementById('cmpLead');
+  if(!a||!b||!out) return;
+  function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+  function num(n){ return n.toLocaleString('en-US'); }
+  function draw(){
+    var x=a.value, y=b.value, rows='', wx=0, wy=0, both=0;
+    for(var i=0;i<views.length;i++){
+      var v=views[i], rx=(data[x]||{})[v[0]], ry=(data[y]||{})[v[0]];
+      if(!rx||!ry) continue;
+      both++; if(rx[0]>ry[0])wx++; else if(ry[0]>rx[0])wy++;
+      var d=ry[0]?(rx[0]-ry[0])/ry[0]*100:0;
+      rows+='<tr><td>'+esc(v[1])+'</td><td>'+num(v[2])+'</td><td class="n">'+num(rx[0])+'</td>'
+           +'<td class="n">'+num(ry[0])+'</td><td class="n">'+(d>=0?'+':'')+d.toFixed(0)+'%</td>'
+           +'<td class="n">'+esc(rx[2]||'-')+'</td><td class="n">'+esc(ry[2]||'-')+'</td></tr>';
+    }
+    out.innerHTML = rows
+      ? '<table class="cmp-table"><thead><tr><th>Profile</th><th>Conns</th><th class="n">'
+        +esc(x)+' req/sec</th><th class="n">'+esc(y)+' req/sec</th><th class="n">Delta</th>'
+        +'<th class="n">'+esc(x)+' p99</th><th class="n">'+esc(y)+' p99</th></tr></thead><tbody>'
+        +rows+'</tbody></table>'
+      : '<p>These two entries share no test profile.</p>';
+    if(head) head.innerHTML = both
+      ? '<b>'+esc(wx>=wy?x:y)+'</b> is quicker on '+Math.max(wx,wy)+' of the '+both
+        +' profiles they both run, <b>'+esc(wx>=wy?y:x)+'</b> on '+Math.min(wx,wy)+'.'
+      : 'These two entries share no test profile.';
+    if(location.hash.slice(1)!==x+'-vs-'+y) history.replaceState(null,'','#'+x+'-vs-'+y);
+  }
+  function fromHash(){
+    var m=decodeURIComponent(location.hash.slice(1)).split('-vs-');
+    if(m.length===2 && sel.indexOf(m[0])>=0 && sel.indexOf(m[1])>=0 && m[0]!==m[1]){
+      a.value=m[0]; b.value=m[1]; draw();
+    }
+  }
+  a.onchange=b.onchange=draw;
+  window.addEventListener('hashchange',fromHash);
+  if(location.hash) fromHash();
+})();
+</script>"""
+
+
+def _compare_langs(profiles, results, members_by_lang):
+    """The languages a comparison can be written for: two entries or more with
+    results in a view they share. Every link to /compare/<language>/ is gated on
+    this set, so nothing points at a page that was never written."""
+    out = set()
+    for lang, members in members_by_lang.items():
+        names = {fw for fw, _k in members}
+        if len(names) < 2:
+            continue
+        data = _cmp_data(_cmp_views(profiles, results, names), results, names)
+        if sum(1 for fw in names if data[fw]) >= 2:
+            out.add(lang)
+    return out
+
+
+def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
+                  og_url=""):
+    """/compare/<language>/ - any two entries of one language, side by side."""
+    e = _html.escape
+    url = SITE + _compare_url(lang)
+    ranked_names = [r[0] for r in ranked]
+    entries = ranked_names + sorted((fw for fw, _k in members if fw not in set(ranked_names)),
+                                    key=str.lower)
+    views = _cmp_views(profiles, results, set(entries))
+    data = _cmp_data(views, results, entries)
+    # An entry with no run in any shared view has nothing to put in a column.
+    entries = [fw for fw in entries if data[fw]]
+    if len(entries) < 2:
+        return ""
+    scores = {r[0]: r[3] for r in ranked}
+    # The pair written into the page, and the pairs offered as links, are the
+    # flagship entries first: "django vs fastapi" is what gets asked, and the two
+    # leaders of a language are often two entries nobody has heard of.
+    kind_of = dict(members)
+    flagship = [fw for fw in entries if kind_of.get(fw) == "flagship"]
+    featured = (flagship + [fw for fw in entries if fw not in flagship])[:4]
+    a, b = featured[0], featured[1]
+    pairs = [(x, y) for i, x in enumerate(featured) for y in featured[i + 1:]]
+    qa = _cmp_faq(data, views, scores, pairs, lang)
+
+    # The page holds every pair, so the heading names none of them: the pair in
+    # it would be the default one, and the sentence under it says which that is
+    # and changes with the picker.
+    title = "%s web framework comparison: any two, head to head" % lang
+    desc = ("Compare %d %s web frameworks and HTTP servers head to head: requests per second, "
+            "p99 latency and the delta on every test profile, all measured on the same machine."
+            % (len(entries), lang))
+
+    def opts(cur):
+        return "".join('<option value="%s"%s>%s</option>'
+                       % (e(fw), " selected" if fw == cur else "", e(fw)) for fw in entries)
+
+    quick = " · ".join('<a href="#%s-vs-%s">%s vs %s</a>' % (e(x), e(y), e(x), e(y))
+                       for x, y in pairs[:6])
+    graph = [
+        {"@type": "WebPage", "@id": url + "#page", "name": title, "description": desc,
+         "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
+         "publisher": {"@id": SITE + "/#org"}, "about": {"@id": SITE + "/#dataset"},
+         "mainEntityOfPage": url,
+         **({"dateModified": updated} if updated else {})},
+        {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Comparisons",
+             "item": SITE + "/compare/"},
+            {"@type": "ListItem", "position": 2, "name": lang, "item": url}]},
+        _faq_node(url, qa),
+    ] + _org_nodes()
+    head = ('<!doctype html><html lang="en" data-theme=""><head>'
+            '<meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            + _THEME_INIT
+            + "<title>" + e(title) + " – HttpArena</title>"
+            + '<meta name="description" content="' + e(desc) + '">'
+            + '<link rel="canonical" href="' + url + '">'
+            + '<link rel="icon" href="/favicon.ico" sizes="any">'
+            + '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+            + '<meta property="og:type" content="website">'
+            + '<meta property="og:site_name" content="HttpArena">'
+            + '<meta property="og:title" content="' + e(title) + '">'
+            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:url" content="' + url + '">'
+            + _og_meta(og_url)
+            + _jsonld({"@context": "https://schema.org", "@graph": graph})
+            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + "</head>")
+    header = ('<body><header class="top">'
+              '<div class="brand">' + _CHROME[0] + '</div>'
+              '<a class="brand-sub" href="/compare/">Comparisons</a>'
+              '<div class="top-links">' + _CHROME[1] + '</div>'
+              '</header>')
+    picker = ('<div class="cmp-pick"><label for="cmpA">Compare</label>'
+              '<select id="cmpA">' + opts(a) + "</select>"
+              '<label for="cmpB">with</label>'
+              '<select id="cmpB">' + opts(b) + "</select></div>")
+    intro = ("<p>Pick any two of the %d %s entries. Requests per second is the best of three "
+             "runs and the delta is the first column against the second; every row is the same "
+             "profile at the same connection count, on the same machine. "
+             '<a href="/docs/test-profiles/">What each profile measures</a>.</p>'
+             % (len(entries), e(lang)))
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
+            '<div class="doc-body">'
+            '<p class="lead-answer" id="cmpLead">' + _cmp_verdict(data, views, scores, a, b)
+            + "</p>" + intro + picker
+            + '<div id="cmpOut">' + _cmp_table(data, views, a, b) + "</div>"
+            + ("<h2>Common comparisons</h2><p>" + quick + "</p>" if quick else "")
+            + "<h2>Questions</h2>" + _faq_html(qa)
+            + "<h2>Every " + e(lang) + " entry</h2><ul>"
+            + "".join('<li><a href="%s">%s</a></li>' % (_fw_url(fw), e(fw)) for fw in entries)
+            + "</ul>"
+            + _updated_line(updated,
+                            '<a href="%s">%s composite ranking</a> · '
+                            '<a href="/compare/">Other languages</a> · '
+                            '<a href="/">Open the leaderboard</a>'
+                            % (_lang_url(lang), e(lang)))
+            + "</div></article></main></div>")
+    payload = js_payload("CMP", {"v": [[k, p["label"], c] for k, p, c in views],
+                                 "d": data, "e": entries})
+    return (head + header + body + "<script>" + payload + "</script>" + _CMP_JS
+            + _THEME_TOGGLE + "</body></html>")
+
+
+def _compare_index_page(langs, updated, og_url=""):
+    """/compare/ - one link per language, and what the page behind it does."""
+    e = _html.escape
+    url = SITE + "/compare/"
+    title = "Compare web frameworks head to head, by language"
+    desc = ("Pick two web frameworks of the same language and compare requests per second, "
+            "p99 latency and the delta on every test profile, measured on the same machine.")
+    items = "".join('<li><a href="%s">Compare %s web frameworks</a> '
+                    '<span class="fw-kind">%d entries</span></li>'
+                    % (_compare_url(l), e(l), n) for l, n in langs)
+    graph = [
+        {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
+         "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
+         "publisher": {"@id": SITE + "/#org"},
+         **({"dateModified": updated} if updated else {})},
+        {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Comparisons", "item": url}]},
+    ] + _org_nodes()
+    head = ('<!doctype html><html lang="en" data-theme=""><head>'
+            '<meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            + _THEME_INIT
+            + "<title>" + e(title) + " – HttpArena</title>"
+            + '<meta name="description" content="' + e(desc) + '">'
+            + '<link rel="canonical" href="' + url + '">'
+            + '<link rel="icon" href="/favicon.ico" sizes="any">'
+            + '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
+            + '<meta property="og:type" content="website">'
+            + '<meta property="og:site_name" content="HttpArena">'
+            + '<meta property="og:title" content="' + e(title) + '">'
+            + '<meta property="og:description" content="' + e(desc) + '">'
+            + '<meta property="og:url" content="' + url + '">'
+            + _og_meta(og_url)
+            + _jsonld({"@context": "https://schema.org", "@graph": graph})
+            + '<link rel="stylesheet" href="/docs/docs.css">'
+            + "</head>")
+    header = ('<body><header class="top">'
+              '<div class="brand">' + _CHROME[0] + '</div>'
+              '<a class="brand-sub" href="/compare/">Comparisons</a>'
+              '<div class="top-links">' + _CHROME[1] + '</div>'
+              '</header>')
+    body = ('<div class="docs-layout one-col"><main class="doc-main">'
+            '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
+            '<div class="doc-body"><p>' + e(desc) + " Comparisons are grouped by language, "
+            "because that is the choice most people are actually making: the framework is picked "
+            "after the language is. Across languages, the "
+            '<a href="/">composite ranking</a> compares every entry at once.</p>'
+            "<ul>" + items + "</ul>"
+            + _updated_line(updated, '<a href="/frameworks/">Every entry, one page each</a> · '
+                                     '<a href="/docs/">How the benchmark works</a>')
+            + "</div></article></main></div>")
+    return head + header + body + _THEME_TOGGLE + "</body></html>"
+
+
+def build_compare_pages(profiles, results, lang_rows, members_by_lang, round_name, updated,
+                        with_og=False):
+    """A head-to-head page per language, plus the index over them."""
+    if COMPARE_OUT.exists():
+        shutil.rmtree(COMPARE_OUT)
+    COMPARE_OUT.mkdir(parents=True, exist_ok=True)
+    written, cards = [], 0
+    for lang in sorted(members_by_lang, key=str.lower):
+        members = members_by_lang[lang]
+        if len(members) < 2:
+            continue
+        rows = lang_rows.get(lang, [])
+        page = _compare_page(lang, rows, members, profiles, results, round_name, updated,
+                             (_compare_url(lang) + "og.png") if with_og else "")
+        if not page:
+            continue
+        dest = COMPARE_OUT / _lang_slug(lang)
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "index.html").write_text(page, encoding="utf-8")
+        if with_og:
+            _og_card(dest / "og.png", "Head to head · " + SCOPE_NAME[DEFAULT_SCOPE],
+                     lang + " web frameworks, compared",
+                     [(r[0], "%.0f" % r[3]) for r in rows[:5]],
+                     "%d entries · %s · www.http-arena.com" % (len(members), round_name))
+            cards += 1
+        written.append((lang, len(members)))
+    if with_og:
+        _og_card(COMPARE_OUT / "og.png", "Head to head",
+                 "Compare two web frameworks, profile by profile",
+                 [(lang, "%d entries" % n) for lang, n in
+                  sorted(written, key=lambda x: -x[1])[:5]],
+                 "%d languages · %s · www.http-arena.com" % (len(written), round_name))
+        cards += 1
+    (COMPARE_OUT / "index.html").write_text(
+        _compare_index_page(written, updated, "/compare/og.png" if with_og else ""),
+        encoding="utf-8")
+    return written, cards
+
+
 def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
-                   round_name, with_og):
+                   round_name, with_og, updated=""):
     """A page per framework that has results, plus the index over them."""
     if FW_OUT.exists():
         shutil.rmtree(FW_OUT)
@@ -2561,32 +3170,11 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
     lang_pages = {lang for lang, fws in langs.items()
                   if any((badge_index.get(_slug(f)) or {}).get("scopes") for f in fws)}
 
-    entries, cards = [], 0
-    for fw in named:
-        m = meta[fw]
-        kind = m.get("type", "emerging")
-        lang = fw_lang.get(fw) or m.get("language", "")
-        lang_url = _lang_url(lang) if lang in lang_pages else ""
-        ranks = _fw_ranks(fw, badge_index)
-        runs = _fw_results(fw, profiles, results)
-        og_url = (_fw_url(fw) + "og.png") if with_og else ""
-        dest = FW_OUT / _slug(fw)
-        dest.mkdir(parents=True, exist_ok=True)
-        (dest / "index.html").write_text(
-            _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
-                     achievements.get(fw, ())), encoding="utf-8")
-        if with_og:
-            _og_card(dest / "og.png", "Benchmark results", fw,
-                     [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
-                      for s, rank, field, _, _link in ranks],
-                     " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
-                                            round_name, "www.http-arena.com"] if x),
-                     blurb=m.get("desc", ""))
-            cards += 1
-        entries.append((fw, lang, kind))
-
-    # Per-language summary pages, from the same badge index the entry pages read.
-    kinds = dict((fw, kind) for fw, _l, kind in entries)
+    # The per-language tables are built before the entry pages, not after: an
+    # entry page now links to the entries either side of it, which is a place in
+    # its language's ranking, and that ranking is this.
+    kinds = {fw: meta[fw].get("type", "emerging") for fw in named}
+    members_by_lang, lang_scopes = {}, {}
     for lang in sorted(lang_pages, key=str.lower):
         members = [(fw, kinds[fw]) for fw in sorted(langs[lang], key=str.lower)]
         scopes = {}
@@ -2602,13 +3190,50 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
                                  bl["rank"] if bl else None, bl["of"] if bl else None))
             if rows:
                 scopes[scope] = sorted(rows, key=lambda r: -r[3])
+        members_by_lang[lang] = members
+        lang_scopes[lang] = scopes
+    # decided before the first page is written: an entry page links to the
+    # comparison of its language, and only where there is one to link to
+    compare_langs = _compare_langs(profiles, results, members_by_lang)
+
+    entries, cards = [], 0
+    for fw in named:
+        m = meta[fw]
+        kind = m.get("type", "emerging")
+        lang = fw_lang.get(fw) or m.get("language", "")
+        lang_url = _lang_url(lang) if lang in lang_pages else ""
+        ranks = _fw_ranks(fw, badge_index)
+        runs = _fw_results(fw, profiles, results)
+        og_url = (_fw_url(fw) + "og.png") if with_og else ""
+        dest = FW_OUT / _slug(fw)
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "index.html").write_text(
+            _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
+                     achievements.get(fw, ()), lang_scopes.get(lang), updated,
+                     lang in compare_langs),
+            encoding="utf-8")
+        if with_og:
+            _og_card(dest / "og.png", "Benchmark results", fw,
+                     [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
+                      for s, rank, field, _, _link in ranks],
+                     " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
+                                            round_name, "www.http-arena.com"] if x),
+                     blurb=m.get("desc", ""))
+            cards += 1
+        entries.append((fw, lang, kind))
+
+    # Per-language summary pages, from the same badge index the entry pages read.
+    siblings = sorted(lang_pages, key=str.lower)
+    for lang in siblings:
         dest = FW_OUT / "lang" / _lang_slug(lang)
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "index.html").write_text(
-            _lang_page(lang, scopes, members, round_name), encoding="utf-8")
+            _lang_page(lang, lang_scopes[lang], members_by_lang[lang], round_name,
+                       siblings, updated, lang in compare_langs), encoding="utf-8")
 
-    (FW_OUT / "index.html").write_text(_fw_index_page(entries, lang_pages), encoding="utf-8")
-    return entries, cards, sorted(lang_pages, key=str.lower)
+    (FW_OUT / "index.html").write_text(
+        _fw_index_page(entries, lang_pages, updated, compare_langs), encoding="utf-8")
+    return entries, cards, siblings, lang_scopes, members_by_lang, compare_langs
 
 
 def build_og_images(content, trails, rows, fw_lang, round_name):
@@ -2724,10 +3349,17 @@ def main():
     board = dict(families)[DEFAULT_SCOPE]
     round_name = payload["rounds"]["name"]
 
-    fw_entries, n_fw_cards, lang_pages = build_fw_pages(profiles, results, meta, fw_lang,
-                                                        badge_index, achievements,
-                                                        round_name, has_og)
-    n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages)
+    updated = _site_updated()
+    (fw_entries, n_fw_cards, lang_pages, lang_scopes,
+     members_by_lang, compare_langs) = build_fw_pages(profiles, results, meta, fw_lang,
+                                                      badge_index, achievements,
+                                                      round_name, has_og, updated)
+    compare_pages, n_cmp_cards = build_compare_pages(
+        profiles, results, {l: s.get(DEFAULT_SCOPE, []) for l, s in lang_scopes.items()},
+        {l: m for l, m in members_by_lang.items() if l in compare_langs},
+        round_name, updated, has_og)
+    n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages,
+                                    [l for l, _n in compare_pages])
 
     # og cards go in after build_doc_pages: that one clears site/generated/docs/
     # before it writes, and the per-doc cards live inside it.
@@ -2736,9 +3368,10 @@ def main():
     # Every entry the dataset covers, not the default board view — see _dataset_node.
     n_entries = len({r["fw"] for rows_ in results.values() for r in rows_})
     index_bytes = build_index_page(board, fw_lang, current, round_name, len(profiles),
-                                   n_entries, og_url)
+                                   n_entries, og_url, lang_pages, updated)
     llms_bytes, llms_full_bytes = write_llms_txt(docs_tree, docs_content, families,
-                                                 fw_lang, current, round_name, fw_entries)
+                                                 fw_lang, current, round_name, fw_entries,
+                                                 compare_pages)
 
     n_rows = sum(len(v) for v in results.values())
     print(f"wrote {OUT.relative_to(ROOT)} - {len(profiles)} profiles, "
@@ -2750,13 +3383,15 @@ def main():
     print(f"wrote {BADGE_OUT.relative_to(ROOT)}/ - {n_badges} badges over {len(badge_index)} frameworks")
     print(f"wrote {FW_OUT.relative_to(ROOT)}/ - {len(fw_entries)} framework pages "
           f"+ {len(lang_pages)} language summaries + index")
+    print(f"wrote {COMPARE_OUT.relative_to(ROOT)}/ - {len(compare_pages)} head-to-head "
+          f"pages + index")
     print(f"wrote {(GEN / 'index.html').relative_to(ROOT)} - board with the "
           f"{SCOPE_NAME[DEFAULT_SCOPE]} composite ({len(board)} entries) pre-rendered, "
           f"{index_bytes // 1024} KB")
     print(f"wrote {(GEN / 'data.json').relative_to(ROOT)} - {json_bytes // 1024} KB")
     print(f"wrote {(GEN / 'llms.txt').relative_to(ROOT)} - {llms_bytes // 1024} KB, "
           f"llms-full.txt {llms_full_bytes // 1024} KB")
-    print(f"wrote {n_cards + n_fw_cards} og:image cards"
+    print(f"wrote {n_cards + n_fw_cards + n_cmp_cards} og:image cards"
           if n_cards else "no og:image cards (Pillow missing)")
 
 
