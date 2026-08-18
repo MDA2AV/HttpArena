@@ -1,0 +1,38 @@
+## HttpArena benchmark helper vmod
+
+vmod_LTLIBRARIES += libvmod_httparena.la
+dist_vcc_DATA += vmod_httparena.vcc
+
+libvmod_httparena_la_SOURCES = \
+	vmod_httparena.c
+
+libvmod_httparena_la_CFLAGS =
+
+vmodtoolargs_httparena ?= --strict --boilerplate -o vcc_httparena_if
+vmod_httparena_symbols_regex ?= Vmod_httparena_Data
+
+libvmod_httparena_la_LDFLAGS = \
+	-export-symbols-regex $(vmod_httparena_symbols_regex) \
+	$(AM_LDFLAGS) \
+	$(VMOD_LDFLAGS) \
+	-rpath $(vmoddir)
+
+nodist_libvmod_httparena_la_SOURCES = vcc_httparena_if.c vcc_httparena_if.h
+
+EXTRA_libvmod_httparena_la_DEPENDENCIES = $(nodist_libvmod_httparena_la_SOURCES)
+
+EXTRA_DIST += automake_boilerplate_httparena.am
+
+$(libvmod_httparena_la_OBJECTS): vcc_httparena_if.h
+
+vcc_httparena_if.h vmod_httparena.rst vmod_httparena.man.rst: vcc_httparena_if.c
+
+vcc_httparena_if.c: $(VMODTOOL) vmod_httparena.vcc
+	@PYTHON@ $(VMODTOOL) $(vmodtoolargs_httparena) `test -f 'vmod_httparena.vcc' || echo '$(srcdir)/'`vmod_httparena.vcc
+	touch vcc_httparena_if.c
+
+clean-local: clean-vmod-httparena
+
+clean-vmod-httparena:
+	rm -f $(nodist_libvmod_httparena_la_SOURCES)
+	rm -f vmod_httparena.rst vmod_httparena.man.rst

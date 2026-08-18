@@ -1,0 +1,19 @@
+{
+  "display_name": "deno",
+  "language": "TS",
+  "type": "engine",
+  "mode": "standard",
+  "engine": "deno",
+  "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
+  "repo": "https://github.com/denoland/deno",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

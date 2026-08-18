@@ -1,0 +1,10 @@
+[package]
+name = "vmod-httparena"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+varnish = "0.7"
+
+[lib]
+crate-type = ["cdylib"]

@@ -1,14 +1,17 @@
 {
-  "display_name": "zix-ws",
+  "display_name": "zix",
   "language": "Zig",
   "type": "engine",
-  "engine": "zix",
-  "description": "Zig WebSocket echo server on the zix.Http1 raw engine (no std.http). Shared-nothing by design: each worker owns its own SO_REUSEPORT multishot accept, io_uring completion ring, and connections, with no shared state or locking across cores. The upgrade and echo are engine-owned: frames are read from a shared per-worker provided-buffer ring (an idle connection holds no buffer), and a pipelined burst is coalesced into one write.",
-  "repo": "https://codeberg.org/prothegee/zix",
+  "engine": "zix.Http1 WebSocket URING Dispatch Model",
+  "description": "WebSocket echo on the zix.Http1 engine, .URING dispatch. GET /ws upgrades and the engine drives the frame pump: frames are echoed on readiness and a pipelined burst leaves as one write. No cache anywhere, echo is per connection.",
+  "repo": "https://github.com/prothegee/zix",
   "enabled": true,
   "tests": [
     "echo-ws",
-    "echo-ws-pipeline"
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
-  "maintainers": ["prothegee"]
+  "maintainers": [
+    "prothegee"
+  ]
 }

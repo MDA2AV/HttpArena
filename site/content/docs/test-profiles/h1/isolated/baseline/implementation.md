@@ -3,7 +3,7 @@ title: Implementation Guidelines
 seo_title: "Baseline Throughput Benchmark — Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP/1.1 baseline throughput benchmark."
 ---
-{{< type-rules standard="Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults." tuned="May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed." engine="No specific rules. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults." tuned="May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed." engine="No specific rules. Ranked separately from frameworks." infrastructure="Configuration is free - worker counts, buffer sizes, event-loop and socket tuning are all allowed. The endpoint must be answered by a module or handler loaded into the server itself, not proxied to an application process behind it - an upstream app makes it a gateway entry, not an infrastructure one." >}}
 
 
 The primary throughput benchmark. Each connection sends one request at a time over persistent keep-alive connections.

@@ -1,7 +1,7 @@
 {
   "display_name": "beskar-websocket",
   "language": "C#",
-  "type": "experimental",
+  "type": "emerging",
   "mode": "standard",
   "engine": "beskar",
   "description": "High-performance WebSocket echo server built with Beskar.Networking.",

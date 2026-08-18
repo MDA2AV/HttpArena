@@ -1,0 +1,1368 @@
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
+Error handling request from 127.0.0.1
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_protocol.py", line 575, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/web_app.py", line 559, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app.py", line 87, in upload
+    async for chunk in request.content.iter_any():
+        size += len(chunk)
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 46, in __anext__
+    rv = await self.read_func()
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 460, in readany
+    await self._wait("readany")
+  File "/usr/local/lib/python3.13/site-packages/aiohttp/streams.py", line 365, in _wait
+    await waiter
+ConnectionResetError: [Errno 104] Connection reset by peer
