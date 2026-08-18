@@ -8,4 +8,5 @@ exec varnishd -F \
     -p feature=+http2 \
     -p thread_pool_max=10000 \
     -p thread_pool_min=5000 \
+    -p vsl_mask=none
     -s malloc,256m

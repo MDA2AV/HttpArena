@@ -2,7 +2,7 @@
   "display_name": "Vinyl Cache",
   "language": "C",
   "engine": "vinyld",
-  "type": "engine",
+  "type": "infrastructure",
   "description": "Vinyl Cache HTTP accelerator.",
   "repo": "https://code.vinyl-cache.org/vinyl-cache/vinyl-cache",
   "enabled": true,
@@ -11,5 +11,5 @@
     "pipelined",
     "limited-conn"
   ],
-  "maintainers": ["gquintard"]
+  "maintainers": ["gquintard", "nigoroll"]
 }

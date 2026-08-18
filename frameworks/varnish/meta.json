@@ -1,5 +1,5 @@
 {
-  "display_name": "Varnish",
+  "display_name": "varnish",
   "language": "C",
   "engine": "varnishd",
   "type": "infrastructure",

@@ -5,9 +5,14 @@ Vinyl Cache is the current name of what used to be called Varnish — same proje
 ## Stack
 
 - **Language:** C
-- **Engine:** vinyld 9.0.1 (vinyl-cache)
+- **Engine:** vinyld main branch (vinyl-cache)
 - **Build:** Multi-stage, built from source (autotools) on `fedora:43`
 - **Dynamic logic:** `vmod_httparena`, a small C vmod to handle the `/baseline11` sum
+
+## vmod_httparena VMOD
+
+The custom vmod resides in `vmod/` and gets added to the source tree by copying
+the relevant files and patching `Makefile.am`.
 
 ## Endpoints
 

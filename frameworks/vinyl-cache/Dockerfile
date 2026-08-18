@@ -10,6 +10,7 @@ RUN set -ex; \
         gcc \
         make \
         git \
+        patch \
         python3 \
         python3-docutils \
         python3-sphinx \
@@ -18,13 +19,14 @@ RUN set -ex; \
         ncurses-devel \
         libedit-devel; \
     cd /tmp; \
-    git clone --recurse-submodules --branch vinyl-cache-9.0.1 \
+    git clone --recurse-submodules --branch main \
         https://code.vinyl-cache.org/vinyl-cache/vinyl-cache.git vinyl-cache
 
 COPY vmod/ /tmp/vinyl-cache/vmod/
 
 RUN set -ex; \
     cd /tmp/vinyl-cache; \
+    patch -p1 <vmod/0001-Add-httparena-vmod-to-vmod-Makefile.am.patch; \
     ./autogen.sh; \
     ./configure --prefix=/usr --sbindir=/usr/bin; \
     make -j"$(nproc)"; \
@@ -44,7 +46,7 @@ RUN set -ex; \
 
 COPY --from=build /out/ /
 COPY default.vcl /etc/vinyl/default.vcl
-COPY --chmod=0755 entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 
 EXPOSE 8080
 
