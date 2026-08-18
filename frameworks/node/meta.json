@@ -1,0 +1,19 @@
+{
+  "display_name": "node",
+  "language": "JS",
+  "type": "engine",
+  "mode": "standard",
+  "engine": "node:http",
+  "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
+  "repo": "https://github.com/nodejs/node",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
