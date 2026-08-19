@@ -16,10 +16,10 @@
                  [org.clojure/core.cache "1.2.263"]]
 
   :main ^:skip-aot ring.core
-
+  :aot          :all
+  :jvm-opts     ["-Dclojure.compiler.direct-linking=true"]
   :source-paths ["src"]
   :test-paths ["test"]
-  :aot :all
   :resource-paths ["resources"]
 
   )
