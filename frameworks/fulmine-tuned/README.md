@@ -18,12 +18,12 @@ compression, no suffix lookup, no alternative JSON serializer, nothing precomput
 
 | Setting | Standard entry | Here | Why a standard entry may not have it |
 |---------|---------------|------|--------------------------------------|
-| `file cache` | `false` | `true` | The small-file cache is the framework's own default and it answers a static request from memory. Standard mode requires every static request to reach the disk. |
-| `stat cache` | unset (`0`) | `24h` | Without it the cache still asks the filesystem whether the file changed, once per request. Longer than any run: the harness mounts these files read-only and nothing writes to them while the container lives. |
+| `stat cache` | unset (`0`) | `24h` | The size and mtime of a file, never its body. The read still happens per request; what this saves is the syscall that asks whether the file changed. Longer than any run: the harness mounts these files read-only and nothing writes to them while the container lives. |
 | `connection headers` | `true` | `false` | Drops `Connection: keep-alive` and `Keep-Alive: timeout=10` from every response. Express sends both, so a standard entry sends them too; HTTP/1.1 keeps the connection alive without being told. |
 
-The first two are why this entry exists: they are the only documented settings the framework has
-that a standard entry is not allowed to use, and both of them are about the static profiles.
+**No static file is held in memory.** `file cache` is off here exactly as it is in the standard
+entry: caching bodies is against the rules whatever the mode, because the static profile exists to
+measure file I/O. Every request reads the file it answers with.
 
 ## What is deliberately not tuned
 

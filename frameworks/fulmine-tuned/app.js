@@ -43,16 +43,17 @@ app.disable('x-powered-by');
 // documented under Performance tips as the setting for an API whose responses are never
 // revalidated, which is every profile here: nothing sends a conditional request
 app.set('etag', false);
-// This entry is tuned for these three lines and for nothing else. Every one of them is a shipped
-// setting of the framework, set through its documented API, and a standard entry may not have
-// them: the first two keep a static request off the disk, which the standard rules forbid, and
-// the third drops two headers a standard entry is expected to send.
+// This entry is tuned for these two lines and for nothing else, both shipped settings of the
+// framework set through its documented API.
 //
-// "file cache" is the framework's own default, and it is the standard entry that turns it off.
-app.set('file cache', true);
-// and the stat that goes with it: without this the cache still asks the filesystem whether the
-// file changed on every request. Longer than any run, because the harness mounts these files
-// read-only and nothing writes to them while the container lives
+// The body cache stays off, as it is in the standard entry: holding static files in memory is
+// against the rules whatever the mode, because the static profile is there to measure file I/O.
+// Every request here reads the file it answers with.
+app.set('file cache', false);
+// What is cached is the stat, and only the stat: size and mtime, never a body. The read still
+// happens per request; what this saves is the syscall that asks whether the file changed.
+// Longer than any run, because the harness mounts these files read-only and nothing writes to
+// them while the container lives
 app.set('stat cache', '24h');
 // Connection: keep-alive and Keep-Alive: timeout=10 on every response, which is what express
 // sends and what the standard entry therefore sends too. HTTP/1.1 keeps the connection alive
@@ -469,8 +470,8 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     });
     tlsApp.disable('x-powered-by');
     tlsApp.set('etag', false);
-    // the same three as the plaintext app above, so static-tls is served the same way
-    tlsApp.set('file cache', true);
+    // the same as the plaintext app above, so static-tls is served the same way
+    tlsApp.set('file cache', false);
     tlsApp.set('stat cache', '24h');
     tlsApp.set('connection headers', false);
     registerJsonRoute(tlsApp);
