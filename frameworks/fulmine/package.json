@@ -2,7 +2,7 @@
   "name": "httparena-fulmine",
   "private": true,
   "dependencies": {
-    "fulmine.js": "^5.12.2",
+    "fulmine.js": "^5.15.1",
     "pg": "^8.13.0",
     "pg-native": "^3.8.0",
     "ejs": "^3.1.10",

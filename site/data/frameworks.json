@@ -839,6 +839,14 @@
     "engine": "v8",
     "mode": "tuned"
   },
+  "node": {
+    "dir": "node",
+    "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
+    "repo": "https://github.com/nodejs/node",
+    "type": "engine",
+    "engine": "node:http",
+    "mode": "standard"
+  },
   "pedestal": {
     "dir": "pedestal",
     "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",

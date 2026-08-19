@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+# 2700 raw run logs. Useless in a search result, and they take crawl budget
+# away from the pages that matter.
+Disallow: /logs/
 
 Sitemap: https://www.http-arena.com/sitemap.xml

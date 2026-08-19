@@ -260,6 +260,13 @@
   .sb .sb-lang{color:var(--text-2)}
   .sb-note{color:var(--muted); font-size:.78rem; margin:.9rem 0 0}
   .sb-note a{color:var(--accent)}
+  .board-seo{margin:2.6rem 0 1rem; max-width:70ch; color:var(--text-2); font-size:.88rem}
+  .board-seo:empty{display:none}
+  .board-seo h2{font-size:1.05rem; font-weight:700; color:var(--text); margin:1.6rem 0 .4rem; letter-spacing:-.01em}
+  .board-seo h3{font-size:.9rem; font-weight:650; color:var(--text); margin:1rem 0 .2rem}
+  .board-seo p{margin:.4rem 0}
+  .board-seo a{color:var(--accent)}
+  .board-seo ul{margin:.4rem 0; padding-left:1.1rem}
 
   .grid{--cols:54px minmax(250px,2fr) minmax(150px,1fr) 112px 92px 92px 96px 86px}
   .thead,.row{display:grid; grid-template-columns:var(--cols); align-items:center}
@@ -519,6 +526,9 @@
         <div id="rows"></div>
       </div>
       <div id="docview" class="docview" style="display:none"></div>
+      <!-- filled by the deploy (build_index_page): the copy, the questions and the
+           hub links a crawler needs on the one page that is only a table. -->
+      <section class="board-seo" id="boardSeo"></section>
     </main>
   </div>
 
@@ -1036,7 +1046,9 @@ document.addEventListener('DOMContentLoaded', function(){
         blurb=document.getElementById('pblurb'), ctl=document.getElementById('headctl');
     if(state.view==='composite'){
       var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles'}[state.scope];
-      var sName={h1:'HTTP/1.1',h2:'HTTP/2',h3:'HTTP/3',gw:'Gateway',grpc:'gRPC',ws:'WebSocket'}[state.scope];
+      // The heading is the page's <h1>. "HTTP/1.1" alone said nothing about
+      // what is on the page, so every view names its subject.
+      var sName={h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks'}[state.scope];
       cat.textContent='Composite ranking'; title.textContent=sName;
       blurb.innerHTML='Normalized score summed across '+sLabel+' (each profile worth 100 to its leader'
         +(state.rescale?' among the frameworks shown':' in the full field, so filtering does not change the numbers')
@@ -1063,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     } else {
       var p=PROF[state.profile];
-      cat.textContent=p.category; title.textContent=p.label;
+      cat.textContent=p.category; title.textContent=p.label+' benchmark';
       var b=esc(p.blurb||'');
       if(p.doc) b+=(b?' ':'')+'<a href="/docs/'+p.doc+'/">Implementation guidelines →</a>';
       blurb.innerHTML=b;
@@ -1241,15 +1253,18 @@ document.addEventListener('DOMContentLoaded', function(){
     var th=document.getElementById('thead');
     var mn=document.querySelector('.main');
     var dv=document.getElementById('docview'), grid=document.getElementById('grid'),
-        tools=document.querySelector('.tools'), phead=document.querySelector('.phead');
+        tools=document.querySelector('.tools'), phead=document.querySelector('.phead'),
+        seo=document.getElementById('boardSeo');
     if(state.view==='doc'){
       if(mn)mn.classList.remove('cmfull');
       if(grid)grid.style.display='none'; if(tools)tools.style.display='none'; if(phead)phead.style.display='none';
+      if(seo)seo.style.display='none';
       if(dv){ dv.style.display=''; renderDoc(dv); }
       renderTypes(); scheduleHash(); return;
     }
     if(dv)dv.style.display='none';
     if(grid)grid.style.display=''; if(tools)tools.style.display=''; if(phead)phead.style.display='';
+    if(seo)seo.style.display='';
     if(state.view==='composite'){ th.style.display='none'; if(mn)mn.classList.add('cmfull'); renderComposite(); }
     else { th.style.display=''; if(mn)mn.classList.remove('cmfull'); renderProfile(); }
     scheduleHash();
