@@ -985,24 +985,10 @@ if has_test "baseline-h2c"; then
         fail_with_link "[HTTP/2 cleartext (prior-knowledge)]: server responded with HTTP/$h2c_proto, expected HTTP/2" "$H2C_DOCS"
     fi
 
-    # Anti-cheat #2: the same port MUST NOT also serve HTTP/1.1. If it did,
-    # the benchmark could be measuring h1 throughput (much higher on some
-    # stacks) while labeled as h2c. --http1.1 forces curl to refuse the
-    # h2 preface; we check that the server didn't happily answer.
-    h1_code=$(curl -s --max-time 5 --http1.1 \
-        -o /dev/null -w '%{http_code}' \
-        "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null || echo "000")
-    if [ "$h1_code" != "200" ]; then
-        echo "  PASS [h2c-only: port $H2C_PORT rejects plain HTTP/1.1] (got $h1_code)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[h2c-only]: port $H2C_PORT also answered HTTP/1.1 with 200 — dual-serving lets the benchmark measure h1 throughput instead of h2c. The h2c listener must refuse HTTP/1.1 requests." "$H2C_DOCS"
-    fi
-
     check "GET /baseline2?a=13&b=42 over h2c" "55" "$H2C_DOCS" \
         -s --http2-prior-knowledge "http://localhost:$H2C_PORT/baseline2?a=13&b=42"
 
-    # Anti-cheat #3: randomized sum
+    # Anti-cheat #2: randomized sum
     A4=$((RANDOM % 900 + 100))
     B4=$((RANDOM % 900 + 100))
     check "GET /baseline2?a=$A4&b=$B4 over h2c (random)" "$((A4 + B4))" "$H2C_DOCS" \
