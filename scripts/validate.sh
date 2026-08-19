@@ -677,6 +677,27 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
     check_fragmented "POST /baseline11 — lower-cased content-length" "75" "$BASELINE_DOCS" \
         $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nhost: localhost\r\ncontent-type: text/plain\r\ncontent-length: 2\r\nconnection: close\r\n\r\n' \
         "20"
+
+    # Exhaustive fragmentation. The checks above split at points a human chose;
+    # this splits nine request shapes at EVERY byte offset (~1,000 of them),
+    # which is where the parser bugs actually live - between the CR and the LF,
+    # mid Content-Length digits, mid chunk-size hex. It also covers chunked
+    # bodies under fragmentation, which nothing else here does: the chunked
+    # check above goes through curl in one write, and check_fragmented only
+    # ever fragments Content-Length bodies.
+    #
+    # Runs in ~2s: connections are opened in batches and each batch pays the
+    # 200ms pause once, rather than once per offset.
+    echo "[test] baseline exhaustive fragmentation"
+    FRAG_OUTPUT=$(python3 "$SCRIPT_DIR/validate-frag.py" localhost "$PORT" 200 2>&1) || true
+    echo "$FRAG_OUTPUT"
+    FRAG_PASS=$(echo "$FRAG_OUTPUT" | grep -oP '(\d+) passed' | grep -oP '\d+')
+    FRAG_FAIL=$(echo "$FRAG_OUTPUT" | grep -oP '(\d+) failed' | grep -oP '\d+')
+    PASS=$((PASS + ${FRAG_PASS:-0}))
+    FAIL=$((FAIL + ${FRAG_FAIL:-0}))
+    if [ "${FRAG_FAIL:-0}" -gt 0 ]; then
+        echo "        → $BASELINE_DOCS"
+    fi
 fi
 
 # ───── Pipelined (GET /pipeline) ─────
