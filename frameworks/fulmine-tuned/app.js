@@ -51,8 +51,9 @@ app.set('etag', false);
 // "file cache" is the framework's own default, and it is the standard entry that turns it off.
 app.set('file cache', true);
 // and the stat that goes with it: without this the cache still asks the filesystem whether the
-// file changed on every request
-app.set('stat cache', '1s');
+// file changed on every request. Longer than any run, because the harness mounts these files
+// read-only and nothing writes to them while the container lives
+app.set('stat cache', '24h');
 // Connection: keep-alive and Keep-Alive: timeout=10 on every response, which is what express
 // sends and what the standard entry therefore sends too. HTTP/1.1 keeps the connection alive
 // without being told, so the bytes buy nothing here
@@ -470,7 +471,7 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     tlsApp.set('etag', false);
     // the same three as the plaintext app above, so static-tls is served the same way
     tlsApp.set('file cache', true);
-    tlsApp.set('stat cache', '1s');
+    tlsApp.set('stat cache', '24h');
     tlsApp.set('connection headers', false);
     registerJsonRoute(tlsApp);
     registerStaticRoute(tlsApp);

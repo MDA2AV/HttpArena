@@ -13,11 +13,21 @@
     "limited-conn",
     "json",
     "json-comp",
+    "upload",
     "api-4",
     "api-16",
+    "async-db",
     "static",
     "static-tls",
-    "json-tls"
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "json-tls",
+    "crud",
+    "gateway-64",
+    "gateway-h3",
+    "production-stack",
+    "fortunes"
   ],
   "maintainers": [
     "nigrosimone"

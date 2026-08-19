@@ -19,7 +19,7 @@ compression, no suffix lookup, no alternative JSON serializer, nothing precomput
 | Setting | Standard entry | Here | Why a standard entry may not have it |
 |---------|---------------|------|--------------------------------------|
 | `file cache` | `false` | `true` | The small-file cache is the framework's own default and it answers a static request from memory. Standard mode requires every static request to reach the disk. |
-| `stat cache` | unset (`0`) | `1s` | Without it the cache still asks the filesystem whether the file changed, once per request. |
+| `stat cache` | unset (`0`) | `24h` | Without it the cache still asks the filesystem whether the file changed, once per request. Longer than any run: the harness mounts these files read-only and nothing writes to them while the container lives. |
 | `connection headers` | `true` | `false` | Drops `Connection: keep-alive` and `Keep-Alive: timeout=10` from every response. Express sends both, so a standard entry sends them too; HTTP/1.1 keeps the connection alive without being told. |
 
 The first two are why this entry exists: they are the only documented settings the framework has
@@ -42,8 +42,8 @@ that a standard entry is not allowed to use, and both of them are about the stat
 
 ## Endpoints
 
-The same handlers as the standard entry, minus the gateway and production-stack profiles: this
-entry does not subscribe to them, so it ships no compose files and no proxy configuration.
+The same handlers and the same twenty profiles as the standard entry, gateway and
+production-stack included.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -51,6 +51,8 @@ entry does not subscribe to them, so it ships no compose files and no proxy conf
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, compressed when the client asks |
+| `/async-db` | GET | Reads from PostgreSQL, prepared statement, pool sized under max_connections |
+| `/upload` | POST | Counts the bytes of the request body |
 | `/static/*` | GET | `express.static()` with `preCompressed`, served from the in-memory cache |
 
 ## Notes
