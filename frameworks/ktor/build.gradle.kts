@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    alias(ktorLibs.plugins.ktor)
+    alias(libs.plugins.ktor)
 }
 
 group = "com.httparena"

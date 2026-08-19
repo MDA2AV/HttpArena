@@ -43,6 +43,7 @@ fun main() {
 
     val server = embeddedServer(Netty, environment, {
         enableHttp2 = true
+        enableHttp3()
 
         connector {
             port = 8080

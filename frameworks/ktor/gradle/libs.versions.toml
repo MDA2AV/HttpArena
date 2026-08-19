@@ -14,5 +14,6 @@ postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
 hikaricp = { module = "com.zaxxer:HikariCP", version = "6.2.1" }
 
 [plugins]
+ktor = { id = "io.ktor.plugin", version = "3.5.2" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

@@ -8,9 +8,10 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven("https://redirector.kotlinlang.org/maven/ktor-eap")
     }
     versionCatalogs {
-        create("ktorLibs").from("io.ktor:ktor-version-catalog:3.5.0")
+        create("ktorLibs").from("io.ktor:ktor-version-catalog:3.6.0-eap-1654")
     }
 }
 

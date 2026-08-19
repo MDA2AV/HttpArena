@@ -16,9 +16,6 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
-import io.netty.channel.ChannelOption
-import io.netty.channel.WriteBufferWaterMark
-import io.netty.handler.flush.FlushConsolidationHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
@@ -33,13 +30,15 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
+@OptIn(ExperimentalKtorApi::class)
 fun main() {
-    println("Ktor HttpArena server starting on :8080 (HTTP/1.1) and :8443 (HTTPS/HTTP+2)")
+    println("Ktor HttpArena server starting on :8080 (HTTP/1.1) and :8443 (HTTPS/HTTP2/HTTP3)")
     val deps = ArenaApplicationDepsFactory.load()
     val environment = applicationEnvironment {}
 
     val server = embeddedServer(Netty, environment, {
         enableHttp2 = true
+        enableHttp3()
 
         connector {
             port = 8080
