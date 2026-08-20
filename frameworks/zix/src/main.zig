@@ -70,7 +70,6 @@ pub fn main(process: std.process.Init) !void {
         .compress = true,
         //
         .public_dir = paths.DATA_DIR,
-        .public_dir_cache_ttl_ms = 200 * 1,
         //
         .kernel_backlog = 16 * 1024,
         .max_recv_buf = 8 * 1024,
