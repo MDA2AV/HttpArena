@@ -24,17 +24,12 @@ function getCPUCount() {
 
 const express = require('fulmine.js');
 const fs = require('fs');
-const zlib = require('zlib');
 
-// The framework's own compression middleware, which negotiates br and gzip per request and
-// takes the compression module's options. json-comp counts the bytes twice over,
-// rps * (minBpr/myBpr)^2, so brotli is worth its extra microseconds where the client offers
-// it: q3 is 12% smaller than gzip level 1 here. Mounted on the json route rather than on the
-// app, because that is the only route the profiles ask to compress.
-const compress = express.compression({
-    level: 1,
-    brotli: { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }
-});
+// The framework's own compression middleware, taking the compression module's options plus
+// fulmine's encodings, the list of what it may answer with. gzip level 1 rather than brotli:
+// on this host brotli q3 costs about twice the CPU per response (the 5.15.1 run measured 136us
+// against 71 for the gzip entries), and json-comp's squared byte term does not buy that back.
+const compress = express.compression({ level: 1, encodings: ['gzip'] });
 
 // 'auto' is one worker per usable core, and usable means the cgroup quota where there is one: a
 // container with two cores does not fork sixty-four processes because the host has them.
