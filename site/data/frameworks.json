@@ -855,6 +855,14 @@
     "engine": "node:http",
     "mode": "standard"
   },
+  "oxpecker": {
+    "dir": "oxpecker",
+    "description": "F# web framework built on ASP.NET Core endpoint routing, with a functional handler DSL and its own code-as-markup view engine.",
+    "repo": "https://github.com/Lanayx/Oxpecker",
+    "type": "emerging",
+    "engine": "kestrel",
+    "mode": "standard"
+  },
   "pedestal": {
     "dir": "pedestal",
     "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
