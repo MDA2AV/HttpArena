@@ -314,9 +314,20 @@ static int on_baseline11(h2o_handler_t *h, h2o_req_t *req)
     int64_t sum = sum_query_values(req);
     if (h2o_memis(req->method.base, req->method.len, H2O_STRLIT("POST"))
         && req->entity.len > 0) {
-        const char *p = req->entity.base;
-        const char *end = p + req->entity.len;
-        while (p < end && *p <= ' ') p++;
+        /* req->entity is length-delimited, NOT NUL-terminated, so strtoll()
+           cannot be pointed at it directly: it scans until a non-digit and
+           happily runs past entity.len into whatever the pool holds next.
+           With a multi-chunk chunked body the decoder compacts the payload
+           and leaves the old chunk framing right behind it, so "20" was
+           being read as "202" or "2020" and the sum came back wrong.
+           Copy into a bounded, NUL-terminated buffer first. */
+        char nbuf[32];
+        size_t nlen = req->entity.len < sizeof(nbuf) - 1
+                    ? req->entity.len : sizeof(nbuf) - 1;
+        memcpy(nbuf, req->entity.base, nlen);
+        nbuf[nlen] = '\0';
+        const char *p = nbuf;
+        while (*p != '\0' && *p <= ' ') p++;
         char *ep;
         long long n = strtoll(p, &ep, 10);
         if (ep > p) sum += n;
@@ -399,7 +410,9 @@ static int on_json(h2o_handler_t *h, h2o_req_t *req)
             if (eq - p == 1 && *p == 'm') {
                 char *ep;
                 long long n = strtoll(eq + 1, &ep, 10);
-                if (ep > eq + 1) m = n;
+                /* Same hazard as the body parse above: bound the accept to
+                   this parameter's span so a digit after it cannot be read. */
+                if (ep > eq + 1 && ep <= amp) m = n;
                 break;
             }
             p = amp < end ? amp + 1 : end;

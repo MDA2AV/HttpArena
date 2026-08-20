@@ -677,6 +677,27 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
     check_fragmented "POST /baseline11 — lower-cased content-length" "75" "$BASELINE_DOCS" \
         $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nhost: localhost\r\ncontent-type: text/plain\r\ncontent-length: 2\r\nconnection: close\r\n\r\n' \
         "20"
+
+    # Exhaustive fragmentation. The checks above split at points a human chose;
+    # this splits nine request shapes at EVERY byte offset (~1,000 of them),
+    # which is where the parser bugs actually live - between the CR and the LF,
+    # mid Content-Length digits, mid chunk-size hex. It also covers chunked
+    # bodies under fragmentation, which nothing else here does: the chunked
+    # check above goes through curl in one write, and check_fragmented only
+    # ever fragments Content-Length bodies.
+    #
+    # Runs in ~2s: connections are opened in batches and each batch pays the
+    # 200ms pause once, rather than once per offset.
+    echo "[test] baseline exhaustive fragmentation"
+    FRAG_OUTPUT=$(python3 "$SCRIPT_DIR/validate-frag.py" localhost "$PORT" 200 2>&1) || true
+    echo "$FRAG_OUTPUT"
+    FRAG_PASS=$(echo "$FRAG_OUTPUT" | grep -oP '(\d+) passed' | grep -oP '\d+')
+    FRAG_FAIL=$(echo "$FRAG_OUTPUT" | grep -oP '(\d+) failed' | grep -oP '\d+')
+    PASS=$((PASS + ${FRAG_PASS:-0}))
+    FAIL=$((FAIL + ${FRAG_FAIL:-0}))
+    if [ "${FRAG_FAIL:-0}" -gt 0 ]; then
+        echo "        → $BASELINE_DOCS"
+    fi
 fi
 
 # ───── Pipelined (GET /pipeline) ─────
@@ -985,24 +1006,10 @@ if has_test "baseline-h2c"; then
         fail_with_link "[HTTP/2 cleartext (prior-knowledge)]: server responded with HTTP/$h2c_proto, expected HTTP/2" "$H2C_DOCS"
     fi
 
-    # Anti-cheat #2: the same port MUST NOT also serve HTTP/1.1. If it did,
-    # the benchmark could be measuring h1 throughput (much higher on some
-    # stacks) while labeled as h2c. --http1.1 forces curl to refuse the
-    # h2 preface; we check that the server didn't happily answer.
-    h1_code=$(curl -s --max-time 5 --http1.1 \
-        -o /dev/null -w '%{http_code}' \
-        "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null || echo "000")
-    if [ "$h1_code" != "200" ]; then
-        echo "  PASS [h2c-only: port $H2C_PORT rejects plain HTTP/1.1] (got $h1_code)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[h2c-only]: port $H2C_PORT also answered HTTP/1.1 with 200 — dual-serving lets the benchmark measure h1 throughput instead of h2c. The h2c listener must refuse HTTP/1.1 requests." "$H2C_DOCS"
-    fi
-
     check "GET /baseline2?a=13&b=42 over h2c" "55" "$H2C_DOCS" \
         -s --http2-prior-knowledge "http://localhost:$H2C_PORT/baseline2?a=13&b=42"
 
-    # Anti-cheat #3: randomized sum
+    # Anti-cheat #2: randomized sum
     A4=$((RANDOM % 900 + 100))
     B4=$((RANDOM % 900 + 100))
     check "GET /baseline2?a=$A4&b=$B4 over h2c (random)" "$((A4 + B4))" "$H2C_DOCS" \

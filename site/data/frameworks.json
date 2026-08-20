@@ -432,6 +432,14 @@
     "engine": "frankenphp",
     "mode": "tuned"
   },
+  "fulmine-tuned": {
+    "dir": "fulmine-tuned",
+    "description": "fulmine.js with the caches its standard entry has to leave off: the in-memory small-file cache and the stat cache, both shipped settings, both forbidden to a standard entry because they keep a static request off the disk.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "tuned"
+  },
   "fulmine": {
     "dir": "fulmine",
     "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
