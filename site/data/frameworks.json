@@ -1294,7 +1294,7 @@
   },
   "uWebSockets.js": {
     "dir": "uwebsockets",
-    "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Routing and body handling through the uWS App API, JSON.stringify per request, gzip through the Node zlib bindings.",
+    "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Raw uWS App API throughout - no router, middleware or body parser. JSON.stringify per request, gzip through the Node zlib bindings, static files read from disk on every request, TLS on :8081 through uWS's own SSLApp. Database profiles use the pg driver with libpq bindings and a pool sized from DATABASE_MAX_CONN; crud reads go through the harness's Redis sidecar, which the profile allows for one-process-per-core runtimes.",
     "repo": "https://github.com/uNetworking/uWebSockets.js",
     "type": "flagship",
     "engine": "uWebSockets",
