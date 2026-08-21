@@ -469,6 +469,27 @@
   .cm tbody tr:nth-child(even) td{background:var(--zebra)}
   .cm tbody tr:hover td{background:var(--panel-2)}
   @media (max-width:820px){ .cm .fwh,.cm .fwcell{width:218px;min-width:218px;max-width:218px} .cm .scoreh,.cm .scorec{left:262px} }
+  /* Compact Framework column. The full cell carries a favourite star, the tuned
+     slot, the type square, a language slot and the medals before the name gets
+     any room - 356px of a table whose point is the profile columns to the right
+     of it. Compact keeps the three things that identify the row and gives the
+     other 156px back to the numbers.
+     Higher specificity than the 820px rule above, so it wins at every width
+     without repeating itself inside the media query. */
+  .cm.compact .fwh,.cm.compact .fwcell{width:200px; min-width:200px; max-width:200px}
+  .cm.compact .scoreh,.cm.compact .scorec{left:244px}
+  /* The tuned cue goes back to the bar it was before #1225: at this width there
+     is no room for the word, and next to the square it still reads as "this row
+     is marked". The pill is what the full column shows. */
+  .cm.compact .tsq.tuned{position:relative}
+  .cm.compact .tsq.tuned::after{content:""; position:absolute; top:0; bottom:0;
+    right:calc(100% + 2px); width:4px; background:#c89a3c}
+  /* Same boxed shape as the Composite header's ?, and like it, clicking it must
+     not sort the column it lives in. */
+  .cm .fwh .fwtog{display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:12px;
+    padding:0 2px; margin-left:.34rem; border:1px solid currentColor; font:700 .58rem/1 var(--mono);
+    text-transform:none; letter-spacing:0; opacity:.55; vertical-align:1px; color:inherit; cursor:pointer}
+  .cm .fwh .fwtog:hover{opacity:1; color:var(--accent); border-color:var(--accent)}
   /* small screens: un-freeze the left columns so the whole table scrolls horizontally and the result cells are reachable (header keeps vertical stick) */
   @media (max-width:640px){ .cm .sticky{left:auto; box-shadow:none} .cm tbody td.sticky{z-index:auto} }
 
@@ -617,7 +638,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -695,7 +716,9 @@ document.addEventListener('DOMContentLoaded', function(){
     scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 100). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
     scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.80. Opens the scoring docs.',
     scoreHelpWs:'How the composite is built: every scored profile is worth 100 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
-    fw:'Framework - click the name to open its repository.'
+    fw:'Framework - click the name to open its repository.',
+    fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
+    fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.'
   };
   function initTips(){
     var tip=document.createElement('div'); tip.id='tip'; document.body.appendChild(tip);
@@ -1190,6 +1213,8 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function saveTypes(){ try{ localStorage.setItem('lb-types', JSON.stringify(state.types)); }catch(e){} }
   function saveTuned(){ try{ localStorage.setItem('lb-showtuned', state.showTuned?'1':'0'); }catch(e){} }
+  function saveCompactFw(){ try{ localStorage.setItem('lb-fwcompact', state.compactFw?'1':'0'); }catch(e){} }
+  function toggleCompactFw(){ state.compactFw=!state.compactFw; saveCompactFw(); render(); scheduleHash(); }
   // flagship/emerging/experimental combine (one framework pool); engine and
   // infrastructure are exclusive - each is its own league, selected alone.
   // Never empty.
@@ -1432,6 +1457,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
+    if(state.compactFw) p.push('fw=compact');
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
     var nh=p.length?('#'+p.join('&')):'';
@@ -1444,6 +1470,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }
     if(p.hasOwnProperty('tuned')) state.showTuned = p.tuned!=='0';
+    if(p.hasOwnProperty('fw')) state.compactFw = p.fw==='compact';
     state.lang = p.lang || '';
     state.q = p.q || '';
     if(p.p && PROF[p.p]){
@@ -1513,7 +1540,11 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
-      + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'+ar('fw')+'</th>'
+      + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'
+      +   '<span class="fwtog" id="fwTog" role="button" tabindex="0" data-tip="'
+      +   esc(state.compactFw ? TIP.fwExpand : TIP.fwCompact)+'" aria-label="'
+      +   (state.compactFw?'Expand':'Compact')+' the Framework column">'
+      +   (state.compactFw?'\u2039\u203a':'\u203a\u2039')+'</span>'+ar('fw')+'</th>'
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
       +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
@@ -1526,7 +1557,16 @@ document.addEventListener('DOMContentLoaded', function(){
       var fav=favs.has(r.fw);
       var tr='<tr class="'+(fav?'fav':'')+'" data-fw-row="'+esc(r.fw)+'">'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
-        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
+        + '<td class="sticky fwcell"><span class="fl">'
+        +   (state.compactFw
+              // Three things only: the type square (carrying the tuned bar, since
+              // the pill has no room here), and the name. The star, the language
+              // and the medals are what the 156px was going on.
+              ? '<span class="tsq tsq-'+t+(modeOf(r.fw)==='tuned'?' tuned':'')+'" data-tip="'
+                + esc(typeTip(t)+(modeOf(r.fw)==='tuned'?'  ·  '+TUNED_TIP:''))+'"></span>'
+                + '<span class="nm">'+nm+'</span>'
+              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw))
+        +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
         var cell=r.cells[pid];
@@ -1538,11 +1578,14 @@ document.addEventListener('DOMContentLoaded', function(){
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
     var colspan=pids.length+4;
-    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
+    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
     // navigation.
-    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&ev.target.closest('.hq')) return; sortBy(h.dataset.k); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&(ev.target.closest('.hq')||ev.target.closest('.fwtog'))) return; sortBy(h.dataset.k); }; });
+    var _ft=document.getElementById('fwTog');
+    if(_ft){ _ft.onclick=function(ev){ ev.stopPropagation(); toggleCompactFw(); };
+             _ft.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); toggleCompactFw(); } }; }
     setupTopScroll();
   }
 
@@ -1639,6 +1682,7 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ var _vt=['flagship','emerging','experimental','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
   document.getElementById('typeFilter').addEventListener('click', function(e){ var b=e.target.closest('button[data-type]'); if(!b) return; toggleType(b.getAttribute('data-type')); });
   try{ var _st=localStorage.getItem('lb-showtuned'); if(_st!==null) state.showTuned=_st==='1'; }catch(e){}
+  try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
   initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
