@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": false
+  },
   "engine": "nginx",
   "description": "Embedded PHP scripting language module for nginx.",
   "repo": "https://github.com/rryqszq4/ngx-php",

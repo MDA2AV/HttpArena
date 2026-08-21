@@ -3,6 +3,12 @@
   "language": "Rust",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "hyper",
   "description": "Axum 0.8 on hyper with the multi-threaded Tokio runtime, default configuration. Routing and path/query extractors through the Axum API, serde_json via the Json response, gzip through the tower-http compression layer.",
   "repo": "https://github.com/tokio-rs/axum",

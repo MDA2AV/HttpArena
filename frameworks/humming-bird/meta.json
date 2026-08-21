@@ -3,6 +3,12 @@
   "language": "Swift",
   "type": "flagship",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "hummingbird",
   "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
   "repo": "https://github.com/hummingbird-project/hummingbird",

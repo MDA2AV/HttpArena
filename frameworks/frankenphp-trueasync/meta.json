@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": false,
+    "response": false
+  },
   "engine": "frankenphp",
   "description": "FrankenPHP with TrueAsync coroutine engine. Each HTTP request runs as a cooperative coroutine with PDO connection pooling, async I/O, and OPcache JIT. Built on Caddy with native HTTP/2 and HTTP/3 support.",
   "repo": "https://github.com/true-async/php-async",

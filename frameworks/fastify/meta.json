@@ -3,6 +3,12 @@
   "language": "JS",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "nodehttp",
   "description": "Fastify 5 on node:http with the cluster module for multi-core scaling.",
   "repo": "https://github.com/fastify/fastify",

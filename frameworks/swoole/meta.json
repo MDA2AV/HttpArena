@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "flagship",
   "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": false
+  },
   "engine": "swoole",
   "description": "Swoole is an event-driven, asynchronous, coroutine-based concurrency library with high performance for PHP.",
   "repo": "https://github.com/swoole/swoole-src",

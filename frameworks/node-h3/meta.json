@@ -3,6 +3,12 @@
   "language": "JS",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "nodehttp",
   "description": "H3 v2, the unjs framework under Nitro and Nuxt, served on node:http by srvx with the cluster module for multi-core scaling.",
   "repo": "https://github.com/h3js/h3",

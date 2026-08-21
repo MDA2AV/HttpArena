@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "simplew",
   "description": "SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.",
   "repo": "https://github.com/stratdev3/SimpleW",

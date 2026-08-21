@@ -3,6 +3,12 @@
   "language": "Kotlin",
   "type": "flagship",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "netty",
   "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, Ghost Serializer, JDK 21.",
   "repo": "https://github.com/ktorio/ktor",

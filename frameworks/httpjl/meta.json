@@ -3,6 +3,12 @@
   "language": "Julia",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": false,
+    "response": false
+  },
   "engine": "http.jl",
   "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware.",
   "repo": "https://github.com/JuliaWeb/HTTP.jl",

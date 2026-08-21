@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "fleck",
   "description": "C# websockets framework",
   "repo": "https://github.com/statianzo/Fleck",

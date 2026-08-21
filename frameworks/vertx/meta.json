@@ -3,6 +3,12 @@
   "language": "Java",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "Netty",
   "description": "Eclipse Vert.x 5 with vertx-web on Netty, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option.",
   "repo": "https://github.com/eclipse-vertx/vert.x",

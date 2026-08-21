@@ -3,6 +3,12 @@
   "language": "Ruby",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "iodine",
   "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
   "repo": "https://github.com/rage-rb/rage",

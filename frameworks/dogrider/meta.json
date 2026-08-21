@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "zerg",
   "description": "GenHTTP websockets with zerg backend",
   "repo": "https://github.com/MDA2AV/dogrider",

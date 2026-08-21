@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "kestrel",
   "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
   "repo": "https://github.com/dotnet/aspnetcore",

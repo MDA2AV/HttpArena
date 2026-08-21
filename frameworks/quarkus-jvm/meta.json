@@ -3,6 +3,12 @@
   "language": "Java",
   "type": "flagship",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "netty",
   "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
   "repo": "https://github.com/quarkusio/quarkus",

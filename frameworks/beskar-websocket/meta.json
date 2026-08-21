@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "beskar",
   "description": "High-performance WebSocket echo server built with Beskar.Networking.",
   "repo": "https://github.com/MarvinDrude/Beskar.Networking",

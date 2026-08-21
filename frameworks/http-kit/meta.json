@@ -3,6 +3,12 @@
   "language": "Clojure",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "http-kit",
   "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
   "repo": "https://github.com/http-kit/http-kit",

@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "kestrel",
   "description": "One framework to power them all. Write your HTTP APIs once and take advantage of end to end typed integrations for all popular Web, Mobile and Desktop platforms.",
   "repo": "https://github.com/ServiceStack/ServiceStack",

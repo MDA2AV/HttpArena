@@ -3,6 +3,12 @@
   "language": "Go",
   "type": "flagship",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": false
+  },
   "engine": "net/http",
   "description": "The Go standard library net/http server with no framework, default configuration. Routing through the ServeMux method and wildcard patterns of Go 1.22, JSON through encoding/json, gzip written by hand with compress/gzip because the standard library ships no compression middleware.",
   "repo": "https://github.com/golang/go",

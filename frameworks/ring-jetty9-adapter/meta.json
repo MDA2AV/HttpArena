@@ -3,6 +3,12 @@
   "language": "Clojure",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "Jetty",
   "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
   "repo": "https://github.com/sunng87/ring-jetty9-adapter",

@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "true-async-server",
   "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and TrueAsyncServer.",
   "repo": "https://github.com/yangusik/symfony-spawn",

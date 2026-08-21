@@ -3,6 +3,12 @@
   "language": "Kotlin",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "codegreen",
   "description": "CodeGreen, a 1:1 Kotlin port of GenHTTP, on its internal Netty-based engine with kotlinx.serialization and JDBC (HikariCP).",
   "repo": "https://github.com/dotnet-web-stack/CodeGreen",

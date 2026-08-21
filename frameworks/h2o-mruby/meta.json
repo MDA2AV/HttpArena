@@ -3,6 +3,12 @@
   "language": "Ruby",
   "type": "flagship",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": false,
+    "response": true
+  },
   "engine": "h2o",
   "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
   "repo": "https://github.com/h2o/h2o",

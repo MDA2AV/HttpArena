@@ -3,6 +3,12 @@
   "language": "Rust",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "actix",
   "description": "Actix-web 4 with rustls for TLS. Standard configuration: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update — no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Pinned to actix git main for try_compressed() (unreleased in actix-files 0.6.10). Compiled with -O3 and thin LTO.",
   "repo": "https://github.com/actix/actix-web",

@@ -3,6 +3,12 @@
   "language": "Java",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "netty",
   "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Jackson, gzip through the Netty server compression the framework enables by itself.",
   "repo": "https://github.com/micronaut-projects/micronaut-core",

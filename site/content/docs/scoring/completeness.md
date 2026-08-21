@@ -48,6 +48,7 @@ Two rules decide the values:
 
 - **Grade what the entry uses, not what the framework ships.** A benchmark implementation that bypasses its framework's router to hand-roll a faster path has no routing. This is the same principle as [Standard mode](/docs/add-framework/implementation-rules/frameworks/standard/) - it just becomes a declaration instead of a review argument.
 - **Grade the surface you write against.** A server that embeds a fast C++ core but exposes only `onData`/`onAborted` for bodies is graded on the callbacks, not the core.
+- **Middleware is the one axis read off the surface rather than the run.** A benchmark has no cross-cutting concern to install, so no entry would ever score it if it were read off the handler. It counts as done when the server the entry is written against gives the author a pipeline to put one in - not when this particular handler happens to use it. The other three axes are exercised by every entry on every request, so they are graded on the code.
 
 **Only framework tiers are graded.** Engine and infrastructure entries implement none of the four - a raw-socket server has no router, a reverse proxy has no handler to run middleware around - and that is exactly why grading them is pointless rather than generous. Every one of them would take the same ×0.80, so nothing about their order would change, and they are never ranked against frameworks in the first place: each league is normalized against itself. Their factor is fixed at ×1.00 and their rows say nothing about completeness.
 

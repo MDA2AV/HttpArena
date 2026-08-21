@@ -3,6 +3,12 @@
   "language": "Python",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "uvicorn",
   "description": "Starlette 1.6 on uvicorn (uvloop), one worker per core, same uvicorn configuration as the fastapi entry. Routing through Starlette routes, JSON through JSONResponse, gzip through the Starlette GZipMiddleware.",
   "repo": "https://github.com/encode/starlette",

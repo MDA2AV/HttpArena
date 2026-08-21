@@ -3,6 +3,12 @@
   "language": "TS",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "jsc",
   "description": "An ergonomic framework for Humans",
   "repo": "https://github.com/elysiajs/elysia",

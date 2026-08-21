@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "kestrel",
   "description": "ASP.NET Core minimal API behind an Nginx reverse proxy. Nginx handles TLS termination and static files, proxying dynamic endpoints to Kestrel over HTTP/1.1.",
   "repo": "https://github.com/dotnet/aspnetcore",

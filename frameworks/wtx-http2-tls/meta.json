@@ -3,6 +3,12 @@
   "language": "Rust",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "wtx",
   "description": "WTX - HTTP/2 Framework Server",
   "repo": "https://github.com/c410-f3r/wtx",

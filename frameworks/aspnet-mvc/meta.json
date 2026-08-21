@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "kestrel",
   "description": "ASP.NET Core server using .NET 10 with Kestrel and MVC controller routing.",
   "repo": "https://github.com/dotnet/aspnetcore",

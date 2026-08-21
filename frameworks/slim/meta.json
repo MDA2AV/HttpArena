@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "FrankenPHP",
   "description": "Slim 4 with slim/psr7 on FrankenPHP in classic per-request mode. Routing and PSR-7 request/response through the Slim API, json_encode per request, gzip through the FrankenPHP encode directive.",
   "repo": "https://github.com/slimphp/Slim",

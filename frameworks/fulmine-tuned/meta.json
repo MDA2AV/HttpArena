@@ -3,6 +3,12 @@
   "language": "JS",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "uwebsockets",
   "description": "fulmine.js with the caches its standard entry has to leave off: the in-memory small-file cache and the stat cache, both shipped settings, both forbidden to a standard entry because they keep a static request off the disk.",
   "repo": "https://github.com/nigrosimone/fulmine.js",

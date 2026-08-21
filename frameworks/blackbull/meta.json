@@ -3,6 +3,12 @@
   "language": "Python",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "blackbull",
   "description": "BlackBull — pure-Python async ASGI 3.0 framework supporting HTTP/1.1, HTTP/2, and WebSocket. ALPN negotiates HTTP/2 on the same listener that serves HTTP/1.1.",
   "repo": "https://github.com/TOKUJI/BlackBull",

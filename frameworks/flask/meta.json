@@ -3,6 +3,12 @@
   "language": "Python",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "gunicorn",
   "description": "Flask web framework on Gunicorn with sync workers",
   "repo": "https://github.com/pallets/flask",

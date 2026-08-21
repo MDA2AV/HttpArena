@@ -3,6 +3,12 @@
   "language": "Java",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "tomcat",
   "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
   "repo": "https://github.com/spring-projects/spring-boot",

@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": false
+  },
   "engine": "nginx",
   "description": "Plain PHP with PHP-FPM & nginx.",
   "repo": "https://github.com/php/php-src",
