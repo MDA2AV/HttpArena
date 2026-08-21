@@ -2,6 +2,8 @@
   "name": "httparena-hyper-express",
   "private": true,
   "dependencies": {
-    "hyper-express": "^7.0.2"
+    "hyper-express": "^7.0.2",
+    "pg": "^8.13.0",
+    "ioredis": "^5.4.1"
   }
 }

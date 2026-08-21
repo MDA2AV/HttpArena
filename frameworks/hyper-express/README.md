@@ -15,6 +15,12 @@ An Express-like API on uWebSockets.js, with the cluster module for multi-core sc
 |----------|--------|-------------|
 | `/pipeline` | GET | Returns `ok` (plain text) |
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
+| `/baseline2` | GET | Sums query parameter values |
+| `/async-db` | GET | Reads from PostgreSQL through a pool of four |
+| `/static/:filename` | GET | Serves a file from disk, the brotli or gzip variant when the client accepts one |
+| `/crud/items` | GET/POST | Lists items by category with paging, or inserts one |
+| `/crud/items/:id` | GET/PUT | Reads one item through a Redis cache-aside, or updates it and drops the cached copy |
+| `/fortunes` | GET | Reads 200 rows from PostgreSQL, appends the runtime row, sorts and renders the HTML table |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzip or brotli when the client accepts one |
 | `/upload` | POST | Counts the bytes of the request body |
 
@@ -36,3 +42,15 @@ than where it looks the same:
 
 Every worker binds `:8080` on its own: uWebSockets.js shares the port across processes unless
 `exclusive_port` is asked for, so the cluster fork per core needs nothing else.
+
+`json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key` are
+mounted. hyper-express takes TLS material through the uWS options at construction rather than
+through a separate `https` server, so the port is a second `Server` carrying the same routes.
+Every worker in the cluster binds it, exactly as they all bind `8080`.
+
+Static file bodies are read from disk on every request, per the arena rules: only the list of
+names, existing pre-compressed variants and content types is scanned at startup.
+
+`fortunes` is rendered by hand rather than through a template engine, which tuned mode allows;
+the handler still queries per request, appends the runtime row, sorts and escapes `<`, `>`, `&`,
+`"` and `'`.
