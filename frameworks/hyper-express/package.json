@@ -1,0 +1,7 @@
+{
+  "name": "httparena-hyper-express",
+  "private": true,
+  "dependencies": {
+    "hyper-express": "^7.0.2"
+  }
+}

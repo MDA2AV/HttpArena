@@ -1,0 +1,2 @@
+info(zix_http1): listening on :::8080 (io_uring, 64 workers, shared-nothing)
+info(zix_http1): dual listener: https/1.1 TLS on :::8081 (same workers, on-ring)

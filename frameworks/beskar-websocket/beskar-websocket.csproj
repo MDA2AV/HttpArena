@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beskar.Networking.Transports.Ws" Version="2.1.6" />
+    <PackageReference Include="Beskar.Networking.Transports.Ws" Version="10.0.1" />
   </ItemGroup>
 
 </Project>

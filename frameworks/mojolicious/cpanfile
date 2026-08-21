@@ -1,0 +1,2 @@
+requires 'Mojolicious', '== 9.49';
+requires 'EV',          '== 4.37';

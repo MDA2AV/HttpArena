@@ -10,9 +10,7 @@ The following checks are executed by `validate.sh` for every framework subscribe
 
 Sends `GET /baseline2?a=1&b=1` to `http://localhost:8082` with `curl --http2-prior-knowledge`. The negotiated protocol (`%{http_version}`) must report **HTTP/2**. A server answering HTTP/1.1 here fails this check.
 
-## Anti-cheat: h2c-only listener
-
-Sends the same request with `curl --http1.1`. The server must **not** respond with an HTTP/1.1 200. If it does, the port is dual-serving h1 and h2c, which means the benchmark could silently measure HTTP/1.1 throughput instead of h2c. The check accepts any non-200 response (connection reset, GOAWAY, 400, etc.).
+The listener may also serve HTTP/1.1 on the same port. Nothing in the benchmark reaches that path: `h2load -p h2c` sends the HTTP/2 connection preface as the first bytes of every connection and never issues an HTTP/1.1 request, so a dual-serving port is still measured as h2c.
 
 ## GET /baseline2 over h2c
 

@@ -58,7 +58,9 @@ If the ecosystem has a well-established, production-grade library for a task (da
 
 ## Static files must be read from disk
 
-For static file tests, standard entries must read files from disk on every request. No in-memory caching, no memory-mapped files, no pre-loaded file buffers.
+For static file tests, files must be read from disk on every request. No in-memory caching, no memory-mapped files, no pre-loaded file buffers.
+
+This applies to Standard, Tuned and Engine entries alike - the disk I/O is the workload the static profiles exist to measure. Infrastructure entries (reverse proxies and static-file servers) are exempt: serving files fast from a tuned cache is what that tier is measuring.
 
 ## Static file compression
 

@@ -1,0 +1,24 @@
+From 6407d028bdafedb7e362a36f7096b16a86d370b1 Mon Sep 17 00:00:00 2001
+From: Nils Goroll <nils.goroll@uplex.de>
+Date: Mon, 17 Aug 2026 13:12:58 +0200
+Subject: [PATCH] Add httparena vmod to vmod/Makefile.am
+
+---
+ vmod/Makefile.am | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/vmod/Makefile.am b/vmod/Makefile.am
+index 0c2e8628c..538539e05 100644
+--- a/vmod/Makefile.am
++++ b/vmod/Makefile.am
+@@ -36,6 +36,7 @@ include $(srcdir)/automake_boilerplate_directors.am
+ include $(srcdir)/automake_boilerplate_math.am
+ include $(srcdir)/automake_boilerplate_proxy.am
+ include $(srcdir)/automake_boilerplate_purge.am
++include $(srcdir)/automake_boilerplate_httparena.am
+ include $(srcdir)/automake_boilerplate_std.am
+ include $(srcdir)/automake_boilerplate_unix.am
+ include $(srcdir)/automake_boilerplate_vtc.am
+-- 
+2.39.5
+

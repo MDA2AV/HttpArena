@@ -1,0 +1,19 @@
+{
+  "display_name": "chi",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "net/http",
+  "description": "chi v5 router on the Go net/http server, default configuration. Routing and path parameters through the chi API, encoding/json for the response body, gzip through the chi middleware.Compress middleware.",
+  "repo": "https://github.com/go-chi/chi",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

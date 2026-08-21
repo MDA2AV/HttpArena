@@ -43,6 +43,23 @@ system_tune() {
     sudo sysctl -w net.ipv4.tcp_max_tw_buckets=131072        >/dev/null 2>&1 || true
     sudo sysctl -w net.ipv4.tcp_tw_reuse=1                   >/dev/null 2>&1 || true
 
+    # Widening the range above put every port a server binds inside the pool the
+    # kernel draws outbound connections from, so a load generator can be sitting
+    # on one when a later profile tries to listen on it. That is what killed
+    # production-stack at the end of a full run: authsvc panicked with
+    # "bind 0.0.0.0:9090: Address in use", and because the edge waits on it the
+    # whole stack aborted. Running the same profile first, with no load behind
+    # it, passed. tcp_tw_reuse does not help - it governs outbound reuse, not a
+    # listening bind.
+    #
+    # ip_local_reserved_ports takes these out of ephemeral allocation while
+    # leaving them bindable, which is exactly the case it exists for. Every
+    # fixed port the harness or a stack listens on belongs here: 8080/8081/8082/
+    # 8443 from common.sh, 9090 for the production-stack auth sidecar, 6379 and
+    # 5432 for the Redis and Postgres sidecars.
+    sudo sysctl -w net.ipv4.ip_local_reserved_ports='5432,6379,8080,8081,8082,8443,9090' \
+        >/dev/null 2>&1 || warn "ip_local_reserved_ports"
+
     info "setting UDP buffer sizes for QUIC"
     sudo sysctl -w net.core.rmem_max=7500000 >/dev/null 2>&1 || true
     sudo sysctl -w net.core.wmem_max=7500000 >/dev/null 2>&1 || true

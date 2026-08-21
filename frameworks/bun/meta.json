@@ -1,0 +1,19 @@
+{
+  "display_name": "bun",
+  "language": "TS",
+  "type": "engine",
+  "mode": "standard",
+  "engine": "bun",
+  "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the port.",
+  "repo": "https://github.com/oven-sh/bun",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
