@@ -1,0 +1,43 @@
+# fulmine gateway edge.
+#
+# Stock Caddy terminates TLS and h1/h2/h3 on 8443, serves /static/* from disk,
+# and forwards the dynamic endpoints to the fulmine server. Both services run
+# with network_mode: host, so the server is reachable on loopback.
+#
+# The same file covers gateway-64 and gateway-h3: Caddy binds 8443 on tcp and
+# udp both, and only the load generator differs between the two profiles.
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+https://localhost:8443 {
+	tls /certs/server.crt /certs/server.key
+
+	# the profile asks the proxy to serve these from disk rather than forward
+	# them. precompressed prefers the .br / .gz sidecars per Accept-Encoding.
+	# (root /data + request /static/foo -> /data/static/foo.)
+	handle /static/* {
+		root * /data
+		file_server {
+			precompressed br gzip
+		}
+	}
+
+	# everything else is the fulmine server. Plain h1 with a large keepalive
+	# pool, so the streams arriving multiplexed over one h2 connection fan out
+	# across the backend workers instead of queueing behind one upstream.
+	handle {
+		reverse_proxy 127.0.0.1:8080 {
+			transport http {
+				versions 1.1
+				keepalive 5m
+				keepalive_idle_conns 2048
+				keepalive_idle_conns_per_host 2048
+			}
+		}
+	}
+}

@@ -1,0 +1,33 @@
+{
+  "display_name": "oxpecker",
+  "language": "F#",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "kestrel",
+  "description": "F# web framework built on ASP.NET Core endpoint routing, with a functional handler DSL and its own code-as-markup view engine.",
+  "repo": "https://github.com/Lanayx/Oxpecker",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload",
+    "api-4",
+    "api-16",
+    "static",
+    "static-tls",
+    "async-db",
+    "crud",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": ["Lanayx"]
+}

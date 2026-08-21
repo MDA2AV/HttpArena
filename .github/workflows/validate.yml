@@ -12,18 +12,43 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       frameworks: ${{ steps.find.outputs.frameworks }}
+      gateway: ${{ steps.find.outputs.gateway }}
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - id: find
+        # Two lists, because the two halves cannot run on the same machine.
+        #
+        # An entry that ships a compose.*.yml subscribes to gateway-64,
+        # gateway-h3 or production-stack, and those compose files pin cpusets
+        # from the benchmark host — 0-15,64-79 for the edge, 21-31,85-95 for
+        # the server. A GitHub runner has four cores, so Docker refuses to
+        # create the container and the profile fails for reasons that have
+        # nothing to do with the entry. Those go to the self-hosted box.
+        #
+        # The split is per entry, not per profile: validate.sh runs everything
+        # in an entry's `tests` array in one process, so a gateway-subscribed
+        # entry has to run its isolated profiles there too.
         run: |
-          frameworks=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-            | grep '^frameworks/' \
-            | cut -d'/' -f2 \
-            | sort -u \
-            | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "frameworks=$frameworks" >> "$GITHUB_OUTPUT"
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '^frameworks/' | cut -d'/' -f2 | sort -u || true)
+          std=(); gw=()
+          for fw in $changed; do
+            # Deleted in this PR, or the shared authsvc rather than an entry.
+            [ -d "frameworks/$fw" ] || continue
+            [ -f "frameworks/$fw/meta.json" ] || continue
+            if compgen -G "frameworks/$fw/compose.*.yml" > /dev/null; then
+              gw+=("$fw")
+            else
+              std+=("$fw")
+            fi
+          done
+          as_json() { printf '%s\n' "${@}" | jq -R -s -c 'split("\n") | map(select(length > 0))'; }
+          echo "frameworks=$(as_json "${std[@]:-}")" >> "$GITHUB_OUTPUT"
+          echo "gateway=$(as_json "${gw[@]:-}")"     >> "$GITHUB_OUTPUT"
+          echo "standard: $(as_json "${std[@]:-}")"
+          echo "gateway:  $(as_json "${gw[@]:-}")"
 
   validate:
     needs: detect
@@ -38,3 +63,42 @@ jobs:
       - uses: actions/checkout@v5
       - name: Validate ${{ matrix.framework }}
         run: ./scripts/validate.sh "${{ matrix.framework }}"
+
+  validate-gateway:
+    needs: detect
+    if: needs.detect.outputs.gateway != '[]'
+    runs-on: self-hosted
+    timeout-minutes: 90
+    # One at a time, and never alongside a benchmark. Every gateway and
+    # production stack binds the host's ports directly — edge 8443, authsvc
+    # 9090, server 8080 — so two stacks on one box fight over them and the
+    # loser dies on bind. Sharing the `benchmark` group is what keeps a
+    # validation off the box while a measured run is using it, and matches
+    # those workflows' cancel-in-progress: false: a queued run waits rather
+    # than replacing the one holding the machine.
+    concurrency:
+      group: benchmark
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+      # Deliberately a loop rather than a matrix. A matrix job enters the
+      # concurrency group once per entry, and GitHub keeps only one run pending
+      # per group — so three gateway entries in one PR would have the third
+      # cancel the second while it waited. One job holding the slot for all of
+      # them is sequential by construction and cannot cancel itself.
+      #
+      # Every entry runs even if an earlier one fails, so a PR touching several
+      # gets one report instead of one failure and a blank.
+      - name: Validate compose-profile entries (self-hosted, one at a time)
+        run: |
+          failed=()
+          for fw in $(echo '${{ needs.detect.outputs.gateway }}' | jq -r '.[]'); do
+            echo "::group::validate $fw"
+            ./scripts/validate.sh "$fw" || failed+=("$fw")
+            echo "::endgroup::"
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "::error::validation failed: ${failed[*]}"
+            exit 1
+          fi
+          echo "all compose-profile entries validated"

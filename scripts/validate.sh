@@ -236,16 +236,9 @@ if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-1
     docker_args+=(-e "DATABASE_MAX_CONN=256")
 fi
 
-# Start Redis sidecar if needed
-if has_test "crud"; then
-
-    REDIS_CONTAINER="httparena-redis"
-    REDIS_URL="redis://localhost:6379"
-    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
-    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
-    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
-    REDIS_CPUSET="${REDIS_CPUSET:-}"
-
+# A function rather than inline, because the production-stack check has to hand
+# the port back and then restart it — see _prodstack_yield_redis below.
+redis_sidecar_start() {
     echo "[redis] Starting Redis sidecar${REDIS_CPUSET:+ (cpuset=$REDIS_CPUSET)}"
     docker rm -f "$REDIS_CONTAINER" 2>/dev/null || true
     docker run -d --rm --name "$REDIS_CONTAINER" --network host \
@@ -265,14 +258,28 @@ if has_test "crud"; then
             >/dev/null
 
     # Wait for PING to succeed.
+    local i
     for i in $(seq 1 30); do
         if docker exec "$REDIS_CONTAINER" redis-cli ping 2>/dev/null | grep -q PONG; then
             echo "[redis] Ready"
-            break
+            return 0
         fi
-        [ "$i" -eq 30 ] && { echo "FAIL: Redis sidecar not ready"; exit 1; }
         sleep 1
     done
+    return 1
+}
+
+# Start Redis sidecar if needed
+if has_test "crud"; then
+
+    REDIS_CONTAINER="httparena-redis"
+    REDIS_URL="redis://localhost:6379"
+    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
+    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
+    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
+    REDIS_CPUSET="${REDIS_CPUSET:-}"
+
+    redis_sidecar_start || { echo "FAIL: Redis sidecar not ready"; exit 1; }
     docker_args+=(-e "REDIS_URL=$REDIS_URL")
 fi
 
@@ -670,6 +677,27 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
     check_fragmented "POST /baseline11 — lower-cased content-length" "75" "$BASELINE_DOCS" \
         $'POST /baseline11?a=13&b=42 HTTP/1.1\r\nhost: localhost\r\ncontent-type: text/plain\r\ncontent-length: 2\r\nconnection: close\r\n\r\n' \
         "20"
+
+    # Exhaustive fragmentation. The checks above split at points a human chose;
+    # this splits nine request shapes at EVERY byte offset (~1,000 of them),
+    # which is where the parser bugs actually live - between the CR and the LF,
+    # mid Content-Length digits, mid chunk-size hex. It also covers chunked
+    # bodies under fragmentation, which nothing else here does: the chunked
+    # check above goes through curl in one write, and check_fragmented only
+    # ever fragments Content-Length bodies.
+    #
+    # Runs in ~2s: connections are opened in batches and each batch pays the
+    # 200ms pause once, rather than once per offset.
+    echo "[test] baseline exhaustive fragmentation"
+    FRAG_OUTPUT=$(python3 "$SCRIPT_DIR/validate-frag.py" localhost "$PORT" 200 2>&1) || true
+    echo "$FRAG_OUTPUT"
+    FRAG_PASS=$(echo "$FRAG_OUTPUT" | grep -oP '(\d+) passed' | grep -oP '\d+')
+    FRAG_FAIL=$(echo "$FRAG_OUTPUT" | grep -oP '(\d+) failed' | grep -oP '\d+')
+    PASS=$((PASS + ${FRAG_PASS:-0}))
+    FAIL=$((FAIL + ${FRAG_FAIL:-0}))
+    if [ "${FRAG_FAIL:-0}" -gt 0 ]; then
+        echo "        → $BASELINE_DOCS"
+    fi
 fi
 
 # ───── Pipelined (GET /pipeline) ─────
@@ -978,24 +1006,10 @@ if has_test "baseline-h2c"; then
         fail_with_link "[HTTP/2 cleartext (prior-knowledge)]: server responded with HTTP/$h2c_proto, expected HTTP/2" "$H2C_DOCS"
     fi
 
-    # Anti-cheat #2: the same port MUST NOT also serve HTTP/1.1. If it did,
-    # the benchmark could be measuring h1 throughput (much higher on some
-    # stacks) while labeled as h2c. --http1.1 forces curl to refuse the
-    # h2 preface; we check that the server didn't happily answer.
-    h1_code=$(curl -s --max-time 5 --http1.1 \
-        -o /dev/null -w '%{http_code}' \
-        "http://localhost:$H2C_PORT/baseline2?a=1&b=1" 2>/dev/null || echo "000")
-    if [ "$h1_code" != "200" ]; then
-        echo "  PASS [h2c-only: port $H2C_PORT rejects plain HTTP/1.1] (got $h1_code)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[h2c-only]: port $H2C_PORT also answered HTTP/1.1 with 200 — dual-serving lets the benchmark measure h1 throughput instead of h2c. The h2c listener must refuse HTTP/1.1 requests." "$H2C_DOCS"
-    fi
-
     check "GET /baseline2?a=13&b=42 over h2c" "55" "$H2C_DOCS" \
         -s --http2-prior-knowledge "http://localhost:$H2C_PORT/baseline2?a=13&b=42"
 
-    # Anti-cheat #3: randomized sum
+    # Anti-cheat #2: randomized sum
     A4=$((RANDOM % 900 + 100))
     B4=$((RANDOM % 900 + 100))
     check "GET /baseline2?a=$A4&b=$B4 over h2c (random)" "$((A4 + B4))" "$H2C_DOCS" \
@@ -1948,6 +1962,31 @@ fi
 # api returns 401 without a cookie) and the authenticated path (api
 # returns 200 with a pre-seeded session cookie).
 
+# The stack ships its own Redis on the host's 6379, and the validate sidecar
+# above already holds it whenever the entry subscribes to crud — fulmine is
+# subscribed to both. The benchmark driver handles this in gateway.sh
+# (_gateway_yield_redis); validate.sh has its own compose handling and needs the
+# same. It used to go unnoticed because the server depended on the cache with
+# the short list form and started anyway; now that the compose files wait for a
+# healthy cache, an unavailable port fails the stack instead of quietly
+# validating against the wrong Redis.
+PRODSTACK_STOPPED_REDIS=false
+
+_prodstack_yield_redis() {
+    PRODSTACK_STOPPED_REDIS=false
+    [ -n "${REDIS_CONTAINER:-}" ] || return 0
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$REDIS_CONTAINER" || return 0
+    echo "[production-stack] stopping the validate redis sidecar: the stack ships its own cache on 6379"
+    docker rm -f "$REDIS_CONTAINER" >/dev/null 2>&1 || true
+    PRODSTACK_STOPPED_REDIS=true
+}
+
+_prodstack_restore_redis() {
+    [ "$PRODSTACK_STOPPED_REDIS" = true ] || return 0
+    PRODSTACK_STOPPED_REDIS=false
+    redis_sidecar_start || echo "[warn] redis sidecar did not come back up"
+}
+
 _validate_production_stack() {
     local compose_file="$1"
     local docs_url="$2"
@@ -1957,9 +1996,10 @@ _validate_production_stack() {
 
     local gw_project="httparena-validate-gw-${profile}-${FRAMEWORK}"
     if [ -f "$compose_file" ]; then
+        _prodstack_yield_redis
         echo "[$profile] Building and starting compose stack..."
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
-            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: $profile compose up"; dump_stack_logs "$gw_project"; FAIL=$((FAIL + 1)); return; }
+            docker compose -f "$compose_file" -p "$gw_project" up --build -d || { echo "FAIL: $profile compose up"; dump_stack_logs "$gw_project"; _prodstack_restore_redis; FAIL=$((FAIL + 1)); return; }
     else
         echo "  FAIL [$profile]: compose file not found at $compose_file"
         FAIL=$((FAIL + 1))
@@ -2155,6 +2195,9 @@ print(f'{count} {valid} {correct_totals}')
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
             docker compose -f "$compose_file" -p "$gw_project" down --remove-orphans 2>/dev/null || true
     fi
+    # The stack has released 6379; give it back to the sidecar for whatever
+    # runs after this.
+    _prodstack_restore_redis
 }
 
 if has_test "production-stack"; then

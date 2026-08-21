@@ -1,0 +1,23 @@
+{
+  "display_name": "caddy",
+  "language": "Go",
+  "type": "infrastructure",
+  "engine": "caddy",
+  "description": "Caddy with custom Go handler modules compiled in via xcaddy: httparena for /baseline11 and /baseline2, httparena_json for /json/{count}, serializing the JSON body per request from the dataset read at provision time. Native file_server for /static. HTTP/1.1 on :8080, h1 over TLS on :8081, h2 and h3 on :8443.",
+  "repo": "https://github.com/caddyserver/caddy",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-tls",
+    "static",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

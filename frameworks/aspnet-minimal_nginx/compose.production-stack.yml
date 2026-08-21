@@ -49,6 +49,17 @@ services:
       - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
       - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
     entrypoint: ["sh", "/entrypoint.sh"]
+    # A cache that cannot bind is a silent downgrade, not a failure: with the
+    # short `depends_on: - cache` form the server starts anyway and quietly
+    # talks to whatever else holds 6379, so the run publishes numbers measured
+    # against a Redis this profile never configured. Fail the stack instead.
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
   authsvc:
     build: ../_shared/authsvc
@@ -85,4 +96,5 @@ services:
     volumes:
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
     depends_on:
-      - cache
+      cache:
+        condition: service_healthy

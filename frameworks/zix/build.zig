@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) void {
     const zix_mod = zix_dep.module("zix");
 
     const exe = b.addExecutable(.{
-        .name = "zix",
+        .name = "zix-http1",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,

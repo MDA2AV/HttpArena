@@ -1,0 +1,35 @@
+{
+  "display_name": "fulmine-tuned",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "tuned",
+  "engine": "uwebsockets",
+  "description": "fulmine.js with the caches its standard entry has to leave off: the in-memory small-file cache and the stat cache, both shipped settings, both forbidden to a standard entry because they keep a static request off the disk.",
+  "repo": "https://github.com/nigrosimone/fulmine.js",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static",
+    "static-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "json-tls",
+    "crud",
+    "gateway-64",
+    "gateway-h3",
+    "production-stack",
+    "fortunes"
+  ],
+  "maintainers": [
+    "nigrosimone"
+  ]
+}

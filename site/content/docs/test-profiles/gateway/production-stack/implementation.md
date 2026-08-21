@@ -4,7 +4,7 @@ seo_title: "Production Stack Benchmark — Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the four-service Production Stack deployment."
 weight: 1
 ---
-{{< type-rules standard="Must ship exactly four services: edge (reverse proxy), cache (Redis), authsvc (the shared JWT verifier from frameworks/_shared/authsvc/, built as-is), and server (the framework). No custom auth implementations - JWT verification must happen at the edge via auth_request / forward_auth using the shared authsvc. The framework must implement cache-aside on /api/items reads (check cache → miss → query DB → populate cache with ≤1 second TTL) and cache invalidation on /api/items writes (clear cache after DB update). How the caching is implemented is the framework's choice - any combination of in-process cache, Redis, or framework-specific cache abstraction is allowed." tuned="Same four-service shape as production. May tune proxy configuration, connection pools, CPU split, and cache TTLs. May NOT replace authsvc with a custom implementation or skip JWT verification." engine="No specific rules. May replace any service with a custom implementation. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must ship exactly four services: edge (reverse proxy), cache (Redis), authsvc (the shared JWT verifier from frameworks/_shared/authsvc/, built as-is), and server (the framework). No custom auth implementations - JWT verification must happen at the edge via auth_request / forward_auth using the shared authsvc. The framework must implement cache-aside on /api/items reads (check cache → miss → query DB → populate cache with ≤1 second TTL) and cache invalidation on /api/items writes (clear cache after DB update). How the caching is implemented is the framework's choice - any combination of in-process cache, Redis, or framework-specific cache abstraction is allowed. The server must wait on a healthy cache - depends_on with condition: service_healthy, not the short list form - so a cache that cannot start fails the stack instead of leaving the run measured against whatever else holds 6379." tuned="Same four-service shape as production. May tune proxy configuration, connection pools, CPU split, and cache TTLs. May NOT replace authsvc with a custom implementation or skip JWT verification. The server must wait on a healthy cache - depends_on with condition: service_healthy, not the short list form - so a cache that cannot start fails the stack instead of leaving the run measured against whatever else holds 6379." engine="No specific rules. May replace any service with a custom implementation. Ranked separately from frameworks." >}}
 
 ## Overview
 
@@ -163,6 +163,46 @@ Every production-stack entry ships `compose.production-stack.yml` with exactly f
 ### Required compose settings
 
 Same as [Gateway-64](../gateway-h2/implementation/#required-compose-settings): `network_mode: host`, pinned `cpuset`, `seccomp:unconfined`, and memlock/nofile ulimits on all four services.
+
+Two more are specific to this profile, and both exist so the stack fails loudly instead of quietly measuring something else:
+
+- **`server` must wait for a healthy `cache`.** Use the map form with a condition, not the short list form:
+
+  ```yaml
+  cache:
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  server:
+    depends_on:
+      cache:
+        condition: service_healthy
+  ```
+
+  `depends_on: - cache` waits only for the container to *start*. A cache that dies on boot — because something else already holds 6379, say — leaves the server running happily against whatever Redis does hold it, and the profile publishes numbers measured against a cache it never configured. Entries ran this way for weeks without anyone noticing.
+
+- **`edge` must wait for a healthy `authsvc`** (`condition: service_healthy`). Without it a run can measure 5xx from the edge and never reach the server at all.
+
+### Ports the stack owns
+
+All four services run on `network_mode: host`, so for the duration of the profile these are host ports, not container ports:
+
+| Port | Service |
+|---|---|
+| 8443 | edge (h2 over TLS) |
+| 9090 | authsvc |
+| 8080 | server |
+| 6379 | cache |
+
+Two things the benchmark driver does so they are actually free:
+
+- It **stops its own Redis sidecar** before bringing the stack up, and restarts it afterwards. That sidecar is started once per run whenever the entry also subscribes to [CRUD](../../h1/isolated/crud/implementation/) and holds 6379 for the whole run, so an entry subscribed to both would otherwise collide with itself on every run.
+- It keeps all four **out of the ephemeral port range**. `ip_local_port_range` is widened to `1024 65535` for connection-churning profiles, which would otherwise let a load generator be holding one of these when the stack starts. See [Kernel tuning](../../../hardware/#kernel-tuning-applied-per-run).
 
 ### Environment variables
 

@@ -21,6 +21,7 @@ GATEWAY_ACTIVE_PROFILE=""
 GATEWAY_ACTIVE_FRAMEWORK=""
 GATEWAY_CONTAINERS=""
 GATEWAY_CONTAINER_COUNT=0
+GATEWAY_STOPPED_REDIS=false
 
 _gateway_env() {
     # All compose invocations need the same env vars for interpolation.
@@ -54,6 +55,70 @@ _gateway_expected_containers() {
     esac
 }
 
+# Remove containers belonging to any *other* httparena compose stack.
+#
+# Every gateway and production stack runs network_mode: host on the same fixed
+# ports - edge 8443, authsvc 9090, server 8080 - so two of them cannot coexist.
+# The `down` in gateway_up only clears this framework's own project, which means
+# a stack left behind by another entry, or by a run killed between profiles,
+# outlives it. Whichever service loses the race then dies on bind and takes the
+# whole stack with it: in #1182 that was authsvc exiting 101 with
+# "bind 0.0.0.0:9090: Address in use", reported only as "exited (101)".
+#
+# Matches on the compose project label, so the harness's own `docker run`
+# sidecars (httparena-postgres, httparena-redis) carry no such label and are
+# left alone. Running containers only - a stopped one holds no port.
+# `|` rather than a space: an unlabelled container prints an empty field, and
+# with whitespace splitting its name would shift into the label's position and
+# match the httparena- test by accident.
+_gateway_clear_stale() {
+    local keep="$1" listing stale
+    listing=$(docker ps --format '{{.ID}}|{{.Label "com.docker.compose.project"}}|{{.Names}}' 2>/dev/null)
+    stale=$(printf '%s\n' "$listing" \
+            | awk -F'|' -v keep="$keep" '$2 ~ /^httparena-/ && $2 != keep { print $1 }')
+    [ -n "$stale" ] || return 0
+    warn "another httparena compose stack is still up; removing it so this one can bind its ports"
+    printf '%s\n' "$listing" \
+        | awk -F'|' -v keep="$keep" '$2 ~ /^httparena-/ && $2 != keep { print "  stale: " $3 }'
+    # shellcheck disable=SC2086
+    docker rm -f -v $stale >/dev/null 2>&1 || true
+}
+
+# Print what each container of the failed stack said. compose reports the exit
+# code and nothing else, so the reason - a bind conflict, a missing env var, a
+# crash loop - was never in the run log. Reuses dump_container_logs so the
+# output matches what a single-container failure already produces.
+_gateway_dump_logs() {
+    local project="$1" line id name
+    while read -r id name; do
+        [ -n "$id" ] || continue
+        dump_container_logs "$id" "$name"
+    done < <(docker ps -a --format '{{.ID}}|{{.Label "com.docker.compose.project"}}|{{.Names}}' 2>/dev/null \
+             | awk -F'|' -v p="$project" '$2 == p { print $1 " " $3 }')
+}
+
+# The harness Redis sidecar and a stack's own `cache` both want the host's
+# 6379, and redis_start runs once for the whole run whenever the entry
+# subscribes to crud — so for any entry subscribed to both crud and
+# production-stack the two collide on every run. It was invisible because the
+# server depended on `cache` with the short form, which only waits for the
+# container to start: the cache died, the server carried on against the
+# harness Redis, and the profile published numbers measured against a cache it
+# never configured. The compose files now wait for a healthy cache, which turns
+# that into a failure; this gives the port up so it can succeed instead.
+_gateway_yield_redis() {
+    local compose_file="$1" project="$2"
+    GATEWAY_STOPPED_REDIS=false
+    command -v redis_stop >/dev/null 2>&1 || return 0
+    [ -n "${REDIS_CONTAINER:-}" ] || return 0
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$REDIS_CONTAINER" || return 0
+    _gateway_env docker compose -f "$compose_file" -p "$project" config --services 2>/dev/null \
+        | grep -qx "cache" || return 0
+    info "stopping the harness redis sidecar: this stack ships its own cache on the same port"
+    redis_stop
+    GATEWAY_STOPPED_REDIS=true
+}
+
 gateway_up() {
     local framework="$1"
     local profile="${2:-gateway-64}"
@@ -67,13 +132,17 @@ gateway_up() {
 
     _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" \
         down --remove-orphans 2>/dev/null || true
+    _gateway_clear_stale "$GATEWAY_PROJECT"
+    _gateway_yield_redis "$compose_file" "$GATEWAY_PROJECT"
 
     info "starting gateway compose stack: $framework ($profile)"
     # --build forces compose to rebuild from source if any file in the
     # build context changed. Without this, an edit to a service Dockerfile
     # or Program.cs silently falls back to a stale image from the last run.
-    _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" up --build -d \
-        || fail "gateway compose up failed"
+    if ! _gateway_env docker compose -f "$compose_file" -p "$GATEWAY_PROJECT" up --build -d; then
+        _gateway_dump_logs "$GATEWAY_PROJECT"
+        fail "gateway compose up failed"
+    fi
 
     # Discover running container IDs for stats collection.
     sleep 2
@@ -92,6 +161,16 @@ gateway_down() {
     # Tear down whatever gateway stack is currently active. Callers can
     # pass (framework, profile) explicitly, but the normal cleanup path
     # (EXIT trap, post-run teardown) relies on the state gateway_up stored.
+    # Before the early returns: if this stack took the harness Redis's port,
+    # give it back even when there is no active stack left to tear down. The
+    # subshell keeps redis_start's `fail` from exiting the caller, since this
+    # also runs from the cleanup trap.
+    if [ "$GATEWAY_STOPPED_REDIS" = true ]; then
+        GATEWAY_STOPPED_REDIS=false
+        info "restarting the harness redis sidecar"
+        ( redis_start ) || warn "redis sidecar did not come back up"
+    fi
+
     local framework="${1:-$GATEWAY_ACTIVE_FRAMEWORK}"
     local profile="${2:-$GATEWAY_ACTIVE_PROFILE}"
     [ -n "$framework" ] || return 0

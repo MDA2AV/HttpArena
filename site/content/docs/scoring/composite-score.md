@@ -75,7 +75,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Baseline | Yes | Query parsing over TLS with multiplexed streams |
 | Static | Yes | 20 static files served over TLS with multiplexed streams |
-| Baseline h2c | Yes | Query parsing over cleartext h2 on port 8082 (prior-knowledge, anti-cheat rejects dual-serving HTTP/1.1) |
+| Baseline h2c | Yes | Query parsing over cleartext h2 on port 8082 (prior-knowledge) |
 | JSON h2c | Yes | JSON serialization workload over cleartext h2 on port 8082 |
 
 ### H/3
@@ -165,9 +165,12 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
+- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload, CRUD, the API mixes).
+- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the eleven profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON, JSON TLS, Static, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, the API mixes, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
 
-The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Engine is exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
+Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there.
+
+The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Engine and Infrastructure are each exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
 
 ## Why this approach
 

@@ -84,72 +84,97 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 
 ## Add the badge
 
-Benchmarked on HttpArena? Add the badge to your project's README — it links to the live leaderboard and adapts to light & dark themes automatically.
+Benchmarked here? Put your rank in your own README. It re-renders itself every
+time the board is republished, so you paste it once and never touch it again:
+
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 
 ```md
-[![Benchmarked by HttpArena](https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg)](https://www.http-arena.com/)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
-Prefer HTML, e.g. to set the size:
+Swap `actix` for your entry and `h1` for the family you want:
 
-```html
-<a href="https://www.http-arena.com/">
-  <img src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" alt="Benchmarked by HttpArena" height="44">
-</a>
+| Family | `<family>` | Composite it reports |
+|---|---|---|
+| HTTP/1.1 | `h1` | Connection, Workload, Database and Multi-endpoint profiles |
+| HTTP/2 | `h2` | the HTTP/2 profiles |
+| HTTP/3 | `h3` | the HTTP/3 profiles |
+| Gateway | `gw` | reverse-proxy and production-stack profiles |
+| gRPC | `grpc` | unary and streaming, plaintext and TLS |
+| WebSocket | `ws` | the echo profiles |
+
+`<framework>` is your entry's name on the board, lowercased, with anything
+outside `A-Z a-z 0-9 . _ -` turned into `-` — the same name as your file in
+[`site/data/results/`](site/data/results). The full list of what is published,
+with every rank in it, is at
+[`/badge/index.json`](https://www.http-arena.com/badge/index.json).
+
+### Ranked among your own language
+
+Optional. Append `-<language>` to the family for a badge reading
+**`#1 of 6 (Rust)`** — same scores and same order, counting only entries in your
+language:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
 ```
 
-Another badge variants:
-- Http/1.1: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h1.svg`
-- Http/2: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h2.svg`
-- Http/3: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h3.svg`
-- Gateway: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-gateway.svg`
-- WebSocket: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg`
-- gRPC: `https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg`
+The language is lowercased, with `#` spelled `sharp` and `++` spelled `pp` — so
+`C#` is `csharp`, `C++` is `cpp`, `TS` is `ts`. It links to the board filtered to
+that language, so the field is the one you can count there. Your line is in
+`index.json` under `scopes.<family>.byLanguage.markdown`.
 
----
+### Counting tuned entries in
 
-<div align="left">
-  <a href="https://www.http-arena.com/">
-    <img alt="Benchmarked by HttpArena" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/wordmark.svg" width="235">
-  </a>
-</div>
+Also optional. By default the field is **standard configurations only**, so the
+number compares like for like. Append `-with-tuned` to count tuned entries too:
 
-<br>
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+```
 
+It combines with the language suffix — `h1-rust-with-tuned.json`. Every variant
+is in `index.json` under `scopes.<family>`, keyed `default`, `withTuned`,
+`byLanguage` and `byLanguageWithTuned`.
 
-<table>
-  <tr>
-    <td align="">
-      <a href="https://www.http-arena.com/#sort=rps:-1&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h1.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=h2&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h2.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=h3&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-h3.svg" width="235">
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=gw&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-gateway.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=grpc&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-grpc.svg" width="235">
-      </a>
-    </td>
-    <td align="">
-      <a href="https://www.http-arena.com/#scope=ws&type=flagship&tuned=0">
-        <img alt="Benchmarked by HttpArena H/1.1" src="https://cdn.jsdelivr.net/gh/MDA2AV/httparena-badge/httparena-badge-websocket.svg" width="235">
-      </a>
-    </td>
-  </tr>
-</table> 
+If your own entry is tuned, its default URL already counts tuned entries — it
+cannot be ranked in a field it is excluded from — so `h1.json` and
+`h1-with-tuned.json` give it the same number.
+
+The two halves say different things. The right half is how you placed — gold for
+first, then shading down by how far into the field you are. The left half is
+which tier you competed in, in the same colours the board uses for the little
+square next to every framework name:
+
+| | Tier | Ranked against |
+|---|---|---|
+| 🟩 | `flagship` | flagship + emerging, as one field |
+| 🟦 | `emerging` | flagship + emerging, as one field |
+| 🟧 | `experimental` | other experimental entries |
+| 🟥 | `engine` | other engines, on the profiles engines are scored on |
+| 🟦 | `infrastructure` | other proxies / static-file servers, on the profiles infrastructure is scored on |
+
+A few things worth knowing before you paste it:
+
+- **The rank is against your own tier.** `flagship` and `emerging` rank together
+  as one field, because that is the board's default view. `engine` entries rank
+  among engines, over the profile subset engines are scored on. That way a
+  framework's ceiling is never set by an engine's result, or the reverse.
+- **It only exists where you scored.** No result in a family means no badge for
+  it, and a family with a single entry in your tier publishes nothing — a rank
+  is worth showing once there was somebody to beat.
+- **The field is every row the board lists.** `of 31` is what you get counting
+  engine rows on the linked page, including any entry sitting at 0 because
+  nothing it ran scores for its tier. Those occupy a place in the field but get
+  no badge of their own.
+- **It follows the default board.** Same scoring as the page it links to, with
+  the memory-efficiency and rescale toggles off. Follow the link and you land on
+  the field the rank was measured against — the whole league, not your row on
+  its own, so `#6 of 83` arrives with the other 82 around it.
+- **It updates on deploy, then when the caches let it.** shields holds a rank
+  for 5 minutes, and GitHub proxies README images through Camo, which holds
+  one for a few hours. Nothing to re-paste either way.
+
+Shields' usual styling works — append `&style=flat-square`, `&logo=rust`, and so
+on to the `img.shields.io` URL.
