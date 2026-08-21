@@ -13,6 +13,7 @@ RUN apt-get update && \
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY app.js .
+COPY views/ views/
 ENV NODE_ENV=production
 EXPOSE 8080
 CMD ["node", "app.js"]
