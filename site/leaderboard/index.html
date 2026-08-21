@@ -722,9 +722,9 @@ document.addEventListener('DOMContentLoaded', function(){
     p99:'99th-percentile latency - 99% of requests were faster than this.',
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
-    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
     scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 100). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
-    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.80. Opens the scoring docs.',
+    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
     scoreHelpWs:'How the composite is built: every scored profile is worth 100 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.',
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
@@ -1244,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // arriving request and a finished response - route it, run middleware around
   // the handler, hand the request over already made (path and query parameters,
   // a body buffered or streamed) and build the response. Each one an entry does
-  // not do costs it 5%, so the factor runs from x1.00 down to x0.80. It scales
+  // not do costs it 2.5%, so the factor runs from x1.00 down to x0.90. It scales
   // the whole composite rather than any single profile, because it is a
   // property of the entry and not of a workload.
   //
@@ -1257,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Only the framework tiers are graded. Engine and infrastructure entries
   // implement none of the four - a raw-socket server has no router, a proxy has
   // no handler to run middleware around - which is why grading them is pointless
-  // rather than generous: they would all take the same x0.80, leaving their
+  // rather than generous: they would all take the same x0.90, leaving their
   // order untouched, and outOfLeague already keeps them from being normalized
   // against frameworks. So their factor is fixed at 1.
   //
@@ -1287,7 +1287,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function cmpFactor(fw){
     if(!cmpInScope() || CMP_TYPES.indexOf(typeOf(fw))<0) return 1;
-    return 1-0.05*cmpMissing(fw).length;
+    return 1-0.025*cmpMissing(fw).length;
   }
   // Which profiles count toward the composite, per league. Frameworks use the
   // global `scored` flag, engines `engineScored`, infrastructure `infraScored`.
@@ -1403,8 +1403,8 @@ document.addEventListener('DOMContentLoaded', function(){
     if(!cmpGraded(r.fw)) return 'composite '+r.score.toFixed(1);
     if(!r.dec) return 'composite '+r.score.toFixed(1)+' - completeness not assessed yet, so nothing is deducted (x1.00)';
     if(!r.miss.length) return 'composite '+r.score.toFixed(1)+' - routing, middleware, request and response all covered, so nothing is deducted (x1.00)';
-    return 'composite '+r.score.toFixed(1)+' = '+r.raw.toFixed(1)+' raw x '+cmpFactor(r.fw).toFixed(2)
-         + ' - no '+r.miss.join(', no ')+' (-5% each)';
+    return 'composite '+r.score.toFixed(1)+' = '+r.raw.toFixed(1)+' raw x '+cmpFactor(r.fw).toFixed(3)
+         + ' - no '+r.miss.join(', no ')+' (-2.5% each)';
   }
   // The points the completeness factor took off, shown only where it took any.
   //

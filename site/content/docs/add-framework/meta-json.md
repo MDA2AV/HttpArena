@@ -31,7 +31,7 @@ Create a `meta.json` file in your framework directory:
 | `engine` | HTTP server engine (e.g., `Kestrel`, `Tomcat`, `hyper`) |
 | `type` | `flagship`, `emerging` or `experimental` for frameworks - servers you write application code against, tiered by how production-proven they are; `engine` for implementations applications are not written against (raw sockets, WSGI/ASGI hosts); `infrastructure` for reverse proxies / static-file servers. See [Implementation Rules](implementation-rules/) |
 | `mode` | Frameworks only: `standard` (default - idiomatic, production-style usage) or `tuned` (non-default config / optimizations) |
-| `completeness` | Frameworks only: which of `routing`, `middleware`, `request` and `response` the framework does for you. Each one set to `false` takes 5% off the composite; an axis you leave out reads as done, and omitting the field scores a full ×1.00. Omit it entirely on an entry that runs only WebSocket or gRPC profiles - the factor never applies on those boards. See [Completeness](/docs/scoring/completeness/) |
+| `completeness` | Frameworks only: which of `routing`, `middleware`, `request` and `response` the framework does for you. Each one set to `false` takes 2.5% off the composite; an axis you leave out reads as done, and omitting the field scores a full ×1.00. Omit it entirely on an entry that runs only WebSocket or gRPC profiles - the factor never applies on those boards. See [Completeness](/docs/scoring/completeness/) |
 | `description` | Shown in the framework detail popup on the leaderboard |
 | `repo` | Link to the framework's source repository |
 | `enabled` | Set to `false` to skip this framework during benchmark runs |

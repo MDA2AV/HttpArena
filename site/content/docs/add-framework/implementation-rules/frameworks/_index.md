@@ -11,7 +11,7 @@ Framework entries are servers you write application code against. There is exact
 
 That is the whole bar. **Routing, middleware, a plugin ecosystem and a template engine are not required.** A runtime's own HTTP server qualifies, and so does a minimal one, as long as applications are genuinely written and deployed on it.
 
-How much the server does for you is not ignored - it is scored rather than gated. Routing, middleware, whether the request arrives already made - path parameters, query parameters, a body buffered or streamed - and whether the response is built for you are the four [completeness](/docs/scoring/completeness/) axes, and each one the entry leaves to you takes 5% off its composite. A thin server and a batteries-included framework compete in the same tier; the difference between them shows up in that factor and in the throughput they buy with it.
+How much the server does for you is not ignored - it is scored rather than gated. Routing, middleware, whether the request arrives already made - path parameters, query parameters, a body buffered or streamed - and whether the response is built for you are the four [completeness](/docs/scoring/completeness/) axes, and each one the entry leaves to you takes 2.5% off its composite. A thin server and a batteries-included framework compete in the same tier; the difference between them shows up in that factor and in the throughput they buy with it.
 
 The three tiers grade one thing: **how proven the entry is in production.** Not ecosystem size, not feature count, not how many profiles it covers. Pick your best fit and it may be adjusted on review. Set it with `meta.json.type`.
 
@@ -23,7 +23,7 @@ All three are scored in the same framework normalization pool and can be combine
 
 ## Completeness
 
-Framework entries also declare **`completeness`** in `meta.json`: which of routing, middleware, the request it hands you and the response it builds the server does for you. Each one it leaves to you costs 5% of the whole composite, so a framework that does all four keeps its full score and one that does none keeps 80% of it. It is the counterweight to the open door above: a server can enter the framework tiers with nothing but an HTTP parser, but it competes there carrying the score of one.
+Framework entries also declare **`completeness`** in `meta.json`: which of routing, middleware, the request it hands you and the response it builds the server does for you. Each one it leaves to you costs 2.5% of the whole composite, so a framework that does all four keeps its full score and one that does none keeps 90% of it. It is the counterweight to the open door above: a server can enter the framework tiers with nothing but an HTTP parser, but it competes there carrying the score of one.
 
 What counts as done on each axis, how to declare it, and how the multiplier is computed are on the [Completeness](/docs/scoring/completeness/) page. Engine and infrastructure entries are not graded on it.
 

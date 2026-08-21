@@ -1,20 +1,20 @@
 ---
 title: Completeness
 seo_title: "Completeness Factor"
-description: "The completeness factor: routing, middleware, request and response. Each one a framework leaves to you costs 5% of its composite score."
+description: "The completeness factor: routing, middleware, request and response. Each one a framework leaves to you costs 2.5% of its composite score."
 weight: 3
 ---
 
 Throughput is only half of what a framework is worth. A server that hands you nothing but a request callback will usually beat one that routes, hands you a parsed body and builds the response for you - and it should, because it is doing less. Ranking on speed alone quietly rewards giving the developer less.
 
-The **completeness factor** is the counterweight. It asks four yes/no questions about the path from an arriving request to a finished response, and each one an entry answers *no* takes **5% off its composite score**:
+The **completeness factor** is the counterweight. It asks four yes/no questions about the path from an arriving request to a finished response, and each one an entry answers *no* takes **2.5% off its composite score**:
 
 ```
-  all four done     →  ×1.00
-  one missing       →  ×0.95
-  two missing       →  ×0.90
-  three missing     →  ×0.85
-  all four missing  →  ×0.80
+  all four done     →  ×1.000
+  one missing       →  ×0.975
+  two missing       →  ×0.950
+  three missing     →  ×0.925
+  all four missing  →  ×0.900
 ```
 
 There is no bonus half. Doing the work a framework exists to do is the baseline, not a credit - the factor is there so a bare request callback cannot out-rank a real framework on throughput it only has because it does less. The best any entry can do is lose nothing.
@@ -50,7 +50,7 @@ Two rules decide the values:
 - **Grade the surface you write against.** A server that embeds a fast C++ core but exposes only `onData`/`onAborted` for bodies is graded on the callbacks, not the core.
 - **Middleware is the one axis read off the surface rather than the run.** A benchmark has no cross-cutting concern to install, so no entry would ever score it if it were read off the handler. It counts as done when the server the entry is written against gives the author a pipeline to put one in - not when this particular handler happens to use it. The other three axes are exercised by every entry on every request, so they are graded on the code.
 
-**Only framework tiers are graded.** Engine and infrastructure entries implement none of the four - a raw-socket server has no router, a reverse proxy has no handler to run middleware around - and that is exactly why grading them is pointless rather than generous. Every one of them would take the same ×0.80, so nothing about their order would change, and they are never ranked against frameworks in the first place: each league is normalized against itself. Their factor is fixed at ×1.00 and their rows say nothing about completeness.
+**Only framework tiers are graded.** Engine and infrastructure entries implement none of the four - a raw-socket server has no router, a reverse proxy has no handler to run middleware around - and that is exactly why grading them is pointless rather than generous. Every one of them would take the same ×0.90, so nothing about their order would change, and they are never ranked against frameworks in the first place: each league is normalized against itself. Their factor is fixed at ×1.00 and their rows say nothing about completeness.
 
 ## Not on the WebSocket and gRPC boards
 
@@ -79,4 +79,4 @@ Hovering gives the full arithmetic either way: the raw sum, the multiplier, whic
 
 ## What it does not do
 
-The factor scales a score; it does not gate a tier. An entry that does none of the four is still a framework entry if it implements HTTP itself, and still ranks in the framework pool - it just needs a raw composite 25% higher than a complete framework to finish level with it (×1.00 ÷ ×0.80).
+The factor scales a score; it does not gate a tier. An entry that does none of the four is still a framework entry if it implements HTTP itself, and still ranks in the framework pool - it just needs a raw composite about 11% higher than a complete framework to finish level with it (×1.00 ÷ ×0.90).
