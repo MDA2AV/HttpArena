@@ -248,6 +248,15 @@
   .tfilter button:hover{color:var(--text)}
   .tfilter button.on{background:var(--text); color:var(--bg); border-color:var(--text)}
   .count{margin-left:auto; color:var(--muted); font-size:.8rem; font-variant-numeric:tabular-nums}
+  /* Sits in the tools bar rather than the header: the board is where someone
+     decides they want two of these entries side by side, and /compare/ was
+     three clicks and a guess away from here. Same .fw-btn shape as the header's
+     Frameworks link, one notch smaller so the search box stays the loudest
+     thing in the row. */
+  .cmp-btn{font-size:.78rem; padding:.4rem .66rem}
+  /* Under 700px the row is search + count + this, and the full label is wider
+     than the search box it wraps under. The icon carries it there. */
+  @media (max-width:700px){ .cmp-btn span{display:none} .cmp-btn{padding:.4rem .5rem} }
 
   /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
      away by renderComposite() as soon as data.js has been parsed. It is what a
@@ -552,6 +561,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off">
         </div>
+        <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
         <span class="count" id="count"></span>
       </div>
 
