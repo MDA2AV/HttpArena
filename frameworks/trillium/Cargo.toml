@@ -17,7 +17,7 @@ trillium-askama = "0.5"
 askama = "0.16"
 trillium-logger = "0.5"
 
-swansong = "0.3.4"
+swansong = "0.3.6"
 futures-lite = "2"
 serde = { version = "1", features = ["derive"] }
 sonic-rs = "0.5"
