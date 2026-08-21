@@ -486,10 +486,21 @@
     right:calc(100% + 2px); width:4px; background:#c89a3c}
   /* Same boxed shape as the Composite header's ?, and like it, clicking it must
      not sort the column it lives in. */
-  .cm .fwh .fwtog{display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:12px;
-    padding:0 2px; margin-left:.34rem; border:1px solid currentColor; font:700 .58rem/1 var(--mono);
-    text-transform:none; letter-spacing:0; opacity:.55; vertical-align:1px; color:inherit; cursor:pointer}
-  .cm .fwh .fwtog:hover{opacity:1; color:var(--accent); border-color:var(--accent)}
+  /* Sized and coloured as a control, not as an annotation. The ? next to
+     Composite is a footnote you may never need; this one is a thing to press,
+     and at 16x12 in currentColor at .55 opacity nobody found it. It carries its
+     own panel background and a filled .on state, so whether the column is
+     compact is readable without counting what is in the cells.
+     No border-radius: the reset at the end of this sheet squares everything. */
+  .cm .fwh .fwtog{display:inline-flex; align-items:center; justify-content:center;
+    min-width:30px; height:19px; padding:0 5px; margin-left:.5rem;
+    border:1px solid var(--line); background:var(--panel-2); color:var(--text-2);
+    font:700 .78rem/1 var(--mono); text-transform:none; letter-spacing:.04em;
+    vertical-align:-4px; cursor:pointer; user-select:none;
+    transition:background .12s ease, color .12s ease, border-color .12s ease}
+  .cm .fwh .fwtog:hover,.cm .fwh .fwtog:focus-visible{background:var(--accent-weak);
+    color:var(--accent); border-color:var(--accent); outline:none}
+  .cm .fwh .fwtog.on{background:var(--accent); border-color:var(--accent); color:var(--bg)}
   /* small screens: un-freeze the left columns so the whole table scrolls horizontally and the result cells are reachable (header keeps vertical stick) */
   @media (max-width:640px){ .cm .sticky{left:auto; box-shadow:none} .cm tbody td.sticky{z-index:auto} }
 
@@ -1541,10 +1552,10 @@ document.addEventListener('DOMContentLoaded', function(){
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'
-      +   '<span class="fwtog" id="fwTog" role="button" tabindex="0" data-tip="'
+      +   '<span class="fwtog'+(state.compactFw?' on':'')+'" id="fwTog" role="button" tabindex="0" aria-pressed="'+(state.compactFw?'true':'false')+'" data-tip="'
       +   esc(state.compactFw ? TIP.fwExpand : TIP.fwCompact)+'" aria-label="'
       +   (state.compactFw?'Expand':'Compact')+' the Framework column">'
-      +   (state.compactFw?'\u2039\u203a':'\u203a\u2039')+'</span>'+ar('fw')+'</th>'
+      +   (state.compactFw?'\u00ab\u00bb':'\u00bb\u00ab')+'</span>'+ar('fw')+'</th>'
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
       +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
