@@ -127,20 +127,6 @@
       "response": true
     }
   },
-  "aspnet-minimal-iouring": {
-    "dir": "aspnet-minimal-iouring",
-    "description": "ASP.NET Core minimal API with experimental io_uring socket engine (dotnet/runtime#124374). Replaces epoll with io_uring for socket I/O on Linux 6.1+.",
-    "repo": "https://github.com/benaadams/runtime/tree/io_uring",
-    "type": "flagship",
-    "engine": "io_uring",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
   "aspnet-minimal-ioxide": {
     "dir": "aspnet-minimal-ioxide",
     "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal \u2014 only the Kestrel transport differs. HTTP/1.1 only: plaintext plus HTTP/1.1-over-TLS (json-tls) terminated in the transport via kTLS (ioxide.tls). HTTP/2 and HTTP/3 are not enabled.",
@@ -700,20 +686,6 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "kestrel",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
-  "genhttp": {
-    "dir": "genhttp",
-    "description": "Lightweight, embeddable and modular C# web server.",
-    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "emerging",
-    "engine": "genhttp",
     "mode": "standard",
     "completeness": {
       "routing": true,

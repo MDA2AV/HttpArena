@@ -32,7 +32,7 @@ For `/benchmark`, always specify `-f <framework>`; the flags combine in any orde
 **What the deltas are measured against.** By default, this framework's own results published on `main` - answering *"did this change help?"*. When you are tuning a variant or a successor entry, `--compare` re-bases them on another entry instead:
 
 ```
-/benchmark -f genhttp-11 --compare genhttp
+/benchmark -f genhttp-11 --compare genhttp-11-kestrel
 ```
 
 The reply states which baseline it used, and profiles the other framework does not run show `n/a` rather than a delta.

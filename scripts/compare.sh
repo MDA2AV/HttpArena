@@ -8,7 +8,7 @@
 # published results instead, which answers "how does this tuned build stack up
 # against the entry it derives from?" — e.g.
 #
-#     ./scripts/compare.sh genhttp-11 --compare genhttp
+#     ./scripts/compare.sh genhttp-11 --compare genhttp-11-kestrel
 #
 # Output: Markdown table with deltas (suitable for PR comments)
 set -euo pipefail
