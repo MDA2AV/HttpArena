@@ -1,2 +1,4 @@
 Django==6.1
 uvicorn[standard]==0.52.3
+asyncpg==0.30.0
+redis==5.2.1

@@ -4,4 +4,4 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 8080
-CMD uvicorn app:application --host 0.0.0.0 --port 8080 --workers $(nproc) --log-level critical
+CMD [ "python3", "launcher.py", "uvicorn", "app:application", "--host", "0.0.0.0", "--port", "8080", "--log-level", "critical" ]
