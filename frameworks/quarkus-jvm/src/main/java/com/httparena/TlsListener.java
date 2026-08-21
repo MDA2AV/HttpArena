@@ -1,6 +1,9 @@
 package com.httparena;
 
 import io.quarkus.runtime.StartupEvent;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -19,6 +22,13 @@ import java.io.File;
  * profiles have it, so the second listener is opened directly on Vert.x and
  * handed the application's own Router - the same routes, JAX-RS resources
  * included, rather than a second copy of the handlers.
+ *
+ * The server is deployed as a verticle with one instance per core. A single
+ * createHttpServer().listen() binds to whichever event loop created it, so all
+ * TLS handshakes and requests for the port would run on one thread while the
+ * other 31 sit idle; the ports Quarkus binds itself are spread across every
+ * event loop. Vert.x shares the bound port between the instances and hands
+ * accepted connections out round-robin, which restores that.
  *
  * ALPN is off on purpose: those two profiles want HTTP/1.1 negotiated and no
  * h2 offered. The harness only mounts /certs for the TLS profiles, so without
@@ -40,13 +50,34 @@ public class TlsListener {
     void onStart(@Observes StartupEvent event) {
         if (!new File(CERT).isFile() || !new File(KEY).isFile()) return;
 
-        var options = new HttpServerOptions()
-            .setPort(PORT)
-            .setHost("0.0.0.0")
-            .setSsl(true)
-            .setUseAlpn(false)
-            .setPemKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
+        var deployment = new DeploymentOptions()
+            .setInstances(Runtime.getRuntime().availableProcessors());
 
-        vertx.createHttpServer(options).requestHandler(router).listen();
+        vertx.deployVerticle(() -> new TlsServer(router), deployment);
+    }
+
+    private static final class TlsServer extends AbstractVerticle {
+
+        private final Router router;
+
+        private TlsServer(Router router) {
+            this.router = router;
+        }
+
+        @Override
+        public void start(Promise<Void> started) {
+            var options = new HttpServerOptions()
+                .setPort(PORT)
+                .setHost("0.0.0.0")
+                .setSsl(true)
+                .setUseAlpn(false)
+                .setPemKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
+
+            vertx.createHttpServer(options)
+                .requestHandler(router)
+                .listen()
+                .<Void>mapEmpty()
+                .onComplete(started);
+        }
     }
 }
