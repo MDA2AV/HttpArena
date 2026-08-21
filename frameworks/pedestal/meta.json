@@ -3,6 +3,12 @@
   "language": "Clojure",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "Jetty",
   "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
   "repo": "https://github.com/pedestal/pedestal",

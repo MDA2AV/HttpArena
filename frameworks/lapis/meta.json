@@ -3,6 +3,12 @@
   "language": "Lua",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "OpenResty",
   "description": "Lapis on OpenResty with LuaJIT, one nginx worker per core. Routing and params through the Lapis application API, cjson serialization, gzip through the nginx gzip directive.",
   "repo": "https://github.com/leafo/lapis",

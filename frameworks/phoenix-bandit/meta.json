@@ -3,6 +3,12 @@
   "language": "Elixir",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "bandit",
   "description": "High-performance Elixir framework using Phoenix and Bandit HTTP server, leveraging Erlang/OTP for concurrent networking and asynchronous database operations.",
   "repo": "https://github.com/phoenixframework/phoenix",

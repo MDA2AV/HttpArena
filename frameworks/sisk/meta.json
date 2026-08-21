@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "sisk",
   "description": "Sisk is a lightweight, agnostic, simple, and robust web development framework.",
   "repo": "https://github.com/sisk-http",

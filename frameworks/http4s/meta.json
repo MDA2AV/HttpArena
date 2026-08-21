@@ -3,6 +3,12 @@
   "language": "Scala",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "Ember",
   "description": "http4s 0.23 on the Ember server with cats-effect, default configuration. Routing through the http4s DSL, circe JSON, gzip through the http4s GZip middleware.",
   "repo": "https://github.com/http4s/http4s",

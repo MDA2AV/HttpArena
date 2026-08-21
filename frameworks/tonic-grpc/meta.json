@@ -3,6 +3,12 @@
   "language": "Rust",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "tonic",
   "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
   "repo": "https://github.com/hyperium/tonic",

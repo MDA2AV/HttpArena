@@ -3,6 +3,12 @@
   "language": "Ruby",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "puma",
   "description": "Ruby on Rails (API mode) on Puma, multi-worker with one worker per CPU core.",
   "repo": "https://github.com/rails/rails",

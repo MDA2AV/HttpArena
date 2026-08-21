@@ -3,6 +3,12 @@
   "language": "Ruby",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "Puma",
   "description": "Hanami 2.3 actions and router on Puma, one worker per core. Routing and params through the Hanami API, JSON generated per request, gzip through Rack::Deflater.",
   "repo": "https://github.com/hanami/hanami",

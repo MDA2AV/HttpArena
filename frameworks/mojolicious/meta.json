@@ -3,6 +3,12 @@
   "language": "Perl",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "mojolicious",
   "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
   "repo": "https://github.com/mojolicious/mojo",

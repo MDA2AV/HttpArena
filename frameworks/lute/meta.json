@@ -3,6 +3,12 @@
   "language": "Luau",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "lute",
   "description": "Lute standalone Luau runtime",
   "repo": "https://github.com/luau-lang/lute",

@@ -3,6 +3,12 @@
   "language": "Scala",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "netty",
   "description": "ZIO HTTP 3.11 on the Netty backend with ZIO 2, default configuration. Routing through the Routes DSL, JSON through zio-json, gzip through the server's own response compression.",
   "repo": "https://github.com/zio/zio-http",

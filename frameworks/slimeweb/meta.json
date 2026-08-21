@@ -3,6 +3,12 @@
   "language": "Python",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "hyper",
   "description": "SlimeWeb is a fast lightweight framework for python powered by rust",
   "repo": "https://github.com/ATOMMAX-2001/Slime/",

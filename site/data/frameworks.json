@@ -6,6 +6,12 @@
     "type": "flagship",
     "engine": "actix",
     "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    },
     "variants": [
       {
         "dir": "actix-h2c",
@@ -13,7 +19,13 @@
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
       },
       {
         "dir": "actix-websocket",
@@ -21,7 +33,13 @@
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
       }
     ]
   },
@@ -31,7 +49,13 @@
     "repo": "https://github.com/aio-libs/aiohttp",
     "type": "flagship",
     "engine": "aiohttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "aleph": {
     "dir": "aleph",
@@ -39,7 +63,13 @@
     "repo": "https://github.com/clj-commons/aleph",
     "type": "emerging",
     "engine": "netty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "araara-standard": {
     "dir": "araara-standard",
@@ -64,6 +94,12 @@
     "type": "flagship",
     "engine": "kestrel",
     "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    },
     "variants": [
       {
         "dir": "aspnet-grpc",
@@ -71,7 +107,13 @@
         "repo": "https://github.com/dotnet/aspnetcore",
         "type": "flagship",
         "engine": "kestrel",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
       },
       {
         "dir": "aspnet-websocket",
@@ -79,7 +121,13 @@
         "repo": "https://github.com/dotnet/aspnetcore",
         "type": "flagship",
         "engine": "kestrel",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
       }
     ]
   },
@@ -89,7 +137,13 @@
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "Kestrel",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "aspnet-minimal-iouring": {
     "dir": "aspnet-minimal-iouring",
@@ -97,7 +151,13 @@
     "repo": "https://github.com/benaadams/runtime/tree/io_uring",
     "type": "flagship",
     "engine": "io_uring",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "aspnet-minimal-ioxide": {
     "dir": "aspnet-minimal-ioxide",
@@ -105,7 +165,13 @@
     "repo": "https://github.com/MDA2AV/ioxide",
     "type": "flagship",
     "engine": "io_uring",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "aspnet-minimal + caddy": {
     "dir": "aspnet-minimal_caddy",
@@ -113,7 +179,13 @@
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "aspnet-minimal + nginx": {
     "dir": "aspnet-minimal_nginx",
@@ -121,7 +193,13 @@
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "aspnet-mvc": {
     "dir": "aspnet-mvc",
@@ -129,7 +207,13 @@
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "axum": {
     "dir": "axum",
@@ -137,7 +221,13 @@
     "repo": "https://github.com/tokio-rs/axum",
     "type": "flagship",
     "engine": "hyper",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "bananabread": {
     "dir": "bananabread",
@@ -145,7 +235,13 @@
     "repo": "https://github.com/dotnet-web-stack/Seagreen",
     "type": "emerging",
     "engine": "seagreen",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "beskar-websocket": {
     "dir": "beskar-websocket",
@@ -153,7 +249,13 @@
     "repo": "https://github.com/MarvinDrude/Beskar.Networking",
     "type": "emerging",
     "engine": "beskar",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "bjoern": {
     "dir": "bjoern",
@@ -168,7 +270,13 @@
     "repo": "https://github.com/TOKUJI/BlackBull",
     "type": "emerging",
     "engine": "blackbull",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "bottle": {
     "dir": "bottle",
@@ -176,7 +284,13 @@
     "repo": "https://github.com/bottlepy/bottle",
     "type": "flagship",
     "engine": "gunicorn",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "bun-websocket": {
     "dir": "bun-websocket",
@@ -184,15 +298,27 @@
     "repo": "https://github.com/oven-sh/bun",
     "type": "emerging",
     "engine": "bun",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "bun": {
     "dir": "bun",
     "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the port.",
     "repo": "https://github.com/oven-sh/bun",
-    "type": "engine",
+    "type": "flagship",
     "engine": "bun",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "caddy": {
     "dir": "caddy",
@@ -251,7 +377,13 @@
     "repo": "https://github.com/go-chi/chi",
     "type": "flagship",
     "engine": "net/http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "dart-io": {
     "dir": "dart-io",
@@ -273,15 +405,27 @@
     "repo": "https://github.com/denoland/deno",
     "type": "emerging",
     "engine": "deno",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "deno": {
     "dir": "deno",
     "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
     "repo": "https://github.com/denoland/deno",
-    "type": "engine",
+    "type": "flagship",
     "engine": "deno",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "django": {
     "dir": "django",
@@ -289,7 +433,13 @@
     "repo": "https://github.com/django/django",
     "type": "flagship",
     "engine": "uvicorn",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "dogrider": {
     "dir": "dogrider",
@@ -297,7 +447,13 @@
     "repo": "https://github.com/MDA2AV/dogrider",
     "type": "emerging",
     "engine": "zerg",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "drogon": {
     "dir": "drogon",
@@ -305,7 +461,13 @@
     "repo": "https://github.com/drogonframework/drogon",
     "type": "flagship",
     "engine": "trantor",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "echo": {
     "dir": "echo",
@@ -313,7 +475,13 @@
     "repo": "https://github.com/labstack/echo",
     "type": "flagship",
     "engine": "net/http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "effinitive": {
     "dir": "effinitive",
@@ -321,7 +489,13 @@
     "repo": "https://github.com/HBartosch/Effinitive",
     "type": "experimental",
     "engine": "effinitive",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "elysia": {
     "dir": "elysia",
@@ -329,7 +503,13 @@
     "repo": "https://github.com/elysiajs/elysia",
     "type": "flagship",
     "engine": "jsc",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "express": {
     "dir": "express",
@@ -337,7 +517,13 @@
     "repo": "https://github.com/expressjs/express",
     "type": "flagship",
     "engine": "nodehttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fastapi": {
     "dir": "fastapi",
@@ -345,7 +531,13 @@
     "repo": "https://github.com/fastapi/fastapi",
     "type": "flagship",
     "engine": "uvicorn",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fastendpoints": {
     "dir": "fastendpoints",
@@ -353,7 +545,13 @@
     "repo": "https://github.com/FastEndpoints/FastEndpoints",
     "type": "flagship",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fasthttp": {
     "dir": "fasthttp",
@@ -368,7 +566,13 @@
     "repo": "https://github.com/fastify/fastify",
     "type": "flagship",
     "engine": "nodehttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fastpysgi-asgi": {
     "dir": "fastpysgi-asgi",
@@ -390,7 +594,13 @@
     "repo": "https://github.com/gofiber/fiber",
     "type": "flagship",
     "engine": "fasthttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fishcake": {
     "dir": "fishcake",
@@ -398,7 +608,13 @@
     "repo": "https://github.com/dotnet-web-stack/CodeGreen",
     "type": "emerging",
     "engine": "codegreen",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "flask": {
     "dir": "flask",
@@ -406,7 +622,13 @@
     "repo": "https://github.com/pallets/flask",
     "type": "flagship",
     "engine": "gunicorn",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fleck": {
     "dir": "fleck",
@@ -414,7 +636,13 @@
     "repo": "https://github.com/statianzo/Fleck",
     "type": "emerging",
     "engine": "fleck",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "fletch": {
     "dir": "fletch",
@@ -422,7 +650,13 @@
     "repo": "https://github.com/kartikey321/fletch",
     "type": "emerging",
     "engine": "dart:io",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "frankenphp-trueasync": {
     "dir": "frankenphp-trueasync",
@@ -430,7 +664,13 @@
     "repo": "https://github.com/true-async/php-async",
     "type": "emerging",
     "engine": "frankenphp",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": false,
+      "response": false
+    }
   },
   "fulmine-tuned": {
     "dir": "fulmine-tuned",
@@ -438,7 +678,13 @@
     "repo": "https://github.com/nigrosimone/fulmine.js",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "fulmine": {
     "dir": "fulmine",
@@ -446,7 +692,13 @@
     "repo": "https://github.com/nigrosimone/fulmine.js",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "genhttp-11-ioxide": {
     "dir": "genhttp-11-ioxide",
@@ -454,7 +706,13 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "genhttp-11-kestrel": {
     "dir": "genhttp-11-kestrel",
@@ -462,7 +720,13 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "kestrel",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "genhttp-11": {
     "dir": "genhttp-11",
@@ -470,7 +734,13 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "genhttp",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "genhttp-kestrel": {
     "dir": "genhttp-kestrel",
@@ -478,7 +748,13 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "genhttp": {
     "dir": "genhttp",
@@ -486,7 +762,13 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "genhttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "gin": {
     "dir": "gin",
@@ -494,7 +776,13 @@
     "repo": "https://github.com/gin-gonic/gin",
     "type": "flagship",
     "engine": "net/http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "go-fasthttp": {
     "dir": "go-fasthttp",
@@ -502,7 +790,13 @@
     "repo": "https://github.com/valyala/fasthttp",
     "type": "flagship",
     "engine": "fasthttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "go-stdlib": {
     "dir": "go-stdlib",
@@ -510,7 +804,13 @@
     "repo": "https://github.com/golang/go",
     "type": "flagship",
     "engine": "net/http",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": false
+    }
   },
   "go-websocket": {
     "dir": "go-websocket",
@@ -518,7 +818,13 @@
     "repo": "https://github.com/gobwas/ws",
     "type": "emerging",
     "engine": "net/http",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "grpc-go": {
     "dir": "grpc-go",
@@ -526,7 +832,13 @@
     "repo": "https://github.com/grpc/grpc-go",
     "type": "emerging",
     "engine": "grpc-go",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "h2o-mruby": {
     "dir": "h2o-mruby",
@@ -534,7 +846,13 @@
     "repo": "https://github.com/h2o/h2o",
     "type": "flagship",
     "engine": "h2o",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": false,
+      "response": true
+    }
   },
   "h2o": {
     "dir": "h2o",
@@ -549,7 +867,13 @@
     "repo": "https://github.com/hanami/hanami",
     "type": "flagship",
     "engine": "Puma",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "helidon-production": {
     "dir": "helidon-production",
@@ -557,7 +881,13 @@
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "helidon-tuned": {
     "dir": "helidon-tuned",
@@ -565,7 +895,13 @@
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "hical": {
     "dir": "hical",
@@ -580,7 +916,13 @@
     "repo": "https://github.com/honojs/hono",
     "type": "flagship",
     "engine": "jsc",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "hono-node": {
     "dir": "hono-node",
@@ -588,7 +930,13 @@
     "repo": "https://github.com/honojs/node-server",
     "type": "flagship",
     "engine": "nodehttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "http-kit": {
     "dir": "http-kit",
@@ -596,7 +944,13 @@
     "repo": "https://github.com/http-kit/http-kit",
     "type": "emerging",
     "engine": "http-kit",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "http4k": {
     "dir": "http4k",
@@ -604,7 +958,13 @@
     "repo": "https://github.com/http4k/http4k",
     "type": "flagship",
     "engine": "Undertow",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "http4s": {
     "dir": "http4s",
@@ -612,7 +972,13 @@
     "repo": "https://github.com/http4s/http4s",
     "type": "flagship",
     "engine": "Ember",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "http.jl": {
     "dir": "httpjl",
@@ -620,7 +986,13 @@
     "repo": "https://github.com/JuliaWeb/HTTP.jl",
     "type": "emerging",
     "engine": "http.jl",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": false,
+      "response": false
+    }
   },
   "humming-bird": {
     "dir": "humming-bird",
@@ -628,7 +1000,13 @@
     "repo": "https://github.com/hummingbird-project/hummingbird",
     "type": "flagship",
     "engine": "hummingbird",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "hyper-express": {
     "dir": "hyper-express",
@@ -636,7 +1014,13 @@
     "repo": "https://github.com/kartikk221/hyper-express",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "hyper": {
     "dir": "hyper",
@@ -651,7 +1035,13 @@
     "repo": "https://github.com/hyperf/hyperf",
     "type": "flagship",
     "engine": "swoole",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ioxide": {
     "dir": "ioxide",
@@ -673,7 +1063,13 @@
     "repo": "https://github.com/koajs/koa",
     "type": "flagship",
     "engine": "node:http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ktor-ghost": {
     "dir": "ktor-ghost",
@@ -681,7 +1077,13 @@
     "repo": "https://github.com/ktorio/ktor",
     "type": "flagship",
     "engine": "netty",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ktor": {
     "dir": "ktor",
@@ -689,7 +1091,13 @@
     "repo": "https://github.com/ktorio/ktor",
     "type": "flagship",
     "engine": "netty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "lapis": {
     "dir": "lapis",
@@ -697,7 +1105,13 @@
     "repo": "https://github.com/leafo/lapis",
     "type": "flagship",
     "engine": "OpenResty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "laravel": {
     "dir": "laravel",
@@ -705,7 +1119,13 @@
     "repo": "https://github.com/laravel/laravel",
     "type": "flagship",
     "engine": "frankenphp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "libreactorng": {
     "dir": "libreactorng",
@@ -720,7 +1140,13 @@
     "repo": "https://github.com/litestar-org/litestar",
     "type": "flagship",
     "engine": "uvicorn",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "lute": {
     "dir": "lute",
@@ -728,7 +1154,13 @@
     "repo": "https://github.com/luau-lang/lute",
     "type": "emerging",
     "engine": "lute",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "mark": {
     "dir": "mark",
@@ -736,7 +1168,13 @@
     "repo": "https://github.com/passwalls/mark",
     "type": "emerging",
     "engine": "workerman",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "may-minihttp": {
     "dir": "may-minihttp",
@@ -751,7 +1189,13 @@
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "minima-sync": {
     "dir": "minima-sync",
@@ -780,7 +1224,13 @@
     "repo": "https://github.com/mojolicious/mojo",
     "type": "flagship",
     "engine": "mojolicious",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "mq-bridge-py": {
     "dir": "mq-bridge-py",
@@ -788,7 +1238,13 @@
     "repo": "https://github.com/marcomq/mq-bridge",
     "type": "emerging",
     "engine": "mq-bridge",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "mq-bridge": {
     "dir": "mq-bridge",
@@ -797,6 +1253,12 @@
     "type": "emerging",
     "engine": "mq-bridge",
     "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    },
     "variants": [
       {
         "dir": "mq-bridge-websocket",
@@ -804,7 +1266,13 @@
         "repo": "https://github.com/marcomq/mq-bridge",
         "type": "emerging",
         "engine": "mq-bridge",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       }
     ]
   },
@@ -814,7 +1282,13 @@
     "repo": "https://github.com/nestjs/nest",
     "type": "flagship",
     "engine": "nodehttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "nginx": {
     "dir": "nginx",
@@ -829,7 +1303,13 @@
     "repo": "https://github.com/rryqszq4/ngx-php",
     "type": "emerging",
     "engine": "nginx",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": false
+    }
   },
   "node-h3": {
     "dir": "node-h3",
@@ -837,7 +1317,13 @@
     "repo": "https://github.com/h3js/h3",
     "type": "flagship",
     "engine": "nodehttp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "node-websocket": {
     "dir": "node-websocket",
@@ -845,15 +1331,27 @@
     "repo": "https://github.com/websockets/ws",
     "type": "emerging",
     "engine": "v8",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "node": {
     "dir": "node",
     "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
     "repo": "https://github.com/nodejs/node",
-    "type": "engine",
+    "type": "flagship",
     "engine": "node:http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": false,
+      "response": false
+    }
   },
   "oxpecker": {
     "dir": "oxpecker",
@@ -861,7 +1359,13 @@
     "repo": "https://github.com/Lanayx/Oxpecker",
     "type": "emerging",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "pedestal": {
     "dir": "pedestal",
@@ -869,7 +1373,13 @@
     "repo": "https://github.com/pedestal/pedestal",
     "type": "emerging",
     "engine": "Jetty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "phoenix-bandit": {
     "dir": "phoenix-bandit",
@@ -877,7 +1387,13 @@
     "repo": "https://github.com/phoenixframework/phoenix",
     "type": "flagship",
     "engine": "bandit",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "php-fpm": {
     "dir": "php",
@@ -885,7 +1401,13 @@
     "repo": "https://github.com/php/php-src",
     "type": "flagship",
     "engine": "nginx",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": false
+    }
   },
   "pico": {
     "dir": "pico",
@@ -900,7 +1422,13 @@
     "repo": "https://github.com/elixir-plug/plug_cowboy",
     "type": "flagship",
     "engine": "Cowboy",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "pyronova": {
     "dir": "pyronova",
@@ -908,7 +1436,13 @@
     "repo": "https://github.com/leocaolab/pyronova",
     "type": "experimental",
     "engine": "pyronova",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
@@ -917,6 +1451,12 @@
     "type": "flagship",
     "engine": "netty",
     "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    },
     "variants": [
       {
         "dir": "quarkus-jvm-grpc",
@@ -924,7 +1464,13 @@
         "repo": "https://github.com/quarkusio/quarkus",
         "type": "flagship",
         "engine": "vert.x (grpc)",
-        "mode": "tuned"
+        "mode": "tuned",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
       },
       {
         "dir": "quarkus-jvm-h2c",
@@ -932,7 +1478,13 @@
         "repo": "https://github.com/quarkusio/quarkus",
         "type": "flagship",
         "engine": "netty",
-        "mode": "tuned"
+        "mode": "tuned",
+        "completeness": {
+          "routing": false,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       }
     ]
   },
@@ -956,7 +1508,13 @@
     "repo": "https://github.com/rage-rb/rage",
     "type": "flagship",
     "engine": "iodine",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "rails": {
     "dir": "rails",
@@ -964,7 +1522,13 @@
     "repo": "https://github.com/rails/rails",
     "type": "flagship",
     "engine": "puma",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ring-http-exchange": {
     "dir": "ring-http-exchange",
@@ -972,7 +1536,13 @@
     "repo": "https://github.com/ruroru/ring-http-exchange",
     "type": "emerging",
     "engine": "robaho-httpserver",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ring-jetty9-adapter": {
     "dir": "ring-jetty9-adapter",
@@ -980,7 +1550,13 @@
     "repo": "https://github.com/sunng87/ring-jetty9-adapter",
     "type": "emerging",
     "engine": "Jetty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ring": {
     "dir": "ring",
@@ -988,7 +1564,13 @@
     "repo": "https://github.com/ring-clojure/ring",
     "type": "emerging",
     "engine": "Jetty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "ringzero-ws": {
     "dir": "ringzero-ws",
@@ -1010,7 +1592,13 @@
     "repo": "https://github.com/arizona-framework/roadrunner",
     "type": "emerging",
     "engine": "roadrunner",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "robyn": {
     "dir": "robyn",
@@ -1018,7 +1606,13 @@
     "repo": "https://github.com/sparckles/Robyn",
     "type": "emerging",
     "engine": "uvloop",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "rocket": {
     "dir": "rocket",
@@ -1026,7 +1620,13 @@
     "repo": "https://github.com/rwf2/Rocket",
     "type": "flagship",
     "engine": "hyper",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "roda": {
     "dir": "roda",
@@ -1034,7 +1634,13 @@
     "repo": "https://github.com/jeremyevans/roda",
     "type": "flagship",
     "engine": "puma",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "rust-epoll": {
     "dir": "rust-epoll",
@@ -1049,7 +1655,13 @@
     "repo": "https://github.com/sanic-org/sanic",
     "type": "flagship",
     "engine": "sanic",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "sark": {
     "dir": "sark",
@@ -1087,7 +1699,13 @@
     "repo": "https://github.com/ServiceStack/ServiceStack",
     "type": "flagship",
     "engine": "kestrel",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "simplew-tuned": {
     "dir": "simplew-tuned",
@@ -1095,7 +1713,13 @@
     "repo": "https://github.com/stratdev3/SimpleW",
     "type": "emerging",
     "engine": "simplew",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "simplew": {
     "dir": "simplew",
@@ -1103,7 +1727,13 @@
     "repo": "https://github.com/stratdev3/SimpleW",
     "type": "emerging",
     "engine": "simplew",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "sinatra": {
     "dir": "sinatra",
@@ -1111,7 +1741,13 @@
     "repo": "https://github.com/sinatra/sinatra",
     "type": "flagship",
     "engine": "puma",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "sisk": {
     "dir": "sisk",
@@ -1119,7 +1755,13 @@
     "repo": "https://github.com/sisk-http",
     "type": "emerging",
     "engine": "sisk",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "slim": {
     "dir": "slim",
@@ -1127,7 +1769,13 @@
     "repo": "https://github.com/slimphp/Slim",
     "type": "flagship",
     "engine": "FrankenPHP",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "slimeweb": {
     "dir": "slimeweb",
@@ -1135,7 +1783,13 @@
     "repo": "https://github.com/ATOMMAX-2001/Slime/",
     "type": "emerging",
     "engine": "hyper",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "spring-boot": {
     "dir": "spring-boot",
@@ -1143,7 +1797,13 @@
     "repo": "https://github.com/spring-projects/spring-boot",
     "type": "flagship",
     "engine": "tomcat",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "spring-jvm-grpc": {
     "dir": "spring-jvm-grpc",
@@ -1151,7 +1811,13 @@
     "repo": "https://github.com/grpc-ecosystem/grpc-spring",
     "type": "flagship",
     "engine": "netty (grpc)",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "starlette": {
     "dir": "starlette",
@@ -1159,7 +1825,13 @@
     "repo": "https://github.com/encode/starlette",
     "type": "flagship",
     "engine": "uvicorn",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "swerver": {
     "dir": "swerver",
@@ -1175,6 +1847,12 @@
     "type": "flagship",
     "engine": "swoole",
     "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": false
+    },
     "variants": [
       {
         "dir": "swoole-websocket",
@@ -1182,7 +1860,13 @@
         "repo": "https://github.com/swoole/swoole-src",
         "type": "flagship",
         "engine": "swoole",
-        "mode": "tuned"
+        "mode": "tuned",
+        "completeness": {
+          "routing": false,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       }
     ]
   },
@@ -1192,7 +1876,13 @@
     "repo": "https://github.com/yangusik/symfony-spawn",
     "type": "emerging",
     "engine": "frankenphp",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "symfony-spawn-tas": {
     "dir": "symfony-spawn-tas",
@@ -1200,7 +1890,13 @@
     "repo": "https://github.com/yangusik/symfony-spawn",
     "type": "emerging",
     "engine": "true-async-server",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "tokio-uring-ws": {
     "dir": "tokio-uring-ws",
@@ -1236,7 +1932,13 @@
     "repo": "https://github.com/hyperium/tonic",
     "type": "emerging",
     "engine": "tonic",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "trillium-tuned": {
     "dir": "trillium-tuned",
@@ -1244,7 +1946,13 @@
     "repo": "https://github.com/trillium-rs/trillium",
     "type": "emerging",
     "engine": "trillium-http",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "trillium": {
     "dir": "trillium",
@@ -1252,7 +1960,13 @@
     "repo": "https://github.com/trillium-rs/trillium",
     "type": "emerging",
     "engine": "trillium-http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "true-async-server": {
     "dir": "true-async-server",
@@ -1260,7 +1974,13 @@
     "repo": "https://github.com/true-async/server",
     "type": "emerging",
     "engine": "true-async-server",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "typev": {
     "dir": "typev",
@@ -1275,7 +1995,13 @@
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "tuned"
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "userver": {
     "dir": "userver",
@@ -1283,7 +2009,13 @@
     "repo": "https://github.com/userver-framework/userver",
     "type": "flagship",
     "engine": "userver",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "uvicorn": {
     "dir": "uvicorn",
@@ -1298,7 +2030,13 @@
     "repo": "https://github.com/uNetworking/uWebSockets.js",
     "type": "flagship",
     "engine": "uWebSockets",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": false,
+      "response": false
+    }
   },
   "vanilla-epoll": {
     "dir": "vanilla-epoll",
@@ -1348,7 +2086,13 @@
     "repo": "https://github.com/eclipse-vertx/vert.x",
     "type": "flagship",
     "engine": "Netty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "vibe.d": {
     "dir": "vibed",
@@ -1356,7 +2100,13 @@
     "repo": "https://github.com/vibe-d/vibe.d",
     "type": "emerging",
     "engine": "vibe.d",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "Vinyl Cache": {
     "dir": "vinyl-cache",
@@ -1371,7 +2121,13 @@
     "repo": "https://github.com/yesodweb/wai",
     "type": "flagship",
     "engine": "warp",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "WebFramework C": {
     "dir": "web-framework-cc",
@@ -1407,7 +2163,13 @@
     "repo": "https://github.com/walkor/Workerman",
     "type": "flagship",
     "engine": "workerman",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "workerman": {
     "dir": "workerman",
@@ -1415,7 +2177,13 @@
     "repo": "https://github.com/walkor/Workerman",
     "type": "flagship",
     "engine": "workerman",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "wtx": {
     "dir": "wtx-grpc",
@@ -1424,6 +2192,12 @@
     "type": "emerging",
     "engine": "wtx",
     "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    },
     "variants": [
       {
         "dir": "wtx-grpc-tls",
@@ -1431,7 +2205,13 @@
         "repo": "https://github.com/c410-f3r/wtx",
         "type": "emerging",
         "engine": "wtx",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       },
       {
         "dir": "wtx-http2",
@@ -1439,7 +2219,13 @@
         "repo": "https://github.com/c410-f3r/wtx",
         "type": "emerging",
         "engine": "wtx",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       },
       {
         "dir": "wtx-http2-tls",
@@ -1447,14 +2233,26 @@
         "repo": "https://github.com/c410-f3r/wtx",
         "type": "emerging",
         "engine": "wtx",
-        "mode": "standard"
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       },
       {
         "dir": "wtx-ws",
         "description": "WTX - WebSocket Server",
         "repo": "https://github.com/c410-f3r/wtx",
         "type": "emerging",
-        "engine": "wtx"
+        "engine": "wtx",
+        "completeness": {
+          "routing": true,
+          "middleware": false,
+          "request": true,
+          "response": true
+        }
       }
     ]
   },
@@ -1471,7 +2269,13 @@
     "repo": "https://github.com/zio/zio-http",
     "type": "flagship",
     "engine": "netty",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "zix": {
     "dir": "zix",

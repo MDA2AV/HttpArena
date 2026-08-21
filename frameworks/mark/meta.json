@@ -3,6 +3,12 @@
   "language": "PHP",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "workerman",
   "description": "Mark is a high performance API micro framework based on workerman, helps you quickly write APIs with PHP.",
   "repo": "https://github.com/passwalls/mark",

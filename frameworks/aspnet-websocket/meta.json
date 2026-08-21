@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "kestrel",
   "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.",
   "repo": "https://github.com/dotnet/aspnetcore",

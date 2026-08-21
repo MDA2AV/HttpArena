@@ -3,6 +3,12 @@
   "language": "TS",
   "type": "emerging",
   "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "deno",
   "description": "Deno WebSocket echo server",
   "repo": "https://github.com/denoland/deno",

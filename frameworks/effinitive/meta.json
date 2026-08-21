@@ -3,6 +3,12 @@
   "language": "C#",
   "type": "experimental",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "effinitive",
   "description": "Ultra-high-performance custom HTTP server for .NET 10 — built from scratch for maximum speed.",
   "repo": "https://github.com/HBartosch/Effinitive",

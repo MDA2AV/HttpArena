@@ -3,6 +3,12 @@
   "language": "Python",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "aiohttp",
   "description": "aiohttp 3.14 web server on uvloop, one forked worker per core sharing the port with SO_REUSEPORT. Routing through the aiohttp router, JSON through web.json_response, gzip through the built-in response compression.",
   "repo": "https://github.com/aio-libs/aiohttp",

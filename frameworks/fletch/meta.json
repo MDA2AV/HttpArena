@@ -4,6 +4,12 @@
   "engine": "dart:io",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "description": "Express-inspired HTTP framework for Dart with radix-tree routing, middleware chains, signed sessions, and built-in DI.",
   "repo": "https://github.com/kartikey321/fletch",
   "enabled": true,

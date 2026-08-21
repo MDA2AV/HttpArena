@@ -3,6 +3,12 @@
   "language": "Go",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "fasthttp",
   "description": "Fiber 3 on fasthttp, default configuration. Routing and path/query binding through the Fiber API, JSON via c.JSON, gzip through the Fiber compress middleware.",
   "repo": "https://github.com/gofiber/fiber",

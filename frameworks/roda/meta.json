@@ -3,6 +3,12 @@
   "language": "Ruby",
   "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "puma",
   "description": "Roda routing tree web toolkit",
   "repo": "https://github.com/jeremyevans/roda",

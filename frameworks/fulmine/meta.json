@@ -3,6 +3,12 @@
   "language": "JS",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "uwebsockets",
   "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
   "repo": "https://github.com/nigrosimone/fulmine.js",

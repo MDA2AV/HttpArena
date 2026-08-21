@@ -3,6 +3,12 @@
   "language": "F#",
   "type": "emerging",
   "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
   "engine": "kestrel",
   "description": "F# web framework built on ASP.NET Core endpoint routing, with a functional handler DSL and its own code-as-markup view engine.",
   "repo": "https://github.com/Lanayx/Oxpecker",
