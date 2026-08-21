@@ -24,7 +24,26 @@ jobs:
     if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     steps:
+      # Full history: the sitemap dates each page from the last commit that
+      # touched its source, and a shallow clone can only say "today" for
+      # everything. Without it the generator drops lastmod rather than guess.
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Only the og:image cards need it. The generator runs fine without it and
+      # simply leaves the cards (and the tags pointing at them) out, so a local
+      # run still produces the whole site.
+      #
+      # continue-on-error keeps that true here: `run:` executes under `bash -e`,
+      # so a PyPI hiccup or a runner image that starts enforcing PEP 668
+      # (externally-managed-environment) would otherwise fail the job before the
+      # generator runs and stop the site updating at all. Losing the cards for
+      # one deploy is the smaller failure. Pinned so the deploy job, which holds
+      # pages:write and id-token:write, does not pull an unreviewed release.
+      - name: Install Pillow (social cards)
+        continue-on-error: true
+        run: python3 -m pip install --quiet --disable-pip-version-check 'pillow==11.3.0'
 
       - name: Generate leaderboard data
         run: python3 scripts/gen_leaderboard_data.py
@@ -39,7 +58,7 @@ jobs:
         working-directory: site
         run: |
           rm -rf public && mkdir public
-          cp leaderboard/index.html public/index.html
+          cp generated/index.html public/index.html                                 # the board with its default view pre-rendered into #rows (leaderboard/index.html is the source)
           cp leaderboard/data.js public/data.js
           cp leaderboard/search.js public/search.js                                  # plain-text Knowledge Base index for the board's page search
           cp -r static/logs public/logs                                             # run logs, served at /logs/
@@ -48,6 +67,11 @@ jobs:
           cp -r generated/docs public/docs                                          # pre-rendered Knowledge Base pages (real /docs/<id>/ URLs) + docs.css
           cp generated/sitemap.xml public/sitemap.xml                               # root + every /docs/<id>/ (generated, replaces the old static one)
           cp -r generated/badge public/badge                                        # shields.io endpoints behind the README badges, /badge/<fw>/<family>.json
+          cp -r generated/frameworks public/frameworks                              # a real page per entry at /frameworks/<slug>/, plus the index over them
+          cp -r generated/compare public/compare                                    # head-to-head pages, one per language, at /compare/<language>/
+          cp generated/data.json public/data.json                                   # every result as plain JSON: what the Dataset structured data points at
+          cp generated/llms.txt generated/llms-full.txt public/                     # the ranking and the Knowledge Base as text, for readers that never run JS
+          if [ -f generated/og.png ]; then cp generated/og.png public/og.png; fi    # social card for the board; the per-doc ones ride along inside generated/docs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

@@ -24,6 +24,17 @@ services:
     cpuset: "${GATEWAY_CACHE_CPUS:-16-19,80-83}"
     security_opt:
       - seccomp:unconfined
+    # A cache that cannot bind is a silent downgrade, not a failure: with the
+    # short `depends_on: - cache` form the server starts anyway and quietly
+    # talks to whatever else holds 6379, so the run publishes numbers measured
+    # against a Redis this profile never configured. Fail the stack instead.
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
   authsvc:
     build: ../_shared/authsvc
@@ -56,4 +67,5 @@ services:
       - SARK_HTTPARENA_PER_IP_CAP=0
       - SARK_HTTPARENA_H1_ONLY=1
     depends_on:
-      - cache
+      cache:
+        condition: service_healthy

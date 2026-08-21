@@ -31,3 +31,7 @@ node_modules/
 
 # macOS Finder metadata
 .DS_Store
+
+# Python bytecode; a .pyc was tracked and churned on every build
+__pycache__/
+*.pyc

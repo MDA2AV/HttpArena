@@ -31,8 +31,8 @@ because they are where the framework differs from Express rather than where it i
   matched in JavaScript.
 - A handler simple enough to be read at registration time is compiled into a µWS declarative
   response. `/pipeline` is one, so it is answered without entering JavaScript. "Simple enough" means
-  every argument is a literal, which is why its headers are written out instead of coming from the
-  shared `SERVER_HDR`: the compiler reads the source and cannot see into a closure.
+  every argument is a literal: a value coming from a closure would keep the route on the ordinary
+  path, because the compiler reads the source and cannot see into one.
 - `express.compression()` is the framework's own, taking the compression module's options: it is
   mounted on the json route, which is the only one the profiles ask to compress.
 - `express.static(dir, { preCompressed: true })` is the framework's documented way of serving the

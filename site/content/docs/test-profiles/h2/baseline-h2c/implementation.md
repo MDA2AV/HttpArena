@@ -20,11 +20,12 @@ Same `/baseline2?a=…&b=…` sum endpoint as the HTTP/2-TLS baseline, served as
 
 - HTTP/2 framing + HPACK + multiplexing *without* TLS overhead
 - Protocol implementation cost in isolation - the delta against `baseline-h2` is roughly the TLS cost
-- How cleanly the framework refuses non-h2 traffic on a port declared h2c-only
 
-## The port must be h2c-only
+## Dual-serving h1 on the same port is allowed
 
-Validation explicitly checks that port 8082 refuses plain HTTP/1.1 requests. A server that dual-serves h1 and h2c on the same port would let the benchmark measure whichever protocol the client picked - useless for ranking. Frameworks that want to expose h1 too must do it on a **different** port.
+Port 8082 may also answer HTTP/1.1. The benchmark cannot pick it up: `h2load -p h2c` writes the HTTP/2 connection preface as the first bytes of every connection and never sends an HTTP/1.1 request, so the h1 path is unreachable during a measured run. Validation asserts the same way, with `curl --http2-prior-knowledge`.
+
+This is what RFC 9113 expects of a cleartext listener - distinguish the h2 preface from an HTTP/1.1 request line and serve each accordingly - and what nginx (1.25.1+), Apache (`Protocols h2c http/1.1`) and h2o all do. The harness itself relies on it: the gRPC profiles run cleartext HTTP/2 against port 8080, the same listener that serves the HTTP/1.1 baseline.
 
 ## Expected request/response
 

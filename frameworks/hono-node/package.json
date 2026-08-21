@@ -1,0 +1,9 @@
+{
+  "name": "httparena-hono-node",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.13.0"
+  }
+}

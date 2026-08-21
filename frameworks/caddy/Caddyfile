@@ -1,0 +1,78 @@
+{
+	admin off
+	auto_https off
+	log {
+		output discard
+	}
+	order httparena before respond
+	order httparena_json before respond
+
+	# Per-listener protocol control. 8080 stays HTTP/1.1 only so the h1
+	# profiles measure h1; 8081 is h1 over TLS (json-tls, static-tls), and
+	# only 8443 negotiates h2 and h3.
+	servers :8080 {
+		protocols h1
+	}
+	servers :8081 {
+		protocols h1
+	}
+	servers :8443 {
+		protocols h1 h2 h3
+	}
+}
+
+# One set of routes, served on all three listeners.
+(arena) {
+	# Custom Go handler compiled in via xcaddy — matches nginx's
+	# ngx_http_httparena_module and h2o's on_baseline11 behavior.
+	# /baseline2 is the same query-sum contract, used by the h2 and h3
+	# profiles.
+	@baseline path /baseline11 /baseline2
+	handle @baseline {
+		httparena
+	}
+
+	# /json/{count}?m={multiplier} — serialized per request from
+	# /data/dataset.json by the httparena_json module.
+	@json path /json/*
+	handle @json {
+		httparena_json
+	}
+
+	# Pipelined profile: fixed "ok" response. Inline respond avoids
+	# the httparena module's query-parsing overhead — critical at 16
+	# pipelined requests per batch.
+	@pipeline path /pipeline
+	handle @pipeline {
+		header Content-Type text/plain
+		respond "ok" 200
+	}
+
+	# Static files mounted read-only at /data/static by the benchmark
+	# harness. handle_path strips the /static/ prefix so file_server
+	# resolves directly against /data/static/<filename>.
+	handle_path /static/* {
+		root * /data/static
+		file_server
+	}
+
+	handle {
+		respond "Not Found" 404
+	}
+}
+
+:8080 {
+	import arena
+}
+
+# HTTP/1.1 over TLS. Certificates are mounted at /certs by the harness.
+:8081 {
+	tls /certs/server.crt /certs/server.key
+	import arena
+}
+
+# TLS with ALPN: h2 over TCP, h3 over QUIC on the same port.
+:8443 {
+	tls /certs/server.crt /certs/server.key
+	import arena
+}

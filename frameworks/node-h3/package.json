@@ -1,0 +1,8 @@
+{
+  "name": "httparena-node-h3",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "h3": "^2.0.1-rc.26"
+  }
+}

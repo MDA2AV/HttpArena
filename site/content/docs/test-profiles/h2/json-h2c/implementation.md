@@ -24,7 +24,6 @@ The load generator rotates through the same seven `(count, m)` pairs as the H/1 
 
 - JSON serialization throughput over h2c (no TLS in the way)
 - h2 multiplexing efficiency when response bodies vary in size (1 → 50 items)
-- How cleanly the framework refuses HTTP/1.1 on the h2c-only port (validated per `baseline-h2c`'s anti-cheat)
 
 ## Expected request/response
 

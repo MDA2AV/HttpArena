@@ -1,0 +1,19 @@
+{
+  "display_name": "sanic",
+  "language": "Python",
+  "type": "flagship",
+  "mode": "tuned",
+  "engine": "sanic",
+  "description": "Sanic 25.3 on its own server with uvloop and httptools, one worker per core through the Sanic worker manager. Routing through the Sanic router, JSON through the ujson response, streamed uploads. Sanic ships no compression middleware, so gzip is hand-rolled in a response middleware, hence tuned.",
+  "repo": "https://github.com/sanic-org/sanic",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

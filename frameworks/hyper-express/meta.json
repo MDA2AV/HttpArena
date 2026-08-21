@@ -1,0 +1,19 @@
+{
+  "display_name": "hyper-express",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "tuned",
+  "engine": "uwebsockets",
+  "description": "hyper-express (Express-like API on uWebSockets.js) with the cluster module for multi-core scaling.",
+  "repo": "https://github.com/kartikk221/hyper-express",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}

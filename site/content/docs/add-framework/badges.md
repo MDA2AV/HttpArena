@@ -14,13 +14,13 @@ itself each time the leaderboard is republished — you paste it once.
 ## Paste it
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
 Replace `actix` with your entry and `h1` with the family you want. The exact
 line for your framework, already assembled and deep-linked to the right view of
 the board, is in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
-under `markdown`.
+under `scopes.<family>.default.markdown`.
 
 ## Families
 
@@ -37,6 +37,55 @@ under `markdown`.
 `A-Z a-z 0-9 . _ -` replaced by `-`. It is the same name as your file under
 `site/data/results/`, so `aspnet-minimal + nginx` becomes
 `aspnet-minimal-nginx`.
+
+## Ranked among your own language
+
+Optional, and a second badge rather than a replacement. Append `-<language>` to
+the family and the badge reads **`#1 of 6 (Rust)`**:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
+```
+
+The language segment is the board's own language name, lowercased, with `#`
+spelled out as `sharp` and `++` as `pp`: `C#` → `csharp`, `C++` → `cpp`,
+`TS` → `ts`, `JS` → `js`. Your ready-made line is in
+[`/badge/index.json`](https://www.http-arena.com/badge/index.json) under
+`scopes.<family>.byLanguage.markdown`.
+
+## Counting tuned entries in
+
+Also optional. The default field is **standard configurations only**, so the
+number compares like for like — a stock server is not ranked against someone
+else's hand-tuned build. Append `-with-tuned` to count tuned entries as well:
+
+```md
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+```
+
+The suffixes combine, so the full set for one family is:
+
+| File | Field |
+|---|---|
+| `h1.json` | standard entries |
+| `h1-with-tuned.json` | standard + tuned |
+| `h1-rust.json` | standard, one language |
+| `h1-rust-with-tuned.json` | standard + tuned, one language |
+
+Each is in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
+under `scopes.<family>`, keyed `default`, `withTuned`, `byLanguage` and
+`byLanguageWithTuned`.
+
+**If your entry is itself tuned**, it has no place in the standard-only field,
+so its default URL serves the tuned-inclusive ranking instead — `h1.json` and
+`h1-with-tuned.json` give it the same number. Nothing to change, and no URL
+stops working.
+
+This is a **filter, not a rescore**. Scores and order are identical to the
+overall badge; only the field is narrowed, so the two can never disagree about
+who is ahead of whom. The link opens the board filtered to that language —
+`#lang=Rust` — which is an exact match, unlike the search box, so the field on
+the page is the field the badge claims.
 
 ## What the colours mean
 
@@ -82,9 +131,19 @@ but get no badge of their own: there is no placing to claim.
 
 ## Freshness
 
-The endpoints are regenerated whenever the site deploys. After that, GitHub
-serves README images through its Camo proxy, which caches them, so a changed
-rank can take a few hours to appear on GitHub itself.
+The endpoints are regenerated whenever the site deploys — including every time
+a benchmark result is saved, since results live under `site/`. Two caches sit in
+front of that:
+
+| | Holds a stale rank for |
+|---|---|
+| shields.io | 5 minutes (`cacheSeconds`, at its floor) |
+| GitHub Camo | a few hours |
+
+So a new rank is visible almost immediately wherever the badge is embedded
+directly, and takes a few hours to turn over inside a GitHub README. Nothing to
+re-paste either way. To see the current value straight away, add any parameter
+to the shields URL — `&style=flat-square` — which makes a fresh cache key.
 
 ## Styling
 

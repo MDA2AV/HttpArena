@@ -12,7 +12,6 @@ Tuned mode (`mode: tuned`) gives a framework entry more freedom. It can use non-
 - Alternative JSON serializers (simd-json, sonic-json, etc.)
 - Custom buffer sizes and TCP socket options
 - Experimental or unstable framework flags
-- Memory-mapped files and in-memory static file caching
 - Custom thread pools and worker configurations
 - Non-default GC settings without documentation requirement
 - Framework-specific performance flags not recommended for production
@@ -22,6 +21,7 @@ Tuned mode (`mode: tuned`) gives a framework entry more freedom. It can use non-
 
 - **Pre-computed response bodies** - serializing a fixed response at startup and returning the same bytes per request (e.g. caching a JSON blob and writing it back unchanged). The serialization + compression work is the workload; bypassing it defeats the measurement.
 - **Response caching** - memoizing the full HTTP response body keyed by URL/params and replaying it. This is distinct from upstream data caching (DB query results, JWT verification, etc.), which remains allowed where the profile calls for it (e.g. the CRUD profile's read cache).
+- **In-memory static file serving** - caching file bodies at startup, memory-mapping them, or holding pre-loaded file buffers. Every entry reads static file bodies from disk on each request; the I/O is the workload the static profiles measure. Pre-rendered response headers and pre-compressed `.gz`/`.br` variants on disk are still fine.
 
 ## What is still required
 

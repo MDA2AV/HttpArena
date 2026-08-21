@@ -25,6 +25,14 @@
       }
     ]
   },
+  "aiohttp": {
+    "dir": "aiohttp",
+    "description": "aiohttp 3.14 web server on uvloop, one forked worker per core sharing the port with SO_REUSEPORT. Routing through the aiohttp router, JSON through web.json_response, gzip through the built-in response compression.",
+    "repo": "https://github.com/aio-libs/aiohttp",
+    "type": "flagship",
+    "engine": "aiohttp",
+    "mode": "standard"
+  },
   "aleph": {
     "dir": "aleph",
     "description": "",
@@ -143,7 +151,7 @@
     "dir": "beskar-websocket",
     "description": "High-performance WebSocket echo server built with Beskar.Networking.",
     "repo": "https://github.com/MarvinDrude/Beskar.Networking",
-    "type": "experimental",
+    "type": "emerging",
     "engine": "beskar",
     "mode": "standard"
   },
@@ -177,6 +185,21 @@
     "type": "emerging",
     "engine": "bun",
     "mode": "tuned"
+  },
+  "bun": {
+    "dir": "bun",
+    "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the port.",
+    "repo": "https://github.com/oven-sh/bun",
+    "type": "engine",
+    "engine": "bun",
+    "mode": "standard"
+  },
+  "caddy": {
+    "dir": "caddy",
+    "description": "Caddy with custom Go handler modules compiled in via xcaddy: httparena for /baseline11 and /baseline2, httparena_json for /json/{count}, serializing the JSON body per request from the dataset read at provision time. Native file_server for /static. HTTP/1.1 on :8080, h1 over TLS on :8081, h2 and h3 on :8443.",
+    "repo": "https://github.com/caddyserver/caddy",
+    "type": "infrastructure",
+    "engine": "caddy"
   },
   "Cardigan": {
     "dir": "cardigan",
@@ -222,6 +245,14 @@
       }
     ]
   },
+  "chi": {
+    "dir": "chi",
+    "description": "chi v5 router on the Go net/http server, default configuration. Routing and path parameters through the chi API, encoding/json for the response body, gzip through the chi middleware.Compress middleware.",
+    "repo": "https://github.com/go-chi/chi",
+    "type": "flagship",
+    "engine": "net/http",
+    "mode": "standard"
+  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
@@ -243,6 +274,14 @@
     "type": "emerging",
     "engine": "deno",
     "mode": "tuned"
+  },
+  "deno": {
+    "dir": "deno",
+    "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
+    "repo": "https://github.com/denoland/deno",
+    "type": "engine",
+    "engine": "deno",
+    "mode": "standard"
   },
   "django": {
     "dir": "django",
@@ -393,6 +432,14 @@
     "engine": "frankenphp",
     "mode": "tuned"
   },
+  "fulmine-tuned": {
+    "dir": "fulmine-tuned",
+    "description": "fulmine.js with the caches its standard entry has to leave off: the in-memory small-file cache and the stat cache, both shipped settings, both forbidden to a standard entry because they keep a static request off the disk.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "tuned"
+  },
   "fulmine": {
     "dir": "fulmine",
     "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
@@ -457,6 +504,14 @@
     "engine": "fasthttp",
     "mode": "standard"
   },
+  "go-stdlib": {
+    "dir": "go-stdlib",
+    "description": "The Go standard library net/http server with no framework, default configuration. Routing through the ServeMux method and wildcard patterns of Go 1.22, JSON through encoding/json, gzip written by hand with compress/gzip because the standard library ships no compression middleware.",
+    "repo": "https://github.com/golang/go",
+    "type": "flagship",
+    "engine": "net/http",
+    "mode": "tuned"
+  },
   "go-websocket": {
     "dir": "go-websocket",
     "description": "Go WebSocket echo server using gobwas/ws",
@@ -480,6 +535,21 @@
     "type": "flagship",
     "engine": "h2o",
     "mode": "tuned"
+  },
+  "h2o": {
+    "dir": "h2o",
+    "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support. Handlers answer /baseline11, /baseline2, /json/{count} \u2014 serialized per request from the dataset parsed at startup \u2014 and /static from files preloaded at boot. TLS on :8081 (HTTP/1.1) and :8443 (h2). No HTTP/3: libh2o's QUIC stack is not wired up in this embedded server.",
+    "repo": "https://github.com/h2o/h2o",
+    "type": "infrastructure",
+    "engine": "h2o"
+  },
+  "hanami": {
+    "dir": "hanami",
+    "description": "Hanami 2.3 actions and router on Puma, one worker per core. Routing and params through the Hanami API, JSON generated per request, gzip through Rack::Deflater.",
+    "repo": "https://github.com/hanami/hanami",
+    "type": "flagship",
+    "engine": "Puma",
+    "mode": "standard"
   },
   "helidon-production": {
     "dir": "helidon-production",
@@ -512,6 +582,14 @@
     "engine": "jsc",
     "mode": "standard"
   },
+  "hono-node": {
+    "dir": "hono-node",
+    "description": "Hono on node:http through @hono/node-server, with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/honojs/node-server",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "http-kit": {
     "dir": "http-kit",
     "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
@@ -536,12 +614,28 @@
     "engine": "Ember",
     "mode": "standard"
   },
+  "http.jl": {
+    "dir": "httpjl",
+    "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware.",
+    "repo": "https://github.com/JuliaWeb/HTTP.jl",
+    "type": "emerging",
+    "engine": "http.jl",
+    "mode": "tuned"
+  },
   "humming-bird": {
     "dir": "humming-bird",
     "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
     "repo": "https://github.com/hummingbird-project/hummingbird",
     "type": "flagship",
     "engine": "hummingbird",
+    "mode": "tuned"
+  },
+  "hyper-express": {
+    "dir": "hyper-express",
+    "description": "hyper-express (Express-like API on uWebSockets.js) with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/kartikk221/hyper-express",
+    "type": "emerging",
+    "engine": "uwebsockets",
     "mode": "tuned"
   },
   "hyper": {
@@ -651,6 +745,14 @@
     "type": "engine",
     "engine": "may-minihttp"
   },
+  "micronaut": {
+    "dir": "micronaut",
+    "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Jackson, gzip through the Netty server compression the framework enables by itself.",
+    "repo": "https://github.com/micronaut-projects/micronaut-core",
+    "type": "flagship",
+    "engine": "netty",
+    "mode": "standard"
+  },
   "minima-sync": {
     "dir": "minima-sync",
     "description": "A synchronous single-issuer io_uring HTTP/1.1 server on Minima's io_uring bindings, NativeAOT-compiled. One pinned reactor thread per core (SO_REUSEPORT, SINGLE_ISSUER|DEFER_TASKRUN); multishot accept + single-shot recv into per-connection buffers (parse-in-place); responses serialized straight into the send buffer; recv/send alternate fully inline \u2014 no async, no thread pool, no GC on the hot path. JSON serialized per request from the model.",
@@ -671,6 +773,14 @@
     "repo": "",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "mojolicious": {
+    "dir": "mojolicious",
+    "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
+    "repo": "https://github.com/mojolicious/mojo",
+    "type": "flagship",
+    "engine": "mojolicious",
+    "mode": "standard"
   },
   "mq-bridge-py": {
     "dir": "mq-bridge-py",
@@ -706,6 +816,13 @@
     "engine": "nodehttp",
     "mode": "standard"
   },
+  "nginx": {
+    "dir": "nginx",
+    "description": "Nginx with a custom C handler module, compiled with -O3 -march=native. The module answers /baseline11, /baseline2 and /json/{count}, serializing the JSON body per request from the dataset parsed at worker startup; /static/* is served by nginx core's sendfile path. TLS via quictls: HTTP/1.1 on :8081, h2 and h3 on :8443.",
+    "repo": "https://github.com/nginx/nginx",
+    "type": "infrastructure",
+    "engine": "nginx"
+  },
   "ngx-php": {
     "dir": "ngx-php",
     "description": "Embedded PHP scripting language module for nginx.",
@@ -714,6 +831,14 @@
     "engine": "nginx",
     "mode": "tuned"
   },
+  "node-h3": {
+    "dir": "node-h3",
+    "description": "H3 v2, the unjs framework under Nitro and Nuxt, served on node:http by srvx with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/h3js/h3",
+    "type": "flagship",
+    "engine": "nodehttp",
+    "mode": "standard"
+  },
   "node-websocket": {
     "dir": "node-websocket",
     "description": "Node.js WebSocket echo server using ws package",
@@ -721,6 +846,22 @@
     "type": "emerging",
     "engine": "v8",
     "mode": "tuned"
+  },
+  "node": {
+    "dir": "node",
+    "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
+    "repo": "https://github.com/nodejs/node",
+    "type": "engine",
+    "engine": "node:http",
+    "mode": "standard"
+  },
+  "oxpecker": {
+    "dir": "oxpecker",
+    "description": "F# web framework built on ASP.NET Core endpoint routing, with a functional handler DSL and its own code-as-markup view engine.",
+    "repo": "https://github.com/Lanayx/Oxpecker",
+    "type": "emerging",
+    "engine": "kestrel",
+    "mode": "standard"
   },
   "pedestal": {
     "dir": "pedestal",
@@ -902,6 +1043,14 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "sanic": {
+    "dir": "sanic",
+    "description": "Sanic 25.3 on its own server with uvloop and httptools, one worker per core through the Sanic worker manager. Routing through the Sanic router, JSON through the ujson response, streamed uploads. Sanic ships no compression middleware, so gzip is hand-rolled in a response middleware, hence tuned.",
+    "repo": "https://github.com/sanic-org/sanic",
+    "type": "flagship",
+    "engine": "sanic",
+    "mode": "tuned"
+  },
   "sark": {
     "dir": "sark",
     "description": "sark \u2014 Rust HTTP on the dope io_uring runtime: thread-per-core, zero-copy parsing, type-safe routing, cartel-pg for Postgres. No serde, no tokio, no Arc/atomic.",
@@ -1003,6 +1152,14 @@
     "type": "flagship",
     "engine": "netty (grpc)",
     "mode": "tuned"
+  },
+  "starlette": {
+    "dir": "starlette",
+    "description": "Starlette 1.6 on uvicorn (uvloop), one worker per core, same uvicorn configuration as the fastapi entry. Routing through Starlette routes, JSON through JSONResponse, gzip through the Starlette GZipMiddleware.",
+    "repo": "https://github.com/encode/starlette",
+    "type": "flagship",
+    "engine": "uvicorn",
+    "mode": "standard"
   },
   "swerver": {
     "dir": "swerver",
@@ -1137,7 +1294,7 @@
   },
   "uWebSockets.js": {
     "dir": "uwebsockets",
-    "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Routing and body handling through the uWS App API, JSON.stringify per request, gzip through the Node zlib bindings.",
+    "description": "uWebSockets.js, the Node binding of the uWebSockets C++ server, one cluster worker per core. Raw uWS App API throughout - no router, middleware or body parser. JSON.stringify per request, gzip through the Node zlib bindings, static files read from disk on every request, TLS on :8081 through uWS's own SSLApp. Database profiles use the pg driver with libpq bindings and a pool sized from DATABASE_MAX_CONN; crud reads go through the harness's Redis sidecar, which the profile allows for one-process-per-core runtimes.",
     "repo": "https://github.com/uNetworking/uWebSockets.js",
     "type": "flagship",
     "engine": "uWebSockets",
@@ -1171,6 +1328,13 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "varnish": {
+    "dir": "varnish",
+    "description": "Varnish Cache HTTP accelerator with native TLS/H2 termination (-A). A custom vmod (Rust, varnish-rs) computes /baseline11 and /baseline2 in-process; vmod-fileserver serves /static.",
+    "repo": "https://github.com/varnish/varnish",
+    "type": "infrastructure",
+    "engine": "varnishd"
+  },
   "veb": {
     "dir": "veb",
     "description": "veb is the web framework in V's standard library, now running on the parallel fasthttp backend (multi-threaded, SO_REUSEPORT epoll, zero-copy append handler). Its deterministic request framing reassembles TCP-fragmented requests and decodes chunked bodies, so baseline is subscribed (the old single-threaded backend could not). JSON responses are built without per-request reflection (precomputed item prefixes + manual serialization); json-comp gzips on Accept-Encoding with a process-shared cache; static assets are served via veb's static handler (sendfile + MIME) mounted at /static/; crud is an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update); fortunes renders the DB rows + a runtime row with HTML escaping; async-db/crud/fortunes use the stdlib db.pg pooled Go-style DB. Built on pinned V master 84a76d791 (the fasthttp vanilla-architecture refactor, vlang/v#27771) with the default GC (Boehm). json-tls is not subscribed: it needs a second TLS listener on :8081 (a separate OpenSSL path) not wired here.",
@@ -1184,6 +1348,29 @@
     "repo": "https://github.com/eclipse-vertx/vert.x",
     "type": "flagship",
     "engine": "Netty",
+    "mode": "standard"
+  },
+  "vibe.d": {
+    "dir": "vibed",
+    "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation.",
+    "repo": "https://github.com/vibe-d/vibe.d",
+    "type": "emerging",
+    "engine": "vibe.d",
+    "mode": "standard"
+  },
+  "Vinyl Cache": {
+    "dir": "vinyl-cache",
+    "description": "Vinyl Cache HTTP accelerator.",
+    "repo": "https://code.vinyl-cache.org/vinyl-cache/vinyl-cache",
+    "type": "infrastructure",
+    "engine": "vinyld"
+  },
+  "warp": {
+    "dir": "warp",
+    "description": "Warp 3.3 serving a plain WAI Application on the threaded GHC runtime, default configuration, one capability per core. Routing on the WAI request path, JSON through the aeson encoding API, gzip through the wai-extra Gzip middleware.",
+    "repo": "https://github.com/yesodweb/wai",
+    "type": "flagship",
+    "engine": "warp",
     "mode": "standard"
   },
   "WebFramework C": {
@@ -1278,20 +1465,28 @@
     "type": "engine",
     "engine": "io_uring"
   },
-  "zix-grpc": {
-    "dir": "zix-grpc",
-    "description": "Zig gRPC server (h2c) on the zix.Grpc engine built on zix.Http2 (no std.http). Shared-nothing by design: each worker owns its own SO_REUSEPORT listener, io_uring completion ring, and connections, with no shared state or locking across cores, multiplexing HTTP/2 streams per connection. Replies use comptime-cached HPACK blocks. Implements GetSum (unary) and StreamSum (server-streaming).",
-    "repo": "https://codeberg.org/prothegee/zix",
-    "type": "engine",
-    "engine": "zix"
+  "zio-http": {
+    "dir": "zio-http",
+    "description": "ZIO HTTP 3.11 on the Netty backend with ZIO 2, default configuration. Routing through the Routes DSL, JSON through zio-json, gzip through the server's own response compression.",
+    "repo": "https://github.com/zio/zio-http",
+    "type": "flagship",
+    "engine": "netty",
+    "mode": "standard"
   },
   "zix": {
     "dir": "zix",
-    "description": "Zig HTTP/1.1 server on the zix.Http1 raw engine (no std.http). Shared-nothing: each worker runs its own SO_REUSEPORT multishot accept plus io_uring completion loop and owns its connections. The /json endpoint serves from the per-worker response cache, and request bodies larger than the read buffer are drained rather than buffered.",
+    "description": "HTTP/1.1 on the zix.Http1 raw engine, .URING dispatch: per-worker SO_REUSEPORT io_uring loops, comptime Router, staged send sink. Dual listener: cleartext 8080, TLS 1.3 on 8081. Database routes run on engine-worker lanes, each worker pumping its own pipelined postgrez connections on its ring with named prepared statements. No response cache and no startup pre-serialization anywhere: json serializes every field per request and compresses per request, static opens the file per request. The crud row cache is the 200 ms cache-aside the crud profile itself defines.",
     "repo": "https://github.com/prothegee/zix",
     "type": "engine",
-    "engine": "zix",
+    "engine": "zix.Http1 URING Dispatch Model",
     "variants": [
+      {
+        "dir": "zix-grpc",
+        "description": "Zig gRPC server on the zix.Grpc engine (native h2 framing), .URING dispatch: shared-nothing per-core io_uring with SO_REUSEPORT, unary plus server-streaming with DATA-frame coalescing. Dual listener (config.tls_port): h2c 8080 plus gRPC over TLS 1.3 on 8443, one process.",
+        "repo": "https://github.com/prothegee/zix",
+        "type": "engine",
+        "engine": "zix.Grpc URING Dispatch Model"
+      },
       {
         "dir": "zix-http2",
         "description": "Zig HTTP/2 server on the zix.Http2 raw engine, .URING dispatch: shared-nothing per-core io_uring with SO_REUSEPORT, per-worker stream-slot pool. Dual listener (config.tls_port): h2c 8082 plus h2 over TLS 1.3 (ALPN h2) on 8443, one process.",
