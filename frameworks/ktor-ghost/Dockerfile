@@ -9,7 +9,7 @@ RUN gradle buildFatJar --no-daemon -q
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/ktor-ghost-httparena.jar .
-EXPOSE 8080 8443
+EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["java", \
   "-server", \
   "-XX:+UseG1GC", \

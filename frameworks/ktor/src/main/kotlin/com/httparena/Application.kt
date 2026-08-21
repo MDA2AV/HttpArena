@@ -30,14 +30,14 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 
-@OptIn(ExperimentalKtorApi::class)
 fun main() {
-    println("Ktor HttpArena server starting on :8080 (HTTP/1.1) and :8443 (HTTPS/HTTP2/HTTP3)")
+    println("Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (HTTP/3), :8443 (HTTPS/HTTP2)")
     val deps = ArenaApplicationDepsFactory.load()
     val environment = applicationEnvironment {}
 
     val server = embeddedServer(Netty, environment, {
         enableHttp2 = true
+        @OptIn(ExperimentalKtorApi::class)
         enableHttp3()
 
         connector {
@@ -185,13 +185,15 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                 if (count < 0) count = 0
                 if (count > appData.dataset.size) count = appData.dataset.size
                 val m = call.request.queryParameters["m"]?.toIntOrNull() ?: 1
-                val processed = appData.dataset.take(count).map { d ->
-                    ProcessedItem(
-                        id = d.id, name = d.name, category = d.category,
-                        price = d.price, quantity = d.quantity, active = d.active,
-                        tags = d.tags, rating = d.rating,
-                        total = d.price.toLong() * d.quantity * m
-                    )
+                val processed = buildList(count) {
+                    for (i in 0..<count) {
+                        add(appData.dataset[i].let { d -> ProcessedItem(
+                            id = d.id, name = d.name, category = d.category,
+                            price = d.price, quantity = d.quantity, active = d.active,
+                            tags = d.tags, rating = d.rating,
+                            total = d.price.toLong() * d.quantity * m
+                        )})
+                    }
                 }
                 call.respond(JsonResponse(items = processed, count = count))
             }

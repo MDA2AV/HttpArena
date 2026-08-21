@@ -37,12 +37,13 @@ import java.io.File
 
 fun main() {
     Ghost.prewarm()
-    println("Ktor HttpArena server starting on :8080 (HTTP/1.1) and :8443 (HTTPS/HTTP+2)")
+    println("Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (HTTP/3), :8443 (HTTPS/HTTP2)")
     val deps = ArenaApplicationDepsFactory.load()
     val environment = applicationEnvironment {}
 
     val server = embeddedServer(Netty, environment, {
         enableHttp2 = true
+        @OptIn(ExperimentalKtorApi::class)
         enableHttp3()
 
         connector {
