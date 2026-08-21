@@ -7,8 +7,6 @@ cd "$(dirname "$0")/.."
 ./scripts/benchmark.sh actix json-comp --save
 ./scripts/benchmark.sh aleph json-comp --save
 ./scripts/benchmark.sh aspnet-minimal json-comp --save
-./scripts/benchmark.sh aspnet-minimal-aot json-comp --save
-./scripts/benchmark.sh aspnet-mvc json-comp --save
 ./scripts/benchmark.sh bjoern json-comp --save
 ./scripts/benchmark.sh elysia json-comp --save
 ./scripts/benchmark.sh fastapi json-comp --save

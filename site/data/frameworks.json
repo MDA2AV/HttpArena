@@ -113,20 +113,6 @@
       }
     ]
   },
-  "aspnet-minimal-aot": {
-    "dir": "aspnet-minimal-aot",
-    "description": "Minimal ASP.NET Core Native AOT server using .NET 10 with Kestrel and minimal API routing.",
-    "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "flagship",
-    "engine": "Kestrel",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
   "aspnet-minimal-ioxide": {
     "dir": "aspnet-minimal-ioxide",
     "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal \u2014 only the Kestrel transport differs. HTTP/1.1 only: plaintext plus HTTP/1.1-over-TLS (json-tls) terminated in the transport via kTLS (ioxide.tls). HTTP/2 and HTTP/3 are not enabled.",
@@ -158,20 +144,6 @@
   "aspnet-minimal + nginx": {
     "dir": "aspnet-minimal_nginx",
     "description": "ASP.NET Core minimal API behind an Nginx reverse proxy. Nginx handles TLS termination and static files, proxying dynamic endpoints to Kestrel over HTTP/1.1.",
-    "repo": "https://github.com/dotnet/aspnetcore",
-    "type": "flagship",
-    "engine": "kestrel",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
-  "aspnet-mvc": {
-    "dir": "aspnet-mvc",
-    "description": "ASP.NET Core server using .NET 10 with Kestrel and MVC controller routing.",
     "repo": "https://github.com/dotnet/aspnetcore",
     "type": "flagship",
     "engine": "kestrel",
