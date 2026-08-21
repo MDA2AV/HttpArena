@@ -1963,8 +1963,12 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
     if compare_pages:
         compare = ["## Head-to-head comparisons", ""]
         for lang, n in compare_pages:
-            compare.append(f"- [{lang}]({SITE}{_compare_url(lang)}): every profile of any two "
-                           f"of the {n} {lang} entries, side by side.")
+            compare.append(
+                f"- [{lang}]({SITE}{_compare_url(lang)}): every profile of any two "
+                f"of the {n} {lang} entries, side by side."
+                if lang else
+                f"- [Every language]({SITE}{_compare_url(None)}): every profile of any two of "
+                f"the {n} entries, side by side, whatever they are written in.")
         compare.append("")
 
     docs = ["## Documentation", ""]
@@ -2348,9 +2352,15 @@ def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
     e = _html.escape
     scope, rows, i = _fw_neighbours(fw, scopes)
     cmp_url = _compare_url(lang)
+    # The cross-language link is not gated on has_compare. That flag is about
+    # this entry's *language* having a page, and an entry whose language has only
+    # one of it - the F# entry, say - had no way to be compared with anything at
+    # all before /compare/all/ existed (#1222).
     links = ("<p>" + ('<a href="%s">Compare %s with any %s entry</a> · '
                       % (cmp_url, e(fw), e(lang)) if has_compare else "")
-             + ('<a href="%s">Every %s entry, ranked</a>' % (lang_url, e(lang))
+             + '<a href="%s#%s">Compare %s with any entry, in any language</a>'
+               % (_compare_url(None), quote(fw), e(fw))
+             + (' · <a href="%s">Every %s entry, ranked</a>' % (lang_url, e(lang))
                 if lang_url else "") + "</p>")
     # Nothing to put in a table: the links still belong on the page, a heading
     # over "there is nothing to compare" does not.
@@ -2819,8 +2829,16 @@ def _fw_index_page(entries, lang_pages=(), updated="", compare_langs=()):
 COMPARE_OUT = GEN / "compare"
 
 
+# The cross-language comparison is addressed as lang=None, from the URL down
+# through _compare_page and into the sitemap and llms.txt lists. One sentinel
+# rather than a parallel set of functions: everything a language page does, the
+# cross-language page does too, with different copy and a wider entry list.
+COMPARE_ALL_SLUG = "all"
+
+
 def _compare_url(lang):
-    return "/compare/" + _lang_slug(lang) + "/"
+    """`lang=None` is the comparison across every language."""
+    return "/compare/" + (_lang_slug(lang) if lang else COMPARE_ALL_SLUG) + "/"
 
 
 def _cmp_views(profiles, results, entries):
@@ -2908,11 +2926,20 @@ def _cmp_faq(data, views, scores, pairs, lang):
           for a, b in pairs[:4]]
     if scores:
         top = max(scores, key=lambda k: scores[k])
-        qa.append(("Which %s framework is fastest overall?" % e(lang),
-                   "%s holds the highest %s composite of the %s entries, at %.0f. The composite "
+        qa.append(("Which %sframework is fastest overall?" % (e(lang) + " " if lang else ""),
+                   "%s holds the highest %s composite of the %s, at %.0f. The composite "
                    "is throughput over the whole suite; if a service is one shape of workload, "
                    "compare that profile on its own in the table above, because the order "
-                   "changes." % (e(top), SCOPE_NAME[DEFAULT_SCOPE], e(lang), scores[top])))
+                   "changes." % (e(top), SCOPE_NAME[DEFAULT_SCOPE],
+                                 ("%s entries" % e(lang)) if lang else "entries it ranks",
+                                 scores[top])))
+    if not lang:
+        qa.append(("Can I compare frameworks written in different languages?",
+                   "Yes - that is what this page is for. Every entry runs the same profiles on "
+                   "the same machine, so an F# entry and a C# one are measured the same way and "
+                   "the numbers line up. The per-language pages under "
+                   "<a href=\"/compare/\">Comparisons</a> narrow the same table to one language "
+                   "when that is the choice you are making."))
     return qa
 
 
@@ -2948,9 +2975,17 @@ _CMP_JS = """<script>
     if(location.hash.slice(1)!==x+'-vs-'+y) history.replaceState(null,'','#'+x+'-vs-'+y);
   }
   function fromHash(){
-    var m=decodeURIComponent(location.hash.slice(1)).split('-vs-');
+    var h=decodeURIComponent(location.hash.slice(1)), m=h.split('-vs-');
     if(m.length===2 && sel.indexOf(m[0])>=0 && sel.indexOf(m[1])>=0 && m[0]!==m[1]){
-      a.value=m[0]; b.value=m[1]; draw();
+      a.value=m[0]; b.value=m[1]; draw(); return;
+    }
+    // A bare entry name lands with that entry on the left and leaves the other
+    // side on its default, which is what a link from an entry's own page wants.
+    // If it IS the default other side, the two swap rather than collapsing into
+    // one entry compared with itself.
+    if(m.length===1 && sel.indexOf(h)>=0){
+      if(h===b.value) b.value=a.value;
+      a.value=h; draw();
     }
   }
   a.onchange=b.onchange=draw;
@@ -2976,8 +3011,15 @@ def _compare_langs(profiles, results, members_by_lang):
 
 
 def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
-                  og_url=""):
-    """/compare/<language>/ - any two entries of one language, side by side."""
+                  og_url="", fw_lang=None):
+    """/compare/<language>/ - any two entries of one language, side by side.
+
+    `lang=None` writes /compare/all/ instead: the same table over every entry in
+    the benchmark, whatever it is written in. Everything is measured on one
+    machine against one set of profiles, so a cross-language row is exactly as
+    comparable as a same-language one - the split existed because picking a
+    language usually comes first, not because the numbers stop lining up.
+    """
     e = _html.escape
     url = SITE + _compare_url(lang)
     ranked_names = [r[0] for r in ranked]
@@ -2996,6 +3038,15 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
     kind_of = dict(members)
     flagship = [fw for fw in entries if kind_of.get(fw) == "flagship"]
     featured = (flagship + [fw for fw in entries if fw not in flagship])[:4]
+    if not lang and fw_lang:
+        # The cross-language page opens on two entries that are not in the same
+        # language - the default pair is the page explaining itself, and two C#
+        # entries would not.
+        lead = featured[0]
+        other = (next((fw for fw in featured[1:] if fw_lang.get(fw) != fw_lang.get(lead)), None)
+                 or next((fw for fw in entries if fw_lang.get(fw) != fw_lang.get(lead)), None))
+        if other:
+            featured = [lead, other] + [fw for fw in featured if fw not in (lead, other)]
     a, b = featured[0], featured[1]
     pairs = [(x, y) for i, x in enumerate(featured) for y in featured[i + 1:]]
     qa = _cmp_faq(data, views, scores, pairs, lang)
@@ -3003,14 +3054,32 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
     # The page holds every pair, so the heading names none of them: the pair in
     # it would be the default one, and the sentence under it says which that is
     # and changes with the picker.
-    title = "%s web framework comparison: any two, head to head" % lang
-    desc = ("Compare %d %s web frameworks and HTTP servers head to head: requests per second, "
-            "p99 latency and the delta on every test profile, all measured on the same machine."
-            % (len(entries), lang))
+    if lang:
+        title = "%s web framework comparison: any two, head to head" % lang
+        desc = ("Compare %d %s web frameworks and HTTP servers head to head: requests per "
+                "second, p99 latency and the delta on every test profile, all measured on the "
+                "same machine." % (len(entries), lang))
+    else:
+        title = "Web framework comparison: any two entries, any language"
+        desc = ("Compare any two of %d web frameworks and HTTP servers head to head, across "
+                "every language: requests per second, p99 latency and the delta on every test "
+                "profile, all measured on the same machine." % len(entries))
 
     def opts(cur):
-        return "".join('<option value="%s"%s>%s</option>'
-                       % (e(fw), " selected" if fw == cur else "", e(fw)) for fw in entries)
+        def one(fw):
+            return ('<option value="%s"%s>%s</option>'
+                    % (e(fw), " selected" if fw == cur else "", e(fw)))
+        if lang or not fw_lang:
+            return "".join(one(fw) for fw in entries)
+        # Every entry in one flat list is not something anyone can pick from, and
+        # the language is what people navigate by - "the F# one". Ranked order is
+        # kept inside each group.
+        by = {}
+        for fw in entries:
+            by.setdefault(fw_lang.get(fw) or "Other", []).append(fw)
+        return "".join('<optgroup label="%s">%s</optgroup>'
+                       % (e(l), "".join(one(fw) for fw in by[l]))
+                       for l in sorted(by, key=str.lower))
 
     quick = " · ".join('<a href="#%s-vs-%s">%s vs %s</a>' % (e(x), e(y), e(x), e(y))
                        for x, y in pairs[:6])
@@ -3023,7 +3092,8 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
         {"@type": "BreadcrumbList", "@id": url + "#crumbs", "itemListElement": [
             {"@type": "ListItem", "position": 1, "name": "Comparisons",
              "item": SITE + "/compare/"},
-            {"@type": "ListItem", "position": 2, "name": lang, "item": url}]},
+            {"@type": "ListItem", "position": 2, "name": lang or "Every language",
+             "item": url}]},
         _faq_node(url, qa),
     ] + _org_nodes()
     head = ('<!doctype html><html lang="en" data-theme=""><head>'
@@ -3053,11 +3123,13 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
               '<select id="cmpA">' + opts(a) + "</select>"
               '<label for="cmpB">with</label>'
               '<select id="cmpB">' + opts(b) + "</select></div>")
-    intro = ("<p>Pick any two of the %d %s entries. Requests per second is the best of three "
-             "runs and the delta is the first column against the second; every row is the same "
-             "profile at the same connection count, on the same machine. "
-             '<a href="/docs/test-profiles/">What each profile measures</a>.</p>'
-             % (len(entries), e(lang)))
+    how = ("Requests per second is the best of three runs and the delta is the first column "
+           "against the second; every row is the same profile at the same connection count, on "
+           'the same machine. <a href="/docs/test-profiles/">What each profile measures</a>.')
+    intro = ("<p>Pick any two of the %d %s entries. %s</p>" % (len(entries), e(lang), how)
+             if lang else
+             "<p>Pick any two of the %d entries, in any language - the picker is grouped by "
+             "language, and the two sides do not have to match. %s</p>" % (len(entries), how))
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
             '<div class="doc-body">'
@@ -3066,14 +3138,20 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
             + '<div id="cmpOut">' + _cmp_table(data, views, a, b) + "</div>"
             + ("<h2>Common comparisons</h2><p>" + quick + "</p>" if quick else "")
             + "<h2>Questions</h2>" + _faq_html(qa)
-            + "<h2>Every " + e(lang) + " entry</h2><ul>"
-            + "".join('<li><a href="%s">%s</a></li>' % (_fw_url(fw), e(fw)) for fw in entries)
-            + "</ul>"
+            + ("<h2>Every " + e(lang) + " entry</h2><ul>"
+               + "".join('<li><a href="%s">%s</a></li>' % (_fw_url(fw), e(fw))
+                         for fw in entries)
+               + "</ul>" if lang else "")
             + _updated_line(updated,
-                            '<a href="%s">%s composite ranking</a> · '
-                            '<a href="/compare/">Other languages</a> · '
-                            '<a href="/">Open the leaderboard</a>'
-                            % (_lang_url(lang), e(lang)))
+                            ('<a href="%s">%s composite ranking</a> · '
+                             '<a href="%s">Compare across languages</a> · '
+                             '<a href="/compare/">Other languages</a> · '
+                             '<a href="/">Open the leaderboard</a>'
+                             % (_lang_url(lang), e(lang), _compare_url(None)))
+                            if lang else
+                            ('<a href="/compare/">One language at a time</a> · '
+                             '<a href="/frameworks/">Every entry, one page each</a> · '
+                             '<a href="/">Open the leaderboard</a>'))
             + "</div></article></main></div>")
     payload = js_payload("CMP", {"v": [[k, p["label"], c] for k, p, c in views],
                                  "d": data, "e": entries})
@@ -3082,15 +3160,18 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
 
 
 def _compare_index_page(langs, updated, og_url=""):
-    """/compare/ - one link per language, and what the page behind it does."""
+    """/compare/ - the cross-language page, one link per language, and what each
+    of them does. `langs` carries the cross-language page as (None, n)."""
     e = _html.escape
     url = SITE + "/compare/"
-    title = "Compare web frameworks head to head, by language"
-    desc = ("Pick two web frameworks of the same language and compare requests per second, "
-            "p99 latency and the delta on every test profile, measured on the same machine.")
+    title = "Compare web frameworks head to head"
+    desc = ("Pick any two web frameworks - the same language or not - and compare requests per "
+            "second, p99 latency and the delta on every test profile, measured on the same "
+            "machine.")
+    every = next((n for l, n in langs if l is None), 0)
     items = "".join('<li><a href="%s">Compare %s web frameworks</a> '
                     '<span class="fw-kind">%d entries</span></li>'
-                    % (_compare_url(l), e(l), n) for l, n in langs)
+                    % (_compare_url(l), e(l), n) for l, n in langs if l is not None)
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
@@ -3124,27 +3205,38 @@ def _compare_index_page(langs, updated, og_url=""):
               '</header>')
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(title) + "</h1>"
-            '<div class="doc-body"><p>' + e(desc) + " Comparisons are grouped by language, "
-            "because that is the choice most people are actually making: the framework is picked "
-            "after the language is. Across languages, the "
-            '<a href="/">composite ranking</a> compares every entry at once.</p>'
+            '<div class="doc-body"><p>' + e(desc) + " Every entry runs the same profiles on the "
+            "same machine, so two entries in different languages are measured the same way and "
+            "the numbers line up.</p>"
+            + ('<p><a href="%s"><b>Compare any two entries, in any language</b></a> - all %d of '
+               "them, in one picker grouped by language. Start here if the language is not what "
+               "you are choosing.</p>" % (_compare_url(None), every) if every else "")
+            + "<h2>One language at a time</h2>"
+            "<p>Narrower, for when the language is already settled: the same table over just "
+            "the entries written in it.</p>"
             "<ul>" + items + "</ul>"
-            + _updated_line(updated, '<a href="/frameworks/">Every entry, one page each</a> · '
+            + _updated_line(updated, '<a href="/">Composite ranking</a> · '
+                                     '<a href="/frameworks/">Every entry, one page each</a> · '
                                      '<a href="/docs/">How the benchmark works</a>')
             + "</div></article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
-def build_compare_pages(profiles, results, lang_rows, members_by_lang, round_name, updated,
-                        with_og=False):
-    """A head-to-head page per language, plus the index over them."""
+def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_langs,
+                        round_name, updated, with_og=False, fw_lang=None):
+    """A head-to-head page per language, the cross-language one, and the index.
+
+    `members_by_lang` is every language, not just the ones that earn a page:
+    /compare/all/ is built from all of them, which is what gives an entry whose
+    language has only one of it somewhere to be compared (#1222).
+    """
     if COMPARE_OUT.exists():
         shutil.rmtree(COMPARE_OUT)
     COMPARE_OUT.mkdir(parents=True, exist_ok=True)
     written, cards = [], 0
     for lang in sorted(members_by_lang, key=str.lower):
         members = members_by_lang[lang]
-        if len(members) < 2:
+        if lang not in compare_langs or len(members) < 2:
             continue
         rows = lang_rows.get(lang, [])
         page = _compare_page(lang, rows, members, profiles, results, round_name, updated,
@@ -3161,10 +3253,32 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, round_nam
                      "%d entries · %s · www.http-arena.com" % (len(members), round_name))
             cards += 1
         written.append((lang, len(members)))
+
+    # Every entry, whatever it is written in. Deliberately not gated on
+    # compare_langs: a language with a single entry never gets a page of its
+    # own, so this is the only place that entry can be compared at all.
+    all_members = [m for l in sorted(members_by_lang, key=str.lower)
+                   for m in members_by_lang[l]]
+    all_rows = sorted((r for rows in lang_rows.values() for r in rows), key=lambda r: -r[3])
+    all_page = _compare_page(None, all_rows, all_members, profiles, results, round_name,
+                             updated, (_compare_url(None) + "og.png") if with_og else "",
+                             fw_lang)
+    if all_page:
+        dest = COMPARE_OUT / COMPARE_ALL_SLUG
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "index.html").write_text(all_page, encoding="utf-8")
+        if with_og:
+            _og_card(dest / "og.png", "Head to head · every language",
+                     "Compare any two entries, whatever they are written in",
+                     [(r[0], "%.0f" % r[3]) for r in all_rows[:5]],
+                     "%d entries · %s · www.http-arena.com" % (len(all_members), round_name))
+            cards += 1
+        written.insert(0, (None, len(all_members)))
+
     if with_og:
         _og_card(COMPARE_OUT / "og.png", "Head to head",
                  "Compare two web frameworks, profile by profile",
-                 [(lang, "%d entries" % n) for lang, n in
+                 [(lang or "Every language", "%d entries" % n) for lang, n in
                   sorted(written, key=lambda x: -x[1])[:5]],
                  "%d languages · %s · www.http-arena.com" % (len(written), round_name))
         cards += 1
@@ -3406,8 +3520,7 @@ def main():
                                                       round_name, has_og, updated)
     compare_pages, n_cmp_cards = build_compare_pages(
         profiles, results, {l: s.get(DEFAULT_SCOPE, []) for l, s in lang_scopes.items()},
-        {l: m for l, m in members_by_lang.items() if l in compare_langs},
-        round_name, updated, has_og)
+        members_by_lang, compare_langs, round_name, updated, has_og, fw_lang)
     n_urls, n_dated = write_sitemap(docs_content, fw_entries, lang_pages,
                                     [l for l, _n in compare_pages])
 
