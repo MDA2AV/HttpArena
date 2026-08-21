@@ -60,11 +60,9 @@ app.set('stat cache', '24h');
 // without being told, so the bytes buy nothing here
 app.set('connection headers', false);
 
-const SERVER_HDR = { 'server': 'fulmine' };
-// built once: the crud read path spread SERVER_HDR into a new object on every request, which
-// is two allocations per read on the busiest route this entry has
-const CACHE_HIT_HDR = { 'server': 'fulmine', 'x-cache': 'HIT' };
-const CACHE_MISS_HDR = { 'server': 'fulmine', 'x-cache': 'MISS' };
+// built once and not per response: the crud read path is the busiest route this entry has
+const CACHE_HIT_HDR = { 'x-cache': 'HIT' };
+const CACHE_MISS_HDR = { 'x-cache': 'MISS' };
 
 // Dataset
 let datasetItems;
@@ -141,12 +139,11 @@ function sumQuery(query) {
     return sum;
 }
 
-// Written out rather than through SERVER_HDR, and that is the whole of it: with every argument a
-// literal, the framework compiles this handler into a uWS declarative response at listen() and the
-// route is answered without entering JavaScript. A closure it cannot read keeps it on the ordinary
-// path, which is what SERVER_HDR was doing here.
+// Every argument is a literal, and that is the whole of it: the framework compiles this handler
+// into a uWS declarative response at listen() and the route is answered without entering
+// JavaScript. A closure it cannot read would keep it on the ordinary path.
 app.get('/pipeline', (req, res) => {
-    res.set({ 'server': 'fulmine' }).type('text/plain').send('ok');
+    res.type('text/plain').send('ok');
 });
 
 // shared by the plaintext listener and the TLS one on 8081: same handler, same shapes
@@ -168,7 +165,7 @@ const registerJsonRoute = (target, path = '/json/:count') => target.get(path, co
         // res.json and not type().send(JSON.stringify()): it writes the content-type straight
         // into the header object instead of going through set(), which costs a lowercase, a
         // charset regex and a validation. Same bytes on the wire, 0.9 to 1.2 us less per response
-        res.set(SERVER_HDR).json({ items, count });
+        res.json({ items, count });
     } else {
         res.status(500).send('No dataset');
     }
@@ -183,7 +180,7 @@ app.set('view engine', 'ejs');
 const RUNTIME_FORTUNE = 'Additional fortune added at request time.';
 
 app.get('/fortunes', async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('text/plain').send('DB not available');
+    if (!pgPool) return res.status(500).type('text/plain').send('DB not available');
     try {
         const result = await pgPool.query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' });
         const rows = result.rows.map(r => ({ id: r.id, message: r.message }));
@@ -191,15 +188,15 @@ app.get('/fortunes', async (req, res) => {
         // ordinal, not locale aware: the synthetic rows carry em-dashes, and localeCompare
         // would order them by collation rules the profile does not ask for
         rows.sort((a, b) => (a.message < b.message ? -1 : a.message > b.message ? 1 : 0));
-        res.set(SERVER_HDR).render('fortunes', { fortunes: rows });
+        res.render('fortunes', { fortunes: rows });
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('text/plain').send('query failed');
+        res.status(500).type('text/plain').send('query failed');
     }
 });
 
 app.get('/async-db', async (req, res) => {
     if (!pgPool) {
-        return res.set(SERVER_HDR).type('application/json').send('{"items":[],"count":0}');
+        return res.type('application/json').send('{"items":[],"count":0}');
     }
     const min = parseInt(req.query.min, 10) || 10;
     const max = parseInt(req.query.max, 10) || 50;
@@ -221,9 +218,9 @@ app.get('/async-db', async (req, res) => {
             rating: { score: r.rating_score, count: r.rating_count }
         }));
         const body = JSON.stringify({ items, count: items.length });
-        res.set(SERVER_HDR).type('application/json').send(body);
+        res.type('application/json').send(body);
     } catch (e) {
-        res.set(SERVER_HDR).type('application/json').send('{"items":[],"count":0}');
+        res.type('application/json').send('{"items":[],"count":0}');
     }
 });
 
@@ -236,7 +233,7 @@ const itemShape = (r) => ({
 });
 
 app.get('/crud/items', async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+    if (!pgPool) return res.status(500).type('application/json').send('{"error":"DB not available"}');
     const category = String(req.query.category || 'electronics');
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     let limit = parseInt(req.query.limit, 10) || 10;
@@ -249,19 +246,19 @@ app.get('/crud/items', async (req, res) => {
             values: [category, limit, (page - 1) * limit]
         });
         const items = result.rows.map(itemShape);
-        res.set(SERVER_HDR).type('application/json')
+        res.type('application/json')
             .send(JSON.stringify({ items, total: items.length, page, limit }));
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
+        res.status(500).type('application/json').send('{"error":"query failed"}');
     }
 });
 
 // the cache-aside read, registered under /crud for the crud profile and under /api for
 // production-stack, which asks for the same thing behind the edge's JWT check
 const itemRead = async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+    if (!pgPool) return res.status(500).type('application/json').send('{"error":"DB not available"}');
     const id = parseInt(req.params.id, 10);
-    if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
+    if (!Number.isFinite(id)) return res.status(404).end();
     try {
         const cached = await crudGet(id);
         if (cached) {
@@ -272,18 +269,18 @@ const itemRead = async (req, res) => {
             text: 'SELECT ' + ITEM_COLUMNS + ' FROM items WHERE id = $1 LIMIT 1',
             values: [id]
         });
-        if (result.rows.length === 0) return res.status(404).set(SERVER_HDR).end();
+        if (result.rows.length === 0) return res.status(404).end();
         const json = JSON.stringify(itemShape(result.rows[0]));
         crudSet(id, json);
         res.set(CACHE_MISS_HDR).type('application/json').send(json);
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
+        res.status(500).type('application/json').send('{"error":"query failed"}');
     }
 };
 app.get('/crud/items/:id', itemRead);
 
 app.post('/crud/items', readJson, async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+    if (!pgPool) return res.status(500).type('application/json').send('{"error":"DB not available"}');
     const body = req.body;
     try {
         const result = await pgPool.query({
@@ -293,19 +290,19 @@ app.post('/crud/items', readJson, async (req, res) => {
                 'ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 RETURNING id',
             values: [body.id, body.name ?? 'New Product', body.category ?? 'test', body.price ?? 0, body.quantity ?? 0]
         });
-        res.status(201).set(SERVER_HDR).json({
+        res.status(201).json({
             id: result.rows[0].id, name: body.name, category: body.category,
             price: body.price, quantity: body.quantity
         });
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"insert failed"}');
+        res.status(500).type('application/json').send('{"error":"insert failed"}');
     }
 });
 
 app.put('/crud/items/:id', readJson, async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+    if (!pgPool) return res.status(500).type('application/json').send('{"error":"DB not available"}');
     const id = parseInt(req.params.id, 10);
-    if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
+    if (!Number.isFinite(id)) return res.status(404).end();
     const body = req.body;
     try {
         const result = await pgPool.query({
@@ -313,13 +310,13 @@ app.put('/crud/items/:id', readJson, async (req, res) => {
             text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
             values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
         });
-        if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
+        if (result.rowCount === 0) return res.status(404).end();
         await crudDel(id);
-        res.set(SERVER_HDR).json({
+        res.json({
             id, name: body.name, price: body.price, quantity: body.quantity
         });
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
+        res.status(500).type('application/json').send('{"error":"update failed"}');
     }
 });
 
@@ -341,7 +338,7 @@ const userSet = (id, json) => {
 };
 
 app.get('/public/baseline', (req, res) => {
-    res.set(SERVER_HDR).type('text/plain').send(String(sumQuery(req.query)));
+    res.type('text/plain').send(String(sumQuery(req.query)));
 });
 registerJsonRoute(app, '/public/json/:count');
 app.get('/api/items/:id', itemRead);
@@ -349,9 +346,9 @@ app.get('/api/items/:id', itemRead);
 // 204 and no body, unlike the crud PUT this otherwise mirrors. The cache entry goes after
 // the row is written, so the next read misses and repopulates from Postgres.
 app.post('/api/items/:id', readJson, async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+    if (!pgPool) return res.status(500).type('application/json').send('{"error":"DB not available"}');
     const id = parseInt(req.params.id, 10);
-    if (!Number.isFinite(id)) return res.status(404).set(SERVER_HDR).end();
+    if (!Number.isFinite(id)) return res.status(404).end();
     const body = req.body;
     try {
         const result = await pgPool.query({
@@ -359,18 +356,18 @@ app.post('/api/items/:id', readJson, async (req, res) => {
             text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
             values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
         });
-        if (result.rowCount === 0) return res.status(404).set(SERVER_HDR).end();
+        if (result.rowCount === 0) return res.status(404).end();
         await crudDel(id);
-        res.status(204).set(SERVER_HDR).end();
+        res.status(204).end();
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"update failed"}');
+        res.status(500).type('application/json').send('{"error":"update failed"}');
     }
 });
 
 app.get('/api/me', async (req, res) => {
-    if (!pgPool) return res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"DB not available"}');
+    if (!pgPool) return res.status(500).type('application/json').send('{"error":"DB not available"}');
     const id = parseInt(req.headers['x-user-id'], 10);
-    if (!Number.isFinite(id)) return res.status(401).set(SERVER_HDR).end();
+    if (!Number.isFinite(id)) return res.status(401).end();
     try {
         const cached = await userGet(id);
         if (cached) {
@@ -381,13 +378,13 @@ app.get('/api/me', async (req, res) => {
             text: 'SELECT id, name, email, plan FROM users WHERE id = $1 LIMIT 1',
             values: [id]
         });
-        if (result.rows.length === 0) return res.status(404).set(SERVER_HDR).end();
+        if (result.rows.length === 0) return res.status(404).end();
         const u = result.rows[0];
         const json = JSON.stringify({ id: u.id, name: u.name, email: u.email, plan: u.plan });
         userSet(id, json);
         res.set(CACHE_MISS_HDR).type('application/json').send(json);
     } catch (e) {
-        res.status(500).set(SERVER_HDR).type('application/json').send('{"error":"query failed"}');
+        res.status(500).type('application/json').send('{"error":"query failed"}');
     }
 });
 
@@ -395,12 +392,12 @@ app.post('/upload', (req, res) => {
     let size = 0;
     req.on('data', chunk => size += chunk.length);
     req.on('end', () => {
-        res.set(SERVER_HDR).type('text/plain').send(String(size));
+        res.type('text/plain').send(String(size));
     });
 });
 
 app.get('/baseline2', (req, res) => {
-    res.set(SERVER_HDR).type('text/plain').send(String(sumQuery(req.query)));
+    res.type('text/plain').send(String(sumQuery(req.query)));
 });
 
 app.all('/baseline11', (req, res) => {
@@ -412,10 +409,10 @@ app.all('/baseline11', (req, res) => {
             let total = querySum;
             const n = parseInt(body.trim(), 10);
             if (n === n) total += n;
-            res.set(SERVER_HDR).type('text/plain').send(String(total));
+            res.type('text/plain').send(String(total));
         });
     } else {
-        res.set(SERVER_HDR).type('text/plain').send(String(querySum));
+        res.type('text/plain').send(String(querySum));
     }
 });
 
@@ -433,8 +430,7 @@ const registerStaticRoute = (target) =>
         express.static('/data/static', {
             preCompressed: true,
             index: false,
-            fallthrough: false,
-            setHeaders: (res) => res.setHeader('server', 'fulmine')
+            fallthrough: false
         })
     );
 registerStaticRoute(app);
@@ -444,7 +440,7 @@ registerStaticRoute(app);
 // framework's error page in the body
 const answerError = (err, req, res, next) => {
     if (res.headersSent) return next(err);
-    res.status(err.status || err.statusCode || 500).set(SERVER_HDR).end();
+    res.status(err.status || err.statusCode || 500).end();
 };
 app.use(answerError);
 

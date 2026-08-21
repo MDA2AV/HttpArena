@@ -63,8 +63,8 @@ The rest is the standard entry's, unchanged and worth repeating here:
   matched in JavaScript.
 - A handler simple enough to be read at registration time is compiled into a µWS declarative
   response. `/pipeline` is one, so it is answered without entering JavaScript. "Simple enough"
-  means every argument is a literal, which is why its headers are written out instead of coming
-  from the shared `SERVER_HDR`: the compiler reads the source and cannot see into a closure.
+  means every argument is a literal: a value coming from a closure would keep the route on the
+  ordinary path, because the compiler reads the source and cannot see into one.
 - `express.compression()` is the framework's own, taking the compression module's options: it is
   mounted on the json route, which is the only one the profiles ask to compress.
 - `express({ cluster: "auto" })` is the framework's own fork, so there is no cluster boilerplate in
