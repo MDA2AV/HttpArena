@@ -302,9 +302,14 @@
   .tsq-experimental{background:#d98e2b}
   .tsq-engine{background:#cb5f51}
   .tsq-infrastructure{background:#2f93a8}
-  /* 'tuned' mode cue - yellow ring around the type square / badge */
-  .tsq.tuned, .badge.tuned{position:relative}
-  .tsq.tuned::after, .badge.tuned::after{content:""; position:absolute; top:0; bottom:0; right:calc(100% + 2px); width:4px; background:#c89a3c}
+  /* 'tuned' mode, said in words. This was a 4px yellow bar beside the type
+     square: it marked the row as different without saying what was different,
+     and the difference is the whole point - a tuned number is one you get by
+     reading the entry's source and doing the work yourself, not one you get by
+     installing the framework (#1103). Same .badge shape as the type pill in the
+     modal, so the two read as one family. */
+  .b-tuned{background:rgba(200,154,60,.16); color:#8a6414}
+  html[data-theme="dark"] .b-tuned{background:rgba(200,154,60,.2); color:#e0b45e}
   /* medals - how many golds/silvers/bronzes the entry holds. Dropped below 820px,
      where the name column halves and the count is not worth what it would cost. */
   .mdls{display:inline-flex; align-items:center; gap:.3rem; flex:none; cursor:default}
@@ -494,7 +499,7 @@
       <button data-type="engine" data-tip="An HTTP implementation applications are not written against - raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.">Engine</button>
       <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
       <span class="tf-div" aria-hidden="true"></span>
-      <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow ring).">Tuned</button>
+      <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow TUNED pill).">Tuned</button>
     </div>
     <div class="round" id="round"></div>
     <a class="fw-btn" href="/frameworks/" data-tip="A results page for every entry, grouped by language, plus a summary comparing the entries of each language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Frameworks</span></a>
@@ -599,8 +604,15 @@ document.addEventListener('DOMContentLoaded', function(){
   function bw(s){ if(!s) return 0; var m=String(s).match(/([\d.]+)\s*([KMG]?B)\/s/i); if(!m) return 0; var v=parseFloat(m[1]),u=m[2].toUpperCase(); return u[0]==='G'?v*1e9:u[0]==='M'?v*1e6:u[0]==='K'?v*1e3:v; }
   function typeOf(fw){ return (D.meta[fw] && D.meta[fw].type) || 'emerging'; }
   function modeOf(fw){ return (D.meta[fw] && D.meta[fw].mode) || 'standard'; }
-  function tunedRing(fw){ return modeOf(fw)==='tuned' ? ' tuned' : ''; }
-  function tunedTip(fw){ return modeOf(fw)==='tuned' ? '  ·  Tuned - non-default configuration / optimizations.' : ''; }
+  // What the word has to carry that the bar did not: tuned is not "a bit
+  // faster", it is a number the reader cannot get by choosing the framework.
+  var TUNED_TIP='Tuned - non-default configuration and hand optimizations. This is not what you '
+    + 'get by installing the framework: reproducing it means reading this entry\u2019s source '
+    + 'and applying it to your own application.';
+  function tunedPill(fw){
+    return modeOf(fw)==='tuned'
+      ? '<span class="badge b-tuned" data-tip="'+esc(TUNED_TIP)+'">tuned</span>' : '';
+  }
   function repoOf(fw){ return D.meta[fw] && D.meta[fw].repo; }
   function langOf(fw){ return FWLANG[fw] || ''; }
   function engineOf(fw){ return (D.meta[fw] && D.meta[fw].engine) || ''; }
@@ -674,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
     var h='<div class="modal-card">'
       + '<button class="modal-x" data-close aria-label="Close">×</button>'
-      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+tunedRing(fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(fw))+'">'+typeAbbr(t)+'</span></div>'
+      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
@@ -1478,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', function(){
       var fav=favs.has(r.fw);
       var tr='<tr class="'+(fav?'fav':'')+'" data-fw-row="'+esc(r.fw)+'">'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
-        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
+        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tunedPill(r.fw)+medalChips(r.fw)+'</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
         var cell=r.cells[pid];
@@ -1520,7 +1532,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tsq tsq-'+x.t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(x.t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span></div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tunedPill(r.fw)+'</div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
