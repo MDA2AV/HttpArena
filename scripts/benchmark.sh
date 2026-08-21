@@ -392,6 +392,27 @@ save_result() {
     local dir="$RESULTS_DIR/$profile/$CONNS"
     mkdir -p "$dir"
 
+    # A run that answers 5xx is not a result. Errors are cheaper to serve than
+    # real responses, so a server that fails fast scores HIGHER than one that
+    # works - php-fpm published 294,864 rps on a baseline-h2 run where 99.2% of
+    # responses were 5xx. Refuse to save above the threshold; the container log
+    # is still written below so the run can be diagnosed.
+    local _2xx=${BEST_M[status_2xx]:-0} _3xx=${BEST_M[status_3xx]:-0}
+    local _4xx=${BEST_M[status_4xx]:-0} _5xx=${BEST_M[status_5xx]:-0}
+    local _tot=$(( _2xx + _3xx + _4xx + _5xx ))
+    local max_pct=${HTTPARENA_MAX_ERROR_PCT:-5}
+    if [ "$_tot" -gt 0 ] && [ "$_5xx" -gt 0 ]; then
+        local pct=$(( _5xx * 100 / _tot ))
+        if [ "$pct" -ge "$max_pct" ]; then
+            warn "$FRAMEWORK $profile/$CONNS: ${pct}% of ${_tot} responses were 5xx (limit ${max_pct}%) - result NOT saved"
+            rm -f "$dir/${FRAMEWORK}.json"
+            local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
+            mkdir -p "$log_dir"
+            docker logs "$CONTAINER_NAME" >"$log_dir/${FRAMEWORK}.log" 2>&1 || true
+            return 0
+        fi
+    fi
+
     local cpu_extra=""
     if [ -n "$best_breakdown" ]; then
         cpu_extra=",

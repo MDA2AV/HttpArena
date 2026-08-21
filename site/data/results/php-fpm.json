@@ -113,26 +113,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "baseline-h2-1024": {
-      "framework": "php-fpm",
-      "language": "PHP",
-      "rps": 294864,
-      "avg_latency": "143.45ms",
-      "p99_latency": "143.45ms",
-      "cpu": "2169.8%",
-      "memory": "4.8GiB",
-      "connections": 1024,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "60.80MB/s",
-      "input_bw": "",
-      "reconnects": 0,
-      "status_2xx": 11817,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 1462506
-    },
     "baseline-h2-256": {
       "framework": "php-fpm",
       "language": "PHP",
