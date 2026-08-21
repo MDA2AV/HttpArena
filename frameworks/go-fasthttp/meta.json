@@ -19,11 +19,14 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload",
     "api-4",
     "api-16",
     "async-db",
-    "static"
+    "static",
+    "static-tls",
+    "crud"
   ],
   "maintainers": []
 }

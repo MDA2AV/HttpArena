@@ -27,3 +27,16 @@ High-performance Go HTTP server using fasthttp with zero-allocation design and b
 - Compression via `compress/flate` (level 1)
 - Zero-copy query parameter iteration with `VisitAll`
 - Baseline11 is the default route handler
+
+## Added profiles
+
+`static-tls`, `json-tls` and `crud`.
+
+- `json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key`
+  are mounted. Every worker binds it the same way they all bind `8080`, so the TLS listener is
+  spread across the same set of processes rather than parked on one.
+- The static handler no longer uses `fasthttp.FS`. That keeps small files in an in-memory cache
+  and writes its own compressed copies next to the originals; the static profiles forbid holding
+  file bodies in memory in every mode. Bodies are now read from disk on every request and the
+  pre-compressed `.br`/`.gz` sibling is picked per request.
+- `crud` runs cache-aside on Redis with a 200ms TTL and an explicit delete on update.

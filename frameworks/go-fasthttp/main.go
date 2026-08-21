@@ -3,21 +3,25 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"runtime"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/reuseport"
 	_ "modernc.org/sqlite"
 )
+
 type Rating struct {
 	Score int `json:"score"`
 	Count int `json:"count"`
@@ -292,22 +296,273 @@ func dbHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody(body)
 }
 
+var rdb *redis.Client
+
+const itemColumns = "id, name, category, price, quantity, active, tags, rating_score, rating_count"
+
+// The crud profile reads and writes the same ids, so a long TTL would answer
+// from a copy the writes have already moved past.
+const crudTTL = 200 * time.Millisecond
+
+func loadRedis() {
+	url := os.Getenv("REDIS_URL")
+	if url == "" {
+		return
+	}
+	opt, err := redis.ParseURL(url)
+	if err != nil {
+		return
+	}
+	rdb = redis.NewClient(opt)
+}
+
+// tags is a JSONB column, so it comes back as bytes rather than a Go slice.
+func queryItems(ctx context.Context, sql string, args ...any) ([]map[string]any, error) {
+	rows, err := pgPool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []map[string]any{}
+	for rows.Next() {
+		var id, quantity, price, ratingScore, ratingCount int
+		var name, category string
+		var active bool
+		var tags []byte
+		if err := rows.Scan(&id, &name, &category, &price, &quantity, &active,
+			&tags, &ratingScore, &ratingCount); err != nil {
+			continue
+		}
+		var tagsArr []any
+		json.Unmarshal(tags, &tagsArr)
+		if tagsArr == nil {
+			tagsArr = []any{}
+		}
+		items = append(items, map[string]any{
+			"id": id, "name": name, "category": category,
+			"price": price, "quantity": quantity, "active": active,
+			"tags":   tagsArr,
+			"rating": map[string]any{"score": ratingScore, "count": ratingCount},
+		})
+	}
+	return items, nil
+}
+
+func queryIntArg(ctx *fasthttp.RequestCtx, name string, fallback int) int {
+	if v := ctx.QueryArgs().Peek(name); len(v) > 0 {
+		if n, err := strconv.Atoi(string(v)); err == nil {
+			return n
+		}
+	}
+	return fallback
+}
+
+func clampInt(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
+}
+
+func writeJSONCtx(ctx *fasthttp.RequestCtx, status int, v any) {
+	body, _ := json.Marshal(v)
+	ctx.Response.Header.Set("Server", "go-fasthttp")
+	ctx.SetStatusCode(status)
+	ctx.SetContentType("application/json")
+	ctx.SetBody(body)
+}
+
+func crudListHandler(ctx *fasthttp.RequestCtx) {
+	if pgPool == nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "DB not available"})
+		return
+	}
+	category := string(ctx.QueryArgs().Peek("category"))
+	if category == "" {
+		category = "electronics"
+	}
+	page := queryIntArg(ctx, "page", 1)
+	if page < 1 {
+		page = 1
+	}
+	limit := clampInt(queryIntArg(ctx, "limit", 10), 1, 50)
+	items, err := queryItems(context.Background(),
+		"SELECT "+itemColumns+" FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3",
+		category, limit, (page-1)*limit)
+	if err != nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "query failed"})
+		return
+	}
+	writeJSONCtx(ctx, 200, map[string]any{
+		"items": items, "total": len(items), "page": page, "limit": limit})
+}
+
+type crudBody struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Category string `json:"category"`
+	Price    int    `json:"price"`
+	Quantity int    `json:"quantity"`
+}
+
+func crudCreateHandler(ctx *fasthttp.RequestCtx) {
+	if pgPool == nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "DB not available"})
+		return
+	}
+	var b crudBody
+	if err := json.Unmarshal(ctx.PostBody(), &b); err != nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "insert failed"})
+		return
+	}
+	if b.Name == "" {
+		b.Name = "New Product"
+	}
+	if b.Category == "" {
+		b.Category = "test"
+	}
+	var id int
+	err := pgPool.QueryRow(context.Background(),
+		`INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count)
+		 VALUES ($1, $2, $3, $4, $5, true, '["bench"]', 0, 0)
+		 ON CONFLICT (id) DO UPDATE SET name = $2, price = $4, quantity = $5 RETURNING id`,
+		b.ID, b.Name, b.Category, b.Price, b.Quantity).Scan(&id)
+	if err != nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "insert failed"})
+		return
+	}
+	writeJSONCtx(ctx, 201, map[string]any{"id": id, "name": b.Name,
+		"category": b.Category, "price": b.Price, "quantity": b.Quantity})
+}
+
+// Cache-aside on Redis where the harness provides it - crud is the one profile
+// that does.
+func crudReadHandler(ctx *fasthttp.RequestCtx, id int) {
+	if pgPool == nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "DB not available"})
+		return
+	}
+	bg := context.Background()
+	key := "crud:" + strconv.Itoa(id)
+	if rdb != nil {
+		if hit, err := rdb.Get(bg, key).Result(); err == nil && hit != "" {
+			ctx.Response.Header.Set("Server", "go-fasthttp")
+			ctx.Response.Header.Set("X-Cache", "HIT")
+			ctx.SetContentType("application/json")
+			ctx.SetBodyString(hit)
+			return
+		}
+	}
+	items, err := queryItems(bg, "SELECT "+itemColumns+" FROM items WHERE id = $1 LIMIT 1", id)
+	if err != nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "query failed"})
+		return
+	}
+	if len(items) == 0 {
+		ctx.SetStatusCode(404)
+		return
+	}
+	body, _ := json.Marshal(items[0])
+	if rdb != nil {
+		rdb.Set(bg, key, body, crudTTL)
+	}
+	ctx.Response.Header.Set("Server", "go-fasthttp")
+	ctx.Response.Header.Set("X-Cache", "MISS")
+	ctx.SetContentType("application/json")
+	ctx.SetBody(body)
+}
+
+func crudUpdateHandler(ctx *fasthttp.RequestCtx, id int) {
+	if pgPool == nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "DB not available"})
+		return
+	}
+	var b crudBody
+	if err := json.Unmarshal(ctx.PostBody(), &b); err != nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "update failed"})
+		return
+	}
+	if b.Name == "" {
+		b.Name = "Updated"
+	}
+	bg := context.Background()
+	tag, err := pgPool.Exec(bg,
+		"UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4",
+		b.Name, b.Price, b.Quantity, id)
+	if err != nil {
+		writeJSONCtx(ctx, 500, map[string]any{"error": "update failed"})
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		ctx.SetStatusCode(404)
+		return
+	}
+	if rdb != nil {
+		rdb.Del(bg, "crud:"+strconv.Itoa(id))
+	}
+	writeJSONCtx(ctx, 200, map[string]any{"id": id, "name": b.Name,
+		"price": b.Price, "quantity": b.Quantity})
+}
+
+var mimeTypes = map[string]string{
+	".css": "text/css", ".js": "application/javascript", ".html": "text/html",
+	".woff2": "font/woff2", ".svg": "image/svg+xml", ".webp": "image/webp",
+	".json": "application/json",
+}
+
+// Static bodies are read from disk on every request. fasthttp.FS, which this
+// used before, keeps small files in an in-memory cache and writes its own
+// compressed copies next to the originals - the static profiles forbid holding
+// file bodies in memory in every mode.
+func staticHandler(ctx *fasthttp.RequestCtx, name string) {
+	if name == "" || strings.Contains(name, "/") || strings.Contains(name, "..") {
+		ctx.SetStatusCode(404)
+		return
+	}
+	base := "/data/static/" + name
+	path, enc := base, ""
+	ae := string(ctx.Request.Header.Peek("Accept-Encoding"))
+	if strings.Contains(ae, "br") {
+		if _, err := os.Stat(base + ".br"); err == nil {
+			path, enc = base+".br", "br"
+		}
+	}
+	if enc == "" && strings.Contains(ae, "gzip") {
+		if _, err := os.Stat(base + ".gz"); err == nil {
+			path, enc = base+".gz", "gzip"
+		}
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		ctx.SetStatusCode(404)
+		return
+	}
+	ct := mimeTypes[filepath.Ext(name)]
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	ctx.Response.Header.Set("Server", "go-fasthttp")
+	ctx.SetContentType(ct)
+	if enc != "" {
+		ctx.Response.Header.Set("Content-Encoding", enc)
+		ctx.Response.Header.Set("Vary", "Accept-Encoding")
+	}
+	ctx.SetBody(data)
+}
+
 func main() {
 	loadDataset()
 	loadDB()
 	loadPgPool()
-
-	fs := &fasthttp.FS{
-		Root:        "/data/static",
-		PathRewrite: fasthttp.NewPathSlashesStripper(1),
-		Compress:    true,
-	}
-	fsHandler := fs.NewRequestHandler()
+	loadRedis()
 
 	handler := func(ctx *fasthttp.RequestCtx) {
 		method := string(ctx.Method())
 
-		if method != "GET" && method != "POST" {
+		if method != "GET" && method != "POST" && method != "PUT" {
 			ctx.SetStatusCode(fasthttp.StatusMethodNotAllowed)
 			return
 		}
@@ -326,13 +581,38 @@ func main() {
 		case path == "/async-db":
 			asyncDbHandler(ctx)
 		case strings.HasPrefix(path, "/static/"):
-			fsHandler(ctx)
+			staticHandler(ctx, path[len("/static/"):])
+		case path == "/crud/items":
+			if method == "POST" {
+				crudCreateHandler(ctx)
+			} else {
+				crudListHandler(ctx)
+			}
+		case strings.HasPrefix(path, "/crud/items/"):
+			id, err := strconv.Atoi(path[len("/crud/items/"):])
+			if err != nil {
+				ctx.SetStatusCode(404)
+			} else if method == "PUT" {
+				crudUpdateHandler(ctx, id)
+			} else {
+				crudReadHandler(ctx, id)
+			}
 		case strings.HasPrefix(path, "/baseline"):
 			baseline11Handler(ctx)
 		default:
 			ctx.SetStatusCode(fasthttp.StatusNotFound)
 		}
 	}
+	// json-tls and static-tls on 8081, the same handler behind TLS. The harness
+	// only mounts /certs for the TLS profiles, so without them it is not opened.
+	const cert, key = "/certs/server.crt", "/certs/server.key"
+	tlsEnabled := false
+	if _, err := os.Stat(cert); err == nil {
+		if _, err := os.Stat(key); err == nil {
+			tlsEnabled = true
+		}
+	}
+
 	numCPU := runtime.NumCPU()
 	var wg sync.WaitGroup
 	for i := 0; i < numCPU; i++ {
@@ -349,6 +629,23 @@ func main() {
 			}
 			s.Serve(ln)
 		}()
+		// Every worker binds 8081 too, so the TLS listener is spread across the
+		// same set of processes rather than parked on one.
+		if tlsEnabled {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				ln, err := reuseport.Listen("tcp4", ":8081")
+				if err != nil {
+					return
+				}
+				s := &fasthttp.Server{
+					Handler:            handler,
+					MaxRequestBodySize: 25 * 1024 * 1024,
+				}
+				s.ServeTLS(ln, cert, key)
+			}()
+		}
 	}
 	wg.Wait()
 }

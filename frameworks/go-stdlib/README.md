@@ -30,3 +30,16 @@ The Go standard library `net/http` server, no framework, default configuration.
   goroutine across all cores. `GOMAXPROCS` is capped by the cgroup cpu quota when
   there is one
 - Missing dataset file means an empty item list, the server still starts
+
+## Added profiles
+
+`static`, `static-tls`, `json-tls`, `async-db`, `crud`, `api-4` and `api-16`.
+
+- `json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key`
+  are mounted; it is the same router behind TLS, not a second copy of the handlers.
+- Static file bodies are read from disk on every request, which the static profiles require in
+  every mode. The pre-compressed `.br`/`.gz` sibling is picked per request and is also read from disk.
+- Postgres goes through `pgx`. One process here, so the whole `DATABASE_MAX_CONN` budget is
+  available, less headroom for `superuser_reserved_connections`.
+- `crud` runs cache-aside on Redis with a 200ms TTL and an explicit delete on update.
+- `tags` is a JSONB column, so it comes back as bytes rather than a Go slice.
