@@ -2,12 +2,6 @@
   "display_name": "wtx",
   "language": "Rust",
   "type": "emerging",
-  "completeness": {
-    "routing": true,
-    "middleware": false,
-    "request": true,
-    "response": true
-  },
   "engine": "wtx",
   "description": "WTX - WebSocket Server",
   "repo": "https://github.com/c410-f3r/wtx",

@@ -52,6 +52,17 @@ Two rules decide the values:
 
 **Only framework tiers are graded.** Engine and infrastructure entries implement none of the four - a raw-socket server has no router, a reverse proxy has no handler to run middleware around - and that is exactly why grading them is pointless rather than generous. Every one of them would take the same ×0.80, so nothing about their order would change, and they are never ranked against frameworks in the first place: each league is normalized against itself. Their factor is fixed at ×1.00 and their rows say nothing about completeness.
 
+## Not on the WebSocket and gRPC boards
+
+The four axes are the path from an arriving HTTP request to a finished response. Two families are not measuring that path, so the factor does not apply on them at all:
+
+- **WebSocket.** There is no route to match, no body to hand over and no response to build. The handshake happened once; everything the profile measures after it is frames on an open socket.
+- **gRPC.** A call has all four - it is dispatched, the request arrives deserialized, the response is serialized back - but the stub generated from the `.proto` does them, not the framework. Grading the framework for them would be crediting protoc.
+
+On those two boards every entry scores ×1.00, including the ones that also serve HTTP and carry a real factor on the HTTP/1.1, HTTP/2, HTTP/3 and Gateway boards. It is the board that is exempt, not the entry.
+
+An entry that runs **only** WebSocket or gRPC profiles does not declare the field at all - there is no board on which it would ever be applied, and a grade nothing reads is a claim about an HTTP path the entry does not have.
+
 ## Why a multiplier on the total
 
 Completeness is a property of the entry, not of a workload. It does not change per profile the way throughput or memory does, so it is applied once, to the finished sum, rather than folded into each profile's 0-100 score. It lands after the memory-efficiency bonus, on whatever total the current toggles produce.

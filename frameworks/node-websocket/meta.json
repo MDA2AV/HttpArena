@@ -3,12 +3,6 @@
   "language": "JS",
   "type": "emerging",
   "mode": "tuned",
-  "completeness": {
-    "routing": false,
-    "middleware": false,
-    "request": true,
-    "response": true
-  },
   "engine": "v8",
   "description": "Node.js WebSocket echo server using ws package",
   "repo": "https://github.com/websockets/ws",

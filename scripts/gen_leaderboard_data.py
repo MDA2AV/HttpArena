@@ -1230,6 +1230,9 @@ def _scored_for(prof, meta, pid, fw):
 # so their scores are never set against a framework's.
 CMP_TYPES = ("flagship", "emerging", "experimental")
 CMP_AXES = ("routing", "middleware", "request", "response")
+# The four axes are the HTTP request-to-response path, so they only mean
+# something on a board measuring that path. cmpInScope() in index.html.
+CMP_SCOPES_OUT = ("ws", "grpc")
 
 
 def _cmp_missing(meta, fw):
@@ -1240,9 +1243,14 @@ def _cmp_missing(meta, fw):
     return [a for a in CMP_AXES if c.get(a) is False]
 
 
-def _cmp_factor(meta, fw):
+def _cmp_factor(meta, fw, scope=None):
     """cmpFactor() in index.html: the completeness factor as a multiplier on the
     whole composite.
+
+    Not applied on the WebSocket and gRPC boards: a WebSocket echo has no route
+    to match, no body to hand over and no response to build, and a gRPC call has
+    all four but the generated stub does them. Those boards measure something the
+    grade is not about, so every entry scores 1.00 there.
 
     Four things a framework can do between an arriving request and a finished
     response - routing, middleware, the request it hands you, the response it
@@ -1251,6 +1259,8 @@ def _cmp_factor(meta, fw):
     An axis that is not declared reads as done, so an ungraded entry scores 1.00
     - ungraded is not the same as missing everything.
     """
+    if scope in CMP_SCOPES_OUT:
+        return 1.0
     if meta.get(fw, {}).get("type", "emerging") not in CMP_TYPES:
         return 1.0
     return 1.0 - 0.05 * len(_cmp_missing(meta, fw))
@@ -1360,7 +1370,7 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 if is_scored(pid, fw):
                     score += (eff(pid, fw) / max_r[pid]) * 100
         if any_result:
-            rows.append((fw, score * _cmp_factor(meta, fw)))
+            rows.append((fw, score * _cmp_factor(meta, fw, scope)))
     rows.sort(key=lambda r: (-r[1], r[0]))
     return rows
 
@@ -2430,9 +2440,10 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
         out.append("<p>Each profile of a family is worth 100 to the entry that leads it, and the "
                    "composite is the sum over the family, less 5% for each of routing, "
                    "middleware, request and response the entry does not do for you - its "
-                   '<a href="/docs/scoring/completeness/">completeness factor</a>. The field is '
-                   "this entry's own league: engines and reverse proxies are scored apart from "
-                   'frameworks. <a href="/docs/scoring/composite-score/">How it works</a>.</p>')
+                   '<a href="/docs/scoring/completeness/">completeness factor</a>, which the '
+                   "WebSocket and gRPC families do not carry. The field is this entry's own "
+                   "league: engines and reverse proxies are scored apart from frameworks. "
+                   '<a href="/docs/scoring/composite-score/">How it works</a>.</p>')
         rows = "".join(
             '<tr><td><a href="%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
             % (e(link), e(SCOPE_NAME[scope]), rank, field, score)

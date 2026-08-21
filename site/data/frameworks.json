@@ -33,13 +33,7 @@
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
-        "mode": "standard",
-        "completeness": {
-          "routing": true,
-          "middleware": true,
-          "request": true,
-          "response": true
-        }
+        "mode": "standard"
       }
     ]
   },
@@ -107,13 +101,7 @@
         "repo": "https://github.com/dotnet/aspnetcore",
         "type": "flagship",
         "engine": "kestrel",
-        "mode": "standard",
-        "completeness": {
-          "routing": true,
-          "middleware": true,
-          "request": true,
-          "response": true
-        }
+        "mode": "standard"
       },
       {
         "dir": "aspnet-websocket",
@@ -121,13 +109,7 @@
         "repo": "https://github.com/dotnet/aspnetcore",
         "type": "flagship",
         "engine": "kestrel",
-        "mode": "standard",
-        "completeness": {
-          "routing": true,
-          "middleware": true,
-          "request": true,
-          "response": true
-        }
+        "mode": "standard"
       }
     ]
   },
@@ -249,13 +231,7 @@
     "repo": "https://github.com/MarvinDrude/Beskar.Networking",
     "type": "emerging",
     "engine": "beskar",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "bjoern": {
     "dir": "bjoern",
@@ -298,13 +274,7 @@
     "repo": "https://github.com/oven-sh/bun",
     "type": "emerging",
     "engine": "bun",
-    "mode": "tuned",
-    "completeness": {
-      "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "bun": {
     "dir": "bun",
@@ -405,13 +375,7 @@
     "repo": "https://github.com/denoland/deno",
     "type": "emerging",
     "engine": "deno",
-    "mode": "tuned",
-    "completeness": {
-      "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "deno": {
     "dir": "deno",
@@ -447,13 +411,7 @@
     "repo": "https://github.com/MDA2AV/dogrider",
     "type": "emerging",
     "engine": "zerg",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "drogon": {
     "dir": "drogon",
@@ -636,13 +594,7 @@
     "repo": "https://github.com/statianzo/Fleck",
     "type": "emerging",
     "engine": "fleck",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "fletch": {
     "dir": "fletch",
@@ -818,13 +770,7 @@
     "repo": "https://github.com/gobwas/ws",
     "type": "emerging",
     "engine": "net/http",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "grpc-go": {
     "dir": "grpc-go",
@@ -832,13 +778,7 @@
     "repo": "https://github.com/grpc/grpc-go",
     "type": "emerging",
     "engine": "grpc-go",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "h2o-mruby": {
     "dir": "h2o-mruby",
@@ -1266,13 +1206,7 @@
         "repo": "https://github.com/marcomq/mq-bridge",
         "type": "emerging",
         "engine": "mq-bridge",
-        "mode": "standard",
-        "completeness": {
-          "routing": true,
-          "middleware": false,
-          "request": true,
-          "response": true
-        }
+        "mode": "standard"
       }
     ]
   },
@@ -1331,13 +1265,7 @@
     "repo": "https://github.com/websockets/ws",
     "type": "emerging",
     "engine": "v8",
-    "mode": "tuned",
-    "completeness": {
-      "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "node": {
     "dir": "node",
@@ -1464,13 +1392,7 @@
         "repo": "https://github.com/quarkusio/quarkus",
         "type": "flagship",
         "engine": "vert.x (grpc)",
-        "mode": "tuned",
-        "completeness": {
-          "routing": true,
-          "middleware": true,
-          "request": true,
-          "response": true
-        }
+        "mode": "tuned"
       },
       {
         "dir": "quarkus-jvm-h2c",
@@ -1811,13 +1733,7 @@
     "repo": "https://github.com/grpc-ecosystem/grpc-spring",
     "type": "flagship",
     "engine": "netty (grpc)",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "starlette": {
     "dir": "starlette",
@@ -1860,13 +1776,7 @@
         "repo": "https://github.com/swoole/swoole-src",
         "type": "flagship",
         "engine": "swoole",
-        "mode": "tuned",
-        "completeness": {
-          "routing": false,
-          "middleware": false,
-          "request": true,
-          "response": true
-        }
+        "mode": "tuned"
       }
     ]
   },
@@ -1932,13 +1842,7 @@
     "repo": "https://github.com/hyperium/tonic",
     "type": "emerging",
     "engine": "tonic",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "tuned"
   },
   "trillium-tuned": {
     "dir": "trillium-tuned",
@@ -2163,13 +2067,7 @@
     "repo": "https://github.com/walkor/Workerman",
     "type": "flagship",
     "engine": "workerman",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "workerman": {
     "dir": "workerman",
@@ -2192,12 +2090,6 @@
     "type": "emerging",
     "engine": "wtx",
     "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": false,
-      "request": true,
-      "response": true
-    },
     "variants": [
       {
         "dir": "wtx-grpc-tls",
@@ -2205,13 +2097,7 @@
         "repo": "https://github.com/c410-f3r/wtx",
         "type": "emerging",
         "engine": "wtx",
-        "mode": "standard",
-        "completeness": {
-          "routing": true,
-          "middleware": false,
-          "request": true,
-          "response": true
-        }
+        "mode": "standard"
       },
       {
         "dir": "wtx-http2",
@@ -2246,13 +2132,7 @@
         "description": "WTX - WebSocket Server",
         "repo": "https://github.com/c410-f3r/wtx",
         "type": "emerging",
-        "engine": "wtx",
-        "completeness": {
-          "routing": true,
-          "middleware": false,
-          "request": true,
-          "response": true
-        }
+        "engine": "wtx"
       }
     ]
   },

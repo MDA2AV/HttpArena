@@ -42,7 +42,7 @@ Summing instead of averaging means the composite scales with the number of score
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 100-point ceiling of that profile.
 
-The finished sum is then cut by the entry's [completeness factor](../completeness/): 5% for each of routing, middleware, the request it hands you and the response it builds that the framework leaves to you, so an entry that does all four keeps its full score and one that does none keeps 80% of it. It is applied once to the total rather than per profile, and only to framework entries; engine, infrastructure and unassessed entries score ×1.00.
+The finished sum is then cut by the entry's [completeness factor](../completeness/): 5% for each of routing, middleware, the request it hands you and the response it builds that the framework leaves to you, so an entry that does all four keeps its full score and one that does none keeps 80% of it. It is applied once to the total rather than per profile, and only to framework entries; engine, infrastructure and unassessed entries score ×1.00. It is also not applied on the WebSocket and gRPC boards, which do not measure the HTTP request-to-response path the four axes are about.
 
 ## Scored vs reference-only profiles
 

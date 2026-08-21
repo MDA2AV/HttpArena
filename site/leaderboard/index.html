@@ -668,7 +668,9 @@ document.addEventListener('DOMContentLoaded', function(){
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
     score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 100). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
     scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.80. Opens the scoring docs.',
+    scoreHelpWs:'How the composite is built: every scored profile is worth 100 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.'
   };
   function initTips(){
@@ -1205,6 +1207,16 @@ document.addEventListener('DOMContentLoaded', function(){
   // scores neutral instead of being penalised.
   var CMP_TYPES=['flagship','emerging','experimental'];
   var CMP_AXES=['routing','middleware','request','response'];
+  // The four axes are the path from an arriving HTTP request to a finished
+  // response, so they only mean something on a board measuring that path. A
+  // WebSocket echo has no route to match, no body to hand over and no response
+  // to build - the handshake happened once and everything after it is frames -
+  // and a gRPC call has all four, but the generated stub does them, not the
+  // framework. On those two boards the factor is 1 for every entry, including
+  // the 27 that also serve HTTP: what is being measured there is not the thing
+  // the grade is about.
+  var CMP_SCOPES_OUT=['ws','grpc'];
+  function cmpInScope(){ return CMP_SCOPES_OUT.indexOf(state.scope)<0; }
   // Only an explicit false costs anything. An axis left undeclared reads as
   // done, so an entry submitted before the field existed is ungraded rather
   // than assumed to be missing all four, and `{middleware:false}` is the whole
@@ -1215,7 +1227,7 @@ document.addEventListener('DOMContentLoaded', function(){
     return CMP_AXES.filter(function(a){ return c[a]===false; });
   }
   function cmpFactor(fw){
-    if(CMP_TYPES.indexOf(typeOf(fw))<0) return 1;
+    if(!cmpInScope() || CMP_TYPES.indexOf(typeOf(fw))<0) return 1;
     return 1-0.05*cmpMissing(fw).length;
   }
   // Which profiles count toward the composite, per league. Frameworks use the
@@ -1327,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // proxy is not unassessed, it is out of scope for the question, so its row
   // says nothing about completeness rather than reporting a clean sheet it was
   // never given.
-  function cmpGraded(fw){ return CMP_TYPES.indexOf(typeOf(fw))>=0; }
+  function cmpGraded(fw){ return cmpInScope() && CMP_TYPES.indexOf(typeOf(fw))>=0; }
   function cmpTip(r){
     if(!cmpGraded(r.fw)) return 'composite '+r.score.toFixed(1);
     if(!r.dec) return 'composite '+r.score.toFixed(1)+' - completeness not assessed yet, so nothing is deducted (x1.00)';
@@ -1478,8 +1490,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'+ar('fw')+'</th>'
-      + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(TIP.score)+'">Composite'
-      +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(TIP.scoreHelp)+'"'
+      + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
+      +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
     pids.forEach(function(pid){ var p=PROF[pid]; var ref=!scoredForType(pid, leagueType()); th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
     th+='<th class="spacer"></th>';
