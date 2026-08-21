@@ -308,6 +308,18 @@
      reading the entry's source and doing the work yourself, not one you get by
      installing the framework (#1103). Same .badge shape as the type pill in the
      modal, so the two read as one family. */
+  /* Row scale. .badge is sized for the modal header; beside a 10px type square
+     the word only has to be legible, and the colour is what catches the eye
+     first anyway. Shares .b-tuned with the modal so both stay one colour. */
+  .tnd{font-size:.53rem; font-weight:700; letter-spacing:.02em; text-transform:uppercase;
+    padding:.04rem .22rem; border-radius:4px; line-height:1.6; white-space:nowrap;
+    flex:none; cursor:default}
+  /* The pill sits in a fixed slot rather than in the flex flow. Putting a marker
+     beside the type square to make a clean left-hand cue, and then letting it
+     shove the square, the language code and the name sideways on the 36% of rows
+     that have one, undoes the reason for putting it there. Right-aligned so it
+     sits snug against the square; empty on standard rows. */
+  .tndslot{width:2.75rem; flex:none; display:flex; justify-content:flex-end; align-items:center}
   .b-tuned{background:rgba(200,154,60,.16); color:#8a6414}
   html[data-theme="dark"] .b-tuned{background:rgba(200,154,60,.2); color:#e0b45e}
   /* medals - how many golds/silvers/bronzes the entry holds. Dropped below 820px,
@@ -609,9 +621,11 @@ document.addEventListener('DOMContentLoaded', function(){
   var TUNED_TIP='Tuned - non-default configuration and hand optimizations. This is not what you '
     + 'get by installing the framework: reproducing it means reading this entry\u2019s source '
     + 'and applying it to your own application.';
-  function tunedPill(fw){
+  // cls picks the size: 'tnd' in table rows, the default .badge in the modal
+  // header where it sits beside the type badge at that badge's scale.
+  function tunedPill(fw, cls){
     return modeOf(fw)==='tuned'
-      ? '<span class="badge b-tuned" data-tip="'+esc(TUNED_TIP)+'">tuned</span>' : '';
+      ? '<span class="'+(cls||'badge')+' b-tuned" data-tip="'+esc(TUNED_TIP)+'">tuned</span>' : '';
   }
   function repoOf(fw){ return D.meta[fw] && D.meta[fw].repo; }
   function langOf(fw){ return FWLANG[fw] || ''; }
@@ -1502,7 +1516,7 @@ document.addEventListener('DOMContentLoaded', function(){
       var fav=favs.has(r.fw);
       var tr='<tr class="'+(fav?'fav':'')+'" data-fw-row="'+esc(r.fw)+'">'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
-        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span>'+tunedPill(r.fw)+'<span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
+        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
         var cell=r.cells[pid];
@@ -1544,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span>'+tunedPill(r.fw)+'<span class="nm">'+nm+'</span></div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span></div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
