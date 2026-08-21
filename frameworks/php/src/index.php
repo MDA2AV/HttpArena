@@ -1,6 +1,8 @@
 <?php
 
 require __DIR__ . '/Pgsql.php';
+require __DIR__ . '/Crud.php';
+require __DIR__ . '/Fortunes.php';
 require __DIR__ . '/data.php';
 
 $path = $_SERVER['PATH_INFO'];
@@ -11,6 +13,7 @@ return match ($path) {
     '/upload'     => upload(),
     '/pipeline'   => pipeline(),
     '/async-db'   => asyncDb(),
+    '/fortunes'   => Fortunes::render(),
 
     default => rest($path)
 };
@@ -19,6 +22,16 @@ function rest($path)
 {
     return match (true) {
         str_starts_with($path, '/json/') => json($path),
+
+        // /crud/items and /crud/items/{id}, split by method the way the profile
+        // asks: list and cache-aside read on GET, upsert on POST, update on PUT.
+        $path === '/crud/items' => $_SERVER['REQUEST_METHOD'] === 'POST'
+            ? Crud::create()
+            : Crud::list(),
+
+        str_starts_with($path, '/crud/items/') => $_SERVER['REQUEST_METHOD'] === 'PUT'
+            ? Crud::update((int) substr($path, 12))
+            : Crud::read((int) substr($path, 12)),
 
         default => notFound()
     };

@@ -45,7 +45,8 @@ RUN apt-get update -yqq && \
         > /etc/apt/sources.list.d/sury-php.list && \
     apt-get update -yqq && \
     apt-get install -yqq --no-install-recommends \
-        libpcre2-8-0 php8.5-fpm php8.5-cli php8.5-pgsql >/dev/null && \
+        libpcre2-8-0 php8.5-fpm php8.5-cli php8.5-pgsql \
+        php8.5-redis php-twig >/dev/null && \
     rm -rf /var/lib/apt/lists/* /tmp/sury.gpg
 
 ARG NGINX_VERSION
@@ -58,6 +59,7 @@ RUN mkdir -p /usr/local/nginx/logs /var/log/nginx \
 
 COPY conf/* /etc/php/8.5/fpm/
 COPY src/ src/
+COPY views/ views/
 COPY nginx.conf .
 
 EXPOSE 8080 8443/tcp 8443/udp
