@@ -12,7 +12,7 @@
   "engine": "nginx",
   "description": "Embedded PHP scripting language module for nginx.",
   "repo": "https://github.com/rryqszq4/ngx-php",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",
