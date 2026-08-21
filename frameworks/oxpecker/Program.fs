@@ -9,10 +9,8 @@ open HttpArena.Services
 
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
-open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Server.Kestrel.Core
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.FileProviders
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Primitives
@@ -113,23 +111,17 @@ let main args =
 
     app.UseResponseCompression() |> ignore
 
-    // Static assets are served straight off the mounted directory by ASP.NET
-    // Core's static file middleware — every request reads the file from disk,
-    // and the response compression middleware above handles the compressible
-    // types. Registered before routing so /static/* never reaches Oxpecker,
-    // while a missing file falls through to the router's 404.
-    let staticRoot = envPath "STATIC_PATH" "/data/static"
+    app.UseRouting() |> ignore
 
-    if Directory.Exists staticRoot then
-        app.UseStaticFiles(
-            StaticFileOptions(
-                FileProvider = new PhysicalFileProvider(staticRoot),
-                RequestPath = PathString "/static"
-            )
-        )
-        |> ignore
+    // Static assets are served by ASP.NET Core's static asset endpoints. The
+    // SDK writes an endpoint manifest at publish time carrying each file's
+    // content type, length and ETag alongside gzip/brotli variants on disk, so
+    // a hit costs a route match plus the file read — not a content-type probe
+    // and a fresh Brotli pass over the body on every request. Bodies still come
+    // off disk; only the headers are precomputed.
+    app.MapStaticAssets() |> ignore
 
-    app.UseRouting().UseOxpecker(endpoints) |> ignore
+    app.UseOxpecker endpoints |> ignore
 
     app.Run()
     0

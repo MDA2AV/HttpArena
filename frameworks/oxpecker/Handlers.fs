@@ -15,21 +15,21 @@ open Oxpecker
 /// Reads an int query parameter through Oxpecker's query accessor, falling
 /// back to `fallback` when the parameter is absent or unparsable.
 let private queryInt (ctx: HttpContext) (key: string) (fallback: int) =
-    match ctx.TryGetQueryValue key with
-    | Some raw ->
+    match ctx.Request.Query.TryGetValue key with
+    | true, raw ->
         match Int32.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture) with
         | true, value -> value
         | _ -> fallback
-    | None ->
+    | false, _ ->
         fallback
 
 let private queryFloat (ctx: HttpContext) (key: string) (fallback: float) =
-    match ctx.TryGetQueryValue key with
-    | Some raw ->
+    match ctx.Request.Query.TryGetValue key with
+    | true, raw ->
         match Double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture) with
         | true, value -> value
         | _ -> fallback
-    | None -> fallback
+    | false, _ -> fallback
 
 let private dbUnavailable (ctx: HttpContext) =
     ctx.SetStatusCode 500
@@ -49,19 +49,11 @@ let baseline: EndpointHandler =
 /// POST /baseline11 — sum of the two query parameters plus the request body.
 let baselineWithBody: EndpointHandler =
     fun ctx ->
+        use reader = new BinaryReader(ctx.Request.Body, Encoding.UTF8, true)
         let a = queryInt ctx "a" 0
         let b = queryInt ctx "b" 0
-
-        task {
-            use reader = new StreamReader(ctx.Request.Body)
-            let! body = reader.ReadToEndAsync()
-            let fromBody =
-                match Int32.TryParse(body, NumberStyles.Integer, CultureInfo.InvariantCulture) with
-                | true, value -> value
-                | _ -> 0
-
-            return! ctx.WriteText(string (a + b + fromBody))
-        }
+        let fromBody = reader.ReadInt32()
+        ctx.WriteText(string (a + b + fromBody))
 
 // ── Workload profiles ──────────────────────────────────────────────────────
 
@@ -143,7 +135,7 @@ let crudRead (id: int) : EndpointHandler =
                     ctx.SetHttpHeader("X-Cache", (if result.CacheHit then "HIT" else "MISS"))
                     match result.Value with
                     | TypedItem item ->
-                        return! ctx.WriteJson item
+                        return! ctx.WriteJsonChunked item
                     | SerializedItem cached ->
                         // Already JSON on the Redis path — write the cached bytes
                         // back rather than round-tripping them through the serializer.
@@ -161,7 +153,7 @@ let crudCreate: EndpointHandler =
                 let! input = ctx.BindJson<CrudItemInput>()
                 let! created = Items.create input
                 ctx.SetStatusCode 201
-                return! ctx.WriteJson created
+                return! ctx.WriteJsonChunked created
             }
 
 /// PUT /crud/items/{id} — update and invalidate the cached entry.
@@ -176,7 +168,7 @@ let crudUpdate (id: int) : EndpointHandler =
                 | None ->
                     ctx.SetStatusCode 404
                 | Some updated ->
-                    return! ctx.WriteJson updated
+                    return! ctx.WriteJsonChunked updated
             }
 
 // ── Template profile ───────────────────────────────────────────────────────
