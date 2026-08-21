@@ -37,9 +37,11 @@ impl BenchmarkService for Benchmark {
     ) -> Result<impl Stream<Item = Result<SumReply, Status>> + Send + use<>, Status> {
         let result = request.a + request.b;
         let count = request.count.max(0) as usize;
-        Ok(stream::iter(
-            (0..count).map(move |_| Ok(SumReply { result })),
-        ))
+        Ok(stream::iter((0..count).map(move |i| {
+            Ok(SumReply {
+                result: result + i as i32,
+            })
+        })))
     }
 
     async fn collect_sum(&self, conn: &mut GrpcServerConn) -> Result<SumReply, Status> {
