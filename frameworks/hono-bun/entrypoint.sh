@@ -8,6 +8,9 @@ if [ -f /sys/fs/cgroup/cpu.max ]; then
     [ "$CGROUP_CPUS" -lt "$CPUS" ] && CPUS=$CGROUP_CPUS
   fi
 fi
+# Every process opens its own Postgres pool, so the server has to know how many
+# of them there are to keep the total under the server's max_connections.
+export HTTPARENA_PROCS="$CPUS"
 for i in $(seq 1 "$CPUS"); do
   bun run /app/server.ts &
 done

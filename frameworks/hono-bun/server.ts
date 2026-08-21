@@ -14,9 +14,11 @@ const MIME_TYPES: Record<string, string> = {
 // Load datasets
 const datasetItems: any[] = JSON.parse(readFileSync("/data/dataset.json", "utf8"));
 
-// Open SQLite database read-only
+// Open SQLite database read-only. The harness mounts /data/dataset.json and
+// /data/static only, so the file is absent on every benchmarked profile - without
+// this guard each of the N processes printed three stack traces at startup.
 let dbStmt: any = null;
-for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+for (let attempt = 0; attempt < 3 && !dbStmt && existsSync("/data/benchmark.db"); attempt++) {
   try {
     const db = new Database("/data/benchmark.db", { readonly: true });
     db.exec("PRAGMA mmap_size=268435456");
@@ -27,18 +29,30 @@ for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
   }
 }
 
-// PostgreSQL pool. Shared by /async-db (read-only, tiny pool sufficed) and
-// /crud/* (full CRUD, needs more connections). Per-process pool — with
-// SO_REUSEPORT and one Bun process per core, total PG conns = cores × max.
-// 64 cores × 8 = 512 to match aspnet-minimal's Npgsql pool for fair
-// cross-framework comparison.
+// PostgreSQL pool. Shared by /async-db (read-only) and /crud/* (full CRUD).
+//
+// The pool is per process and SO_REUSEPORT runs one process per core, so the
+// total is procs x max and it has to stay under the harness's Postgres, which
+// runs with max_connections=256 and reserves a few of those for the superuser.
+// A fixed max overshoots badly: the crud profile hands the container the cpuset
+// 1-31,65-95, so nproc reports 62 and 62 x 8 asked for 496 connections against
+// 256. Postgres answered "sorry, too many clients already" and those requests
+// became 500s.
 let pgPool: any = null;
 {
   const dbUrl = process.env.DATABASE_URL;
   if (dbUrl) {
     try {
       const { Pool } = require("pg");
-      pgPool = new Pool({ connectionString: dbUrl, max: 8 });
+      const procs = parseInt(process.env.HTTPARENA_PROCS ?? "", 10) || 1;
+      const budget = parseInt(process.env.DATABASE_MAX_CONN ?? "", 10) || 256;
+      // headroom for superuser_reserved_connections and anything else holding one
+      const max = Math.max(1, Math.floor((budget - 8) / procs));
+      pgPool = new Pool({ connectionString: dbUrl, max });
+      // Without this, node-pg re-emits every connection failure as an unhandled
+      // 'error' event and each one prints a stack trace: the crud run left a 54MB
+      // log with 72,031 of them.
+      pgPool.on("error", () => {});
     } catch (_) {}
   }
 }
