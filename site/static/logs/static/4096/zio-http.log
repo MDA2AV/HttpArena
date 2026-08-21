@@ -1,0 +1,7 @@
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+timestamp=2026-08-21T23:43:43.991333918Z level=INFO thread=#zio-fiber-240700772 message="Starting the server..." location=<empty>.Main.run.plain file=Main.scala line=401
+timestamp=2026-08-21T23:43:43.991314471Z level=INFO thread=#zio-fiber-2141345581 message="Starting the server..." location=<empty>.Main.run file=Main.scala line=408
+timestamp=2026-08-21T23:43:44.070531693Z level=INFO thread=#zio-fiber-240700772 message="Server started" location=<empty>.Main.run.plain file=Main.scala line=401
+timestamp=2026-08-21T23:43:44.070527816Z level=INFO thread=#zio-fiber-2141345581 message="Server started" location=<empty>.Main.run file=Main.scala line=408
