@@ -4,6 +4,7 @@
   "dependencies": {
     "ultimate-express": "^2.0.0",
     "better-sqlite3": "^13.0.2",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "ioredis": "^5.4.1"
   }
 }
