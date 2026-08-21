@@ -190,9 +190,15 @@
     "dir": "bun",
     "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the port.",
     "repo": "https://github.com/oven-sh/bun",
-    "type": "engine",
+    "type": "flagship",
     "engine": "bun",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "caddy": {
     "dir": "caddy",
@@ -279,9 +285,15 @@
     "dir": "deno",
     "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
     "repo": "https://github.com/denoland/deno",
-    "type": "engine",
+    "type": "flagship",
     "engine": "deno",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
   },
   "django": {
     "dir": "django",
@@ -851,9 +863,15 @@
     "dir": "node",
     "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
     "repo": "https://github.com/nodejs/node",
-    "type": "engine",
+    "type": "flagship",
     "engine": "node:http",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": false,
+      "middleware": false,
+      "request": false,
+      "response": false
+    }
   },
   "oxpecker": {
     "dir": "oxpecker",
@@ -1298,7 +1316,13 @@
     "repo": "https://github.com/uNetworking/uWebSockets.js",
     "type": "flagship",
     "engine": "uWebSockets",
-    "mode": "standard"
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": false,
+      "response": false
+    }
   },
   "vanilla-epoll": {
     "dir": "vanilla-epoll",

@@ -23,6 +23,31 @@ import sys
 from pathlib import Path
 
 
+# The four things a framework can do for you between an arriving request and a
+# finished response. Each one an entry does not do costs it 5% of its composite
+# — see site/content/docs/scoring/completeness.md.
+COMPLETENESS_AXES = ("routing", "middleware", "request", "response")
+
+
+def _completeness(value, meta_path: str) -> dict:
+    """Normalize meta.json's `completeness` to the four known axes.
+
+    Only `false` carries weight, so a typo'd key would silently mean "done"
+    rather than failing — hence the warning. An axis left out is left out on
+    purpose: it reads as done, which is what makes a partial declaration like
+    `{"middleware": false}` the natural way to write "only middleware missing".
+    """
+    if not isinstance(value, dict):
+        print(f"[warn] {meta_path}: completeness must be an object of "
+              f"{'/'.join(COMPLETENESS_AXES)} booleans - ignoring", file=sys.stderr)
+        return {}
+    for k in value:
+        if k not in COMPLETENESS_AXES:
+            print(f"[warn] {meta_path}: unknown completeness axis {k!r} - ignored "
+                  f"(expected {', '.join(COMPLETENESS_AXES)})", file=sys.stderr)
+    return {a: bool(value[a]) for a in COMPLETENESS_AXES if a in value}
+
+
 def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
     """Aggregate every frameworks/*/meta.json into site/data/frameworks.json.
 
@@ -51,6 +76,8 @@ def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
         }
         if "mode" in m:
             entry["mode"] = m["mode"]
+        if "completeness" in m:
+            entry["completeness"] = _completeness(m["completeness"], meta_path)
         groups.setdefault(display, []).append(entry)
 
     out: dict[str, dict] = {}

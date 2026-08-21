@@ -417,10 +417,27 @@
   .cm .fwcell .nm{font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0}
   .cm .fwcell .lang{flex:none; font-size:.72rem; white-space:nowrap}
   .cm .fwcell .nm a:hover{color:var(--accent)}
-  .cm .scoreh,.cm .scorec{left:400px; width:104px; min-width:104px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
+  /* 8px wider than it was: the ? and its gap are what the header gained, and an
+     auto-layout column would otherwise grow past the 104px floor on its own. */
+  .cm .scoreh,.cm .scorec{left:400px; width:112px; min-width:112px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
   .cm .scoreh + th, .cm .scorec + td{padding-left:1.3rem}
+  /* The one column with a method behind it, and the method has a term - the
+     completeness factor - that cannot be read off the table. Every other header
+     explains itself in a tooltip; this one needs to say out loud that there is
+     something to open. Sized to sit inside the header beside the sort arrow,
+     and it does not sort when clicked. Boxed rather than circled: the sharp-edge
+     reset at the end of this sheet wins over any border-radius set here. */
+  .cm .scoreh .hq{display:inline-flex; align-items:center; justify-content:center; width:12px; height:12px;
+    margin-left:.34rem; border:1px solid currentColor; font:700 .58rem/1 var(--sans);
+    text-transform:none; letter-spacing:0; opacity:.55; vertical-align:1px; color:inherit}
+  .cm .scoreh .hq:hover{opacity:1; color:var(--accent); border-color:var(--accent)}
   .cm .scorec .sc{display:flex; flex-direction:column; align-items:flex-start; gap:.12rem}
   .cm .scorec .sc b{font-weight:600; color:var(--text); font-family:var(--mono); font-variant-numeric:tabular-nums; font-size:.80rem}
+  /* No bonus colour: the completeness factor is 1.00 at best, so the delta is
+     never positive and a green state here would be unreachable. */
+  .cm .scorec .sc b .cmp{font-weight:500; font-size:.68rem; line-height:1; letter-spacing:-.01em; margin-left:.2rem}
+  .cm .scorec .sc b .cmp.pen{color:#c0392b} html[data-theme="dark"] .cm .scorec .sc b .cmp.pen{color:#f0857a}
+  .cm .scorec .sc b .cmp.zero{color:var(--muted); opacity:.65}
   .cm .scorec .sc .bar{width:100%; height:3px; background:var(--bar-track); overflow:hidden}
   .cm .scorec .sc .bar i{display:block; height:100%; border-radius:3px}
   .cm tbody tr:nth-child(even) td{background:var(--zebra)}
@@ -470,11 +487,11 @@
       <a class="icon-btn" href="https://mda2av.github.io/Http11Probe/" target="_blank" rel="noopener" title="RFC Compliance" aria-label="RFC Compliance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></a>
     </div>
     <div class="type-filter" id="typeFilter">
-      <button data-type="flagship" data-tip="Mature framework with an active development team, a solid ecosystem, and an established community around it; covers a complete test category.">Flagship</button>
-      <button data-type="emerging" data-tip="A real framework that doesn’t yet meet the full flagship bar - younger, minimal, or partial coverage.">Emerging</button>
+      <button data-type="flagship" data-tip="Proven in production - real applications are built and operated on it at scale, and it is actively maintained. A runtime’s own HTTP server counts; a router and middleware are not required.">Flagship</button>
+      <button data-type="emerging" data-tip="A genuine, working server that is not yet production-proven - young, niche, or without real deployments to point to.">Emerging</button>
       <button data-type="experimental" data-tip="Very new, unproven work. Ranked with frameworks but hidden until you select it.">Experimental</button>
       <span class="tf-div" aria-hidden="true"></span>
-      <button data-type="engine" data-tip="Bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.">Engine</button>
+      <button data-type="engine" data-tip="An HTTP implementation applications are not written against - raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.">Engine</button>
       <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
       <span class="tf-div" aria-hidden="true"></span>
       <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow ring).">Tuned</button>
@@ -624,10 +641,10 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function typeAbbr(t){ return {flagship:'flagship', emerging:'emerging', experimental:'experimental', engine:'engine', infrastructure:'infra'}[t] || t; }
   var TYPE_TIP={
-    flagship:'Flagship - mature framework with an active development team, a solid ecosystem, and an established community around it; covers a complete test category.',
-    emerging:'Emerging - a real framework that doesn’t yet meet the full flagship bar (younger, minimal, or partial coverage).',
+    flagship:'Flagship - proven in production: real applications are built and operated on it at scale, and it is actively maintained. A runtime’s own HTTP server counts; a router and middleware are not required.',
+    emerging:'Emerging - a genuine, working server that is not yet production-proven (young, niche, or without real deployments to point to).',
     experimental:'Experimental - very new, unproven work. Ranked with frameworks but hidden until selected.',
-    engine:'Engine - bare-metal HTTP implementation (raw sockets / low-level I/O). Ranked separately.',
+    engine:'Engine - an HTTP implementation applications are not written against: raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.',
     infrastructure:'Infrastructure - reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.'
   };
   function typeTip(t){ return TYPE_TIP[t]||t; }
@@ -638,7 +655,8 @@ document.addEventListener('DOMContentLoaded', function(){
     p99:'99th-percentile latency - 99% of requests were faster than this.',
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
-    score:'Composite - sum of normalized per-profile scores (each profile leader = 100).',
+    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.80. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.'
   };
   function initTips(){
@@ -657,7 +675,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var h='<div class="modal-card">'
       + '<button class="modal-x" data-close aria-label="Close">×</button>'
       + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+tunedRing(fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(fw))+'">'+typeAbbr(t)+'</span></div>'
-      + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':''].filter(Boolean).join(' · '))+'</div>';
+      + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
+          cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
     var mdl=medalsOf(fw);
     if(mdl.length){
@@ -1148,6 +1167,45 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // ── COMPOSITE scoring (mirrors the canonical board) ─────
   var MIXW={baseline:0.15, json:1, upload:10, static:2, async_db:10};
+  // Completeness: the four things a framework can do for you between an
+  // arriving request and a finished response - route it, run middleware around
+  // the handler, hand the request over already made (path and query parameters,
+  // a body buffered or streamed) and build the response. Each one an entry does
+  // not do costs it 5%, so the factor runs from x1.00 down to x0.80. It scales
+  // the whole composite rather than any single profile, because it is a
+  // property of the entry and not of a workload.
+  //
+  // There is deliberately no bonus half. Doing the work a framework exists to
+  // do is the baseline, not a credit: the factor exists so a bare request
+  // callback cannot out-rank a real framework on throughput it only has because
+  // it does less. Nothing outside that request-to-response path counts - not
+  // templating, not an ORM, not the ecosystem.
+  //
+  // Only the framework tiers are graded. Engine and infrastructure entries
+  // implement none of the four - a raw-socket server has no router, a proxy has
+  // no handler to run middleware around - which is why grading them is pointless
+  // rather than generous: they would all take the same x0.80, leaving their
+  // order untouched, and outOfLeague already keeps them from being normalized
+  // against frameworks. So their factor is fixed at 1.
+  //
+  // Named positively rather than through isExclusiveType() so a future
+  // exclusive tier defaults to ungraded, and so the orphan `production` type
+  // scores neutral instead of being penalised.
+  var CMP_TYPES=['flagship','emerging','experimental'];
+  var CMP_AXES=['routing','middleware','request','response'];
+  // Only an explicit false costs anything. An axis left undeclared reads as
+  // done, so an entry submitted before the field existed is ungraded rather
+  // than assumed to be missing all four, and `{middleware:false}` is the whole
+  // declaration for an entry that only lacks middleware.
+  function cmpDecl(fw){ var c=D.meta[fw]&&D.meta[fw].cmp; return (c&&typeof c==='object')?c:null; }
+  function cmpMissing(fw){
+    var c=cmpDecl(fw); if(!c) return [];
+    return CMP_AXES.filter(function(a){ return c[a]===false; });
+  }
+  function cmpFactor(fw){
+    if(CMP_TYPES.indexOf(typeOf(fw))<0) return 1;
+    return 1-0.05*cmpMissing(fw).length;
+  }
   // Which profiles count toward the composite, per league. Frameworks use the
   // global `scored` flag, engines `engineScored`, infrastructure `infraScored`.
   //
@@ -1239,7 +1297,8 @@ document.addEventListener('DOMContentLoaded', function(){
           if(counts) sum+=sc;
         }
       });
-      if(any) rows.push({fw:fw, lang:langOf(fw), score:sum, cells:cells});
+      if(any) rows.push({fw:fw, lang:langOf(fw), score:sum*cmpFactor(fw), raw:sum,
+                         miss:cmpMissing(fw), dec:!!cmpDecl(fw), cells:cells});
     });
     // per-profile max score → normalize the per-cell quality bar so it adapts when the memory toggle lifts the ceiling above 100
     var maxV={}; pids.forEach(function(pid){ maxV[pid]=0; });
@@ -1249,6 +1308,43 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   // ── render ──────────────────────────────────────────────
+  // Why a row scored what it did. The completeness factor is the one part of
+  // the composite that is not read off a benchmark, so it is always shown with
+  // the raw sum it was applied to rather than folded silently into one number.
+  // Only the framework tiers carry the factor at all. An engine or a reverse
+  // proxy is not unassessed, it is out of scope for the question, so its row
+  // says nothing about completeness rather than reporting a clean sheet it was
+  // never given.
+  function cmpGraded(fw){ return CMP_TYPES.indexOf(typeOf(fw))>=0; }
+  function cmpTip(r){
+    if(!cmpGraded(r.fw)) return 'composite '+r.score.toFixed(1);
+    if(!r.dec) return 'composite '+r.score.toFixed(1)+' - completeness not assessed yet, so nothing is deducted (x1.00)';
+    if(!r.miss.length) return 'composite '+r.score.toFixed(1)+' - routing, middleware, request and response all covered, so nothing is deducted (x1.00)';
+    return 'composite '+r.score.toFixed(1)+' = '+r.raw.toFixed(1)+' raw x '+cmpFactor(r.fw).toFixed(2)
+         + ' - no '+r.miss.join(', no ')+' (-5% each)';
+  }
+  // The points the completeness factor took off, shown on every *assessed* row
+  // - (0) included. The score is the number people compare and this is the one
+  // part of it that was not read off a benchmark, so it is never folded in
+  // silently; a figure that only appeared on penalised rows would read as a
+  // mark against those entries rather than as a term every assessed row
+  // carries.
+  //
+  // An entry that has not declared the field gets no marker at all, not a (0).
+  // Both score x1.00, but they are not the same claim: (0) says the four axes
+  // were checked and nothing was deducted, and printing that over an entry
+  // nobody has looked at yet would be the board asserting a result it does not
+  // have. The tooltip tells the two apart in words; this keeps the glyph honest
+  // too.
+  //
+  // Taken off the displayed figures rather than the exact ones, so what is on
+  // screen always reconciles: 416 (-22) never sits next to a raw 438.4. The
+  // factor is at most 1, so d is never positive and already carries its sign.
+  function cmpDelta(r){
+    if(!cmpGraded(r.fw) || !r.dec) return '';
+    var d=Math.round(r.score)-Math.round(r.raw);
+    return '<span class="cmp '+(d<0?'pen':'zero')+'">('+d+')</span>';
+  }
   function render(){
     var th=document.getElementById('thead');
     var mn=document.querySelector('.main');
@@ -1370,7 +1466,9 @@ document.addEventListener('DOMContentLoaded', function(){
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
       + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'+ar('fw')+'</th>'
-      + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(TIP.score)+'">Composite'+ar('score')+'</th>';
+      + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(TIP.score)+'">Composite'
+      +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(TIP.scoreHelp)+'"'
+      +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
     pids.forEach(function(pid){ var p=PROF[pid]; var ref=!scoredForType(pid, leagueType()); th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
     th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
@@ -1381,7 +1479,7 @@ document.addEventListener('DOMContentLoaded', function(){
       var tr='<tr class="'+(fav?'fav':'')+'" data-fw-row="'+esc(r.fw)+'">'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
         + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
-        + '<td class="sticky scorec" title="raw composite '+r.score.toFixed(1)+'"><span class="sc"><b>'+r.score.toFixed(0)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
+        + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
@@ -1393,7 +1491,10 @@ document.addEventListener('DOMContentLoaded', function(){
     }).join('');
     var colspan=pids.length+4;
     document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
-    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(){ sortBy(h.dataset.k); }; });
+    // The ? in the Composite header is a link out to the docs, not a sort
+    // target - a click there must not also reorder the table behind the
+    // navigation.
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&ev.target.closest('.hq')) return; sortBy(h.dataset.k); }; });
     setupTopScroll();
   }
 

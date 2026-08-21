@@ -1223,6 +1223,39 @@ def _scored_for(prof, meta, pid, fw):
     return True
 
 
+# Framework tiers are the only ones graded on completeness. Engine and
+# infrastructure entries implement none of the four axes, which is why grading
+# them is pointless rather than generous: they would all take the same 0.80,
+# leaving their order untouched, and each league is normalized against itself
+# so their scores are never set against a framework's.
+CMP_TYPES = ("flagship", "emerging", "experimental")
+CMP_AXES = ("routing", "middleware", "request", "response")
+
+
+def _cmp_missing(meta, fw):
+    """The axes an entry declares it does not do, in CMP_AXES order."""
+    c = meta.get(fw, {}).get("cmp")
+    if not isinstance(c, dict):
+        return []
+    return [a for a in CMP_AXES if c.get(a) is False]
+
+
+def _cmp_factor(meta, fw):
+    """cmpFactor() in index.html: the completeness factor as a multiplier on the
+    whole composite.
+
+    Four things a framework can do between an arriving request and a finished
+    response - routing, middleware, the request it hands you, the response it
+    builds. Each one it does not do costs 5%, so the factor runs from 1.00 down
+    to 0.80 and never above it: doing that work is the baseline, not a credit.
+    An axis that is not declared reads as done, so an ungraded entry scores 1.00
+    - ungraded is not the same as missing everything.
+    """
+    if meta.get(fw, {}).get("type", "emerging") not in CMP_TYPES:
+        return 1.0
+    return 1.0 - 0.05 * len(_cmp_missing(meta, fw))
+
+
 def _eff_fn(A, in_league):
     """eff() in index.html: the number a profile is actually ranked on.
 
@@ -1327,7 +1360,7 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 if is_scored(pid, fw):
                     score += (eff(pid, fw) / max_r[pid]) * 100
         if any_result:
-            rows.append((fw, score))
+            rows.append((fw, score * _cmp_factor(meta, fw)))
     rows.sort(key=lambda r: (-r[1], r[0]))
     return rows
 
@@ -1900,7 +1933,10 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
         "",
         "The leaderboard at " + SITE + "/ is rendered client-side, so the ranking below is the "
         "same data as text. Scores are the composite: each profile is worth 100 to the best entry "
-        "in the field and a framework's score is the sum over the profiles of that family.",
+        "in the field and a framework's score is the sum over the profiles of that family, scaled "
+        "by its completeness factor - the entry loses 5% for each of routing, middleware, the "
+        "request it hands you and the response it builds that it does not do, so the factor runs "
+        "from 1.00 down to 0.80. Engine and infrastructure entries are not graded on it.",
         "",
     ]
 
@@ -2029,7 +2065,10 @@ def _board_faq(rows, fw_lang, current, round_name, n_profiles, n_entries):
         ("What is the fastest web framework?",
          "%s%s leads the %s composite with %.0f, ahead of %s and %s. The composite adds a "
          "normalized score over every profile of the family, where the leader of each profile "
-         "scores 100, so it ranks an entry over the whole suite instead of on one test."
+         "scores 100, so it ranks an entry over the whole suite instead of on one test. The "
+         "sum is then reduced by 5%% for each of routing, middleware, the request it hands you "
+         "and the response it builds that the entry does not do for you, so a framework that "
+         "does none of the four keeps 80%% of what it scored on throughput."
          % (e(lead[0]), " (%s)" % e(lead[2]) if lead[2] else "", SCOPE_NAME[DEFAULT_SCOPE],
             lead[1], ", ".join("%s (%.0f)" % (e(f), sc) for f, sc, _l in top[1:2]),
             ", ".join("%s (%.0f)" % (e(f), sc) for f, sc, _l in top[2:3]))),
@@ -2352,6 +2391,12 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
     if kind_has_mode(m.get("type", "emerging")):
         facts.append("tuned configuration" if m.get("mode") == "tuned"
                      else "standard configuration")
+    # Same reason as mode: only framework entries are graded on completeness,
+    # and an unassessed one is left silent rather than shown as the 4/4 it is
+    # scored at - the page should not assert a grade nobody gave it.
+    if m.get("type", "emerging") in CMP_TYPES and isinstance(m.get("cmp"), dict):
+        facts.append("completeness %d/4" % (4 - len([a for a in CMP_AXES
+                                                     if m["cmp"].get(a) is False])))
     out = ["<p>" + e(" · ".join(x for x in facts if x)) + "</p>"]
     if m.get("desc"):
         out.append("<p>" + e(m["desc"]) + "</p>")
@@ -2373,9 +2418,11 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
     if ranks:
         out.append('<h2 id="rank">Composite rank</h2>')
         out.append("<p>Each profile of a family is worth 100 to the entry that leads it, and the "
-                   "composite is the sum over the family. The field is this entry's own league: "
-                   "engines and reverse proxies are scored apart from frameworks. "
-                   '<a href="/docs/scoring/composite-score/">How it works</a>.</p>')
+                   "composite is the sum over the family, less 5% for each of routing, "
+                   "middleware, request and response the entry does not do for you - its "
+                   '<a href="/docs/scoring/completeness/">completeness factor</a>. The field is '
+                   "this entry's own league: engines and reverse proxies are scored apart from "
+                   'frameworks. <a href="/docs/scoring/composite-score/">How it works</a>.</p>')
         rows = "".join(
             '<tr><td><a href="%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
             % (e(link), e(SCOPE_NAME[scope]), rank, field, score)
@@ -2651,7 +2698,9 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
              % (_compare_url(lang), e(lang)) if has_compare else "")
     intro += ("<p>Every %s entry in the benchmark, compared on the composite score of each "
              "family. The composite sums a normalized score over the profiles of that family, "
-             "where the leader of each profile scores 100. Rank overall is the entry's place in "
+             "where the leader of each profile scores 100, and scales the sum by the entry's "
+             '<a href="/docs/scoring/completeness/">completeness factor</a>. '
+             "Rank overall is the entry's place in "
              "its own league across all languages; rank among %s narrows the same field to this "
              "language. Both link through to the board view they were taken in. "
              '<a href="/docs/scoring/composite-score/">How the score works</a>.</p>'
@@ -3278,6 +3327,7 @@ def main():
                 "repo": m.get("repo", ""),
                 "dir": m.get("dir", ""),
                 "engine": m.get("engine", ""),
+                "cmp": m.get("completeness"),
                 "desc": m.get("description", "")} for n, m in frameworks.items()}
 
     docs_tree, docs_content = build_docs()

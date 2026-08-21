@@ -1,8 +1,14 @@
 {
   "display_name": "deno",
   "language": "TS",
-  "type": "engine",
+  "type": "flagship",
   "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
   "engine": "deno",
   "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
   "repo": "https://github.com/denoland/deno",
