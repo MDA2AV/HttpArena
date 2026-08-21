@@ -1,4 +1,4 @@
-ARG NGINX_VERSION=1.31.3
+ARG NGINX_VERSION=1.31.4
 
 FROM debian:trixie AS build
 

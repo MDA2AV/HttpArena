@@ -2,6 +2,9 @@
   "name": "httparena-uwebsockets",
   "private": true,
   "dependencies": {
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.69.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.69.0",
+    "pg": "^8.13.0",
+    "pg-native": "^3.8.0",
+    "ioredis": "^5.4.1"
   }
 }
