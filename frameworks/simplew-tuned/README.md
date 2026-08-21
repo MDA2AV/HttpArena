@@ -22,10 +22,10 @@ SimpleW is Modern Web Server for .NET. Designed for Simplicity. Built for Speed.
 | `/crud/items` | GET/POST | Paginated list and create endpoint for the CRUD profile |
 | `/crud/items/{id}` | GET/PUT | Cached read and cache-invalidating update endpoint |
 | `/upload` | POST | Receives upload bodies up to 20 MB and returns the byte count |
-| `/static/{filename}` | GET | Serves preloaded static files with MIME types |
+| `/static/{filename}` | GET | Serves static files read from disk with MIME types |
 | `/ws` | WS | Echo websocket endpoint |
 
 ## Notes
 
 - Plain HTTP listens on `8080`.
-- If `/certs/server.crt` and `/certs/server.key` are mounted, HTTPS for `json-tls` listens on `8081`.
+- If `/certs/server.crt` and `/certs/server.key` are mounted, HTTPS for `json-tls` and `static-tls` listens on `8081`.
