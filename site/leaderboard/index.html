@@ -463,7 +463,6 @@
      never positive and a green state here would be unreachable. */
   .cm .scorec .sc b .cmp{font-weight:500; font-size:.68rem; line-height:1; letter-spacing:-.01em; margin-left:.2rem}
   .cm .scorec .sc b .cmp.pen{color:#c0392b} html[data-theme="dark"] .cm .scorec .sc b .cmp.pen{color:#f0857a}
-  .cm .scorec .sc b .cmp.zero{color:var(--muted); opacity:.65}
   .cm .scorec .sc .bar{width:100%; height:3px; background:var(--bar-track); overflow:hidden}
   .cm .scorec .sc .bar i{display:block; height:100%; border-radius:3px}
   .cm tbody tr:nth-child(even) td{background:var(--zebra)}
@@ -1407,19 +1406,18 @@ document.addEventListener('DOMContentLoaded', function(){
     return 'composite '+r.score.toFixed(1)+' = '+r.raw.toFixed(1)+' raw x '+cmpFactor(r.fw).toFixed(2)
          + ' - no '+r.miss.join(', no ')+' (-5% each)';
   }
-  // The points the completeness factor took off, shown on every *assessed* row
-  // - (0) included. The score is the number people compare and this is the one
-  // part of it that was not read off a benchmark, so it is never folded in
-  // silently; a figure that only appeared on penalised rows would read as a
-  // mark against those entries rather than as a term every assessed row
-  // carries.
+  // The points the completeness factor took off, shown only where it took any.
   //
-  // An entry that has not declared the field gets no marker at all, not a (0).
-  // Both score x1.00, but they are not the same claim: (0) says the four axes
-  // were checked and nothing was deducted, and printing that over an entry
-  // nobody has looked at yet would be the board asserting a result it does not
-  // have. The tooltip tells the two apart in words; this keeps the glyph honest
-  // too.
+  // This used to print (0) on every assessed row, on the argument that a figure
+  // appearing only on penalised rows reads as a mark against them. In practice
+  // it was the other way round: 89 of the 114 assessed entries lose nothing, so
+  // (0) was noise on the large majority of rows and the ones that actually lost
+  // points had to be picked out of it. Nothing deducted, nothing said.
+  //
+  // What that gives up is the at-a-glance difference between "assessed, nothing
+  // deducted" and "not assessed yet" - both are a bare score now. They are still
+  // different claims, and the tooltip still tells them apart in words, which is
+  // where that distinction was really being carried anyway.
   //
   // Taken off the displayed figures rather than the exact ones, so what is on
   // screen always reconciles: 416 (-22) never sits next to a raw 438.4. The
@@ -1427,7 +1425,8 @@ document.addEventListener('DOMContentLoaded', function(){
   function cmpDelta(r){
     if(!cmpGraded(r.fw) || !r.dec) return '';
     var d=Math.round(r.score)-Math.round(r.raw);
-    return '<span class="cmp '+(d<0?'pen':'zero')+'">('+d+')</span>';
+    if(!d) return '';
+    return '<span class="cmp pen">('+d+')</span>';
   }
   function render(){
     var th=document.getElementById('thead');

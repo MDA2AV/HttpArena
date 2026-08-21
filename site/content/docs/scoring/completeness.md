@@ -73,9 +73,9 @@ It is also the only part of the composite that is not read off a benchmark, so t
 416 (-22)     scored 438 on throughput, no routing and no middleware took 22 off
 ```
 
-Hovering gives the full arithmetic - the raw sum, the multiplier, and which axes were deducted. An entry with all four covered shows `(0)`, because a clean sheet is a result too.
+Only rows that lost something carry a figure. An entry that does all four shows its score alone, and so does one that has not been assessed - most of the field loses nothing, so a `(0)` on all of them would bury the rows that did.
 
-An entry that has not declared the field shows no marker at all. It scores ×1.00 like a complete one, but the two are not the same claim: `(0)` means the four axes were checked and nothing was deducted, and most of the field has not been assessed yet.
+Hovering gives the full arithmetic either way: the raw sum, the multiplier, which axes were deducted, or that the entry has not been assessed yet. That is where the difference between a checked clean sheet and an unassessed entry is carried.
 
 ## What it does not do
 
