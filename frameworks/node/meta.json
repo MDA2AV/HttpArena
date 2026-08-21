@@ -10,7 +10,7 @@
     "response": false
   },
   "engine": "node:http",
-  "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
+  "description": "Node's own HTTP server, node:http, with no framework and no router, and one worker per core sharing the port through reusePort. The only dependencies are pg and ioredis, which the database profiles cannot run without.",
   "repo": "https://github.com/nodejs/node",
   "enabled": true,
   "tests": [
@@ -19,7 +19,15 @@
     "limited-conn",
     "json",
     "json-comp",
-    "upload"
+    "json-tls",
+    "upload",
+    "static",
+    "static-tls",
+    "async-db",
+    "crud",
+    "fortunes",
+    "api-4",
+    "api-16"
   ],
   "maintainers": []
 }

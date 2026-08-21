@@ -379,7 +379,7 @@
   },
   "deno": {
     "dir": "deno",
-    "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
+    "description": "Deno's own HTTP server, Deno.serve, with no framework and no router on top. The only dependencies are pg and ioredis over npm: specifiers, which the database profiles cannot run without.",
     "repo": "https://github.com/denoland/deno",
     "type": "flagship",
     "engine": "deno",
@@ -1269,7 +1269,7 @@
   },
   "node": {
     "dir": "node",
-    "description": "Node's own HTTP server, node:http, with no framework and no dependencies, and one worker per core sharing the port through reusePort.",
+    "description": "Node's own HTTP server, node:http, with no framework and no router, and one worker per core sharing the port through reusePort. The only dependencies are pg and ioredis, which the database profiles cannot run without.",
     "repo": "https://github.com/nodejs/node",
     "type": "flagship",
     "engine": "node:http",

@@ -11,6 +11,10 @@ if [ -r /sys/fs/cgroup/cpu.max ]; then
   fi
 fi
 
+# The server splits DATABASE_MAX_CONN across the workers rather than letting each
+# open the whole allowance against Postgres.
+export BUN_WORKERS="$CPUS"
+
 for i in $(seq 1 "$CPUS"); do
   bun run /app/server.ts &
 done
