@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { Database } from "bun:sqlite";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
+import Handlebars from "handlebars";
 
 const SERVER_NAME = "hono-bun";
 
@@ -340,6 +341,38 @@ app.put("/crud/items/:id", async (c) => {
   return c.json({ id, name: body.name, price: body.price, quantity: body.quantity });
 });
 
+// --- /fortunes ---
+// Standard mode wants a real template engine here, with the template as its own
+// artifact rather than a string built in the handler. Handlebars is on the
+// profile's list of accepted engines and escapes {{ }} by default, which is the
+// check the profile calls load-bearing: row 11 of the seed carries a <script>.
+const fortunesTemplate = Handlebars.compile(
+  readFileSync(new URL("./views/fortunes.hbs", import.meta.url), "utf8"),
+);
+const RUNTIME_FORTUNE = "Additional fortune added at request time.";
+
+app.get("/fortunes", async (c) => {
+  if (!pgPool) return c.text("DB not available", 500);
+  try {
+    const r = await pgPool.query({
+      name: "fortunes",
+      text: "SELECT id, message FROM fortune",
+    });
+    const fortunes = r.rows.map((x: any) => ({ id: x.id, message: x.message }));
+    fortunes.push({ id: 0, message: RUNTIME_FORTUNE });
+    // Ordinal, not locale aware: the seed carries em-dashes and collation rules
+    // would order them in a way the profile does not ask for.
+    fortunes.sort((a: any, b: any) =>
+      a.message < b.message ? -1 : a.message > b.message ? 1 : 0,
+    );
+    return new Response(fortunesTemplate({ fortunes }), {
+      headers: { "content-type": "text/html; charset=utf-8", server: SERVER_NAME },
+    });
+  } catch (_) {
+    return c.text("query failed", 500);
+  }
+});
+
 // Catch-all
 app.all("*", () => new Response("Not found", { status: 404 }));
 
@@ -349,3 +382,20 @@ Bun.serve({
   reusePort: true,
   fetch: app.fetch,
 });
+
+// json-tls and static-tls: the same app over TLS on 8081. Both routes already
+// exist, so the listener is the only new thing. Bun negotiates http/1.1 here -
+// there is no h2 to fall into, which is what those two profiles require of the
+// ALPN. The harness only mounts /certs for the TLS profiles, so without them
+// this listener is not opened.
+if (existsSync("/certs/server.key") && existsSync("/certs/server.crt")) {
+  Bun.serve({
+    port: 8081,
+    reusePort: true,
+    tls: {
+      key: Bun.file("/certs/server.key"),
+      cert: Bun.file("/certs/server.crt"),
+    },
+    fetch: app.fetch,
+  });
+}

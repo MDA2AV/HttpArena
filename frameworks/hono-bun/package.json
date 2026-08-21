@@ -2,8 +2,9 @@
   "name": "httparena-hono-bun",
   "private": true,
   "dependencies": {
+    "handlebars": "^4.7.9",
     "hono": "^4.7.0",
-    "pg": "^8.13.0",
-    "ioredis": "^5.4.1"
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.0"
   }
 }
