@@ -1,0 +1,50 @@
+Fatal error on transport TCPTransport
+protocol: <asyncpg.connect_utils.TLSUpgradeProto object at 0x7e9a9c6c1710>
+transport: <TCPTransport closed=False reading=False 0x5d0dafa57cb0>
+Traceback (most recent call last):
+  File "uvloop/handles/stream.pyx", line 838, in uvloop.loop.__uv_stream_on_read_impl
+  File "uvloop/loop.pyx", line 109, in uvloop.loop.run_in_context1
+  File "/usr/local/lib/python3.13/site-packages/asyncpg/connect_utils.py", line 784, in data_received
+    self.on_data.set_result(False)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+asyncio.exceptions.InvalidStateError: invalid state
+Fatal error on transport TCPTransport
+protocol: <asyncpg.connect_utils.TLSUpgradeProto object at 0x7e9a9c10be70>
+transport: <TCPTransport closed=False reading=False 0x5d0daeb8a4a0>
+Traceback (most recent call last):
+  File "uvloop/handles/stream.pyx", line 838, in uvloop.loop.__uv_stream_on_read_impl
+  File "uvloop/loop.pyx", line 109, in uvloop.loop.run_in_context1
+  File "/usr/local/lib/python3.13/site-packages/asyncpg/connect_utils.py", line 784, in data_received
+    self.on_data.set_result(False)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+asyncio.exceptions.InvalidStateError: invalid state
+Fatal error on transport TCPTransport
+protocol: <asyncpg.connect_utils.TLSUpgradeProto object at 0x7e9a9c1d50f0>
+transport: <TCPTransport closed=False reading=False 0x5d0daedd0bb0>
+Traceback (most recent call last):
+  File "uvloop/handles/stream.pyx", line 838, in uvloop.loop.__uv_stream_on_read_impl
+  File "uvloop/loop.pyx", line 109, in uvloop.loop.run_in_context1
+  File "/usr/local/lib/python3.13/site-packages/asyncpg/connect_utils.py", line 784, in data_received
+    self.on_data.set_result(False)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+asyncio.exceptions.InvalidStateError: invalid state
+Fatal error on transport TCPTransport
+protocol: <asyncpg.connect_utils.TLSUpgradeProto object at 0x7b0242f55080>
+transport: <TCPTransport closed=False reading=False 0x5825035f4760>
+Traceback (most recent call last):
+  File "uvloop/handles/stream.pyx", line 838, in uvloop.loop.__uv_stream_on_read_impl
+  File "uvloop/loop.pyx", line 109, in uvloop.loop.run_in_context1
+  File "/usr/local/lib/python3.13/site-packages/asyncpg/connect_utils.py", line 784, in data_received
+    self.on_data.set_result(False)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+asyncio.exceptions.InvalidStateError: invalid state
+Fatal error on transport TCPTransport
+protocol: <asyncpg.connect_utils.TLSUpgradeProto object at 0x77926cbfc980>
+transport: <TCPTransport closed=False reading=False 0x59c016b21750>
+Traceback (most recent call last):
+  File "uvloop/handles/stream.pyx", line 838, in uvloop.loop.__uv_stream_on_read_impl
+  File "uvloop/loop.pyx", line 109, in uvloop.loop.run_in_context1
+  File "/usr/local/lib/python3.13/site-packages/asyncpg/connect_utils.py", line 784, in data_received
+    self.on_data.set_result(False)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+asyncio.exceptions.InvalidStateError: invalid state
