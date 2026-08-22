@@ -128,14 +128,43 @@ async fn upload(data: Data<'_>) -> String {
     }
 }
 
-#[launch]
-fn rocket() -> _ {
-    // Leaked once at startup so handlers borrow the items instead of cloning
-    // every string into the response.
-    let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
-
+// Single definition of the app; both the plaintext and the TLS listener are
+// configured from it, so the two ports cannot drift apart.
+fn build(dataset: &'static [DatasetItem]) -> rocket::Rocket<rocket::Build> {
     rocket::build().manage(dataset).mount(
         "/",
         routes![pipeline, baseline11_get, baseline11_post, json_items, upload],
     )
+}
+
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
+    // Leaked once at startup so handlers borrow the items instead of cloning
+    // every string into the response.
+    let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
+
+    // Rocket binds one address per instance, so json-tls needs a second one.
+    // Both start from Config::figment(), which keeps the ROCKET_* env from the
+    // Dockerfile (address, log level) applying to each.
+    let plain = build(dataset).configure(rocket::Config::figment().merge(("port", 8080)));
+
+    // Rocket's own TLS, driven off the mounted PEMs. The harness only mounts
+    // /certs for the TLS profiles, so without them only 8080 comes up.
+    let cert = std::path::Path::new("/certs/server.crt");
+    let key = std::path::Path::new("/certs/server.key");
+    if cert.exists() && key.exists() {
+        let tls = build(dataset).configure(
+            rocket::Config::figment()
+                .merge(("port", 8081))
+                .merge(("tls.certs", cert))
+                .merge(("tls.key", key)),
+        );
+        let (plain_res, tls_res) = rocket::tokio::join!(plain.launch(), tls.launch());
+        plain_res?;
+        tls_res?;
+    } else {
+        plain.launch().await?;
+    }
+
+    Ok(())
 }

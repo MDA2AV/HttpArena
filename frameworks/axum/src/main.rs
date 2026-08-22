@@ -4,6 +4,7 @@ use axum::body::Bytes;
 use axum::extract::{DefaultBodyLimit, Path, Query, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use axum_server::tls_rustls::RustlsConfig;
 use serde::{Deserialize, Serialize};
 use tower_http::compression::CompressionLayer;
 
@@ -127,6 +128,25 @@ async fn main() {
         .layer(CompressionLayer::new())
         .layer(DefaultBodyLimit::max(MAX_BODY))
         .with_state(dataset);
+
+    // json-tls on 8081, served by the same Router. axum-server is axum's own
+    // TLS companion (it is what the axum tls-rustls example uses), so the
+    // accept loop is the framework's rather than hand-rolled here. The harness
+    // only mounts /certs for the TLS profiles, hence the guard.
+    let cert = std::path::Path::new("/certs/server.crt");
+    let key = std::path::Path::new("/certs/server.key");
+    if cert.exists() && key.exists() {
+        // ring rather than aws-lc-rs: same TLS, no C toolchain in the build image
+        rustls::crypto::ring::default_provider().install_default().ok();
+        let tls_config = RustlsConfig::from_pem_file(cert, key).await.unwrap();
+        let tls_app = app.clone();
+        tokio::spawn(async move {
+            axum_server::bind_rustls("0.0.0.0:8081".parse().unwrap(), tls_config)
+                .serve(tls_app.into_make_service())
+                .await
+                .unwrap();
+        });
+    }
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();
