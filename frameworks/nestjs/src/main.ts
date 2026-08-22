@@ -1,7 +1,8 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import cluster from 'node:cluster';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { createServer as createHttpsServer } from 'node:https';
 import os from 'node:os';
 import compression from 'compression';
 import { AppModule } from './app.module';
@@ -25,6 +26,19 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false, logger: false });
   app.use(compression());
   await app.listen(8080);
+
+  // json-tls on 8081. The adapter's instance is the very Express app Nest just
+  // wired the controllers and compression onto, so putting it behind node:https
+  // serves the same pipeline rather than a second copy. Certs are only mounted
+  // for the TLS profiles, hence the guard.
+  const cert = '/certs/server.crt';
+  const key = '/certs/server.key';
+  if (existsSync(cert) && existsSync(key)) {
+    createHttpsServer(
+      { key: readFileSync(key), cert: readFileSync(cert) },
+      app.getHttpAdapter().getInstance(),
+    ).listen(8081);
+  }
 }
 
 if (cluster.isPrimary) {
