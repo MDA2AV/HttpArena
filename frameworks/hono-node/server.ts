@@ -3,7 +3,8 @@ import { Hono } from "hono";
 import { compress } from "hono/compress";
 import cluster from "node:cluster";
 import os from "node:os";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { createServer as createHttpsServer } from "node:https";
 
 const SERVER_NAME = "hono-node";
 
@@ -110,4 +111,19 @@ if (cluster.isPrimary) {
 
   // Start — node:http through the Hono adapter, one worker per core
   serve({ fetch: app.fetch, port: 8080 });
+
+  // json-tls on 8081: the same app.fetch behind node:https. The adapter takes the
+  // server factory, so this is the identical Hono instance and middleware chain,
+  // not a second copy of the routes. Certs are only mounted for the TLS profiles.
+  if (existsSync("/certs/server.crt") && existsSync("/certs/server.key")) {
+    serve({
+      fetch: app.fetch,
+      port: 8081,
+      createServer: createHttpsServer,
+      serverOptions: {
+        key: readFileSync("/certs/server.key"),
+        cert: readFileSync("/certs/server.crt"),
+      },
+    });
+  }
 }

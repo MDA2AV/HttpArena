@@ -18,6 +18,7 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-tls",
     "json-comp",
     "upload",
     "api-4",

@@ -104,4 +104,14 @@ if (cluster.isPrimary) {
     // under cluster only the first worker gets port 8080 and the others fail with
     // EADDRINUSE, silently: srvx catches the listen error, so they stay up serving nothing
     serve(app, { port: 8080, hostname: '0.0.0.0', reusePort: true, silent: true });
+
+    // json-tls on 8081. srvx (h3's server layer) takes the PEM paths directly and
+    // builds the node:https server itself, so this is the same h3 app on both
+    // ports. Certs are only mounted for the TLS profiles, hence the guard.
+    if (fs.existsSync('/certs/server.crt') && fs.existsSync('/certs/server.key')) {
+        serve(app, {
+            port: 8081, hostname: '0.0.0.0', reusePort: true, silent: true,
+            tls: { cert: '/certs/server.crt', key: '/certs/server.key' },
+        });
+    }
 }

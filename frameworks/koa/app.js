@@ -1,4 +1,5 @@
 const cluster = require('cluster');
+const https = require('node:https');
 const os = require('os');
 
 function getCPUCount() {
@@ -92,4 +93,18 @@ if (cluster.isPrimary) {
 
     app.use(router.routes());
     app.listen(8080);
+
+    // json-tls on 8081: the same app, behind a TLS server. app.callback() is the
+    // node request handler Koa already builds for its own listen(), so this is
+    // the same middleware chain rather than a second copy. Every worker binds it
+    // as they all bind 8080. The harness only mounts /certs for the TLS
+    // profiles, so without them it is not opened.
+    const cert = '/certs/server.crt';
+    const key = '/certs/server.key';
+    if (fs.existsSync(cert) && fs.existsSync(key)) {
+        https.createServer(
+            { key: fs.readFileSync(key), cert: fs.readFileSync(cert) },
+            app.callback()
+        ).listen(8081);
+    }
 }

@@ -20,8 +20,11 @@ if (cluster.isPrimary) {
     start();
 }
 
-async function start() {
-    const fastify = require('fastify')({ logger: false });
+// Fastify binds one instance to one server, so the TLS listener needs its own
+// instance. build() is the single definition of the app — both ports register
+// the identical plugins and routes from it, rather than a hand-copied subset.
+async function build(serverOpts) {
+    const fastify = require('fastify')({ logger: false, ...serverOpts });
     const fs = require('fs');
     const Database = require('better-sqlite3');
 
@@ -178,5 +181,18 @@ async function start() {
         }
     });
 
-    await fastify.listen({ port: 8080, host: '0.0.0.0' });
+    return fastify;
+}
+
+async function start() {
+    const fs = require('fs');
+    await (await build({})).listen({ port: 8080, host: '0.0.0.0' });
+
+    // json-tls on 8081. The harness only mounts /certs for the TLS profiles.
+    const cert = '/certs/server.crt';
+    const key = '/certs/server.key';
+    if (fs.existsSync(cert) && fs.existsSync(key)) {
+        const tls = await build({ https: { key: fs.readFileSync(key), cert: fs.readFileSync(cert) } });
+        await tls.listen({ port: 8081, host: '0.0.0.0' });
+    }
 }
