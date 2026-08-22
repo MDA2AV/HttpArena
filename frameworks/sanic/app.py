@@ -6,7 +6,7 @@ import os
 import asyncpg
 import redis.asyncio as aioredis
 from sanic import Sanic
-from sanic.response import file_stream
+from sanic.response import ResponseStream
 from sanic.response import json as json_response
 from sanic.response import raw, text
 
@@ -313,15 +313,25 @@ async def static_file(request, filename):
     if not os.path.isfile(path):
         return raw(b"", status=404)
     ext = os.path.splitext(filename)[1]
-    return await file_stream(
-        path, mime_type=MIME_TYPES.get(ext, "application/octet-stream")
-    )
+    # Read the body rather than streaming it. file_stream returns a
+    # ResponseStream, which the response middleware below cannot read - it
+    # raised on every single static request, and the traceback it logged each
+    # time ran the container log to 240MB over one profile.
+    with open(path, "rb") as fh:
+        body = fh.read()
+    return raw(body, content_type=MIME_TYPES.get(ext, "application/octet-stream"))
 
 
 @app.on_response
 async def compress_response(request, response):
     # Nothing is compressed unless the client negotiated it, so the plain
     # /json profile keeps sending plain JSON on the same route.
+    #
+    # A streaming response has no body to read and raises here; the error is
+    # caught by Sanic and logged, so it costs a traceback per request rather
+    # than a failure. Skip those instead.
+    if isinstance(response, ResponseStream):
+        return
     body = response.body
     if not body or len(body) < MIN_COMPRESS_SIZE:
         return
