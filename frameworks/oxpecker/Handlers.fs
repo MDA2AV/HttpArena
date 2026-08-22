@@ -2,6 +2,7 @@ module HttpArena.Handlers
 
 open System
 open System.Buffers
+open System.Globalization
 open System.IO
 open System.Text
 open HttpArena.Services
@@ -12,12 +13,18 @@ open Oxpecker
 /// back to `fallback` when the parameter is absent or unparsable.
 let private queryInt (ctx: HttpContext) (key: string) (fallback: int) =
     match ctx.TryGetQueryValue key with
-    | Some raw -> int raw
+    | Some raw ->
+        match Int32.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture) with
+        | true, value -> value
+        | _ -> fallback
     | None -> fallback
 
 let private queryFloat (ctx: HttpContext) (key: string) (fallback: float) =
     match ctx.TryGetQueryValue key with
-    | Some raw -> float raw
+    | Some raw ->
+        match Double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture) with
+        | true, value -> value
+        | _ -> fallback
     | None -> fallback
 
 // ── Connection profiles ────────────────────────────────────────────────────
@@ -34,11 +41,20 @@ let baseline: EndpointHandler =
 /// POST /baseline11 — sum of the two query parameters plus the request body.
 let baselineWithBody: EndpointHandler =
     fun ctx ->
-        use reader = new BinaryReader(ctx.Request.Body, Encoding.UTF8, true)
         let a = queryInt ctx "a" 0
         let b = queryInt ctx "b" 0
-        let fromBody = reader.ReadInt32()
-        ctx.WriteText(string (a + b + fromBody))
+
+        task {
+            use reader = new StreamReader(ctx.Request.Body)
+            let! body = reader.ReadToEndAsync()
+
+            let fromBody =
+                match Int32.TryParse(body, NumberStyles.Integer, CultureInfo.InvariantCulture) with
+                | true, value -> value
+                | _ -> 0
+
+            return! ctx.WriteText(string (a + b + fromBody))
+        }
 
 // ── Workload profiles ──────────────────────────────────────────────────────
 

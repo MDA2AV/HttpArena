@@ -17,7 +17,7 @@ let private items =
     if File.Exists path then
         JsonSerializer.Deserialize<Item[]>(File.ReadAllText path, Serialization.options)
     else
-        failwith "No dataset"
+        null
 
 let getItems (count: int) (multiplier: int) =
     let count = Math.Clamp(count, 0, items.Length)
