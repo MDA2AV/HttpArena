@@ -1,14 +1,7 @@
 {
   "display_name": "node",
   "language": "JS",
-  "type": "flagship",
-  "mode": "standard",
-  "completeness": {
-    "routing": false,
-    "middleware": false,
-    "request": false,
-    "response": false
-  },
+  "type": "engine",
   "engine": "node:http",
   "description": "Node's own HTTP server, node:http, with no framework and no router, and one worker per core sharing the port through reusePort. The only dependencies are pg and ioredis, which the database profiles cannot run without.",
   "repo": "https://github.com/nodejs/node",
