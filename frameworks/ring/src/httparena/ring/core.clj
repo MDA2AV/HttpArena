@@ -12,7 +12,11 @@
    [ring.util.response :as response]
    [selmer.parser :as selmer])
   (:import
-   [java.io InputStream OutputStream]
+   [java.io FileInputStream InputStream OutputStream]
+   [java.security KeyFactory KeyStore]
+   [java.security.cert Certificate CertificateFactory]
+   [java.security.spec PKCS8EncodedKeySpec]
+   [java.util Base64]
    [java.net URI]
    [org.eclipse.jetty.server Server]
    [org.eclipse.jetty.server.handler.gzip GzipHandler]
@@ -269,19 +273,53 @@
   (doto (QueuedThreadPool.)
     (.setVirtualThreadsExecutor (VirtualThreads/getDefaultVirtualThreadsExecutor))))
 
+(def ^:private ^:const tls-cert-path "/certs/server.crt")
+(def ^:private ^:const tls-key-path "/certs/server.key")
+
+;; The harness mounts PEMs; Jetty wants a KeyStore. Built with the plain JDK
+;; crypto APIs rather than java.security.PEMDecoder, which is still a preview
+;; API on the JDK in this image.
+(defn- pem->keystore ^KeyStore [^String cert-path ^String key-path]
+  (let [certs (with-open [in (FileInputStream. cert-path)]
+                (.generateCertificates (CertificateFactory/getInstance "X.509") in))
+        chain (into-array Certificate certs)
+        der (->> (-> (slurp key-path)
+                     (str/replace #"-----(BEGIN|END) PRIVATE KEY-----" "")
+                     (str/replace #"\s" ""))
+                 (.decode (Base64/getDecoder)))
+        pk (.generatePrivate (KeyFactory/getInstance "RSA")
+                             (PKCS8EncodedKeySpec. der))
+        pw (char-array 0)]
+    (doto (KeyStore/getInstance "PKCS12")
+      (.load nil pw)
+      (.setKeyEntry "server" pk pw chain))))
+
+;; json-tls on 8081, same handler as 8080. Only opened when the certs are
+;; mounted, which the harness does just for the TLS profiles.
+(defn- tls-opts []
+  (if (and (.exists (io/file tls-cert-path)) (.exists (io/file tls-key-path)))
+    {:ssl?            true
+     :ssl-port        8081
+     :keystore        (pem->keystore tls-cert-path tls-key-path)
+     :key-password    ""
+     :sni-host-check? false}
+    {}))
+
 (defn -main [& _args]
   (when-not (vector? @dataset)
     (throw (ex-info "dataset.json must contain a JSON array"
                     {:path "/data/dataset.json"})))
   (.addShutdownHook (Runtime/getRuntime) (Thread. ^Runnable close-datasource!))
   (jetty/run-jetty handler
-                   {:host         "0.0.0.0"
-                    :configurator (fn [^Server server]
-                                    (let [gzip-handler (doto (GzipHandler.)
-                                                         (.setExcludedPaths
-                                                          (into-array String ["/static/*"]))
-                                                         (.setHandler (.getHandler server)))]
-                                      (.setHandler server gzip-handler)))
-                    :join?        true
-                    :port         8080
-                    :thread-pool  (virtual-thread-pool)}))
+                   (merge
+                    {:host         "0.0.0.0"
+                     :configurator (fn [^Server server]
+                                     (let [gzip-handler (doto (GzipHandler.)
+                                                          (.setExcludedPaths
+                                                           (into-array String ["/static/*"]))
+                                                          (.setHandler (.getHandler server)))]
+                                       (.setHandler server gzip-handler)))
+                     :join?        true
+                     :port         8080
+                     :thread-pool  (virtual-thread-pool)}
+                    (tls-opts))))
