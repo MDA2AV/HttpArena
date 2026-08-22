@@ -18,12 +18,41 @@ defmodule PhoenixBandit.Application do
       # Start to serve requests, typically the last entry
       {DynamicSupervisor, strategy: :one_for_one, name: PhoenixBandit.DB.Supervisor},
       PhoenixBanditWeb.Endpoint
-    ]
+    ] ++ json_tls_child()
 
     # See https://elixir.hexdocs.pm/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: PhoenixBandit.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  # json-tls needs HTTP/1.1 over TLS on 8081. The endpoint's own https: config
+  # already holds 8443 for the h2 profiles and Phoenix binds one https listener
+  # per endpoint, so this is a second Bandit listener in front of the same
+  # endpoint plug -- the identical pipeline, not a copy of it. The harness only
+  # mounts /certs for the TLS profiles, so without them the child is not added.
+  defp json_tls_child do
+    cert = System.get_env("TLS_CERT_PATH", "/certs/server.crt")
+    key = System.get_env("TLS_KEY_PATH", "/certs/server.key")
+
+    if File.exists?(cert) and File.exists?(key) do
+      [
+        Supervisor.child_spec(
+          {Bandit,
+           plug: PhoenixBanditWeb.Endpoint,
+           scheme: :https,
+           port: 8081,
+           ip: {0, 0, 0, 0},
+           thousand_island_options: [
+             num_acceptors: 100,
+             transport_options: [certfile: Path.expand(cert), keyfile: Path.expand(key)]
+           ]},
+          id: :json_tls_listener
+        )
+      ]
+    else
+      []
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
