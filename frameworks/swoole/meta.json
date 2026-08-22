@@ -27,6 +27,7 @@
     "static-h2",
     "api-4",
     "api-16",
-    "async-db"
+    "async-db",
+    "crud"
   ]
 }

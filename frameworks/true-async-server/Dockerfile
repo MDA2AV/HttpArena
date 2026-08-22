@@ -11,7 +11,7 @@ RUN printf '%s\n' \
  && rm -f /etc/php.d/xdebug.ini
 
 WORKDIR /app
-COPY entry.php PostgreSQL.php SQLite.php /app/
+COPY entry.php PostgreSQL.php SQLite.php SharedCache.php /app/
 
 EXPOSE 8080 8443 8443/udp
 

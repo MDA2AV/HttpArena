@@ -5,6 +5,7 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 
 require __DIR__ . '/PostgreSQL.php';
+require __DIR__ . '/Crud.php';
 
 $dataset = json_decode(file_get_contents('/data/dataset.json'), true);
 
@@ -48,6 +49,9 @@ $serveStatic = function (Request $request, Response $response, array $f): void {
         $response->end(file_get_contents($f['path']));
     }
 };
+
+// Allocate the shared crud cache before the workers fork, so they all map it.
+Crud::initCache();
 
 $http = new Server('0.0.0.0', 8080);
 $http->set([
@@ -115,6 +119,25 @@ $http->on('request', function (Request $request, Response $response) use ($datas
             $serveStatic($request, $response, $files[$path]);
             return;
         }
+    }
+
+    if ($path === '/crud/items') {
+        if ($request->server['request_method'] === 'POST') {
+            Crud::create($request, $response);
+        } else {
+            Crud::list($request, $response);
+        }
+        return;
+    }
+
+    if (str_starts_with($path, '/crud/items/')) {
+        $id = (int)substr($path, strlen('/crud/items/'));
+        if ($request->server['request_method'] === 'PUT') {
+            Crud::update($request, $response, $id);
+        } else {
+            Crud::read($request, $response, $id);
+        }
+        return;
     }
 
     $response->status(404);

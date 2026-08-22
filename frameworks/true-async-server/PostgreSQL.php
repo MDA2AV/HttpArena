@@ -122,4 +122,144 @@ final class PostgreSQL
             return [];
         }
     }
+
+    // ---- crud -------------------------------------------------------------
+    // Same pooled PDO the async-db profile uses. Each returns the JSON body the
+    // profile expects, or null where the row is missing.
+
+    private const CRUD_COLUMNS =
+        'id, name, category, price, quantity, active, tags, rating_score, rating_count';
+
+    private static function shape(array $row): array
+    {
+        return [
+            'id'       => (int)$row['id'],
+            'name'     => $row['name'],
+            'category' => $row['category'],
+            'price'    => (int)$row['price'],
+            'quantity' => (int)$row['quantity'],
+            'active'   => (bool)$row['active'],
+            // tags is a JSONB column, so PDO hands it back as text
+            'tags'     => json_decode($row['tags'], true),
+            'rating'   => [
+                'score' => (int)$row['rating_score'],
+                'count' => (int)$row['rating_count'],
+            ],
+        ];
+    }
+
+    public static function available(): bool
+    {
+        // Same lazy init as query(): the pool is opened per worker on first use,
+        // so a crud request landing on a worker that has not served async-db yet
+        // must open it rather than answer 500.
+        if (!self::$available) {
+            self::init();
+        }
+        return self::$available && self::$pdo !== null;
+    }
+
+    public static function crudList(string $category, int $page, int $limit): ?string
+    {
+        if (!self::available()) {
+            return null;
+        }
+        try {
+            $stmt = self::$pdo->prepare(
+                'SELECT ' . self::CRUD_COLUMNS
+                . ' FROM items WHERE category = ? ORDER BY id LIMIT ? OFFSET ?'
+            );
+            $stmt->execute([$category, $limit, ($page - 1) * $limit]);
+            $items = [];
+            while ($row = $stmt->fetch()) {
+                $items[] = self::shape($row);
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return json_encode(
+            ['items' => $items, 'total' => count($items), 'page' => $page, 'limit' => $limit],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+    }
+
+    public static function crudCreate(array $body): ?string
+    {
+        if (!self::available()) {
+            return null;
+        }
+        $name     = $body['name'] ?? 'New Product';
+        $price    = $body['price'] ?? 0;
+        $quantity = $body['quantity'] ?? 0;
+        try {
+            $stmt = self::$pdo->prepare(
+                'INSERT INTO items (id, name, category, price, quantity, active, tags, '
+                . 'rating_score, rating_count) '
+                . 'VALUES (?, ?, ?, ?, ?, true, \'["bench"]\', 0, 0) '
+                . 'ON CONFLICT (id) DO UPDATE SET name = ?, price = ?, quantity = ? RETURNING id'
+            );
+            $stmt->execute([
+                $body['id'] ?? null, $name, $body['category'] ?? 'test', $price, $quantity,
+                $name, $price, $quantity,
+            ]);
+            $row = $stmt->fetch();
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return json_encode([
+            'id'       => (int)$row['id'],
+            'name'     => $body['name'] ?? null,
+            'category' => $body['category'] ?? null,
+            'price'    => $body['price'] ?? null,
+            'quantity' => $body['quantity'] ?? null,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /** Returns the JSON row, false when the id is absent, null on failure. */
+    public static function crudRead(int $id)
+    {
+        if (!self::available()) {
+            return null;
+        }
+        try {
+            $stmt = self::$pdo->prepare(
+                'SELECT ' . self::CRUD_COLUMNS . ' FROM items WHERE id = ? LIMIT 1'
+            );
+            $stmt->execute([$id]);
+            $row = $stmt->fetch();
+        } catch (\Throwable $e) {
+            return null;
+        }
+        if (!$row) {
+            return false;
+        }
+        return json_encode(self::shape($row), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    /** Returns the JSON row, false when the id is absent, null on failure. */
+    public static function crudUpdate(int $id, array $body)
+    {
+        if (!self::available()) {
+            return null;
+        }
+        try {
+            $stmt = self::$pdo->prepare(
+                'UPDATE items SET name = ?, price = ?, quantity = ? WHERE id = ?'
+            );
+            $stmt->execute([
+                $body['name'] ?? 'Updated', $body['price'] ?? 0, $body['quantity'] ?? 0, $id,
+            ]);
+            if ($stmt->rowCount() === 0) {
+                return false;
+            }
+        } catch (\Throwable $e) {
+            return null;
+        }
+        return json_encode([
+            'id'       => $id,
+            'name'     => $body['name'] ?? null,
+            'price'    => $body['price'] ?? null,
+            'quantity' => $body['quantity'] ?? null,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
 }
