@@ -1,8 +1,0 @@
-Workerman[start.php] start in DEBUG mode
--------------------------------------------- WORKERMAN ---------------------------------------------
-Workerman/5.2.2         PHP/8.5.8 (JIT on)            Linux/6.17.0-22-generic
---------------------------------------------- WORKERS ----------------------------------------------
-event-loop  proto       user        worker      listen                 count       state            
-event       tcp         root        Mark        http://0.0.0.0:8080    64           [OK]            
-----------------------------------------------------------------------------------------------------
-Press Ctrl+C to stop. Start success.
