@@ -93,7 +93,12 @@ if (dbUrl) {
         // The pool is kept to one connection, the tag's overflow for a stalled pipeline, so
         // the connection budget stays perWorker + 1.
         const pool = new Pool({ connectionString: dbUrl, max: 1 });
-        sql = require('pg-telaio').createSql(pool, { pipeline: perWorker });
+        // stallMillis false turns off the tag's slow-query guard, which parks a connection that
+        // has stopped answering and sends its queries to the pool. Every query these profiles
+        // run is a point read of a few milliseconds, so the guard can only cost here: measured
+        // 5% to 12% at this shape. It stays on by default for a mixed workload, where one slow
+        // query would otherwise hold up the fast ones queued behind it.
+        sql = require('pg-telaio').createSql(pool, { pipeline: perWorker, stallMillis: false });
         pgPool = pool;
     } catch (e) {}
 }
