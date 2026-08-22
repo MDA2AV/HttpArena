@@ -151,9 +151,18 @@ post '/upload' => sub ($c) {
 
 app->log->level('info');
 
+# json-tls on 8081: the same app, over Mojo's own TLS listener. The harness
+# mounts /certs for the TLS profiles only, so without them only 8080 is opened
+# -- Mojo aborts at startup on a listen URL naming certificate files that are
+# not there.
+my @listen = ('http://*:8080');
+if (-f '/certs/server.crt' && -f '/certs/server.key') {
+    push @listen, 'https://*:8081?cert=/certs/server.crt&key=/certs/server.key';
+}
+
 Mojo::Server::Prefork->new(
     app     => app,
-    listen  => ['http://*:8080'],
+    listen  => \@listen,
     workers => cpu_count(),
 
     # A worker is not recycled in the middle of a run: limited-conn opens a new

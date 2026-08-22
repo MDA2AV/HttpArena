@@ -10,4 +10,8 @@ RUN mkdir -p logs
 ENV LAPIS_ENVIRONMENT=production
 
 EXPOSE 8080
-CMD ["openresty", "-p", "/app", "-c", "/app/nginx.conf", "-g", "daemon off;"]
+COPY json-tls.conf /app/json-tls.conf
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN mkdir -p /app/tls.d && chmod +x /usr/local/bin/entrypoint.sh
+
+CMD ["/usr/local/bin/entrypoint.sh"]

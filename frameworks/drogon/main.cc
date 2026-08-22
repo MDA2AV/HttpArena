@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <drogon/drogon.h>
 
 #include <cstdlib>
@@ -108,6 +109,16 @@ int main()
             callback(plainText(std::to_string(req->body().length())));
         },
         {Post});
+
+    // json-tls on 8081, served by the same handlers as 8080 through Drogon's
+    // own TLS listener. The harness mounts /certs for the TLS profiles only,
+    // so without them the listener is not added.
+    const std::string certFile = "/certs/server.crt";
+    const std::string keyFile = "/certs/server.key";
+    if (std::filesystem::exists(certFile) && std::filesystem::exists(keyFile))
+    {
+        app().addListener("0.0.0.0", 8081, true, certFile, keyFile);
+    }
 
     app().setLogLevel(trantor::Logger::kError)
         .addListener("0.0.0.0", 8080)
