@@ -1,74 +1,228 @@
+# Run a benchmark directly, without a PR.
+#
+# benchmark-pr.yml is the path a `/benchmark` comment takes: it checks out
+# refs/pull/<pr>/head, compares against main and reports back on the PR, so it
+# needs a PR number. This one runs a framework as it stands on a branch — main
+# by default — which is what you want for a re-measure after a rule change, a
+# machine change, or a result that looks wrong.
 name: Benchmark
 
 on:
   workflow_dispatch:
     inputs:
       framework:
-        description: 'Framework to benchmark (leave empty for all)'
-        required: false
-        default: ''
+        description: 'Framework(s): one directory name, a comma-separated list, or "all" for every enabled framework subscribed to the profile'
+        required: true
       profile:
-        description: 'Profile to run (e.g. baseline, baseline-h2, leave empty for all)'
+        description: 'Profile (e.g. baseline, static-tls). Leave empty to run every profile the framework subscribes to — required when framework is "all"'
         required: false
         default: ''
+      save:
+        description: 'Open a PR with the results (true/false). Anything else runs the benchmark and reports without committing'
+        required: false
+        default: 'false'
+      ref:
+        description: 'Branch or SHA to benchmark'
+        required: false
+        default: 'main'
 
 permissions:
   contents: write
   pull-requests: write
 
+# One benchmark at a time. The runner is a whole machine per run and a second
+# one would contend for CPU, so queue rather than cancel — cancelling mid-run
+# discards whatever the first had already measured (#1084).
 concurrency:
-  group: benchmark
+  group: benchmark-dispatch
   cancel-in-progress: false
 
 jobs:
+  runner-busy:
+    if: vars.RUNNER_LOCAL == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report runner unavailable
+        run: |
+          echo "::error::Runner is performing local benchmark runs and is disabled for GitHub Actions. Try later, or check Discord for runner state."
+          exit 1
+
   benchmark:
+    if: vars.RUNNER_LOCAL != 'true'
     runs-on: self-hosted
     environment: runner
+    # A popular profile across every subscribed framework legitimately runs for
+    # many hours.
+    timeout-minutes: 2880
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
 
-      - name: Detect modified frameworks
-        id: detect
+      # Resolve the framework list the same way benchmark-pr.yml does, so "all"
+      # and a comma-separated list mean the same thing on both paths.
+      - name: Resolve frameworks
+        id: resolve
+        env:
+          FRAMEWORK: ${{ inputs.framework }}
+          PROFILE: ${{ inputs.profile }}
         run: |
-          if [ -n "${{ inputs.framework }}" ]; then
-            echo "list=${{ inputs.framework }}" >> "$GITHUB_OUTPUT"
+          if [ "$FRAMEWORK" = "all" ]; then
+            if [ -z "$PROFILE" ]; then
+              echo "::error::framework=all requires a profile"
+              exit 1
+            fi
+            LIST=$(python3 -c '
+          import json, pathlib, re, sys
+          profile = sys.argv[1]
+          names = []
+          for meta in sorted(pathlib.Path("frameworks").glob("*/meta.json")):
+              name = meta.parent.name
+              if not re.match(r"^[A-Za-z0-9._-]{1,64}$", name):
+                  continue
+              try:
+                  m = json.load(open(meta))
+              except Exception:
+                  continue
+              if not m.get("enabled", True):
+                  continue
+              if profile in (m.get("tests") or []):
+                  names.append(name)
+          print(" ".join(names))
+          ' "$PROFILE")
           else
-            list=$(git diff --name-only HEAD~1 HEAD \
-              | grep '^frameworks/' \
-              | cut -d'/' -f2 \
-              | sort -u \
-              | tr '\n' ' ')
-            echo "list=$list" >> "$GITHUB_OUTPUT"
+            LIST=$(printf '%s' "$FRAMEWORK" | tr ',' ' ')
+            for fw in $LIST; do
+              if [ ! -d "frameworks/$fw" ]; then
+                echo "::error::framework '$fw' not found"
+                exit 1
+              fi
+            done
           fi
+          COUNT=$(echo $LIST | wc -w)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::error::no frameworks resolved"
+            exit 1
+          fi
+          echo "list=$LIST" >> "$GITHUB_OUTPUT"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Benchmarking $COUNT framework(s) on ${{ inputs.ref }}: $LIST"
 
-      - name: Run benchmarks
-        if: steps.detect.outputs.list != ''
+      - name: Clean previous containers and results
         run: |
-          for fw in ${{ steps.detect.outputs.list }}; do
-            echo ">>> Benchmarking: $fw"
-            ./scripts/benchmark.sh --save "$fw" ${{ inputs.profile }} || echo "WARN: $fw benchmark failed"
-          done
+          docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f 2>/dev/null || true
+          rm -rf results/ /tmp/bench_logs
+          mkdir -p /tmp/bench_logs
 
-      - name: Create PR with results
-        if: steps.detect.outputs.list != ''
+      # Frameworks run sequentially — each needs the whole machine. A failure
+      # doesn't stop the loop: the rest still run, whatever was saved stays
+      # saved, and the job is flagged red at the end.
+      - name: Run benchmarks
+        id: bench
+        env:
+          LIST: ${{ steps.resolve.outputs.list }}
+          PROFILE: ${{ inputs.profile }}
+        run: |
+          set -o pipefail
+          FAILED=""
+          for fw in $LIST; do
+            echo "::group::benchmark $fw"
+            if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
+              echo "::error::benchmark.sh failed for $fw"
+              FAILED="${FAILED:+$FAILED }$fw"
+            fi
+            echo "::endgroup::"
+          done
+          echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
+
+      - name: Summarise
+        if: always()
+        env:
+          LIST: ${{ steps.resolve.outputs.list }}
+          PROFILE: ${{ inputs.profile }}
+          FAILED: ${{ steps.bench.outputs.failed }}
+        run: |
+          {
+            echo "## Benchmark"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| ref | \`${{ inputs.ref }}\` |"
+            echo "| frameworks | \`$LIST\` |"
+            echo "| profile | \`${PROFILE:-all subscribed}\` |"
+            echo "| saved | ${{ inputs.save }} |"
+            [ -n "$FAILED" ] && echo "| failed | \`$FAILED\` |"
+            echo
+            for fw in $LIST; do
+              [ -f "/tmp/bench_logs/$fw.log" ] || continue
+              echo "<details><summary>$fw</summary>"
+              echo
+              echo '```'
+              grep -E "^\s*(profile|rps|Requests/sec|saved results)" "/tmp/bench_logs/$fw.log" | tail -40 || tail -40 "/tmp/bench_logs/$fw.log"
+              echo '```'
+              echo
+              echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The results land on a fresh branch off the benchmarked ref rather than
+      # being pushed to it, so a run against main never writes to main directly.
+      - name: Open a PR with the results
+        if: inputs.save == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LIST: ${{ steps.resolve.outputs.list }}
+          PROFILE: ${{ inputs.profile }}
+          FAILED: ${{ steps.bench.outputs.failed }}
         run: |
-          git config user.name "HttpArena Bot"
-          git config user.email "bot@httparena"
-          git add site/data/ site/static/logs/ 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            branch="benchmark-results/$(date +%Y%m%d-%H%M%S)"
-            git fetch origin main
-            git checkout -b "$branch" origin/main
-            git checkout HEAD@{1} -- site/data/ site/static/logs/
-            git commit -m "benchmark: update results for ${{ steps.detect.outputs.list }}"
-            git push -u origin "$branch"
-            gh pr create \
-              --title "benchmark: update results for ${{ steps.detect.outputs.list }}" \
-              --body "Automated benchmark results update." \
-              --base main \
-              --head "$branch"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- site/data/ site/static/logs/ && \
+             [ -z "$(git ls-files --others --exclude-standard site/data/ site/static/logs/)" ]; then
+            echo "No result changes to commit — nothing was saved."
+            exit 0
           fi
+
+          # Carry the generated results across the branch switch: checking out a
+          # new branch from origin/main would otherwise leave them behind or
+          # conflict with whatever main already has.
+          rm -rf /tmp/bench_out
+          mkdir -p /tmp/bench_out
+          cp -r site/data /tmp/bench_out/data
+          cp -r site/static/logs /tmp/bench_out/logs
+
+          branch="benchmark-results/$(date +%Y%m%d-%H%M%S)"
+          git fetch origin main
+          git checkout -B "$branch" origin/main
+          rm -rf site/data site/static/logs
+          mkdir -p site/static
+          cp -r /tmp/bench_out/data site/data
+          cp -r /tmp/bench_out/logs site/static/logs
+
+          git add site/data site/static/logs
+          if git diff --cached --quiet; then
+            echo "Results match main — nothing to open a PR for."
+            exit 0
+          fi
+
+          title="benchmark: ${PROFILE:-all profiles} for $LIST"
+          git commit -m "$title" -m "Run on ${{ inputs.ref }} via the Benchmark workflow.${FAILED:+
+          
+          benchmark.sh failed for: $FAILED}"
+          git push -u origin "$branch"
+
+          gh pr create \
+            --title "$title" \
+            --body "Benchmarked \`$LIST\` on \`${{ inputs.ref }}\`, profile \`${PROFILE:-all subscribed}\`, from the Benchmark workflow.${FAILED:+
+
+          **benchmark.sh failed for:** \`$FAILED\` — those results are missing or partial.}" \
+            --base main \
+            --head "$branch"
+
+      - name: Fail if any framework failed
+        if: steps.bench.outputs.failed != ''
+        run: |
+          echo "::error::benchmark.sh failed for: ${{ steps.bench.outputs.failed }}"
+          exit 1
