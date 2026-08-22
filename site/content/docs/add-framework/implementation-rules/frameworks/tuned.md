@@ -21,7 +21,7 @@ Tuned mode (`mode: tuned`) gives a framework entry more freedom. It can use non-
 
 - **Pre-computed response bodies** - serializing a fixed response at startup and returning the same bytes per request (e.g. caching a JSON blob and writing it back unchanged). The serialization + compression work is the workload; bypassing it defeats the measurement.
 - **Response caching** - memoizing the full HTTP response body keyed by URL/params and replaying it. This is distinct from upstream data caching (DB query results, JWT verification, etc.), which remains allowed where the profile calls for it (e.g. the CRUD profile's read cache).
-- **In-memory static file serving** - caching file bodies at startup, memory-mapping them, or holding pre-loaded file buffers. Every entry reads static file bodies from disk on each request; the I/O is the workload the static profiles measure. Pre-rendered response headers and pre-compressed `.gz`/`.br` variants on disk are still fine.
+- **Hand-rolled static file caching** - reading the directory into a map at startup, holding pre-loaded buffers, or memory-mapping the files in the entry. Serving static files from memory is allowed, but the cache has to be the framework's own static file handler rather than one assembled here, and it has to follow the disk: replace a file and the next response must carry the new bytes. Pre-rendered response headers and pre-compressed `.gz`/`.br` variants on disk are still fine.
 
 ## What is still required
 
