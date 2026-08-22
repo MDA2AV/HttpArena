@@ -18,9 +18,10 @@ on:
         required: false
         default: ''
       save:
-        description: 'Open a PR with the results (true/false). Anything else runs the benchmark and reports without committing'
+        description: 'Open a PR with the results. Unchecked runs the benchmark and reports without committing'
         required: false
-        default: 'false'
+        default: false
+        type: boolean
       ref:
         description: 'Branch or SHA to benchmark'
         required: false
@@ -169,7 +170,7 @@ jobs:
       # The results land on a fresh branch off the benchmarked ref rather than
       # being pushed to it, so a run against main never writes to main directly.
       - name: Open a PR with the results
-        if: inputs.save == 'true'
+        if: inputs.save
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LIST: ${{ steps.resolve.outputs.list }}
