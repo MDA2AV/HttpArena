@@ -139,12 +139,18 @@ const registerJsonRoute = (target, path = '/json/:count') => target.get(path, co
         if (count < 0) count = 0;
         if (count > datasetItems.length) count = datasetItems.length;
         const m = parseInt(req.query.m) || 1;
-        const items = datasetItems.slice(0, count).map(d => ({
-            id: d.id, name: d.name, category: d.category,
-            price: d.price, quantity: d.quantity, active: d.active,
-            tags: d.tags, rating: d.rating,
-            total: d.price * d.quantity * m
-        }));
+        // a preallocated loop, not slice().map(): same items, without the sliced
+        // copy and the per-element callback
+        const items = new Array(count);
+        for (let i = 0; i < count; i++) {
+            const d = datasetItems[i];
+            items[i] = {
+                id: d.id, name: d.name, category: d.category,
+                price: d.price, quantity: d.quantity, active: d.active,
+                tags: d.tags, rating: d.rating,
+                total: d.price * d.quantity * m
+            };
+        }
         // the middleware compresses this when the request asked for it, and leaves it alone
         // when it did not: the json profile sends no Accept-Encoding, json-comp sends one
         //
@@ -169,7 +175,9 @@ app.get('/fortunes', async (req, res) => {
     if (!pgPool) return res.status(500).type('text/plain').send('DB not available');
     try {
         const result = await pgPool.query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' });
-        const rows = result.rows.map(r => ({ id: r.id, message: r.message }));
+        // the driver rows already carry only id and message, so the runtime row is
+        // pushed onto them and they are sorted in place instead of copied first
+        const rows = result.rows;
         rows.push({ id: 0, message: RUNTIME_FORTUNE });
         // ordinal, not locale aware: the synthetic rows carry em-dashes, and localeCompare
         // would order them by collation rules the profile does not ask for
