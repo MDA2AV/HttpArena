@@ -33,7 +33,6 @@
     "baseline-h3",
     "static-h3",
     "async-db",
-    "crud",
-    "fortunes"
+    "crud"
   ]
 }

@@ -79,10 +79,16 @@ $config = (new HttpServerConfig())
     });
 
 if ($tlsAvailable) {
-    // 8443: h2 + h1 over TLS (ALPN). 8081: h1 over TLS for the json-tls profile.
+    // 8081: h1 over TLS for the json-tls and static-tls profiles. 8443: h2 + h1
+    // over TLS (ALPN).
+    //
+    // 8081 is bound first on purpose. validate.sh waits for 8443 before it runs
+    // any TLS check and never waits for 8081, so binding 8081 second leaves a
+    // window where the static-tls checks fire against a port that is not up yet
+    // - which is what happened on CI while passing on a faster machine.
     $config
-        ->addListener('0.0.0.0', $tlsPort, true)
         ->addListener('0.0.0.0', 8081, true)
+        ->addListener('0.0.0.0', $tlsPort, true)
         ->setCertificate($certPath)
         ->setPrivateKey($keyPath)
         // Pin the TLS clear-text-out BIO ring to 64 KiB (#29). This already
