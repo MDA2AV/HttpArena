@@ -21,6 +21,8 @@ PG_CONTAINER="httparena-validate-postgres"
 PG_NETWORK="httparena-validate-net"
 
 cleanup() {
+    # put back any static file a staleness probe replaced, before anything else
+    restore_static_probe 2>/dev/null || true
     # Kill watchdog if still running
     [ -n "${WATCHDOG_PID:-}" ] && kill "$WATCHDOG_PID" 2>/dev/null || true
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
@@ -285,6 +287,25 @@ fi
 
 # Start container (skip for gateway-only — compose handles it later)
 if [ "$GATEWAY_ONLY" = "false" ]; then
+    # Any leftover validate container, not just this framework's. They all bind
+    # the same ports, so one surviving a crashed or interrupted run answers for
+    # whatever is validated next: the container under test fails to bind, exits,
+    # and the suite happily reports the previous framework's behaviour under the
+    # new framework's name.
+    # The sidecars this run just started share the prefix, so they are excluded
+    # by name - sweeping them would take Postgres out from under the async-db and
+    # crud checks.
+    _stale=""
+    for _c in $(docker ps --filter "name=httparena-validate-" --format '{{.Names}}' 2>/dev/null); do
+        case "$_c" in
+            "${PG_CONTAINER:-httparena-validate-postgres}"|"${REDIS_CONTAINER:-httparena-redis}") continue ;;
+        esac
+        _stale="${_stale:+$_stale }$_c"
+    done
+    if [ -n "$_stale" ]; then
+        echo "[warn] removing leftover validate containers still holding the ports: $_stale"
+        docker rm -f $_stale >/dev/null 2>&1 || true
+    fi
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
     docker run "${docker_args[@]}" "$IMAGE_NAME"
 
@@ -368,6 +389,15 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
             fi
             sleep 1
         done
+        # Something answered - make sure it was this container. If the image
+        # under test died on startup while another process held the port, every
+        # assertion below would describe that other process.
+        if ! docker ps -q --filter "name=^${CONTAINER_NAME}$" | grep -q .; then
+            echo "FAIL: something is answering on the ports but $CONTAINER_NAME is not running"
+            echo "      the results would describe whatever else holds them, so the run stops here"
+            dump_logs "$CONTAINER_NAME" "$FRAMEWORK"
+            exit 1
+        fi
         echo "[ready] Server is up"
     fi
 fi
@@ -375,6 +405,118 @@ fi
 # ───── Helpers ─────
 
 DOCS_BASE="https://www.http-arena.com/#doc=test-profiles"
+
+# Every parameter the profiles below send is drawn fresh per run. The suite used
+# to ask for a fixed set - /json/12?m=3, /json/50?m=1, min=10&max=50&limit=50 -
+# which a framework can answer from bytes prepared at startup without ever
+# running the work the profile exists to measure. Nothing can be prepared for a
+# number that is chosen after the container is already up.
+rand_between() {
+    local lo="$1" hi="$2"
+    echo $(( (RANDOM % (hi - lo + 1)) + lo ))
+}
+
+# How long a framework may take to notice a file it is caching has changed. The
+# rules allow the framework's own cache; they require it to follow the disk, and
+# a cache with a TTL - nginx's open_file_cache, and anything modelled on it -
+# needs a window to turn over in.
+STATIC_STALE_WINDOW="${HTTPARENA_STATIC_STALE_WINDOW:-30}"
+
+# Restores a static file this suite replaced, whatever happens next. Set while a
+# probe is in flight so an interrupt cannot leave the repository's data/static
+# holding the probe's bytes.
+STATIC_PROBE_FILE=""
+STATIC_PROBE_BACKUP=""
+restore_static_probe() {
+    if [ -n "${STATIC_PROBE_FILE:-}" ] && [ -f "${STATIC_PROBE_BACKUP:-}" ]; then
+        mv -f "$STATIC_PROBE_BACKUP" "$STATIC_PROBE_FILE" 2>/dev/null || true
+    fi
+    STATIC_PROBE_FILE=""
+    STATIC_PROBE_BACKUP=""
+}
+# Deliberately no trap of its own: cleanup() already holds the EXIT trap, and a
+# second `trap ... EXIT` replaces it rather than chaining, which would leave the
+# framework container running after the run. cleanup() calls this instead.
+
+# Replaces a static file atomically and requires the server to serve the new
+# bytes within STATIC_STALE_WINDOW, then puts the original back and requires it
+# to come back too.
+#
+# This is the one check a pre-loaded copy cannot pass. Reading the file once at
+# startup and answering from that copy satisfies every size and content-type
+# assertion in this suite; it fails here, because the bytes on disk moved and the
+# answer did not.
+#
+# The target is chosen from the files with no .br/.gz twin on disk, and the
+# request asks for identity, so a served variant can never be what makes the
+# response look unchanged.
+#
+# $1 label  $2 url prefix  $3 docs url  $4.. extra curl args
+static_staleness_probe() {
+    local label="$1" url_prefix="$2" docs="$3"
+    shift 3
+    local target="hero.webp"
+    local file="$DATA_DIR/static/$target"
+    if [ ! -f "$file" ]; then
+        echo "  SKIP [$label] ($target not present)"
+        return 0
+    fi
+
+    local backup probe original_sum probe_sum
+    backup="$(mktemp)"
+    probe="$(mktemp)"
+    cp -p "$file" "$backup"
+    STATIC_PROBE_FILE="$file"
+    STATIC_PROBE_BACKUP="$backup"
+
+    # different bytes and a different length, so neither a content nor a length
+    # comparison can miss the change
+    cat "$file" > "$probe"
+    printf 'httparena-staleness-probe-%s\n' "$$" >> "$probe"
+    original_sum="$(sha256sum "$backup" | cut -d' ' -f1)"
+    probe_sum="$(sha256sum "$probe" | cut -d' ' -f1)"
+
+    _served_sum() {
+        curl -s --max-time 30 -H 'Accept-Encoding: identity' "$@" \
+             "${url_prefix}/static/${target}" 2>/dev/null | sha256sum | cut -d' ' -f1
+    }
+
+    # atomic: the server never sees a half-written file
+    mv -f "$probe" "$file"
+
+    local waited=0 saw_new=false
+    while [ "$waited" -le "$STATIC_STALE_WINDOW" ]; do
+        if [ "$(_served_sum "$@")" = "$probe_sum" ]; then
+            saw_new=true
+            break
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+
+    mv -f "$backup" "$file"
+    STATIC_PROBE_FILE=""
+    STATIC_PROBE_BACKUP=""
+
+    local restored=false rewaited=0
+    while [ "$rewaited" -le "$STATIC_STALE_WINDOW" ]; do
+        if [ "$(_served_sum "$@")" = "$original_sum" ]; then
+            restored=true
+            break
+        fi
+        sleep 1
+        rewaited=$((rewaited + 1))
+    done
+
+    if [ "$saw_new" = "true" ] && [ "$restored" = "true" ]; then
+        echo "  PASS [$label] (replaced file served in ${waited}s, original back in ${rewaited}s)"
+        PASS=$((PASS + 1))
+    elif [ "$saw_new" != "true" ]; then
+        fail_with_link "[$label]: $target was replaced in the mounted static directory and the server still served the old bytes after ${STATIC_STALE_WINDOW}s. Either a cache is holding the file contents and never revalidating, or the entry is serving a copy taken at image build rather than the directory the profile mounts" "$docs"
+    else
+        fail_with_link "[$label]: the replaced file was served, but the original did not come back within ${STATIC_STALE_WINDOW}s" "$docs"
+    fi
+}
 
 fail_with_link() {
     local msg="$1"
@@ -717,31 +859,43 @@ if has_test "json" || has_test "api-4" || has_test "api-16"; then
     JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
     echo "[test] json endpoint"
     json_fail=false
-    json_params=("12:3" "22:7" "31:2" "50:5")
-    for jp in "${json_params[@]}"; do
+    # counts and multipliers drawn per run, and every field checked against
+    # data/dataset.json rather than only against the response's own arithmetic:
+    # a made-up item with a self-consistent total used to pass this.
+    json_params=""
+    for _ in 1 2 3 4; do
+        json_params="$json_params $(rand_between 1 50):$(rand_between 2 97)"
+    done
+    for jp in $json_params; do
         jcount="${jp%%:*}"
         jm="${jp##*:}"
         response=$(curl -s --max-time 30 "http://localhost:$PORT/json/$jcount?m=$jm" || true)
-        json_result=$(echo "$response" | python3 -c "
-import sys, json
-m = $jm
+        json_result=$(echo "$response" | JM="$jm" JCOUNT="$jcount" DATASET="$DATA_DIR/dataset.json" python3 -c "
+import sys, json, os
+m = int(os.environ['JM']); want = int(os.environ['JCOUNT'])
+source = json.load(open(os.environ['DATASET']))
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
-def valid_item(it):
+def shaped(it):
     r = it.get('rating')
     return ('id' in it and 'name' in it and 'category' in it and 'price' in it
             and 'quantity' in it and 'total' in it
             and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
             and isinstance(r, dict) and 'score' in r and 'count' in r)
-valid = all(valid_item(it) for it in items) if items else False
-correct_totals = True
-for item in items:
-    expected = item.get('price', 0) * item.get('quantity', 0) * m
-    if item.get('total', 0) != expected:
-        correct_totals = False
-        break
-print(f'{count} {valid} {correct_totals}')
+valid = bool(items) and all(shaped(it) for it in items)
+# the items are the first N of the dataset, unchanged, with total computed on m
+faithful = len(items) == want
+if faithful:
+    for got, src in zip(items, source[:want]):
+        if (got.get('id') != src['id'] or got.get('name') != src['name']
+                or got.get('category') != src['category'] or got.get('price') != src['price']
+                or got.get('quantity') != src['quantity'] or got.get('active') != src['active']
+                or got.get('tags') != src['tags']
+                or got.get('total') != src['price'] * src['quantity'] * m):
+            faithful = False
+            break
+print(f'{count} {valid} {faithful}')
 " 2>/dev/null || echo "0 False False")
         json_count=$(echo "$json_result" | cut -d' ' -f1)
         json_valid=$(echo "$json_result" | cut -d' ' -f2)
@@ -750,12 +904,12 @@ print(f'{count} {valid} {correct_totals}')
         if [ "$json_count" = "$jcount" ] && [ "$json_valid" = "True" ] && [ "$json_correct" = "True" ]; then
             :
         else
-            fail_with_link "[GET /json/$jcount?m=$jm]: count=$json_count, schema=$json_valid, correct_totals=$json_correct" "$JSON_DOCS"
+            fail_with_link "[GET /json/$jcount?m=$jm]: count=$json_count, schema=$json_valid, matches dataset=$json_correct" "$JSON_DOCS"
             json_fail=true
         fi
     done
     if [ "$json_fail" = "false" ]; then
-        echo "  PASS [GET /json/{count}?m=X] (4 counts × multipliers + full item schema verified)"
+        echo "  PASS [GET /json/{count}?m=X] (4 random counts × multipliers, items matched against data/dataset.json)"
         PASS=$((PASS + 1))
     fi
 
@@ -782,8 +936,13 @@ if has_test "json-comp"; then
 
     # Verify compressed response with varying counts and multipliers
     jc_fail=false
-    jc_params=("25:3" "40:7" "50:2")
-    for jcp in "${jc_params[@]}"; do
+    # drawn per run: a compressed body prepared at startup for a known
+    # count/multiplier cannot answer these
+    jc_params=""
+    for _ in 1 2 3; do
+        jc_params="$jc_params $(rand_between 5 50):$(rand_between 2 89)"
+    done
+    for jcp in $jc_params; do
         jccount="${jcp%%:*}"
         jcm="${jcp##*:}"
         jc_response=$(curl -s --max-time 30 --compressed -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/json/$jccount?m=$jcm" || true)
@@ -851,8 +1010,11 @@ if has_test "json-tls"; then
 
     # Response body correctness across 3 (count, m) pairs (different from json-comp so a caller can't share state)
     jt_fail=false
-    jt_params=("7:2" "23:11" "50:1")
-    for jtp in "${jt_params[@]}"; do
+    jt_params=""
+    for _ in 1 2 3; do
+        jt_params="$jt_params $(rand_between 5 50):$(rand_between 2 89)"
+    done
+    for jtp in $jt_params; do
         jtcount="${jtp%%:*}"
         jtm="${jtp##*:}"
         jt_response=$(curl -sk --max-time 30 "https://localhost:$H1TLS_PORT/json/$jtcount?m=$jtm" || true)
@@ -942,6 +1104,36 @@ if has_test "upload"; then
     done
     if [ "$upload_fail" = "false" ]; then
         echo "  PASS [POST /upload] (4 sizes verified: 500K, 2M, 10M, 20M)"
+        PASS=$((PASS + 1))
+    fi
+
+    # Chunked, so there is no Content-Length to echo. Every check above hands the
+    # handler a request that already states its own length in a header, which a
+    # handler that never reads the body can copy out and answer with. This one
+    # cannot be answered without counting what arrived.
+    upload_chunk_bytes=$(rand_between 100000 900000)
+    upload_chunked=$( { head -c "$upload_chunk_bytes" /dev/urandom | \
+        curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" \
+             -H "Transfer-Encoding: chunked" --data-binary @- \
+             "http://localhost:$PORT/upload"; } || true )
+    if [ "$upload_chunked" = "$upload_chunk_bytes" ]; then
+        echo "  PASS [POST /upload chunked] ($upload_chunk_bytes bytes counted with no Content-Length)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[POST /upload chunked]: sent $upload_chunk_bytes bytes with Transfer-Encoding: chunked, got '$upload_chunked' - a handler that echoes Content-Length instead of counting the body fails here" "$UPLOAD_DOCS"
+    fi
+
+    # A body shorter than the Content-Length it declares. Answering with the
+    # header's number rather than what arrived is the same shortcut seen from the
+    # other side; a server that reads the body either counts fewer bytes or
+    # refuses the request, and both are fine - echoing 4096 is not.
+    upload_short=$(printf 'short-body' | curl -s --max-time 15 -X POST \
+        -H "Content-Type: application/octet-stream" -H "Content-Length: 4096" \
+        --data-binary @- "http://localhost:$PORT/upload" 2>/dev/null || true)
+    if [ "$upload_short" = "4096" ]; then
+        fail_with_link "[POST /upload truncated body]: declared Content-Length: 4096, sent 10 bytes, and the server answered '4096' - it is reporting the header, not the body" "$UPLOAD_DOCS"
+    else
+        echo "  PASS [POST /upload truncated body] (did not echo the declared length; answered '${upload_short:-<nothing>}')"
         PASS=$((PASS + 1))
     fi
 fi
@@ -1041,11 +1233,16 @@ if has_test "json-h2c"; then
     check_header "GET /json Content-Type (h2c)" "Content-Type" "application/json" "$JSON_H2C_DOCS" \
         -s --http2-prior-knowledge "http://localhost:$H2C_PORT/json/1?m=1"
 
-    # Same (count, m) validator as the h1 json profile — count field must
-    # match and items.length equals count. Uses 4 distinct pairs that
-    # differ from the benchmark rotation so caching-by-key gets punished.
+    # Same (count, m) validator as the h1 json profile - count field must match
+    # and items.length equals count. Drawn per run: fixed pairs, however far they
+    # sit from the benchmark rotation, are still four responses a server can have
+    # ready before the first request arrives.
     json_h2c_fail=false
-    for jp in "12:3" "22:7" "31:2" "50:5"; do
+    _h2c_params=""
+    for _ in 1 2 3 4; do
+        _h2c_params="$_h2c_params $(rand_between 1 50):$(rand_between 2 97)"
+    done
+    for jp in $_h2c_params; do
         jcount="${jp%%:*}"
         jm="${jp##*:}"
         resp=$(curl -s --max-time 30 --http2-prior-knowledge \
@@ -1154,6 +1351,8 @@ if has_test "static"; then
 
     check_status "GET /static/nonexistent.txt" "404" "$STATIC_DOCS" \
         -s "http://localhost:$PORT/static/nonexistent.txt"
+
+    static_staleness_probe "static file follows the disk" "http://localhost:$PORT" "$STATIC_DOCS"
 fi
 
 
@@ -1232,6 +1431,8 @@ if has_test "static-tls"; then
 
     check_status "GET /static/nonexistent.txt (TLS)" "404" "$STATICTLS_DOCS" \
         -sk "https://localhost:$H1TLS_PORT/static/nonexistent.txt"
+
+    static_staleness_probe "static-tls file follows the disk" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" -k
 fi
 
 
@@ -1272,8 +1473,14 @@ if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-1
     ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false
-    db_params=("min=5&max=80&limit=7" "min=20&max=150&limit=18" "min=100&max=400&limit=33" "min=10&max=50&limit=50")
-    for dbp in "${db_params[@]}"; do
+    # ranges and limits drawn per run
+    db_params=""
+    for _ in 1 2 3 4; do
+        _dbmin=$(rand_between 1 120)
+        _dbmax=$((_dbmin + $(rand_between 20 300)))
+        db_params="$db_params min=${_dbmin}&max=${_dbmax}&limit=$(rand_between 1 50)"
+    done
+    for dbp in $db_params; do
         dblimit=$(echo "$dbp" | grep -oP 'limit=\K[0-9]+')
         response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?$dbp" || true)
         pgdb_result=$(echo "$response" | python3 -c "
