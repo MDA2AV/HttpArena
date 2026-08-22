@@ -473,6 +473,12 @@ static_staleness_probe() {
     # comparison can miss the change
     cat "$file" > "$probe"
     printf 'httparena-staleness-probe-%s\n' "$$" >> "$probe"
+    # mktemp creates 0600, and mv carries the source mode onto the destination.
+    # Left alone that makes the replacement unreadable to any container running
+    # as non-root, which reads back as "the server ignored the disk" -- a false
+    # failure for exactly the entries doing the right thing. Carry the mode of
+    # the file being replaced instead.
+    chmod --reference="$backup" "$probe"
     original_sum="$(sha256sum "$backup" | cut -d' ' -f1)"
     probe_sum="$(sha256sum "$probe" | cut -d' ' -f1)"
 
