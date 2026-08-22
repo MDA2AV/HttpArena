@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "deno",
-  "description": "Deno's own HTTP server, Deno.serve, with no framework on top.",
+  "description": "Deno's own HTTP server, Deno.serve, with no framework and no router on top. The only dependencies are pg and ioredis over npm: specifiers, which the database profiles cannot run without.",
   "repo": "https://github.com/denoland/deno",
   "enabled": true,
   "tests": [
@@ -19,7 +19,15 @@
     "limited-conn",
     "json",
     "json-comp",
-    "upload"
+    "json-tls",
+    "upload",
+    "static",
+    "static-tls",
+    "async-db",
+    "crud",
+    "fortunes",
+    "api-4",
+    "api-16"
   ],
   "maintainers": []
 }

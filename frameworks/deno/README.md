@@ -15,10 +15,22 @@ Deno's own HTTP server, `Deno.serve`, with no framework on top.
 |----------|--------|-------------|
 | `/pipeline` | GET | Returns `ok` (plain text) |
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
+| `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |
 | `/upload` | POST | Counts the bytes of the request body |
+| `/static/:file` | GET | Serves one of the 20 files from `/data/static`, read off disk per request |
+| `/async-db` | GET | Postgres range query over `items`, `min`/`max`/`limit` |
+| `/crud/items` | GET/POST | Paginated list by category; POST upserts |
+| `/crud/items/:id` | GET/PUT | Cache-aside read through Redis; PUT updates and invalidates |
+| `/fortunes` | GET | Postgres rows plus one runtime row, sorted, HTML-escaped into a table |
+
+The same `/json/:count` and `/static/:file` routes are also served over TLS on port 8081 for the
+`json-tls` and `static-tls` profiles, when the harness mounts `/certs`.
 
 ## Notes
+
+- The only dependencies are `pg` and `ioredis`, pulled in over `npm:` specifiers. Deno ships
+  neither a Postgres nor a Redis client, and the database profiles cannot run without them.
 
 - Multi-core scaling is `deno serve --parallel`, which runs one process per core and lets them
   share port 8080 through `SO_REUSEPORT`. Deno counts the cores itself and respects the cgroup

@@ -23,6 +23,7 @@
     "json-comp",
     "upload",
     "static",
+    "static-tls",
     "static-h2",
     "api-4",
     "api-16",

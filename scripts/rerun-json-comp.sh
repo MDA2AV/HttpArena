@@ -7,9 +7,6 @@ cd "$(dirname "$0")/.."
 ./scripts/benchmark.sh actix json-comp --save
 ./scripts/benchmark.sh aleph json-comp --save
 ./scripts/benchmark.sh aspnet-minimal json-comp --save
-./scripts/benchmark.sh aspnet-minimal-aot json-comp --save
-./scripts/benchmark.sh aspnet-minimal-iouring json-comp --save
-./scripts/benchmark.sh aspnet-mvc json-comp --save
 ./scripts/benchmark.sh bjoern json-comp --save
 ./scripts/benchmark.sh elysia json-comp --save
 ./scripts/benchmark.sh fastapi json-comp --save
@@ -18,7 +15,6 @@ cd "$(dirname "$0")/.."
 ./scripts/benchmark.sh flask json-comp --save
 ./scripts/benchmark.sh fletch json-comp --save
 ./scripts/benchmark.sh frankenphp-trueasync json-comp --save
-./scripts/benchmark.sh genhttp json-comp --save
 ./scripts/benchmark.sh genhttp-kestrel json-comp --save
 ./scripts/benchmark.sh go-fasthttp json-comp --save
 ./scripts/benchmark.sh h2o-mruby json-comp --save

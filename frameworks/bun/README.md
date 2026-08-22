@@ -19,8 +19,19 @@ port 8080 through `reusePort`.
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |
 | `/upload` | POST | Counts the bytes of the request body |
+| `/static/:file` | GET | Serves one of the 20 files from `/data/static`, read off disk per request |
+| `/async-db` | GET | Postgres range query over `items`, `min`/`max`/`limit` |
+| `/crud/items` | GET/POST | Paginated list by category; POST upserts |
+| `/crud/items/:id` | GET/PUT | Cache-aside read through Redis; PUT updates and invalidates |
+| `/fortunes` | GET | Postgres rows plus one runtime row, sorted, HTML-escaped into a table |
+
+The same `/json/:count` and `/static/:file` routes are also served over TLS on port 8081 for the
+`json-tls` and `static-tls` profiles, when the harness mounts `/certs`.
 
 ## Notes
+
+- Postgres and Redis are `Bun.SQL` and `Bun.RedisClient`, both shipped with the runtime, so the
+  database profiles cost this entry no dependency.
 
 - Bun was on the board as a WebSocket echo server only. This entry is the plain HTTP floor of the
   runtime itself, so a Bun framework entry can be read against it.

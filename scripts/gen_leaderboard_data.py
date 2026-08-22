@@ -1225,11 +1225,14 @@ def _scored_for(prof, meta, pid, fw):
 
 # Framework tiers are the only ones graded on completeness. Engine and
 # infrastructure entries implement none of the four axes, which is why grading
-# them is pointless rather than generous: they would all take the same 0.80,
+# them is pointless rather than generous: they would all take the same 0.90,
 # leaving their order untouched, and each league is normalized against itself
 # so their scores are never set against a framework's.
 CMP_TYPES = ("flagship", "emerging", "experimental")
 CMP_AXES = ("routing", "middleware", "request", "response")
+# The four axes are the HTTP request-to-response path, so they only mean
+# something on a board measuring that path. cmpInScope() in index.html.
+CMP_SCOPES_OUT = ("ws", "grpc")
 
 
 def _cmp_missing(meta, fw):
@@ -1240,20 +1243,28 @@ def _cmp_missing(meta, fw):
     return [a for a in CMP_AXES if c.get(a) is False]
 
 
-def _cmp_factor(meta, fw):
+def _cmp_factor(meta, fw, scope=None):
     """cmpFactor() in index.html: the completeness factor as a multiplier on the
     whole composite.
 
+    Not applied on the WebSocket and gRPC boards: a WebSocket echo has no route
+    to match, no body to hand over and no response to build, and a gRPC call has
+    all four but the generated stub does them. Those boards measure something the
+    grade is not about, so every entry scores 1.00 there.
+
     Four things a framework can do between an arriving request and a finished
     response - routing, middleware, the request it hands you, the response it
-    builds. Each one it does not do costs 5%, so the factor runs from 1.00 down
-    to 0.80 and never above it: doing that work is the baseline, not a credit.
+    builds. Each one it does not do costs 2.5%, so the factor runs from 1.00
+    down to 0.90 and never above it: doing that work is the baseline, not a
+    credit.
     An axis that is not declared reads as done, so an ungraded entry scores 1.00
     - ungraded is not the same as missing everything.
     """
+    if scope in CMP_SCOPES_OUT:
+        return 1.0
     if meta.get(fw, {}).get("type", "emerging") not in CMP_TYPES:
         return 1.0
-    return 1.0 - 0.05 * len(_cmp_missing(meta, fw))
+    return 1.0 - 0.025 * len(_cmp_missing(meta, fw))
 
 
 def _eff_fn(A, in_league):
@@ -1360,7 +1371,7 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 if is_scored(pid, fw):
                     score += (eff(pid, fw) / max_r[pid]) * 100
         if any_result:
-            rows.append((fw, score * _cmp_factor(meta, fw)))
+            rows.append((fw, score * _cmp_factor(meta, fw, scope)))
     rows.sort(key=lambda r: (-r[1], r[0]))
     return rows
 
@@ -1934,9 +1945,9 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
         "The leaderboard at " + SITE + "/ is rendered client-side, so the ranking below is the "
         "same data as text. Scores are the composite: each profile is worth 100 to the best entry "
         "in the field and a framework's score is the sum over the profiles of that family, scaled "
-        "by its completeness factor - the entry loses 5% for each of routing, middleware, the "
+        "by its completeness factor - the entry loses 2.5% for each of routing, middleware, the "
         "request it hands you and the response it builds that it does not do, so the factor runs "
-        "from 1.00 down to 0.80. Engine and infrastructure entries are not graded on it.",
+        "from 1.00 down to 0.90. Engine and infrastructure entries are not graded on it.",
         "",
     ]
 
@@ -2070,9 +2081,9 @@ def _board_faq(rows, fw_lang, current, round_name, n_profiles, n_entries):
          "%s%s leads the %s composite with %.0f, ahead of %s and %s. The composite adds a "
          "normalized score over every profile of the family, where the leader of each profile "
          "scores 100, so it ranks an entry over the whole suite instead of on one test. The "
-         "sum is then reduced by 5%% for each of routing, middleware, the request it hands you "
+         "sum is then reduced by 2.5%% for each of routing, middleware, the request it hands you "
          "and the response it builds that the entry does not do for you, so a framework that "
-         "does none of the four keeps 80%% of what it scored on throughput."
+         "does none of the four keeps 90%% of what it scored on throughput."
          % (e(lead[0]), " (%s)" % e(lead[2]) if lead[2] else "", SCOPE_NAME[DEFAULT_SCOPE],
             lead[1], ", ".join("%s (%.0f)" % (e(f), sc) for f, sc, _l in top[1:2]),
             ", ".join("%s (%.0f)" % (e(f), sc) for f, sc, _l in top[2:3]))),
@@ -2428,11 +2439,12 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
     if ranks:
         out.append('<h2 id="rank">Composite rank</h2>')
         out.append("<p>Each profile of a family is worth 100 to the entry that leads it, and the "
-                   "composite is the sum over the family, less 5% for each of routing, "
+                   "composite is the sum over the family, less 2.5% for each of routing, "
                    "middleware, request and response the entry does not do for you - its "
-                   '<a href="/docs/scoring/completeness/">completeness factor</a>. The field is '
-                   "this entry's own league: engines and reverse proxies are scored apart from "
-                   'frameworks. <a href="/docs/scoring/composite-score/">How it works</a>.</p>')
+                   '<a href="/docs/scoring/completeness/">completeness factor</a>, which the '
+                   "WebSocket and gRPC families do not carry. The field is this entry's own "
+                   "league: engines and reverse proxies are scored apart from frameworks. "
+                   '<a href="/docs/scoring/composite-score/">How it works</a>.</p>')
         rows = "".join(
             '<tr><td><a href="%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
             % (e(link), e(SCOPE_NAME[scope]), rank, field, score)

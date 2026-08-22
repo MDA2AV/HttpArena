@@ -18,8 +18,20 @@ Node's own HTTP server, `node:http`, with no framework on top and no dependencie
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |
 | `/upload` | POST | Counts the bytes of the request body |
+| `/static/:file` | GET | Serves one of the 20 files from `/data/static`, read off disk per request |
+| `/async-db` | GET | Postgres range query over `items`, `min`/`max`/`limit` |
+| `/crud/items` | GET/POST | Paginated list by category; POST upserts |
+| `/crud/items/:id` | GET/PUT | Cache-aside read through Redis; PUT updates and invalidates |
+| `/fortunes` | GET | Postgres rows plus one runtime row, sorted, HTML-escaped into a table |
+
+The same `/json/:count` and `/static/:file` routes are also served over TLS on port 8081 for the
+`json-tls` and `static-tls` profiles, when the harness mounts `/certs`.
 
 ## Notes
+
+- The only dependencies are `pg` and `ioredis`. node ships neither a Postgres nor a Redis client,
+  and the database profiles cannot run without them. Nothing else is on top: still no framework and
+  still no router.
 
 - Node was on the board only through frameworks. This entry is the plain HTTP floor of the
   runtime itself, so express, fastify, koa, nestjs and the two h3 entries can be read against it.

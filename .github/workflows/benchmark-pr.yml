@@ -18,7 +18,7 @@ on:
         required: false
         default: ''
       compare:
-        description: 'Compare against another framework instead of this one (e.g. genhttp) — single-framework runs only'
+        description: 'Compare against another framework instead of this one (e.g. genhttp-11-kestrel) — single-framework runs only'
         required: false
         default: ''
 

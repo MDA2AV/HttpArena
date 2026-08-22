@@ -10,6 +10,9 @@ COPY bun.lock bun.lock
 RUN bun install --production
 
 COPY server.ts .
+# The fortunes template is imported as text and embedded into the binary, so it
+# has to be present when bun build runs.
+COPY views ./views
 
 ENV NODE_ENV=production
 

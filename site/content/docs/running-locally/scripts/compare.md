@@ -31,15 +31,15 @@ Compare a framework's benchmark results against the published leaderboard data o
 By default the baseline is the framework's own published results, which answers *"did my change help?"*. When you are developing a tuned or successor entry, the more useful question is often *"how does this compare to the entry it derives from?"* - `--compare` swaps the baseline:
 
 ```bash
-./scripts/compare.sh genhttp-11 --compare genhttp
+./scripts/compare.sh genhttp-11 --compare genhttp-11-kestrel
 ```
 
-Every delta is then measured against `genhttp`'s published results, and the output says so explicitly so the numbers cannot be mistaken for a regression against the framework's own history. Profiles the comparison framework does not run show `n/a` rather than `NEW`.
+Every delta is then measured against `genhttp-11-kestrel`'s published results, and the output says so explicitly so the numbers cannot be mistaken for a regression against the framework's own history. Profiles the comparison framework does not run show `n/a` rather than `NEW`.
 
 The same flag is available from a pull request:
 
 ```
-/benchmark -f genhttp-11 --compare genhttp
+/benchmark -f genhttp-11 --compare genhttp-11-kestrel
 ```
 
 ## Metrics compared

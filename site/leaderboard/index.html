@@ -248,6 +248,15 @@
   .tfilter button:hover{color:var(--text)}
   .tfilter button.on{background:var(--text); color:var(--bg); border-color:var(--text)}
   .count{margin-left:auto; color:var(--muted); font-size:.8rem; font-variant-numeric:tabular-nums}
+  /* Sits in the tools bar rather than the header: the board is where someone
+     decides they want two of these entries side by side, and /compare/ was
+     three clicks and a guess away from here. Same .fw-btn shape as the header's
+     Frameworks link, one notch smaller so the search box stays the loudest
+     thing in the row. */
+  .cmp-btn{font-size:.78rem; padding:.4rem .66rem}
+  /* Under 700px the row is search + count + this, and the full label is wider
+     than the search box it wraps under. The icon carries it there. */
+  @media (max-width:700px){ .cmp-btn span{display:none} .cmp-btn{padding:.4rem .5rem} }
 
   /* Build-time ranking, written into #rows by gen_leaderboard_data.py and thrown
      away by renderComposite() as soon as data.js has been parsed. It is what a
@@ -302,9 +311,26 @@
   .tsq-experimental{background:#d98e2b}
   .tsq-engine{background:#cb5f51}
   .tsq-infrastructure{background:#2f93a8}
-  /* 'tuned' mode cue - yellow ring around the type square / badge */
-  .tsq.tuned, .badge.tuned{position:relative}
-  .tsq.tuned::after, .badge.tuned::after{content:""; position:absolute; top:0; bottom:0; right:calc(100% + 2px); width:4px; background:#c89a3c}
+  /* 'tuned' mode, said in words. This was a 4px yellow bar beside the type
+     square: it marked the row as different without saying what was different,
+     and the difference is the whole point - a tuned number is one you get by
+     reading the entry's source and doing the work yourself, not one you get by
+     installing the framework (#1103). Same .badge shape as the type pill in the
+     modal, so the two read as one family. */
+  /* Row scale. .badge is sized for the modal header; beside a 10px type square
+     the word only has to be legible, and the colour is what catches the eye
+     first anyway. Shares .b-tuned with the modal so both stay one colour. */
+  .tnd{font-size:.53rem; font-weight:700; letter-spacing:.02em; text-transform:uppercase;
+    padding:.04rem .22rem; border-radius:4px; line-height:1.6; white-space:nowrap;
+    flex:none; cursor:default}
+  /* The pill sits in a fixed slot rather than in the flex flow. Putting a marker
+     beside the type square to make a clean left-hand cue, and then letting it
+     shove the square, the language code and the name sideways on the 36% of rows
+     that have one, undoes the reason for putting it there. Right-aligned so it
+     sits snug against the square; empty on standard rows. */
+  .tndslot{width:2.75rem; flex:none; display:flex; justify-content:flex-end; align-items:center}
+  .b-tuned{background:rgba(200,154,60,.16); color:#8a6414}
+  html[data-theme="dark"] .b-tuned{background:rgba(200,154,60,.2); color:#e0b45e}
   /* medals - how many golds/silvers/bronzes the entry holds. Dropped below 820px,
      where the name column halves and the count is not worth what it would cost. */
   .mdls{display:inline-flex; align-items:center; gap:.3rem; flex:none; cursor:default}
@@ -437,12 +463,43 @@
      never positive and a green state here would be unreachable. */
   .cm .scorec .sc b .cmp{font-weight:500; font-size:.68rem; line-height:1; letter-spacing:-.01em; margin-left:.2rem}
   .cm .scorec .sc b .cmp.pen{color:#c0392b} html[data-theme="dark"] .cm .scorec .sc b .cmp.pen{color:#f0857a}
-  .cm .scorec .sc b .cmp.zero{color:var(--muted); opacity:.65}
   .cm .scorec .sc .bar{width:100%; height:3px; background:var(--bar-track); overflow:hidden}
   .cm .scorec .sc .bar i{display:block; height:100%; border-radius:3px}
   .cm tbody tr:nth-child(even) td{background:var(--zebra)}
   .cm tbody tr:hover td{background:var(--panel-2)}
   @media (max-width:820px){ .cm .fwh,.cm .fwcell{width:218px;min-width:218px;max-width:218px} .cm .scoreh,.cm .scorec{left:262px} }
+  /* Compact Framework column. The full cell carries a favourite star, the tuned
+     slot, the type square, a language slot and the medals before the name gets
+     any room - 356px of a table whose point is the profile columns to the right
+     of it. Compact keeps the three things that identify the row and gives the
+     other 156px back to the numbers.
+     Higher specificity than the 820px rule above, so it wins at every width
+     without repeating itself inside the media query. */
+  .cm.compact .fwh,.cm.compact .fwcell{width:200px; min-width:200px; max-width:200px}
+  .cm.compact .scoreh,.cm.compact .scorec{left:244px}
+  /* The tuned cue goes back to the bar it was before #1225: at this width there
+     is no room for the word, and next to the square it still reads as "this row
+     is marked". The pill is what the full column shows. */
+  .cm.compact .tsq.tuned{position:relative}
+  .cm.compact .tsq.tuned::after{content:""; position:absolute; top:0; bottom:0;
+    right:calc(100% + 2px); width:4px; background:#c89a3c}
+  /* Same boxed shape as the Composite header's ?, and like it, clicking it must
+     not sort the column it lives in. */
+  /* Sized and coloured as a control, not as an annotation. The ? next to
+     Composite is a footnote you may never need; this one is a thing to press,
+     and at 16x12 in currentColor at .55 opacity nobody found it. It carries its
+     own panel background and a filled .on state, so whether the column is
+     compact is readable without counting what is in the cells.
+     No border-radius: the reset at the end of this sheet squares everything. */
+  .cm .fwh .fwtog{display:inline-flex; align-items:center; justify-content:center;
+    min-width:30px; height:19px; padding:0 5px; margin-left:.5rem;
+    border:1px solid var(--line); background:var(--panel-2); color:var(--text-2);
+    font:700 .78rem/1 var(--mono); text-transform:none; letter-spacing:.04em;
+    vertical-align:-4px; cursor:pointer; user-select:none;
+    transition:background .12s ease, color .12s ease, border-color .12s ease}
+  .cm .fwh .fwtog:hover,.cm .fwh .fwtog:focus-visible{background:var(--accent-weak);
+    color:var(--accent); border-color:var(--accent); outline:none}
+  .cm .fwh .fwtog.on{background:var(--accent); border-color:var(--accent); color:var(--bg)}
   /* small screens: un-freeze the left columns so the whole table scrolls horizontally and the result cells are reachable (header keeps vertical stick) */
   @media (max-width:640px){ .cm .sticky{left:auto; box-shadow:none} .cm tbody td.sticky{z-index:auto} }
 
@@ -494,7 +551,7 @@
       <button data-type="engine" data-tip="An HTTP implementation applications are not written against - raw sockets, low-level I/O, or a WSGI/ASGI-style host. Ranked separately.">Engine</button>
       <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
       <span class="tf-div" aria-hidden="true"></span>
-      <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow ring).">Tuned</button>
+      <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow TUNED pill).">Tuned</button>
     </div>
     <div class="round" id="round"></div>
     <a class="fw-btn" href="/frameworks/" data-tip="A results page for every entry, grouped by language, plus a summary comparing the entries of each language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Frameworks</span></a>
@@ -535,6 +592,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off">
         </div>
+        <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
         <span class="count" id="count"></span>
       </div>
 
@@ -590,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -599,8 +657,17 @@ document.addEventListener('DOMContentLoaded', function(){
   function bw(s){ if(!s) return 0; var m=String(s).match(/([\d.]+)\s*([KMG]?B)\/s/i); if(!m) return 0; var v=parseFloat(m[1]),u=m[2].toUpperCase(); return u[0]==='G'?v*1e9:u[0]==='M'?v*1e6:u[0]==='K'?v*1e3:v; }
   function typeOf(fw){ return (D.meta[fw] && D.meta[fw].type) || 'emerging'; }
   function modeOf(fw){ return (D.meta[fw] && D.meta[fw].mode) || 'standard'; }
-  function tunedRing(fw){ return modeOf(fw)==='tuned' ? ' tuned' : ''; }
-  function tunedTip(fw){ return modeOf(fw)==='tuned' ? '  ·  Tuned - non-default configuration / optimizations.' : ''; }
+  // What the word has to carry that the bar did not: tuned is not "a bit
+  // faster", it is a number the reader cannot get by choosing the framework.
+  var TUNED_TIP='Tuned - non-default configuration and hand optimizations. This is not what you '
+    + 'get by installing the framework: reproducing it means reading this entry\u2019s source '
+    + 'and applying it to your own application.';
+  // cls picks the size: 'tnd' in table rows, the default .badge in the modal
+  // header where it sits beside the type badge at that badge's scale.
+  function tunedPill(fw, cls){
+    return modeOf(fw)==='tuned'
+      ? '<span class="'+(cls||'badge')+' b-tuned" data-tip="'+esc(TUNED_TIP)+'">tuned</span>' : '';
+  }
   function repoOf(fw){ return D.meta[fw] && D.meta[fw].repo; }
   function langOf(fw){ return FWLANG[fw] || ''; }
   function engineOf(fw){ return (D.meta[fw] && D.meta[fw].engine) || ''; }
@@ -655,9 +722,13 @@ document.addEventListener('DOMContentLoaded', function(){
     p99:'99th-percentile latency - 99% of requests were faster than this.',
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
-    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
-    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.80. Opens the scoring docs.',
-    fw:'Framework - click the name to open its repository.'
+    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 100). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
+    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
+    scoreHelpWs:'How the composite is built: every scored profile is worth 100 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
+    fw:'Framework - click the name to open its repository.',
+    fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
+    fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.'
   };
   function initTips(){
     var tip=document.createElement('div'); tip.id='tip'; document.body.appendChild(tip);
@@ -674,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
     var h='<div class="modal-card">'
       + '<button class="modal-x" data-close aria-label="Close">×</button>'
-      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+tunedRing(fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(fw))+'">'+typeAbbr(t)+'</span></div>'
+      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
@@ -1152,6 +1223,8 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function saveTypes(){ try{ localStorage.setItem('lb-types', JSON.stringify(state.types)); }catch(e){} }
   function saveTuned(){ try{ localStorage.setItem('lb-showtuned', state.showTuned?'1':'0'); }catch(e){} }
+  function saveCompactFw(){ try{ localStorage.setItem('lb-fwcompact', state.compactFw?'1':'0'); }catch(e){} }
+  function toggleCompactFw(){ state.compactFw=!state.compactFw; saveCompactFw(); render(); scheduleHash(); }
   // flagship/emerging/experimental combine (one framework pool); engine and
   // infrastructure are exclusive - each is its own league, selected alone.
   // Never empty.
@@ -1171,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // arriving request and a finished response - route it, run middleware around
   // the handler, hand the request over already made (path and query parameters,
   // a body buffered or streamed) and build the response. Each one an entry does
-  // not do costs it 5%, so the factor runs from x1.00 down to x0.80. It scales
+  // not do costs it 2.5%, so the factor runs from x1.00 down to x0.90. It scales
   // the whole composite rather than any single profile, because it is a
   // property of the entry and not of a workload.
   //
@@ -1184,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Only the framework tiers are graded. Engine and infrastructure entries
   // implement none of the four - a raw-socket server has no router, a proxy has
   // no handler to run middleware around - which is why grading them is pointless
-  // rather than generous: they would all take the same x0.80, leaving their
+  // rather than generous: they would all take the same x0.90, leaving their
   // order untouched, and outOfLeague already keeps them from being normalized
   // against frameworks. So their factor is fixed at 1.
   //
@@ -1193,6 +1266,16 @@ document.addEventListener('DOMContentLoaded', function(){
   // scores neutral instead of being penalised.
   var CMP_TYPES=['flagship','emerging','experimental'];
   var CMP_AXES=['routing','middleware','request','response'];
+  // The four axes are the path from an arriving HTTP request to a finished
+  // response, so they only mean something on a board measuring that path. A
+  // WebSocket echo has no route to match, no body to hand over and no response
+  // to build - the handshake happened once and everything after it is frames -
+  // and a gRPC call has all four, but the generated stub does them, not the
+  // framework. On those two boards the factor is 1 for every entry, including
+  // the 27 that also serve HTTP: what is being measured there is not the thing
+  // the grade is about.
+  var CMP_SCOPES_OUT=['ws','grpc'];
+  function cmpInScope(){ return CMP_SCOPES_OUT.indexOf(state.scope)<0; }
   // Only an explicit false costs anything. An axis left undeclared reads as
   // done, so an entry submitted before the field existed is ungraded rather
   // than assumed to be missing all four, and `{middleware:false}` is the whole
@@ -1203,8 +1286,8 @@ document.addEventListener('DOMContentLoaded', function(){
     return CMP_AXES.filter(function(a){ return c[a]===false; });
   }
   function cmpFactor(fw){
-    if(CMP_TYPES.indexOf(typeOf(fw))<0) return 1;
-    return 1-0.05*cmpMissing(fw).length;
+    if(!cmpInScope() || CMP_TYPES.indexOf(typeOf(fw))<0) return 1;
+    return 1-0.025*cmpMissing(fw).length;
   }
   // Which profiles count toward the composite, per league. Frameworks use the
   // global `scored` flag, engines `engineScored`, infrastructure `infraScored`.
@@ -1315,27 +1398,26 @@ document.addEventListener('DOMContentLoaded', function(){
   // proxy is not unassessed, it is out of scope for the question, so its row
   // says nothing about completeness rather than reporting a clean sheet it was
   // never given.
-  function cmpGraded(fw){ return CMP_TYPES.indexOf(typeOf(fw))>=0; }
+  function cmpGraded(fw){ return cmpInScope() && CMP_TYPES.indexOf(typeOf(fw))>=0; }
   function cmpTip(r){
     if(!cmpGraded(r.fw)) return 'composite '+r.score.toFixed(1);
     if(!r.dec) return 'composite '+r.score.toFixed(1)+' - completeness not assessed yet, so nothing is deducted (x1.00)';
     if(!r.miss.length) return 'composite '+r.score.toFixed(1)+' - routing, middleware, request and response all covered, so nothing is deducted (x1.00)';
-    return 'composite '+r.score.toFixed(1)+' = '+r.raw.toFixed(1)+' raw x '+cmpFactor(r.fw).toFixed(2)
-         + ' - no '+r.miss.join(', no ')+' (-5% each)';
+    return 'composite '+r.score.toFixed(1)+' = '+r.raw.toFixed(1)+' raw x '+cmpFactor(r.fw).toFixed(3)
+         + ' - no '+r.miss.join(', no ')+' (-2.5% each)';
   }
-  // The points the completeness factor took off, shown on every *assessed* row
-  // - (0) included. The score is the number people compare and this is the one
-  // part of it that was not read off a benchmark, so it is never folded in
-  // silently; a figure that only appeared on penalised rows would read as a
-  // mark against those entries rather than as a term every assessed row
-  // carries.
+  // The points the completeness factor took off, shown only where it took any.
   //
-  // An entry that has not declared the field gets no marker at all, not a (0).
-  // Both score x1.00, but they are not the same claim: (0) says the four axes
-  // were checked and nothing was deducted, and printing that over an entry
-  // nobody has looked at yet would be the board asserting a result it does not
-  // have. The tooltip tells the two apart in words; this keeps the glyph honest
-  // too.
+  // This used to print (0) on every assessed row, on the argument that a figure
+  // appearing only on penalised rows reads as a mark against them. In practice
+  // it was the other way round: 89 of the 114 assessed entries lose nothing, so
+  // (0) was noise on the large majority of rows and the ones that actually lost
+  // points had to be picked out of it. Nothing deducted, nothing said.
+  //
+  // What that gives up is the at-a-glance difference between "assessed, nothing
+  // deducted" and "not assessed yet" - both are a bare score now. They are still
+  // different claims, and the tooltip still tells them apart in words, which is
+  // where that distinction was really being carried anyway.
   //
   // Taken off the displayed figures rather than the exact ones, so what is on
   // screen always reconciles: 416 (-22) never sits next to a raw 438.4. The
@@ -1343,7 +1425,8 @@ document.addEventListener('DOMContentLoaded', function(){
   function cmpDelta(r){
     if(!cmpGraded(r.fw) || !r.dec) return '';
     var d=Math.round(r.score)-Math.round(r.raw);
-    return '<span class="cmp '+(d<0?'pen':'zero')+'">('+d+')</span>';
+    if(!d) return '';
+    return '<span class="cmp pen">('+d+')</span>';
   }
   function render(){
     var th=document.getElementById('thead');
@@ -1384,6 +1467,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
+    if(state.compactFw) p.push('fw=compact');
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
     var nh=p.length?('#'+p.join('&')):'';
@@ -1396,6 +1480,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }
     if(p.hasOwnProperty('tuned')) state.showTuned = p.tuned!=='0';
+    if(p.hasOwnProperty('fw')) state.compactFw = p.fw==='compact';
     state.lang = p.lang || '';
     state.q = p.q || '';
     if(p.p && PROF[p.p]){
@@ -1465,9 +1550,13 @@ document.addEventListener('DOMContentLoaded', function(){
     document.getElementById('count').textContent=rows.length+(rows.length===1?' framework':' frameworks');
     var ar=function(k){ return sk===k?(dir<0?' ▼':' ▲'):''; };
     var th='<th class="sticky rankh">#</th>'
-      + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'+ar('fw')+'</th>'
-      + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(TIP.score)+'">Composite'
-      +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(TIP.scoreHelp)+'"'
+      + '<th class="sticky fwh" data-k="fw" data-tip="'+esc(TIP.fw)+'">Framework'
+      +   '<span class="fwtog'+(state.compactFw?' on':'')+'" id="fwTog" role="button" tabindex="0" aria-pressed="'+(state.compactFw?'true':'false')+'" data-tip="'
+      +   esc(state.compactFw ? TIP.fwExpand : TIP.fwCompact)+'" aria-label="'
+      +   (state.compactFw?'Expand':'Compact')+' the Framework column">'
+      +   (state.compactFw?'\u00ab\u00bb':'\u00bb\u00ab')+'</span>'+ar('fw')+'</th>'
+      + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
+      +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
     pids.forEach(function(pid){ var p=PROF[pid]; var ref=!scoredForType(pid, leagueType()); th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
     th+='<th class="spacer"></th>';
@@ -1478,7 +1567,16 @@ document.addEventListener('DOMContentLoaded', function(){
       var fav=favs.has(r.fw);
       var tr='<tr class="'+(fav?'fav':'')+'" data-fw-row="'+esc(r.fw)+'">'
         + '<td class="sticky rankc'+(rank<=3?' r'+rank:'')+'">'+rank+'</td>'
-        + '<td class="sticky fwcell"><span class="fl">'+starHtml(r.fw)+'<span class="tsq tsq-'+t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw)+'</span></td>'
+        + '<td class="sticky fwcell"><span class="fl">'
+        +   (state.compactFw
+              // Three things only: the type square (carrying the tuned bar, since
+              // the pill has no room here), and the name. The star, the language
+              // and the medals are what the 156px was going on.
+              ? '<span class="tsq tsq-'+t+(modeOf(r.fw)==='tuned'?' tuned':'')+'" data-tip="'
+                + esc(typeTip(t)+(modeOf(r.fw)==='tuned'?'  ·  '+TUNED_TIP:''))+'"></span>'
+                + '<span class="nm">'+nm+'</span>'
+              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw))
+        +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
         var cell=r.cells[pid];
@@ -1490,11 +1588,14 @@ document.addEventListener('DOMContentLoaded', function(){
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
     var colspan=pids.length+4;
-    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
+    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
     // navigation.
-    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&ev.target.closest('.hq')) return; sortBy(h.dataset.k); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&(ev.target.closest('.hq')||ev.target.closest('.fwtog'))) return; sortBy(h.dataset.k); }; });
+    var _ft=document.getElementById('fwTog');
+    if(_ft){ _ft.onclick=function(ev){ ev.stopPropagation(); toggleCompactFw(); };
+             _ft.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); toggleCompactFw(); } }; }
     setupTopScroll();
   }
 
@@ -1520,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tsq tsq-'+x.t+tunedRing(r.fw)+'" data-tip="'+esc(typeTip(x.t)+tunedTip(r.fw))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span></div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span></div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
@@ -1591,6 +1692,7 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ var _vt=['flagship','emerging','experimental','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
   document.getElementById('typeFilter').addEventListener('click', function(e){ var b=e.target.closest('button[data-type]'); if(!b) return; toggleType(b.getAttribute('data-type')); });
   try{ var _st=localStorage.getItem('lb-showtuned'); if(_st!==null) state.showTuned=_st==='1'; }catch(e){}
+  try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
   initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();

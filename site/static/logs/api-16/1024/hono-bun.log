@@ -1,9 +1,9 @@
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -11,15 +11,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -27,15 +27,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -43,15 +43,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -59,15 +59,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -75,15 +75,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -91,15 +91,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -107,15 +107,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -123,15 +123,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -139,15 +139,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -155,15 +155,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -171,15 +171,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -187,15 +187,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -203,15 +203,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -219,15 +219,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -235,15 +235,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 1 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 1 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -251,15 +251,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -267,15 +267,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -283,15 +283,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -299,15 +299,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -315,15 +315,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -331,15 +331,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -347,15 +347,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -363,15 +363,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -379,15 +379,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -395,15 +395,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -411,15 +411,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -427,15 +427,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -443,15 +443,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -459,15 +459,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -475,15 +475,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -491,15 +491,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 2 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 2 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -507,15 +507,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -523,15 +523,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -539,15 +539,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -555,15 +555,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -571,15 +571,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -587,15 +587,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -603,15 +603,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -619,15 +619,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -635,15 +635,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -651,15 +651,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -667,15 +667,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -683,15 +683,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -699,15 +699,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -715,15 +715,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -731,15 +731,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -747,15 +747,15 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 
-SQLite open attempt 3 failed: 14 | 
-15 | // Open SQLite database read-only
-16 | let dbStmt: any = null;
-17 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
-18 |   try {
-19 |     const db = new Database("/data/benchmark.db", { readonly: true });
+SQLite open attempt 3 failed: 16 | 
+17 | // Open SQLite database read-only
+18 | let dbStmt: any = null;
+19 | for (let attempt = 0; attempt < 3 && !dbStmt; attempt++) {
+20 |   try {
+21 |     const db = new Database("/data/benchmark.db", { readonly: true });
                     ^
 SQLiteError: unable to open database file
       errno: 14,
@@ -763,6 +763,6 @@ SQLiteError: unable to open database file
        code: "SQLITE_CANTOPEN"
 
       at new Database (bun:sqlite:260:28)
-      at /app/server.ts:19:16
+      at /app/server.ts:21:16
       at loadAndEvaluateModule (2:1)
 

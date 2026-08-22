@@ -3,12 +3,6 @@
   "language": "Go",
   "type": "emerging",
   "mode": "tuned",
-  "completeness": {
-    "routing": true,
-    "middleware": true,
-    "request": true,
-    "response": true
-  },
   "engine": "grpc-go",
   "description": "Go gRPC server using google.golang.org/grpc.",
   "repo": "https://github.com/grpc/grpc-go",
