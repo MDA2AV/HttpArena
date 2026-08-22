@@ -348,9 +348,15 @@ async def compress_response(request, response):
 if __name__ == "__main__":
     # Sanic's own worker manager, not gunicorn: the main process opens the
     # listening socket and hands it to one worker process per core.
-    # Sanic serves one port per app.run(). A second app.prepare() for a TLS
-    # listener on 8081 starts without error but never answers, so json-tls and
-    # static-tls are left unsubscribed rather than shipped broken.
+    # json-tls and static-tls are unsubscribed: sanic 25.3.0 cannot serve TLS
+    # under its worker manager. The listener binds and accepts, then never
+    # sends a ServerHello -- at any worker count, and whether it is the only
+    # listener or a second prepare() alongside 8080. A second *plaintext*
+    # prepare() on another port answers fine, so it is TLS specifically.
+    # single_process=True does serve it, which would pin the entry to one core
+    # and publish a number that is not comparable to anything else here.
+    # (A prebuilt ssl.SSLContext is not an option either: the manager spawns,
+    # and an SSLContext cannot be pickled.)
     app.run(
         host="0.0.0.0",
         port=8080,

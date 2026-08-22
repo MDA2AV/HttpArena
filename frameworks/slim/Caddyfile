@@ -12,3 +12,9 @@
 		file_server off
 	}
 }
+
+# json-tls, when the TLS profiles mount the certificate. Caddy refuses to start
+# if a tls directive points at files that are not there, so the 8081 site is
+# dropped in by the entrypoint rather than declared unconditionally. A glob that
+# matches nothing is not an error.
+import /etc/caddy/tls.d/*.caddy

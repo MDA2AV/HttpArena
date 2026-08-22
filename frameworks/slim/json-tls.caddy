@@ -1,0 +1,12 @@
+# Same app, same php_server as :8080 -- TLS terminated by the server the entry
+# already runs on. Copied into /etc/caddy/tls.d by the entrypoint only when the
+# certificate is mounted.
+:8081 {
+	tls /certs/server.crt /certs/server.key
+	encode br gzip
+	root * /app/public
+	php_server {
+		index index.php
+		file_server off
+	}
+}

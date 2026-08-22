@@ -15,6 +15,9 @@ COPY public ./public
 # with timestamp validation off as a PHP deployment would run it.
 COPY php.ini $PHP_INI_DIR/conf.d/99-httparena.ini
 COPY Caddyfile /etc/caddy/Caddyfile
+COPY json-tls.caddy /etc/caddy/json-tls.caddy
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN mkdir -p /etc/caddy/tls.d && chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8080
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+CMD ["/usr/local/bin/entrypoint.sh"]
