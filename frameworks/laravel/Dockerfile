@@ -22,5 +22,8 @@ ENV APP_ENV=production \
     LOG_CHANNEL=null \
     SERVER_NAME=:8080
 
-EXPOSE 8080
-CMD ["php", "artisan", "octane:start", "--server=frankenphp", "--host=0.0.0.0", "--port=8080", "--admin-port=2019"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 8080 8081
+CMD ["/usr/local/bin/entrypoint.sh"]
