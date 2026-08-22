@@ -176,6 +176,91 @@ async def json_comp_endpoint(count: int, scope):
     return JSONResponse(_json_payload(count, m))
 
 
+
+
+# ---------------------------------------------------------------------------
+# Postgres and Redis — async-db, api-4/api-16 and crud.
+#
+# Wired lazily on first use: launcher.py starts one process per listener port
+# and there is no startup hook that runs inside each one's event loop. Every
+# process gets its own pool, so the harness's budget is divided by the worker
+# count with headroom left for superuser_reserved_connections.
+# ---------------------------------------------------------------------------
+
+_PG_POOL = None
+
+_ITEM_COLUMNS = (
+    'id, name, category, price, quantity, active, tags, rating_score, rating_count'
+)
+
+def _worker_count():
+    try:
+        return max(1, len(os.sched_getaffinity(0)))
+    except Exception:
+        return 1
+
+
+async def _pool():
+    global _PG_POOL
+    if _PG_POOL is None:
+        dsn = os.environ.get('DATABASE_URL')
+        if not dsn:
+            return None
+        try:
+            import asyncpg
+            budget = int(os.environ.get('DATABASE_MAX_CONN', '256'))
+            per = max(1, (budget - 8) // _worker_count())
+            _PG_POOL = await asyncpg.create_pool(dsn, min_size=1, max_size=per)
+        except Exception:
+            return None
+    return _PG_POOL
+
+
+def _item(row):
+    tags = row['tags']
+    return {
+        'id': row['id'],
+        'name': row['name'],
+        'category': row['category'],
+        'price': row['price'],
+        'quantity': row['quantity'],
+        'active': row['active'],
+        # tags is a JSONB column, so it arrives as text unless a codec is set
+        'tags': json.loads(tags) if isinstance(tags, str) else tags,
+        'rating': {'score': row['rating_score'], 'count': row['rating_count']},
+    }
+
+
+def _qs_int(scope, name, fallback):
+    try:
+        return int(_qs(scope).get(name, [fallback])[0])
+    except (TypeError, ValueError):
+        return fallback
+
+
+@app.route(path='/async-db', methods=[HTTPMethod.GET])
+async def async_db_endpoint(scope):
+    pool = await _pool()
+    if pool is None:
+        return JSONResponse({'items': [], 'count': 0})
+    limit = max(1, min(50, _qs_int(scope, 'limit', 50)))
+    try:
+        rows = await pool.fetch(
+            f'SELECT {_ITEM_COLUMNS} FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
+            _qs_int(scope, 'min', 10), _qs_int(scope, 'max', 50), limit,
+        )
+    except Exception:
+        return JSONResponse({'items': [], 'count': 0})
+    items = [_item(r) for r in rows]
+    return JSONResponse({'items': items, 'count': len(items)})
+
+
+# crud is not subscribed: the collection route works, but a handler declared with
+# a path parameter does not also receive `receive`/`send`, so /crud/items/{id}
+# cannot read a PUT body or write its own response. Left out rather than shipped
+# half-working.
+
+
 @app.route(path='/upload', methods=[HTTPMethod.POST])
 async def upload_endpoint(scope, receive, send):
     size = 0
