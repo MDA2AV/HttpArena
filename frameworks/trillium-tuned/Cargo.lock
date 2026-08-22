@@ -2677,9 +2677,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-client"
-version = "0.9.14"
+version = "0.9.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "353d5e679f18666c9e83a3e2bfe62f5add6ce57d921a79e1c554ae6947973107"
+checksum = "89e884096209c2c7606b5c2fc5ee74153327eed78603e24f14c6f23192e7cd2e"
 dependencies = [
  "async-lock",
  "crossbeam-queue",
@@ -2839,9 +2839,9 @@ dependencies = [
 
 [[package]]
 name = "trillium-server-common"
-version = "0.7.10"
+version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f36a02f792b5015cd357aac5299d5eeb154ecf149b8f5f52341e5691d1301154"
+checksum = "e4fc30dde3b44f13cf57bdfb52e0c46b1263512ce9808df8274e840462cca131"
 dependencies = [
  "async-channel",
  "async_cell",
