@@ -1,14 +1,7 @@
 {
   "display_name": "deno",
   "language": "TS",
-  "type": "flagship",
-  "mode": "standard",
-  "completeness": {
-    "routing": false,
-    "middleware": false,
-    "request": true,
-    "response": true
-  },
+  "type": "engine",
   "engine": "deno",
   "description": "Deno's own HTTP server, Deno.serve, with no framework and no router on top. The only dependencies are pg and ioredis over npm: specifiers, which the database profiles cannot run without.",
   "repo": "https://github.com/denoland/deno",
