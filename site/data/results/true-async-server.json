@@ -203,6 +203,26 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "crud-4096": {
+      "framework": "true-async-server",
+      "language": "PHP",
+      "rps": 244247,
+      "avg_latency": "16.75ms",
+      "p99_latency": "82.40ms",
+      "cpu": "2762.4%",
+      "memory": "464MiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "89.60MB/s",
+      "input_bw": "20.96MB/s",
+      "reconnects": 16342,
+      "status_2xx": 3663717,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "fortunes-1024": {
       "framework": "true-async-server",
       "language": "PHP",
