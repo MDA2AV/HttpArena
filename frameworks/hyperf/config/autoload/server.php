@@ -16,6 +16,33 @@ use Hyperf\Server\Event;
 use Hyperf\Server\Server;
 use Swoole\Constant;
 
+// json-tls on 8081: the same Hyperf HTTP server behind Swoole's own TLS, so
+// both ports run the identical request pipeline. The harness only mounts
+// /certs for the TLS profiles, so on every other profile this is an empty
+// array and the listener is never opened -- Swoole aborts at startup if a
+// listener names certificate files that are not there.
+$jsonTlsServer = [];
+if (file_exists('/certs/server.crt') && file_exists('/certs/server.key')) {
+    $jsonTlsServer[] = [
+        'name' => 'http-tls',
+        'type' => Server::SERVER_HTTP,
+        'host' => '0.0.0.0',
+        'port' => 8081,
+        'sock_type' => SWOOLE_SOCK_TCP | SWOOLE_SSL,
+        'callbacks' => [
+            Event::ON_REQUEST => [App\TlsServer::class, 'onRequest'],
+        ],
+        'options' => [
+            'enable_request_lifecycle' => false,
+        ],
+        // Swoole port options live under settings; options is Hyperf's own
+        'settings' => [
+            'ssl_cert_file' => '/certs/server.crt',
+            'ssl_key_file' => '/certs/server.key',
+        ],
+    ];
+}
+
 return [
     'mode' => SWOOLE_PROCESS,
     'servers' => [
@@ -45,6 +72,7 @@ return [
                 Event::ON_CLOSE => [Hyperf\WebSocketServer\Server::class, 'onClose'],
             ],
         ],
+        ...$jsonTlsServer,
     ],
     'settings' => [
         Constant::OPTION_ENABLE_COROUTINE => true,
