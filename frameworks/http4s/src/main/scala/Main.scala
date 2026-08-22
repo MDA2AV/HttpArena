@@ -1,5 +1,8 @@
 import cats.effect.{IO, IOApp}
+import cats.syntax.all.*
 import com.comcast.ip4s.{Host, Port}
+import fs2.io.net.Network
+import fs2.io.net.tls.TLSContext
 import io.circe.{Json, JsonObject, parser}
 import org.http4s.circe.*
 import org.http4s.dsl.io.*
@@ -7,8 +10,16 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.GZip
 import org.http4s.{HttpRoutes, Request}
 
+import java.io.{File, FileInputStream}
+import java.security.cert.{Certificate, CertificateFactory}
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.{KeyFactory, KeyStore}
+import java.util.Base64
+import javax.net.ssl.{KeyManagerFactory, SSLContext}
+
 import scala.io.Source
 import scala.util.Using
+import scala.jdk.CollectionConverters.*
 
 object Main extends IOApp.Simple:
 
@@ -58,12 +69,51 @@ object Main extends IOApp.Simple:
         .flatMap(size => Ok(size.toString))
   }
 
-  def run: IO[Unit] =
-    EmberServerBuilder
+  // json-tls needs HTTP/1.1 over TLS on 8081. The harness mounts PEMs and Ember
+  // wants a TLSContext, so the pair is converted in-process. Plain JDK crypto
+  // rather than java.security.PEMDecoder, which is still a preview API here.
+  private def sslContext: Option[SSLContext] =
+    val cert = File("/certs/server.crt")
+    val key = File("/certs/server.key")
+    Option.when(cert.exists() && key.exists()):
+      val chain = Using.resource(FileInputStream(cert)): in =>
+        CertificateFactory
+          .getInstance("X.509")
+          .generateCertificates(in)
+          .asScala
+          .toArray[Certificate]
+      val der = Base64.getDecoder.decode(
+        Source
+          .fromFile(key)
+          .mkString
+          .replaceAll("-----(BEGIN|END) PRIVATE KEY-----", "")
+          .replaceAll("\\s", "")
+      )
+      val privateKey = KeyFactory.getInstance("RSA").generatePrivate(PKCS8EncodedKeySpec(der))
+      val password = Array.empty[Char]
+      val store = KeyStore.getInstance("PKCS12")
+      store.load(null, password)
+      store.setKeyEntry("server", privateKey, password, chain)
+      val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm)
+      kmf.init(store, password)
+      val ctx = SSLContext.getInstance("TLS")
+      ctx.init(kmf.getKeyManagers, null, null)
+      ctx
+
+  // One builder definition, so both ports serve the identical routes.
+  private def server(port: Int, tls: Option[TLSContext[IO]]) =
+    val base = EmberServerBuilder
       .default[IO]
       .withHost(Host.fromString("0.0.0.0").get)
-      .withPort(Port.fromInt(8080).get)
+      .withPort(Port.fromInt(port).get)
       .withHttpApp(GZip(routes).orNotFound)
       .withMaxConnections(16384)
-      .build
-      .useForever
+    tls.fold(base)(base.withTLS(_)).build
+
+  def run: IO[Unit] =
+    sslContext match
+      case Some(ctx) =>
+        val tls = Network[IO].tlsContext.fromSSLContext(ctx)
+        (server(8080, None), server(8081, Some(tls))).parTupled.useForever
+      case None =>
+        server(8080, None).useForever
