@@ -203,6 +203,7 @@ final class PostgreSQL
                 $name, $price, $quantity,
             ]);
             $row = $stmt->fetch();
+            $stmt->closeCursor();
         } catch (\Throwable $e) {
             return null;
         }
@@ -227,6 +228,10 @@ final class PostgreSQL
             );
             $stmt->execute([$id]);
             $row = $stmt->fetch();
+            // Single-row fetches leave the cursor open, and a pooled PDO will
+            // not hand the connection back until it is closed - a few of these
+            // and every later query fails.
+            $stmt->closeCursor();
         } catch (\Throwable $e) {
             return null;
         }
@@ -249,7 +254,9 @@ final class PostgreSQL
             $stmt->execute([
                 $body['name'] ?? 'Updated', $body['price'] ?? 0, $body['quantity'] ?? 0, $id,
             ]);
-            if ($stmt->rowCount() === 0) {
+            $affected = $stmt->rowCount();
+            $stmt->closeCursor();
+            if ($affected === 0) {
                 return false;
             }
         } catch (\Throwable $e) {

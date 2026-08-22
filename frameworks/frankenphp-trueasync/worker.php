@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/SharedCache.php';
+
 use FrankenPHP\HttpServer;
 use FrankenPHP\Request;
 use FrankenPHP\Response;
@@ -13,7 +15,9 @@ set_time_limit(0);
 $dataset = json_decode(file_get_contents('/data/dataset.json'), true);
 // Dataset items loaded (total computed per-request with m param)
 
-// Preload static files into memory
+// Static files: only paths and MIME types are resolved at startup. Bodies are
+// read from disk on every request - the static profiles forbid holding them in
+// memory, in every mode.
 $staticFiles = [];
 $staticDir = '/data/static';
 $mimeTypes = [
@@ -33,10 +37,10 @@ if (is_dir($staticDir)) {
         $ext = pathinfo($file, PATHINFO_EXTENSION);
         $base = $staticDir . '/' . $file;
         $staticFiles[$file] = [
-            'data' => file_get_contents($base),
+            'path' => $base,
             'mime' => $mimeTypes[$ext] ?? 'application/octet-stream',
-            'br'   => file_exists($base . '.br') ? file_get_contents($base . '.br') : null,
-            'gz'   => file_exists($base . '.gz') ? file_get_contents($base . '.gz') : null,
+            'br'   => file_exists($base . '.br') ? $base . '.br' : null,
+            'gz'   => file_exists($base . '.gz') ? $base . '.gz' : null,
         ];
     }
 }
@@ -74,13 +78,18 @@ function pgDb(): PDO
             $parts['port'] ?? 5432,
             ltrim($parts['path'] ?? '/benchmark', '/')
         );
-        $maxConn = (int)(getenv('DATABASE_MAX_CONN') ?: 512);
+        // The pool was capped at DATABASE_MAX_CONN exactly, which is also the
+        // Postgres max_connections - and some of those are reserved for the
+        // superuser, so a full pool overshot and the server answered "sorry,
+        // too many clients already". Leave headroom.
+        $budget  = (int)(getenv('DATABASE_MAX_CONN') ?: 256);
+        $maxConn = max(8, $budget - 8);
         $pgDb = new PDO($dsn, $parts['user'] ?? 'bench', $parts['pass'] ?? 'bench', [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
             PDO::ATTR_POOL_ENABLED       => true,
-            PDO::ATTR_POOL_MIN           => 64,
+            PDO::ATTR_POOL_MIN           => min(16, $maxConn),
             PDO::ATTR_POOL_MAX           => $maxConn,
         ]);
     }
@@ -208,12 +217,12 @@ function handleStatic(string $path, Request $request, Response $response): void
     $ae = $request->getHeader('Accept-Encoding') ?? '';
     if ($f['br'] !== null && str_contains($ae, 'br')) {
         $response->setHeader('Content-Encoding', 'br');
-        $response->write($f['br']);
+        $response->write(file_get_contents($f['br']));
     } elseif ($f['gz'] !== null && str_contains($ae, 'gzip')) {
         $response->setHeader('Content-Encoding', 'gzip');
-        $response->write($f['gz']);
+        $response->write(file_get_contents($f['gz']));
     } else {
-        $response->write($f['data']);
+        $response->write(file_get_contents($f['path']));
     }
     $response->end();
 }
@@ -240,6 +249,171 @@ function handleAsyncDb(Request $request, Response $response): void
     }
 }
 
+
+// --- crud ------------------------------------------------------------------
+// Same pooled PDO async-db uses. The cache-aside in front of the single-item
+// read is SharedCache: frankenphp runs a worker per process, so a per-worker
+// array would hold only its own fraction of the 50,000 ids the profile reads.
+
+const CRUD_COLUMNS =
+    'id, name, category, price, quantity, active, tags, rating_score, rating_count';
+
+// The profile reads and writes the same ids, so a long TTL would answer from a
+// copy the writes have already moved past.
+const CRUD_TTL_MS = 200;
+
+function crudShape(array $row): array
+{
+    return [
+        'id'       => (int)$row['id'],
+        'name'     => $row['name'],
+        'category' => $row['category'],
+        'price'    => (int)$row['price'],
+        'quantity' => (int)$row['quantity'],
+        'active'   => (bool)$row['active'],
+        // tags is a JSONB column, so PDO hands it back as text
+        'tags'     => json_decode($row['tags'], true),
+        'rating'   => [
+            'score' => (int)$row['rating_score'],
+            'count' => (int)$row['rating_count'],
+        ],
+    ];
+}
+
+function crudJson(Response $response, string $body, int $status = 200, array $extra = []): void
+{
+    $response->setStatus($status);
+    $response->setHeader('Content-Type', 'application/json');
+    foreach ($extra as $k => $v) {
+        $response->setHeader($k, $v);
+    }
+    $response->write($body);
+    $response->end();
+}
+
+function handleCrudCollection(Request $request, Response $response): void
+{
+    if (strtoupper($request->getMethod()) === 'POST') {
+        $body = json_decode((string)$request->getBody(), true);
+        if (!is_array($body)) {
+            crudJson($response, '{"error":"insert failed"}', 500);
+            return;
+        }
+        $name     = $body['name'] ?? 'New Product';
+        $price    = $body['price'] ?? 0;
+        $quantity = $body['quantity'] ?? 0;
+        try {
+            $stmt = pgDb()->prepare(
+                'INSERT INTO items (id, name, category, price, quantity, active, tags, '
+                . 'rating_score, rating_count) '
+                . "VALUES (?, ?, ?, ?, ?, true, '[\"bench\"]', 0, 0) "
+                . 'ON CONFLICT (id) DO UPDATE SET name = ?, price = ?, quantity = ? RETURNING id'
+            );
+            $stmt->execute([
+                $body['id'] ?? null, $name, $body['category'] ?? 'test', $price, $quantity,
+                $name, $price, $quantity,
+            ]);
+            $row = $stmt->fetch();
+            // Single-row fetches leave the cursor open, and a pooled PDO will not
+            // hand the connection back until it is closed - a few of these and
+            // every later query fails.
+            $stmt->closeCursor();
+        } catch (\Throwable $e) {
+            crudJson($response, '{"error":"insert failed"}', 500);
+            return;
+        }
+        crudJson($response, json_encode([
+            'id'       => (int)$row['id'],
+            'name'     => $body['name'] ?? null,
+            'category' => $body['category'] ?? null,
+            'price'    => $body['price'] ?? null,
+            'quantity' => $body['quantity'] ?? null,
+        ]), 201);
+        return;
+    }
+
+    $params   = parseQueryParams($request->getUri());
+    $category = $params['category'] ?? 'electronics';
+    $page     = max(1, (int)($params['page'] ?? 1));
+    $limit    = max(1, min(50, (int)($params['limit'] ?? 10)));
+    try {
+        $stmt = pgDb()->prepare(
+            'SELECT ' . CRUD_COLUMNS . ' FROM items WHERE category = ? ORDER BY id LIMIT ? OFFSET ?'
+        );
+        $stmt->execute([$category, $limit, ($page - 1) * $limit]);
+        $items = [];
+        while ($row = $stmt->fetch()) {
+            $items[] = crudShape($row);
+        }
+    } catch (\Throwable $e) {
+        crudJson($response, '{"error":"query failed"}', 500);
+        return;
+    }
+    crudJson($response, json_encode([
+        'items' => $items, 'total' => count($items), 'page' => $page, 'limit' => $limit,
+    ]));
+}
+
+function handleCrudItem(int $id, Request $request, Response $response): void
+{
+    $key = 'crud:' . $id;
+
+    if (strtoupper($request->getMethod()) === 'PUT') {
+        $body = json_decode((string)$request->getBody(), true);
+        if (!is_array($body)) {
+            crudJson($response, '{"error":"update failed"}', 500);
+            return;
+        }
+        try {
+            $stmt = pgDb()->prepare('UPDATE items SET name = ?, price = ?, quantity = ? WHERE id = ?');
+            $stmt->execute([
+                $body['name'] ?? 'Updated', $body['price'] ?? 0, $body['quantity'] ?? 0, $id,
+            ]);
+            $affected = $stmt->rowCount();
+            $stmt->closeCursor();
+        } catch (\Throwable $e) {
+            crudJson($response, '{"error":"update failed"}', 500);
+            return;
+        }
+        if ($affected === 0) {
+            $response->setStatus(404);
+            $response->end();
+            return;
+        }
+        SharedCache::del($key);
+        crudJson($response, json_encode([
+            'id'       => $id,
+            'name'     => $body['name'] ?? null,
+            'price'    => $body['price'] ?? null,
+            'quantity' => $body['quantity'] ?? null,
+        ]));
+        return;
+    }
+
+    $hit = SharedCache::get($key);
+    if ($hit !== null) {
+        crudJson($response, $hit, 200, ['X-Cache' => 'HIT']);
+        return;
+    }
+    try {
+        $stmt = pgDb()->prepare('SELECT ' . CRUD_COLUMNS . ' FROM items WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch();
+        $stmt->closeCursor();
+    } catch (\Throwable $e) {
+        crudJson($response, '{"error":"query failed"}', 500);
+        return;
+    }
+    if (!$row) {
+        $response->setStatus(404);
+        $response->end();
+        return;
+    }
+    $body = json_encode(crudShape($row));
+    SharedCache::setPx($key, $body, CRUD_TTL_MS);
+    crudJson($response, $body, 200, ['X-Cache' => 'MISS']);
+}
+
 // --- Main request router ---
 
 HttpServer::onRequest(function (Request $request, Response $response): void {
@@ -255,6 +429,9 @@ HttpServer::onRequest(function (Request $request, Response $response): void {
         $path === '/db'           => handleSyncDb($request, $response),
         $path === '/async-db'     => handleAsyncDb($request, $response),
         str_starts_with($path, '/static/') => handleStatic($path, $request, $response),
+        $path === '/crud/items'   => handleCrudCollection($request, $response),
+        preg_match('#^/crud/items/(\d+)$#', $path, $c) === 1
+            => handleCrudItem((int)$c[1], $request, $response),
         default => (function () use ($response) {
             $response->setStatus(404);
             $response->setHeader('Content-Type', 'text/plain');

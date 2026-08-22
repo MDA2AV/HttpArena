@@ -193,6 +193,7 @@ class Crud
                 $name, $price, $quantity,
             ]);
             $row = $stmt->fetch();
+            $stmt->closeCursor();
         } catch (\Throwable $e) {
             self::json($response, ['error' => 'insert failed'], 500);
             return;
@@ -223,6 +224,7 @@ class Crud
             $stmt = $pdo->prepare('SELECT ' . self::COLUMNS . ' FROM items WHERE id = ? LIMIT 1');
             $stmt->execute([$id]);
             $row = $stmt->fetch();
+            $stmt->closeCursor();
         } catch (\Throwable $e) {
             self::json($response, ['error' => 'query failed'], 500);
             return;
