@@ -7,6 +7,8 @@ using HttpArena.Services;
 using HttpArena.Types;
 
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -87,6 +89,25 @@ app.UseFastEndpoints(c =>
 _ = app.Services.GetRequiredService<DatasetService>();
 _ = app.Services.GetRequiredService<ItemService>();
 
-app.MapStaticAssets();
+// Served straight out of the directory the profile mounts, rather than a copy
+// taken at image build. MapStaticAssets, which this used before, resolves assets
+// through a manifest generated at compile time from wwwroot: the container ended
+// up holding two copies of the corpus and answering from the one the harness
+// cannot touch, so a file replaced on disk was never reflected in a response.
+//
+// UseStaticFiles reads the file per request through the file provider, so what is
+// served follows the mounted directory. Compression is still ASP.NET's own
+// response compression middleware, configured above.
+var staticContentTypes = new FileExtensionContentTypeProvider();
+staticContentTypes.Mappings[".webp"] = "image/webp";
+staticContentTypes.Mappings[".woff2"] = "font/woff2";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider("/data/static"),
+    RequestPath = "/static",
+    ContentTypeProvider = staticContentTypes,
+    ServeUnknownFileTypes = false
+});
 
 app.Run();
