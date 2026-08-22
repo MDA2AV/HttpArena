@@ -1,10 +1,3 @@
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned::static_preload] static preload: 20 files from /data/static
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] starting 4 workers
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 1: bound 8080
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 0: bound 8080
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 3: bound 8080
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 2: bound 8080
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 1: bound TLS on 8443
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 3: bound TLS on 8443
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 2: bound TLS on 8443
-[2026-05-13T13:21:17Z INFO  httparena_trillium_tuned] worker 0: bound TLS + QUIC on 8443
+[2026-08-22T00:17:57Z INFO  httparena_trillium_tuned::static_preload] static preload: 20 files from /data/static
+[2026-08-22T00:17:57Z INFO  httparena_trillium_tuned] starting trillium-tuned via server(): 4 reuseport worker(s) + shared runtime for h3
+[2026-08-22T00:17:57Z INFO  trillium_server_common::listener_config::reuseport] reuseport: 4 per-core worker(s) across 3 listener(s)
