@@ -24,17 +24,21 @@ function getCPUCount() {
 
 const express = require('fulmine.js');
 const fs = require('fs');
-const zlib = require('zlib');
 
-// The framework's own compression middleware, which negotiates br and gzip per request and
-// takes the compression module's options. json-comp counts the bytes twice over,
-// rps * (minBpr/myBpr)^2, so brotli is worth its extra microseconds where the client offers
-// it: q3 is 12% smaller than gzip level 1 here. Mounted on the json route rather than on the
-// app, because that is the only route the profiles ask to compress.
-const compress = express.compression({
-    level: 1,
-    brotli: { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } }
-});
+// The framework's own compression middleware, mounted on the json route rather than on the app,
+// because that is the only route the profiles ask to compress.
+//
+// gzip and not brotli, which is a reversal, and it is 5.18.0 that reverses it: a whole body is
+// now gzipped on a stream the framework keeps rather than on one built and thrown away per call,
+// which is half of what the call used to cost at this size. A brotli stream cannot be kept that
+// way, it carries context from one body into the next, so it still pays the build every time.
+// json-comp scores rps * (minBpr/myBpr)^2, so brotli's 10% smaller body is worth roughly a fifth
+// of the score and the cheaper call is worth more than that. `encodings` is the documented way to
+// say it: the client offers both and gets gzip.
+//
+// Level 3 rather than 1: once the per-call build is gone, levels 1, 2 and 3 cost the same, and 3
+// is the smallest of them.
+const compress = express.compression({ level: 3, encodings: ['gzip'] });
 
 // 'auto' is one worker per usable core, and usable means the cgroup quota where there is one: a
 // container with two cores does not fork sixty-four processes because the host has them.
