@@ -12,7 +12,7 @@ RUN groupadd --system appuser \
     && mkdir -p /app \
     && chown -R appuser:appuser /app
 # psycopg[binary] powers the optional /async-db profile; absent DATABASE_URL it is unused.
-RUN pip install --no-cache-dir "mq-bridge-py==${MQB_VERSION}" "psycopg[binary]>=3.1" "psycopg_pool>=3.2"
+RUN pip install --no-cache-dir "mq-bridge-py==${MQB_VERSION}" "psycopg[binary]>=3.1" "psycopg_pool>=3.2" "redis>=5.2"
 WORKDIR /app
 COPY --chown=appuser:appuser server.py /app/server.py
 EXPOSE 8080

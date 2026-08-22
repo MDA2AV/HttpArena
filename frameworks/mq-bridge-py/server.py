@@ -206,7 +206,13 @@ def _init_pool():
         from psycopg_pool import ConnectionPool
     except ImportError:
         return None
-    max_conn = int(os.environ.get("DATABASE_MAX_CONN", "256"))
+    budget = int(os.environ.get("DATABASE_MAX_CONN", "256"))
+    # One pool per forked worker, so the budget has to be divided by the worker
+    # count rather than handed to each. Postgres runs with max_connections=256
+    # and reserves a few of those for the superuser; the crud profile hands the
+    # container a 62-CPU cpuset, so a per-worker max of the full budget asked
+    # for 62 x 256.
+    max_conn = max(1, (budget - 8) // max(1, _worker_count()))
     try:
         pool = ConnectionPool(url, min_size=1, max_size=max_conn, open=True)
         return pool
@@ -338,6 +344,175 @@ def _serve_static(request: Message, name: str, want_gzip: bool) -> Message:
     return cached.message(request, want_gzip)
 
 
+
+
+# ---------- crud ----------
+
+_REDIS = None
+
+CRUD_COLUMNS = (
+    "id, name, category, price, quantity, active, tags, rating_score, rating_count"
+)
+
+# The crud profile reads and writes the same ids, so a long TTL would answer from
+# a copy the writes have already moved past.
+CRUD_TTL_MS = 200
+
+
+def _init_redis():
+    url = os.environ.get("REDIS_URL", "")
+    if not url:
+        return None
+    try:
+        import redis
+
+        return redis.Redis.from_url(url, decode_responses=True)
+    except Exception:  # noqa: BLE001 - non-fatal, crud degrades to DB-only
+        return None
+
+
+def _crud_row(r) -> dict:
+    tags = r[6]
+    return {
+        "id": r[0],
+        "name": r[1],
+        "category": r[2],
+        "price": r[3],
+        "quantity": r[4],
+        "active": r[5],
+        # tags is a JSONB column, so it arrives as text unless a codec is set
+        "tags": _json.loads(tags) if isinstance(tags, str) else tags,
+        "rating": {"score": r[7], "count": r[8]},
+    }
+
+
+def _crud_list(qs: dict[str, list[str]]) -> tuple[bytes, dict]:
+    if _POOL is None:
+        return b'{"error":"DB not available"}', _status_meta(500)
+    category = (qs.get("category") or ["electronics"])[0]
+    page = max(1, _query_int(qs, "page", 1))
+    limit = max(1, min(_query_int(qs, "limit", 10), 50))
+    try:
+        with _POOL.connection() as conn:
+            rows = conn.execute(
+                f"SELECT {CRUD_COLUMNS} FROM items WHERE category = %s ORDER BY id "
+                "LIMIT %s OFFSET %s",
+                (category, limit, (page - 1) * limit),
+            ).fetchall()
+    except Exception:  # noqa: BLE001
+        return b'{"error":"query failed"}', _status_meta(500)
+    items = [_crud_row(r) for r in rows]
+    body = _json.dumps(
+        {"items": items, "total": len(items), "page": page, "limit": limit},
+        separators=(",", ":"),
+    ).encode()
+    return body, JSON_META
+
+
+def _crud_create(payload: bytes) -> tuple[bytes, dict]:
+    if _POOL is None:
+        return b'{"error":"DB not available"}', _status_meta(500)
+    try:
+        body = _json.loads(payload)
+    except Exception:  # noqa: BLE001
+        return b'{"error":"insert failed"}', _status_meta(500)
+    name = body.get("name", "New Product")
+    price = body.get("price", 0)
+    quantity = body.get("quantity", 0)
+    try:
+        with _POOL.connection() as conn:
+            row = conn.execute(
+                "INSERT INTO items (id, name, category, price, quantity, active, "
+                "tags, rating_score, rating_count) "
+                "VALUES (%s, %s, %s, %s, %s, true, '[\"bench\"]', 0, 0) "
+                "ON CONFLICT (id) DO UPDATE SET name = %s, price = %s, quantity = %s "
+                "RETURNING id",
+                (body.get("id"), name, body.get("category", "test"), price, quantity,
+                 name, price, quantity),
+            ).fetchone()
+    except Exception:  # noqa: BLE001
+        return b'{"error":"insert failed"}', _status_meta(500)
+    out = _json.dumps(
+        {
+            "id": row[0], "name": body.get("name"),
+            "category": body.get("category"), "price": body.get("price"),
+            "quantity": body.get("quantity"),
+        },
+        separators=(",", ":"),
+    ).encode()
+    return out, _status_meta(201)
+
+
+# Cache-aside on Redis where the harness provides it - crud is the one profile
+# that does, and the cache is shared across the forked workers as a per-process
+# dict would not be.
+def _crud_read(item_id: int) -> tuple[bytes, dict]:
+    if _POOL is None:
+        return b'{"error":"DB not available"}', _status_meta(500)
+    key = "crud:%d" % item_id
+    if _REDIS is not None:
+        try:
+            hit = _REDIS.get(key)
+        except Exception:  # noqa: BLE001
+            hit = None
+        if hit:
+            return hit.encode(), dict(JSON_META, **{"X-Cache": "HIT"})
+    try:
+        with _POOL.connection() as conn:
+            row = conn.execute(
+                f"SELECT {CRUD_COLUMNS} FROM items WHERE id = %s LIMIT 1", (item_id,)
+            ).fetchone()
+    except Exception:  # noqa: BLE001
+        return b'{"error":"query failed"}', _status_meta(500)
+    if row is None:
+        return b"", _status_meta(404)
+    body = _json.dumps(_crud_row(row), separators=(",", ":")).encode()
+    if _REDIS is not None:
+        try:
+            _REDIS.set(key, body, px=CRUD_TTL_MS)
+        except Exception:  # noqa: BLE001
+            pass
+    return body, dict(JSON_META, **{"X-Cache": "MISS"})
+
+
+def _crud_update(item_id: int, payload: bytes) -> tuple[bytes, dict]:
+    if _POOL is None:
+        return b'{"error":"DB not available"}', _status_meta(500)
+    try:
+        body = _json.loads(payload)
+    except Exception:  # noqa: BLE001
+        return b'{"error":"update failed"}', _status_meta(500)
+    try:
+        with _POOL.connection() as conn:
+            cur = conn.execute(
+                "UPDATE items SET name = %s, price = %s, quantity = %s WHERE id = %s",
+                (body.get("name", "Updated"), body.get("price", 0),
+                 body.get("quantity", 0), item_id),
+            )
+            affected = cur.rowcount
+    except Exception:  # noqa: BLE001
+        return b'{"error":"update failed"}', _status_meta(500)
+    if not affected:
+        return b"", _status_meta(404)
+    if _REDIS is not None:
+        try:
+            _REDIS.delete("crud:%d" % item_id)
+        except Exception:  # noqa: BLE001
+            pass
+    out = _json.dumps(
+        {
+            "id": item_id, "name": body.get("name"), "price": body.get("price"),
+            "quantity": body.get("quantity"),
+        },
+        separators=(",", ":"),
+    ).encode()
+    return out, JSON_META
+
+
+def _status_meta(code: int) -> dict:
+    return dict(JSON_META, **{"http_status_code": str(code)})
+
+
 def handle(message: Message) -> Message:
     method = message.metadata.get("http_method", "")
     path = message.metadata.get("http_path", "")
@@ -367,6 +542,23 @@ def handle(message: Message) -> Message:
         return _reply(message, _build_json(count, _query_int(qs, "m", 1)), JSON_META)
     if method == "GET" and path.startswith("/static/"):
         return _serve_static(message, path[len("/static/"):], _accepts_gzip(message))
+    if path == "/crud/items":
+        if method == "POST":
+            body, meta = _crud_create(bytes(message.payload))
+            return _reply(message, body, meta)
+        if method == "GET":
+            body, meta = _crud_list(qs)
+            return _reply(message, body, meta)
+    if path.startswith("/crud/items/") and method in ("GET", "PUT"):
+        try:
+            item_id = int(path[len("/crud/items/"):])
+        except ValueError:
+            return _reply(message, b"Not Found", NOT_FOUND_META)
+        if method == "PUT":
+            body, meta = _crud_update(item_id, bytes(message.payload))
+        else:
+            body, meta = _crud_read(item_id)
+        return _reply(message, body, meta)
     return _reply(message, b"Not Found", NOT_FOUND_META)
 
 
@@ -380,8 +572,9 @@ def _run_secondary_listener(route: Route) -> None:
 def _run_worker(http_workers: int) -> None:
     # Per-process setup: the Postgres pool (background threads) and the Rust
     # runtime must be created AFTER any fork, never inherited across it.
-    global _POOL
+    global _POOL, _REDIS
     _POOL = _init_pool()
+    _REDIS = _init_redis()
     config, names = _config(http_workers)
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
         f.write(config)

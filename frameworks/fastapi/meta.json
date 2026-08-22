@@ -25,7 +25,8 @@
     "api-16",
     "async-db",
     "static",
-    "static-tls"
+    "static-tls",
+    "crud"
   ],
   "maintainers": []
 }

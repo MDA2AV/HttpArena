@@ -18,13 +18,15 @@
     "pipelined",
     "limited-conn",
     "json",
+    "json-comp",
     "json-tls",
     "upload",
     "api-4",
     "api-16",
     "async-db",
     "static",
-    "static-tls"
+    "static-tls",
+    "crud"
   ],
   "maintainers": []
 }

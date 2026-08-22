@@ -121,7 +121,10 @@ def compress_response(response):
 
 @app.route('/pipeline')
 def pipeline():
-    return b'ok' 
+    # Flask defaults a bare body to text/html; the profiles want text/plain.
+    response = make_response(b'ok')
+    response.content_type = 'text/plain; charset=utf-8'
+    return response
 
 
 @app.route('/baseline11', methods=['GET', 'POST'])
@@ -137,7 +140,9 @@ def baseline11():
             total += int(request.data.strip())
         except ValueError:
             pass
-    return str(total)
+    response = make_response(str(total))
+    response.content_type = 'text/plain; charset=utf-8'
+    return response
 
 
 @app.route('/json/<int:count>')
@@ -202,6 +207,160 @@ def upload_endpoint():
 
 mimetypes.add_type('.woff2', 'font/woff2')
 mimetypes.add_type('.webp', 'image/webp')
+
+
+
+# -- crud --------------------------------------------------------------------
+
+REDIS = None
+
+CRUD_COLUMNS = (
+    "id, name, category, price, quantity, active, tags, rating_score, rating_count"
+)
+
+# The crud profile reads and writes the same ids, so a long TTL would answer from
+# a copy the writes have already moved past.
+CRUD_TTL_MS = 200
+
+
+def redis_setup():
+    global REDIS
+    if REDIS is not None:
+        return REDIS
+    url = os.environ.get("REDIS_URL")
+    if not url:
+        return None
+    try:
+        import redis
+        REDIS = redis.Redis.from_url(url, decode_responses=True)
+    except Exception:
+        REDIS = None
+    return REDIS
+
+
+def crud_item(row):
+    tags = row['tags']
+    return {
+        'id'      : row['id'],
+        'name'    : row['name'],
+        'category': row['category'],
+        'price'   : row['price'],
+        'quantity': row['quantity'],
+        'active'  : row['active'],
+        # tags is a JSONB column, so it arrives as text unless a codec is set
+        'tags'    : json.loads(tags) if isinstance(tags, str) else tags,
+        'rating'  : { 'score': row['rating_score'], 'count': row['rating_count'] },
+    }
+
+
+@app.route('/crud/items', methods=['GET', 'POST'])
+def crud_collection_endpoint():
+    global DATABASE_POOL
+    if not DATABASE_POOL:
+        return { "error": "DB not available" }, 500
+    if request.method == 'POST':
+        body = request.get_json(force=True, silent=True)
+        if body is None:
+            return { "error": "insert failed" }, 500
+        name = body.get('name', 'New Product')
+        price = body.get('price', 0)
+        quantity = body.get('quantity', 0)
+        try:
+            with DATABASE_POOL.connection() as db_conn:
+                row = db_conn.execute(
+                    "INSERT INTO items (id, name, category, price, quantity, active, "
+                    "tags, rating_score, rating_count) "
+                    "VALUES (%s, %s, %s, %s, %s, true, '[\"bench\"]', 0, 0) "
+                    "ON CONFLICT (id) DO UPDATE SET name = %s, price = %s, "
+                    "quantity = %s RETURNING id",
+                    (body.get('id'), name, body.get('category', 'test'), price,
+                     quantity, name, price, quantity),
+                ).fetchone()
+        except Exception:
+            return { "error": "insert failed" }, 500
+        return {
+            "id": row['id'], "name": body.get('name'),
+            "category": body.get('category'), "price": body.get('price'),
+            "quantity": body.get('quantity'),
+        }, 201
+    category = request.args.get('category') or 'electronics'
+    page = max(1, request.args.get('page', default=1, type=int) or 1)
+    limit = request.args.get('limit', default=10, type=int) or 10
+    limit = max(1, min(50, limit))
+    try:
+        with DATABASE_POOL.connection() as db_conn:
+            rows = db_conn.execute(
+                f"SELECT {CRUD_COLUMNS} FROM items WHERE category = %s ORDER BY id "
+                "LIMIT %s OFFSET %s",
+                (category, limit, (page - 1) * limit),
+            ).fetchall()
+    except Exception:
+        return { "error": "query failed" }, 500
+    items = [crud_item(r) for r in rows]
+    return { "items": items, "total": len(items), "page": page, "limit": limit }
+
+
+# Cache-aside on Redis where the harness provides it - crud is the one profile
+# that does, and the cache is shared across the gunicorn workers as a per-worker
+# dict would not be.
+@app.route('/crud/items/<int:item_id>', methods=['GET', 'PUT'])
+def crud_item_endpoint(item_id):
+    global DATABASE_POOL
+    if not DATABASE_POOL:
+        return { "error": "DB not available" }, 500
+    rds = redis_setup()
+    key = "crud:%d" % item_id
+    if request.method == 'PUT':
+        body = request.get_json(force=True, silent=True)
+        if body is None:
+            return { "error": "update failed" }, 500
+        try:
+            with DATABASE_POOL.connection() as db_conn:
+                cur = db_conn.execute(
+                    "UPDATE items SET name = %s, price = %s, quantity = %s "
+                    "WHERE id = %s",
+                    (body.get('name', 'Updated'), body.get('price', 0),
+                     body.get('quantity', 0), item_id),
+                )
+                affected = cur.rowcount
+        except Exception:
+            return { "error": "update failed" }, 500
+        if not affected:
+            return Response(status=404)
+        if rds is not None:
+            try:
+                rds.delete(key)
+            except Exception:
+                pass
+        return {
+            "id": item_id, "name": body.get('name'),
+            "price": body.get('price'), "quantity": body.get('quantity'),
+        }
+    if rds is not None:
+        try:
+            hit = rds.get(key)
+        except Exception:
+            hit = None
+        if hit:
+            return Response(hit, mimetype='application/json',
+                            headers={'X-Cache': 'HIT'})
+    try:
+        with DATABASE_POOL.connection() as db_conn:
+            row = db_conn.execute(
+                f"SELECT {CRUD_COLUMNS} FROM items WHERE id = %s LIMIT 1", (item_id,)
+            ).fetchone()
+    except Exception:
+        return { "error": "query failed" }, 500
+    if row is None:
+        return Response(status=404)
+    body = json.dumps(crud_item(row))
+    if rds is not None:
+        try:
+            rds.set(key, body, px=CRUD_TTL_MS)
+        except Exception:
+            pass
+    return Response(body, mimetype='application/json', headers={'X-Cache': 'MISS'})
+
 
 @app.route('/static/<path:filepath>')
 def static_endpoint(filepath):
