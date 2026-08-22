@@ -33,6 +33,14 @@ listen: &ssl_listen
 listen:
   <<: *ssl_listen
   type: quic
+
+# json-tls: HTTP/1.1 over TLS on its own port. 8443 advertises h2 through
+# ALPN, so it cannot double as the HTTP/1.1 listener.
+listen:
+  port: 8081
+  ssl:
+    certificate-file: ${CERT_FILE}
+    key-file: ${KEY_FILE}
 EOF
 fi
 

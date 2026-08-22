@@ -16,8 +16,11 @@ RUN git clone --recurse-submodules --depth 1 https://github.com/h2o/h2o.git . &&
     cmake --install build
 
 FROM debian:bookworm-slim
+# libbrotli1 carries libbrotlidec/libbrotlienc: the build stage installs
+# libbrotli-dev, so h2o links against brotli and will not start without it
+# ("error while loading shared libraries: libbrotlidec.so.1").
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libssl3 jq && \
+    libssl3 libbrotli1 jq && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=build /usr/local/bin/h2o /usr/local/bin/h2o
 COPY --from=build /usr/local/share/h2o /usr/local/share/h2o
