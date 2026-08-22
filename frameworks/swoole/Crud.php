@@ -31,8 +31,16 @@ class Crud
     /**
      * Allocate the shared table. Must run before $http->start() so the mapping
      * is inherited by every worker.
+     *
+     * Sized well above the id space the profile reads, which is 50,000. A
+     * Swoole\Table holds fewer rows than it is declared with - the hash keeps a
+     * bounded conflict pool, and a table declared 65,536 stopped accepting new
+     * keys at about 34,900 and topped out near 43,400. At that point every write
+     * failed and each one logged, which is how one crud run produced 66,157
+     * copies of "Swoole\Table::set(): failed to set". 131,072 takes 60,000
+     * distinct keys with room to spare.
      */
-    public static function initCache(int $rows = 1 << 16): void
+    public static function initCache(int $rows = 1 << 17): void
     {
         $table = new Table($rows);
         $table->column('body', Table::TYPE_STRING, 1024);
@@ -40,6 +48,26 @@ class Crud
         $table->column('expires', Table::TYPE_INT, 8);
         $table->create();
         self::$cache = $table;
+    }
+
+    /**
+     * Drop rows whose deadline has passed.
+     *
+     * The table cannot grow, and a row is otherwise only removed when a read
+     * finds it expired - an id written once and never read again holds its slot
+     * for the life of the process. Sweeping keeps a long run from filling it.
+     */
+    private static function sweepExpired(): void
+    {
+        if (self::$cache === null) {
+            return;
+        }
+        $now = (int)(microtime(true) * 1000);
+        foreach (self::$cache as $key => $row) {
+            if ($row['expires'] <= $now) {
+                self::$cache->del($key);
+            }
+        }
     }
 
     private static function pdo(): ?PDO
@@ -96,10 +124,18 @@ class Crud
         if (self::$cache === null || strlen($body) > 1024) {
             return;
         }
-        self::$cache->set($key, [
+        $row = [
             'body'    => $body,
             'expires' => (int)(microtime(true) * 1000) + self::TTL_MS,
-        ]);
+        ];
+        // A full table answers false and raises a warning. Sweep the expired
+        // rows and try once more; if it still will not fit, the read simply
+        // goes to Postgres next time, which is the same outcome as a miss and
+        // costs nothing but the query.
+        if (@self::$cache->set($key, $row) === false) {
+            self::sweepExpired();
+            @self::$cache->set($key, $row);
+        }
     }
 
     private static function cacheDel(string $key): void
