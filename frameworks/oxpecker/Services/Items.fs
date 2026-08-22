@@ -77,10 +77,8 @@ module private Cache =
     /// In-process fallback; only constructed when Redis is not configured.
     let local =
         match Database.redis with
-        | Some _ -> None
-        | None -> Some(new MemoryCache(MemoryCacheOptions()))
-
-let isAvailable = Database.isAvailable
+        | Some _ -> ValueNone
+        | None -> ValueSome(new MemoryCache(MemoryCacheOptions()))
 
 let private fetchById (id: int) =
     task {
@@ -88,7 +86,7 @@ let private fetchById (id: int) =
         cmd.Parameters.Add(intParameter id) |> ignore
         use! reader = cmd.ExecuteReaderAsync()
         let! hasRow = reader.ReadAsync()
-        return if hasRow then Some(Sql.read reader) else None
+        return if hasRow then ValueSome(Sql.read reader) else ValueNone
     }
 
 /// Range query for /async-db: items with price between `minPrice` and `maxPrice`.
@@ -107,7 +105,7 @@ let query (minPrice: float) (maxPrice: float) (limit: int) =
         while! reader.ReadAsync() do
             items.Add(Sql.read reader)
 
-        return { Items = items.ToArray(); Count = items.Count }
+        return { Items = items; Count = items.Count }
     }
 
 /// Paginated list by category (always DB, never cached). Out-of-range paging
@@ -131,8 +129,8 @@ let list (category: string) (page: int) (limit: int) =
             items.Add(Sql.read reader)
 
         return {
-            Items = items.ToArray()
-            Total = int64 items.Count
+            Items = items
+            Total = items.Count
             Page = page
             Limit = limit
         }
@@ -150,23 +148,23 @@ let read (id: int) =
         | Some redis ->
             match! redis.StringGetAsync(RedisKey key) with
             | cached when cached.HasValue ->
-                return Some { Value = SerializedItem(cached.ToString()); CacheHit = true }
+                return ValueSome { Value = SerializedItem(cached.ToString()); CacheHit = true }
             | _ ->
                 match! fetchById id with
-                | None -> return None
-                | Some item ->
+                | ValueNone -> return ValueNone
+                | ValueSome item ->
                     let json = JsonSerializer.Serialize(item, Serialization.options)
                     let! _ = redis.StringSetAsync(RedisKey key, RedisValue json, Nullable Cache.ttl, When.Always)
-                    return Some { Value = SerializedItem json; CacheHit = false }
+                    return ValueSome { Value = SerializedItem json; CacheHit = false }
         | None ->
             match Cache.local.Value.TryGetValue key with
-            | true, (:? Item as item) -> return Some { Value = TypedItem item; CacheHit = true }
+            | true, (:? Item as item) -> return ValueSome { Value = TypedItem item; CacheHit = true }
             | _ ->
                 match! fetchById id with
-                | None -> return None
-                | Some item ->
+                | ValueNone -> return ValueNone
+                | ValueSome item ->
                     Cache.local.Value.Set(key, item, Cache.entryOptions) |> ignore
-                    return Some { Value = TypedItem item; CacheHit = false }
+                    return ValueSome { Value = TypedItem item; CacheHit = false }
     }
 
 /// Creates an item (upsert on id conflict).
@@ -182,7 +180,7 @@ let create (input: CrudItemInput) =
         let! newId = cmd.ExecuteScalarAsync()
 
         return {
-            Id = Convert.ToInt32 newId
+            Id = unbox newId
             Name = input.Name
             Category = input.Category
             Price = input.Price
@@ -205,12 +203,11 @@ let update (id: int) (input: CrudItemInput) =
         if affected = 0 then
             return None
         else
-            do!
-                match Database.redis with
-                | Some redis -> redis.KeyDeleteAsync(RedisKey(Cache.key id)) :> Task
-                | None ->
-                    Cache.local.Value.Remove(Cache.key id)
-                    Task.CompletedTask
+            match Database.redis with
+            | Some redis ->
+                do! redis.KeyDeleteAsync(RedisKey(Cache.key id)) :> Task
+            | None ->
+                Cache.local.Value.Remove(Cache.key id)              
 
             return
                 Some {

@@ -3,9 +3,13 @@ module HttpArena.Services.Fortunes
 
 open System
 
+open System.Collections.Generic
 open HttpArena
 
-let isAvailable = Database.isAvailable
+let FortuneComparer = {
+    new IComparer<Fortune> with
+        member self.Compare(a,b) = String.CompareOrdinal(a.Message, b.Message)
+}
 
 let getRows () =
     task {
@@ -20,7 +24,7 @@ let getRows () =
         // Runtime-injected row defeats whole-page memoization: the rendered
         // HTML must vary per request, even though the seeded rows don't.
         rows.Add { Id = 0; Message = "Additional fortune added at request time." }
-        rows.Sort(fun a b -> String.CompareOrdinal(a.Message, b.Message))
+        rows.Sort(FortuneComparer)
 
         return rows
     }

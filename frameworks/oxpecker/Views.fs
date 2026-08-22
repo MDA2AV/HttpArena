@@ -2,33 +2,31 @@ module HttpArena.Views
 
 open Oxpecker.ViewEngine
 
-
-let private pageHead = 
-    head () {
-        title () { "Fortunes" }
-    }
-    
-let private tableHead = 
-    thead () {
-        tr () {
-            th () { "id" }
-            th () { "message" }
-        }
-    }
-
-let fortunes (rows: ResizeArray<Fortune>) =
-    html () {
-        pageHead
-
-        body () {
-            table () {
-                tableHead
-
-                for row in rows do
-                    tr () {
-                        td () { row.Id }
-                        td () { row.Message }
+let private layout =
+    prerenderAround (fun content ->
+        html () {
+            head () {
+                title () { "Fortunes" }
+            }
+            body () {
+                table () {
+                    thead () {
+                        tr () {
+                            th () { "id" }
+                            th () { "message" }
+                        }
                     }
+                    content
+                }
             }
         }
+    )
+
+let fortunes (rows: ResizeArray<Fortune>) =
+    layout() {
+        for row in rows do
+            tr () {
+                td () { row.Id }
+                td () { row.Message }
+            }
     }

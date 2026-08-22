@@ -65,9 +65,5 @@ let postgres = openPostgres ()
 /// uses Redis as a shared cache; otherwise it uses an in-process MemoryCache.
 let redis = openRedis ()
 
-/// True once the Postgres pool is configured; the DB-backed endpoints answer
-/// 500 without it.
-let isAvailable = postgres.IsSome
-
-/// Opens a pooled command. Only valid once `isAvailable` is true.
+/// Opens a pooled command.
 let command (sql: string) = postgres.Value.CreateCommand sql

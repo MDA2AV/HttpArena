@@ -2,38 +2,23 @@ module HttpArena.Handlers
 
 open System
 open System.Buffers
-open System.Globalization
 open System.IO
 open System.Text
-
 open HttpArena.Services
-
 open Microsoft.AspNetCore.Http
-
 open Oxpecker
 
 /// Reads an int query parameter through Oxpecker's query accessor, falling
 /// back to `fallback` when the parameter is absent or unparsable.
 let private queryInt (ctx: HttpContext) (key: string) (fallback: int) =
-    match ctx.Request.Query.TryGetValue key with
-    | true, raw ->
-        match Int32.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture) with
-        | true, value -> value
-        | _ -> fallback
-    | false, _ ->
-        fallback
+    match ctx.TryGetQueryValue key with
+    | Some raw -> int raw
+    | None -> fallback
 
 let private queryFloat (ctx: HttpContext) (key: string) (fallback: float) =
-    match ctx.Request.Query.TryGetValue key with
-    | true, raw ->
-        match Double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture) with
-        | true, value -> value
-        | _ -> fallback
-    | false, _ -> fallback
-
-let private dbUnavailable (ctx: HttpContext) =
-    ctx.SetStatusCode 500
-    ctx.WriteText "DB not available"
+    match ctx.TryGetQueryValue key with
+    | Some raw -> float raw
+    | None -> fallback
 
 // ── Connection profiles ────────────────────────────────────────────────────
 
@@ -83,103 +68,82 @@ let upload: EndpointHandler =
 let json (count: int) : EndpointHandler =
     fun ctx ->
         let multiplier = queryInt ctx "m" 1
-        match Dataset.getItems count multiplier with
-        | Some response ->
-            ctx.WriteJsonChunked response
-        | None ->
-            ctx.SetStatusCode 500
-            ctx.WriteText "Dataset not loaded"
+        let response = Dataset.getItems count multiplier
+        ctx.WriteJsonChunked response
 
 // ── Database profiles ──────────────────────────────────────────────────────
 
 /// GET /async-db — Postgres range query over the unindexed price column.
 let asyncDb: EndpointHandler =
     fun ctx ->
-        if not Items.isAvailable then
-            dbUnavailable ctx
-        else
-            let minPrice = queryFloat ctx "min" 10.0
-            let maxPrice = queryFloat ctx "max" 50.0
-            let limit = queryInt ctx "limit" 50
-            task {
-                let! response = Items.query minPrice maxPrice limit
-                return! ctx.WriteJsonChunked response
-            }
+        let minPrice = queryFloat ctx "min" 10.0
+        let maxPrice = queryFloat ctx "max" 50.0
+        let limit = queryInt ctx "limit" 50
+        task {
+            let! response = Items.query minPrice maxPrice limit
+            return! ctx.WriteJsonChunked response
+        }   
 
 /// GET /crud/items — paginated list by category.
 let crudList: EndpointHandler =
     fun ctx ->
-        if not Items.isAvailable then
-            dbUnavailable ctx
-        else
-            let category = ctx.TryGetQueryValue "category" |> Option.defaultValue ""
-            let page = queryInt ctx "page" 0
-            let limit = queryInt ctx "limit" 0
-            task {
-                let! response = Items.list category page limit
-                return! ctx.WriteJsonChunked response
-            }
+        let category = ctx.TryGetQueryValue "category" |> Option.defaultValue ""
+        let page = queryInt ctx "page" 0
+        let limit = queryInt ctx "limit" 0
+        task {
+            let! response = Items.list category page limit
+            return! ctx.WriteJsonChunked response
+        }
 
 /// GET /crud/items/{id} — cache-aside single-item read, reporting the cache
 /// outcome through X-Cache.
 let crudRead (id: int) : EndpointHandler =
     fun ctx ->
-        if not Items.isAvailable then
-            dbUnavailable ctx
-        else
-            task {
-                match! Items.read id with
-                | None ->
-                    ctx.SetStatusCode 404
-                | Some result ->
-                    ctx.SetHttpHeader("X-Cache", (if result.CacheHit then "HIT" else "MISS"))
-                    match result.Value with
-                    | TypedItem item ->
-                        return! ctx.WriteJsonChunked item
-                    | SerializedItem cached ->
-                        // Already JSON on the Redis path — write the cached bytes
-                        // back rather than round-tripping them through the serializer.
-                        ctx.SetContentType "application/json; charset=utf-8"
-                        return! ctx.WriteBytes(Encoding.UTF8.GetBytes cached)
-            }
+        task {
+            match! Items.read id with
+            | ValueNone ->
+                ctx.SetStatusCode 404
+            | ValueSome result ->
+                ctx.SetHttpHeader("X-Cache", if result.CacheHit then "HIT" else "MISS")
+                match result.Value with
+                | TypedItem item ->
+                    return! ctx.WriteJsonChunked item
+                | SerializedItem cached ->
+                    // Already JSON on the Redis path — write the cached bytes
+                    // back rather than round-tripping them through the serializer.
+                    ctx.SetContentType "application/json"
+                    return! ctx.WriteBytes(Encoding.UTF8.GetBytes cached)
+        }
 
 /// POST /crud/items — create (upsert on id conflict).
 let crudCreate: EndpointHandler =
     fun ctx ->
-        if not Items.isAvailable then
-            dbUnavailable ctx
-        else
-            task {
-                let! input = ctx.BindJson<CrudItemInput>()
-                let! created = Items.create input
-                ctx.SetStatusCode 201
-                return! ctx.WriteJsonChunked created
-            }
+        task {
+            let! input = ctx.BindJson<CrudItemInput>()
+            let! created = Items.create input
+            ctx.SetStatusCode 201
+            return! ctx.WriteJsonChunked created
+        }
 
 /// PUT /crud/items/{id} — update and invalidate the cached entry.
 let crudUpdate (id: int) : EndpointHandler =
     fun ctx ->
-        if not Items.isAvailable then
-            dbUnavailable ctx
-        else
-            task {
-                let! input = ctx.BindJson<CrudItemInput>()
-                match! Items.update id input with
-                | None ->
-                    ctx.SetStatusCode 404
-                | Some updated ->
-                    return! ctx.WriteJsonChunked updated
-            }
+        task {
+            let! input = ctx.BindJson<CrudItemInput>()
+            match! Items.update id input with
+            | None ->
+                ctx.SetStatusCode 404
+            | Some updated ->
+                return! ctx.WriteJsonChunked updated
+        }
+            
 
 // ── Template profile ───────────────────────────────────────────────────────
 
 /// GET /fortunes — DB query plus an Oxpecker.ViewEngine render.
 let fortunes: EndpointHandler =
     fun ctx ->
-        if not Items.isAvailable then
-            dbUnavailable ctx
-        else
-            task {
-                let! rows = Fortunes.getRows ()
-                return! ctx.WriteHtmlViewChunked(Views.fortunes rows)
-            }
+        task {
+            let! rows = Fortunes.getRows ()
+            return! ctx.WriteHtmlViewChunked(Views.fortunes rows)
+        }

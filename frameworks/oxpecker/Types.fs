@@ -30,10 +30,18 @@ type ProcessedItem = {
     Active: bool
     Tags: string[]
     Rating: RatingInfo
-    Total: int64
+    Total: int
 }
 
-type ItemsResponse<'T> = { Items: 'T[]; Count: int }
+type JsonResponse = {
+    Items: ProcessedItem[]
+    Count: int
+}
+
+type AsyncDbResponse = {
+    Items: ResizeArray<Item>
+    Count: int
+}
 
 /// Request body of POST /crud/items and PUT /crud/items/{id}. Fields the
 /// caller omits (PUT never sends an id) stay at their default.
@@ -47,8 +55,8 @@ type CrudItemInput = {
 }
 
 type CrudListResponse = {
-    Items: Item[]
-    Total: int64
+    Items: ResizeArray<Item>
+    Total: int
     Page: int
     Limit: int
 }
@@ -64,10 +72,12 @@ type CrudWriteResponse = {
 /// Payload of a cached single-item read. The two cache backends hand back
 /// different shapes: the in-process cache stores the typed DTO, Redis stores
 /// the already-serialized JSON so a HIT skips a Deserialize+Serialize round trip.
+[<Struct>]
 type CachedItem =
-    | TypedItem of Item
-    | SerializedItem of string
+    | TypedItem of item:Item
+    | SerializedItem of json:string
 
+[<Struct>]
 type CachedItemResult = { Value: CachedItem; CacheHit: bool }
 
 type Fortune = { Id: int; Message: string }

@@ -3,18 +3,12 @@ module HttpArena.Program
 open System
 open System.IO
 open System.Security.Cryptography.X509Certificates
-open System.Threading.Tasks
-
-open HttpArena.Services
-
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Server.Kestrel.Core
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Primitives
-
 open Oxpecker
 
 
@@ -97,17 +91,6 @@ let main args =
     |> ignore
 
     let app = builder.Build()
-
-    // The Services modules hold their state in module-level bindings, which
-    // .NET initializes on first touch. Reading them here loads the dataset and
-    // opens the Postgres/Redis pools at startup instead of during the first
-    // request — and turns a missing dataset or DATABASE_URL into a startup
-    // message rather than mystery 500s.
-    if not Dataset.isAvailable then
-        Console.Error.WriteLine "dataset not loaded; /json will answer 500"
-
-    if not Database.isAvailable then
-        Console.Error.WriteLine "DATABASE_URL not configured; DB endpoints will answer 500"
 
     app.UseResponseCompression() |> ignore
 
