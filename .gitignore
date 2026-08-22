@@ -35,3 +35,6 @@ node_modules/
 # Python bytecode; a .pyc was tracked and churned on every build
 __pycache__/
 *.pyc
+
+# clojure tools-deps classpath cache
+.cpcache/
