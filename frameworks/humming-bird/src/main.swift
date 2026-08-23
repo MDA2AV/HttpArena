@@ -1,6 +1,8 @@
 import Foundation
 import Hummingbird
 import HummingbirdCompression
+import HummingbirdTLS
+import NIOSSL
 import NIOCore
 import NIOFoundationCompat
 import PostgresNIO
@@ -442,4 +444,44 @@ var app = Application(
 if let client = pgClient {
     app.addServices(client)
 }
-try await app.runService()
+
+// json-tls on 8081: the same router behind Hummingbird's own TLS server. One
+// Application binds one address, so the TLS listener is a second Application
+// over that same router rather than a copy of the routes. The harness only
+// mounts /certs for the TLS profiles, so without them only 8080 comes up.
+func loadTLSConfiguration() -> TLSConfiguration? {
+    let certPath = "/certs/server.crt"
+    let keyPath = "/certs/server.key"
+    guard FileManager.default.fileExists(atPath: certPath),
+          FileManager.default.fileExists(atPath: keyPath)
+    else { return nil }
+
+    do {
+        let chain = try NIOSSLCertificate.fromPEMFile(certPath).map {
+            NIOSSLCertificateSource.certificate($0)
+        }
+        let key = try NIOSSLPrivateKey(file: keyPath, format: .pem)
+        var configuration = TLSConfiguration.makeServerConfiguration(
+            certificateChain: chain,
+            privateKey: .privateKey(key)
+        )
+        // http/1.1 only: json-tls requires the ALPN not to fall into h2.
+        configuration.applicationProtocols = ["http/1.1"]
+        return configuration
+    } catch {
+        return nil
+    }
+}
+
+if let tlsConfiguration = loadTLSConfiguration() {
+    let tlsApp = Application(
+        router: router,
+        server: try .tls(tlsConfiguration: tlsConfiguration),
+        configuration: .init(address: .hostname("0.0.0.0", port: 8081), serverName: "hummingbird")
+    )
+    async let tls: Void = tlsApp.runService()
+    async let plain: Void = app.runService()
+    _ = try await (tls, plain)
+} else {
+    try await app.runService()
+}

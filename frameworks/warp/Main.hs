@@ -5,7 +5,9 @@
 
 module Main (main) where
 
+import           Control.Concurrent          (forkIO)
 import           Control.Exception           (SomeException, try)
+import           Control.Monad               (void, when)
 import           Data.Aeson                  (FromJSON (..), (.:))
 import qualified Data.Aeson                  as A
 import qualified Data.Aeson.Encoding         as E
@@ -25,7 +27,9 @@ import           Network.HTTP.Types          (Query, hContentLength,
 import           Network.Wai
 import           Network.Wai.Handler.Warp    (defaultSettings, runSettings,
                                               setPort)
+import           Network.Wai.Handler.WarpTLS (runTLS, tlsSettings)
 import           Network.Wai.Middleware.Gzip (defaultGzipSettings, gzip)
+import           System.Directory            (doesFileExist)
 import           System.Environment          (lookupEnv)
 import           System.IO                   (hPutStrLn, stderr)
 
@@ -210,4 +214,21 @@ main = do
   -- standard mode: compression is the stock wai-extra Gzip middleware with its
   -- defaults, so it only fires when the request negotiates it.
   let handler = gzip defaultGzipSettings (app items total)
+
+  -- json-tls on 8081: the same handler behind warp-tls. The harness only mounts
+  -- /certs for the TLS profiles, so without them only 8080 is opened.
+  hasCert <- doesFileExist tlsCertPath
+  hasKey  <- doesFileExist tlsKeyPath
+  when (hasCert && hasKey) $
+    void $ forkIO $
+      runTLS (tlsSettings tlsCertPath tlsKeyPath)
+             (setPort 8081 defaultSettings)
+             handler
+
   runSettings (setPort 8080 defaultSettings) handler
+
+tlsCertPath :: FilePath
+tlsCertPath = "/certs/server.crt"
+
+tlsKeyPath :: FilePath
+tlsKeyPath = "/certs/server.key"

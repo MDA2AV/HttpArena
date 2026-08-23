@@ -24,6 +24,7 @@ let package = Package(
             dependencies: [
                 "CSQLite",
                 .product(name: "Hummingbird", package: "hummingbird"),
+                .product(name: "HummingbirdTLS", package: "hummingbird"),
                 .product(name: "HummingbirdCompression", package: "hummingbird-compression"),
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOFoundationCompat", package: "swift-nio"),

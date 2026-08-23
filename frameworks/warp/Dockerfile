@@ -2,6 +2,8 @@ FROM debian:trixie-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ghc \
         libghc-warp-dev \
+        libghc-warp-tls-dev \
+        libghc-directory-dev \
         libghc-wai-dev \
         libghc-wai-extra-dev \
         libghc-http-types-dev \
