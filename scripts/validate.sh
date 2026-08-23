@@ -99,6 +99,7 @@ if [ ! -f "$META_FILE" ]; then
     exit 0
 fi
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
+FRAMEWORK_TYPE=$(python3 -c "import json; print(json.load(open('$META_FILE')).get('type',''))")
 echo "[info] Subscribed tests: $TESTS"
 
 # Reject test names that aren't real profiles, before spending a build on it.
@@ -420,79 +421,117 @@ rand_between() {
 # rules allow the framework's own cache; they require it to follow the disk, and
 # a cache with a TTL - nginx's open_file_cache, and anything modelled on it -
 # needs a window to turn over in.
-STATIC_STALE_WINDOW="${HTTPARENA_STATIC_STALE_WINDOW:-30}"
+# How long a replaced file may keep being served before the entry is failed.
+#
+# The framework rules say "replace a file and the next response must carry the
+# new bytes", and every compliant entry measured so far flips on the very next
+# request -- Node, Rust, Elixir, Clojure, JVM, PHP, Lua, Perl, C++, all at 0s.
+# So this is a tolerance for a slow first request or a filesystem-notification
+# debounce, not a staleness budget. It has to stay well under DURATION (5s):
+# a window longer than a measured run certifies nothing, because a cache with
+# a TTL inside it is never revalidated while the numbers are being taken.
+#
+# Infrastructure is the exception. Its rule explicitly allows open_file_cache
+# and mmap -- "serving files fast from a tuned cache is the job" -- and says
+# nothing about following the disk, so the tier gets a window that matches what
+# it is actually permitted to do rather than being failed for it.
+if [ "${FRAMEWORK_TYPE:-}" = "infrastructure" ]; then
+    STATIC_STALE_WINDOW="${HTTPARENA_STATIC_STALE_WINDOW:-30}"
+else
+    STATIC_STALE_WINDOW="${HTTPARENA_STATIC_STALE_WINDOW:-2}"
+fi
 
 # Restores a static file this suite replaced, whatever happens next. Set while a
 # probe is in flight so an interrupt cannot leave the repository's data/static
 # holding the probe's bytes.
-STATIC_PROBE_FILE=""
-STATIC_PROBE_BACKUP=""
+STATIC_PROBE_FILES=()
+STATIC_PROBE_BACKUPS=()
 restore_static_probe() {
-    if [ -n "${STATIC_PROBE_FILE:-}" ] && [ -f "${STATIC_PROBE_BACKUP:-}" ]; then
-        mv -f "$STATIC_PROBE_BACKUP" "$STATIC_PROBE_FILE" 2>/dev/null || true
-    fi
-    STATIC_PROBE_FILE=""
-    STATIC_PROBE_BACKUP=""
+    local i
+    for i in "${!STATIC_PROBE_FILES[@]}"; do
+        if [ -f "${STATIC_PROBE_BACKUPS[$i]}" ]; then
+            mv -f "${STATIC_PROBE_BACKUPS[$i]}" "${STATIC_PROBE_FILES[$i]}" 2>/dev/null || true
+        fi
+    done
+    STATIC_PROBE_FILES=()
+    STATIC_PROBE_BACKUPS=()
 }
 # Deliberately no trap of its own: cleanup() already holds the EXIT trap, and a
 # second `trap ... EXIT` replaces it rather than chaining, which would leave the
 # framework container running after the run. cleanup() calls this instead.
 
-# Replaces a static file atomically and requires the server to serve the new
-# bytes within STATIC_STALE_WINDOW, then puts the original back and requires it
-# to come back too.
+# Replaces static files on disk and requires the server to notice.
 #
-# This is the one check a pre-loaded copy cannot pass. Reading the file once at
+# This is the one check a pre-loaded copy cannot pass. Reading the files once at
 # startup and answering from that copy satisfies every size and content-type
-# assertion in this suite; it fails here, because the bytes on disk moved and the
-# answer did not.
+# assertion in this suite; it fails here, because the bytes on disk moved and
+# the answer did not.
 #
-# The target is chosen from the files with no .br/.gz twin on disk, and the
-# request asks for identity, so a served variant can never be what makes the
-# response look unchanged.
+# Three things make it harder to pass by accident than a naive version:
 #
-# $1 label  $2 url prefix  $3 docs url  $4.. extra curl args
+#   * the replacement is byte-for-byte the same LENGTH as the original, so a
+#     cache validated on size alone cannot see it. Anything keyed on mtime or
+#     content still does, which is what a real framework cache uses.
+#   * the comparison is against what the server served a moment earlier, not
+#     against the file on disk, so it works whether the entry answers with the
+#     original, a pre-compressed variant, or something it compressed itself.
+#   * for the compressed pass, the .br and .gz twins are replaced alongside the
+#     original, so an entry that caches variants cannot hide behind them.
+#
+# $1 label  $2 url prefix  $3 docs url  $4 target file  $5 accept-encoding
+# $6.. extra curl args
 static_staleness_probe() {
-    local label="$1" url_prefix="$2" docs="$3"
-    shift 3
-    local target="hero.webp"
-    local file="$DATA_DIR/static/$target"
-    if [ ! -f "$file" ]; then
+    local label="$1" url_prefix="$2" docs="$3" target="$4" accept="$5"
+    shift 5
+
+    local base="$DATA_DIR/static/$target"
+    if [ ! -f "$base" ]; then
         echo "  SKIP [$label] ($target not present)"
         return 0
     fi
 
-    local backup probe original_sum probe_sum
-    backup="$(mktemp)"
-    probe="$(mktemp)"
-    cp -p "$file" "$backup"
-    STATIC_PROBE_FILE="$file"
-    STATIC_PROBE_BACKUP="$backup"
-
-    # different bytes and a different length, so neither a content nor a length
-    # comparison can miss the change
-    cat "$file" > "$probe"
-    printf 'httparena-staleness-probe-%s\n' "$$" >> "$probe"
-    # mktemp creates 0600, and mv carries the source mode onto the destination.
-    # Left alone that makes the replacement unreadable to any container running
-    # as non-root, which reads back as "the server ignored the disk" -- a false
-    # failure for exactly the entries doing the right thing. Carry the mode of
-    # the file being replaced instead.
-    chmod --reference="$backup" "$probe"
-    original_sum="$(sha256sum "$backup" | cut -d' ' -f1)"
-    probe_sum="$(sha256sum "$probe" | cut -d' ' -f1)"
+    # the original plus whichever pre-compressed twins exist beside it
+    local -a targets=("$base")
+    local suffix
+    for suffix in .br .gz; do
+        [ -f "${base}${suffix}" ] && targets+=("${base}${suffix}")
+    done
 
     _served_sum() {
-        curl -s --max-time 30 -H 'Accept-Encoding: identity' "$@" \
+        curl -s --max-time 30 -H "Accept-Encoding: $accept" "$@" \
              "${url_prefix}/static/${target}" 2>/dev/null | sha256sum | cut -d' ' -f1
     }
 
-    # atomic: the server never sees a half-written file
-    mv -f "$probe" "$file"
+    # What the server answers with right now. Everything is compared to this, so
+    # the check does not care which representation it chose.
+    local before
+    before="$(_served_sum "$@")"
+    if [ -z "$before" ] || [ "$before" = "$(printf '' | sha256sum | cut -d' ' -f1)" ]; then
+        echo "  SKIP [$label] (no body served for $target before the probe)"
+        return 0
+    fi
+
+    local f backup
+    for f in "${targets[@]}"; do
+        backup="$(mktemp)"
+        cp -p "$f" "$backup"
+        STATIC_PROBE_FILES+=("$f")
+        STATIC_PROBE_BACKUPS+=("$backup")
+        # same length, different bytes: a size comparison cannot tell them apart
+        local size
+        size="$(wc -c < "$f")"
+        local probe
+        probe="$(mktemp)"
+        head -c "$size" /dev/urandom > "$probe"
+        # mktemp is 0600 and mv carries the mode over, which would hand a
+        # non-root container EACCES and read back as staleness
+        chmod --reference="$f" "$probe"
+        mv -f "$probe" "$f"
+    done
 
     local waited=0 saw_new=false
     while [ "$waited" -le "$STATIC_STALE_WINDOW" ]; do
-        if [ "$(_served_sum "$@")" = "$probe_sum" ]; then
+        if [ "$(_served_sum "$@")" != "$before" ]; then
             saw_new=true
             break
         fi
@@ -500,13 +539,11 @@ static_staleness_probe() {
         waited=$((waited + 1))
     done
 
-    mv -f "$backup" "$file"
-    STATIC_PROBE_FILE=""
-    STATIC_PROBE_BACKUP=""
+    restore_static_probe
 
     local restored=false rewaited=0
     while [ "$rewaited" -le "$STATIC_STALE_WINDOW" ]; do
-        if [ "$(_served_sum "$@")" = "$original_sum" ]; then
+        if [ "$(_served_sum "$@")" = "$before" ]; then
             restored=true
             break
         fi
@@ -515,10 +552,10 @@ static_staleness_probe() {
     done
 
     if [ "$saw_new" = "true" ] && [ "$restored" = "true" ]; then
-        echo "  PASS [$label] (replaced file served in ${waited}s, original back in ${rewaited}s)"
+        echo "  PASS [$label] (${#targets[@]} file(s) replaced, served in ${waited}s, original back in ${rewaited}s)"
         PASS=$((PASS + 1))
     elif [ "$saw_new" != "true" ]; then
-        fail_with_link "[$label]: $target was replaced in the mounted static directory and the server still served the old bytes after ${STATIC_STALE_WINDOW}s. Either a cache is holding the file contents and never revalidating, or the entry is serving a copy taken at image build rather than the directory the profile mounts" "$docs"
+        fail_with_link "[$label]: $target was replaced in the mounted static directory (along with its .br/.gz twins) and the server still served the same bytes after ${STATIC_STALE_WINDOW}s. Either a cache is holding the contents and never revalidating, or the entry is serving a copy taken at image build rather than the directory the profile mounts" "$docs"
     else
         fail_with_link "[$label]: the replaced file was served, but the original did not come back within ${STATIC_STALE_WINDOW}s" "$docs"
     fi
@@ -1358,7 +1395,15 @@ if has_test "static"; then
     check_status "GET /static/nonexistent.txt" "404" "$STATIC_DOCS" \
         -s "http://localhost:$PORT/static/nonexistent.txt"
 
-    static_staleness_probe "static file follows the disk" "http://localhost:$PORT" "$STATIC_DOCS"
+    # hero.webp has no pre-compressed twin, so this is the plain identity path.
+    static_staleness_probe "static file follows the disk" "http://localhost:$PORT" "$STATIC_DOCS" \
+        "hero.webp" "identity"
+    # app.js does, and after the pre-compressed rule change that is the path most
+    # of the payload takes: 15 of the 20 files are served encoded. q-values on
+    # purpose -- that is what the load generator sends, and an exact-token match
+    # against it silently serves the original instead.
+    static_staleness_probe "static variant follows the disk" "http://localhost:$PORT" "$STATIC_DOCS" \
+        "app.js" "br;q=1, gzip;q=0.8"
 fi
 
 
@@ -1438,7 +1483,10 @@ if has_test "static-tls"; then
     check_status "GET /static/nonexistent.txt (TLS)" "404" "$STATICTLS_DOCS" \
         -sk "https://localhost:$H1TLS_PORT/static/nonexistent.txt"
 
-    static_staleness_probe "static-tls file follows the disk" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" -k
+    static_staleness_probe "static-tls file follows the disk" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" \
+        "hero.webp" "identity" -k
+    static_staleness_probe "static-tls variant follows the disk" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" \
+        "app.js" "br;q=1, gzip;q=0.8" -k
 fi
 
 
