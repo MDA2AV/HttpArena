@@ -25,7 +25,7 @@ F# web framework built on ASP.NET Core endpoint routing, running on .NET 10 with
 | `/crud/items` | POST | Create item via INSERT with ON CONFLICT upsert, returns 201 |
 | `/crud/items/{id}` | PUT | Update item and invalidate cache entry |
 | `/fortunes` | GET | DB query + HTML table rendered with Oxpecker.ViewEngine |
-| `/static/*` | GET | Serves the static assets via ASP.NET Core's static asset endpoints |
+| `/static/*` | GET | Serves the static assets straight from the mounted `/data/static` |
 
 ## Notes
 
@@ -37,7 +37,7 @@ F# web framework built on ASP.NET Core endpoint routing, running on .NET 10 with
 - TLS certs from `$TLS_CERT` / `$TLS_KEY` (default `/certs/server.crt` + `/certs/server.key`); TLS listeners skipped when absent
 - HTTP/2 tuned: 256 max streams per connection, 2 MB initial connection window, 1 MB stream window
 - `AddResponseCompression()` + `UseResponseCompression()` for `json-comp`
-- `MapStaticAssets()` for `/static/*`: `data/static` is copied into `wwwroot` at build time so the SDK emits an endpoint manifest with precomputed headers and picks up the `.br`/`.gz` files already sitting next to the originals — bodies are still read from disk per request, but nothing is compressed at runtime
+- `UseStaticFiles` for `/static/*` with a `PhysicalFileProvider` on `/data/static`, so what is served follows the directory the harness mounts rather than a build-time copy in `wwwroot` (see #1268); `.webp` and `.woff2` are added to the content type provider, and compression is left to the response compression middleware
 - `/upload` drains the body through a 64 KB pooled buffer (`ArrayPool<byte>.Shared`)
 - Postgres pooled via `NpgsqlDataSource` with auto-prepare; crud read cache is Redis when `REDIS_URL` is set, else in-process `MemoryCache`
 - Logging disabled (`ClearProviders()`); `ServerGarbageCollection` enabled

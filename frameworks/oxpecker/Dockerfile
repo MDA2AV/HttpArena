@@ -5,12 +5,6 @@ COPY frameworks/oxpecker/ .
 # to restore for linux-x64 itself.
 RUN rm -rf bin obj
 
-# The benchmark's static assets become static web assets of the project, so the
-# SDK emits an endpoint manifest for them at publish time — precomputed content
-# types, lengths and ETags, plus gzip/brotli variants on disk next to the
-# originals. /data/static is still mounted at runtime and holds the same files.
-COPY data/static/ wwwroot/static/
-
 RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

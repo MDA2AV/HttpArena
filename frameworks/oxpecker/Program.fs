@@ -5,8 +5,11 @@ open System.IO
 open System.Security.Cryptography.X509Certificates
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Server.Kestrel.Core
+open Microsoft.AspNetCore.StaticFiles
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.FileProviders
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Oxpecker
@@ -94,15 +97,31 @@ let main args =
 
     app.UseResponseCompression() |> ignore
 
-    app.UseRouting() |> ignore
+    // Served straight out of the directory the profile mounts, rather than a
+    // copy taken at image build. MapStaticAssets, which this used before,
+    // resolves assets through a manifest the SDK generates at publish time from
+    // wwwroot, so the container held two copies of the corpus and answered from
+    // the one the harness cannot touch: replacing a file in the mounted
+    // directory never reached a response.
+    //
+    // UseStaticFiles reads the file per request through the file provider, so
+    // what is served follows the mounted directory. Compression stays with the
+    // response compression middleware registered above.
+    let staticContentTypes = FileExtensionContentTypeProvider()
+    staticContentTypes.Mappings[".webp"] <- "image/webp"
+    staticContentTypes.Mappings[".woff2"] <- "font/woff2"
 
-    // Static assets are served by ASP.NET Core's static asset endpoints. The
-    // SDK writes an endpoint manifest at publish time carrying each file's
-    // content type, length and ETag alongside gzip/brotli variants on disk, so
-    // a hit costs a route match plus the file read — not a content-type probe
-    // and a fresh Brotli pass over the body on every request. Bodies still come
-    // off disk; only the headers are precomputed.
-    app.MapStaticAssets() |> ignore
+    app.UseStaticFiles(
+        StaticFileOptions(
+            FileProvider = new PhysicalFileProvider("/data/static"),
+            RequestPath = PathString "/static",
+            ContentTypeProvider = staticContentTypes,
+            ServeUnknownFileTypes = false
+        )
+    )
+    |> ignore
+
+    app.UseRouting() |> ignore
 
     app.UseOxpecker endpoints |> ignore
 
