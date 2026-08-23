@@ -131,13 +131,10 @@ if (cluster.isPrimary) {
 			(dot > 0 && STATIC_MIME[name.slice(dot + 1)]) ||
 			"application/octet-stream";
 
+		// Content-Type and Content-Encoding only: Vary and Server are left off
+		// because the profile scores bandwidth. See the note above.
 		return new Response(encoded, {
-			headers: {
-				"content-type": type,
-				"content-encoding": encoding,
-				vary: "Accept-Encoding",
-				server: "Elysia",
-			},
+			headers: { "content-type": type, "content-encoding": encoding },
 		});
 	};
 

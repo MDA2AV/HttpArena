@@ -264,6 +264,17 @@ app.post("/upload", async (c) => {
 // woff2 and webp still go out as themselves. Nothing is compressed at runtime.
 // It reads through to disk on every request, so replacing a file shows up on
 // the next one.
+//
+// serveStatic appends Vary: Accept-Encoding, and Server would come from an
+// onFound hook. Both are correct HTTP, but the profile scores bandwidth and
+// together they are ~38 bytes on every response, so Server is not set and Vary
+// is taken back off here -- which is cheaper than giving up the documented
+// precompressed API to avoid it.
+app.use("/static/*", async (c, next) => {
+  await next();
+  c.res.headers.delete("vary");
+});
+
 app.use(
   "/static/*",
   serveStatic({
@@ -271,9 +282,6 @@ app.use(
     rewriteRequestPath: (path) => path.slice("/static".length),
     precompressed: true,
     mimes: STATIC_MIMES,
-    onFound: (_path, c) => {
-      c.header("server", SERVER_NAME);
-    },
   }),
 );
 

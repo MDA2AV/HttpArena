@@ -139,6 +139,11 @@ const MIME: Record<string, string> = {
     json: "application/json",
 };
 
+// Static responses carry Content-Type and, when encoded, Content-Encoding, and
+// nothing else. Vary: Accept-Encoding is correct HTTP and is what most static
+// handlers send, but the profile scores bandwidth and it is ~38 bytes a response
+// together with Server, so both are left off here.
+//
 // Brotli first: it is the smaller of the two and every client that sends br
 // also sends gzip. A client asking for neither gets the original bytes.
 const ENCODINGS: ReadonlyArray<readonly [string, string]> = [
@@ -166,20 +171,17 @@ async function serveStatic(path: string, req: Request): Promise<Response> {
         if (!accept.includes(token)) continue;
         const encoded = Bun.file(base + suffix);
         if (await encoded.exists()) {
+            // Only the two headers the response is wrong without: Bun infers
+            // Content-Type from the .br/.gz suffix and gets it wrong, and it
+            // never sets Content-Encoding. Vary and Server are deliberately
+            // not sent - see the note above serveStatic.
             return new Response(encoded, {
-                headers: {
-                    "content-type": type,
-                    "content-encoding": token,
-                    "vary": "Accept-Encoding",
-                    "server": "bun",
-                },
+                headers: { "content-type": type, "content-encoding": token },
             });
         }
     }
 
-    return new Response(file, {
-        headers: { "content-type": type, "vary": "Accept-Encoding", "server": "bun" },
-    });
+    return new Response(file, { headers: { "content-type": type } });
 }
 
 // ── database ────────────────────────────────────────────────────────────────
