@@ -92,20 +92,28 @@ Compression of static files is optional but recommended for better results. All 
 
 **Standard rule:** compression must use the framework's standard middleware or built-in static file handler (e.g., Nginx `gzip on`/`gzip_static on`, ASP.NET response compression middleware, Express `compression()` middleware). No handmade compression code.
 
-Pre-compressed files (`.gz`, `.br`) are available on disk alongside the originals. Frameworks that support serving pre-compressed files as a documented, official feature (e.g., Nginx `gzip_static`/`brotli_static`, ASP.NET `MapStaticAssets`) may use them.
+Pre-compressed files (`.gz`, `.br`) are available on disk alongside the originals,
+and **serving them is allowed for every entry type**. Use the framework's own
+feature where it has one (e.g. Nginx `gzip_static`/`brotli_static`, ASP.NET
+`MapStaticAssets`, Hono `serveStatic({ precompressed: true })`); where it has
+none, select the variant in the entry off `Accept-Encoding`. Those bytes already
+exist on disk, so choosing one is a file read, not compression - which is why it
+is allowed here while compressing by hand is not. The response must carry the
+original file's `Content-Type` and the matching `Content-Encoding`.
 
-The line is what the framework gives you, not what can be written against it.
-Whatever a framework's own static handler does internally is its business - if it
-passes validation, it counts. What does not count is a static handler written for
-this benchmark: suffix lookup, negotiation and compression assembled in the entry
-because the framework has none. Moving that same code behind a function name does
-not change what a user of the framework actually gets, and that is what these
-numbers are supposed to report.
+This is a deliberate change. The rule used to allow pre-compressed files only
+behind a documented API, which made the profile turn on whether a framework
+happened to ship that one feature: an entry sending full-size bodies against
+entries sending brotli is not doing the same work, and the resulting gap swamped
+everything else the profile measures.
 
-The consequence is deliberate: **a framework that ships no static file handling
-serves the files uncompressed**, and the bandwidth shows up in its result. That is
-the measurement, not a penalty - the profile is reporting the absence of a feature,
-which is worth knowing. Tuned entries are free to hand-roll the same thing; the
+What is still out is a **static handler** written for this benchmark. The cache
+must be the framework's own and must follow the disk, and nothing may be
+compressed at runtime by code in the entry. The line is what the framework gives
+you, not what can be written against it: whatever a framework's own static
+handler does internally is its business - if it passes validation, it counts.
+
+Tuned entries are free to hand-roll the same thing; the
 distinction only binds Standard, where the point is to show what the framework
 does out of the box.
 

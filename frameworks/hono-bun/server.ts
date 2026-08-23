@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { compress } from "hono/compress";
+import { serveStatic } from "hono/bun";
 import { Database } from "bun:sqlite";
 import { readFileSync, existsSync } from "fs";
 import Handlebars from "handlebars";
@@ -9,6 +10,14 @@ const SERVER_NAME = "hono-bun";
 const MIME_TYPES: Record<string, string> = {
   ".css": "text/css", ".js": "application/javascript", ".html": "text/html",
   ".woff2": "font/woff2", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json",
+};
+
+// serveStatic looks up by bare extension, and the profile checks the header on
+// woff2 and webp among others, so the table is given to it explicitly rather
+// than relying on what it infers.
+const STATIC_MIMES: Record<string, string> = {
+  css: "text/css", js: "application/javascript", html: "text/html",
+  woff2: "font/woff2", svg: "image/svg+xml", webp: "image/webp", json: "application/json",
 };
 
 // Load datasets
@@ -248,21 +257,25 @@ app.post("/upload", async (c) => {
   });
 });
 
-// --- /static/:filename ---
-app.get("/static/:filename", async (c) => {
-  const filename = c.req.param("filename");
-  const file = Bun.file(`/data/static/${filename}`);
-  if (await file.exists()) {
-    const ext = filename.slice(filename.lastIndexOf("."));
-    return new Response(file, {
-      headers: {
-        "content-type": MIME_TYPES[ext] || "application/octet-stream",
-        server: SERVER_NAME,
-      },
-    });
-  }
-  return new Response("Not found", { status: 404 });
-});
+// --- /static/* ---
+// Hono's own static handler rather than a hand-rolled Bun.file route, which is
+// what makes precompressed available: it serves the .br/.gz variants the
+// harness leaves next to the originals, and only for compressible types, so
+// woff2 and webp still go out as themselves. Nothing is compressed at runtime.
+// It reads through to disk on every request, so replacing a file shows up on
+// the next one.
+app.use(
+  "/static/*",
+  serveStatic({
+    root: "/data/static",
+    rewriteRequestPath: (path) => path.slice("/static".length),
+    precompressed: true,
+    mimes: STATIC_MIMES,
+    onFound: (_path, c) => {
+      c.header("server", SERVER_NAME);
+    },
+  }),
+);
 
 // --- CRUD ---
 // Realistic REST API: paginated list, cached single-item read, create, update.

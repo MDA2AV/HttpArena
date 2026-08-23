@@ -87,6 +87,60 @@ if (cluster.isPrimary) {
 		return null;
 	};
 
+	// The profile checks Content-Type on woff2 and webp among others, and the
+	// encoded response has to carry that of the original file.
+	const STATIC_MIME: Record<string, string> = {
+		css: "text/css", js: "text/javascript", html: "text/html",
+		woff2: "font/woff2", svg: "image/svg+xml", webp: "image/webp",
+		json: "application/json",
+	};
+
+	// @elysiajs/static has no pre-compressed option, so the .br/.gz variants the
+	// harness leaves next to the originals are picked here, ahead of the plugin,
+	// which still handles everything else including the plain bodies and 404s.
+	// Nothing is compressed at runtime - the encoded bytes already exist on disk
+	// and this reads a different path. Bun.file is lazy, so replacing either file
+	// shows up on the next request.
+	//
+	// The hook sees every request, so the cheap reject comes first: one indexOf
+	// on the raw URL rather than parsing it.
+	const precompressedStatic = async ({ request }: any) => {
+		const url: string = request.url;
+		if (url.indexOf("/static/", 8) < 0) return;
+
+		const start = url.indexOf("/", 8);
+		const q = url.indexOf("?", start);
+		const path = q < 0 ? url.slice(start) : url.slice(start, q);
+		if (!path.startsWith("/static/")) return;
+
+		const name = path.slice(8);
+		if (name.length === 0 || name.includes("/") || name.includes("..")) return;
+
+		const encoding = pickEncoding(
+			request.headers.get("accept-encoding") ?? undefined,
+		);
+		if (!encoding) return;
+
+		const encoded = Bun.file(
+			`/data/static/${name}${encoding === "br" ? ".br" : ".gz"}`,
+		);
+		if (!(await encoded.exists())) return;
+
+		const dot = name.lastIndexOf(".");
+		const type =
+			(dot > 0 && STATIC_MIME[name.slice(dot + 1)]) ||
+			"application/octet-stream";
+
+		return new Response(encoded, {
+			headers: {
+				"content-type": type,
+				"content-encoding": encoding,
+				vary: "Accept-Encoding",
+				server: "Elysia",
+			},
+		});
+	};
+
 	// json-tls and static-tls want these two on the TLS listener as well, so the
 	// handler and the plugin mount are named rather than inlined into one chain.
 	const jsonHandler = ({ params, query }: any) => {
@@ -117,6 +171,7 @@ if (cluster.isPrimary) {
 		.headers({
 			server: "Elysia",
 		})
+		.onRequest(precompressedStatic)
 		// The static plugin mounts BEFORE the compression hook on purpose:
 		// Elysia hooks only apply to routes registered after them, and letting
 		// mapResponse wrap the plugin's not-found flow swallows its 404 into
@@ -389,6 +444,7 @@ if (cluster.isPrimary) {
 			},
 		})
 			.headers({ server: "Elysia" })
+			.onRequest(precompressedStatic)
 			.use(staticMount())
 			.get("/json/:count", jsonHandler)
 			.onError(({ code }) => {
