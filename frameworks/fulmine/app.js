@@ -47,8 +47,10 @@ app.disable('x-powered-by');
 // documented under Performance tips as the setting for an API whose responses are never
 // revalidated, which is every profile here: nothing sends a conditional request
 app.set('etag', false);
-// the static rules want every request to reach the disk, so the small-file cache is off
-app.set('file cache', false);
+// The framework's own small-file cache, which is where it is by default. The static rules ask
+// that a cache be the framework's own and follow the disk, and this one is given the stat the
+// request already paid for: a file whose mtime or size moved is read again.
+app.set('file cache', true);
 
 // built once and not per response: the crud read path is the busiest route this entry has
 const CACHE_HIT_HDR = { 'x-cache': 'HIT' };
@@ -419,8 +421,9 @@ app.all('/baseline11', (req, res) => {
 //
 // preCompressed is the framework's documented way of serving the .br and .gz files the harness
 // leaves on disk next to the originals: the middleware negotiates between them, keeps the
-// content type of the name that was asked for and gives each variant its own ETag. Nothing is
-// held in memory, and with "file cache" off every request reads the file it answers with.
+// content type of the name that was asked for and gives each variant its own ETag. The variant
+// it picks is answered from the framework's file cache once it has been read, and read again
+// whenever the stat says the bytes on disk moved.
 const registerStaticRoute = (target) =>
     target.use(
         '/static',
@@ -463,7 +466,7 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     });
     tlsApp.disable('x-powered-by');
     tlsApp.set('etag', false);
-    tlsApp.set('file cache', false);
+    tlsApp.set('file cache', true);
     registerJsonRoute(tlsApp);
     registerStaticRoute(tlsApp);
     tlsApp.use(answerError);

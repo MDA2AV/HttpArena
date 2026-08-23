@@ -47,18 +47,16 @@ app.disable('x-powered-by');
 // documented under Performance tips as the setting for an API whose responses are never
 // revalidated, which is every profile here: nothing sends a conditional request
 app.set('etag', false);
-// This entry is tuned for these two lines and for nothing else, both shipped settings of the
-// framework set through its documented API.
+// What this entry tunes is one line below and the Postgres driver further down, both through
+// documented options of the framework.
 //
-// The body cache stays off, as it is in the standard entry: holding static files in memory is
-// against the rules whatever the mode, because the static profile is there to measure file I/O.
-// Every request here reads the file it answers with.
-app.set('file cache', false);
-// What is cached is the stat, and only the stat: size and mtime, never a body. The read still
-// happens per request; what this saves is the syscall that asks whether the file changed.
-// Longer than any run, because the harness mounts these files read-only and nothing writes to
-// them while the container lives
-app.set('stat cache', '24h');
+// The body cache is the framework's and is on by default, here as in the standard entry.
+//
+// The stat cache that used to be on this line is gone. It remembered size and mtime for a
+// window, and a body cache validated against a remembered stat cannot see a file that was
+// replaced inside it, which is the one thing the static rules ask of a cache. Measured against
+// the validator's own staleness probe: the two together fail it, the body cache alone passes.
+app.set('file cache', true);
 // Connection: keep-alive and Keep-Alive: timeout=10 on every response, which is what express
 // sends and what the standard entry therefore sends too. HTTP/1.1 keeps the connection alive
 // without being told, so the bytes buy nothing here
@@ -422,9 +420,8 @@ app.all('/baseline11', (req, res) => {
 //
 // preCompressed is the framework's documented way of serving the .br and .gz files the harness
 // leaves on disk next to the originals: the middleware negotiates between them, keeps the
-// content type of the name that was asked for and gives each variant its own ETag. The variant
-// chosen is the same one the standard entry chooses; what differs is that "file cache" answers
-// it from memory instead of reading it again, which is why this entry is tuned.
+// content type of the name that was asked for and gives each variant its own ETag. This is the
+// same static route the standard entry serves, with the same cache: nothing here is tuned.
 const registerStaticRoute = (target) =>
     target.use(
         '/static',
@@ -468,8 +465,7 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     tlsApp.disable('x-powered-by');
     tlsApp.set('etag', false);
     // the same as the plaintext app above, so static-tls is served the same way
-    tlsApp.set('file cache', false);
-    tlsApp.set('stat cache', '24h');
+    tlsApp.set('file cache', true);
     tlsApp.set('connection headers', false);
     registerJsonRoute(tlsApp);
     registerStaticRoute(tlsApp);
