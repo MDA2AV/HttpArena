@@ -12,7 +12,7 @@
   "engine": "seagreen",
   "description": "Seagreen — a TypeScript port of GenHTTP — on Bun's raw-TCP engine, with kotlinx-style decorators and Bun's built-in SQL.",
   "repo": "https://github.com/dotnet-web-stack/Seagreen",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",
