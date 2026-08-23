@@ -4,7 +4,7 @@
   "type": "flagship",
   "mode": "standard",
   "completeness": {
-    "routing": false,
+    "routing": true,
     "middleware": false,
     "request": true,
     "response": true
