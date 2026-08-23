@@ -1,5 +1,13 @@
 FROM trueasync/php-true-async:latest-frankenphp
 
+# The frankenphp binary in this image links libwebp, but the image does not
+# carry it -- it exits at startup with "error while loading shared libraries:
+# libwebpdemux.so.2". The tag is :latest, so this arrives with whatever
+# upstream last pushed rather than with anything in this entry.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libwebpdemux2 libwebpmux3 libwebp7 && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY worker.php /app/worker.php
