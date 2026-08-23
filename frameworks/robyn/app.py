@@ -91,5 +91,10 @@ def upload_endpoint(request: Request):
 # -- APP executor -----------------------------------------------------------
 
 if __name__ == "__main__":
+    # json-tls is unsubscribed: robyn 0.83.0 has no TLS support at all. start()
+    # takes host, port, _check_port, client_timeout and keep_alive_timeout and
+    # nothing else, and there is no ssl/certificate/keyfile reference anywhere
+    # in the package. Serving HTTPS would mean putting another server in front,
+    # which is not this entry.
     app.start(host="0.0.0.0", port=8080)
 

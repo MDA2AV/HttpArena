@@ -1,8 +1,10 @@
 import json
 import os
+import subprocess
+import sys
 
 import asyncpg as pg
-from slimeweb import Slime, SlimeCompression
+from slimeweb import Slime, SlimeCompression, SlimeTls
 
 app = Slime(__file__)
 
@@ -145,4 +147,35 @@ async def init():
 
 
 if __name__ == "__main__":
-    app.serve(host="0.0.0.0", port=8080, static_path="/data/static")
+    tls_cert = "/certs/server.crt"
+    tls_key = "/certs/server.key"
+
+    # json-tls on 8081. serve() owns an event loop and makes its own listener
+    # TLS rather than adding one, so the second port needs a second serve() --
+    # and it cannot share this process: asyncpg pools are bound to the loop that
+    # created them, so handlers on the other loop fail with "got Future attached
+    # to a different loop" and /async-db returns nothing.
+    #
+    # So the TLS listener is its own process, started without DATABASE_URL so it
+    # creates no pool at all. 8081 only carries json-tls, which never touches
+    # the database, and the connection budget is left exactly as it was -- the
+    # harness runs Postgres with max_connections=256 and this pool already asks
+    # for that many.
+    #
+    # The harness only mounts /certs for the TLS profiles, so on every other
+    # profile no child is started.
+    if os.environ.get("HTTPARENA_TLS_LISTENER") == "1":
+        app.serve(
+            host="0.0.0.0",
+            port=8081,
+            static_path="/data/static",
+            https=SlimeTls(cert=tls_cert, key=tls_key),
+        )
+    else:
+        if os.path.exists(tls_cert) and os.path.exists(tls_key):
+            child_env = os.environ.copy()
+            child_env["HTTPARENA_TLS_LISTENER"] = "1"
+            child_env.pop("DATABASE_URL", None)
+            subprocess.Popen([sys.executable, __file__], env=child_env)
+
+        app.serve(host="0.0.0.0", port=8080, static_path="/data/static")
