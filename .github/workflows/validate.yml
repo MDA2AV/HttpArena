@@ -6,6 +6,13 @@ on:
       - 'frameworks/**'
       - 'scripts/validate.sh'
       - 'scripts/validate-ws.py'
+      - '.github/workflows/validate.yml'
+  workflow_dispatch:
+    inputs:
+      framework:
+        description: 'Entry name, a comma-separated list, or "all" for every enabled entry'
+        required: false
+        default: 'all'
 
 jobs:
   detect:
@@ -30,9 +37,45 @@ jobs:
         # The split is per entry, not per profile: validate.sh runs everything
         # in an entry's `tests` array in one process, so a gateway-subscribed
         # entry has to run its isolated profiles there too.
+        env:
+          DISPATCH_INPUT: ${{ github.event.inputs.framework }}
         run: |
-          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-            | grep '^frameworks/' | cut -d'/' -f2 | sort -u || true)
+          # Which entries this run covers.
+          #
+          #   * a manual run takes the name, list, or "all" it was given
+          #   * a change to the validator itself covers everything, because a
+          #     validator change can affect any entry. Without this the job
+          #     triggers on scripts/validate.sh and then finds no changed
+          #     frameworks/ paths, so it validates nothing at all -- which is
+          #     what happened to the static staleness probe when it landed.
+          #   * otherwise, just the entries the PR touches
+          all_entries() {
+            for m in frameworks/*/meta.json; do
+              fw=$(basename "$(dirname "$m")")
+              jq -e '.enabled != false' "$m" >/dev/null 2>&1 && echo "$fw"
+            done
+          }
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -z "$DISPATCH_INPUT" ] || [ "$DISPATCH_INPUT" = "all" ]; then
+              changed=$(all_entries)
+              echo "manual run over every enabled entry"
+            else
+              changed=$(echo "$DISPATCH_INPUT" | tr ',' '\n' | sed 's/[^A-Za-z0-9._-]//g' | sort -u)
+              echo "manual run over: $(echo $changed)"
+            fi
+          else
+            validator_changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+              | grep -E '^(scripts/validate\.sh|scripts/validate-ws\.py|\.github/workflows/validate\.yml)$' || true)
+            if [ -n "$validator_changed" ]; then
+              changed=$(all_entries)
+              echo "the validator changed, so every enabled entry is covered"
+            else
+              changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+                | grep '^frameworks/' | cut -d'/' -f2 | sort -u || true)
+            fi
+          fi
+
           std=(); gw=()
           for fw in $changed; do
             # Deleted in this PR, or the shared authsvc rather than an entry.
@@ -54,7 +97,11 @@ jobs:
     needs: detect
     if: needs.detect.outputs.frameworks != '[]'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A full sweep reaches entries that never appear in a normal PR, and some of
+    # them build from source on a four-core hosted runner -- h2o, the LTO Rust
+    # entries, Swift. 30 minutes was sized for the handful of entries a PR
+    # touches and is not enough for those.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -68,7 +115,9 @@ jobs:
     needs: detect
     if: needs.detect.outputs.gateway != '[]'
     runs-on: self-hosted
-    timeout-minutes: 90
+    # Sequential by construction (see below), so the budget has to cover every
+    # compose entry in the run, not just one. There are eight.
+    timeout-minutes: 300
     # One at a time, and never alongside a benchmark. Every gateway and
     # production stack binds the host's ports directly — edge 8443, authsvc
     # 9090, server 8080 — so two stacks on one box fight over them and the
