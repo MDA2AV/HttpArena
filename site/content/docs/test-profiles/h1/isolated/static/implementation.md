@@ -42,6 +42,25 @@ Selecting an already-compressed file is a separate thing and is not restricted: 
 
 This is a deliberate change from the earlier rule, which allowed pre-compressed files only behind a documented API. That made the profile turn on whether a framework happened to ship one feature, and an entry serving full-size bodies against entries serving brotli is not measuring the same work - the gap swamped everything else the profile measures.
 
+### Watch the q-values
+
+The header is sent **with q-values** - `br;q=1, gzip;q=0.8` - which is ordinary HTTP but defeats any handler that matches the encoding by exact token. A common shape:
+
+```js
+const accepted = new Set(header.split(",").map(s => s.trim()))
+if (!accepted.has("br")) { /* skipped */ }
+```
+
+That set holds `"br;q=1"`, not `"br"`, so it never matches and every response goes out uncompressed. Hono's `serveStatic` had exactly this, and it cost the entry about a third of its throughput while looking correct in every hand check.
+
+It is easy to miss, because the usual ways of checking send no q-values: `curl --compressed` sends `deflate, gzip, br, zstd`, and a hand-written `-H 'Accept-Encoding: br'` matches too. Only the load generator sends the real header. If you are adding pre-compressed support, verify with the header the profile actually sends:
+
+```
+curl -sI -H 'Accept-Encoding: br;q=1, gzip;q=0.8' localhost:8080/static/app.js
+```
+
+and check for `Content-Encoding: br` in the response.
+
 **Tuned rule:** free to use any approach - custom compression, manual `.br`/`.gz` lookup, etc.
 
 ## What it measures
