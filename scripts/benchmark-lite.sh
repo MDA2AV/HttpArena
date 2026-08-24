@@ -164,11 +164,10 @@ DOCKER_FLAGS=(
 H2LOAD_CMD="docker run ${DOCKER_FLAGS[*]} $H2LOAD_IMAGE"
 H2LOAD_H3_CMD="docker run ${DOCKER_FLAGS[*]} $H2LOAD_H3_IMAGE"
 WRK_CMD="docker run ${DOCKER_FLAGS[*]} $WRK_IMAGE"
-GHZ_CMD="docker run ${DOCKER_FLAGS[*]} $GHZ_IMAGE"
 
 # Parallel arrays — image names contain ':' (e.g. wrk:local), so packing
 # them into "img:dockerfile" strings breaks `${pair%%:*}` parsing.
-_loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE" "$GHZ_IMAGE")
+_loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE")
 _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile")
 for i in "${!_loadgen_images[@]}"; do
     img="${_loadgen_images[$i]}"

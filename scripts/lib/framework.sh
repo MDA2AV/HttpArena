@@ -181,7 +181,13 @@ framework_wait_ready() {
 
     case "$endpoint" in
         grpc|grpc-tls)
-            _wait_grpc "$endpoint" && return 0
+            # Return the probe's own verdict. Falling through on failure lands
+            # in the generic loop below, which reads $probe_url -- never set on
+            # this path -- and dies with "unbound variable" under set -u,
+            # hiding the real answer ("the gRPC server never became ready")
+            # behind a shell error.
+            _wait_grpc "$endpoint"
+            return $?
             ;;
         h3|static-h3)
             probe_url="https://localhost:$H2PORT/baseline2?a=1&b=1"
@@ -232,26 +238,50 @@ framework_wait_ready() {
 
 _wait_grpc() {
     local endpoint="$1"
-    local target flag
+    local url proto_flag
     if [[ "$endpoint" == *-tls ]]; then
-        target="localhost:$H2PORT"
-        flag="--skipTLS"
+        url="https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum"
+        proto_flag="-k --http2"
     else
-        target="localhost:$PORT"
-        flag="--insecure"
+        url="http://localhost:$PORT/benchmark.BenchmarkService/GetSum"
+        proto_flag="--http2-prior-knowledge"
     fi
-    local proto="$REQUESTS_DIR/benchmark.proto"
-    [ -f "$proto" ] || proto=$(find "$ROOT_DIR/frameworks/$FRAMEWORK" -name benchmark.proto -type f | head -1)
 
-    local i
+    # A real unary GetSum, framed by hand rather than driven by a gRPC client.
+    # ghz used to do this, and it was the only thing left needing that tool once
+    # the streaming profiles went; a length-prefixed protobuf message is nine
+    # bytes and costs no dependency at all.
+    #
+    #   00                 compressed-flag = 0
+    #   00 00 00 04        big-endian message length
+    #   08 01              field 1 (a) varint 1
+    #   10 02              field 2 (b) varint 2
+    local frame
+    frame=$(mktemp)
+    printf '\x00\x00\x00\x00\x04\x08\x01\x10\x02' > "$frame"
+
+    local i head
     for i in $(seq 1 30); do
-        if "$GHZ" "$flag" --proto "$proto" \
-             --call benchmark.BenchmarkService/GetSum \
-             -d '{"a":1,"b":2}' -c 1 -n 1 "$target" >/dev/null 2>&1; then
+        # Ready means a gRPC answer, not merely an open socket: an h2 server
+        # that has not registered the service yet still accepts connections.
+        #
+        # The verdict is the response *header* block -- 200 plus an
+        # application/grpc content-type. grpc-status is deliberately not the
+        # test: most servers (cardigan, and every grpc-go descendant) send it
+        # as an HTTP/2 trailer, which -D does not capture, so requiring it
+        # would hang the probe on servers that are perfectly ready. A non-gRPC
+        # server on the same port answers 404 with text/plain and is rejected.
+        head=$(curl -s --max-time 3 $proto_flag \
+                    -H 'content-type: application/grpc' -H 'te: trailers' \
+                    --data-binary "@$frame" -o /dev/null -D - "$url" 2>/dev/null)
+        if grep -qiE '^HTTP/2 200' <<<"$head" \
+           && grep -qi '^content-type: *application/grpc' <<<"$head"; then
+            rm -f "$frame"
             info "gRPC server ready"
             return 0
         fi
         sleep 1
     done
+    rm -f "$frame"
     return 1
 }
