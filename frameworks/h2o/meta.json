@@ -12,8 +12,6 @@
     "limited-conn",
     "json",
     "json-tls",
-    "static",
-    "static-tls",
     "baseline-h2",
     "static-h2"
   ],

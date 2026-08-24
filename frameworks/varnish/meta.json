@@ -10,9 +10,10 @@
     "baseline",
     "pipelined",
     "limited-conn",
-    "static",
     "baseline-h2",
     "static-h2"
   ],
-  "maintainers": ["guillaume.quintard@varnish-software.com"]
+  "maintainers": [
+    "guillaume.quintard@varnish-software.com"
+  ]
 }
