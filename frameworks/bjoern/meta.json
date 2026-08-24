@@ -5,7 +5,7 @@
   "engine": "libev",
   "description": "A screamingly fast, ultra-lightweight WSGI server",
   "repo": "https://github.com/jonashaag/bjoern",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",

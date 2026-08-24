@@ -5,7 +5,7 @@
   "type": "infrastructure",
   "description": "Vinyl Cache HTTP accelerator.",
   "repo": "https://code.vinyl-cache.org/vinyl-cache/vinyl-cache",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",

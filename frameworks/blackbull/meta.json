@@ -12,7 +12,7 @@
   "engine": "blackbull",
   "description": "BlackBull — pure-Python async ASGI 3.0 framework supporting HTTP/1.1, HTTP/2, and WebSocket. ALPN negotiates HTTP/2 on the same listener that serves HTTP/1.1.",
   "repo": "https://github.com/TOKUJI/BlackBull",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline-h2",
     "static-h2",

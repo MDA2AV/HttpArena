@@ -12,7 +12,7 @@
   "engine": "effinitive",
   "description": "Ultra-high-performance custom HTTP server for .NET 10 — built from scratch for maximum speed.",
   "repo": "https://github.com/HBartosch/Effinitive",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",

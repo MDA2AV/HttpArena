@@ -12,7 +12,7 @@
     "engine": "níma",
     "description": "Helidon SE 4.4.1 on Níma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
-    "enabled": true,
+    "enabled": false,
     "tests": [
         "baseline",
         "pipelined",
