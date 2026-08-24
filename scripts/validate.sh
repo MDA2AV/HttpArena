@@ -2923,12 +2923,24 @@ else
 fi
 
 # An entry that ran no assertions at all is unvalidated, not validated-clean.
-# Exiting 0 here is what let H3-only entries show a green check while nothing
-# had been verified about them; say so plainly and fail instead.
+# Exiting 0 there is what let H3-only entries show a green check while nothing
+# had been verified about them.
+#
+# But "no assertions" has two very different causes, and only one of them is the
+# entry's problem. If coverage exists and the tool it needs was simply absent,
+# that is an environment gap: the validate job runs on ubuntu-latest, which never
+# builds the load-generator images (benchmark.sh does that, on the self-hosted
+# runner), so h3 checks skip there and would fail every h3-only entry for a
+# reason that has nothing to do with the entry. Warn loudly and pass.
+# Fail only when validate.sh genuinely has no checks for anything subscribed.
 if [ "$PASS" -eq 0 ] && [ "$FAIL" -eq 0 ]; then
     echo ""
-    echo "FAIL: no checks ran for $FRAMEWORK — every subscribed test ($TESTS) is one validate.sh has no coverage for, so this run proves nothing"
-    exit 1
+    if [ "$SKIPPED" -ne 0 ]; then
+        echo "WARNING: $FRAMEWORK is UNVALIDATED — the only coverage for its subscribed tests ($TESTS) was skipped for want of a tool on this machine. Nothing here was verified about the entry; run it where the load-generator images exist to get a real verdict."
+    else
+        echo "FAIL: no checks ran for $FRAMEWORK — every subscribed test ($TESTS) is one validate.sh has no coverage for, so this run proves nothing"
+        exit 1
+    fi
 fi
 
 if [ "$FAIL" -ne 0 ]; then
