@@ -17,3 +17,7 @@ Sends `GET /baseline2?a=13&b=42` over HTTPS with HTTP/2 and verifies the respons
 ## Anti-cheat: randomized query parameters
 
 Generates random values for `a` and `b` (100-999), sends `GET /baseline2?a={a}&b={b}` over HTTP/2, and verifies the response matches the expected sum. This detects hardcoded responses.
+
+## TLS checks
+
+This profile's TLS listener on port 8443 also goes through the shared TLS checks — the certificate must be the one the harness mounted, the connection must negotiate TLS 1.3 with an AEAD cipher, ALPN must not name a protocol the client did not offer, and the server must accept no obsolete protocol or weak cipher. They are documented once, under [json-tls validation](../../h1/isolated/json-tls/validation/#tls-checks).
