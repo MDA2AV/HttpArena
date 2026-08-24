@@ -6,7 +6,7 @@
   "engine": "wtx",
   "description": "WTX - gRPC Server",
   "repo": "https://github.com/c410-f3r/wtx",
-  "enabled": false,
+  "enabled": true,
   "tests": [
     "unary-grpc-tls"
   ]

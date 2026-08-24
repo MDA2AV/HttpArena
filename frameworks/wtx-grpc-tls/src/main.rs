@@ -6,7 +6,8 @@ use wtx::{
   grpc::{GrpcManager, GrpcMiddleware},
   http::{
     HttpRecvParams,
-    http2_server_framework::{Http2ServerFramework, HttpRouter, State, post},
+    StatusCode,
+    http2_server_framework::{Http2ServerFramework, HttpRouter, State, VerbatimParams, post},
   },
   tls::{TlsConfig, TlsModeVerified},
 };
@@ -28,10 +29,14 @@ fn main() -> wtx::Result<()> {
     .run_in_threads("0.0.0.0:8443", router)
 }
 
-async fn endpoint_grpc_unary(state: State<'_, GrpcManager<QuickProtobuf>>) -> wtx::Result<()> {
+// Same fix as the plaintext entry: ResFinalizer for () clears the request
+// buffer after the handler runs, which erased the serialized reply.
+async fn endpoint_grpc_unary(
+  state: State<'_, GrpcManager<QuickProtobuf>>,
+) -> wtx::Result<VerbatimParams> {
   let sr = state.data.des_from_req_bytes::<SumRequest>(&mut state.req.msg_data.body.as_slice())?;
   state.req.clear();
   let result = sr.a.wrapping_add(sr.b);
   state.data.ser_to_res_bytes(&mut state.req.msg_data.body, SumReply { result })?;
-  Ok(())
+  Ok(VerbatimParams(StatusCode::Ok))
 }

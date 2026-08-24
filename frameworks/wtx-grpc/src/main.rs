@@ -6,7 +6,8 @@ use wtx::{
   grpc::{GrpcManager, GrpcMiddleware},
   http::{
     HttpRecvParams,
-    http2_server_framework::{Http2ServerFramework, HttpRouter, State, post},
+    StatusCode,
+    http2_server_framework::{Http2ServerFramework, HttpRouter, State, VerbatimParams, post},
   },
   tls::TlsConfig,
 };
@@ -22,10 +23,16 @@ fn main() -> wtx::Result<()> {
     .run_in_threads("0.0.0.0:8080", router)
 }
 
-async fn endpoint_grpc_unary(state: State<'_, GrpcManager<QuickProtobuf>>) -> wtx::Result<()> {
+// Returns VerbatimParams rather than (). ResFinalizer for () calls req.clear()
+// after the handler runs, which erased the reply just serialized into the
+// request buffer: the server answered 200 with grpc-status 0 and an empty
+// body. VerbatimParams carries the status and leaves the body alone.
+async fn endpoint_grpc_unary(
+  state: State<'_, GrpcManager<QuickProtobuf>>,
+) -> wtx::Result<VerbatimParams> {
   let sr = state.data.des_from_req_bytes::<SumRequest>(&mut state.req.msg_data.body.as_slice())?;
   state.req.clear();
   let result = sr.a.wrapping_add(sr.b);
   state.data.ser_to_res_bytes(&mut state.req.msg_data.body, SumReply { result })?;
-  Ok(())
+  Ok(VerbatimParams(StatusCode::Ok))
 }
