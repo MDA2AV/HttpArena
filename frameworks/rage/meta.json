@@ -23,8 +23,9 @@
     "api-4",
     "api-16",
     "async-db",
-    "crud",
-    "static"
+    "crud"
   ],
-  "maintainers": ["p8"]
+  "maintainers": [
+    "p8"
+  ]
 }

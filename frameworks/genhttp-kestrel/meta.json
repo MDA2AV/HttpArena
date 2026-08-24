@@ -24,8 +24,6 @@
     "json-tls",
     "upload",
     "async-db",
-    "static",
-    "static-tls",
     "static-h2",
     "static-h3",
     "api-4",

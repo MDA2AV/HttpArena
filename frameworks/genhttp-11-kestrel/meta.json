@@ -13,7 +13,7 @@
   "description": "Lightweight, embeddable and modular C# web server.",
   "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
   "enabled": true,
-  "tests": [    
+  "tests": [
     "baseline",
     "baseline-h2",
     "baseline-h3",
@@ -25,8 +25,6 @@
     "upload",
     "async-db",
     "crud",
-    "static",
-    "static-tls",
     "static-h2",
     "static-h3",
     "echo-ws",

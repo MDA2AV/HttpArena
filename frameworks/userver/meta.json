@@ -23,9 +23,9 @@
     "upload",
     "api-4",
     "api-16",
-    "static",
-    "static-tls",
     "async-db"
   ],
-  "maintainers": ["botanegg"]
+  "maintainers": [
+    "botanegg"
+  ]
 }

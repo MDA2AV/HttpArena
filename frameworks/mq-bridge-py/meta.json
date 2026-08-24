@@ -20,8 +20,6 @@
     "json",
     "json-comp",
     "upload",
-    "static",
-    "static-tls",
     "async-db",
     "crud",
     "api-4",

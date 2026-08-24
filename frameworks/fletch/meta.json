@@ -21,9 +21,9 @@
     "json-comp",
     "json-tls",
     "upload",
-    "static",
-    "static-tls",
     "async-db"
   ],
-  "maintainers": ["kartikey321"]
+  "maintainers": [
+    "kartikey321"
+  ]
 }
