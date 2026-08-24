@@ -5,7 +5,7 @@
   "engine": "epoll",
   "description": "HTTP/2 cleartext (h2c, prior-knowledge) on vanilla's conn-mode seam: one epoll engine drives the RFC 9113 state machine behind a ConnHandler. The client's PRI * HTTP/2.0 preface parses as an ordinary request; the HTTP handler flips the connection over (core.queue_takeover), appends the server SETTINGS preface, and every later burst is fed to the http2 machine instead of the HTTP/1.1 parser. The http2 module is a self-contained RFC 9113/7541 codec: HPACK (static + dynamic table, canonical Huffman decode, decoded-block ceiling), frame codec, and a stream state machine with send-side flow control, hardened against a live h2spec CI gate. Requests surface only when COMPLETE (END_STREAM); responses are HPACK-encoded HEADERS + DATA. The :8082 listener is h2c-only — a plain HTTP/1.1 request is refused 505, never a 200, so the benchmark cannot silently measure h1 throughput. /json reuses the vanilla /json shape (same dataset, precomputed per-item prefixes, total = price*quantity*m). Multi-threaded, SO_REUSEPORT, lock-free, -gc none. Pinned V 0.5.2 (prebuilt from source).",
   "repo": "https://github.com/enghitalo/vanilla",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline-h2c",
     "json-h2c"

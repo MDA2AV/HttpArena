@@ -5,7 +5,7 @@
   "engine": "epoll",
   "description": "fasthttp is a raw multi-threaded epoll HTTP server in V's standard library (non-blocking, SO_REUSEPORT, one worker per core). It uses fasthttp's zero-copy append handler (write the raw response straight into the connection's reused buffer), lock-free per-worker state (make_state), deterministic request framing that reassembles TCP-fragmented AND chunked requests (so baseline is now subscribed), and sendfile(2) for static bodies. JSON is built in a single allocation with precomputed prefixes (no per-request reflection); json-comp gzips on Accept-Encoding with a process-shared cache; static assets are streamed via sendfile with a preloaded MIME/size table; crud is an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update); fortunes renders the DB rows + a runtime row with HTML escaping; async-db/crud/fortunes use the stdlib db.pg pooled Go-style DB (blocking queries on the worker thread — fasthttp has no async watch reactor yet). Built on pinned V master 84a76d791 (the fasthttp vanilla-architecture refactor, vlang/v#27771) with the default GC (Boehm). json-tls is not subscribed: the stdlib fasthttp server has no TLS backend.",
   "repo": "https://github.com/vlang/v",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",

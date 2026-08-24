@@ -5,7 +5,7 @@
   "engine": "picoev",
   "description": "A raw V server on the picoev non-blocking event loop + picohttpparser (both stdlib). One process per core shares the listen socket via SO_REUSEPORT. JSON is serialized manually (precomputed prefixes, no per-request reflection). Built with the default GC on pinned V master c0624b274. DB profiles are not subscribed: picoev is a single-threaded event loop and the stdlib db.pg driver is blocking, which would stall the loop. baseline is not subscribed: picoev parses each recv() in one shot and does not reassemble TCP-fragmented requests, which baseline validation requires.",
   "repo": "https://github.com/vlang/v",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "pipelined",
     "json"

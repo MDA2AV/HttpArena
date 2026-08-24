@@ -6,7 +6,7 @@
   "mode": "tuned",
   "description": "araara - an OCaml 5 web stack built on HCS, Eio, a zero-copy sans-I/O HTTP codec, radix-trie routing, Phoenix-style plugs, Postgres via repodb, and gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
   "repo": "https://araara.ml",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",
