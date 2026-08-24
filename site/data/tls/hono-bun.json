@@ -1,0 +1,4 @@
+{
+  "framework": "hono-bun",
+  "tls": "pass"
+}

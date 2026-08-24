@@ -10,6 +10,10 @@ H1TLS_PORT=8081
 H2C_PORT=8082
 PASS=0
 FAIL=0
+# Set by the TLS probes; written out at the end so the board can show which
+# entries have actually been checked rather than trusting a self-declared flag.
+TLS_CHECKED=false
+TLS_CLEAN=true
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
@@ -602,6 +606,7 @@ _tls_accepts() {
 
 tls_quality_probe() {
     local label="$1" port="$2" docs="$3"
+    TLS_CHECKED=true
 
     local old="" untestable=""
     local proto
@@ -620,6 +625,7 @@ tls_quality_probe() {
     done
 
     if [ -n "$old" ] || [ -n "$weak" ]; then
+        TLS_CLEAN=false
         local detail=""
         [ -n "$old" ]  && detail="obsolete protocols:${old}"
         [ -n "$weak" ] && detail="${detail:+$detail; }weak ciphers:${weak}"
@@ -657,6 +663,7 @@ tls_quality_probe() {
 # $1 label prefix  $2 port  $3 docs url  $4 expected ALPN (empty to skip)
 tls_posture_probe() {
     local label="$1" port="$2" docs="$3" want_alpn="${4:-}"
+    TLS_CHECKED=true
 
     local expected_fp
     expected_fp=$(openssl x509 -in "$CERTS_DIR/server.crt" -noout -fingerprint -sha256 2>/dev/null | sed 's/.*=//')
@@ -683,6 +690,7 @@ tls_posture_probe() {
         local alg
         alg=$(printf '%s' "$out" | openssl x509 -noout -text 2>/dev/null \
               | grep -m1 "Public Key Algorithm" | sed 's/.*: //' || true)
+        TLS_CLEAN=false
         fail_with_link "[$label serves the mounted certificate]: the certificate on port $port is not the one mounted at /certs (served ${alg:-unknown key}, fingerprint ${served_fp:-none}). Every handshake is signed with this key, so a self-generated one -- an EC key above all -- makes handshakes cheaper than they are for every other entry" "$docs"
     fi
 
@@ -695,6 +703,7 @@ tls_posture_probe() {
         echo "  PASS [$label negotiates TLS 1.3] (cipher $cipher)"
         PASS=$((PASS + 1))
     else
+        TLS_CLEAN=false
         fail_with_link "[$label negotiates TLS 1.3]: settled on ${version:-unknown} against a client offering 1.3. The 1.2 handshake costs an extra round trip, so its numbers are not comparable with the rest of the field" "$docs"
     fi
 
@@ -705,6 +714,7 @@ tls_posture_probe() {
             echo "  PASS [$label uses a TLS 1.3 AEAD cipher] ($cipher)"
             PASS=$((PASS + 1)) ;;
         *)
+            TLS_CLEAN=false
             fail_with_link "[$label uses a TLS 1.3 AEAD cipher]: negotiated '${cipher:-none}', which is not one of the three TLS 1.3 suites" "$docs" ;;
     esac
 
@@ -2641,6 +2651,23 @@ if has_test "production-stack"; then
 fi
 
 # ───── Summary ─────
+
+# Record the TLS verdict where the board can read it. Only written when the
+# entry actually has TLS profiles, and only ever says "pass" because the checks
+# ran and were clean -- absence means unverified, never approved. This is why
+# it is a generated artifact rather than a meta.json field: the shield has to
+# be earned by the probes, not declared by the entry.
+if [ "$TLS_CHECKED" = "true" ]; then
+    mkdir -p "$ROOT_DIR/site/data/tls"
+    if [ "$TLS_CLEAN" = "true" ] && [ "$FAIL" -eq 0 ]; then
+        tls_state="pass"
+    else
+        tls_state="fail"
+    fi
+    printf '{\n  "framework": "%s",\n  "tls": "%s"\n}\n' \
+        "$FRAMEWORK" "$tls_state" > "$ROOT_DIR/site/data/tls/$FRAMEWORK.json"
+    echo "[info] TLS verdict: $tls_state (site/data/tls/$FRAMEWORK.json)"
+fi
 
 echo ""
 echo "=== Results: $PASS passed, $FAIL failed ==="

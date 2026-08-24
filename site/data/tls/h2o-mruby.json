@@ -1,0 +1,4 @@
+{
+  "framework": "h2o-mruby",
+  "tls": "pass"
+}
