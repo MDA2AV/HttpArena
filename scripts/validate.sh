@@ -15,6 +15,9 @@ H2C_PORT=8082
 TLS_CHECK_PORT=9000
 PASS=0
 FAIL=0
+# Checks that could not run for want of a tool, as opposed to checks that ran
+# and passed. Counted separately so a skip can never read as coverage.
+SKIPPED=0
 # Set by the TLS probes; written out at the end so the board can show which
 # entries have actually been checked rather than trusting a self-declared flag.
 TLS_CHECKED=false
@@ -158,7 +161,9 @@ for t in $TESTS; do
     esac
 done
 
-if [ "$GATEWAY_ONLY" = "false" ]; then
+if [ "$GATEWAY_ONLY" = "false" ] && [ "${VALIDATE_SKIP_BUILD:-0}" = "1" ]; then
+    echo "[build] VALIDATE_SKIP_BUILD=1 — reusing existing image $IMAGE_NAME"
+elif [ "$GATEWAY_ONLY" = "false" ]; then
     echo "[build] Building Docker image..."
     if [ -x "frameworks/$FRAMEWORK/build.sh" ]; then
         "frameworks/$FRAMEWORK/build.sh" || { echo "FAIL: Docker build failed"; exit 1; }
@@ -190,6 +195,15 @@ if has_test "json-tls" || has_test "static-tls"; then
     needs_h1tls=true
 fi
 
+# QUIC is UDP, and -p publishes tcp unless told otherwise. Without this an h3
+# entry on the bridge network gets :8443 over tcp and no datagram path at all,
+# so nothing could ever reach its listener -- which is the practical reason the
+# h3 profiles went unvalidated for so long.
+needs_h3=false
+if has_test "baseline-h3" || has_test "static-h3"; then
+    needs_h3=true
+fi
+
 needs_h2c=false
 if has_test "baseline-h2c" || has_test "json-h2c"; then
     needs_h2c=true
@@ -213,6 +227,7 @@ fi
 if ($needs_h2 || $needs_h1tls) && [ -d "$CERTS_DIR" ]; then
     docker_args+=(-v "$CERTS_DIR:/certs:ro")
     $needs_h2     && docker_args+=(-p "$H2PORT:8443")
+    $needs_h3     && docker_args+=(-p "$H2PORT:8443/udp")
     $needs_h1tls  && docker_args+=(-p "$H1TLS_PORT:8081")
 fi
 
@@ -357,9 +372,12 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
     # h2/h3 on 8443 depending on build) never respond to an HTTP/1.1 request
     # and would otherwise time out. Fall back to GET /baseline2 over HTTPS
     # with ALPN h2 on $H2PORT when the framework subscribes to any h2 or h3
-    # profile. H/3 servers still advertise h2 on the same TLS listener via
-    # ALPN, so this single fallback covers both cases without requiring
-    # curl to be built with HTTP/3 support.
+    # profile. Most h3 entries also advertise h2 on the same TLS listener, so
+    # that fallback covers them -- but not an h3-only entry like sark-h3, which
+    # serves QUIC on udp/8443 and nothing at all on tcp/8443. Those need the
+    # QUIC probe further down; without it they time out here while perfectly
+    # healthy, which is exactly what "Server did not start within 30s" meant
+    # for sark-h3 on every run it ever had.
     need_tls_probe=false
     if has_test "baseline-h2" || has_test "static-h2" \
        || has_test "baseline-h3" || has_test "static-h3"; then
@@ -420,6 +438,18 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
                     -X POST --data-binary "@$ROOT_DIR/requests/grpc-sum.bin" \
                     -H 'content-type: application/grpc' -H 'te: trailers' \
                     "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" 2>/dev/null; then
+                break
+            fi
+            # An h3-only entry answers none of the probes above: curl here has
+            # no QUIC support, so the only client that can reach it is the same
+            # ngtcp2 h2load the benchmark uses. Tried last and only when the
+            # image exists, so nothing else pays the container-start cost.
+            if [ "$needs_h3" = "true" ] \
+               && docker image inspect "${H2LOAD_H3_IMAGE:-h2load-h3}" >/dev/null 2>&1 \
+               && docker run --rm --network host "${H2LOAD_H3_IMAGE:-h2load-h3}" \
+                    --alpn-list=h3 -n 1 -c 1 -t 1 \
+                    "https://localhost:$H2PORT/baseline2?a=1&b=1" 2>/dev/null \
+                  | grep -q ' 1 2xx'; then
                 break
             fi
             if [ "$i" -eq 30 ]; then
@@ -1994,6 +2024,55 @@ if has_test "static-h2"; then
     fi
 fi
 
+# ───── HTTP/3 (QUIC on :8443/udp) ─────
+#
+# Until this existed, baseline-h3 and static-h3 had no checks at all: an entry
+# subscribing only to H3 profiles ran zero assertions and still exited 0, which
+# reads on CI exactly like a clean pass. There is no HTTP/3 client in the base
+# image and openssl cannot speak QUIC, so the check borrows the same ngtcp2
+# h2load the benchmark itself uses. When that image is absent the result is an
+# explicit SKIP, never silence.
+
+if has_test "baseline-h3" || has_test "static-h3"; then
+    H3_DOCS="$DOCS_BASE/h3/baseline-h3/validation"
+    H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3}"
+    echo "[test] h3 endpoints (QUIC on :$H2PORT/udp)"
+
+    if ! docker image inspect "$H2LOAD_H3_IMAGE" >/dev/null 2>&1; then
+        echo "  SKIP [h3]: no $H2LOAD_H3_IMAGE image — build docker/h2load-h3.Dockerfile to validate HTTP/3"
+        SKIPPED=$((SKIPPED + 1))
+    else
+        h3_request() {
+            # One h2load run over QUIC. Prints the 2xx count it observed, or
+            # nothing when the transfer never completed.
+            local url="$1" n="$2"
+            docker run --rm --network host "$H2LOAD_H3_IMAGE" \
+                --alpn-list=h3 -n "$n" -c 1 -t 1 "$url" 2>/dev/null \
+                | sed -n 's/.*status codes: \([0-9]*\) 2xx.*/\1/p'
+        }
+
+        if has_test "baseline-h3"; then
+            got=$(h3_request "https://localhost:$H2PORT/baseline2?a=13&b=42" 4)
+            if [ "${got:-0}" = "4" ]; then
+                echo "  PASS [baseline-h3 over QUIC] (4/4 2xx, ALPN h3)"
+                PASS=$((PASS + 1))
+            else
+                fail_with_link "[baseline-h3 over QUIC]: expected 4 2xx responses, got ${got:-none} — the entry subscribes to baseline-h3 but did not answer over HTTP/3" "$H3_DOCS"
+            fi
+        fi
+
+        if has_test "static-h3"; then
+            got=$(h3_request "https://localhost:$H2PORT/static/reset.css" 4)
+            if [ "${got:-0}" = "4" ]; then
+                echo "  PASS [static-h3 over QUIC] (4/4 2xx, ALPN h3)"
+                PASS=$((PASS + 1))
+            else
+                fail_with_link "[static-h3 over QUIC]: expected 4 2xx responses, got ${got:-none} — the entry subscribes to static-h3 but did not serve /static over HTTP/3" "$DOCS_BASE/h3/static-h3/validation"
+            fi
+        fi
+    fi
+fi
+
 # ───── Async Database (GET /async-db) ─────
 
 if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16"; then
@@ -2334,6 +2413,14 @@ if has_test "unary-grpc-tls"; then
         fi
         sleep 1
     done
+
+    # gRPC over TLS terminates a real TLS 1.3 handshake per connection, exactly
+    # like baseline-h2 -- so it gets the same posture and quality probes. Without
+    # these an entry can serve a self-generated EC certificate here and pay a
+    # fraction of the signing cost every other entry pays on the shared RSA key,
+    # which is precisely what this port was missing.
+    tls_posture_probe "unary-grpc-tls" "$H2PORT" "$GRPC_TLS_DOCS" "h2"
+    tls_quality_probe "unary-grpc-tls" "$H2PORT" "$GRPC_TLS_DOCS"
 
     grpc_check_sum "GetSum over h2+TLS" \
         "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" "$GRPC_TLS_DOCS" \
@@ -2829,7 +2916,21 @@ if [ "$TLS_CHECKED" = "true" ]; then
 fi
 
 echo ""
-echo "=== Results: $PASS passed, $FAIL failed ==="
+if [ "$SKIPPED" -ne 0 ]; then
+    echo "=== Results: $PASS passed, $FAIL failed, $SKIPPED skipped ==="
+else
+    echo "=== Results: $PASS passed, $FAIL failed ==="
+fi
+
+# An entry that ran no assertions at all is unvalidated, not validated-clean.
+# Exiting 0 here is what let H3-only entries show a green check while nothing
+# had been verified about them; say so plainly and fail instead.
+if [ "$PASS" -eq 0 ] && [ "$FAIL" -eq 0 ]; then
+    echo ""
+    echo "FAIL: no checks ran for $FRAMEWORK — every subscribed test ($TESTS) is one validate.sh has no coverage for, so this run proves nothing"
+    exit 1
+fi
+
 if [ "$FAIL" -ne 0 ]; then
     # The checks above show what the server answered; this shows what it
     # was doing at the time. Last container to run, so for a multi-profile
