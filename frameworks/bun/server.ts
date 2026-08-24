@@ -79,8 +79,8 @@ async function baseline11Post(req: Request, sum: number): Promise<Response> {
     return new Response(String(Number.isNaN(n) ? sum : sum + n), { headers: TEXT });
 }
 
-function json(path: string, query: string, req: Request): Response {
-    let count = parseInt(path.slice(6), 10);
+function json(count_: string, query: string, req: Request): Response {
+    let count = parseInt(count_, 10);
     if (!(count > 0)) count = 0;
     if (count > dataset.length) count = dataset.length;
     const m = multiplier(query);
@@ -151,8 +151,7 @@ const ENCODINGS: ReadonlyArray<readonly [string, string]> = [
     ["gzip", ".gz"],
 ];
 
-async function serveStatic(path: string, req: Request): Promise<Response> {
-    const name = path.slice(8);
+async function serveStatic(name: string, req: Request): Promise<Response> {
     // No traversal outside the mount, and no directory reads.
     if (name.length === 0 || name.includes("/") || name.includes("..")) {
         return new Response("Not Found", { status: 404, headers: TEXT });
@@ -319,46 +318,48 @@ async function fortunes(): Promise<Response> {
     }
 }
 
-function handle(req: Request): Response | Promise<Response> {
-    // req.url is absolute, so the path starts at the first slash after the host.
-    const url = req.url;
-    const start = url.indexOf("/", 8);
-    const q = url.indexOf("?", start);
-    const path = q < 0 ? url.slice(start) : url.slice(start, q);
-    const query = q < 0 ? "" : url.slice(q + 1);
+// The query string, which is the one part of the request the router does not hand over.
+const qs = (req: Request): string => {
+    const q = req.url.indexOf("?");
+    return q < 0 ? "" : req.url.slice(q + 1);
+};
 
-    if (path === "/pipeline") return new Response("ok", { headers: TEXT });
+// Bun.serve matches method and path itself and fills in req.params, so this entry declares its
+// endpoints rather than branching on req.url. `fetch` below is only what is left when nothing
+// matched.
+const routes = {
+    "/pipeline": () => new Response("ok", { headers: TEXT }),
 
-    if (path === "/baseline11") {
-        const sum = sumQuery(query);
-        if (req.method === "POST") return baseline11Post(req, sum);
-        return new Response(String(sum), { headers: TEXT });
-    }
+    "/baseline11": {
+        GET: (req: Request) => new Response(String(sumQuery(qs(req))), { headers: TEXT }),
+        POST: (req: Request) => baseline11Post(req, sumQuery(qs(req))),
+    },
 
-    if (path.startsWith("/json/")) return json(path, query, req);
+    "/baseline2": (req: Request) => new Response(String(sumQuery(qs(req))), { headers: TEXT }),
 
-    if (path === "/upload" && req.method === "POST") return upload(req);
+    "/json/:count": (req: any) => json(req.params.count, qs(req), req),
 
-    if (path === "/baseline2") return new Response(String(sumQuery(query)), { headers: TEXT });
+    "/upload": { POST: (req: Request) => upload(req) },
 
-    if (path.startsWith("/static/")) return serveStatic(path, req);
+    // one segment, so a path with a slash in it never reaches the handler
+    "/static/:name": (req: any) => serveStatic(req.params.name, req),
 
-    if (path === "/async-db") return asyncDb(query);
+    "/async-db": (req: Request) => asyncDb(qs(req)),
 
-    if (path === "/fortunes") return fortunes();
+    "/fortunes": () => fortunes(),
 
-    if (path.startsWith("/crud/items")) {
-        if (path === "/crud/items") {
-            if (req.method === "POST") return crudCreate(req);
-            return crudList(query);
-        }
-        if (path.charCodeAt(11) === 47 /* "/" */) {
-            const id = parseInt(path.slice(12), 10);
-            if (req.method === "PUT") return crudUpdate(req, id);
-            return crudRead(id);
-        }
-    }
+    "/crud/items": {
+        GET: (req: Request) => crudList(qs(req)),
+        POST: (req: Request) => crudCreate(req),
+    },
 
+    "/crud/items/:id": {
+        GET: (req: any) => crudRead(parseInt(req.params.id, 10)),
+        PUT: (req: any) => crudUpdate(req, parseInt(req.params.id, 10)),
+    },
+};
+
+function handle(): Response {
     return new Response("Not Found", { status: 404, headers: TEXT });
 }
 
@@ -370,6 +371,7 @@ const listener = {
     development: false,
     // A 20 MB upload on a saturated server takes longer than the 10s default.
     idleTimeout: 120,
+    routes,
     fetch: handle,
 };
 
