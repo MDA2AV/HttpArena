@@ -8,12 +8,22 @@ PORT=8080
 H2PORT=8443
 H1TLS_PORT=8081
 H2C_PORT=8082
+# The opt-in TLS section gets its own listener and its own certificate pair.
+# It rotates certificates underneath a running server, and doing that to the
+# shared /certs would move the ground under json-tls, static-tls and every h2
+# profile in the same run.
+TLS_CHECK_PORT=9000
 PASS=0
 FAIL=0
 # Set by the TLS probes; written out at the end so the board can show which
 # entries have actually been checked rather than trusting a self-declared flag.
 TLS_CHECKED=false
 TLS_CLEAN=true
+# Set when the opt-in TLS section runs, so the stronger badge is only ever
+# claimed by an entry that actually subscribed to it.
+TLS_CHECK_RUN=false
+TLS_CHECK_FAIL_BEFORE=0
+TLS_CHECK_OK=false
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
@@ -27,6 +37,9 @@ PG_NETWORK="httparena-validate-net"
 cleanup() {
     # put back any static file a staleness probe replaced, before anything else
     restore_static_probe 2>/dev/null || true
+    # and any certificate the TLS section rotated, then drop its private dir
+    restore_tls_certs 2>/dev/null || true
+    [ -n "${TLS_CHECK_CERTS:-}" ] && rm -rf "$TLS_CHECK_CERTS" 2>/dev/null || true
     # Kill watchdog if still running
     [ -n "${WATCHDOG_PID:-}" ] && kill "$WATCHDOG_PID" 2>/dev/null || true
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
@@ -105,6 +118,9 @@ if [ ! -f "$META_FILE" ]; then
     exit 0
 fi
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
+# The TLS section is a capability an entry opts into, not a profile it is
+# measured on, so it is its own field rather than an entry in "tests".
+TLS_CHECK_OPTIN=$(python3 -c "import json; print('yes' if json.load(open('$META_FILE')).get('tls_check') else 'no')")
 FRAMEWORK_TYPE=$(python3 -c "import json; print(json.load(open('$META_FILE')).get('type',''))")
 echo "[info] Subscribed tests: $TESTS"
 
@@ -202,6 +218,19 @@ fi
 
 # h2c uses no TLS so no certs mount needed; just expose the port.
 $needs_h2c && docker_args+=(-p "$H2C_PORT:8082")
+
+# The TLS section's own listener, with a certificate directory nothing else
+# reads. Seeded from the mounted pair so the entry starts from the same
+# material, then rotated freely without touching /certs.
+TLS_CHECK_CERTS=""
+if [ "$TLS_CHECK_OPTIN" = "yes" ] && [ -d "$CERTS_DIR" ]; then
+    TLS_CHECK_CERTS=$(mktemp -d)
+    cp -p "$CERTS_DIR/server.crt" "$TLS_CHECK_CERTS/server.crt"
+    cp -p "$CERTS_DIR/server.key" "$TLS_CHECK_CERTS/server.key"
+    chmod 644 "$TLS_CHECK_CERTS/server.crt" "$TLS_CHECK_CERTS/server.key"
+    docker_args+=(-v "$TLS_CHECK_CERTS:/certs-tls:ro")
+    docker_args+=(-p "$TLS_CHECK_PORT:9000")
+fi
 
 if has_test "gateway-64" || has_test "gateway-h3"; then
     docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
@@ -568,6 +597,223 @@ static_staleness_probe() {
         fail_with_link "[$label]: $target was replaced in the mounted static directory (along with its .br/.gz twins) and the server still served the same bytes after ${STATIC_STALE_WINDOW}s. Either a cache is holding the contents and never revalidating, or the entry is serving a copy taken at image build rather than the directory the profile mounts" "$docs"
     else
         fail_with_link "[$label]: the replaced file was served, but the original did not come back within ${STATIC_STALE_WINDOW}s" "$docs"
+    fi
+}
+
+# ───── tls_check (opt-in, validation only) ─────
+#
+# Subscribed by putting "tls" in meta.json "tests". Nothing is measured: this
+# is a hardening bar an entry opts into, and every check needs the entry to
+# have done something deliberate. HTTP/1.1 on :8081 only -- h2 and h3 have
+# their own listeners and are a separate question.
+#
+# Certificates are swapped underneath a running server here, so they are
+# restored on the way out, including when a check fails midway.
+# Rotation happens in $TLS_CHECK_CERTS, a directory mounted at /certs-tls
+# for this entry alone. /certs is never written to, so json-tls, static-tls and
+# the h2 profiles cannot see anything this section does.
+TLS_CERT_BACKUP=""
+TLS_KEY_BACKUP=""
+restore_tls_certs() {
+    [ -n "$TLS_CHECK_CERTS" ] || return 0
+    if [ -n "$TLS_CERT_BACKUP" ] && [ -f "$TLS_CERT_BACKUP" ]; then
+        mv -f "$TLS_CERT_BACKUP" "$TLS_CHECK_CERTS/server.crt" 2>/dev/null || true
+    fi
+    if [ -n "$TLS_KEY_BACKUP" ] && [ -f "$TLS_KEY_BACKUP" ]; then
+        mv -f "$TLS_KEY_BACKUP" "$TLS_CHECK_CERTS/server.key" 2>/dev/null || true
+    fi
+    TLS_CERT_BACKUP=""
+    TLS_KEY_BACKUP=""
+    return 0
+}
+
+_served_fp() {
+    timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost </dev/null 2>/dev/null \
+        | openssl x509 -noout -fingerprint -sha256 2>/dev/null | sed 's/.*=//' || true
+}
+
+_new_pair() {
+    openssl req -x509 -newkey rsa:2048 -nodes -keyout "$1/new.key" -out "$1/new.crt" \
+        -days 3650 -subj "/CN=localhost" \
+        -addext "subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1,IP:0.0.0.0,IP:::1" \
+        -addext "keyUsage=critical,digitalSignature,keyEncipherment" \
+        -addext "extendedKeyUsage=serverAuth" >/dev/null 2>&1
+}
+
+_swap_in_pair() {
+    local dir="$1"
+    TLS_CERT_BACKUP=$(mktemp); TLS_KEY_BACKUP=$(mktemp)
+    cp -p "$TLS_CHECK_CERTS/server.crt" "$TLS_CERT_BACKUP"
+    cp -p "$TLS_CHECK_CERTS/server.key" "$TLS_KEY_BACKUP"
+    # mode carried over: mktemp is 0600, and a non-root container that cannot
+    # read the new pair would look exactly like one that ignored the rotation
+    chmod --reference="$TLS_CHECK_CERTS/server.crt" "$dir/new.crt"
+    chmod --reference="$TLS_CHECK_CERTS/server.key" "$dir/new.key"
+    mv -f "$dir/new.crt" "$TLS_CHECK_CERTS/server.crt"
+    mv -f "$dir/new.key" "$TLS_CHECK_CERTS/server.key"
+}
+
+# Replace the pair on disk and require the server to serve it without a
+# restart. A certificate is renewed roughly every 60 days in production, and a
+# server that needs a restart to pick one up is a weaker server.
+tls_rotation_probe() {
+    local docs="$1" window="${HTTPARENA_TLS_ROTATE_WINDOW:-30}"
+    local before; before=$(_served_fp)
+    if [ -z "$before" ]; then
+        fail_with_link "[tls_check certificate rotation]: no certificate served on :$TLS_CHECK_PORT before the probe" "$docs"
+        return 0
+    fi
+    local tmp; tmp=$(mktemp -d)
+    if ! _new_pair "$tmp"; then
+        echo "  SKIP [tls_check certificate rotation] (could not generate a replacement pair)"
+        rm -rf "$tmp"; return 0
+    fi
+    _swap_in_pair "$tmp"; rm -rf "$tmp"
+
+    local waited=0 rotated=false
+    while [ "$waited" -le "$window" ]; do
+        [ "$(_served_fp)" != "$before" ] && { rotated=true; break; }
+        sleep 1; waited=$((waited + 1))
+    done
+
+    # Rotating by dying is not rotating. Asked while the new pair is still in
+    # place, so the answer is about the new certificate.
+    local alive="no"
+    curl -sk --max-time 8 -o /dev/null "https://localhost:$TLS_CHECK_PORT/json/1" 2>/dev/null && alive="yes"
+
+    restore_tls_certs
+    local back=0
+    while [ "$back" -le "$window" ]; do
+        [ "$(_served_fp)" = "$before" ] && break
+        sleep 1; back=$((back + 1))
+    done
+
+    if [ "$rotated" != "true" ]; then
+        fail_with_link "[tls_check certificate rotation]: the pair at /certs was replaced and the server still served the old certificate after ${window}s" "$docs"
+    elif [ "$alive" != "yes" ]; then
+        fail_with_link "[tls_check certificate rotation]: the new certificate was served, but the server stopped answering on it" "$docs"
+    else
+        echo "  PASS [tls_check certificate rotation] (new certificate served in ${waited}s, original back in ${back}s, still answering)"
+        PASS=$((PASS + 1))
+    fi
+}
+
+# Rotation is only useful if it does not drop what is in flight.
+tls_rotation_graceful_probe() {
+    local docs="$1"
+    local tmp; tmp=$(mktemp -d)
+    if ! _new_pair "$tmp"; then
+        echo "  SKIP [tls_check rotation keeps serving] (could not generate a replacement pair)"
+        rm -rf "$tmp"; return 0
+    fi
+    local out; out=$(mktemp)
+    ( for _ in $(seq 1 30); do
+        curl -sk --max-time 5 -o /dev/null -w '%{http_code}\n' "https://localhost:$TLS_CHECK_PORT/json/1" 2>/dev/null || echo "000"
+        sleep 0.2
+      done ) > "$out" &
+    local pid=$!
+    sleep 2
+    _swap_in_pair "$tmp"; rm -rf "$tmp"
+    wait "$pid" 2>/dev/null || true
+    restore_tls_certs
+
+    local total ok
+    total=$(wc -l < "$out"); ok=$(grep -c '^200$' "$out" || true)
+    rm -f "$out"
+    if [ "${total:-0}" -gt 0 ] && [ "${ok:-0}" -eq "${total:-0}" ]; then
+        echo "  PASS [tls_check rotation keeps serving] ($ok/$total requests answered across the swap)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[tls_check rotation keeps serving]: ${ok:-0} of ${total:-0} requests succeeded while the certificate was replaced" "$docs"
+    fi
+}
+
+# The certificate must be chosen per handshake, not bound once at startup.
+tls_sni_probe() {
+    local docs="$1" with without
+    with=$(timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost </dev/null 2>/dev/null \
+           | openssl x509 -noout -subject 2>/dev/null || true)
+    without=$(timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -noservername </dev/null 2>/dev/null \
+              | openssl x509 -noout -subject 2>/dev/null || true)
+    if [ -n "$with" ] && [ -n "$without" ]; then
+        echo "  PASS [tls_check SNI] (answers both with a server name and without one)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[tls_check SNI]: no handshake completed $([ -z "$with" ] && echo "with SNI=localhost" || echo "without SNI"). A client that omits SNI must still get a usable answer" "$docs"
+    fi
+}
+
+# Resumption decides what a reconnecting client pays. Noted rather than failed:
+# TLS 1.3 tickets are off by default in several stacks.
+tls_resumption_probe() {
+    local docs="$1" sess out
+    sess=$(mktemp)
+    timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost \
+        -sess_out "$sess" </dev/null >/dev/null 2>&1 || true
+    if [ ! -s "$sess" ]; then
+        echo "  NOTE [tls_check session resumption]: no session ticket issued, so every connection pays a full handshake"
+        rm -f "$sess"; return 0
+    fi
+    out=$(timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost \
+          -sess_in "$sess" </dev/null 2>/dev/null || true)
+    rm -f "$sess"
+    if printf '%s' "$out" | grep -q "Reused"; then
+        echo "  PASS [tls_check session resumption] (ticket issued and accepted)"
+        PASS=$((PASS + 1))
+    else
+        echo "  NOTE [tls_check session resumption]: a ticket was issued but not accepted on reconnect"
+    fi
+}
+
+# Without close_notify a truncated response is indistinguishable from a
+# complete one.
+tls_close_notify_probe() {
+    local docs="$1" out
+    # -quiet is deliberately not used: it suppresses the very lines this reads.
+    # A clean shutdown ends with DONE; a server that just drops the socket makes
+    # openssl report "unexpected eof while reading".
+    out=$(printf 'GET /json/1 HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' \
+          | timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost 2>&1 >/dev/null || true)
+    if printf '%s' "$out" | grep -qi "unexpected eof"; then
+        fail_with_link "[tls_check close_notify]: the server dropped the connection without a close_notify alert, so a truncated response is indistinguishable from a complete one" "$docs"
+    elif printf '%s' "$out" | grep -qE "DONE|close notify"; then
+        echo "  PASS [tls_check close_notify] (closed at the TLS layer, not just the socket)"
+        PASS=$((PASS + 1))
+    else
+        echo "  NOTE [tls_check close_notify]: could not tell from the client whether the close was clean"
+    fi
+}
+
+# The vulnerability suite, from the tool that already knows them all. Only run
+# for this opt-in profile, where 30s is affordable.
+tls_vuln_scan() {
+    local docs="$1"
+    if [ "${HTTPARENA_SKIP_TLS_SCAN:-0}" = "1" ]; then
+        echo "  SKIP [tls_check vulnerability suite] (HTTPARENA_SKIP_TLS_SCAN=1)"
+        return 0
+    fi
+    local od json; od=$(mktemp -d); json="$od/v.json"
+    timeout 600 docker run --rm --network host -v "$od:/out" "${HTTPARENA_TESTSSL_IMAGE:-drwetter/testssl.sh}" \
+        -U --quiet --color 0 --jsonfile /out/v.json "127.0.0.1:$TLS_CHECK_PORT" >/dev/null 2>&1 || true
+    if [ ! -s "$json" ]; then
+        echo "  SKIP [tls_check vulnerability suite] (testssl.sh unavailable)"
+        rm -rf "$od"; return 0
+    fi
+    local bad
+    bad=$(python3 - "$json" <<'PYEOF'
+import json, sys
+rows = json.load(open(sys.argv[1]))
+rows = rows if isinstance(rows, list) else rows.get("scanResult", [])
+hits = [r.get("id") for r in rows if str(r.get("severity", "")).upper() in ("HIGH", "CRITICAL")]
+print(",".join(sorted(set(h for h in hits if h))))
+PYEOF
+)
+    rm -rf "$od"
+    if [ -n "$bad" ]; then
+        fail_with_link "[tls_check vulnerability suite]: testssl.sh reports HIGH or CRITICAL findings: ${bad//,/, }" "$docs"
+    else
+        echo "  PASS [tls_check vulnerability suite] (no HIGH or CRITICAL finding)"
+        PASS=$((PASS + 1))
     fi
 }
 
@@ -1594,6 +1840,44 @@ if has_test "static"; then
 fi
 
 
+# ───── TLS hardening (opt-in; validation only, nothing is measured) ─────
+
+if [ "$TLS_CHECK_OPTIN" = "yes" ]; then
+    TLS_CHECK_DOCS="$DOCS_BASE/h1/isolated/tls/validation"
+    echo "[test] tls_check — TLS hardening (opt-in)"
+    # The badge answers for this section, so it counts this section's failures.
+    # An unrelated check failing elsewhere says nothing about whether the entry
+    # rotates a certificate.
+    TLS_CHECK_FAIL_BEFORE=$FAIL
+    if [ -z "$TLS_CHECK_CERTS" ]; then
+        echo "  SKIP [tls_check] (no certificate directory to rotate)"
+    elif ! timeout 30 bash -c "until (echo > /dev/tcp/localhost/$TLS_CHECK_PORT) 2>/dev/null; do sleep 1; done"; then
+        fail_with_link "[tls_check listener]: nothing accepted a connection on :$TLS_CHECK_PORT. An entry subscribing to \"tls\" has to open a TLS listener there, separate from :8081, so the section can rotate its certificate without disturbing the other profiles" "$TLS_CHECK_DOCS"
+        TLS_CHECK_RUN=true
+        TLS_CHECK_OK=false
+    else
+
+    # The shared checks first: no point asking whether an entry can rotate a
+    # certificate before knowing it serves the right one to begin with.
+    tls_posture_probe "tls_check" "$TLS_CHECK_PORT" "$TLS_CHECK_DOCS" "http/1.1"
+    tls_quality_probe "tls_check" "$TLS_CHECK_PORT" "$TLS_CHECK_DOCS"
+    tls_sni_probe "$TLS_CHECK_DOCS"
+    tls_resumption_probe "$TLS_CHECK_DOCS"
+    tls_close_notify_probe "$TLS_CHECK_DOCS"
+    tls_rotation_probe "$TLS_CHECK_DOCS"
+    tls_rotation_graceful_probe "$TLS_CHECK_DOCS"
+    tls_vuln_scan "$TLS_CHECK_DOCS"
+    TLS_CHECK_RUN=true
+    # Settled here rather than at the end of the run: a check that fails after
+    # this point is not part of the section and must not decide its badge.
+    if [ "$FAIL" -eq "$TLS_CHECK_FAIL_BEFORE" ]; then
+        TLS_CHECK_OK=true
+    else
+        TLS_CHECK_OK=false
+    fi
+    fi
+fi
+
 # ───── Static Files TLS (GET /static/* over HTTP/1.1 + TLS on :8081) ─────
 
 if has_test "static-tls"; then
@@ -2527,14 +2811,21 @@ fi
 # be earned by the probes, not declared by the entry.
 if [ "$TLS_CHECKED" = "true" ]; then
     mkdir -p "$ROOT_DIR/site/data/tls"
-    if [ "$TLS_CLEAN" = "true" ] && [ "$FAIL" -eq 0 ]; then
+    if [ "$TLS_CLEAN" = "true" ]; then
         tls_state="pass"
     else
         tls_state="fail"
     fi
-    printf '{\n  "framework": "%s",\n  "tls": "%s"\n}\n' \
-        "$FRAMEWORK" "$tls_state" > "$ROOT_DIR/site/data/tls/$FRAMEWORK.json"
-    echo "[info] TLS verdict: $tls_state (site/data/tls/$FRAMEWORK.json)"
+    if [ "$TLS_CHECK_RUN" != "true" ]; then
+        tls_check="none"
+    elif [ "$TLS_CHECK_OK" = "true" ]; then
+        tls_check="pass"
+    else
+        tls_check="fail"
+    fi
+    printf '{\n  "framework": "%s",\n  "tls": "%s",\n  "check": "%s"\n}\n' \
+        "$FRAMEWORK" "$tls_state" "$tls_check" > "$ROOT_DIR/site/data/tls/$FRAMEWORK.json"
+    echo "[info] TLS verdict: $tls_state, opt-in tls_check: $tls_check"
 fi
 
 echo ""

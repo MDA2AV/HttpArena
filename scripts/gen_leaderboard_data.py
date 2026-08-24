@@ -3443,6 +3443,19 @@ def main():
     langcolors = load("langcolors.json") or {}
     current = load("current.json") or {}
 
+    # tls_check verdicts, written by validate.sh when an entry opts in. Keyed by directory name, which is what validate.sh is given;
+    # meta is keyed by display name, so the mapping goes through "dir".
+    tls_check = {}
+    tls_dir = ROOT / "site" / "data" / "tls"
+    if tls_dir.is_dir():
+        for f in sorted(tls_dir.glob("*.json")):
+            try:
+                v = json.loads(f.read_text())
+            except Exception:
+                continue
+            if v.get("check"):
+                tls_check[f.stem] = v["check"]
+
     meta = {n: {"type": m.get("type", "emerging"),
                 "mode": m.get("mode", "standard"),
                 "language": m.get("language", ""),
@@ -3454,7 +3467,9 @@ def main():
                 # Only ever set when the probes ran and were clean. Absent
                 # means unverified, which the board renders as no shield
                 # rather than as a failure.
-                } for n, m in frameworks.items()}
+                # "pass" only when the opt-in section ran and its own checks
+                # were clean. Absent for every entry that did not opt in.
+                "tlsCheck": tls_check.get(m.get("dir", ""))} for n, m in frameworks.items()}
 
     docs_tree, docs_content = build_docs()
 

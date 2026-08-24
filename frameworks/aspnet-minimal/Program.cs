@@ -1,5 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
 
+using HttpArena;
 using HttpArena.Services;
 using HttpArena.Types;
 
@@ -23,6 +24,14 @@ var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
 var hasCert = File.Exists(certPath) && File.Exists(keyPath);
 
+// The opt-in tls_check gets its own listener on :9000 and its own pair at
+// /certs-tls. It rotates certificates under a running server, and pointing it
+// at /certs would move the ground under json-tls, static-tls and the h2
+// profiles in the same validation run.
+var tlsCheckCert = "/certs-tls/server.crt";
+var tlsCheckKey = "/certs-tls/server.key";
+var hasTlsCheck = File.Exists(tlsCheckCert) && File.Exists(tlsCheckKey);
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.Http2.MaxStreamsPerConnection = 256;
@@ -45,12 +54,15 @@ builder.WebHost.ConfigureKestrel(options =>
 
     if (hasCert)
     {
-        var cert = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+        // Re-read when the files change, so a rotation lands without a restart.
+        // The selector below runs per handshake, which is what makes that
+        // visible to the next connection rather than the next process.
+        var cert = new RotatingCertificate(certPath, keyPath);
 
         options.ListenAnyIP(8443, lo =>
         {
             lo.Protocols = HttpProtocols.Http1AndHttp2AndHttp3;
-            lo.UseHttps(cert);
+            lo.UseHttps(https => https.ServerCertificateSelector = (_, _) => cert.Current);
         });
 
         // HTTP/1.1-only TLS listener for the json-tls profile. Kestrel
@@ -59,7 +71,21 @@ builder.WebHost.ConfigureKestrel(options =>
         options.ListenAnyIP(8081, lo =>
         {
             lo.Protocols = HttpProtocols.Http1;
-            lo.UseHttps(cert);
+            lo.UseHttps(https => https.ServerCertificateSelector = (_, _) => cert.Current);
+        });
+    }
+
+    if (hasTlsCheck)
+    {
+        // Same rotating handle, a different pair. The selector runs per
+        // handshake, which is what lets a replaced file reach the next
+        // connection instead of the next process.
+        var checkCert = new RotatingCertificate(tlsCheckCert, tlsCheckKey);
+
+        options.ListenAnyIP(9000, lo =>
+        {
+            lo.Protocols = HttpProtocols.Http1;
+            lo.UseHttps(https => https.ServerCertificateSelector = (_, _) => checkCert.Current);
         });
     }
 });
