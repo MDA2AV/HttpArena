@@ -3,7 +3,7 @@
 //! zix.Http3 (.URING) against the HttpArena HTTP/3 suite
 //! (baseline-h3, static-h3).
 //! QUIC over UDP on PORT, TLS 1.3 inside the handshake
-//! (baked Ed25519 cert at /etc/zix-tls), ALPN h3 negotiated by the engine.
+//! (the RSA cert mounted at /certs), ALPN h3 negotiated by the engine.
 //! /baseline2 sums the query integers, /static serves /data/static
 //! with .br / .gz negotiation against the request accept-encoding.
 //! A one-worker https responder on TCP 8443 answers the bench readiness
@@ -27,8 +27,8 @@ const WORKERS: usize = 0;
 // arrives on TCP 8443 (the two coexist, distinct sockets).
 const PROBE_TCP_PORT: u16 = 8443;
 
-const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
-const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
+const TLS_CERT_DEFAULT: []const u8 = "/certs/server.crt";
+const TLS_KEY_DEFAULT: []const u8 = "/certs/server.key";
 
 // --------------------------------------------------------- //
 

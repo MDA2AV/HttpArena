@@ -7,8 +7,8 @@
 //!
 //! ONE server, two listeners through config.tls_port (dual listener):
 //! - h2c cleartext on PORT (8080). Serves unary-grpc and stream-grpc.
-//! - gRPC over TLS 1.3 on TLS_PORT (8443), ALPN h2, self-signed Ed25519 cert
-//!   baked at /etc/zix-tls, terminated on the same per-core .URING workers
+//! - gRPC over TLS 1.3 on TLS_PORT (8443), ALPN h2, the shared RSA cert
+//!   mounted at /certs, terminated on the same per-core .URING workers
 //!   (no second launch, no doubled workers or fd tables).
 //!   Serves unary-grpc-tls and stream-grpc-tls.
 //!
