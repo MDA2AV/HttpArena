@@ -49,11 +49,18 @@ jobs:
           #     frameworks/ paths, so it validates nothing at all -- which is
           #     what happened to the static staleness probe when it landed.
           #   * otherwise, just the entries the PR touches
+          # The trailing `return 0` matters: the loop's last command is a jq
+          # that exits non-zero for a disabled entry, so without it the
+          # function inherits that status and `changed=$(all_entries)` aborts
+          # the whole step under `bash -e` -- silently, before anything is
+          # echoed. Whether that happens depends on which entry sorts last and
+          # whether it is enabled, which is not a thing to leave to chance.
           all_entries() {
             for m in frameworks/*/meta.json; do
               fw=$(basename "$(dirname "$m")")
               jq -e '.enabled != false' "$m" >/dev/null 2>&1 && echo "$fw"
             done
+            return 0
           }
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
