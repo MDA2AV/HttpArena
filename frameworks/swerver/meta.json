@@ -1,11 +1,18 @@
 {
   "display_name": "swerver",
   "language": "Zig",
-  "type": "engine",
+  "type": "experimental",
+  "mode": "tuned",
   "engine": "swerver",
-  "description": "swerver as an engine: no pre-computed response bodies (pre-encoded registry off), JSON serialized per request through the framework's std.json-based ctx.jsonValue, static files served from an in-memory cache with precompressed .br/.gz negotiation, and the native async PostgreSQL client (pipelined, prepared-statement cache, park/resume) for async-db and fortunes. Single-threaded event loop per worker, SO_REUSEPORT fork fan-out, one multi-listener process for the four protocol ports, native HTTP/1.1 + HTTP/2 + HTTP/3 (QUIC), kqueue/epoll/io_uring backends.",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": false,
+    "response": true
+  },
+  "description": "Experimental Zig web framework built directly on swerver's Router, HandlerContext, middleware, response, and static-file APIs. No pre-computed response bodies (pre-encoded registry off); JSON is serialized per request through ctx.jsonValue; unary gRPC is decoded and encoded per request over h2c and TLS h2; async-db and fortunes use the native async PostgreSQL client (pipelining, prepared-statement cache, park/resume). Single-threaded event loop per worker, SO_REUSEPORT fork fan-out, one multi-listener process for HTTP/1.1, HTTP/2, HTTP/3 (QUIC), kqueue, epoll, and io_uring backends.",
   "repo": "https://github.com/justinGrosvenor/swerver",
-  "enabled": false,
+  "enabled": true,
   "tests": [
     "baseline",
     "pipelined",
@@ -13,7 +20,10 @@
     "json",
     "json-tls",
     "upload",
+    "api-4",
+    "api-16",
     "static",
+    "static-tls",
     "baseline-h2",
     "static-h2",
     "baseline-h2c",
@@ -21,6 +31,8 @@
     "json-comp",
     "baseline-h3",
     "static-h3",
+    "unary-grpc",
+    "unary-grpc-tls",
     "async-db",
     "fortunes"
   ],

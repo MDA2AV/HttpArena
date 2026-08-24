@@ -222,6 +222,92 @@ fn handleUpload(ctx: *router.HandlerContext) response_mod.Response {
     };
 }
 
+// ── Unary gRPC ───────────────────────────────────────────────────
+
+fn grpcError(status: []const u8) response_mod.Response {
+    return .{
+        .status = 200,
+        .headers = &[_]response_mod.Header{
+            .{ .name = "Content-Type", .value = "application/grpc" },
+            .{ .name = "grpc-status", .value = status },
+        },
+        .body = .none,
+    };
+}
+
+fn readProtoVarint(data: []const u8, offset: *usize) ?u64 {
+    var value: u64 = 0;
+    var shift: u6 = 0;
+    var count: usize = 0;
+    while (offset.* < data.len and count < 10) : (count += 1) {
+        const byte = data[offset.*];
+        offset.* += 1;
+        value |= @as(u64, byte & 0x7f) << shift;
+        if (byte & 0x80 == 0) return value;
+        if (shift == 63) return null;
+        shift += 7;
+    }
+    return null;
+}
+
+fn writeProtoVarint(dst: []u8, value_arg: u64) ?usize {
+    var value = value_arg;
+    var written: usize = 0;
+    while (true) {
+        if (written == dst.len) return null;
+        var byte: u8 = @intCast(value & 0x7f);
+        value >>= 7;
+        if (value != 0) byte |= 0x80;
+        dst[written] = byte;
+        written += 1;
+        if (value == 0) return written;
+    }
+}
+
+/// POST /benchmark.BenchmarkService/GetSum — unary gRPC SumRequest → SumReply.
+/// The benchmark schema is two int32 varints (`a` field 1, `b` field 2) and a
+/// single int32 varint result. The gRPC envelope is the standard compression
+/// flag plus a four-byte big-endian protobuf length.
+fn handleGrpcSum(ctx: *router.HandlerContext) response_mod.Response {
+    const request_body = ctx.request.body.sliceOrNull() orelse
+        ctx.request.body.copyTo(ctx.response_buf) orelse return grpcError("8");
+    if (request_body.len < 5 or request_body[0] != 0) return grpcError("3");
+
+    const message_len = std.mem.readInt(u32, request_body[1..5], .big);
+    if (message_len != request_body.len - 5) return grpcError("3");
+    const message = request_body[5..];
+
+    var a: u64 = 0;
+    var b: u64 = 0;
+    var offset: usize = 0;
+    while (offset < message.len) {
+        const tag = readProtoVarint(message, &offset) orelse return grpcError("3");
+        if (tag & 0x7 != 0) return grpcError("3");
+        const value = readProtoVarint(message, &offset) orelse return grpcError("3");
+        switch (tag >> 3) {
+            1 => a = value,
+            2 => b = value,
+            else => {},
+        }
+    }
+
+    const out = ctx.response_buf;
+    out[0] = 0;
+    out[5] = 0x08; // SumReply.result, protobuf field 1 / wire type 0
+    const value_len = writeProtoVarint(out[6..], a +% b) orelse return grpcError("13");
+    const protobuf_len: u32 = @intCast(1 + value_len);
+    std.mem.writeInt(u32, out[1..5], protobuf_len, .big);
+
+    return .{
+        .status = 200,
+        .headers = &[_]response_mod.Header{
+            .{ .name = "Content-Type", .value = "application/grpc" },
+            .{ .name = "grpc-status", .value = "0" },
+        },
+        .body = .{ .bytes = out[0 .. 5 + protobuf_len] },
+    };
+}
+
 /// GET /json/:count?m=X — return `count` items with total = price * quantity * m
 fn handleJson(ctx: *router.HandlerContext) response_mod.Response {
     const count_str = ctx.getParam("count") orelse "50";
@@ -338,6 +424,7 @@ pub fn main(init: std.process.Init) !void {
     try app_router.post("/baseline2", handleBaseline);
     try app_router.get("/json/:count", handleJson);
     try app_router.postDiscard("/upload", handleUpload);
+    try app_router.post("/benchmark.BenchmarkService/GetSum", handleGrpcSum);
     try db_routes.register(&app_router);
 
     if (cfg.workers != 1) {
