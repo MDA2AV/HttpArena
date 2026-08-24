@@ -12,7 +12,7 @@
   "engine": "frankenphp",
   "description": "Laravel 13 served by Laravel Octane on FrankenPHP, the first-party production runtime documented by Laravel. Routing and request handling through the Laravel API, responses via the response()/json() helpers, gzip and brotli through the Caddy encode directive Octane generates.",
   "repo": "https://github.com/laravel/laravel",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",
