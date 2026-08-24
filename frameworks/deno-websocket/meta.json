@@ -6,7 +6,7 @@
   "engine": "deno",
   "description": "Deno WebSocket echo server",
   "repo": "https://github.com/denoland/deno",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "echo-ws",
     "echo-ws-pipeline"

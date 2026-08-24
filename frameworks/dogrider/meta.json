@@ -6,7 +6,7 @@
   "engine": "zerg",
   "description": "GenHTTP websockets with zerg backend",
   "repo": "https://github.com/MDA2AV/dogrider",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "echo-ws",
     "echo-ws-pipeline"

@@ -5,7 +5,7 @@
   "engine": "zix.Http1 URING Dispatch Model",
   "description": "HTTP/1.1 on the zix.Http1 raw engine, .URING dispatch: per-worker SO_REUSEPORT io_uring loops, comptime Router, staged send sink. Dual listener: cleartext 8080, TLS 1.3 on 8081. Database routes run on engine-worker lanes, each worker pumping its own pipelined postgrez connections on its ring with named prepared statements. No response cache and no startup pre-serialization anywhere: json serializes every field per request and compresses per request, static opens the file per request. The crud row cache is the 200 ms cache-aside the crud profile itself defines.",
   "repo": "https://github.com/prothegee/zix",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "pipelined",

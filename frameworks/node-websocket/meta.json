@@ -6,7 +6,7 @@
   "engine": "v8",
   "description": "Node.js WebSocket echo server using ws package",
   "repo": "https://github.com/websockets/ws",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "echo-ws",
     "echo-ws-pipeline"

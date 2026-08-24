@@ -6,7 +6,7 @@
   "engine": "fleck",
   "description": "C# websockets framework",
   "repo": "https://github.com/statianzo/Fleck",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "echo-ws",
     "echo-ws-pipeline"

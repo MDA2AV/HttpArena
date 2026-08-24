@@ -5,7 +5,7 @@
   "engine": "io_uring",
   "description": "TypeV bytecode VM running a Type-C HTTP server.",
   "repo": "https://github.com/praisethemoon/type-project",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "pipelined",
     "baseline",
