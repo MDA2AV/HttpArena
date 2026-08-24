@@ -111,6 +111,21 @@ jobs:
       - name: Validate ${{ matrix.framework }}
         run: ./scripts/validate.sh "${{ matrix.framework }}"
 
+      # validate.sh writes site/data/tls/<entry>.json when it runs the TLS
+      # probes, and the board turns that into the TLS shield. Nothing here
+      # commits it -- one artifact per entry, collected after the run, keeps
+      # 177 parallel jobs from racing each other over one directory. Uploaded
+      # even when validation failed, because a TLS verdict of "fail" is a
+      # result worth having.
+      - name: Collect TLS verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tls-verdict-${{ matrix.framework }}
+          path: site/data/tls/
+          if-no-files-found: ignore
+          retention-days: 7
+
   validate-gateway:
     needs: detect
     if: needs.detect.outputs.gateway != '[]'
