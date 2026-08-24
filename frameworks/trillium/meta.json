@@ -34,12 +34,12 @@
     "static-h3",
     "unary-grpc",
     "unary-grpc-tls",
-    "stream-grpc",
-    "stream-grpc-tls",
     "echo-ws",
     "echo-ws-pipeline",
     "gateway-64",
     "gateway-h3"
   ],
-  "maintainers": ["jbr"]
+  "maintainers": [
+    "jbr"
+  ]
 }

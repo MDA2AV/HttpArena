@@ -8,9 +8,9 @@
   "enabled": true,
   "tests": [
     "unary-grpc",
-    "stream-grpc",
-    "unary-grpc-tls",
-    "stream-grpc-tls"
+    "unary-grpc-tls"
   ],
-  "maintainers": ["prothegee"]
+  "maintainers": [
+    "prothegee"
+  ]
 }

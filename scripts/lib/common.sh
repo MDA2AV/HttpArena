@@ -56,8 +56,6 @@ H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"
 WRK="${WRK:-wrk}"
 WRK_IMAGE="${WRK_IMAGE:-wrk:local}"
 
-GHZ="${GHZ:-ghz}"
-GHZ_IMAGE="${GHZ_IMAGE:-ghz:local}"
 
 LOADGEN_DOCKER="${LOADGEN_DOCKER:-false}"
 

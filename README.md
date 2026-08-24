@@ -50,7 +50,7 @@ The reply states which baseline it used, and profiles the other framework does n
 | Multi-endpoint | `api-4`, `api-16` | Mixed baseline + JSON + async-db at CPU-budget cliffs (4 and 16 logical CPUs, i.e. 2 and 8 full SMT cores) |
 | H/2 | `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c` | Baseline + static over TLS with h2 stream multiplexing; baseline + JSON over cleartext h2 (prior-knowledge, port 8082) |
 | H/3 | `baseline-h3`, `static-h3` | Baseline and static over QUIC with TLS 1.3 |
-| gRPC | `unary-grpc`, `unary-grpc-tls`, `stream-grpc`, `stream-grpc-tls` | Unary and server-streaming gRPC over plaintext HTTP/2 and TLS |
+| gRPC | `unary-grpc`, `unary-grpc-tls` | Unary gRPC over plaintext HTTP/2 and TLS |
 | Gateway | `gateway-64`, `gateway-h3` | Reverse proxy + server stack over HTTP/2 and HTTP/3 with mixed workload |
 | Production Stack | `production-stack` | Four-service architecture: edge + Redis + JWT auth sidecar + server, 10K-item cache-aside, concurrent reads + writes |
 | WebSocket | `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` | Echo throughput across connection counts; 16x batched echo; echo with each connection closed after 10 messages (upgrade-handshake cost) |

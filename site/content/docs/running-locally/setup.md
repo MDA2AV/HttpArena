@@ -22,7 +22,7 @@ The fast road: install nothing, let the scripts build everything.
 ./scripts/benchmark-lite.sh actix baseline
 ```
 
-First invocation builds `gcannon:latest`, `h2load:latest`, `h2load-h3:local`, `wrk:local`, and `ghz:local` from `docker/*.Dockerfile`. `h2load-h3` is the slow one - expect a few minutes while quictls + ngtcp2 compile. Cached after that.
+First invocation builds `gcannon:latest`, `h2load:latest`, `h2load-h3:local`, and `wrk:local` from `docker/*.Dockerfile`. `h2load-h3` is the slow one - expect a few minutes while quictls + ngtcp2 compile. Cached after that.
 
 To use the same docker images with the full `benchmark.sh` driver (all profiles, CPU pinning, etc.) set `LOADGEN_DOCKER=true`:
 
@@ -66,22 +66,6 @@ No distro package exists. Either build it yourself from `docker/h2load-h3.Docker
 sudo apt install wrk
 ```
 
-### ghz - stream-grpc / stream-grpc-tls
-
-```bash
-go install github.com/bojand/ghz/cmd/ghz@latest
-```
-
-## TLS certificates
-
-The repo ships self-signed certs in `certs/` (`server.crt` + `server.key`). Every framework container mounts them at `/certs` automatically - no action needed.
-
-To regenerate them (optional):
-
-```bash
-openssl req -x509 -newkey rsa:2048 -keyout certs/server.key -out certs/server.crt \
-  -days 365 -nodes -subj "/CN=localhost"
-```
 
 ## Permission check
 

@@ -79,8 +79,6 @@ CATALOG = [
     ("gRPC", [
         ("unary-grpc",     "Unary",     "Unary gRPC over plaintext h2.",             [256,1024],[256,1024],True,True,False),
         ("unary-grpc-tls", "Unary TLS", "Unary gRPC over TLS.",                      [256,1024],[256,1024],True,True,False),
-        ("stream-grpc",    "Stream",    "Server-streaming gRPC, plaintext.",         [64],      [64],      True,True,False),
-        ("stream-grpc-tls","Stream TLS","Server-streaming gRPC over TLS.",           [64],      [64],      True,True,False),
     ]),
     ("Gateway", [
         ("gateway-64", "Gateway (H2)", "Reverse proxy + server, mixed h2.",          [256,512,1024],[512,1024],True,True,False),
@@ -124,8 +122,6 @@ PROFILE_DOC = {
     "static-h3":        "test-profiles/h3/static-h3/implementation",
     "unary-grpc":       "test-profiles/grpc/unary/implementation",
     "unary-grpc-tls":   "test-profiles/grpc/unary/implementation",
-    "stream-grpc":      "test-profiles/grpc/stream/implementation",
-    "stream-grpc-tls":  "test-profiles/grpc/stream/implementation",
     "gateway-64":       "test-profiles/gateway/gateway-h2/implementation",
     "gateway-h3":       "test-profiles/gateway/gateway-h3/implementation",
     "production-stack": "test-profiles/gateway/production-stack/implementation",

@@ -20,7 +20,7 @@ Trillium 1.x async Rust web framework on tokio.
 | 8081 | HTTP/1.1 + TLS | ALPN advertises `http/1.1` only |
 | 8443 | HTTP/1.1 + HTTP/2 + HTTP/3 | TLS via ALPN; QUIC via UDP |
 
-gRPC shares these listeners: `unary-grpc` / `stream-grpc` run over h2c prior-knowledge on 8080, and `unary-grpc-tls` / `stream-grpc-tls` over h2-via-ALPN on 8443.
+gRPC shares these listeners: `unary-grpc` runs over h2c prior-knowledge on 8080, and `unary-grpc-tls` over h2-via-ALPN on 8443.
 
 ## Endpoints
 

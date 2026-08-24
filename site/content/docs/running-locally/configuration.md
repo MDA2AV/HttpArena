@@ -26,8 +26,8 @@ In `benchmark-lite.sh`, `THREADS` defaults to `max(nproc / 2, 1)` and `H2THREADS
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc`, `stream-grpc` - prior-knowledge on the same socket). |
-| `H2PORT` | `8443` | HTTPS / HTTP/2 over TLS (`baseline-h2`, `static-h2`, gateway + production-stack), HTTP/3 over QUIC (`baseline-h3`, `static-h3`, `gateway-h3`), and gRPC-TLS (`unary-grpc-tls`, `stream-grpc-tls`). |
+| `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc` - prior-knowledge on the same socket). |
+| `H2PORT` | `8443` | HTTPS / HTTP/2 over TLS (`baseline-h2`, `static-h2`, gateway + production-stack), HTTP/3 over QUIC (`baseline-h3`, `static-h3`, `gateway-h3`), and gRPC-TLS (`unary-grpc-tls`). |
 | `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS, used only by the `json-tls` profile (ALPN `http/1.1`). |
 | `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for the `baseline-h2c` and `json-h2c` profiles. Must be a dedicated listener that refuses HTTP/1.1 - the validator checks this explicitly. |
 
@@ -51,7 +51,6 @@ Each load generator has a pair of variables - native binary name and docker imag
 | `H2LOAD=h2load` | `H2LOAD_IMAGE=h2load:latest` | baseline-h2, static-h2, unary-grpc, unary-grpc-tls, gateway-64 | `docker/h2load.Dockerfile` (Ubuntu + glibc, **not** alpine) |
 | `H2LOAD_H3=h2load-h3` | `H2LOAD_H3_IMAGE=h2load-h3:local` | baseline-h3, static-h3 | `docker/h2load-h3.Dockerfile` (quictls + ngtcp2 + nghttp3) |
 | `WRK=wrk` | `WRK_IMAGE=wrk:local` | static, json-tls | `docker/wrk.Dockerfile` |
-| `GHZ=ghz` | `GHZ_IMAGE=ghz:local` | stream-grpc, stream-grpc-tls, gRPC readiness probe | `docker/ghz.Dockerfile` |
 
 ## Postgres sidecar
 
@@ -89,7 +88,6 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 | `static`, `json-tls` | wrk |
 | `h2`, `static-h2`, `h2c`, `json-h2c`, `gateway-64`, `grpc`, `grpc-tls`, `production-stack` | h2load |
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
-| `grpc-stream`, `grpc-stream-tls` | ghz |
 | everything else (`""`, `pipeline`, `upload`, `api-4`, `api-16`, `async-db`, `crud`, `json`, `json-compressed`, `ws-echo`) | gcannon |
 
 ## Small-machine overrides

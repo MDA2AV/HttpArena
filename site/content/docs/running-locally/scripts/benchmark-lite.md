@@ -15,7 +15,7 @@ weight: 4
 | CPU pinning | Per-profile `--cpuset-cpus` | None - all containers see every core |
 | `THREADS` default | 64 | `nproc / 2` |
 | `H2THREADS` / `H3THREADS` default | 64 / 64 | Same as `THREADS` |
-| Profile set | 26 profiles | 15 - skips `api-4`, `api-16`, `json-tls`, `crud`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `stream-grpc`, `stream-grpc-tls` |
+| Profile set | 24 profiles | 15 - skips `api-4`, `api-16`, `json-tls`, `crud`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack` |
 | Connection counts | Varies (512, 1024, 4096, 16384, …) | One per profile (mostly 512; upload 128; h3 64) |
 | Framework selection | One framework, always | Optional - runs every enabled framework if omitted |
 
@@ -44,7 +44,6 @@ First time you invoke it (or after a `docker rmi`), the script builds every load
 - `h2load:latest` - Ubuntu 24.04 + `apt install nghttp2-client` (glibc build, not musl).
 - `h2load-h3:local` - Ubuntu 24.04 + builds `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` from source. Takes 5–10 minutes the first time.
 - `wrk:local` - Ubuntu 24.04 + `wrk` source build.
-- `ghz:local` - `ghz` from `github.com/bojand/ghz@v0.121.0`, static CGO_DISABLED build.
 
 All images are built **before** the host tuning step, because `system_tune()` restarts the Docker daemon and buildkit DNS takes a few seconds to recover - long enough to break `git clone` inside a build container.
 
@@ -90,7 +89,7 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 
 ## Requirements
 
-The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk, ghz - is built automatically inside containers. You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
+The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk - is built automatically inside containers. You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
 
 Host tuning (CPU governor, sysctl, docker daemon restart, MTU, page-cache drop) is still best-effort - it uses `sudo` where needed and warns + continues if you don't have it. Numbers without tuning are noisier but still usable for relative comparisons.
 

@@ -180,7 +180,7 @@ framework_wait_ready() {
     info "waiting for server..."
 
     case "$endpoint" in
-        grpc|grpc-tls|grpc-stream|grpc-stream-tls)
+        grpc|grpc-tls)
             _wait_grpc "$endpoint" && return 0
             ;;
         h3|static-h3)

@@ -7,8 +7,7 @@
   "repo": "https://github.com/phjeltman/cardigan",
   "enabled": true,
   "tests": [
-    "unary-grpc-tls",
-    "stream-grpc-tls"
+    "unary-grpc-tls"
   ],
   "maintainers": [
     "phjeltman"

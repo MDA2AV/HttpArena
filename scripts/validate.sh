@@ -180,11 +180,10 @@ fi
 # unreachable 8443, and cannot be validated even once the probe below works.
 needs_grpc=false
 needs_grpc_tls=false
-if has_test "unary-grpc" || has_test "stream-grpc" \
-   || has_test "unary-grpc-tls" || has_test "stream-grpc-tls"; then
+if has_test "unary-grpc" || has_test "unary-grpc-tls"; then
     needs_grpc=true
 fi
-if has_test "unary-grpc-tls" || has_test "stream-grpc-tls"; then
+if has_test "unary-grpc-tls"; then
     needs_grpc_tls=true
     needs_h2=true
 fi
@@ -1869,144 +1868,6 @@ if has_test "unary-grpc-tls"; then
     grpc_check_sum "GetSum over h2+TLS (second random pair)" \
         "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum" "$GRPC_TLS_DOCS" \
         -k --http2
-fi
-
-# ───── gRPC server streaming (benchmark.BenchmarkService/StreamSum) ─────
-#
-# StreamRequest{a,b,count} -> the server emits `count` SumReply frames on one
-# stream, the i-th carrying `result = a + b + i` (docs: test-profiles/grpc/
-# stream/implementation). ghz drives this in the benchmark; here the reply
-# frames arrive concatenated in the response body, so correctness is "exactly
-# `count` frames carrying sum+0 .. sum+count-1, in order".
-#
-# Asserting the sequence rather than just the frame count is deliberate: a
-# server that emits `count` copies of a single precomputed reply skips the
-# per-message work the profile exists to measure, and would otherwise pass.
-
-# Encode a StreamRequest frame for (a, b, count).
-grpc_encode_stream_req() {
-    python3 -c '
-import sys, struct
-def varint(n):
-    out = bytearray()
-    while True:
-        b = n & 0x7f
-        n >>= 7
-        out.append(b | 0x80 if n else b)
-        if not n:
-            return bytes(out)
-msg = (b"\x08" + varint(int(sys.argv[1]))
-       + b"\x10" + varint(int(sys.argv[2]))
-       + b"\x18" + varint(int(sys.argv[3])))
-sys.stdout.buffer.write(b"\x00" + struct.pack(">I", len(msg)) + msg)
-' "$1" "$2" "$3"
-}
-
-# Verify a body of concatenated reply frames against the expected sequence.
-# Prints "OK" on success, otherwise ERR:<reason> describing the first problem.
-# Args: <body_file> <expected_base_sum> <expected_count>
-grpc_decode_stream() {
-    python3 -c '
-import sys
-data = open(sys.argv[1], "rb").read()
-base, count = int(sys.argv[2]), int(sys.argv[3])
-vals, i = [], 0
-while i < len(data):
-    if i + 5 > len(data):
-        print("ERR:trailing-bytes(%d)" % (len(data) - i)); sys.exit(0)
-    n = int.from_bytes(data[i+1:i+5], "big")
-    msg = data[i+5:i+5+n]
-    if len(msg) != n:
-        print("ERR:truncated-frame(want=%d,got=%d)" % (n, len(msg))); sys.exit(0)
-    i += 5 + n
-    if not msg:
-        vals.append(0); continue
-    if msg[0] != 0x08:
-        print("ERR:tag=0x%02x" % msg[0]); sys.exit(0)
-    val = shift = 0
-    j = 1
-    while j < len(msg):
-        byte = msg[j]; j += 1
-        val |= (byte & 0x7f) << shift
-        if not byte & 0x80:
-            break
-        shift += 7
-    vals.append(val)
-if len(vals) != count:
-    print("ERR:emitted %d frame(s), expected %d" % (len(vals), count)); sys.exit(0)
-expected = [base + k for k in range(count)]
-if vals != expected:
-    if len(set(vals)) == 1:
-        print("ERR:all %d frames carried %d - expected the sequence %d..%d "
-              "(result = a+b+i)" % (len(vals), vals[0], base, base + count - 1))
-    else:
-        print("ERR:got %s, expected %s" % (vals, expected))
-    sys.exit(0)
-print("OK")
-' "$1" "$2" "$3"
-}
-
-# Args: <label> <url> <docs> <count|auto> [curl args...]
-# "auto" randomizes count so it can't be special-cased either.
-grpc_check_stream() {
-    local label="$1" url="$2" docs="$3" count="$4"
-    shift 4
-    local a=$((RANDOM % 900 + 100))
-    local b=$((RANDOM % 900 + 100))
-    [ "$count" = "auto" ] && count=$((RANDOM % 8 + 3))
-    local expected=$((a + b))
-    local req hdr body proto status verdict
-
-    req=$(mktemp); hdr=$(mktemp); body=$(mktemp)
-    grpc_encode_stream_req "$a" "$b" "$count" > "$req"
-    proto=$(curl -s --max-time 30 "$@" \
-        -X POST --data-binary "@$req" \
-        -H 'content-type: application/grpc' -H 'te: trailers' \
-        -D "$hdr" -o "$body" -w '%{http_version}' "$url" 2>/dev/null || echo "0")
-
-    status=$({ grep -i '^grpc-status:' "$hdr" || true; } | tail -1 | tr -d '\r' | awk '{print $2}')
-    verdict=$(grpc_decode_stream "$body" "$expected" "$count")
-
-    if [ "$proto" != "2" ]; then
-        fail_with_link "[$label]: responded over HTTP/$proto, expected HTTP/2 — gRPC requires HTTP/2" "$docs"
-    elif [ -n "$status" ] && [ "$status" != "0" ]; then
-        local gmsg
-        gmsg=$({ grep -i '^grpc-message:' "$hdr" || true; } | tail -1 | tr -d '\r' | cut -d' ' -f2-)
-        fail_with_link "[$label]: grpc-status=$status${gmsg:+ ($gmsg)}, expected 0" "$docs"
-    elif [ "$verdict" = "OK" ]; then
-        echo "  PASS [$label] (a=$a b=$b count=$count -> $expected..$((expected + count - 1)))"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[$label]: StreamSum(a=$a, b=$b, count=$count) — ${verdict#ERR:}" "$docs"
-    fi
-    rm -f "$req" "$hdr" "$body"
-}
-
-if has_test "stream-grpc"; then
-    GRPC_STREAM_DOCS="$DOCS_BASE/grpc/stream/validation"
-    echo "[test] stream-grpc endpoint (h2c on :$PORT)"
-    grpc_check_stream "StreamSum over h2c" \
-        "http://localhost:$PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_DOCS" \
-        auto --http2-prior-knowledge
-
-    # The benchmark drives count=5000. A framework that truncates long streams
-    # or drops trailing messages under flow control still passes the short
-    # check above, so exercise the real depth once.
-    grpc_check_stream "StreamSum over h2c (count=5000, benchmark depth)" \
-        "http://localhost:$PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_DOCS" \
-        5000 --http2-prior-knowledge
-fi
-
-if has_test "stream-grpc-tls"; then
-    GRPC_STREAM_TLS_DOCS="$DOCS_BASE/grpc/stream/validation"
-    echo "[test] stream-grpc-tls endpoint (h2+TLS on :$H2PORT)"
-    grpc_check_stream "StreamSum over h2+TLS" \
-        "https://localhost:$H2PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_TLS_DOCS" \
-        auto -k --http2
-
-    grpc_check_stream "StreamSum over h2+TLS (count=5000, benchmark depth)" \
-        "https://localhost:$H2PORT/benchmark.BenchmarkService/StreamSum" "$GRPC_STREAM_TLS_DOCS" \
-        5000 -k --http2
 fi
 
 # ───── WebSocket Echo (ws://localhost/ws) ─────

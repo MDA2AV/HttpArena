@@ -20,23 +20,43 @@
   "x-tagGroups": [
     {
       "name": "HTTP/1.1",
-      "tags": ["Baseline", "Static Files", "Upload", "JSON Processing", "Async Database", "CRUD", "Pipelined"]
+      "tags": [
+        "Baseline",
+        "Static Files",
+        "Upload",
+        "JSON Processing",
+        "Async Database",
+        "CRUD",
+        "Pipelined"
+      ]
     },
     {
       "name": "HTTP/2",
-      "tags": ["H2 Baseline", "H2 Static Files", "H2 JSON"]
+      "tags": [
+        "H2 Baseline",
+        "H2 Static Files",
+        "H2 JSON"
+      ]
     },
     {
       "name": "HTTP/3",
-      "tags": ["H3 Baseline", "H3 Static Files"]
+      "tags": [
+        "H3 Baseline",
+        "H3 Static Files"
+      ]
     },
     {
       "name": "gRPC",
-      "tags": ["gRPC Unary", "gRPC Streaming"]
+      "tags": [
+        "gRPC Unary",
+        "gRPC Streaming"
+      ]
     },
     {
       "name": "WebSocket",
-      "tags": ["WebSocket Echo"]
+      "tags": [
+        "WebSocket Echo"
+      ]
     }
   ],
   "servers": [
@@ -163,21 +183,13 @@
       }
     },
     {
-      "name": "gRPC Streaming",
-      "description": "Server-streaming gRPC RPC (`StreamSum`) over h2c (port 8080) and TLS (port 8443). Each call emits 5,000 reply messages; the benchmark records messages/sec. Load generator: ghz.",
-      "externalDocs": {
-        "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/grpc/stream/"
-      }
-    },
-    {
       "name": "WebSocket Echo",
       "description": "WebSocket echo benchmark. Each connection upgrades via HTTP/1.1 then exchanges text frames. Note: the WebSocket message exchange after the `101` response cannot be modeled in OpenAPI 3.0 — only the HTTP upgrade handshake is documented here.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://www.http-arena.com/docs/test-profiles/ws/echo/"
       }
-    },
+    }
   ],
   "paths": {
     "/baseline11": {
@@ -406,13 +418,18 @@
             "headers": {
               "Content-Type": {
                 "description": "MIME type matching the file extension (e.g. `text/css`, `application/javascript`, `image/webp`)",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               },
               "Content-Encoding": {
                 "description": "Compression applied, if any. Only present when the response body is compressed.",
                 "schema": {
                   "type": "string",
-                  "enum": ["br", "gzip"]
+                  "enum": [
+                    "br",
+                    "gzip"
+                  ]
                 }
               }
             },
@@ -518,7 +535,10 @@
                 "description": "Compression applied (json-compressed profile only). Absent when client did not send `Accept-Encoding`.",
                 "schema": {
                   "type": "string",
-                  "enum": ["gzip", "br"]
+                  "enum": [
+                    "gzip",
+                    "br"
+                  ]
                 }
               }
             },
@@ -536,8 +556,14 @@
                       "price": 328,
                       "quantity": 15,
                       "active": true,
-                      "tags": ["fast", "new"],
-                      "rating": { "score": 48, "count": 127 },
+                      "tags": [
+                        "fast",
+                        "new"
+                      ],
+                      "rating": {
+                        "score": 48,
+                        "count": 127
+                      },
                       "total": 14760
                     }
                   ],
@@ -618,8 +644,14 @@
                       "price": 30,
                       "quantity": 5,
                       "active": true,
-                      "tags": ["fast", "new"],
-                      "rating": { "score": 42, "count": 127 }
+                      "tags": [
+                        "fast",
+                        "new"
+                      ],
+                      "rating": {
+                        "score": 42,
+                        "count": 127
+                      }
                     }
                   ],
                   "count": 1
@@ -699,8 +731,14 @@
                       "price": 30,
                       "quantity": 5,
                       "active": true,
-                      "tags": ["fast", "new"],
-                      "rating": { "score": 42, "count": 127 }
+                      "tags": [
+                        "fast",
+                        "new"
+                      ],
+                      "rating": {
+                        "score": 42,
+                        "count": 127
+                      }
                     }
                   ],
                   "total": 10,
@@ -787,7 +825,10 @@
                 "description": "`MISS` when the item was fetched from Postgres, `HIT` when served from cache",
                 "schema": {
                   "type": "string",
-                  "enum": ["MISS", "HIT"]
+                  "enum": [
+                    "MISS",
+                    "HIT"
+                  ]
                 }
               }
             },
@@ -803,8 +844,14 @@
                   "price": 30,
                   "quantity": 5,
                   "active": true,
-                  "tags": ["fast", "new"],
-                  "rating": { "score": 42, "count": 127 }
+                  "tags": [
+                    "fast",
+                    "new"
+                  ],
+                  "rating": {
+                    "score": 42,
+                    "count": 127
+                  }
                 }
               }
             }
@@ -887,26 +934,44 @@
             "name": "Upgrade",
             "in": "header",
             "required": true,
-            "schema": { "type": "string", "enum": ["websocket"] }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "websocket"
+              ]
+            }
           },
           {
             "name": "Connection",
             "in": "header",
             "required": true,
-            "schema": { "type": "string", "enum": ["Upgrade"] }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Upgrade"
+              ]
+            }
           },
           {
             "name": "Sec-WebSocket-Key",
             "in": "header",
             "required": true,
             "description": "Base64-encoded 16-byte random nonce",
-            "schema": { "type": "string", "example": "dGhlIHNhbXBsZSBub25jZQ==" }
+            "schema": {
+              "type": "string",
+              "example": "dGhlIHNhbXBsZSBub25jZQ=="
+            }
           },
           {
             "name": "Sec-WebSocket-Version",
             "in": "header",
             "required": true,
-            "schema": { "type": "string", "enum": ["13"] }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "13"
+              ]
+            }
           }
         ],
         "responses": {
@@ -914,14 +979,27 @@
             "description": "Switching Protocols — WebSocket connection established. The connection switches to WebSocket framing; subsequent communication is not HTTP.",
             "headers": {
               "Upgrade": {
-                "schema": { "type": "string", "enum": ["websocket"] }
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "websocket"
+                  ]
+                }
               },
               "Connection": {
-                "schema": { "type": "string", "enum": ["Upgrade"] }
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "Upgrade"
+                  ]
+                }
               },
               "Sec-WebSocket-Accept": {
                 "description": "SHA-1 of the client nonce concatenated with the WebSocket GUID, base64-encoded",
-                "schema": { "type": "string", "example": "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=" }
+                "schema": {
+                  "type": "string",
+                  "example": "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+                }
               }
             }
           }
@@ -955,11 +1033,21 @@
             "description": "gRPC OK (grpc-status: 0). Response body is a protobuf-encoded `SumReply`.",
             "headers": {
               "content-type": {
-                "schema": { "type": "string", "enum": ["application/grpc"] }
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "application/grpc"
+                  ]
+                }
               },
               "grpc-status": {
                 "description": "gRPC status code. `0` = OK.",
-                "schema": { "type": "string", "enum": ["0"] }
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "0"
+                  ]
+                }
               }
             },
             "content": {
@@ -972,51 +1060,7 @@
           }
         }
       }
-    },
-    "/benchmark.BenchmarkService/StreamSum": {
-      "post": {
-        "tags": [
-          "gRPC Streaming"
-        ],
-        "summary": "gRPC server-streaming — emit N reply messages",
-        "description": "Server-streaming gRPC RPC. For each incoming `StreamRequest`, the server emits exactly `request.count` `SumReply` messages, each carrying `result = request.a + request.b + i` for `i` in `0..count-1`, then closes the stream.\n\nThe load generator (ghz) opens many concurrent streams. The benchmark records **messages per second** (calls/sec × msgs/call) rather than calls/sec, because a single call can deliver thousands of protobuf messages through the framework's stream writer.\n\n```protobuf\nservice BenchmarkService {\n  rpc StreamSum (StreamRequest) returns (stream SumReply);\n}\nmessage StreamRequest { int32 a = 1; int32 b = 2; int32 count = 3; }\nmessage SumReply      { int32 result = 1; }\n```\n\nAvailable on both **port 8080** (h2c, profile `stream-grpc`) and **port 8443** (TLS, profile `stream-grpc-tls`).\n\n**Production:** Must use the framework's standard gRPC server implementation. No bypassing of protobuf serialization or HTTP/2 framing.\n\n**Tuned:** May tune HTTP/2 frame sizes, flow-control window sizes, and server concurrency limits.",
-        "operationId": "grpcStreamSum",
-        "externalDocs": {
-          "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/grpc/stream/implementation/"
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/grpc": {
-              "schema": {
-                "$ref": "#/components/schemas/StreamRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "gRPC OK (grpc-status: 0). The response is a server-side stream: `request.count` `SumReply` DATA frames, each carrying `result = a + b + i`.",
-            "headers": {
-              "content-type": {
-                "schema": { "type": "string", "enum": ["application/grpc"] }
-              },
-              "grpc-status": {
-                "schema": { "type": "string", "enum": ["0"] }
-              }
-            },
-            "content": {
-              "application/grpc": {
-                "schema": {
-                  "$ref": "#/components/schemas/SumReply"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
+    }
   },
   "components": {
     "schemas": {
@@ -1024,7 +1068,10 @@
         "type": "object",
         "description": "Aggregated item rating, restructured from the `rating_score` and `rating_count` columns in Postgres.",
         "additionalProperties": false,
-        "required": ["score", "count"],
+        "required": [
+          "score",
+          "count"
+        ],
         "properties": {
           "score": {
             "type": "integer",
@@ -1042,7 +1089,16 @@
         "type": "object",
         "description": "A single item as stored in the Postgres `items` table. Used in async-db, CRUD, and production-stack responses.",
         "additionalProperties": false,
-        "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating"],
+        "required": [
+          "id",
+          "name",
+          "category",
+          "price",
+          "quantity",
+          "active",
+          "tags",
+          "rating"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -1076,7 +1132,10 @@
             "items": {
               "type": "string"
             },
-            "example": ["fast", "new"]
+            "example": [
+              "fast",
+              "new"
+            ]
           },
           "rating": {
             "$ref": "#/components/schemas/Rating"
@@ -1087,7 +1146,17 @@
         "type": "object",
         "description": "An item from the JSON dataset with a per-request computed `total` field. Used only in `/json/{count}` and `/public/json/{count}` responses.",
         "additionalProperties": false,
-        "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating", "total"],
+        "required": [
+          "id",
+          "name",
+          "category",
+          "price",
+          "quantity",
+          "active",
+          "tags",
+          "rating",
+          "total"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -1121,7 +1190,10 @@
             "items": {
               "type": "string"
             },
-            "example": ["fast", "new"]
+            "example": [
+              "fast",
+              "new"
+            ]
           },
           "rating": {
             "$ref": "#/components/schemas/Rating"
@@ -1138,7 +1210,10 @@
         "type": "object",
         "description": "Response from `GET /json/{count}` and `GET /public/json/{count}`. The `count` field must equal the route parameter and match `items.length`.",
         "additionalProperties": false,
-        "required": ["items", "count"],
+        "required": [
+          "items",
+          "count"
+        ],
         "properties": {
           "items": {
             "type": "array",
@@ -1158,7 +1233,10 @@
         "type": "object",
         "description": "Response from `GET /async-db`. The `count` field must be dynamically computed from the number of returned rows, not hardcoded. Returns `{\"items\":[],\"count\":0}` when no rows match or the database is unavailable.",
         "additionalProperties": false,
-        "required": ["items", "count"],
+        "required": [
+          "items",
+          "count"
+        ],
         "properties": {
           "items": {
             "type": "array",
@@ -1178,7 +1256,12 @@
         "type": "object",
         "description": "Paginated response from `GET /crud/items`. Uses load-more semantics: `total` equals `items.length` (items in this response), not the full filter row count.",
         "additionalProperties": false,
-        "required": ["items", "total", "page", "limit"],
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ],
         "properties": {
           "items": {
             "type": "array",
@@ -1208,7 +1291,13 @@
         "type": "object",
         "description": "Request body for `POST /crud/items`. All fields are required. The item is inserted with `ON CONFLICT (id) DO UPDATE` (upsert).",
         "additionalProperties": false,
-        "required": ["id", "name", "category", "price", "quantity"],
+        "required": [
+          "id",
+          "name",
+          "category",
+          "price",
+          "quantity"
+        ],
         "properties": {
           "id": {
             "type": "integer",
@@ -1239,7 +1328,11 @@
         "type": "object",
         "description": "Request body for `PUT /crud/items/{id}` and `POST /api/items/{id}`. Updates `name`, `price`, and `quantity`. The cache entry for the item ID is invalidated on success.",
         "additionalProperties": false,
-        "required": ["name", "price", "quantity"],
+        "required": [
+          "name",
+          "price",
+          "quantity"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -1261,20 +1354,43 @@
         "type": "object",
         "description": "Protobuf `SumRequest` message used by both `GetSum` (unary) and `StreamSum` (streaming) RPCs. Over the wire this is a binary gRPC DATA frame — the JSON representation here is for documentation only.\n\n```protobuf\nmessage SumRequest { int32 a = 1; int32 b = 2; }\n```",
         "additionalProperties": false,
-        "required": ["a", "b"],
+        "required": [
+          "a",
+          "b"
+        ],
         "properties": {
-          "a": { "type": "integer", "format": "int32", "example": 1 },
-          "b": { "type": "integer", "format": "int32", "example": 2 }
+          "a": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "b": {
+            "type": "integer",
+            "format": "int32",
+            "example": 2
+          }
         }
       },
       "StreamRequest": {
         "type": "object",
         "description": "Protobuf `StreamRequest` message for the `StreamSum` server-streaming RPC. Over the wire this is a binary gRPC DATA frame.\n\n```protobuf\nmessage StreamRequest { int32 a = 1; int32 b = 2; int32 count = 3; }\n```",
         "additionalProperties": false,
-        "required": ["a", "b", "count"],
+        "required": [
+          "a",
+          "b",
+          "count"
+        ],
         "properties": {
-          "a": { "type": "integer", "format": "int32", "example": 1 },
-          "b": { "type": "integer", "format": "int32", "example": 2 },
+          "a": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          },
+          "b": {
+            "type": "integer",
+            "format": "int32",
+            "example": 2
+          },
           "count": {
             "type": "integer",
             "format": "int32",
@@ -1287,9 +1403,15 @@
         "type": "object",
         "description": "Protobuf `SumReply` response message. For `GetSum`: `result = a + b`. For `StreamSum`: `result = a + b + i` for the i-th message (0-indexed). Over the wire this is a binary gRPC DATA frame.\n\n```protobuf\nmessage SumReply { int32 result = 1; }\n```",
         "additionalProperties": false,
-        "required": ["result"],
+        "required": [
+          "result"
+        ],
         "properties": {
-          "result": { "type": "integer", "format": "int32", "example": 3 }
+          "result": {
+            "type": "integer",
+            "format": "int32",
+            "example": 3
+          }
         }
       }
     }

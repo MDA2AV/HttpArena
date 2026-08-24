@@ -50,7 +50,6 @@ docker build -t gcannon:latest    -f docker/gcannon.Dockerfile    docker
 docker build -t h2load:latest     -f docker/h2load.Dockerfile     docker
 docker build -t h2load-h3:local   -f docker/h2load-h3.Dockerfile  docker
 docker build -t wrk:local         -f docker/wrk.Dockerfile        docker
-docker build -t ghz:local         -f docker/ghz.Dockerfile        docker
 ```
 
 The slow one is `h2load-h3:local` (compiles quictls + nghttp3 + ngtcp2 + nghttp2 --enable-http3 from source - 5–10 minutes). Everything else is under a minute.
@@ -172,34 +171,6 @@ docker run $DFLAGS wrk:local \
     http://localhost:8080/baseline11?a=1\&b=1
 ```
 
-### ghz - gRPC streaming
-
-ghz needs the `.proto` file mounted in. It emits a big text summary by default; add `--format=json` for scriptable output.
-
-```bash
-# Unary, h2c
-docker run $DFLAGS \
-    -v "$(pwd)/requests:/requests:ro" \
-    ghz:local \
-    --insecure --proto /requests/benchmark.proto \
-    --call benchmark.BenchmarkService/GetSum \
-    -d '{"a":1,"b":2}' \
-    --connections 64 -c 256 -z 5s \
-    localhost:8080
-
-# Bidi-ish streaming: one call fans out 5000 messages, 64 concurrent connections
-docker run $DFLAGS \
-    -v "$(pwd)/requests:/requests:ro" \
-    ghz:local \
-    --insecure --proto /requests/benchmark.proto \
-    --call benchmark.BenchmarkService/StreamSum \
-    -d '{"a":1,"b":2,"count":5000}' \
-    --connections 64 -c 256 -n 50000 \
-    localhost:8080
-```
-
-For TLS (`grpc-tls` / `stream-grpc-tls`) use `--skipTLS` instead of `--insecure` and point at port `8443`.
-
 ## CPU pinning (optional)
 
 The benchmark script pins the load generator to one half of the CPU topology via `--cpuset-cpus` to avoid stealing cycles from the framework. For a manual run you can do the same:
@@ -229,7 +200,7 @@ Mount the directory read-only into any tool: `-v "$(pwd)/requests:/requests:ro"`
 
 ## Parsing the output
 
-The benchmark driver's parsers live in `scripts/lib/tools/*.sh` - `gcannon_parse`, `h2load_parse`, `h2load_h3_parse`, `wrk_parse`, `ghz_parse`. If you want to script on top of a manual run, source one of those modules:
+The benchmark driver's parsers live in `scripts/lib/tools/*.sh` - `gcannon_parse`, `h2load_parse`, `h2load_h3_parse`, `wrk_parse`. If you want to script on top of a manual run, source one of those modules:
 
 ```bash
 source scripts/lib/common.sh

@@ -3,7 +3,7 @@
   "language": "Rust",
   "type": "engine",
   "engine": "io_uring",
-  "description": "sark \u2014 Rust HTTP on the dope io_uring runtime: thread-per-core, zero-copy parsing, type-safe routing, cartel-pg for Postgres. No serde, no tokio, no Arc/atomic.",
+  "description": "sark — Rust HTTP on the dope io_uring runtime: thread-per-core, zero-copy parsing, type-safe routing, cartel-pg for Postgres. No serde, no tokio, no Arc/atomic.",
   "repo": "https://github.com/dope-rs/dope",
   "enabled": false,
   "tests": [
@@ -27,9 +27,7 @@
     "echo-ws",
     "echo-ws-pipeline",
     "unary-grpc",
-    "stream-grpc",
-    "unary-grpc-tls",
-    "stream-grpc-tls"
+    "unary-grpc-tls"
   ],
   "maintainers": [
     "inq"

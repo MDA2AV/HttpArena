@@ -23,7 +23,7 @@ What you need installed before running HttpArena benchmarks locally.
 - **bash ≥ 4.4** - the driver uses associative arrays.
 - **python3** - for result JSON aggregation (`scripts/rebuild_site_data.py`) and `meta.json` parsing.
 - **curl** - readiness probes.
-- **git** - image builds clone gcannon / nghttp2 / ghz source from GitHub.
+- **git** - image builds clone gcannon / nghttp2 source from GitHub.
 
 ## Choosing a script
 
@@ -33,7 +33,7 @@ What you need installed before running HttpArena benchmarks locally.
 | Load generators | Native binaries by default, docker mode opt-in (`LOADGEN_DOCKER=true`) | **Always** docker, forced |
 | CPU pinning | Per-profile `--cpuset-cpus` | None (container gets all cores) |
 | Threads | 64 (h1) / 128 (h2) / 64 (h3) - fixed | `nproc / 2`, or `--load-threads N` |
-| Profiles | All 21 | Subset (no api-4/16, json-tls, gateway-64, stream-grpc*) |
+| Profiles | All 21 | Subset (no api-4/16, json-tls, gateway-64) |
 | Host tuning (CPU gov, sysctl, MTU, daemon restart) | Yes | Yes |
 | Root needed | For tuning + docker | For tuning + docker |
 
@@ -43,7 +43,7 @@ Pick `benchmark-lite.sh` if you just want to sanity-check a framework; pick `ben
 
 Just Docker, bash, python3. Every load-generator image is built from `docker/*.Dockerfile` on first run (first invocation takes a few minutes while `quictls` + `ngtcp2` compile for `h2load-h3`; cached after that).
 
-You do **not** need `gcannon`, `h2load`, `h2load-h3`, `wrk`, or `ghz` installed on the host. You do not need a specific kernel for gcannon - the container already carries `liburing` 2.9.
+You do **not** need `gcannon`, `h2load`, `h2load-h3`, or `wrk` installed on the host. You do not need a specific kernel for gcannon - the container already carries `liburing` 2.9.
 
 ## benchmark.sh requirements (native load-generator mode)
 
@@ -73,11 +73,6 @@ For the default (native) mode, install each tool the host binary. If anything is
   sudo apt install wrk
   ```
 
-- **ghz** - gRPC streaming benchmarks.
-
-  ```bash
-  go install github.com/bojand/ghz/cmd/ghz@latest
-  ```
 
 ## Permission notes
 

@@ -28,7 +28,6 @@ source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
 source "$SOURCE_DIR/tools/wrk.sh"
-source "$SOURCE_DIR/tools/ghz.sh"
 
 cd "$ROOT_DIR"
 validate_profiles
@@ -130,9 +129,9 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     GHZ_CMD="docker run ${DOCKER_FLAGS[*]} $GHZ_IMAGE"
 
     # Parallel arrays — images can't be packed into "img:dockerfile" strings
-    # because image names already contain ':' (e.g. ghz:local, wrk:local).
+    # because image names already contain ':' (e.g. wrk:local, h2load:local).
     _loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE" "$GHZ_IMAGE")
-    _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile" "ghz.Dockerfile")
+    _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile")
     for i in "${!_loadgen_images[@]}"; do
         img="${_loadgen_images[$i]}"
         df="${_loadgen_files[$i]}"
@@ -168,7 +167,7 @@ for t in baseline pipelined limited-conn json json-comp json-tls upload \
          api-4 api-16 static static-tls async-db \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
-         unary-grpc unary-grpc-tls stream-grpc stream-grpc-tls \
+         unary-grpc unary-grpc-tls \
          echo-ws echo-ws-pipeline echo-ws-limited; do
     if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
 done
@@ -270,11 +269,6 @@ run_one() {
     local -a gc_args
     mapfile -t gc_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$DURATION" "$PROF_REQ")
 
-    # ghz needs a warm-up before the first measurement run.
-    if [ "$tool" = "ghz" ]; then
-        ghz_warmup "$CONNS"
-    fi
-
     # ── Best-of-N runs ──────────────────────────────────────────────────
     #
     # best_rps starts at -1 so that the *first* measurement always wins,
@@ -298,7 +292,7 @@ run_one() {
         output=$("${tool//-/_}_run" "${gc_args[@]}")
         stats_stop
 
-        # Print trimmed output (drop ghz/h2load-h3 per-thread spawn chatter).
+        # Print trimmed output (drop h2load-h3 per-thread spawn chatter).
         echo "$output" | grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' || true
         info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"

@@ -129,7 +129,7 @@ gcannon_parse() {
     local endpoint="$1" output="$2"
 
     # rps — compute from 2xx (or 3xx for caching, or WS frames for ws-echo)
-    # divided by the actual measured duration ghz-style.
+    # divided by the actual measured duration.
     #
     # grep + head don't fail on empty input, so their fallbacks never fire —
     # the `:-` default on the variable itself is what guarantees a number.

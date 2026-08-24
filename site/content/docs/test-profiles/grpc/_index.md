@@ -9,5 +9,4 @@ gRPC test profiles measure framework performance using Protocol Buffers over HTT
 
 {{< cards >}}
   {{< card link="unary" title="Unary" subtitle="Single unary RPC throughput - GetSum request/response over h2c and h2 TLS." icon="globe-alt" >}}
-  {{< card link="stream" title="Server Streaming" subtitle="Server-streaming throughput in messages/sec - one request, N replies per call over h2c and h2 TLS." icon="globe-alt" >}}
 {{< /cards >}}

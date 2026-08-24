@@ -65,8 +65,6 @@ Create a `meta.json` file in your framework directory:
 | `production-stack` | HTTP/2 | Compose stack: edge + JWT auth sidecar + Redis + server (TLS, port 8443) |
 | `unary-grpc` | gRPC | `BenchmarkService/GetSum` (h2c, port 8080) |
 | `unary-grpc-tls` | gRPC | `BenchmarkService/GetSum` (TLS, port 8443) |
-| `stream-grpc` | gRPC | `BenchmarkService/StreamSum` (h2c, port 8080) |
-| `stream-grpc-tls` | gRPC | `BenchmarkService/StreamSum` (TLS, port 8443) |
 | `echo-ws` | WebSocket | `/ws` echo (port 8080) |
 
 Only include profiles your framework supports. Frameworks missing a profile simply don't appear in that profile's leaderboard.

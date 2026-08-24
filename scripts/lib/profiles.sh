@@ -32,8 +32,6 @@ declare -A PROFILES=(
     [static-h3]="1|0|0-31,64-95|64|static-h3"
     [unary-grpc]="1|0|0-31,64-95|256,1024|grpc"
     [unary-grpc-tls]="1|0|0-31,64-95|256,1024|grpc-tls"
-    [stream-grpc]="1|0|0-31,64-95|64|grpc-stream"
-    [stream-grpc-tls]="1|0|0-31,64-95|64|grpc-stream-tls"
     [gateway-64]="1|0|0-31,64-95|512,1024|gateway-64"
     [gateway-h3]="1|0|0-31,64-95|64,256|gateway-h3"
     [production-stack]="1|0|0-31,64-95|256,1024|production-stack"
@@ -54,7 +52,6 @@ PROFILE_ORDER=(
     gateway-64 gateway-h3
     production-stack
     unary-grpc unary-grpc-tls
-    stream-grpc stream-grpc-tls
     echo-ws echo-ws-pipeline echo-ws-limited
 )
 
@@ -73,7 +70,7 @@ parse_profile() {
 }
 
 # Map an endpoint to the tool name that handles it.
-# Returns one of: gcannon, wrk, h2load, h2load-h3, ghz
+# Returns one of: gcannon, wrk, h2load, h2load-h3
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
@@ -82,8 +79,6 @@ endpoint_tool() {
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3
         h3|static-h3|gateway-h3)            echo "h2load-h3" ;;
-        # ghz for real gRPC (streaming especially)
-        grpc-stream|grpc-stream-tls)        echo "ghz" ;;
         # gcannon for everything else (h1, upload, api-4, api-16, async-db, ws, ...)
         *)                                  echo "gcannon" ;;
     esac

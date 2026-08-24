@@ -29,8 +29,8 @@ Five load generators are dispatched per profile - each one is built for a specif
 
 | Parameter | Value |
 |-----------|-------|
-| Load generators | `gcannon` (HTTP/1.1, upload, WebSocket), `wrk` (static + json-tls rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `ghz` (gRPC) |
-| Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`); `ghz` scales workers dynamically as `connections × 4` |
+| Load generators | `gcannon` (HTTP/1.1, upload, WebSocket), `wrk` (static + json-tls rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC) |
+| Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`) |
 | Duration | 5s default; `async-db` 10s; `api-4`, `api-16`, `crud` 15s (hardcoded in the profile dispatcher) |
 | Runs | 3 per (profile, connection count) - best RPS wins |
 | Networking | Docker `--network host` for all containers (server + load generator + Postgres + Redis sidecars) |
