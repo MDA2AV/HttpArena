@@ -13,6 +13,7 @@
   "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
+  "tls_check": true,
   "tests": [
     "baseline",
     "pipelined",

@@ -668,6 +668,28 @@ document.addEventListener('DOMContentLoaded', function(){
     return modeOf(fw)==='tuned'
       ? '<span class="'+(cls||'badge')+' b-tuned" data-tip="'+esc(TUNED_TIP)+'">tuned</span>' : '';
   }
+  // A shield beside the name for an entry whose TLS was probed and came back
+  // clean: the mounted certificate, TLS 1.3, an AEAD cipher, and no obsolete
+  // protocol or weak cipher accepted. Absent means unverified, not failed --
+  // most entries have no TLS profile at all.
+  var TLS_TIP = 'TLS verified - serves the certificate the harness mounts, negotiates TLS 1.3 with an AEAD cipher, and refuses SSLv3, TLS 1.0/1.1 and NULL, anonymous, export, RC4, DES and 3DES ciphers.';
+  // The opt-in TLS section: certificate rotation, SNI, resumption, close_notify
+  // and the vulnerability suite, all on the HTTP/1.1 listener. Only ever shown
+  // on the H1 composite -- h2 and h3 have their own listeners and are not
+  // covered by it, so a badge earned on :8081 must not follow the entry into
+  // views it says nothing about.
+  var TLS_CHECK_TIP = 'TLS hardened - opted into the TLS section and passed it: rotates its certificate without a restart and without dropping traffic, answers with and without SNI, closes at the TLS layer, and reports no HIGH or CRITICAL finding from the vulnerability suite.';
+  // The composite views are keyed by scope; 'h1' is the HTTP/1.1 one.
+  function h1View(){ return state.view === 'composite' && state.scope === 'h1'; }
+  function tlsCheckBadge(fw){
+    var m = D.meta[fw];
+    if(!m || m.tlsCheck !== 'pass' || !h1View()) return '';
+    return '<span class="tlssec" data-tip="'+esc(TLS_CHECK_TIP)+'" aria-label="TLS hardened">'
+         + '<svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">'
+         + '<path fill="currentColor" d="M12 1.5 3.8 4.9v6.2c0 5 3.5 9.7 8.2 11.4 4.7-1.7 8.2-6.4 8.2-11.4V4.9z"/>'
+         + '<path fill="none" stroke="#fff" stroke-width="2.1" stroke-linejoin="round" d="m12 6.6 1.6 3.4 3.6.5-2.6 2.6.6 3.7-3.2-1.8-3.2 1.8.6-3.7-2.6-2.6 3.6-.5z"/>'
+         + '</svg></span>';
+  }
   function repoOf(fw){ return D.meta[fw] && D.meta[fw].repo; }
   function langOf(fw){ return FWLANG[fw] || ''; }
   function engineOf(fw){ return (D.meta[fw] && D.meta[fw].engine) || ''; }
@@ -745,7 +767,7 @@ document.addEventListener('DOMContentLoaded', function(){
     var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
     var h='<div class="modal-card">'
       + '<button class="modal-x" data-close aria-label="Close">×</button>'
-      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3><span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
+      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3>'+tlsCheckBadge(fw)+'<span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
@@ -1575,7 +1597,7 @@ document.addEventListener('DOMContentLoaded', function(){
               ? '<span class="tsq tsq-'+t+(modeOf(r.fw)==='tuned'?' tuned':'')+'" data-tip="'
                 + esc(typeTip(t)+(modeOf(r.fw)==='tuned'?'  ·  '+TUNED_TIP:''))+'"></span>'
                 + '<span class="nm">'+nm+'</span>'
-              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+medalChips(r.fw))
+              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+medalChips(r.fw))
         +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
@@ -1621,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+'</div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+'</div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
