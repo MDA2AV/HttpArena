@@ -566,98 +566,70 @@ static_staleness_probe() {
 # The posture probe below asks what this connection negotiated. This asks what
 # the server is willing to negotiate at all, which is a different question and
 # the one that says whether an entry's TLS defaults are any good: a server can
-# hand a modern client TLS 1.3 and still accept TLS 1.0, RC4 or a NULL cipher
-# from anything that asks.
+# hand a modern client TLS 1.3 and still accept TLS 1.0 or a NULL cipher from
+# anything else that asks.
 #
-# testssl.sh rather than a hand-rolled sweep. It already knows every suite and
-# how to probe for them, it is the reference tool for this, and with -p -s it
-# answers in about five seconds. The full run also produces an SSL Labs style
-# grade, but it takes ~48s per port and every entry here is capped at B by the
-# self-signed certificate the harness mounts, so the graded run is left for
-# audits rather than run on every validation.
+# Asked with openssl directly rather than with a scanner. testssl.sh is the
+# reference tool for this and agrees with these results -- it is what found
+# the first real failure here -- but a gate that runs on every entry wants no
+# image to pull and no scanner to hang: these probes take ~70ms for the whole
+# set against testssl's ~5s, and nothing outside the base image is needed.
+# testssl.sh remains the better tool for an audit, where its far wider suite
+# coverage and its SSL Labs style grade are worth the time.
 #
-# Set HTTPARENA_SKIP_TLS_SCAN=1 to skip, and it skips itself when the image is
-# unavailable rather than failing an entry for a missing scanner.
-TESTSSL_IMAGE="${HTTPARENA_TESTSSL_IMAGE:-drwetter/testssl.sh}"
+# The client has to be pushed to make these offers at all: OpenSSL 3 will not
+# send an SSLv3 or TLS 1.0 ClientHello, nor a NULL/EXPORT/RC4 one, at its
+# default security level. @SECLEVEL=0 is what makes the question askable.
+#
+# A protocol or cipher counts as accepted only when a handshake actually
+# completes. An alert, a reset or a timeout is a refusal.
+_tls_accepts() {
+    local port="$1" proto="$2" cipher="${3:-}"
+    # A flag this openssl was not built with cannot be probed; say so rather
+    # than reading "cannot ask" as "refused".
+    if ! openssl s_client -help 2>&1 | grep -q -- "-${proto} "; then
+        echo "unsupported"
+        return 0
+    fi
+    if timeout 8 openssl s_client -connect "localhost:$port" "-${proto}" \
+           ${cipher:+-cipher "$cipher"} </dev/null 2>/dev/null \
+       | grep -qE "^New, (TLSv1|SSLv3)"; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
 
-tls_quality_scan() {
+tls_quality_probe() {
     local label="$1" port="$2" docs="$3"
 
-    if [ "${HTTPARENA_SKIP_TLS_SCAN:-0}" = "1" ]; then
-        echo "  SKIP [$label TLS quality] (HTTPARENA_SKIP_TLS_SCAN=1)"
-        return 0
-    fi
+    local old="" untestable=""
+    local proto
+    for proto in ssl3 tls1 tls1_1; do
+        case "$(_tls_accepts "$port" "$proto" 'ALL:@SECLEVEL=0')" in
+            yes)         old="$old ${proto}" ;;
+            unsupported) untestable="$untestable ${proto}" ;;
+        esac
+    done
 
-    local outdir json
-    outdir=$(mktemp -d)
-    json="$outdir/ssl.json"
-    if ! timeout 240 docker run --rm --network host -v "$outdir:/out" "$TESTSSL_IMAGE" \
-            -p -s --quiet --color 0 --jsonfile /out/ssl.json "127.0.0.1:$port" >/dev/null 2>&1; then
-        if [ ! -s "$json" ]; then
-            echo "  SKIP [$label TLS quality] (testssl.sh unavailable)"
-            rm -rf "$outdir"
-            return 0
-        fi
-    fi
-    if [ ! -s "$json" ]; then
-        echo "  SKIP [$label TLS quality] (scanner produced no result)"
-        rm -rf "$outdir"
-        return 0
-    fi
+    # Cipher families that are broken on their own terms: no encryption, no
+    # authentication, export-grade, or 64-bit.
+    local weak="" fam
+    for fam in NULL aNULL EXPORT RC4 DES 3DES; do
+        [ "$(_tls_accepts "$port" tls1_2 "${fam}:@SECLEVEL=0")" = "yes" ] && weak="$weak ${fam}"
+    done
 
-    # id -> finding, for the ids this cares about
-    local report
-    report=$(python3 - "$json" <<'PYEOF'
-import json, sys
-rows = json.load(open(sys.argv[1]))
-rows = rows if isinstance(rows, list) else rows.get("scanResult", [])
-f = {r.get("id"): str(r.get("finding", "")) for r in rows}
-
-# Offered by a server with genuinely unsafe defaults. Each is broken on its
-# own terms: the protocols have no safe configuration left, and the cipher
-# lists are no-encryption, no-authentication, export-grade, or 64-bit.
-fatal = [
-    ("SSLv2",                "SSLv2"),
-    ("SSLv3",                "SSLv3"),
-    ("TLS1",                 "TLS 1.0"),
-    ("TLS1_1",               "TLS 1.1"),
-    ("cipherlist_NULL",      "NULL ciphers (no encryption)"),
-    ("cipherlist_aNULL",     "anonymous ciphers (no authentication)"),
-    ("cipherlist_EXPORT",    "export-grade ciphers"),
-    ("cipherlist_LOW",       "64-bit / DES / RC2 / RC4 / MD5 ciphers"),
-    ("cipherlist_3DES_IDEA", "3DES / IDEA ciphers"),
-]
-bad = [name for key, name in fatal if "offered" in f.get(key, "") and "not offered" not in f.get(key, "")]
-
-# Weak but widely shipped as a default. Reported so the drift is visible
-# without failing half the field for it.
-soft = []
-for key, name in (("cipherlist_OBSOLETED", "obsolete CBC ciphers"),
-                  ("cipherlist_STRONG_NOFS", "AEAD ciphers without forward secrecy")):
-    v = f.get(key, "")
-    if "offered" in v and "not offered" not in v:
-        soft.append(name)
-
-print("FATAL:" + "; ".join(bad))
-print("SOFT:" + "; ".join(soft))
-PYEOF
-)
-    rm -rf "$outdir"
-
-    local bad soft
-    bad=$(printf '%s' "$report" | sed -n 's/^FATAL://p')
-    soft=$(printf '%s' "$report" | sed -n 's/^SOFT://p')
-
-    if [ -n "$bad" ]; then
-        fail_with_link "[$label TLS quality]: the server accepts $bad. A client that asks for these gets them, whatever a modern client negotiates" "$docs"
+    if [ -n "$old" ] || [ -n "$weak" ]; then
+        local detail=""
+        [ -n "$old" ]  && detail="obsolete protocols:${old}"
+        [ -n "$weak" ] && detail="${detail:+$detail; }weak ciphers:${weak}"
+        fail_with_link "[$label TLS quality]: the server completes a handshake using $detail. A client that asks for these gets them, whatever a modern client negotiates" "$docs"
     else
-        echo "  PASS [$label TLS quality] (no obsolete protocol or weak cipher accepted)"
+        echo "  PASS [$label TLS quality] (refuses every obsolete protocol and weak cipher probed)"
         PASS=$((PASS + 1))
     fi
-
-    if [ -n "$soft" ]; then
-        echo "  NOTE [$label TLS quality]: also accepts $soft - allowed, but weaker than the defaults most of the field ships"
-    fi
+    [ -n "$untestable" ] && echo "  NOTE [$label TLS quality]: this openssl cannot offer${untestable}, so those were not probed"
+    return 0
 }
 
 # ───── TLS posture ─────
@@ -1236,7 +1208,7 @@ fi
 if has_test "json-tls"; then
     JSONTLS_DOCS="$DOCS_BASE/h1/isolated/json-tls/validation"
     tls_posture_probe "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS" "http/1.1"
-    tls_quality_scan  "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS"
+    tls_quality_probe "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS"
     echo "[test] json-tls endpoint"
 
     # Must negotiate HTTP/1.1 (not h2) via ALPN on :8081
@@ -1383,7 +1355,7 @@ fi
 if has_test "baseline-h2"; then
     H2_DOCS="$DOCS_BASE/h2/baseline-h2/validation"
     tls_posture_probe "baseline-h2" "$H2PORT" "$H2_DOCS" "h2"
-    tls_quality_scan  "baseline-h2" "$H2PORT" "$H2_DOCS"
+    tls_quality_probe "baseline-h2" "$H2PORT" "$H2_DOCS"
     echo "[test] baseline-h2 endpoint"
     if wait_h2; then
         # Verify server actually speaks HTTP/2

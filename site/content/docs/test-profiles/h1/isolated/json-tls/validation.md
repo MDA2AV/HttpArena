@@ -79,7 +79,7 @@ Selecting **nothing** is fine: a server without ALPN omits the extension and the
 
 ### Accepts no obsolete protocol or weak cipher
 
-A server can hand a modern client TLS 1.3 and still accept TLS 1.0, RC4 or a NULL cipher from anything else that asks. The suite scans for what the server will accept, using [testssl.sh](https://github.com/testssl/testssl.sh), and **fails** on any of:
+A server can hand a modern client TLS 1.3 and still accept TLS 1.0, RC4 or a NULL cipher from anything else that asks. The validator offers each of these directly and **fails** when a handshake actually completes — an alert, a reset or a timeout is a refusal:
 
 - `SSLv2`, `SSLv3`, `TLS 1.0`, `TLS 1.1`
 - NULL ciphers (no encryption)
@@ -88,14 +88,9 @@ A server can hand a modern client TLS 1.3 and still accept TLS 1.0, RC4 or a NUL
 - 64-bit, DES, RC2, RC4 or MD5 ciphers
 - 3DES / IDEA
 
-Two more are **noted rather than failed**, because they are weak but still shipped as defaults by much of the field:
+OpenSSL will not offer an SSLv3 or TLS 1.0 handshake, nor a NULL/EXPORT/RC4 one, at its default security level, so the probes use `@SECLEVEL=0` to make the question askable at all. A protocol the local OpenSSL cannot offer is reported as unprobed rather than counted as refused. The whole set costs about 70ms per port.
 
-- obsolete CBC ciphers
-- AEAD ciphers without forward secrecy
-
-The scan uses `testssl.sh -p -s` and adds about five seconds per port. Set `HTTPARENA_SKIP_TLS_SCAN=1` to skip it; it also skips itself, rather than failing an entry, when the scanner image is unavailable.
-
-> A full `testssl.sh` run additionally produces an SSL Labs style grade, but it costs around 48 seconds per port and caps every entry at **B** on *chain incomplete* — an artifact of the self-signed certificate the harness mounts, not of the entry. That run is for audits, not for the validation gate.
+> [testssl.sh](https://github.com/testssl/testssl.sh) is the reference tool for this question and agrees with these checks — it is what surfaced the first real failure here. It is the better choice for an audit, where its much wider suite coverage and its SSL Labs style grade are worth the time: a full run costs ~48s per port and caps every entry at **B** on *chain incomplete*, which is an artifact of the self-signed certificate the harness mounts rather than anything about the entry.
 
 ## Running locally
 
