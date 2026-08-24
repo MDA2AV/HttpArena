@@ -90,8 +90,10 @@ dump_stack_logs() {
     done
 }
 
-# 5-minute overall timeout
-VALIDATE_TIMEOUT=${VALIDATE_TIMEOUT:-300}
+# Overall watchdog. 300s was not enough for the entries with the widest
+# profile sets once the TLS probes joined -- humming-bird and the
+# web-framework-* trio were killed mid-run rather than failing anything.
+VALIDATE_TIMEOUT=${VALIDATE_TIMEOUT:-800}
 ( trap 'exit 0' TERM; sleep "$VALIDATE_TIMEOUT"; echo ""; echo "FAIL: Validation timed out after ${VALIDATE_TIMEOUT}s"; dump_logs "$CONTAINER_NAME" "$FRAMEWORK"; kill -TERM $$ 2>/dev/null ) &
 WATCHDOG_PID=$!
 
@@ -206,9 +208,14 @@ if has_test "gateway-64" || has_test "gateway-h3"; then
     docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
 fi
 
-if has_test "static" || has_test "static-tls" || has_test "static-h2" || has_test "static-h3" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
-    docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
-fi
+# Mounted for every entry, not only the ones with a static profile, which is
+# what benchmark.sh already does (scripts/lib/framework.sh). Entries that read
+# the directory at startup -- rage and rails copy it, userver builds an
+# fs-cache from it -- cannot boot without it, so dropping the mount when the
+# static profiles are not subscribed turned "this entry does not serve static"
+# into "this entry does not start". It is a read-only bind of a small
+# directory; there is nothing to be gained by leaving it out.
+docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 
 # Note: --security-opt seccomp=unconfined is applied unconditionally in both
 # container-launch branches above. io_uring (and other syscalls some runtimes
