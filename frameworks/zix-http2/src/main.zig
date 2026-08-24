@@ -6,7 +6,7 @@
 //!   (shared-nothing per-core io_uring, one SO_REUSEPORT
 //!   listener plus ring per CPU). Serves baseline-h2c and json-h2c.
 //! - h2 over TLS 1.3 on TLS_PORT
-//!   (ALPN h2, self-signed Ed25519 cert at /etc/zix-tls),
+//!   (ALPN h2, the RSA cert mounted at /certs),
 //!   terminated on the same per-core rings: no second launch,
 //!   no doubled workers or fd tables. Serves baseline-h2 and static-h2.
 //!
@@ -35,8 +35,8 @@ const PORT: u16 = 8082;
 const DISPATCH_MODEL: zix.Http2.DispatchModel = .URING;
 
 const TLS_PORT: u16 = 8443;
-const TLS_CERT_DEFAULT: []const u8 = "/etc/zix-tls/server.crt";
-const TLS_KEY_DEFAULT: []const u8 = "/etc/zix-tls/server.key";
+const TLS_CERT_DEFAULT: []const u8 = "/certs/server.crt";
+const TLS_KEY_DEFAULT: []const u8 = "/certs/server.key";
 
 // --------------------------------------------------------- //
 

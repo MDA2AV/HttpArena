@@ -58,15 +58,8 @@ RUN set -eu; \
     esac; \
     zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}+aes+pclmul+adx" --release=fast
 
-# Self-signed Ed25519 cert generated at image build, baked at /etc/zix-tls.
-RUN set -eu; \
-    mkdir -p /etc/zix-tls; \
-    openssl genpkey -algorithm ED25519 -out /etc/zix-tls/server.key; \
-    openssl req -new -x509 -key /etc/zix-tls/server.key -out /etc/zix-tls/server.crt \
-        -days 3650 -subj "/CN=localhost"
 
 FROM alpine:3.20
 COPY --from=build /server/zig-out/bin/zix-http2 /zix-http2
-COPY --from=build /etc/zix-tls /etc/zix-tls
 EXPOSE 8443/tcp 8443/udp
 ENTRYPOINT ["/zix-http2"]
