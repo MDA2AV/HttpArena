@@ -26,9 +26,8 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
-# Zero-copy bodies + pre-gzip for the in-memory static/json caches.
+# Zero-copy response bodies.
 bytes = "1"
-flate2 = "1"
 # Sharded concurrent map behind the crud profile's cache-aside read path.
 dashmap = "6"
 # Template engine for the fortunes profile: compile-time, auto-escaping, and

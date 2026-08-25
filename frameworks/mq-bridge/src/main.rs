@@ -41,7 +41,6 @@ use mq_bridge::sqlx::{self, PgPool, Row};
 use mq_bridge::{CanonicalMessage, Handled, HandlerError, Route};
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
-use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -142,42 +141,12 @@ struct CrudUpdate {
 
 struct AppState {
     dataset: Vec<DatasetItem>,
-    static_cache: HashMap<String, CachedBody>,
+    static_dir: PathBuf,
     crud_cache: CrudCache,
     pool: Option<PgPool>,
 }
 
 // ---------- caches ----------
-
-/// A static asset in identity and gzip form, built once at startup. The gzip
-/// variant is kept only when it actually shrinks the body.
-struct CachedBody {
-    plain: Bytes,
-    gzip: Option<Bytes>,
-    content_type: &'static str,
-}
-
-impl CachedBody {
-    fn build(bytes: Vec<u8>, content_type: &'static str) -> Self {
-        let plain = Bytes::from(bytes);
-        let compressed = gzip(&plain);
-        Self {
-            gzip: (compressed.len() < plain.len()).then_some(compressed),
-            plain,
-            content_type,
-        }
-    }
-
-    /// Setting `content-encoding` tells the mq-bridge HTTP layer the body is
-    /// already encoded, so it skips its own compression pass.
-    fn to_message(&self, want_gzip: bool) -> CanonicalMessage {
-        match (want_gzip, &self.gzip) {
-            (true, Some(g)) => reply_bytes(g.clone(), self.content_type)
-                .with_metadata_kv("content-encoding", "gzip"),
-            _ => reply_bytes(self.plain.clone(), self.content_type),
-        }
-    }
-}
 
 /// Cache-aside store behind `GET /crud/items/{id}`, holding the rendered body
 /// so a hit skips both the query and the serialization.
@@ -206,32 +175,6 @@ impl CrudCache {
     fn invalidate(&self, id: i32) {
         self.entries.remove(&id);
     }
-}
-
-/// Runs once per file at startup, never on the request path, so it pays for the
-/// maximum level: the smaller body is pure win on every subsequent request.
-fn gzip(data: &[u8]) -> Bytes {
-    use flate2::{write::GzEncoder, Compression};
-    use std::io::Write;
-    let mut encoder = GzEncoder::new(Vec::new(), Compression::best());
-    encoder.write_all(data).expect("gzip write");
-    Bytes::from(encoder.finish().expect("gzip finish"))
-}
-
-fn load_static(dir: &Path) -> HashMap<String, CachedBody> {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return HashMap::new();
-    };
-    entries
-        .flatten()
-        .filter(|e| e.file_type().is_ok_and(|ft| ft.is_file()))
-        .filter_map(|e| {
-            let name = e.file_name().to_string_lossy().into_owned();
-            let bytes = std::fs::read(e.path()).ok()?;
-            let content_type = guess_content_type(&name);
-            Some((name, CachedBody::build(bytes, content_type)))
-        })
-        .collect()
 }
 
 fn load_dataset() -> Vec<DatasetItem> {
@@ -570,16 +513,26 @@ async fn fortunes(state: &AppState) -> CanonicalMessage {
 
 // ---------- static ----------
 
-fn serve_static(state: &AppState, name: &str, want_gzip: bool) -> CanonicalMessage {
+async fn serve_static(state: &AppState, name: &str, want_gzip: bool) -> CanonicalMessage {
     // Reject traversal: the filename must be a single normal component.
     let mut comps = Path::new(name).components();
     let safe = matches!(comps.next(), Some(Component::Normal(_))) && comps.next().is_none();
     if !safe {
         return not_found();
     }
-    match state.static_cache.get(name) {
-        Some(cached) => cached.to_message(want_gzip),
-        None => not_found(),
+    let path = state.static_dir.join(name);
+    let content_type = guess_content_type(name);
+    if want_gzip {
+        let mut gzip_path = path.as_os_str().to_os_string();
+        gzip_path.push(".gz");
+        if let Ok(bytes) = tokio::fs::read(gzip_path).await {
+            return reply_bytes(Bytes::from(bytes), content_type)
+                .with_metadata_kv("content-encoding", "gzip");
+        }
+    }
+    match tokio::fs::read(path).await {
+        Ok(bytes) => reply_bytes(Bytes::from(bytes), content_type),
+        Err(_) => not_found(),
     }
 }
 
@@ -617,7 +570,7 @@ async fn handle(state: Arc<AppState>, msg: CanonicalMessage) -> Result<Handled, 
             serve_json(&state, count, msg.query_int("m").unwrap_or(1))
         }
         ("GET", p) if p.starts_with("/static/") => {
-            serve_static(&state, &p["/static/".len()..], msg.accepts_gzip())
+            serve_static(&state, &p["/static/".len()..], msg.accepts_gzip()).await
         }
         _ => not_found(),
     };
@@ -630,9 +583,9 @@ async fn handle(state: Arc<AppState>, msg: CanonicalMessage) -> Result<Handled, 
 async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AppState {
         dataset: load_dataset(),
-        static_cache: load_static(&PathBuf::from(
+        static_dir: PathBuf::from(
             std::env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".to_string()),
-        )),
+        ),
         crud_cache: CrudCache::default(),
         pool: connect_pool().await,
     });

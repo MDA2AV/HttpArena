@@ -1288,7 +1288,6 @@ dependencies = [
  "askama",
  "bytes",
  "dashmap",
- "flate2",
  "mimalloc",
  "mq-bridge",
  "rustls",
