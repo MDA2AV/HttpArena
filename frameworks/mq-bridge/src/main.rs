@@ -13,7 +13,7 @@
 //! | `GET  /json/{count}?m=`         | processed dataset     | json, json-comp, json-tls, json-h2c |
 //! | `POST /upload` + body           | byte count            | upload |
 //! | `GET  /async-db?min=&max=&limit=` | `items` rows        | async-db |
-//! | `GET  /static/{file}`           | cached asset          | static, static-h2 |
+//! | `GET  /static/{file}`           | cached asset          | static, static-tls, static-h2 |
 //! | `GET  /crud/items?category=&page=&limit=` | paginated list | crud |
 //! | `GET  /crud/items/{id}`         | cached item           | crud |
 //! | `POST /crud/items` + JSON       | 201 + upserted item   | crud |
