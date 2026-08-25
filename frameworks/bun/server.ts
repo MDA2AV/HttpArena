@@ -328,7 +328,7 @@ const qs = (req: Request): string => {
 // endpoints rather than branching on req.url. `fetch` below is only what is left when nothing
 // matched.
 const routes = {
-    "/pipeline": () => new Response("ok", { headers: TEXT }),
+    "/pipeline": new Response("ok", { headers: TEXT }),
 
     "/baseline11": {
         GET: (req: Request) => new Response(String(sumQuery(qs(req))), { headers: TEXT }),
