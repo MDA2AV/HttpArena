@@ -1,7 +1,7 @@
 info: [master] starting 64 workers on :8080
 info: [master] forked worker 0 (pid 8)
-info: [master] forked worker 1 (pid 9)
 info: [w0] worker starting
+info: [master] forked worker 1 (pid 9)
 info: [w1] worker starting
 info: [master] forked worker 2 (pid 10)
 info: [w2] worker starting
@@ -16,12 +16,13 @@ info: [w6] worker starting
 info: [master] forked worker 7 (pid 15)
 info: [w7] worker starting
 info: [master] forked worker 8 (pid 16)
-info: [w8] worker starting
 info: [master] forked worker 9 (pid 17)
 info: [w9] worker starting
 info: [master] forked worker 10 (pid 18)
+info: [w8] worker starting
 info: [master] forked worker 11 (pid 19)
 info: [w11] worker starting
+info: [w10] worker starting
 info: [master] forked worker 12 (pid 20)
 info: [w12] worker starting
 info: [master] forked worker 13 (pid 21)
@@ -42,20 +43,20 @@ info: [master] forked worker 20 (pid 28)
 info: [w20] worker starting
 info: [master] forked worker 21 (pid 29)
 info: [w21] worker starting
-info: [w10] worker starting
 info: [master] forked worker 22 (pid 30)
 info: [w22] worker starting
 info: [master] forked worker 23 (pid 31)
 info: [w23] worker starting
 info: [master] forked worker 24 (pid 32)
-info: [master] forked worker 25 (pid 33)
 info: [w24] worker starting
+info: [master] forked worker 25 (pid 33)
 info: [w25] worker starting
 info: [master] forked worker 26 (pid 34)
 info: [w26] worker starting
 info: [master] forked worker 27 (pid 35)
 info: [w27] worker starting
 info: [master] forked worker 28 (pid 36)
+info: [w28] worker starting
 info: [master] forked worker 29 (pid 37)
 info: [w29] worker starting
 info: [master] forked worker 30 (pid 38)
@@ -63,7 +64,6 @@ info: [w30] worker starting
 info: [master] forked worker 31 (pid 39)
 info: [w31] worker starting
 info: [master] forked worker 32 (pid 40)
-info: [w28] worker starting
 info: [w32] worker starting
 info: [master] forked worker 33 (pid 41)
 info: [w33] worker starting
@@ -72,58 +72,58 @@ info: [w34] worker starting
 info: [master] forked worker 35 (pid 43)
 info: [w35] worker starting
 info: [master] forked worker 36 (pid 44)
-info: [w36] worker starting
 info: [master] forked worker 37 (pid 45)
+info: [w36] worker starting
 info: [w37] worker starting
-info: [master] forked worker 38 (pid 46)
+info: [master] forked worker 38 (pid 49)
 info: [w38] worker starting
-info: [master] forked worker 39 (pid 47)
+info: [master] forked worker 39 (pid 51)
 info: [w39] worker starting
-info: [master] forked worker 40 (pid 48)
+info: [master] forked worker 40 (pid 56)
 info: [w40] worker starting
-info: [master] forked worker 41 (pid 49)
+info: [master] forked worker 41 (pid 57)
 info: [w41] worker starting
-info: [master] forked worker 42 (pid 50)
+info: [master] forked worker 42 (pid 58)
 info: [w42] worker starting
-info: [master] forked worker 43 (pid 51)
+info: [master] forked worker 43 (pid 59)
 info: [w43] worker starting
-info: [master] forked worker 44 (pid 52)
-info: [w44] worker starting
-info: [master] forked worker 45 (pid 56)
+info: [master] forked worker 44 (pid 62)
+info: [master] forked worker 45 (pid 64)
 info: [w45] worker starting
-info: [master] forked worker 46 (pid 60)
+info: [w44] worker starting
+info: [master] forked worker 46 (pid 65)
 info: [w46] worker starting
-info: [master] forked worker 47 (pid 62)
+info: [master] forked worker 47 (pid 69)
 info: [w47] worker starting
-info: [master] forked worker 48 (pid 63)
+info: [master] forked worker 48 (pid 70)
 info: [w48] worker starting
-info: [master] forked worker 49 (pid 66)
+info: [master] forked worker 49 (pid 73)
 info: [w49] worker starting
-info: [master] forked worker 50 (pid 68)
+info: [master] forked worker 50 (pid 74)
 info: [w50] worker starting
-info: [master] forked worker 51 (pid 69)
+info: [master] forked worker 51 (pid 76)
 info: [w51] worker starting
-info: [master] forked worker 52 (pid 70)
+info: [master] forked worker 52 (pid 78)
 info: [w52] worker starting
-info: [master] forked worker 53 (pid 71)
+info: [master] forked worker 53 (pid 81)
 info: [w53] worker starting
-info: [master] forked worker 54 (pid 73)
+info: [master] forked worker 54 (pid 83)
 info: [w54] worker starting
-info: [master] forked worker 55 (pid 76)
+info: [master] forked worker 55 (pid 84)
 info: [w55] worker starting
-info: [master] forked worker 56 (pid 79)
+info: [master] forked worker 56 (pid 85)
 info: [w56] worker starting
-info: [master] forked worker 57 (pid 82)
+info: [master] forked worker 57 (pid 87)
 info: [w57] worker starting
-info: [master] forked worker 58 (pid 83)
+info: [master] forked worker 58 (pid 89)
 info: [w58] worker starting
-info: [master] forked worker 59 (pid 88)
+info: [master] forked worker 59 (pid 91)
 info: [w59] worker starting
-info: [master] forked worker 60 (pid 90)
-info: [master] forked worker 61 (pid 92)
-info: [w61] worker starting
+info: [master] forked worker 60 (pid 93)
 info: [w60] worker starting
-info: [master] forked worker 62 (pid 94)
+info: [master] forked worker 61 (pid 95)
+info: [w61] worker starting
+info: [master] forked worker 62 (pid 99)
 info: [w62] worker starting
-info: [master] forked worker 63 (pid 95)
+info: [master] forked worker 63 (pid 100)
 info: [w63] worker starting
