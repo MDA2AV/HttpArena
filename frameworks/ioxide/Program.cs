@@ -101,6 +101,9 @@ internal static class Program
             : null;
         // Precompressed variants are baked here (HTTP), not in ioxide.file.
         Precompressed? precompressed = Directory.Exists(staticRoot) ? new Precompressed(staticRoot) : null;
+        // Both caches above are built once and would otherwise never look at the
+        // directory again; this is what makes them follow it.
+        StaticRefresh.Init(staticRoot, assets, precompressed);
 
         // Postgres: DATABASE_URL=postgres://user:pass@host:port/db (validation/benchmark sidecar).
         PgOptions? pg = null;
