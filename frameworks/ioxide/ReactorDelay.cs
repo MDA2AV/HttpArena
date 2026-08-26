@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks.Sources;
 
 using ioxide;
@@ -65,6 +66,27 @@ internal static class ReactorDelay
     private static readonly Action<object?> DrainCallback = _ => Drain();
     private static int _started;
 
+    // IOXIDE_DELAY_MODE=ring parks each wait on a timerfd submitted to the
+    // reactor's own ring, the way ioxide.pg parks on the Postgres socket.
+    // SubmitRead on a pollable fd gets there without IORING_OP_TIMEOUT, which
+    // ioxide does not expose (MDA2AV/ioxide#212): io_uring arms a poll
+    // internally rather than handing the read to a worker thread.
+    //
+    // It is off by default because it measured worse, and the reason is
+    // instructive. A socket read is I/O the connection has to do regardless, so
+    // the ring is free for it. A timer is not: this costs a timerfd_settime
+    // syscall plus an SQE and a CQE per request, about 1.5M syscalls a second at
+    // this load, where the tick completes ~13 timers per drain and makes no
+    // syscall at all. Over four interleaved repetitions at 64,000 connections:
+    //
+    //   ring  1.50M rps  2007% cpu  p99 104.2ms   overshoot 0.18ms
+    //   tick  1.58M rps  1765% cpu  p99  68.4ms   overshoot 0.25-0.82ms
+    //
+    // So it buys precision and pays in throughput. Worth revisiting if
+    // IORING_OP_TIMEOUT lands, which removes the syscall but not the SQE/CQE.
+    private static readonly bool UseRingTimer =
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "ring";
+
     // Touched only by the reactor thread that owns it: the handler parks a
     // request from this thread, and the drain runs on this thread too.
     [ThreadStatic] private static PriorityQueue<DelaySource, long>? _pending;
@@ -82,6 +104,10 @@ internal static class ReactorDelay
     public static ValueTask Delay(Reactor reactor, int ms, DelaySource source)
     {
         if (ms <= 0) return ValueTask.CompletedTask;
+
+        // The ring holds the deadline itself: no tick, no drain, no second
+        // thread. Everything below this line is the fallback for when it is off.
+        if (UseRingTimer) return source.WaitOnRing(reactor, ms);
 
         // Registering a reactor is permanent and per thread, so it belongs on the
         // first call from that thread and nowhere else. It used to run on every
@@ -194,7 +220,7 @@ internal static class ReactorDelay
             long now = Stopwatch.GetTimestamp();
             while (q.TryPeek(out _, out long deadline) && deadline <= now)
             {
-                q.Dequeue().Complete();
+                q.Dequeue().Fire();
             }
         }
         finally
@@ -216,15 +242,79 @@ internal static class ReactorDelay
 /// Safe to reuse only because a connection never has two delays in flight: the
 /// handler awaits one before it reads the next request.
 /// </summary>
-internal sealed class DelaySource : IValueTaskSource
+internal sealed class DelaySource : IValueTaskSource, IRingCompletion
 {
+    private const int ClockMonotonic = 1;
+    private const int TfdNonblock = 0x800;
+    private const int TfdCloexec = 0x80000;
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int timerfd_create(int clockid, int flags);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern unsafe int timerfd_settime(int fd, int flags, long* newValue, long* oldValue);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int close(int fd);
+
+    // Created on this connection's first delay and re-armed for every one after,
+    // so a delay costs a settime and an SQE - no allocation, no timer object.
+    private int _fd = -1;
+    private IntPtr _buf;   // the 8-byte expiration count the read returns
+
+    /// <summary>Arms the timer and parks on it through the reactor's ring.</summary>
+    public unsafe ValueTask WaitOnRing(Reactor reactor, int ms)
+    {
+        if (_fd < 0)
+        {
+            _fd = timerfd_create(ClockMonotonic, TfdNonblock | TfdCloexec);
+            if (_fd < 0) throw new InvalidOperationException($"timerfd_create failed, errno {Marshal.GetLastPInvokeError()}");
+            _buf = Marshal.AllocHGlobal(8);
+        }
+
+        // itimerspec is four longs: interval sec/nsec then value sec/nsec. A
+        // zero interval makes it one-shot.
+        long* spec = stackalloc long[4];
+        spec[0] = 0;
+        spec[1] = 0;
+        spec[2] = ms / 1000;
+        spec[3] = (long)(ms % 1000) * 1_000_000L;
+        if (timerfd_settime(_fd, 0, spec, null) < 0)
+        {
+            throw new InvalidOperationException($"timerfd_settime failed, errno {Marshal.GetLastPInvokeError()}");
+        }
+
+        short token = _core.Version;
+        reactor.SubmitRead(_fd, _buf, 8, 0, this);
+        return new ValueTask(this, token);
+    }
+
+    /// <summary>The ring completion: the timer fired, so the wait is over.</summary>
+    public void Complete(int result) => _core.SetResult(true);
+
+    /// <summary>Releases the timer. Called when the connection is finished.</summary>
+    public void Dispose()
+    {
+        if (_fd >= 0)
+        {
+            close(_fd);
+            _fd = -1;
+        }
+        if (_buf != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(_buf);
+            _buf = IntPtr.Zero;
+        }
+    }
+
     // Continuations run inline on the completing thread, which is the reactor
     // thread - the same affinity the Task version had.
     private ManualResetValueTaskSourceCore<bool> _core = new() { RunContinuationsAsynchronously = false };
 
     public ValueTask Wait() => new(this, _core.Version);
 
-    public void Complete() => _core.SetResult(true);
+    /// <summary>Completed by the drain, when the fallback tick path is in use.</summary>
+    public void Fire() => _core.SetResult(true);
 
     public void GetResult(short token)
     {
