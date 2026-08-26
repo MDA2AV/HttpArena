@@ -14,7 +14,7 @@
   "repo": "https://github.com/go-chi/chi",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

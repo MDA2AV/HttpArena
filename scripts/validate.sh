@@ -1243,10 +1243,10 @@ wait_h2() {
 
 # ───── Baseline (GET/POST /baseline11) ─────
 
-# millionaire drives GET /baseline11 at a pinned rate, so it needs the same
+# latency-1m drives GET /baseline11 at a pinned rate, so it needs the same
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
-if has_test "baseline" || has_test "limited-conn" || has_test "millionaire"; then
+if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m"; then
     BASELINE_DOCS="$DOCS_BASE/h1/isolated/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \

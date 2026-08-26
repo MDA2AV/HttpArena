@@ -17,7 +17,7 @@
     "baseline-h2",
     "static-h2",
     "echo-ws",
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

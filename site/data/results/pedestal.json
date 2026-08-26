@@ -1,7 +1,7 @@
 {
   "framework": "pedestal",
   "results": {
-    "millionaire-1024": {
+    "latency-1m-1024": {
       "framework": "pedestal",
       "language": "Clojure",
       "rps": 327026,

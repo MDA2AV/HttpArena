@@ -114,7 +114,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static, Static TLS, Async Delay, Millionaire, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined, Static, Static TLS, Async Delay, Latency-1M, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 

@@ -14,7 +14,7 @@
   "repo": "https://github.com/yangusik/symfony-spawn",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

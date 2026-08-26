@@ -8,7 +8,7 @@
   "enabled": false,
   "tests": [
     "pipelined",
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "limited-conn",
     "json",
     "static",

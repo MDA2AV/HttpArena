@@ -1,6 +1,6 @@
 ---
-title: Millionaire
-seo_title: "Millionaire: CPU Cost at One Million Requests per Second"
+title: Latency-1M
+seo_title: "Latency-1M: CPU Cost at One Million Requests per Second"
 description: "Pins the offered load at one million requests per second and measures the CPU each framework spends to serve it, read exactly from the container's cgroup."
 ---
 

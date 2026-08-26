@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Millionaire Benchmark: Implementation Guide"
+seo_title: "Latency-1M Benchmark: Implementation Guide"
 description: "How the one-million-requests-per-second fixed-rate CPU profile is run, what it measures, and the type-specific rules that apply to it."
 ---
 {{< type-rules standard="Nothing to implement - the profile drives `GET /baseline11`, which the baseline profile already specifies and validates. What it asks of you is a serving model that does not spend CPU it is not using: no busy-wait loop, no spin-poll on a ring, no timer thread waking at a fixed frequency to find nothing to do. All of those are charged here and no other profile can see them." tuned="May tune poll intervals, batching, affinity and ring sizing freely. Note that submission-queue polling and every other spin mode is charged in full: it buys latency at a fixed CPU price, and this is the one profile that prices that trade rather than rewarding it." engine="Same as above, and it matters more: an engine with a fixed worker pool polling at a set cadence spends the same CPU at one million req/s as it does at ten thousand, which this profile is designed to expose. Configuration that scales the poll to the load is in scope; a build that cannot idle is a real result, not a disqualification." >}}
@@ -24,7 +24,7 @@ An entry that cannot hold the rate is not failed for it. It is flagged instead, 
 
 The load is `GET /baseline11?a=1&b=2`, the same endpoint the [baseline profile](../baseline/implementation) specifies, with the same response, and only ever the GET. The mixed GET/POST/chunked rotation belongs to `baseline`; there are no request bodies here at all.
 
-If your entry already subscribes to `baseline`, subscribing to `millionaire` costs you no code.
+If your entry already subscribes to `baseline`, subscribing to `latency-1m` costs you no code.
 
 That thinness is deliberate. The handler is as small as the framework allows, so what is left in the CPU figure is the framework's own overhead (accept loop, event loop, parser, router, response path) rather than anything the workload contributed.
 
@@ -116,7 +116,7 @@ On the composite board this score is shown ×10, on the 0–1,000 basis every
 profile column uses there. The detail view and `--table` report it as defined
 above, out of 100.
 
-The reference implementation is [`scripts/millionaire_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/millionaire_score.py); the board mirrors it in JavaScript. Run `python3 scripts/millionaire_score.py --table` to score the published results from the command line.
+The reference implementation is [`scripts/latency_1m_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/latency_1m_score.py); the board mirrors it in JavaScript. Run `python3 scripts/latency_1m_score.py --table` to score the published results from the command line.
 
 ### Composite
 

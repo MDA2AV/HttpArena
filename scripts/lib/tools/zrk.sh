@@ -2,7 +2,7 @@
 #
 # zrk is the only generator here that paces. gcannon, wrk and h2load all answer
 # "how fast can this go"; zrk answers "hold exactly this rate", which is what
-# the millionaire profile needs — with the rate pinned, the only thing left to
+# the latency-1m profile needs — with the rate pinned, the only thing left to
 # vary between entries is what it cost them.
 #
 # It is also the only one that emits a machine-readable summary, so this
@@ -38,7 +38,7 @@ _zrk_cmd() {
       Build it with: docker build -t $ZRK_IMAGE -f docker/zrk.Dockerfile docker/"
 }
 
-# The rate the millionaire profile holds, in requests/second. It lives here
+# The rate the latency-1m profile holds, in requests/second. It lives here
 # rather than in the profile spec because the spec's five fields are shaped for
 # closed-loop tools and have no slot for an offered rate — and because changing
 # it re-baselines every published number on the profile, so it should be a
@@ -53,7 +53,7 @@ zrk_build_args() {
     mapfile -t cmd < <(_zrk_cmd)
 
     case "$endpoint" in
-        millionaire)
+        latency-1m)
             # Same GET the baseline profile is validated on, so nothing new has
             # to be implemented to subscribe and the handler is as thin as the
             # framework allows -- what is left in the CPU number is the
@@ -124,7 +124,7 @@ print("rps=%d" % round(d.get("achieved_rate") or 0))
 # lat() on the board reads us/ms/s, so hand it microseconds unconverted.
 print("avg_lat=%.1fus" % (lat.get("mean") or 0))
 print("p99_lat=%.1fus" % (lat.get("p99") or 0))
-# p99.9 is not a field any other adapter produces, and the millionaire
+# p99.9 is not a field any other adapter produces, and the latency-1m
 # score weights it, so it has to survive into the result row rather than
 # only existing in this summary.
 print("p999_lat=%.1fus" % (lat.get("p99_9") or 0))

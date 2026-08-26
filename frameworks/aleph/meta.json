@@ -14,7 +14,7 @@
   "repo": "https://github.com/clj-commons/aleph",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "limited-conn",
     "json",
     "json-comp",

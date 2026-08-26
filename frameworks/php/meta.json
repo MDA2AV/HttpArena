@@ -14,7 +14,7 @@
   "repo": "https://github.com/php/php-src",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

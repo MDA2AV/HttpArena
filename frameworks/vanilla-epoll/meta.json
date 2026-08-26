@@ -7,7 +7,7 @@
   "repo": "https://github.com/enghitalo/vanilla",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

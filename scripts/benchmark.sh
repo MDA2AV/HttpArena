@@ -165,7 +165,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         static static-tls async-db async millionaire \
+         static static-tls async-db async latency-1m \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -178,7 +178,7 @@ $_has_isolated_test && framework_build
 # gcannon, wrk and h2load are all on PATH there, so the adapters can call them
 # bare when LOADGEN_DOCKER is false -- zrk cannot, and a `command not found`
 # inside a tool adapter reads downstream as a server that answered nothing.
-# That is exactly how the first board-wide millionaire run failed: every entry
+# That is exactly how the first board-wide latency-1m run failed: every entry
 # reported 0 req/s and a rate_ratio of 0, and the run looked like 103 broken
 # frameworks instead of one missing binary.
 #
@@ -187,10 +187,10 @@ $_has_isolated_test && framework_build
 # for the reason the framework build above is: this Dockerfile needs DNS to
 # reach github.com, and the daemon restart in system_tune() breaks resolution
 # inside build containers for several seconds afterwards.
-if framework_subscribes_to "millionaire" && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
+if framework_subscribes_to "latency-1m" && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
     if ! docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
-        docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — millionaire cannot run without it"
+        docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — latency-1m cannot run without it"
     fi
     ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 $ZRK_IMAGE"
     info "zrk: docker mode ($ZRK_IMAGE)"
@@ -300,12 +300,12 @@ run_one() {
     local best_rps=-1 best_output="" best_cpu="0%" best_mem="0MiB" best_breakdown=""
     local best_cpu_usec="" best_rate_ratio=""
 
-    # Millionaire picks its winner after the loop instead of during it: the run
+    # Latency-1M picks its winner after the loop instead of during it: the run
     # score normalises each metric against the best of this framework's own
     # three runs, which is not known until all three have happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
-    [ "$endpoint" = "millionaire" ] && _mdir=$(mktemp -d)
+    [ "$endpoint" = "latency-1m" ] && _mdir=$(mktemp -d)
 
     BEST_M=()
     local run
@@ -323,7 +323,7 @@ run_one() {
         local output
         # Exact cgroup CPU across exactly the window the load is applied in.
         # Cheap enough to take on every profile — two file reads — and it is
-        # the measurement on the millionaire profile rather than context.
+        # the measurement on the latency-1m profile rather than context.
         cpu_acct_start "$CONTAINER_NAME"
         output=$("${tool//-/_}_run" "${gc_args[@]}")
         cpu_acct_stop
@@ -349,7 +349,7 @@ run_one() {
         # one, which also discards the warm-up for free: an unsettled JIT or GC
         # heap shows up as CPU, and run 1 is the one carrying it.
         local better=false
-        if [ "$endpoint" = "millionaire" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
+        if [ "$endpoint" = "latency-1m" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
             if [ -z "$best_cpu_usec" ] || [ "$CPU_ACCT_USEC" -lt "$best_cpu_usec" ]; then
                 better=true
             fi
@@ -390,7 +390,7 @@ run_one() {
         if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
     done
 
-    # ── Millionaire: pick the run by score, not by any single metric ─────
+    # ── Latency-1M: pick the run by score, not by any single metric ─────
     #
     # The published score weights rate, CPU and both latency tails together, so
     # choosing the run on CPU alone could keep a cheap run with a wrecked tail.
@@ -400,7 +400,7 @@ run_one() {
     # the published score.
     if [ -n "$_mdir" ]; then
         local _win
-        _win=$(python3 "$SCRIPT_DIR/millionaire_score.py" --pick "$_mdir" 2>/dev/null || echo "")
+        _win=$(python3 "$SCRIPT_DIR/latency_1m_score.py" --pick "$_mdir" 2>/dev/null || echo "")
         if [ -n "$_win" ] && [ -f "$_mdir/$_win.kv" ]; then
             info "run $_win wins on score"
             BEST_M=()
@@ -422,8 +422,8 @@ run_one() {
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
-    # The millionaire profile's headline number, and the check that it counts.
-    if [ "$endpoint" = "millionaire" ]; then
+    # The latency-1m profile's headline number, and the check that it counts.
+    if [ "$endpoint" = "latency-1m" ]; then
         # Two different failures that used to print the same line. "No CPU
         # reading" is a cgroup problem; "no requests" is a generator or server
         # problem, and saying the former when it is the latter sent the first
@@ -432,7 +432,7 @@ run_one() {
             warn "no requests were served — there is nothing to measure here."
             warn "  this is a load-generator or server failure, not a CPU one; see the zrk output above"
         elif [ -z "$best_cpu_usec" ]; then
-            warn "no cgroup CPU reading for this run — the millionaire metric is missing"
+            warn "no cgroup CPU reading for this run — the latency-1m metric is missing"
         else
             info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
 | $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
@@ -514,7 +514,7 @@ save_result() {
     local dir="$RESULTS_DIR/$profile/$CONNS"
     mkdir -p "$dir"
 
-    # Millionaire publishes what the profile is about. `cpu` above is still the
+    # Latency-1M publishes what the profile is about. `cpu` above is still the
     # sampled percentage every profile carries; these are the exact figures:
     # CPU microseconds out of the container's own cgroup, the same number per
     # request, and the evidence that the offered rate was actually delivered.
@@ -523,7 +523,7 @@ save_result() {
     # not the load, so the reason ships with the row rather than being inferred
     # from an rps that looks merely slow.
     local eff_extra=""
-    if [ "$profile" = "millionaire" ]; then
+    if [ "$profile" = "latency-1m" ]; then
         local _eff_reqs=${BEST_M[status_2xx]:-0}
         local _eff_per_req="null"
         if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then

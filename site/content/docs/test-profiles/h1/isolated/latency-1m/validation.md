@@ -1,12 +1,12 @@
 ---
 title: Validation
-seo_title: "Millionaire Benchmark: Validation Checks"
-description: "How correctness is established for the Millionaire fixed-rate CPU profile."
+seo_title: "Latency-1M Benchmark: Validation Checks"
+description: "How correctness is established for the Latency-1M fixed-rate CPU profile."
 ---
 
 This profile has no validation section of its own, and that is not an omission.
 
-It drives `GET /baseline11?a=1&b=2`, the baseline endpoint unchanged, so an entry subscribed to `millionaire` is run through the full [baseline validation suite](../baseline/validation): the arithmetic, the `Content-Type`, the randomized-input anti-cheat, the TCP fragmentation checks, and the exhaustive per-byte fragmentation sweep. There is no second endpoint to check.
+It drives `GET /baseline11?a=1&b=2`, the baseline endpoint unchanged, so an entry subscribed to `latency-1m` is run through the full [baseline validation suite](../baseline/validation): the arithmetic, the `Content-Type`, the randomized-input anti-cheat, the TCP fragmentation checks, and the exhaustive per-byte fragmentation sweep. There is no second endpoint to check.
 
 The profile is also unusually hard to game, because the thing an entry would have to fake is not in its control:
 

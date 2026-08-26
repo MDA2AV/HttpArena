@@ -14,7 +14,7 @@
   "repo": "https://github.com/ruroru/ring-http-exchange",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "limited-conn",
     "json",
     "json-comp",

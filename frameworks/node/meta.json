@@ -7,7 +7,7 @@
   "repo": "https://github.com/nodejs/node",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

@@ -14,7 +14,7 @@
   "repo": "https://github.com/aio-libs/aiohttp",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",

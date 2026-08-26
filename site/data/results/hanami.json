@@ -1,7 +1,7 @@
 {
   "framework": "hanami",
   "results": {
-    "millionaire-1024": {
+    "latency-1m-1024": {
       "framework": "hanami",
       "language": "Ruby",
       "rps": 80703,

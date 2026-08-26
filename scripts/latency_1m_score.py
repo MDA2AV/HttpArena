@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scoring for the `millionaire` profile.
+"""Scoring for the `latency-1m` profile.
 
 Every other profile here ranks on one number, requests per second. This one
 cannot: the rate is pinned, so every entry that finishes serves the same load
@@ -33,8 +33,8 @@ best on cost and on both tails, and that gap is information.
 
 Two modes:
 
-    millionaire_score.py --pick <dir>   pick the best of N runs (benchmark.sh)
-    millionaire_score.py --table        score the published results
+    latency_1m_score.py --pick <dir>   pick the best of N runs (benchmark.sh)
+    latency_1m_score.py --table        score the published results
 """
 
 from __future__ import annotations
@@ -155,7 +155,7 @@ def table(results_dir: Path) -> None:
         except Exception:
             continue
         for key, r in (d.get("results") or {}).items():
-            if not key.startswith("millionaire-"):
+            if not key.startswith("latency-1m-"):
                 continue
             rows.append({
                 "fw": d.get("framework", f.stem),
@@ -165,7 +165,7 @@ def table(results_dir: Path) -> None:
                 "p999": to_us(r.get("p99_9_latency")),
             })
     if not rows:
-        print("no millionaire results found", file=sys.stderr)
+        print("no latency-1m results found", file=sys.stderr)
         return
     score_rows(rows)
     rows.sort(key=lambda r: -r["score"])
