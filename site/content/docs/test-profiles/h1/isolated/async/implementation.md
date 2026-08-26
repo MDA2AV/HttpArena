@@ -12,7 +12,7 @@ Every other HTTP/1.1 profile here is answered the moment it arrives; the only th
 
 This profile isolates that difference and nothing else. There is no database, no network hop, no serialization, no I/O of any kind - just a timer, so the number that comes out is a property of the framework's concurrency model rather than of a driver someone else wrote.
 
-**Connections:** 32,768 and 49,152
+**Connections:** 64,000
 
 ## How it works
 
@@ -21,7 +21,7 @@ This profile isolates that difference and nothing else. There is no database, no
 3. The framework waits that long
 4. The framework responds `200` with the parsed number as the body and `Content-Type: text/plain`
 
-The load generator holds every connection open for the whole run, so at 49,152 connections the server has 49,152 requests outstanding at all times, each with its own deadline.
+The load generator holds every connection open for the whole run, so the server has 64,000 requests outstanding at all times, each with its own deadline.
 
 ## Expected response
 
@@ -42,14 +42,14 @@ The body is the parsed integer, in decimal, with no surrounding whitespace or JS
 | Parameter | Value |
 |-----------|-------|
 | Endpoint | `GET /delay/{ms}` |
-| Delay | drawn per request, uniform over 10-30 ms |
-| Connections | 32,768 and 49,152 |
+| Delay | 10 ms |
+| Connections | 64,000 |
 | Pipeline | 1 |
 | Requests per connection | unlimited (connections are held for the whole run) |
-| Duration | 15s |
+| Duration | 10s |
 | Runs | 3 (best taken) |
 
-The delay is rewritten by the load generator on every request from a `{RAND:10:30}` placeholder, so the value asked for is chosen after the container is already running and cannot be answered from anything prepared at startup.
+The delay is flat, so the benchmark itself is not doing any anti-cheat work with the value - all of that lands on validation, which draws its own delays after the container is already running and asserts that the response time follows them.
 
 ## The throughput ceiling
 
@@ -59,9 +59,9 @@ A connection cannot have more than one request in flight, and each request occup
 max rps = connections / mean(delay)
 ```
 
-With a mean delay of 20 ms that is roughly **1.64M rps at 32,768 connections** and **2.46M at 49,152**. Nothing can exceed it while honouring the delays, which makes the ceiling a free correctness check: a result above it is not a fast server, it is a server that did not wait.
+At 10 ms and 64,000 connections that is **6.4M rps**, which is above the fastest number any entry has ever posted on the plain baseline profile. That is deliberate: the ceiling is set high enough not to bind, so what the profile reports is the framework's own capacity rather than the arithmetic.
 
-The gap between a framework's number and that ceiling is what the profile actually reports. Reaching it means holding every connection's timer without the timers themselves becoming the bottleneck.
+It still works as a free correctness check in the other direction. Nothing can exceed the ceiling while honouring the delays, so a result above it is not a fast server, it is a server that did not wait.
 
 For a blocking implementation the ceiling is much lower, and it is set by the thread count rather than the connection count:
 
@@ -69,15 +69,15 @@ For a blocking implementation the ceiling is much lower, and it is set by the th
 max rps = threads / mean(delay)
 ```
 
-A 64-thread server at a 20 ms mean tops out near 3,200 rps no matter how many connections are offered.
+A 64-thread server at 10 ms tops out near 6,400 rps no matter how many connections are offered.
 
 ## Implementation notes
 
 - **Prefer a real async wait.** `await Task.Delay(ms)`, `tokio::time::sleep`, `asyncio.sleep`, `setTimeout`, `time.After`, a suspended coroutine - whatever your framework's own idiom is. These cost a timer entry and keep the worker free
 - **Do not `Thread.sleep` on an event loop.** On a single-threaded or thread-per-core runtime this stalls every other connection that thread owns, not just this request. It is the one shape that will look worse here than a plain thread-per-request server
 - **Per-request state.** The delay belongs to the request. A field on the server, the connection, or a shared handler instance is read back by whichever request finishes parsing last, and validation runs 32 overlapping requests with 32 different delays specifically to find that
-- **Timer granularity.** The shortest delay asked for is 10 ms, comfortably above the resolution of every mainstream runtime on Linux. Rounding up a little is fine; the profile never asserts an upper bound on a single response
-- **Do not create a thread per request.** At 49,152 concurrent requests that is 49,152 threads. Frameworks without an async model should block on whatever pool they already have and accept the result - see the ceiling above
+- **Timer granularity matters more than it looks.** The delay is 10 ms, so a runtime that habitually overshoots by 3-4 ms is handing back 30-40% of the wait. That cost is real and the profile does charge for it. Validation never asserts an upper bound on a single response, though - only the benchmark prices it
+- **Do not create a thread per request.** At 64,000 concurrent requests that is 64,000 threads. Frameworks without an async model should block on whatever pool they already have and accept the result - see the ceiling above
 - **No I/O.** Do not sleep by polling a socket, opening a file, or querying anything. The profile is a timer and nothing else
 
 ## Scoring

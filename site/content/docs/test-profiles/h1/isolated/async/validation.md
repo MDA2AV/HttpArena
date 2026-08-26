@@ -10,13 +10,13 @@ None of them care *how* the wait was implemented. Blocking the request's thread 
 
 ## Randomized delay
 
-Sends `GET /delay/{ms}` with `{ms}` drawn fresh between 10 and 30, the same range the benchmark draws from. Verifies:
+Sends `GET /delay/{ms}` with `{ms}` drawn fresh between 10 and 90. Verifies:
 
 - the response is `200`
 - the body is the requested number
 - the response did not arrive before the requested delay had elapsed
 
-Because the value is chosen after the container is up, nothing prepared at startup can answer it.
+Because the value is chosen after the container is up, nothing prepared at startup can answer it. The benchmark itself asks for a flat 10 ms, so this section carries all of the anti-cheat weight for the parameter.
 
 ## Content-Type header
 

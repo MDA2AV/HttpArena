@@ -13,18 +13,23 @@ declare -A PROFILES=(
     [baseline]="1|0|0-31,64-95|512,4096|"
     [pipelined]="16|0|0-31,64-95|512,4096|pipeline"
     [limited-conn]="1|10|0-31,64-95|512,4096|"
-    # Async: GET /delay/{ms}, ms drawn per request from {RAND:10:30}. Held
-    # connections (req_per_conn=0) so every one of them is a pending timer the
-    # server has to carry. Ceiling is arithmetic — conns / mean(delay), i.e.
-    # ~1.64M rps at 32768c and ~2.46M at 49152c — so a result above it is proof
-    # the delay was skipped, not a fast server.
+    # Async: GET /delay/10, a flat 10ms wait. Held connections
+    # (req_per_conn=0) so every one of them is a pending timer the server has to
+    # carry. Ceiling is arithmetic — conns / delay, i.e. ~6.4M rps — so a result
+    # above it is proof the delay was skipped, not a fast server.
     #
-    # 49152 rather than the 65536 this was scoped at: system_tune() widens
-    # ip_local_port_range to 1024-65535, which is 64505 usable ephemeral ports
-    # after ip_local_reserved_ports, and gcannon needs one per connection. 64K
-    # connections do not fit; 48K leaves headroom for the TIME_WAIT the previous
-    # run is still holding.
-    [async]="1|0|0-31,64-95|32768,49152|async"
+    # The first run (#1314) used a 10-30ms draw over 32768 and 49152, where the
+    # ceiling was 1.64M/2.46M and tokio reached 93%/83% of it. At 10ms the
+    # ceiling clears the ~4.4M baseline peak, so nothing is arithmetic-bound and
+    # the number is the framework's own capacity.
+    #
+    # 64000 rather than 65536: system_tune() widens ip_local_port_range to
+    # 1024-65535 and gcannon needs one ephemeral port per connection, so 64505
+    # are usable after ip_local_reserved_ports. 65536 connections to one
+    # localhost:8080 cannot be established at all — the whole 16-bit port space
+    # is smaller than that. 64000 fits with ~500 ports to spare; if the ramp
+    # ever shows up as connect errors, 61440 is the next stop down.
+    [async]="1|0|0-31,64-95|64000|async"
     [json]="1|0|0-31,64-95|4096|json"
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"

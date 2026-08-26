@@ -47,21 +47,21 @@ gcannon_build_args() {
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
         async)
-            # One template, one {RAND:10:30} placeholder — gcannon rewrites the
-            # two delay digits per request, so the route parameter is drawn
-            # after the container is up and cannot be answered from anything
-            # prepared at startup.
+            # One template, a flat 10ms wait. The value still travels in the
+            # path, so the handler has to parse it out of the route -- what a
+            # constant delay gives up is the on-the-wire variation, which is why
+            # validate.sh draws its own values and asserts the differential.
             #
             # No -r: connections are held for the whole run. That is the point.
             # Every held connection is one request the server is currently
-            # sleeping on, so 32K/48K connections means 32K/48K live timers.
+            # sleeping on, so 64K connections means 64K live timers.
             #
-            # 15s rather than the 5s default. At 20ms mean delay a connection
-            # only completes ~50 requests/s, and the run has to be long enough
-            # that establishing the connections is a small share of it.
+            # 10s rather than the 5s default: long enough that establishing
+            # 64000 connections is a small share of the window, short enough to
+            # keep three runs plus their cool-downs reasonable.
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/async-delay.raw"
-                  -c "$conns" -t "$THREADS" -d 15s -p "$pipeline")
+                  -c "$conns" -t "$THREADS" -d 10s -p "$pipeline")
             ;;
         fortunes)
             # Single endpoint, fixed 12-row seed + 1 runtime-injected row.

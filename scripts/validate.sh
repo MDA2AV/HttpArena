@@ -1456,9 +1456,11 @@ if has_test "async"; then
     ASYNC_DOCS="$DOCS_BASE/h1/isolated/async/validation"
     echo "[test] async delay endpoint"
 
-    # The benchmark draws its delay from {RAND:10:30}; draw this one the same
-    # way so nothing can be prepared for the value that gets asked for.
-    ASYNC_MS=$(rand_between 10 30)
+    # The benchmark asks for a flat 10ms, so on-the-wire variation is not
+    # doing any anti-cheat work there and all of it lands here: draw the
+    # value fresh, after the container is already up, so nothing can have
+    # been prepared for it.
+    ASYNC_MS=$(rand_between 10 90)
     check_delay "GET /delay/$ASYNC_MS (random)" "$ASYNC_MS" 0.008 "$ASYNC_DOCS"
 
     check_header "GET /delay/$ASYNC_MS Content-Type" "Content-Type" "text/plain" "$ASYNC_DOCS" \

@@ -54,8 +54,8 @@ CATALOG = [
         # tuned (#1310). The other two flags are set for the day it flips:
         # engines are measured on it, infrastructure is not — a reverse proxy
         # has no application handler to await in.
-        ("async", "Async Delay", "Per-request delay from a route parameter, at 32K/48K held connections.",
-                                                    [32768,49152],       [32768,49152],   False,True,False),
+        ("async", "Async Delay", "A 10ms wait named in the route, at 64K held connections.",
+                                                    [64000],             [64000],         False,True,False),
     ]),
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),

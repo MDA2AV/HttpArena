@@ -44,7 +44,7 @@ The reply states which baseline it used, and profiles the other framework does n
 | Category | Profiles | Description |
 |----------|----------|-------------|
 | Connection | `baseline`, `pipelined` *, `limited-conn` | Mixed GET/POST with query parsing (512/4K conns), 16× batched pipelining (reference-only, shown faded, excluded from the composite score), short-lived connections that close after 10 requests |
-| Concurrency | `async` * | `GET /delay/{ms}` with the wait named in the route, 32K and 49K held connections. Isolates what a framework does while a request is pending, with no database or I/O in the way. Reference-only for now — measured and shown, not yet part of the composite score |
+| Concurrency | `async` * | `GET /delay/{ms}` with the wait named in the route, 64K held connections. Isolates what a framework does while a request is pending, with no database or I/O in the way. Reference-only for now — measured and shown, not yet part of the composite score |
 | Workload | `json`, `json-comp`, `json-tls`, `upload`, `static`, `static-tls` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, 20 MB body ingestion, 20-file static asset serving (plaintext and TLS) |
 | Database | `async-db`, `crud` | Async Postgres sequential scan; realistic REST API with cached reads, list, upsert, update, and optional Redis cache |
 | Templates | `fortunes` * | DB query + HTML template render (TechEmpower-style Fortunes). Reference-only — measures template-engine throughput, not part of the composite score |
