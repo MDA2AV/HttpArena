@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Gateway H3 Benchmark — Implementation Guide"
+seo_title: "Gateway H3 Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the Gateway H3 proxy and server stack."
 ---
 {{< type-rules standard="Must ship exactly two services - one HTTP/3-capable reverse proxy and one application server. The proxy must be a widely-used, production-grade server with QUIC support (Caddy, nginx 1.25+ with ngx_http_v3_module, Envoy, HAProxy 2.8+, h2o). No custom QUIC implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, QUIC parameter tuning). May tune the proxy-to-server protocol (h1/h2c/UDS). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom QUIC implementations. Ranked separately from frameworks." >}}

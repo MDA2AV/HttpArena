@@ -1,3 +1,0 @@
-[2026-08-22T08:33:15Z INFO  httparena_trillium_tuned::static_preload] static preload: 20 files from /data/static
-[2026-08-22T08:33:15Z INFO  httparena_trillium_tuned] starting trillium-tuned via server(): 4 reuseport worker(s) + shared runtime for h3
-[2026-08-22T08:33:15Z INFO  trillium_server_common::listener_config::reuseport] reuseport: 4 per-core worker(s) across 3 listener(s)

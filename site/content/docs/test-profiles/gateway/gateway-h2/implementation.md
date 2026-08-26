@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Gateway H2 Benchmark — Implementation Guide"
+seo_title: "Gateway H2 Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the Gateway H2 proxy and server stack."
 ---
 {{< type-rules standard="Must ship exactly two services - one reverse proxy and one application server. The proxy must be a widely-used, production-grade server (Nginx, Caddy, Envoy, HAProxy, Traefik, etc.). No custom proxy implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, connection pooling). May tune the proxy-to-server protocol (h2c, Unix sockets, etc.). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom proxy implementations. Ranked separately from frameworks." >}}

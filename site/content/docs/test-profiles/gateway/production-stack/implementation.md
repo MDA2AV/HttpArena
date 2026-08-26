@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Production Stack Benchmark — Implementation Guide"
+seo_title: "Production Stack Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the four-service Production Stack deployment."
 weight: 1
 ---
@@ -184,7 +184,7 @@ Two more are specific to this profile, and both exist so the stack fails loudly 
         condition: service_healthy
   ```
 
-  `depends_on: - cache` waits only for the container to *start*. A cache that dies on boot — because something else already holds 6379, say — leaves the server running happily against whatever Redis does hold it, and the profile publishes numbers measured against a cache it never configured. Entries ran this way for weeks without anyone noticing.
+  `depends_on: - cache` waits only for the container to *start*. A cache that dies on boot (because something else already holds 6379, say) leaves the server running happily against whatever Redis does hold it, and the profile publishes numbers measured against a cache it never configured. Entries ran this way for weeks without anyone noticing.
 
 - **`edge` must wait for a healthy `authsvc`** (`condition: service_healthy`). Without it a run can measure 5xx from the edge and never reach the server at all.
 

@@ -7,7 +7,7 @@
   "repo": "https://github.com/MDA2AV/ioxide",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -18,8 +18,6 @@
     "upload",
     "async-db",
     "crud",
-    "api-4",
-    "api-16",
     "baseline-h2",
     "static-h2",
     "baseline-h3",

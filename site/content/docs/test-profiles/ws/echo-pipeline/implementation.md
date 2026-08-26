@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Pipelined WebSocket Echo Benchmark — Implementation Guide"
+seo_title: "Pipelined WebSocket Echo Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the pipelined WebSocket echo benchmark."
 ---
 {{< type-rules standard="Must use the framework standard WebSocket API with default buffer sizes. No custom batching or read-ahead optimizations." tuned="May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers or batched read paths." engine="No specific rules. Ranked separately from frameworks." >}}

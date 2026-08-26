@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Async Database Benchmark (Postgres) — Implementation Guide"
+seo_title: "Async Database Benchmark (Postgres): Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the async Postgres benchmark."
 ---
 {{< type-rules standard="Must use an async PostgreSQL driver with standard connection pooling. Size the pool from `DATABASE_MAX_CONN` (currently 256), not from CPU count." tuned="May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults." engine="No specific rules." >}}
@@ -9,6 +9,13 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection - exercising async I/O scheduling, connection pooling, and async Postgres driver efficiency.
 
 **This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
+
+> **Reference-only.** This profile is measured and published but does not contribute to the
+> composite score. The database and its driver dominate the result far more than the framework
+> does, so the number mostly reports which Postgres driver a language has rather than anything
+> about the HTTP path this board sets out to compare. It is still worth having, it just no
+> longer decides the ranking.
+
 
 **Connections:** 1,024
 

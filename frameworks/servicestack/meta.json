@@ -14,7 +14,7 @@
   "repo": "https://github.com/ServiceStack/ServiceStack",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -23,9 +23,7 @@
     "upload",
     "static",
     "static-tls",
-    "async-db",
-    "api-4",
-    "api-16"
+    "async-db"
   ],
   "maintainers": [
     "Kaliumhexacyanoferrat"

@@ -8,8 +8,7 @@ both the per-profile explorer and the composite ranking.
 
 The composite mirrors the canonical board: it averages RPS over each profile's
 *scored* connection set, applies per-type profile eligibility, and carries the
-tpl_*/bandwidth fields needed for the api-4/api-16 (template mix) and json-comp
-(compression-ratio) adjustments.
+bandwidth field the json-comp compression-ratio adjustment needs.
 
 Run after scripts/rebuild_site_data.py (or any time site/data changes):
     python3 scripts/gen_leaderboard_data.py
@@ -21,9 +20,13 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import posixpath
 import html as _html
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import latency_1m_score as _l1m  # noqa: E402  (reference impl for the latency-1m score)
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -58,17 +61,16 @@ CATALOG = [
                                                     [64000],             [64000],         False,True,False),
     ]),
     ("Efficiency", [
-        # Unscored while the rate and the connection count settle (#1310). The
-        # ranking metric here is CPU, not rps, and the composite sums rps — so
-        # this cannot simply be switched on: scoring it means teaching
-        # aggregate() a lower-is-better metric first.
+        # Scored. The composite cannot rank this on rps the way it ranks every
+        # other profile, because the rate is pinned and every entry that holds it
+        # delivers the same one. It contributes its own score instead, which
+        # computeComposite() puts on the shared 0-1000 basis.
         #
         # infraScored stays False even though a proxy's CPU efficiency is very
-        # much a real thing, because scoredForType() reads that flag *ahead* of
-        # `scored` — setting it now would score this profile for infrastructure
-        # alone while every other league ignored it.
-        ("millionaire", "Millionaire", "CPU spent serving a pinned 1M req/s.",
-                                                    [1024],              [1024],          False,True,False),
+        # much a real thing: scoredForType() reads that flag *ahead* of `scored`,
+        # and no infrastructure entry has been measured on this profile yet.
+        ("latency-1m", "Latency-1M", "Score out of 100: CPU and both latency tails at a pinned 1M req/s.",
+                                                    [1024],              [1024],          True,True,False),
     ]),
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
@@ -79,13 +81,13 @@ CATALOG = [
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
     ]),
     ("Database", [
-        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True,False),
-        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False,False),
+        # Reference-only. The database and its driver dominate these two far
+        # more than the framework does, which is the case #1310 makes: they
+        # measure the connector, not the HTTP path. Still measured and shown,
+        # just no longer deciding the ranking.
+        ("async-db",  "Async DB",  "Async Postgres sequential scan (reference).",     [1024],     [1024],  False,True,False),
+        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update (reference).",   [4096],     [4096],  False,False,False),
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
-    ]),
-    ("Multi-endpoint", [
-        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False,False),
-        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
     ]),
     ("HTTP/2", [
         ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,True),
@@ -119,7 +121,8 @@ BASE_FIELDS = ("rps", "avg_latency", "p99_latency", "cpu", "memory", "bandwidth"
 TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async_db")
 # Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
 # other ~2,300 rows in data.js do not each grow four nulls.
-EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate")
+EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate",
+              "p99_9_latency")
 
 # Map each benchmark profile to its Knowledge Base "Implementation Guidelines"
 # page (docs ids differ from profile ids; TLS gRPC variants share one page).
@@ -134,12 +137,10 @@ PROFILE_DOC = {
     "static":           "test-profiles/h1/isolated/static/implementation",
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
     "async":            "test-profiles/h1/isolated/async/implementation",
-    "millionaire":      "test-profiles/h1/isolated/millionaire/implementation",
+    "latency-1m":      "test-profiles/h1/isolated/latency-1m/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",
-    "api-4":            "test-profiles/h1/workload/api-4/implementation",
-    "api-16":           "test-profiles/h1/workload/api-16/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
     "static-h2":        "test-profiles/h2/static-h2/implementation",
     "baseline-h2c":     "test-profiles/h2/baseline-h2c/implementation",
@@ -1178,9 +1179,6 @@ TYPE_COLOR = {
 }
 TYPE_COLOR_FALLBACK = "1f2937"
 
-# api-4/api-16 template mix — MIXW in index.html.
-MIXW = {"baseline": 0.15, "json": 1, "upload": 10, "static": 2, "async_db": 10}
-
 _MEM_RE = re.compile(r"([\d.]+)\s*([KMG]i?B)", re.I)
 _BW_RE = re.compile(r"([\d.]+)\s*([KMG]?B)/s", re.I)
 
@@ -1204,12 +1202,12 @@ def _bw(s):
 
 
 def badge_aggregate(profiles, results):
-    """Average rps/mem/bw (and the api template mix) over each profile's scored
-    conns. Port of aggregate() in index.html."""
-    avg, amem, abw, atpl = {}, {}, {}, {}
+    """Average rps/mem/bw over each profile's scored conns. Port of aggregate()
+    in index.html."""
+    avg, amem, abw = {}, {}, {}
     for p in profiles:
         pid = p["id"]
-        sums, ms, bs, cn, ts = {}, {}, {}, {}, {}
+        sums, ms, bs, cn = {}, {}, {}, {}
         for c in p["scoredConns"]:
             for r in results.get(f"{pid}-{c}", []):
                 fw = r["fw"]
@@ -1217,17 +1215,38 @@ def badge_aggregate(profiles, results):
                 cn[fw] = cn.get(fw, 0) + 1
                 ms[fw] = ms.get(fw, 0) + _mem(r.get("memory"))
                 bs[fw] = bs.get(fw, 0) + _bw(r.get("bandwidth"))
-                if pid in ("api-4", "api-16"):
-                    t = ts.setdefault(fw, dict.fromkeys(MIXW, 0.0) | {"n": 0})
-                    for k in MIXW:
-                        t[k] += r.get("tpl_" + k) or 0
-                    t["n"] += 1
         avg[pid] = {fw: sums[fw] / cn[fw] for fw in sums}
         amem[pid] = {fw: ms[fw] / cn[fw] for fw in sums}
         abw[pid] = {fw: bs[fw] / cn[fw] for fw in sums}
-        if pid in ("api-4", "api-16"):
-            atpl[pid] = {fw: {k: t[k] / t["n"] for k in MIXW} for fw, t in ts.items()}
-    return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
+    return {"avg": avg, "mem": amem, "bw": abw}
+
+
+# The latency-1m score, from the reference implementation rather than a third
+# copy of the formula. Field-wide and computed once, exactly like l1mEnsure() in
+# index.html: the bests are taken over every published row, not over whichever
+# league or filter happens to be on screen, so a framework's score does not move
+# when the view does.
+_L1M_CACHE = {}
+
+
+def l1m_scores():
+    if _L1M_CACHE:
+        return _L1M_CACHE
+    rows = [{"fw": r.get("framework") or r.get("fw"),
+             "rps": r.get("rps") or 0,
+             "cpu": r.get("cpu_per_req_us"),
+             "p99": _l1m.to_us(r.get("p99_latency")),
+             "p999": _l1m.to_us(r.get("p99_9_latency"))}
+            for key, rs in RESULTS.items() if key.startswith("latency-1m-")
+            for r in rs]
+    if not rows:
+        _L1M_CACHE["__empty__"] = 0.0
+        return _L1M_CACHE
+    _l1m.score_rows(rows)
+    for r in rows:
+        if r["fw"]:
+            _L1M_CACHE[r["fw"]] = r["score"]
+    return _L1M_CACHE
 
 
 def _scored_for(prof, meta, pid, fw):
@@ -1292,8 +1311,7 @@ def _cmp_factor(meta, fw, scope=None):
 def _eff_fn(A, in_league):
     """eff() in index.html: the number a profile is actually ranked on.
 
-    Plain average rps, except for the two profiles the board adjusts — the
-    api-4/api-16 template mix, and json-comp, which is scored on
+    Plain average rps, except for json-comp, which the board scores on
     bandwidth-adjusted rps: the best compressor sets the bar and everyone else
     is penalised by the square of their size ratio. The compression bar is per
     league, which is why this takes `in_league` rather than a finished set.
@@ -1312,9 +1330,6 @@ def _eff_fn(A, in_league):
         rps = A["avg"].get(pid, {}).get(fw, 0)
         if rps <= 0:
             return 0.0
-        t = A["tpl"].get(pid, {}).get(fw)
-        if pid in ("api-4", "api-16") and t:
-            return sum(t[k] * w for k, w in MIXW.items())
         if pid == "json-comp" and min_bpr is not None:
             b = A["bw"][pid].get(fw, 0)
             if b > 0:
@@ -1391,7 +1406,17 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 # board renders, which is a number people can count (#1149).
                 any_result = True
                 if is_scored(pid, fw):
-                    score += (eff(pid, fw) / max_r[pid]) * 100
+                    # 0-1000 per profile; mirrors computeComposite() in
+                    # index.html, which check_badge_parity.js diffs against.
+                    #
+                    # latency-1m cannot be normalised on rps like the rest: its
+                    # rate is pinned, so every entry that holds it delivers the
+                    # same one and the column would read 1000 for all of them.
+                    # It contributes its own score, x10 onto the shared basis.
+                    if pid == "latency-1m":
+                        score += l1m_scores().get(fw, 0.0) * 10
+                    else:
+                        score += (eff(pid, fw) / max_r[pid]) * 1000
         if any_result:
             rows.append((fw, score * _cmp_factor(meta, fw, scope)))
     rows.sort(key=lambda r: (-r[1], r[0]))

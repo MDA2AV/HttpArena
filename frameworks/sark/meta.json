@@ -7,7 +7,7 @@
   "repo": "https://github.com/dope-rs/dope",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -17,8 +17,6 @@
     "async-db",
     "crud",
     "fortunes",
-    "api-4",
-    "api-16",
     "json-tls",
     "baseline-h2c",
     "json-h2c",

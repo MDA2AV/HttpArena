@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Unary gRPC Benchmark — Implementation Guide"
+seo_title: "Unary gRPC Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the unary gRPC benchmark."
 ---
 {{< type-rules standard="Must use the standard gRPC library for the language with default configuration. No custom protobuf serialization." tuned="May optimize gRPC channel settings, thread pools, and use custom protobuf serialization." engine="No specific rules. Ranked separately from frameworks." >}}

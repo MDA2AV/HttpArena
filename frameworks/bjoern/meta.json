@@ -7,14 +7,12 @@
   "repo": "https://github.com/jonashaag/bjoern",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
     "json-comp",
     "upload",
-    "api-4",
-    "api-16",
     "static",
     "async-db"
   ],

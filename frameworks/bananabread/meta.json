@@ -14,15 +14,13 @@
   "repo": "https://github.com/dotnet-web-stack/Seagreen",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
     "upload",
     "async-db",
-    "crud",
-    "api-4",
-    "api-16"
+    "crud"
   ],
   "maintainers": []
 }

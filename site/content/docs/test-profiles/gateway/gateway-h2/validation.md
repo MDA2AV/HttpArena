@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Gateway H2 Benchmark — Validation Checks"
+seo_title: "Gateway H2 Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the Gateway H2 proxy and server stack before a framework's results are accepted."
 ---
 

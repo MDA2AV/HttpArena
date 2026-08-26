@@ -2,12 +2,11 @@
 weight: 1
 title: H/1.1
 seo_title: "HTTP/1.1 Test Profiles"
-description: "HTTP/1.1 profiles, split into isolated single-endpoint benchmarks and multi-endpoint workload mixes."
+description: "Single-endpoint HTTP/1.1 benchmarks, each isolating one dimension: throughput, JSON, uploads, static files, concurrency, CPU cost and database access."
 ---
 
-H/1.1 test profiles are split into **Isolated** (single-endpoint benchmarks) and **Workload** (multi-endpoint realistic mixes).
+Every HTTP/1.1 profile measures one thing at a time, so a number can be attributed to a single part of the framework rather than to a mix.
 
 {{< cards >}}
-  {{< card link="isolated" title="Isolated" subtitle="Single-endpoint benchmarks - baseline, JSON, upload, static files, and more." icon="lightning-bolt" >}}
-  {{< card link="workload" title="Workload" subtitle="Multi-endpoint mixes that exercise multiple code paths under realistic conditions." icon="collection" >}}
+  {{< card link="isolated" title="Isolated" subtitle="Single-endpoint benchmarks - baseline, JSON, upload, static files, concurrency, CPU cost and database access." icon="lightning-bolt" >}}
 {{< /cards >}}

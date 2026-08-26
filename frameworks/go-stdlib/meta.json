@@ -14,7 +14,7 @@
   "repo": "https://github.com/golang/go",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -24,9 +24,7 @@
     "static",
     "static-tls",
     "async-db",
-    "crud",
-    "api-4",
-    "api-16"
+    "crud"
   ],
   "maintainers": []
 }

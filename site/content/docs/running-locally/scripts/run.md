@@ -1,6 +1,6 @@
 ---
 title: run.sh
-seo_title: "run.sh — Run a Framework Interactively"
+seo_title: "run.sh: Run a Framework Interactively"
 description: "Build and start a single framework container with all data volumes and a Postgres sidecar attached, for hands-on testing."
 weight: 2
 ---

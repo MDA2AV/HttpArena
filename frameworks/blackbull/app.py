@@ -17,7 +17,6 @@ read-only mount HttpArena's harness provides).
 
 Profiles intentionally NOT implemented:
   - async-db / crud   (no asyncpg integration)
-  - api-4 / api-16    (multi-endpoint compositions)
   - *-h3              (no HTTP/3 transport)
   - *-grpc            (no gRPC support)
   - production-stack / gateway / fortunes
@@ -179,7 +178,7 @@ async def json_comp_endpoint(count: int, scope):
 
 
 # ---------------------------------------------------------------------------
-# Postgres and Redis — async-db, api-4/api-16 and crud.
+# Postgres and Redis — async-db and crud.
 #
 # Wired lazily on first use: launcher.py starts one process per listener port
 # and there is no startup hook that runs inside each one's event loop. Every

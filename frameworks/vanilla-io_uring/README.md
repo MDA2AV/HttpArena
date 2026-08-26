@@ -21,7 +21,6 @@ backend. The harness runs it with `--security-opt seccomp=unconfined` and
 | `async-db` | `GET /async-db?min&max&limit` | `db.pg` pooled Go-style DB |
 | `crud` | `GET/POST/PUT /crud/items[/id]` | list + read + create + update; in-memory cache-aside (`X-Cache` MISS/HIT, invalidated on update — no Redis) |
 | `fortunes` | `GET /fortunes` | DB rows + runtime row, HTML-escaped |
-| `api-4`, `api-16` | mixed baseline + json + async-db | |
 
 ## Stack
 

@@ -1,0 +1,29 @@
+{
+  "framework": "WebFramework Python",
+  "results": {
+    "latency-1m-1024": {
+      "framework": "WebFramework Python",
+      "language": "Pyton",
+      "rps": 23556,
+      "avg_latency": "9286569.0us",
+      "p99_latency": "18440192.0us",
+      "cpu": "99.1%",
+      "memory": "92MiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "20s",
+      "pipeline": 1,
+      "bandwidth": "2.92MB/s",
+      "reconnects": 599,
+      "status_2xx": 471215,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0,
+      "cpu_usec": 20634867,
+      "cpu_per_req_us": 43.7908,
+      "target_rate": 1000000,
+      "rate_ratio": 0.0236,
+      "p99_9_latency": "18653184.0us"
+    }
+  }
+}

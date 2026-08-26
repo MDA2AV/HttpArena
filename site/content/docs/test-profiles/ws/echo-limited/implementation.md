@@ -1,12 +1,12 @@
 ---
 title: Implementation Guidelines
-seo_title: "Short-lived WebSocket Connection Benchmark — Implementation Guide"
+seo_title: "Short-lived WebSocket Connection Benchmark: Implementation Guide"
 description: "Endpoint contract and rules for the short-lived WebSocket profile, where each connection is retired after 10 echo messages and re-upgraded."
 ---
 {{< type-rules standard="Must use the framework standard WebSocket API with default buffer sizes. The upgrade handshake must be handled by the framework's own WebSocket support - pre-computing or caching the 101 response across connections is not allowed." tuned="May optimize the upgrade path, frame handling and buffer sizes, including custom handshake parsing, as long as every connection performs a real handshake." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
-The endpoint is exactly the one used by [Echo](../echo/implementation/) — `/ws` on port 8080, echoing each text frame back unchanged. The difference is entirely in the client: the load generator sends 10 messages per connection, then closes it and opens a replacement.
+The endpoint is exactly the one used by [Echo](../echo/implementation/): `/ws` on port 8080, echoing each text frame back unchanged. The difference is entirely in the client: the load generator sends 10 messages per connection, then closes it and opens a replacement.
 
 **Connections:** 512, 4,096
 **Messages per connection:** 10
@@ -25,7 +25,7 @@ Throughput is counted the same way as the other WebSocket profiles: one echo rec
 
 ## What it measures
 
-- Cost of the WebSocket upgrade handshake — request parsing, `Sec-WebSocket-Accept` computation, and the 101 response
+- Cost of the WebSocket upgrade handshake: request parsing, `Sec-WebSocket-Accept` computation, and the 101 response
 - Per-connection setup and teardown: allocation of the connection's buffers and WebSocket state, and how promptly they are released
 - Accept-path throughput under continuous connection churn, rather than the steady-state frame loop the other WebSocket profiles measure
 

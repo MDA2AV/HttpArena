@@ -14,14 +14,12 @@
   "repo": "https://github.com/walkor/Workerman",
   "enabled": false,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
     "json-tls",
     "static",
-    "api-4",
-    "api-16",
     "async-db",
     "upload"
   ],

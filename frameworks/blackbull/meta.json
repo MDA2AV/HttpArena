@@ -17,7 +17,7 @@
     "baseline-h2",
     "static-h2",
     "echo-ws",
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -25,8 +25,6 @@
     "json-tls",
     "upload",
     "async-db",
-    "api-4",
-    "api-16",
     "static",
     "static-tls"
   ],

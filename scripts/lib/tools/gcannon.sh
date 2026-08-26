@@ -10,8 +10,8 @@
 # Emits one token per line — caller captures with `mapfile -t gc_args`.
 #
 # req_per_conn is only honored for endpoints that don't hardcode their own -r.
-# Today that's the empty (baseline/limited-conn), api-4/api-16 and ws-echo
-# (echo-ws-limited) cases.
+# Today that's the empty (baseline/limited-conn) and ws-echo (echo-ws-limited)
+# cases.
 gcannon_build_args() {
     local endpoint="$1" conns="$2" pipeline="$3" duration="$4" req_per_conn="${5:-0}"
     local -a args
@@ -34,12 +34,6 @@ gcannon_build_args() {
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/upload-500k.raw,$REQUESTS_DIR/upload-2m.raw,$REQUESTS_DIR/upload-10m.raw,$REQUESTS_DIR/upload-20m.raw"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 5)
-            ;;
-        api-4|api-16)
-            args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/async-db-get.raw,$REQUESTS_DIR/async-db-get.raw"
-                  -c "$conns" -t 64 -d 15s -p "$pipeline")
-            [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
         async-db)
             args=("http://localhost:$PORT"
@@ -203,20 +197,5 @@ gcannon_parse() {
         echo "status_3xx=$(echo "$output" | grep -oP '3xx=\K\d+' | head -1 || echo 0)"
         echo "status_4xx=$(echo "$output" | grep -oP '4xx=\K\d+' | head -1 || echo 0)"
         echo "status_5xx=$(echo "$output" | grep -oP '5xx=\K\d+' | head -1 || echo 0)"
-    fi
-
-    # Per-template response counts — only gcannon emits these, and today
-    # only api-4 / api-16 read them (mixed-template workload). The template
-    # order here must stay in sync with gcannon_build_args for api-4/api-16:
-    #   get, get, get, json-get, json-get, json-get, async-db-get, async-db-get
-    if [ "$endpoint" = "api-4" ] || [ "$endpoint" = "api-16" ]; then
-        local tpl_line
-        tpl_line=$(echo "$output" | grep -oP 'Per-template-ok: \K.*' | head -1)
-        if [ -n "$tpl_line" ]; then
-            IFS=',' read -ra _tpl <<< "$tpl_line"
-            echo "tpl_baseline=$(( ${_tpl[0]:-0} + ${_tpl[1]:-0} + ${_tpl[2]:-0} ))"
-            echo "tpl_json=$(( ${_tpl[3]:-0} + ${_tpl[4]:-0} + ${_tpl[5]:-0} ))"
-            echo "tpl_async_db=$(( ${_tpl[6]:-0} + ${_tpl[7]:-0} ))"
-        fi
     fi
 }

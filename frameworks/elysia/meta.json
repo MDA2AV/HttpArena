@@ -14,7 +14,7 @@
   "repo": "https://github.com/elysiajs/elysia",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -25,9 +25,7 @@
     "static-tls",
     "async-db",
     "crud",
-    "fortunes",
-    "api-4",
-    "api-16"
+    "fortunes"
   ],
   "maintainers": ["saltyaom"]
 }

@@ -7,7 +7,7 @@
   "repo": "https://github.com/phjeltman/cardigan",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn"
   ],

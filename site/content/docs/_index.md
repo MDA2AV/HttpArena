@@ -1,6 +1,6 @@
 ---
 title: Knowledge Base
-seo_title: "HttpArena Knowledge Base — HTTP Server Benchmark Methodology"
+seo_title: "HttpArena Knowledge Base: HTTP Server Benchmark Methodology"
 description: "How the HttpArena benchmarks work: what each test profile measures, how the load generators drive traffic, and how results are scored."
 toc: false
 ---

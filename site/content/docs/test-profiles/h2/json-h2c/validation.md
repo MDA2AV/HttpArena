@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "JSON over HTTP/2 Cleartext Benchmark — Validation Checks"
+seo_title: "JSON over HTTP/2 Cleartext Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the JSON over HTTP/2 cleartext benchmark before a framework's results are accepted."
 ---
 

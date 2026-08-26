@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Static File Serving Benchmark (HTTP/1.1) — Validation Checks"
+seo_title: "Static File Serving Benchmark (HTTP/1.1): Validation Checks"
 description: "The correctness checks validate.sh runs against the HTTP/1.1 static file benchmark before a framework's results are accepted."
 ---
 

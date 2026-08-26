@@ -47,6 +47,18 @@ const composite = grab(/\/\/ ── COMPOSITE scoring[\s\S]*?(?=\/\/ ── rend
 const familyOf = grab(/^\s*function familyOf\(p\)\{.*$/m, 'familyOf()');
 const memFn = grab(/^\s*function mem\(s\)\{.*$/m, 'mem()');
 const bwFn = grab(/^\s*function bw\(s\)\{.*$/m, 'bw()');
+const latFn = grab(/^\s*function lat\(s\)\{.*$/m, 'lat()');
+// computeComposite() calls leagueType() to decide column order, and
+// leagueType() reads this. Lifted rather than restated here so the two lists
+// cannot drift apart.
+const exclTypes = grab(/^\s*var EXCLUSIVE_TYPES=.*$/m, 'EXCLUSIVE_TYPES');
+// The latency-1m profile pins its rate, so the composite cannot render its
+// column off rps the way it does every other one and calls into this block for
+// a score instead. Lifted for the same reason as everything else here: the
+// composite reaches for it, so evaluating the composite without it throws.
+const milFns = grab(
+  /\s*\/\/ Latency-1M scores on cost[\s\S]*?(?=\s*\/\/ What a profile's detail view ranks on)/,
+  'the latency-1m scoring block');
 
 // ── the data the browser would have ─────────────────────────────────────────
 const window = {};
@@ -73,6 +85,9 @@ const run = new Function('D', `
   ${familyOf}
   ${memFn}
   ${bwFn}
+  ${latFn}
+  ${exclTypes}
+  ${milFns}
   ${composite}
   return function(scope, types, lang, showTuned){
     // AGG is state-independent, so its cache survives these being flipped.

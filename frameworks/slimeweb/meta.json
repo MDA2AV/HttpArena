@@ -14,7 +14,7 @@
   "repo": "https://github.com/ATOMMAX-2001/Slime/",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -23,8 +23,6 @@
     "upload",
     "echo-ws",
     "echo-ws-pipeline",
-    "api-4",
-    "api-16",
     "static",
     "async-db"
   ],

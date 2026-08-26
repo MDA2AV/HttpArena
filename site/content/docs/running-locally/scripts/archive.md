@@ -1,6 +1,6 @@
 ---
 title: archive.sh
-seo_title: "archive.sh — Manage Result Rounds"
+seo_title: "archive.sh: Manage Result Rounds"
 description: "Snapshot current results as a named round, list archived rounds, or delete one, using scripts/archive.sh."
 weight: 5
 ---

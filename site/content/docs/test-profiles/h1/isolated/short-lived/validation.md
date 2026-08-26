@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Short-lived Connection Benchmark — Validation Checks"
+seo_title: "Short-lived Connection Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the short-lived connection benchmark before a framework's results are accepted."
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "HTTP/2 Cleartext Baseline Benchmark (h2c) — Validation Checks"
+seo_title: "HTTP/2 Cleartext Baseline Benchmark (h2c): Validation Checks"
 description: "The correctness checks validate.sh runs against the HTTP/2 cleartext baseline benchmark before a framework's results are accepted."
 ---
 

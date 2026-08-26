@@ -28,7 +28,6 @@ Responses are produced by GenHTTP's own pipeline (routing + serialization), not 
 - `upload` — `POST /upload`, streamed request body, returns the byte count
 - `async-db` — `/async-db?min=&max=&limit=`, Postgres via `ioxide.pg` (per-reactor pool)
 - `crud` — list / get / create / update on `/crud/items`, cache-aside (`X-Cache`, in-process)
-- `api-4` / `api-16` — mixed baseline+json+async-db at 4 / 16 reactors
 
 `json-tls` serves on `:8081` when `TLS_CERT` / `TLS_KEY` (default `/certs`) exist; the DB profiles
 need `DATABASE_URL`. Both are provided by the harness sidecars.

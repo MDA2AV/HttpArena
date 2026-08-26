@@ -14,7 +14,7 @@
   "repo": "https://github.com/sanic-org/sanic",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -22,9 +22,7 @@
     "upload",
     "static",
     "async-db",
-    "crud",
-    "api-4",
-    "api-16"
+    "crud"
   ],
   "maintainers": []
 }

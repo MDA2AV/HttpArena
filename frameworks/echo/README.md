@@ -26,7 +26,7 @@ Echo v4 on the Go `net/http` server, default configuration.
 
 ## Added profiles
 
-`static`, `static-tls`, `json-tls`, `async-db`, `crud`, `api-4` and `api-16`.
+`static`, `static-tls`, `json-tls`, `async-db` and `crud`.
 
 - `json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key`
   are mounted; it is the same router behind TLS, not a second copy of the handlers.

@@ -135,8 +135,8 @@ This split is empirically tuned - see the CHANGELOG entry for 2026-04-16 for the
 - `net.ipv4.tcp_max_syn_backlog` → 65535
 - `net.core.netdev_max_backlog` → 65535
 - `net.ipv4.ip_local_port_range` → `1024 65535` (avoid ephemeral port exhaustion under `-r` reconnect storms)
-- `net.ipv4.ip_local_reserved_ports` → `5432,6379,8080,8081,8082,8443,9090` — every port a server or sidecar listens on. The range above is wide enough to include them, so without this the kernel can hand one to an outbound load-generator socket and the next profile to bind it fails. That is not theoretical: `production-stack` died at the end of a full run with `bind 0.0.0.0:9090: Address in use` while passing when run first. Reserving keeps them bindable and out of ephemeral allocation.
-- `net.ipv4.tcp_tw_reuse` → 1 (outbound reuse only — it does not help a listening bind)
+- `net.ipv4.ip_local_reserved_ports` → `5432,6379,8080,8081,8082,8443,9090`, every port a server or sidecar listens on. The range above is wide enough to include them, so without this the kernel can hand one to an outbound load-generator socket and the next profile to bind it fails. That is not theoretical: `production-stack` died at the end of a full run with `bind 0.0.0.0:9090: Address in use` while passing when run first. Reserving keeps them bindable and out of ephemeral allocation.
+- `net.ipv4.tcp_tw_reuse` → 1 (outbound reuse only; it does not help a listening bind)
 - `net.ipv4.tcp_max_tw_buckets` → 131072
 - `net.core.rmem_max` / `wmem_max` → 7.5 MB (UDP buffer for QUIC)
 - Loopback MTU → 1500 (realistic Ethernet; the default 65536 hides kernel segmentation cost)

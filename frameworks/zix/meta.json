@@ -7,7 +7,7 @@
   "repo": "https://github.com/prothegee/zix",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "static",
@@ -15,8 +15,6 @@
     "json",
     "json-comp",
     "json-tls",
-    "api-4",
-    "api-16",
     "async-db",
     "crud"
   ],

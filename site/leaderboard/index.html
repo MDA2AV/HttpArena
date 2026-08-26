@@ -444,8 +444,13 @@
   .cm .fwcell .lang{flex:none; font-size:.72rem; white-space:nowrap}
   .cm .fwcell .nm a:hover{color:var(--accent)}
   /* 8px wider than it was: the ? and its gap are what the header gained, and an
-     auto-layout column would otherwise grow past the 104px floor on its own. */
-  .cm .scoreh,.cm .scorec{left:400px; width:112px; min-width:112px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
+     auto-layout column would otherwise grow past the 104px floor on its own.
+     Then 20px wider again for the 0-1000 per-profile scale: the largest total
+     on any board went from 1,041 to 10,412, and the completeness delta beside
+     it from (-26) to (-260). The cell is nowrap, so the digits had to fit.
+     Safe to widen because this is the last sticky column - nothing else has a
+     left offset that depends on its width. */
+  .cm .scoreh,.cm .scorec{left:400px; width:132px; min-width:132px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
   .cm .scoreh + th, .cm .scorec + td{padding-left:1.3rem}
   /* The one column with a method behind it, and the method has a term - the
      completeness factor - that cannot be read off the table. Every other header
@@ -641,7 +646,11 @@ document.addEventListener('DOMContentLoaded', function(){
   var COMPOSITE = '__composite__';
   var SCOPES = [{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'}];
   function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws'}[p.category]||'h1'; }
-  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Workload','Database','Multi-endpoint']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
+  // cats must list every CATALOG category that belongs to the family. This is
+  // the nav's only source of profiles, so a category missing here disappears
+  // from Detailed Views entirely while still ranking on the composite --
+  // which is how async and latency-1m went missing when they were added.
+  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload','Database']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
   var expanded=new Set(['composite']);
   // state.lang is an exact language filter, distinct from the q search box: q
   // matches substrings across name/language/engine, which is fine for typing but
@@ -1262,7 +1271,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   // ── COMPOSITE scoring (mirrors the canonical board) ─────
-  var MIXW={baseline:0.15, json:1, upload:10, static:2, async_db:10};
   // Completeness: the four things a framework can do for you between an
   // arriving request and a finished response - route it, run middleware around
   // the handler, hand the request over already made (path and query parameters,
@@ -1332,33 +1340,42 @@ document.addEventListener('DOMContentLoaded', function(){
   // framework selection shares the one framework scored set.
   function leagueType(){ for(var i=0;i<EXCLUSIVE_TYPES.length;i++){ if(state.types.indexOf(EXCLUSIVE_TYPES[i])>=0) return EXCLUSIVE_TYPES[i]; } return 'flagship'; }
   function aggregate(){
-    // avg rps/mem/bw over each profile's scored conns; tpl avg for api.
-    var avg={},amem={},abw={},atpl={};
+    // avg rps/mem/bw over each profile's scored conns.
+    var avg={},amem={},abw={};
     D.profiles.forEach(function(p){
       // Reference-only profiles (scored:false — pipelined, fortunes) aggregate
       // too: they render as faded columns in the matrix, they just never enter
       // the framework composite sum (#1058). Load-bearing for infrastructure,
       // whose composite does count Pipelined — scoredForType() can only pick a
       // profile up if there is an average here for it.
-      var pid=p.id, sums={},ms={},bs={},cn={},ts={};
+      var pid=p.id, sums={},ms={},bs={},cn={};
       p.scoredConns.forEach(function(c){
         (D.results[pid+'-'+c]||[]).forEach(function(r){
           var fw=r.fw; sums[fw]=(sums[fw]||0)+(r.rps||0); cn[fw]=(cn[fw]||0)+1;
           ms[fw]=(ms[fw]||0)+mem(r.memory); bs[fw]=(bs[fw]||0)+bw(r.bandwidth);
-          if(pid==='api-4'||pid==='api-16'){ if(!ts[fw])ts[fw]={baseline:0,json:0,upload:0,static:0,async_db:0,n:0}; var t=ts[fw]; t.baseline+=r.tpl_baseline||0; t.json+=r.tpl_json||0; t.upload+=r.tpl_upload||0; t.static+=r.tpl_static||0; t.async_db+=r.tpl_async_db||0; t.n++; }
         });
       });
       avg[pid]={};amem[pid]={};abw[pid]={};
       Object.keys(sums).forEach(function(fw){ var c=cn[fw]; avg[pid][fw]=sums[fw]/c; amem[pid][fw]=ms[fw]/c; abw[pid][fw]=bs[fw]/c; });
-      if(pid==='api-4'||pid==='api-16'){ atpl[pid]={}; Object.keys(ts).forEach(function(fw){ var t=ts[fw]; atpl[pid][fw]={baseline:t.baseline/t.n,json:t.json/t.n,upload:t.upload/t.n,static:t.static/t.n,async_db:t.async_db/t.n}; }); }
     });
-    return {avg:avg,mem:amem,bw:abw,tpl:atpl};
+    return {avg:avg,mem:amem,bw:abw};
   }
   var AGG=null;
   function computeComposite(){
     if(!AGG) AGG=aggregate();
     var A=AGG, useMem=state.useMem;
     var pids=[]; D.profiles.forEach(function(p){ if(state.scope==='all'||familyOf(p)===state.scope) pids.push(p.id); });
+    // Scored columns first, reference-only ones after, each keeping its catalog
+    // order. Reading left to right then follows the score: everything before the
+    // break is in the sum, everything after it is context.
+    //
+    // Decided here rather than by reordering the catalog, because which columns
+    // are reference-only is a property of the league being shown, not of the
+    // profile. Infrastructure scores Pipelined and the framework leagues do not,
+    // so a fixed order would have to be wrong for one of them.
+    var _lt=leagueType(), _scored=[], _ref=[];
+    pids.forEach(function(pid){ (scoredForType(pid,_lt)?_scored:_ref).push(pid); });
+    pids=_scored.concat(_ref);
     // Two different questions, previously answered by one predicate:
     //
     //   outOfLeague — is this entry ranked somewhere else entirely? Types are
@@ -1382,7 +1399,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if(pids.indexOf('json-comp')>=0 && A.avg['json-comp']){ var mv=Infinity; Object.keys(A.avg['json-comp']).forEach(function(fw){ if(exclFromScale(fw))return; var rps=A.avg['json-comp'][fw]||0,b=A.bw['json-comp'][fw]||0; if(rps>0&&b>0){var bpr=b/rps; if(bpr<mv)mv=bpr;} }); if(mv<Infinity)minBpr=mv; }
     function eff(pid,fw){
       var rps=(A.avg[pid]&&A.avg[pid][fw])||0; if(rps<=0) return 0;
-      if((pid==='api-4'||pid==='api-16')&&A.tpl[pid]&&A.tpl[pid][fw]){ var t=A.tpl[pid][fw]; return t.baseline*MIXW.baseline+t.json*MIXW.json+t.upload*MIXW.upload+t.static*MIXW.static+t.async_db*MIXW.async_db; }
       if(pid==='json-comp'&&minBpr!=null){ var b=A.bw[pid][fw]||0; if(b>0) return rps*Math.pow(minBpr/(b/rps),2); }
       return rps;
     }
@@ -1396,10 +1412,30 @@ document.addEventListener('DOMContentLoaded', function(){
       pids.forEach(function(pid){
         var rps=(A.avg[pid]&&A.avg[pid][fw])||0;
         if(rps>0 && maxR[pid]>0){ any=true;
-          var sc=(eff(pid,fw)/maxR[pid])*100;
-          if(useMem && maxME[pid]>0){ var m=A.mem[pid][fw]||0; if(m>0) sc+=(Math.sqrt(rps)/m/maxME[pid])*100*0.5; }
+          var sc;
+          if(pid==='latency-1m'){
+            // The rate is pinned on this profile, so normalising it on rps puts
+            // every entry that held the rate at 100 and the column says nothing.
+            // Its own score is already a 0-100 quantity built from cost and both
+            // latency tails, which is what the cell should show. No memory bonus:
+            // the value is not a throughput for the bonus to scale.
+            l1mEnsure();
+            // x10 to land on the composite's 0-1000 basis. The profile's own
+            // score is defined 0-100 and the detail view shows it that way.
+            sc=(_l1mScores[fw]||0)*10;
+          } else {
+            // 0-1000 per profile, not 0-100. At 24 scored profiles a 0-100
+            // basis put whole clusters of entries on the same rounded total,
+            // and the extra digit is free: nothing about the ranking changes,
+            // only how finely it can be read.
+            sc=(eff(pid,fw)/maxR[pid])*1000;
+            if(useMem && maxME[pid]>0){ var m=A.mem[pid][fw]||0; if(m>0) sc+=(Math.sqrt(rps)/m/maxME[pid])*1000*0.5; }
+          }
           var counts=isScored(pid,fw);
-          cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0)};
+          // `score` is set only where the cell must not print rps. Everywhere
+          // else it stays null and the renderer keeps showing throughput.
+          cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0),
+                      score:(pid==='latency-1m'?sc:null)};
           if(counts) sum+=sc;
         }
       });
@@ -1605,9 +1641,10 @@ document.addEventListener('DOMContentLoaded', function(){
       pids.forEach(function(pid){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
-        var inner='<span class="pcv"><span class="crps">'+fmtK(cell.rps)+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
+        var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps);
+        var inner='<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'">'+inner+'</td>'; }
-        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile — not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
+        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile, not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
@@ -1623,27 +1660,85 @@ document.addEventListener('DOMContentLoaded', function(){
     setupTopScroll();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return _l1mScores[r.fw]||0; if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
+  // Latency-1M scores on cost, not throughput. The rate is pinned, so every
+  // entry that finishes serves the same load and rps cannot separate them; what
+  // can is the bill and the tail. Kept byte-for-byte equivalent to
+  // scripts/latency_1m_score.py, which is the reference implementation and
+  // carries the reasoning for the two different curve shapes.
+  var L1M_FULL=950000, L1M_W_CPU=0.60, L1M_W_P99=0.25, L1M_W_P999=0.15, L1M_DEC=3;
+  var _l1mScores={}, _l1mBuilt=false;
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  // CPU spans ~3.3x across rate-holders, so a plain ratio behaves over it.
+  function l1mLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
+  // The tails span five orders of magnitude, where a ratio would collapse to
+  // zero for everyone but the leader. A decade scale keeps the field separable
+  // and still charges a third of the term for every 10x.
+  function l1mDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/L1M_DEC); }
+  // Build from the canonical result set when the caller has no rows of its own,
+  // so the composite and the detail view agree on the same normalisation.
+  function l1mEnsure(){
+    if(_l1mBuilt) return;
+    var p=PROF['latency-1m'];
+    var rows=[]; if(p) p.conns.forEach(function(c){ rows=rows.concat(D.results['latency-1m-'+c]||[]); });
+    l1mBuild(rows);
+  }
+  function l1mBuild(rows){
+    _l1mScores={}; _l1mBuilt=true;
+    var bc=Infinity,bp=Infinity,b9=Infinity;
+    rows.forEach(function(r){
+      var c=+r.cpu_per_req_us, p=lat(r.p99_latency), q=lat(r.p99_9_latency);
+      if(c>0) bc=Math.min(bc,c);
+      if(p>0&&isFinite(p)) bp=Math.min(bp,p);
+      if(q>0&&isFinite(q)) b9=Math.min(b9,q);
+    });
+    rows.forEach(function(r){
+      var rf=clamp01((r.rps||0)/L1M_FULL);
+      _l1mScores[r.fw]=100*rf*(L1M_W_CPU*l1mLinear(+r.cpu_per_req_us,bc)
+                              +L1M_W_P99*l1mDecade(lat(r.p99_latency),bp)
+                              +L1M_W_P999*l1mDecade(lat(r.p99_9_latency),b9));
+    });
+  }
+
   // What a profile's detail view ranks on. Everything here is "most requests
-  // per second wins" except the millionaire profile, which pins the rate: every
+  // per second wins" except the latency-1m profile, which pins the rate: every
   // entry delivers the same rps by construction, so ordering on it sorts by
   // measurement noise. Its metric is the CPU each one spent to do it, and less
   // of that is better.
-  function defProfileSort(id){ return id==='millionaire' ? {k:'cpureq',d:1} : {k:'rps',d:-1}; }
+  function defProfileSort(id){ return id==='latency-1m' ? {k:'l1mscore',d:-1} : {k:'rps',d:-1}; }
   function profileCols(){
     var W=window.innerWidth;
     var c=[
       {k:'rank', w:'54px', min:0},
-      {k:'fw', label:'Framework', w:'minmax(200px,2fr)', min:0, tip:TIP.fw},
-      {k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps},
-      {k:'bw', label:'Bandwidth', num:true, w:'112px', min:1024, tip:TIP.bw}
+      {k:'fw', label:'Framework', w:'minmax(200px,2fr)', min:0, tip:TIP.fw}
     ];
+    // Latency-1M declares its own set rather than taking the shared one and
+    // appending to it. Adding four columns to the standard seven put the table's
+    // minimum width past a laptop viewport, and the column that gave way was the
+    // framework name, which sits on a minmax floor of 200px and simply truncated.
+    //
+    // Three of the shared columns carry nothing here anyway. Bandwidth is a fixed
+    // function of a rate every entry is held to, so it reads the same for all of
+    // them. CPU % is the sampled figure this profile exists to replace with an
+    // exact one. Avg latency is dominated by the same coordinated-omission
+    // inflation that p99 and p99.9 already show, only less legibly. Dropping them
+    // buys the name back ~300px and loses no information.
+    if(state.profile==='latency-1m'){
+      c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
+      c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
+      c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
+      c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
+      c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:640, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
+      c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
+      return c.filter(function(x){ return W>=x.min; });
+    }
+    c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
+    c.push({k:'bw', label:'Bandwidth', num:true, w:'112px', min:1024, tip:TIP.bw});
     if(state.profile==='json-comp') c.push({k:'bwreq', label:'BW / req', num:true, w:'100px', min:640, tip:'Bytes per request - lower means better compression.'});
     if(state.profile==='upload') c.push({k:'inbw', label:'In BW', num:true, w:'118px', min:640, tip:'Input bandwidth - bytes/sec the server ingests (upload throughput).'});
-    if(state.profile==='millionaire') c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
     c.push({k:'avg', label:'Avg', num:true, w:'92px', min:820, tip:TIP.avg});
     c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
     c.push({k:'cpu', label:'CPU %', num:true, w:'96px', min:1024, tip:TIP.cpu});
@@ -1657,6 +1752,8 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
     if(k==='inbw') return '<div class="c num sub">'+esc(r.input_bw||'-')+'</div>';
+    if(k==='l1mscore'){ var v=_l1mScores[r.fw]; return '<div class="c num"><b>'+(v==null?'-':v.toFixed(1))+'</b></div>'; }
+    if(k==='p999') return '<div class="c num sub">'+esc(r.p99_9_latency||'-')+'</div>';
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
@@ -1666,6 +1763,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function renderProfile(){
     var all=(D.results[state.profile+'-'+state.conns]||[]).slice();
+    if(state.profile==='latency-1m') l1mBuild(all);
     // Rank on whatever this profile is actually about. Ranking the fixed-rate
     // profile by rps would number entries 1..N by noise around 500,000.
     var _rk=defProfileSort(state.profile);

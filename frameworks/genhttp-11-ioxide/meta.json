@@ -14,7 +14,7 @@
   "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -24,8 +24,6 @@
     "upload",
     "async-db",
     "crud",
-    "api-4",
-    "api-16",
     "echo-ws",
     "echo-ws-pipeline",
     "echo-ws-limited"

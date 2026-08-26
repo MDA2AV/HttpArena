@@ -29,7 +29,7 @@ It runs GenHTTP's own internal HTTP/1.1 engine, built on `Bun.listen` raw TCP (n
 | `/crud/items/{id}` | PUT | Update, `404` when unknown |
 
 Declared profiles (`meta.json`): `baseline`, `pipelined`, `limited-conn`, `json`, `upload`,
-`async-db`, `crud`, `api-4`, `api-16`. TLS/HTTP-2, compression, static files, websockets and
+`async-db`, `crud`. TLS/HTTP-2, compression, static files, websockets and
 gRPC are omitted (those Seagreen modules are not ported yet).
 
 ## Notes

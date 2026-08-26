@@ -20,7 +20,6 @@ chunked bodies — which is what lets veb subscribe to the `baseline` profile
 | `async-db` | `GET /async-db?min&max&limit` via `db.pg` |
 | `crud` | `GET/POST /crud/items`, `GET/PUT /crud/items/{id}` (in-memory cache-aside, `X-Cache` MISS/HIT) |
 | `fortunes` | `GET /fortunes` (DB rows + a runtime row, HTML-escaped) |
-| `api-4` / `api-16` | mixed `/baseline11` + `/json` + `/async-db` workload |
 
 `json-tls` is **not** subscribed: it requires a second TLS listener on `:8081`
 (veb's separate OpenSSL SSL path), which is not wired up here.

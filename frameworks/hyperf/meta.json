@@ -14,7 +14,7 @@
   "repo": "https://github.com/hyperf/hyperf",
   "enabled": true,
   "tests": [
-    "baseline", "millionaire",
+    "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -23,8 +23,6 @@
     "upload",
     "static",
     "async-db",
-    "api-4",
-    "api-16",
     "echo-ws",
     "echo-ws-pipeline"
   ],

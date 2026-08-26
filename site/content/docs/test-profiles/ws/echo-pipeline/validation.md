@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Pipelined WebSocket Echo Benchmark — Validation Checks"
+seo_title: "Pipelined WebSocket Echo Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the pipelined WebSocket echo benchmark before a framework's results are accepted."
 ---
 
