@@ -14,7 +14,7 @@
   "repo": "https://github.com/h2o/h2o",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

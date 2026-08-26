@@ -14,7 +14,7 @@
   "repo": "https://github.com/sinatra/sinatra",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

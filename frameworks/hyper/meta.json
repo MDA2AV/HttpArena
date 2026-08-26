@@ -7,7 +7,7 @@
   "repo": "https://github.com/hyperium/hyper",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "baseline-h2",

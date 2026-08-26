@@ -14,7 +14,7 @@
   "repo": "https://github.com/sanic-org/sanic",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

@@ -8,7 +8,7 @@
   "repo": "https://araara.ml",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

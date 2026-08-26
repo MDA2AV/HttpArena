@@ -14,7 +14,7 @@
   "repo": "https://github.com/hummingbird-project/hummingbird",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

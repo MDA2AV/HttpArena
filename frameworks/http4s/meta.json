@@ -14,7 +14,7 @@
   "repo": "https://github.com/http4s/http4s",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

@@ -127,7 +127,13 @@ jobs:
         run: |
           set -o pipefail
           FAILED=""
+          FIRST=true
           for fw in $LIST; do
+            # Settle between frameworks — see the same block in benchmark-pr.yml.
+            # The previous entry's sockets are still draining through TIME_WAIT
+            # and the daemon is still reclaiming its layers, so starting the next
+            # one straight into that measures the tail of the last.
+            if [ "$FIRST" = "true" ]; then FIRST=false; else sleep 15; fi
             echo "::group::benchmark $fw"
             if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
               echo "::error::benchmark.sh failed for $fw"

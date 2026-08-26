@@ -17,7 +17,7 @@
     "baseline-h2",
     "static-h2",
     "echo-ws",
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

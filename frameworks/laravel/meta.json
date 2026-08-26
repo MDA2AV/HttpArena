@@ -14,7 +14,7 @@
   "repo": "https://github.com/laravel/laravel",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

@@ -14,7 +14,7 @@
   "repo": "https://github.com/honojs/node-server",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

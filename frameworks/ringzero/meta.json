@@ -7,7 +7,7 @@
   "repo": "https://github.com/MDA2AV/ringzero",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn"
   ],

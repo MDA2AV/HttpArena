@@ -14,7 +14,7 @@
   "repo": "https://github.com/ktorio/ktor",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "limited-conn",
     "pipelined",
     "json",

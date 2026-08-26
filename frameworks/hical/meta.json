@@ -7,7 +7,7 @@
   "repo": "https://github.com/Hical61/Hical",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

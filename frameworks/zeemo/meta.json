@@ -7,7 +7,7 @@
   "repo": "https://github.com/skylightis666/zeemo",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json"

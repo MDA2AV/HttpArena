@@ -14,7 +14,7 @@
   "repo": "https://github.com/sunng87/ring-jetty9-adapter",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

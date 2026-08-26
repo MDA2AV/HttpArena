@@ -14,7 +14,7 @@
   "repo": "https://github.com/JuliaWeb/HTTP.jl",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

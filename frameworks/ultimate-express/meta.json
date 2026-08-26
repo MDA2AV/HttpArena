@@ -14,7 +14,7 @@
   "repo": "https://github.com/dimdenGD/ultimate-express",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

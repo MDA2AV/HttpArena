@@ -14,7 +14,7 @@
   "repo": "https://github.com/swoole/swoole-src",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "baseline-h2",
     "pipelined",
     "limited-conn",

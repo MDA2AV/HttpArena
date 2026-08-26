@@ -7,7 +7,7 @@
   "repo": "https://github.com/Cobra007-star-source/IRIS",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",
