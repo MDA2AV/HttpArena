@@ -84,6 +84,38 @@ Three runs are taken and the one with the lowest CPU wins. Since every run deliv
 
 ## Scoring
 
-This profile is currently **reference-only**: it is measured, published and shown, but it does not contribute to the composite score ([#1310](https://github.com/MDA2AV/HttpArena/issues/1310)).
+Every other profile ranks on one number, requests per second. This one cannot: the rate is pinned, so every entry that finishes serves the same load and throughput is identical by construction. The score combines what it cost with how the tail behaved.
 
-Unlike the other unscored profiles, this one cannot simply be switched on. The composite sums normalized requests-per-second, and this profile's metric is CPU, where lower is better — scoring it means teaching the composite a lower-is-better metric first, not flipping a flag.
+```
+rateFactor = min(1, achieved_rps / 950,000)
+quality    = 0.60 x cpuScore + 0.25 x p99Score + 0.15 x p999Score
+score      = 100 x rateFactor x quality
+```
+
+measured against the best value present in the field:
+
+| term | shape | at the best | 10x worse | 100x worse | 1000x worse |
+|---|---|---|---|---|---|
+| `cpuScore` | `bestCpu / cpu` | 1.00 | 0.10 | 0.01 | 0.00 |
+| `p99Score` | `1 - log10(p99 / bestP99) / 3` | 1.00 | 0.67 | 0.33 | 0.00 |
+| `p999Score` | `1 - log10(p999 / bestP999) / 3` | 1.00 | 0.67 | 0.33 | 0.00 |
+
+All three are clamped to 0–1.
+
+**Why the two shapes differ.** CPU per request spans about 3.3x across the entries that hold the rate, so a plain ratio behaves well over it. The latency tails span five orders of magnitude — 151 µs to 7.6 s at p99 among rate-holders — and a plain ratio there collapses to near zero for everything but the leader, spending 40% of the weight without separating anybody. A decade scale keeps the whole field distinguishable while still charging heavily for a bad tail.
+
+**Why the 3-decade span is fixed** rather than derived from the worst entry: one pathological entry joining the board would otherwise move everybody else's score.
+
+**`rateFactor` is the gate.** Full credit at 950,000 req/s and above — the practical ceiling is around 998,000, so everything that holds the rate sits comfortably clear of it. Below that it falls proportionally, so an entry serving 50,000 req/s keeps `50/950 ≈ 0.053` of whatever quality it earned. This is what stops a server that quietly serves less from looking cheap: its CPU per request may be excellent, but it is multiplied by a rate factor near zero.
+
+**Nothing is rescaled so the leader lands on exactly 100.** The top entry scores in the low-to-mid 90s because no single entry is simultaneously best on cost and on both tails, and that gap is information. It also means a score means the same thing across rounds instead of being silently rebased whenever a new leader arrives.
+
+**Best of three runs** is decided by this same formula, with each metric normalised against the best of that entry's own three runs rather than against the field — the field does not exist yet while one entry is being measured. Choosing on CPU alone could keep a cheap run with a wrecked tail.
+
+The reference implementation is [`scripts/millionaire_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/millionaire_score.py); the board mirrors it in JavaScript. Run `python3 scripts/millionaire_score.py --table` to score the published results from the command line.
+
+### Composite
+
+The profile is currently **reference-only**: measured, published and shown, but not contributing to the composite score ([#1310](https://github.com/MDA2AV/HttpArena/issues/1310)).
+
+Unlike the other unscored profiles, this one cannot simply be switched on. The composite sums normalized requests-per-second across profiles; this profile's score is already a 0–100 quantity computed on entirely different axes, so folding it in is a decision about what the composite means, not a flag.

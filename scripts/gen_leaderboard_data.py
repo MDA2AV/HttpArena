@@ -119,7 +119,8 @@ BASE_FIELDS = ("rps", "avg_latency", "p99_latency", "cpu", "memory", "bandwidth"
 TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async_db")
 # Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
 # other ~2,300 rows in data.js do not each grow four nulls.
-EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate")
+EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate",
+              "p99_9_latency")
 
 # Map each benchmark profile to its Knowledge Base "Implementation Guidelines"
 # page (docs ids differ from profile ids; TLS gRPC variants share one page).

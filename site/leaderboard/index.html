@@ -1623,16 +1623,47 @@ document.addEventListener('DOMContentLoaded', function(){
     setupTopScroll();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='milscore')return _milScores[r.fw]||0; if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
+  // Millionaire scores on cost, not throughput. The rate is pinned, so every
+  // entry that finishes serves the same load and rps cannot separate them; what
+  // can is the bill and the tail. Kept byte-for-byte equivalent to
+  // scripts/millionaire_score.py, which is the reference implementation and
+  // carries the reasoning for the two different curve shapes.
+  var MIL_FULL=950000, MIL_W_CPU=0.60, MIL_W_P99=0.25, MIL_W_P999=0.15, MIL_DEC=3;
+  var _milScores={};
+  function clamp01(v){ return v<0?0:v>1?1:v; }
+  // CPU spans ~3.3x across rate-holders, so a plain ratio behaves over it.
+  function milLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
+  // The tails span five orders of magnitude, where a ratio would collapse to
+  // zero for everyone but the leader. A decade scale keeps the field separable
+  // and still charges a third of the term for every 10x.
+  function milDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/MIL_DEC); }
+  function milBuild(rows){
+    _milScores={};
+    var bc=Infinity,bp=Infinity,b9=Infinity;
+    rows.forEach(function(r){
+      var c=+r.cpu_per_req_us, p=lat(r.p99_latency), q=lat(r.p99_9_latency);
+      if(c>0) bc=Math.min(bc,c);
+      if(p>0&&isFinite(p)) bp=Math.min(bp,p);
+      if(q>0&&isFinite(q)) b9=Math.min(b9,q);
+    });
+    rows.forEach(function(r){
+      var rf=clamp01((r.rps||0)/MIL_FULL);
+      _milScores[r.fw]=100*rf*(MIL_W_CPU*milLinear(+r.cpu_per_req_us,bc)
+                              +MIL_W_P99*milDecade(lat(r.p99_latency),bp)
+                              +MIL_W_P999*milDecade(lat(r.p99_9_latency),b9));
+    });
+  }
+
   // What a profile's detail view ranks on. Everything here is "most requests
   // per second wins" except the millionaire profile, which pins the rate: every
   // entry delivers the same rps by construction, so ordering on it sorts by
   // measurement noise. Its metric is the CPU each one spent to do it, and less
   // of that is better.
-  function defProfileSort(id){ return id==='millionaire' ? {k:'cpureq',d:1} : {k:'rps',d:-1}; }
+  function defProfileSort(id){ return id==='millionaire' ? {k:'milscore',d:-1} : {k:'rps',d:-1}; }
   function profileCols(){
     var W=window.innerWidth;
     var c=[
@@ -1643,9 +1674,11 @@ document.addEventListener('DOMContentLoaded', function(){
     ];
     if(state.profile==='json-comp') c.push({k:'bwreq', label:'BW / req', num:true, w:'100px', min:640, tip:'Bytes per request - lower means better compression.'});
     if(state.profile==='upload') c.push({k:'inbw', label:'In BW', num:true, w:'118px', min:640, tip:'Input bandwidth - bytes/sec the server ingests (upload throughput).'});
+    if(state.profile==='millionaire') c.push({k:'milscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
     if(state.profile==='millionaire') c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
     c.push({k:'avg', label:'Avg', num:true, w:'92px', min:820, tip:TIP.avg});
     c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
+    if(state.profile==='millionaire') c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:820, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
     c.push({k:'cpu', label:'CPU %', num:true, w:'96px', min:1024, tip:TIP.cpu});
     c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
     return c.filter(function(x){ return W>=x.min; });
@@ -1657,6 +1690,8 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
     if(k==='inbw') return '<div class="c num sub">'+esc(r.input_bw||'-')+'</div>';
+    if(k==='milscore'){ var v=_milScores[r.fw]; return '<div class="c num"><b>'+(v==null?'-':v.toFixed(1))+'</b></div>'; }
+    if(k==='p999') return '<div class="c num sub">'+esc(r.p99_9_latency||'-')+'</div>';
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
@@ -1666,6 +1701,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function renderProfile(){
     var all=(D.results[state.profile+'-'+state.conns]||[]).slice();
+    if(state.profile==='millionaire') milBuild(all);
     // Rank on whatever this profile is actually about. Ranking the fixed-rate
     // profile by rps would number entries 1..N by noise around 500,000.
     var _rk=defProfileSort(state.profile);
