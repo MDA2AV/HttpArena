@@ -10,14 +10,15 @@
     "response": true
   },
   "engine": "blackbull",
-  "description": "BlackBull — pure-Python async ASGI 3.0 framework supporting HTTP/1.1, HTTP/2, and WebSocket. ALPN negotiates HTTP/2 on the same listener that serves HTTP/1.1.",
+  "description": "BlackBull \u2014 pure-Python async ASGI 3.0 framework supporting HTTP/1.1, HTTP/2, and WebSocket. ALPN negotiates HTTP/2 on the same listener that serves HTTP/1.1.",
   "repo": "https://github.com/TOKUJI/BlackBull",
-  "enabled": false,
+  "enabled": true,
   "tests": [
     "baseline-h2",
     "static-h2",
     "echo-ws",
-    "baseline", "latency-1m",
+    "baseline",
+    "latency-1m",
     "pipelined",
     "limited-conn",
     "json",
@@ -28,5 +29,7 @@
     "static",
     "static-tls"
   ],
-  "maintainers": []
+  "maintainers": [
+    "TOKUJI"
+  ]
 }
