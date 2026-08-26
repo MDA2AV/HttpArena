@@ -1,4 +1,4 @@
-[2026-08-22T08:12:25Z INFO  trillium_static::handler] serving files within "/data/static"
-[2026-08-22T08:12:25Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
-[2026-08-22T08:12:32Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
-[2026-08-22T08:12:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-08-26T22:27:53Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-08-26T22:27:53Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-08-26T22:28:00Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-08-26T22:28:08Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
