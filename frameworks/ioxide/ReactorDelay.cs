@@ -50,14 +50,26 @@ internal static class ReactorDelay
     {
         if (ms <= 0) return Task.CompletedTask;
 
-        Register(reactor);
-        _pending ??= new PriorityQueue<TaskCompletionSource, long>();
+        // Registering a reactor is permanent and per thread, so it belongs on the
+        // first call from that thread and nowhere else. It used to run on every
+        // call, and the process-global lock it takes - several million times a
+        // second, contended by every reactor at once - was the profile's ceiling:
+        // throughput flattened at a number that did not move when the delay got
+        // shorter, and the box sat at a third of its CPU because the reactor
+        // threads were queued on the lock rather than serving. An empty queue is
+        // exactly the "first call on this thread" signal, so it gates both.
+        var q = _pending;
+        if (q is null)
+        {
+            q = _pending = new PriorityQueue<TaskCompletionSource, long>();
+            Register(reactor);
+        }
 
         // Continuations run synchronously on whichever thread completes the
         // source, and that is deliberately the reactor thread - the whole point
         // is that the connection never leaves it.
         var tcs = new TaskCompletionSource();
-        _pending.Enqueue(tcs, Stopwatch.GetTimestamp() + (long)(ms * (Stopwatch.Frequency / 1000.0)));
+        q.Enqueue(tcs, Stopwatch.GetTimestamp() + (long)(ms * (Stopwatch.Frequency / 1000.0)));
         return tcs.Task;
     }
 

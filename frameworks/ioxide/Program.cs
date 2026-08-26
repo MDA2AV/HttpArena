@@ -68,18 +68,36 @@ internal static class Program
         // userspace, the fastest backend on loopback.
         using var quic = tls ? new QuicEngine(certPath, keyPath, cidLength: 8, alpn: ["h3"]) : null;
 
+        // The knobs below are left at the library default unless the environment names
+        // one. The async profile holds 64,000 connections open at once, which is ~1,000
+        // per reactor, and a default sized for ordinary keep-alive traffic throttles
+        // submission long before the CPU is busy - so they have to be reachable.
+        // These are init-only, so an unset variable has to fall back to the library's
+        // own default rather than to a number picked here - hence the throwaway
+        // instance to read those defaults off.
+        var tcpDefault = new TcpOptions();
+        var srvDefault = new ServerConfig();
+        Console.WriteLine($"[cfg] library defaults: ringEntries={srvDefault.RingEntries} recvSlots={srvDefault.RecvSlots} "
+                        + $"backlog={tcpDefault.ListenBacklog} poolMax={tcpDefault.PoolMax} recvQueue={tcpDefault.RecvQueueEntries} zeroCopy={tcpDefault.ZeroCopySend}");
+
+        var tcp = new TcpOptions
+        {
+            Port       = port,
+            ExtraPorts = tls ? [(ushort)8081, (ushort)8443] : [],
+            // 128 KB so a static response fits one slab and the handler sends it without chunk-flushing.
+            WriteSlabSize    = 128 * 1024,
+            ListenBacklog    = EnvInt("IOXIDE_BACKLOG")    ?? tcpDefault.ListenBacklog,
+            PoolMax          = EnvInt("IOXIDE_POOL_MAX")   ?? tcpDefault.PoolMax,
+            RecvQueueEntries = EnvInt("IOXIDE_RECV_QUEUE") ?? tcpDefault.RecvQueueEntries,
+        };
+
         var config = new ServerConfig
         {
             ReactorCount   = reactors,
             RecvBufferSize = recvKb * 1024,
             RecvSlots      = ringEntries,
-            Tcp = new TcpOptions
-            {
-                Port       = port,
-                ExtraPorts = tls ? [(ushort)8081, (ushort)8443] : [],
-                // 128 KB so a static response fits one slab and the handler sends it without chunk-flushing.
-                WriteSlabSize = 128 * 1024,
-            },
+            RingEntries    = (uint)(EnvInt("IOXIDE_SQ_ENTRIES") ?? (int)srvDefault.RingEntries),
+            Tcp = tcp,
             Quic = quic == null ? null : new QuicOptions
             {
                 Port = 8443,
@@ -87,6 +105,9 @@ internal static class Program
                 ConnectionFactory = quic.CreateFactory(),
             },
         };
+
+        Console.WriteLine($"[cfg] effective: reactors={config.ReactorCount} ringEntries={config.RingEntries} recvSlots={config.RecvSlots} "
+                        + $"recvBuf={config.RecvBufferSize} backlog={config.Tcp.ListenBacklog} poolMax={config.Tcp.PoolMax} recvQueue={config.Tcp.RecvQueueEntries}");
 
         var dsPath = Environment.GetEnvironmentVariable("IOXIDE_DATASET") ?? "/data/dataset.json";
         var dataset = Dataset.Load(dsPath);
@@ -227,4 +248,8 @@ internal static class Program
         
         return "127.0.0.1";
     }
+
+    /// <summary>An int from the environment, or null when it is unset or unparseable.</summary>
+    private static int? EnvInt(string name)
+        => int.TryParse(Environment.GetEnvironmentVariable(name), out int v) && v > 0 ? v : null;
 }
