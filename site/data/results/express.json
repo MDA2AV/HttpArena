@@ -93,6 +93,26 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "async-64000": {
+      "framework": "express",
+      "language": "JS",
+      "rps": 420968,
+      "avg_latency": "79.87ms",
+      "p99_latency": "102.90ms",
+      "cpu": "4340.6%",
+      "memory": "8.7GiB",
+      "connections": 64000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "82.28MB/s",
+      "input_bw": "19.27MB/s",
+      "reconnects": 0,
+      "status_2xx": 4209683,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "express",
       "language": "JS",

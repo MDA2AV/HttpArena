@@ -93,6 +93,26 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "async-64000": {
+      "framework": "fastapi",
+      "language": "Python",
+      "rps": 133138,
+      "avg_latency": "287.28ms",
+      "p99_latency": "620.70ms",
+      "cpu": "4400.3%",
+      "memory": "6.4GiB",
+      "connections": 64000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "17.14MB/s",
+      "input_bw": "6.09MB/s",
+      "reconnects": 0,
+      "status_2xx": 1331386,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "fastapi",
       "language": "Python",
