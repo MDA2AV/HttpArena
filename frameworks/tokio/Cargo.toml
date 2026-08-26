@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 socket2 = { version = "0.5", features = ["all"] }
-tokio = { version = "1", default-features = false, features = ["io-util", "net", "rt"] }
+tokio = { version = "1", default-features = false, features = ["io-util", "net", "rt", "time"] }
 
 [profile.release]
 codegen-units = 1

@@ -166,7 +166,16 @@ jobs:
           set -o pipefail
           mkdir -p /tmp/bench_logs
           FAILED=""
+          FIRST=true
           for fw in $LIST; do
+            # Settle between frameworks. The previous entry's container has only
+            # just been torn down: its sockets are still draining through
+            # TIME_WAIT, the port table has not recycled, and the daemon is still
+            # reclaiming its page cache and layers. Starting the next framework
+            # straight into that measures the tail of the last one, and on a run
+            # over a hundred entries every one of them would inherit it from
+            # whoever happened to precede it. Not applied before the first.
+            if [ "$FIRST" = "true" ]; then FIRST=false; else sleep 15; fi
             echo "::group::benchmark $fw"
             # Always save results to disk for comparison; only commit if --save requested
             if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then

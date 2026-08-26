@@ -14,7 +14,7 @@
   "repo": "https://github.com/stratdev3/SimpleW",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

@@ -14,7 +14,7 @@
   "repo": "https://github.com/true-async/php-async",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

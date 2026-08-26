@@ -28,6 +28,7 @@ source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
 source "$SOURCE_DIR/tools/wrk.sh"
+source "$SOURCE_DIR/tools/zrk.sh"
 
 cd "$ROOT_DIR"
 validate_profiles
@@ -126,11 +127,12 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     H2LOAD_CMD="docker run ${DOCKER_FLAGS[*]} $H2LOAD_IMAGE"
     H2LOAD_H3_CMD="docker run ${DOCKER_FLAGS[*]} $H2LOAD_H3_IMAGE"
     WRK_CMD="docker run ${DOCKER_FLAGS[*]} $WRK_IMAGE"
+    ZRK_CMD="docker run ${DOCKER_FLAGS[*]} $ZRK_IMAGE"
 
     # Parallel arrays — images can't be packed into "img:dockerfile" strings
     # because image names already contain ':' (e.g. wrk:local, h2load:local).
-    _loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE")
-    _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile")
+    _loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE" "$ZRK_IMAGE")
+    _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile" "zrk.Dockerfile")
     for i in "${!_loadgen_images[@]}"; do
         img="${_loadgen_images[$i]}"
         df="${_loadgen_files[$i]}"
@@ -163,7 +165,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         api-4 api-16 static static-tls async-db \
+         api-4 api-16 static static-tls async-db async millionaire \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -171,6 +173,28 @@ for t in baseline pipelined limited-conn json json-comp json-tls upload \
     if framework_subscribes_to "$t"; then _has_isolated_test=true; break; fi
 done
 $_has_isolated_test && framework_build
+
+# zrk is the one load generator with no native install on the bench host.
+# gcannon, wrk and h2load are all on PATH there, so the adapters can call them
+# bare when LOADGEN_DOCKER is false -- zrk cannot, and a `command not found`
+# inside a tool adapter reads downstream as a server that answered nothing.
+# That is exactly how the first board-wide millionaire run failed: every entry
+# reported 0 req/s and a rate_ratio of 0, and the run looked like 103 broken
+# frameworks instead of one missing binary.
+#
+# Built here rather than in the LOADGEN_DOCKER block because that block is
+# gated on a mode the bench host does not use, and built *before* system_tune()
+# for the reason the framework build above is: this Dockerfile needs DNS to
+# reach github.com, and the daemon restart in system_tune() breaks resolution
+# inside build containers for several seconds afterwards.
+if framework_subscribes_to "millionaire" && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
+    if ! docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
+        info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
+        docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — millionaire cannot run without it"
+    fi
+    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 $ZRK_IMAGE"
+    info "zrk: docker mode ($ZRK_IMAGE)"
+fi
 
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
@@ -274,6 +298,8 @@ run_one() {
     # even if its rps is 0 (ws-echo, zero-traffic regressions). Without this,
     # BEST_M would carry stale metrics from a previous profile.
     local best_rps=-1 best_output="" best_cpu="0%" best_mem="0MiB" best_breakdown=""
+    local best_cpu_usec="" best_rate_ratio=""
+
     BEST_M=()
     local run
 
@@ -288,7 +314,12 @@ run_one() {
         fi
 
         local output
+        # Exact cgroup CPU across exactly the window the load is applied in.
+        # Cheap enough to take on every profile — two file reads — and it is
+        # the measurement on the millionaire profile rather than context.
+        cpu_acct_start "$CONTAINER_NAME"
         output=$("${tool//-/_}_run" "${gc_args[@]}")
+        cpu_acct_stop
         stats_stop
 
         # Print trimmed output (drop h2load-h3 per-thread spawn chatter).
@@ -304,8 +335,25 @@ run_one() {
         done < <("${tool//-/_}_parse" "$endpoint" "$output")
 
         local rps_int=${m[rps]:-0}
-        if [ "$rps_int" -gt "$best_rps" ] 2>/dev/null; then
+
+        # Best-of-N keeps the fastest run — except on a fixed-rate profile,
+        # where every run delivers the same rps by construction, so picking on
+        # rps is a coin flip between them. There the run to keep is the cheapest
+        # one, which also discards the warm-up for free: an unsettled JIT or GC
+        # heap shows up as CPU, and run 1 is the one carrying it.
+        local better=false
+        if [ "$endpoint" = "millionaire" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
+            if [ -z "$best_cpu_usec" ] || [ "$CPU_ACCT_USEC" -lt "$best_cpu_usec" ]; then
+                better=true
+            fi
+        elif [ "$rps_int" -gt "$best_rps" ] 2>/dev/null; then
+            better=true
+        fi
+
+        if $better; then
             best_rps=$rps_int
+            best_cpu_usec="${CPU_ACCT_USEC:-}"
+            best_rate_ratio="${m[rate_ratio]:-}"
             best_output="$output"
             best_cpu="$STATS_AVG_CPU"
             best_mem="$STATS_PEAK_MEM"
@@ -314,10 +362,42 @@ run_one() {
             for k in "${!m[@]}"; do BEST_M[$k]="${m[$k]}"; done
         fi
 
-        sleep 2
+        # Cool-down between iterations. gcannon closes every connection when it
+        # exits and the active closer holds the port for the kernel's fixed
+        # ~60s TIME_WAIT, so a profile running tens of thousands of connections
+        # hands the next iteration a port table that is already mostly spoken
+        # for. tcp_tw_reuse lets those be recycled, but at 48K of a 64.5K-port
+        # range the connect path starts scanning and the ramp lands inside the
+        # measured window. Two seconds is plenty below that.
+        if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
     done
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
+
+    # The millionaire profile's headline number, and the check that it counts.
+    if [ "$endpoint" = "millionaire" ]; then
+        # Two different failures that used to print the same line. "No CPU
+        # reading" is a cgroup problem; "no requests" is a generator or server
+        # problem, and saying the former when it is the latter sent the first
+        # board-wide run looking in the wrong place entirely.
+        if [ "${BEST_M[status_2xx]:-0}" -eq 0 ] 2>/dev/null; then
+            warn "no requests were served — there is nothing to measure here."
+            warn "  this is a load-generator or server failure, not a CPU one; see the zrk output above"
+        elif [ -z "$best_cpu_usec" ]; then
+            warn "no cgroup CPU reading for this run — the millionaire metric is missing"
+        else
+            info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
+| $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
+        fi
+        # Below ~0.98 the client never delivered the rate the profile is defined
+        # by, so the CPU figure describes a different, lighter workload than
+        # every other entry's. Louder than a note: it invalidates the comparison.
+        if [ -n "$best_rate_ratio" ] \
+           && awk -v r="$best_rate_ratio" 'BEGIN{exit !(r+0 < 0.98)}'; then
+            warn "offered rate fell short: rate_ratio=$best_rate_ratio (target ${BEST_M[target_rate]:-?}/s)"
+            warn "  the CPU number is not comparable with runs that held the rate"
+        fi
+    fi
 
     # Input bandwidth — bytes the server ingests per second. Matters for
     # profiles where the *request* body dominates (upload, api-4/16 mixed
@@ -358,7 +438,8 @@ else: print(f'{bps}B/s')
 
     # ── Save results (--save) ───────────────────────────────────────────
     if [ "$SAVE_RESULTS" = "true" ]; then
-        save_result "$profile" "$CONNS" "$best_rps" "$best_cpu" "$best_mem"
+        save_result "$profile" "$CONNS" "$best_rps" "$best_cpu" "$best_mem" \
+                    "$best_cpu_usec" "$best_rate_ratio"
     else
         info "dry-run — not saving (use --save to persist)"
     fi
@@ -382,8 +463,31 @@ else: print(f'{bps}B/s')
 # proportionally across the 20-URI mix (6 static, 4 baseline, 7 json, 3 db).
 save_result() {
     local profile="$1" CONNS="$2" best_rps="$3" best_cpu="$4" best_mem="$5"
+    local best_cpu_usec="${6:-}" best_rate_ratio="${7:-}"
     local dir="$RESULTS_DIR/$profile/$CONNS"
     mkdir -p "$dir"
+
+    # Millionaire publishes what the profile is about. `cpu` above is still the
+    # sampled percentage every profile carries; these are the exact figures:
+    # CPU microseconds out of the container's own cgroup, the same number per
+    # request, and the evidence that the offered rate was actually delivered.
+    # rate_ratio is the one that decides whether the rest means anything — a run
+    # that fell short of 500K did not measure this profile, because the load was
+    # not the load, so the reason ships with the row rather than being inferred
+    # from an rps that looks merely slow.
+    local eff_extra=""
+    if [ "$profile" = "millionaire" ]; then
+        local _eff_reqs=${BEST_M[status_2xx]:-0}
+        local _eff_per_req="null"
+        if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then
+            _eff_per_req=$(awk -v c="$best_cpu_usec" -v r="$_eff_reqs" 'BEGIN{printf "%.4f", c/r}')
+        fi
+        eff_extra=",
+  \"cpu_usec\": ${best_cpu_usec:-null},
+  \"cpu_per_req_us\": $_eff_per_req,
+  \"target_rate\": ${BEST_M[target_rate]:-0},
+  \"rate_ratio\": ${best_rate_ratio:-0}"
+    fi
 
     local cpu_extra=""
     if [ -n "$best_breakdown" ]; then
@@ -435,14 +539,14 @@ save_result() {
   "memory": "$best_mem",
   "connections": $CONNS,
   "threads": $THREADS,
-  "duration": "$DURATION",
+  "duration": "${BEST_M[duration]:-$DURATION}",
   "pipeline": $PROF_PIPELINE,
   "bandwidth": "${BEST_M[bandwidth]:-0}",$([ -n "${BEST_M[input_bw]:-}" ] && printf '\n  "input_bw": "%s",' "${BEST_M[input_bw]}")
   "reconnects": ${BEST_M[reconnects]:-0},
   "status_2xx": ${BEST_M[status_2xx]:-0},
   "status_3xx": ${BEST_M[status_3xx]:-0},
   "status_4xx": ${BEST_M[status_4xx]:-0},
-  "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}${cpu_extra}
+  "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}${eff_extra}${cpu_extra}
 }
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"

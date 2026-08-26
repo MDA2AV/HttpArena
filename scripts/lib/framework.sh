@@ -214,6 +214,11 @@ framework_wait_ready() {
         json)
             probe_url="http://localhost:$PORT/json/1"
             ;;
+        async)
+            # Shortest delay the profile ever asks for, so readiness costs 10ms
+            # rather than a tenth of the 2s curl budget.
+            probe_url="http://localhost:$PORT/delay/10"
+            ;;
         json-tls)
             probe_url="https://localhost:$H1TLS_PORT/json/1?m=1"
             ;;

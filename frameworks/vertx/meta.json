@@ -14,7 +14,7 @@
   "repo": "https://github.com/eclipse-vertx/vert.x",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

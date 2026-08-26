@@ -14,7 +14,7 @@
   "repo": "https://github.com/rwf2/Rocket",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

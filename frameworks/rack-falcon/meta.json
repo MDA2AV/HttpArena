@@ -7,7 +7,7 @@
   "repo": "https://github.com/socketry/falcon",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn"
   ],

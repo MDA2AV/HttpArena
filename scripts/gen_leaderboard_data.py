@@ -49,6 +49,27 @@ CATALOG = [
         ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False,True),
         ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True,True),
     ]),
+    ("Concurrency", [
+        # Unscored while the delay range and connection counts are still being
+        # tuned (#1310). The other two flags are set for the day it flips:
+        # engines are measured on it, infrastructure is not — a reverse proxy
+        # has no application handler to await in.
+        ("async", "Async Delay", "A 15ms wait named in the route, at 64K held connections.",
+                                                    [64000],             [64000],         False,True,False),
+    ]),
+    ("Efficiency", [
+        # Unscored while the rate and the connection count settle (#1310). The
+        # ranking metric here is CPU, not rps, and the composite sums rps — so
+        # this cannot simply be switched on: scoring it means teaching
+        # aggregate() a lower-is-better metric first.
+        #
+        # infraScored stays False even though a proxy's CPU efficiency is very
+        # much a real thing, because scoredForType() reads that flag *ahead* of
+        # `scored` — setting it now would score this profile for infrastructure
+        # alone while every other league ignored it.
+        ("millionaire", "Millionaire", "CPU spent serving a pinned 1M req/s.",
+                                                    [1024],              [1024],          False,True,False),
+    ]),
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
@@ -96,6 +117,9 @@ CATALOG = [
 BASE_FIELDS = ("rps", "avg_latency", "p99_latency", "cpu", "memory", "bandwidth", "input_bw",
                "status_2xx", "status_3xx", "status_4xx", "status_5xx")
 TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async_db")
+# Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
+# other ~2,300 rows in data.js do not each grow four nulls.
+EFF_FIELDS = ("cpu_usec", "cpu_per_req_us", "rate_ratio", "target_rate")
 
 # Map each benchmark profile to its Knowledge Base "Implementation Guidelines"
 # page (docs ids differ from profile ids; TLS gRPC variants share one page).
@@ -109,6 +133,8 @@ PROFILE_DOC = {
     "upload":           "test-profiles/h1/isolated/upload/implementation",
     "static":           "test-profiles/h1/isolated/static/implementation",
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
+    "async":            "test-profiles/h1/isolated/async/implementation",
+    "millionaire":      "test-profiles/h1/isolated/millionaire/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",
@@ -3491,6 +3517,9 @@ def main():
                         row[f] = r.get(f)
                     for f in TPL_FIELDS:
                         if r.get(f):
+                            row[f] = r.get(f)
+                    for f in EFF_FIELDS:
+                        if r.get(f) is not None:
                             row[f] = r.get(f)
                     trimmed.append(row)
                 if trimmed:

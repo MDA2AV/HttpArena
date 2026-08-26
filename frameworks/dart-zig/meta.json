@@ -7,7 +7,7 @@
   "repo": "https://github.com/kartikey321/dart-sdk/tree/dart-zig/dart-zig",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json"

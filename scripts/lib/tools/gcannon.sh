@@ -46,6 +46,23 @@ gcannon_build_args() {
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
+        async)
+            # One template, a flat 15ms wait. The value still travels in the
+            # path, so the handler has to parse it out of the route -- what a
+            # constant delay gives up is the on-the-wire variation, which is why
+            # validate.sh draws its own values and asserts the differential.
+            #
+            # No -r: connections are held for the whole run. That is the point.
+            # Every held connection is one request the server is currently
+            # sleeping on, so 64K connections means 64K live timers.
+            #
+            # 10s rather than the 5s default: long enough that establishing
+            # 64000 connections is a small share of the window, short enough to
+            # keep three runs plus their cool-downs reasonable.
+            args=("http://localhost:$PORT"
+                  --raw "$REQUESTS_DIR/async-delay.raw"
+                  -c "$conns" -t "$THREADS" -d 10s -p "$pipeline")
+            ;;
         fortunes)
             # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
             # No --raw rotation: every request is the same GET; the per-request

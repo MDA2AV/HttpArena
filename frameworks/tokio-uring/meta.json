@@ -7,7 +7,7 @@
   "repo": "https://github.com/tokio-rs/tokio-uring",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn"
   ],

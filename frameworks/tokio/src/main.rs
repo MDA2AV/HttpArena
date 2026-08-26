@@ -9,9 +9,11 @@
 //! Endpoints:
 //!   GET/POST /baseline11?a=&b=  -> text/plain "a + b (+ body)"
 //!   GET      /pipeline          -> text/plain "ok"
+//!   GET      /delay/{ms}        -> text/plain "{ms}", after ms milliseconds
 
 use socket2::{Domain, Protocol, Socket, Type};
 use std::net::SocketAddr;
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -27,6 +29,7 @@ fn main() {
         handles.push(std::thread::spawn(|| {
             tokio::runtime::Builder::new_current_thread()
                 .enable_io()
+                .enable_time()
                 .build()
                 .expect("runtime")
                 .block_on(serve());
@@ -71,11 +74,17 @@ async fn handle(mut stream: TcpStream) {
         // Drain every complete request currently buffered, batching responses.
         let mut pos = 0;
         let mut keep = true;
+        let mut delay_ms: u64 = 0;
         loop {
             match process(&buf[pos..], &mut out) {
                 Outcome::Incomplete => break,
-                Outcome::Complete { consumed, keep_alive } => {
+                Outcome::Complete { consumed, keep_alive, delay } => {
                     pos += consumed;
+                    // Summed, not maxed: pipelined requests are answered in
+                    // order, so a batch of them finishes when the last one's
+                    // wait is over. The async profile never pipelines, where
+                    // the sum is just the single request's own delay.
+                    delay_ms += delay;
                     if !keep_alive {
                         keep = false;
                         break;
@@ -85,6 +94,12 @@ async fn handle(mut stream: TcpStream) {
         }
         if pos > 0 {
             buf.drain(..pos);
+        }
+        // The wait, and the whole point of the async profile: the task parks on
+        // a timer and the worker thread goes back to the scheduler to drive
+        // every other connection it owns. Nothing is held but this task's state.
+        if delay_ms > 0 {
+            tokio::time::sleep(Duration::from_millis(delay_ms)).await;
         }
         if !out.is_empty() {
             if stream.write_all(&out).await.is_err() {
@@ -107,7 +122,9 @@ async fn handle(mut stream: TcpStream) {
 
 enum Outcome {
     Incomplete,
-    Complete { consumed: usize, keep_alive: bool },
+    /// `delay` is milliseconds the response must not be sent before. Parsing is
+    /// synchronous, the waiting is not, so it is handed back to handle().
+    Complete { consumed: usize, keep_alive: bool, delay: u64 },
 }
 
 /// Parse one request from buf; append its response to out. Returns Incomplete if
@@ -156,11 +173,13 @@ fn process(buf: &[u8], out: &mut Vec<u8>) -> Outcome {
         (0, body_start)
     };
 
-    respond(out, target, body_int);
-    Outcome::Complete { consumed, keep_alive: !close }
+    let delay = respond(out, target, body_int);
+    Outcome::Complete { consumed, keep_alive: !close, delay }
 }
 
-fn respond(out: &mut Vec<u8>, target: &[u8], body_int: i64) {
+/// Writes the response and returns how long it must be held back, in ms.
+fn respond(out: &mut Vec<u8>, target: &[u8], body_int: i64) -> u64 {
+    const DELAY: &[u8] = b"/delay/";
     let q = find(target, b"?");
     let path = match q {
         Some(i) => &target[..i],
@@ -168,6 +187,14 @@ fn respond(out: &mut Vec<u8>, target: &[u8], body_int: i64) {
     };
     if path == b"/pipeline" {
         write_resp(out, b"ok");
+        0
+    } else if path.len() > DELAY.len() && &path[..DELAY.len()] == DELAY {
+        // The delay is echoed back so the parameter can be checked from the
+        // response, and it is a local -- there is no per-server or
+        // per-connection slot for two overlapping requests to share.
+        let ms = parse_i64(&path[DELAY.len()..]).max(0) as u64;
+        write_resp(out, ms.to_string().as_bytes());
+        ms
     } else {
         let query = match q {
             Some(i) => &target[i + 1..],
@@ -176,6 +203,7 @@ fn respond(out: &mut Vec<u8>, target: &[u8], body_int: i64) {
         let (a, b) = parse_ab(query);
         let s = (a + b + body_int).to_string();
         write_resp(out, s.as_bytes());
+        0
     }
 }
 

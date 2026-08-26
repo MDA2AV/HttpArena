@@ -59,6 +59,7 @@ source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
 source "$SOURCE_DIR/tools/wrk.sh"
+source "$SOURCE_DIR/tools/zrk.sh"
 
 # ── Override PROFILES + PROFILE_ORDER with the lite subset ─────────────────
 #

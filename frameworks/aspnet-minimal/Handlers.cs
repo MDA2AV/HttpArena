@@ -16,6 +16,16 @@ static class Handlers
 
     public static string Text() => "ok";
 
+    // GET /delay/{ms} - answer after ms milliseconds. Task.Delay registers a
+    // timer and yields; the thread goes back to the pool instead of sitting on
+    // the request, so the number of waits in flight is bounded by memory rather
+    // than by the pool size.
+    public static async ValueTask<string> Delay(int ms)
+    {
+        if (ms > 0) await Task.Delay(ms);
+        return ms.ToString();
+    }
+
     public static async ValueTask<string> Upload(HttpRequest req)
     {
         long size = 0;

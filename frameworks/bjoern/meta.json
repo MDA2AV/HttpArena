@@ -7,7 +7,7 @@
   "repo": "https://github.com/jonashaag/bjoern",
   "enabled": false,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",

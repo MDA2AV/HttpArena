@@ -14,7 +14,7 @@
   "repo": "https://github.com/h3js/h3",
   "enabled": true,
   "tests": [
-    "baseline",
+    "baseline", "millionaire",
     "pipelined",
     "limited-conn",
     "json",
