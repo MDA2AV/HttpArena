@@ -42,7 +42,7 @@ measure file I/O. Every request reads the file it answers with.
 
 ## Endpoints
 
-The same handlers and the same twenty profiles as the standard entry, gateway and
+The same handlers and the same twenty-two profiles as the standard entry, gateway and
 production-stack included.
 
 | Endpoint | Method | Description |
@@ -51,6 +51,7 @@ production-stack included.
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, compressed when the client asks |
+| `/delay/:ms` | GET | Waits the milliseconds named in the path, then echoes them back |
 | `/async-db` | GET | Reads from PostgreSQL, prepared statement, pool sized under max_connections |
 | `/upload` | POST | Counts the bytes of the request body |
 | `/static/*` | GET | `express.static()` with `preCompressed`, served from the in-memory cache |

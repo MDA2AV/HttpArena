@@ -160,6 +160,23 @@ app.get('/pipeline', (req, res) => {
     res.type('text/plain').send('ok');
 });
 
+// GET /delay/{ms} — answered once ms milliseconds have gone by. setTimeout hands the request
+// back to the event loop, so a request that is waiting costs one timer entry and the worker
+// stays free for the next one: at 64K held connections that is 64K timers rather than 64K
+// blocked threads.
+//
+// The value is read out of the path before the timer is armed, which is what this profile is
+// really testing. µWS invalidates the request object the moment the handler returns, so a
+// handler that reached for the parameter inside the callback would find it gone; keeping it in
+// the closure also gives every overlapping request its own delay, which is what the 32-way
+// concurrent probe looks for.
+app.get('/delay/:ms', (req, res) => {
+    const ms = parseInt(req.params.ms, 10) || 0;
+    setTimeout(() => {
+        res.type('text/plain').send(String(ms));
+    }, ms);
+});
+
 // shared by the plaintext listener and the TLS one on 8081: same handler, same shapes
 const registerJsonRoute = (target, path = '/json/:count') => target.get(path, compress, (req, res) => {
     if (datasetItems) {
