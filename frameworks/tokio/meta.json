@@ -9,7 +9,7 @@
   "tests": [
     "baseline",
     "pipelined",
-    "limited-conn"
+    "limited-conn", "async"
   ],
   "maintainers": []
 }

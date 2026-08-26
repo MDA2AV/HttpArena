@@ -1,0 +1,3 @@
+GET /delay/{RAND:10:30} HTTP/1.1
+Host: localhost:8080
+

@@ -49,6 +49,14 @@ CATALOG = [
         ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False,True),
         ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True,True),
     ]),
+    ("Concurrency", [
+        # Unscored while the delay range and connection counts are still being
+        # tuned (#1310). The other two flags are set for the day it flips:
+        # engines are measured on it, infrastructure is not — a reverse proxy
+        # has no application handler to await in.
+        ("async", "Async Delay", "Per-request delay from a route parameter, at 32K/48K held connections.",
+                                                    [32768,49152],       [32768,49152],   False,True,False),
+    ]),
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
@@ -109,6 +117,7 @@ PROFILE_DOC = {
     "upload":           "test-profiles/h1/isolated/upload/implementation",
     "static":           "test-profiles/h1/isolated/static/implementation",
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
+    "async":            "test-profiles/h1/isolated/async/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",

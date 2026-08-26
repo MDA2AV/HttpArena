@@ -92,6 +92,16 @@ if (cluster.isPrimary) {
         res.set(SERVER_HDR).type('text/plain').send('ok');
     });
 
+    // GET /delay/{ms} — answer after ms milliseconds. setTimeout hands the
+    // request back to the event loop, so the wait costs a timer entry and
+    // nothing else. `ms` is per-request state, captured in the closure.
+    app.get('/delay/:ms', (req, res) => {
+        const ms = parseInt(req.params.ms, 10) || 0;
+        setTimeout(() => {
+            res.set(SERVER_HDR).type('text/plain').send(String(ms));
+        }, ms);
+    });
+
     app.get('/json/:count', (req, res) => {
         if (datasetItems) {
             let count = parseInt(req.params.count, 10) || 0;

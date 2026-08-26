@@ -46,6 +46,23 @@ gcannon_build_args() {
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
+        async)
+            # One template, one {RAND:10:30} placeholder — gcannon rewrites the
+            # two delay digits per request, so the route parameter is drawn
+            # after the container is up and cannot be answered from anything
+            # prepared at startup.
+            #
+            # No -r: connections are held for the whole run. That is the point.
+            # Every held connection is one request the server is currently
+            # sleeping on, so 32K/48K connections means 32K/48K live timers.
+            #
+            # 15s rather than the 5s default. At 20ms mean delay a connection
+            # only completes ~50 requests/s, and the run has to be long enough
+            # that establishing the connections is a small share of it.
+            args=("http://localhost:$PORT"
+                  --raw "$REQUESTS_DIR/async-delay.raw"
+                  -c "$conns" -t "$THREADS" -d 15s -p "$pipeline")
+            ;;
         fortunes)
             # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
             # No --raw rotation: every request is the same GET; the per-request

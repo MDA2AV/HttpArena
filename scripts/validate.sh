@@ -1355,6 +1355,150 @@ if has_test "pipelined"; then
         "http://localhost:$PORT/pipeline"
 fi
 
+# ───── Async delay (GET /delay/{ms}) ─────
+
+# One timed request. Asserts the status, the echoed parameter and that the
+# server actually waited, and leaves the measured seconds in ASYNC_SECS so the
+# caller can compare two of them.
+#
+# Only a lower bound is asserted. Blocking implementations are allowed on this
+# profile - they are meant to lose the benchmark, not fail validation - so
+# nothing here cares how the wait was implemented, only that it happened.
+ASYNC_SECS=""
+check_delay() {
+    local label="$1" ms="$2" min_secs="$3" docs="$4"
+    local out code body
+    out=$(LC_ALL=C curl -s --max-time 30 -w '\n%{http_code} %{time_total}' \
+              "http://localhost:$PORT/delay/$ms" 2>/dev/null || true)
+    code=$(printf '%s\n' "$out" | tail -1 | awk '{print $1}')
+    ASYNC_SECS=$(printf '%s\n' "$out" | tail -1 | awk '{print $2}')
+    body=$(printf '%s\n' "$out" | head -n -1 | tail -1)
+
+    if [ "$code" != "200" ]; then
+        fail_with_link "[$label]: expected HTTP 200, got HTTP ${code:-none}" "$docs"
+        return
+    fi
+    if [ "$body" != "$ms" ]; then
+        fail_with_link "[$label]: expected body '$ms', got '$body'" "$docs"
+        return
+    fi
+    if ! awk -v t="${ASYNC_SECS:-0}" -v m="$min_secs" 'BEGIN{exit !(t+0 >= m+0)}'; then
+        fail_with_link "[$label]: answered in ${ASYNC_SECS}s, short of the ${ms}ms it was asked to wait" "$docs"
+        return
+    fi
+    echo "  PASS [$label] (${ASYNC_SECS}s)"
+    PASS=$((PASS + 1))
+}
+
+# N requests in flight at once, every one carrying a different delay. Each must
+# come back with its own parameter echoed and its own wait served.
+#
+# This is the check a per-server global cannot pass. Storing "the delay" in one
+# place instead of per request answers every sequential check in this section
+# correctly and falls apart the moment two requests overlap, which is the only
+# state this profile is ever run in.
+#
+# The elapsed wall time is reported but not asserted: a thread-per-request
+# server takes sum(delays) here and that is a legitimate implementation.
+async_concurrent_probe() {
+    local label="$1" n="$2" docs="$3"
+    local dir; dir=$(mktemp -d)
+    local i ms
+    local t0 t1
+    # Waited on by pid, not with a bare `wait`: the run-level watchdog at the
+    # top of this script is a background subshell sleeping out VALIDATE_TIMEOUT,
+    # and a bare wait blocks on that too - which is the whole timeout, every
+    # time, for a probe that finishes in half a second.
+    local -a pids=()
+    t0=$(date +%s.%N)
+    for i in $(seq 1 "$n"); do
+        # 13 is coprime with 400, so 32 indices give 32 distinct delays.
+        ms=$(( 100 + (i * 13) % 400 ))
+        printf '%s' "$ms" > "$dir/$i.want"
+        # No leading newline in -w here: the body already goes to its own file,
+        # so stdout is the metrics line and nothing else.
+        LC_ALL=C curl -s --max-time 30 -w '%{http_code} %{time_total}' \
+            -o "$dir/$i.body" "http://localhost:$PORT/delay/$ms" > "$dir/$i.meta" 2>/dev/null &
+        pids+=($!)
+    done
+    wait "${pids[@]}" 2>/dev/null || true
+    t1=$(date +%s.%N)
+
+    local bad="" code secs body want
+    for i in $(seq 1 "$n"); do
+        want=$(cat "$dir/$i.want")
+        code=$(awk '{print $1}' "$dir/$i.meta" 2>/dev/null)
+        secs=$(awk '{print $2}' "$dir/$i.meta" 2>/dev/null)
+        body=$(tail -1 "$dir/$i.body" 2>/dev/null)
+        if [ "$code" != "200" ]; then
+            bad="/delay/$want returned HTTP ${code:-none}"; break
+        fi
+        if [ "$body" != "$want" ]; then
+            bad="/delay/$want echoed '$body'"; break
+        fi
+        if ! awk -v t="${secs:-0}" -v m="$want" 'BEGIN{exit !(t+0 >= (m/1000)*0.9)}'; then
+            bad="/delay/$want answered in ${secs}s"; break
+        fi
+    done
+    rm -rf "$dir"
+
+    local wall
+    wall=$(LC_ALL=C awk -v a="$t0" -v b="$t1" 'BEGIN{printf "%.2f", b-a}')
+    if [ -n "$bad" ]; then
+        fail_with_link "[$label]: $bad" "$docs"
+    else
+        echo "  PASS [$label] ($n concurrent, ${wall}s wall)"
+        PASS=$((PASS + 1))
+    fi
+}
+
+if has_test "async"; then
+    ASYNC_DOCS="$DOCS_BASE/h1/isolated/async/validation"
+    echo "[test] async delay endpoint"
+
+    # The benchmark draws its delay from {RAND:10:30}; draw this one the same
+    # way so nothing can be prepared for the value that gets asked for.
+    ASYNC_MS=$(rand_between 10 30)
+    check_delay "GET /delay/$ASYNC_MS (random)" "$ASYNC_MS" 0.008 "$ASYNC_DOCS"
+
+    check_header "GET /delay/$ASYNC_MS Content-Type" "Content-Type" "text/plain" "$ASYNC_DOCS" \
+        "http://localhost:$PORT/delay/$ASYNC_MS"
+
+    # Zero is a valid delay, not a missing one. Anything that treats it as
+    # absent and substitutes a default answers with the wrong number here.
+    check "GET /delay/0" "0" "$ASYNC_DOCS" "http://localhost:$PORT/delay/0"
+
+    # The parameter has to reach the sleep, not just the response body. Echoing
+    # it back is easy; taking half a second longer for the request that asked
+    # for half a second longer is not.
+    echo "[test] async delay is driven by the parameter"
+    check_delay "GET /delay/10" 10 0.008 "$ASYNC_DOCS"
+    ASYNC_T_SHORT="${ASYNC_SECS:-0}"
+    check_delay "GET /delay/500" 500 0.45 "$ASYNC_DOCS"
+    ASYNC_T_LONG="${ASYNC_SECS:-0}"
+
+    if awk -v s="$ASYNC_T_SHORT" -v l="$ASYNC_T_LONG" 'BEGIN{exit !((l+0) - (s+0) >= 0.3)}'; then
+        echo "  PASS [/delay/500 waits ~490ms longer than /delay/10] (${ASYNC_T_SHORT}s vs ${ASYNC_T_LONG}s)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[/delay/500 vs /delay/10]: ${ASYNC_T_SHORT}s vs ${ASYNC_T_LONG}s — the delay does not track the parameter" \
+            "$ASYNC_DOCS"
+    fi
+
+    # A fixed multi-second sleep would satisfy every lower bound above. This is
+    # the only upper bound in the section, and it is deliberately loose: it
+    # exists to catch a constant, not to grade timer precision.
+    if awk -v s="$ASYNC_T_SHORT" 'BEGIN{exit !(s+0 <= 2.0)}'; then
+        echo "  PASS [/delay/10 is not a constant long sleep] (${ASYNC_T_SHORT}s)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[/delay/10]: took ${ASYNC_T_SHORT}s for a 10ms delay" "$ASYNC_DOCS"
+    fi
+
+    echo "[test] async concurrent delays"
+    async_concurrent_probe "32 overlapping requests, 32 different delays" 32 "$ASYNC_DOCS"
+fi
+
 # ───── JSON Processing (GET /json) ─────
 
 if has_test "json" || has_test "api-4" || has_test "api-16"; then

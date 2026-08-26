@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import multiprocessing
@@ -97,6 +98,16 @@ app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=5)
 @app.get("/pipeline")
 async def pipeline():
     return PlainTextResponse(b"ok")
+
+
+@app.get("/delay/{ms}")
+async def delay_endpoint(ms: int = Path(...)):
+    # asyncio.sleep suspends this coroutine and returns control to the loop, so
+    # the wait costs one timer entry rather than one worker. `ms` is a local,
+    # which is what keeps 32K overlapping requests from reading each other's.
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return PlainTextResponse(str(ms))
 
 
 @app.api_route("/baseline11", methods=["GET", "POST"])

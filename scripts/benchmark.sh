@@ -163,7 +163,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         api-4 api-16 static static-tls async-db \
+         api-4 api-16 static static-tls async-db async \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -314,7 +314,14 @@ run_one() {
             for k in "${!m[@]}"; do BEST_M[$k]="${m[$k]}"; done
         fi
 
-        sleep 2
+        # Cool-down between iterations. gcannon closes every connection when it
+        # exits and the active closer holds the port for the kernel's fixed
+        # ~60s TIME_WAIT, so a profile running tens of thousands of connections
+        # hands the next iteration a port table that is already mostly spoken
+        # for. tcp_tw_reuse lets those be recycled, but at 48K of a 64.5K-port
+        # range the connect path starts scanning and the ramp lands inside the
+        # measured window. Two seconds is plenty below that.
+        if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
     done
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="

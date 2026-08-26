@@ -16,7 +16,7 @@
   "tests": [
     "baseline",
     "pipelined",
-    "limited-conn",
+    "limited-conn", "async",
     "json",
     "json-comp",
     "json-tls",
