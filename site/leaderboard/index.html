@@ -1691,17 +1691,34 @@ document.addEventListener('DOMContentLoaded', function(){
     var W=window.innerWidth;
     var c=[
       {k:'rank', w:'54px', min:0},
-      {k:'fw', label:'Framework', w:'minmax(200px,2fr)', min:0, tip:TIP.fw},
-      {k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps},
-      {k:'bw', label:'Bandwidth', num:true, w:'112px', min:1024, tip:TIP.bw}
+      {k:'fw', label:'Framework', w:'minmax(200px,2fr)', min:0, tip:TIP.fw}
     ];
+    // Millionaire declares its own set rather than taking the shared one and
+    // appending to it. Adding four columns to the standard seven put the table's
+    // minimum width past a laptop viewport, and the column that gave way was the
+    // framework name, which sits on a minmax floor of 200px and simply truncated.
+    //
+    // Three of the shared columns carry nothing here anyway. Bandwidth is a fixed
+    // function of a rate every entry is held to, so it reads the same for all of
+    // them. CPU % is the sampled figure this profile exists to replace with an
+    // exact one. Avg latency is dominated by the same coordinated-omission
+    // inflation that p99 and p99.9 already show, only less legibly. Dropping them
+    // buys the name back ~300px and loses no information.
+    if(state.profile==='millionaire'){
+      c.push({k:'milscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
+      c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
+      c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
+      c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
+      c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:640, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
+      c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
+      return c.filter(function(x){ return W>=x.min; });
+    }
+    c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
+    c.push({k:'bw', label:'Bandwidth', num:true, w:'112px', min:1024, tip:TIP.bw});
     if(state.profile==='json-comp') c.push({k:'bwreq', label:'BW / req', num:true, w:'100px', min:640, tip:'Bytes per request - lower means better compression.'});
     if(state.profile==='upload') c.push({k:'inbw', label:'In BW', num:true, w:'118px', min:640, tip:'Input bandwidth - bytes/sec the server ingests (upload throughput).'});
-    if(state.profile==='millionaire') c.push({k:'milscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
-    if(state.profile==='millionaire') c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
     c.push({k:'avg', label:'Avg', num:true, w:'92px', min:820, tip:TIP.avg});
     c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
-    if(state.profile==='millionaire') c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:820, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
     c.push({k:'cpu', label:'CPU %', num:true, w:'96px', min:1024, tip:TIP.cpu});
     c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
     return c.filter(function(x){ return W>=x.min; });
