@@ -14,13 +14,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ioxide" Version="0.4.169" />
-        <PackageReference Include="ioxide.pg" Version="0.4.169" />
-        <PackageReference Include="ioxide.file" Version="0.4.169" />
-        <PackageReference Include="ioxide.redis" Version="0.4.169" />
-        <PackageReference Include="ioxide.http2" Version="0.4.169" />
-        <PackageReference Include="ioxide.ngtcp2" Version="0.4.169" />
-        <PackageReference Include="ioxide.nghttp3" Version="0.4.169" />
+        <PackageReference Include="ioxide" Version="0.7.210" />
+        <PackageReference Include="ioxide.pg" Version="0.7.210" />
+        <PackageReference Include="ioxide.file" Version="0.7.210" />
+        <PackageReference Include="ioxide.redis" Version="0.7.210" />
+        <PackageReference Include="ioxide.http2" Version="0.7.210" />
+        <PackageReference Include="ioxide.ngtcp2" Version="0.7.210" />
+        <PackageReference Include="ioxide.nghttp3" Version="0.7.210" />
         <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
     </ItemGroup>
