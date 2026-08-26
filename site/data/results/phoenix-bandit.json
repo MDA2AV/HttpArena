@@ -426,7 +426,8 @@
       "cpu_usec": 1265485702,
       "cpu_per_req_us": 126.0014,
       "target_rate": 1000000,
-      "rate_ratio": 0.502
+      "rate_ratio": 0.502,
+      "p99_9_latency": "10776576.0us"
     },
     "pipelined-4096": {
       "framework": "phoenix-bandit",

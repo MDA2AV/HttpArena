@@ -314,7 +314,8 @@
       "cpu_usec": 1270426015,
       "cpu_per_req_us": 235.0981,
       "target_rate": 1000000,
-      "rate_ratio": 0.2701
+      "rate_ratio": 0.2701,
+      "p99_9_latency": "14610432.0us"
     },
     "pipelined-4096": {
       "framework": "php-fpm",

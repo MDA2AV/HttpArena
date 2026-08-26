@@ -273,7 +273,8 @@
       "cpu_usec": 1222097818,
       "cpu_per_req_us": 62.4272,
       "target_rate": 1000000,
-      "rate_ratio": 0.9784
+      "rate_ratio": 0.9784,
+      "p99_9_latency": "1170944.0us"
     },
     "pipelined-4096": {
       "framework": "userver",

@@ -407,7 +407,8 @@
       "cpu_usec": 499820992,
       "cpu_per_req_us": 25.0386,
       "target_rate": 1000000,
-      "rate_ratio": 0.9979
+      "rate_ratio": 0.9979,
+      "p99_9_latency": "5738.0us"
     },
     "pipelined-4096": {
       "framework": "simplew-tuned",

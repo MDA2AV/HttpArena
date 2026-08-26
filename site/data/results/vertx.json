@@ -293,7 +293,8 @@
       "cpu_usec": 604766646,
       "cpu_per_req_us": 30.3063,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "8086.0us"
     },
     "pipelined-4096": {
       "framework": "vertx",

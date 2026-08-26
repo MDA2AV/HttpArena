@@ -182,7 +182,8 @@
       "cpu_usec": 1276585093,
       "cpu_per_req_us": 83.132,
       "target_rate": 1000000,
-      "rate_ratio": 0.7676
+      "rate_ratio": 0.7676,
+      "p99_9_latency": "7489536.0us"
     },
     "pipelined-4096": {
       "framework": "hono-node",

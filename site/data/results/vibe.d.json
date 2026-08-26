@@ -182,7 +182,8 @@
       "cpu_usec": 1201910268,
       "cpu_per_req_us": 206.5837,
       "target_rate": 1000000,
-      "rate_ratio": 0.2908
+      "rate_ratio": 0.2908,
+      "p99_9_latency": "15618048.0us"
     },
     "pipelined-4096": {
       "framework": "vibe.d",

@@ -265,7 +265,8 @@
       "cpu_usec": 1275949506,
       "cpu_per_req_us": 96.6519,
       "target_rate": 1000000,
-      "rate_ratio": 0.6598
+      "rate_ratio": 0.6598,
+      "p99_9_latency": "12529664.0us"
     },
     "pipelined-4096": {
       "framework": "uvicorn",

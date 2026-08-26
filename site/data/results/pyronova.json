@@ -331,7 +331,8 @@
       "cpu_usec": 1235898645,
       "cpu_per_req_us": 81.5834,
       "target_rate": 1000000,
-      "rate_ratio": 0.7572
+      "rate_ratio": 0.7572,
+      "p99_9_latency": "9605120.0us"
     },
     "pipelined-4096": {
       "framework": "pyronova",

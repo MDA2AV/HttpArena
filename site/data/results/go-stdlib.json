@@ -293,7 +293,8 @@
       "cpu_usec": 591489499,
       "cpu_per_req_us": 64.854,
       "target_rate": 1000000,
-      "rate_ratio": 0.4558
+      "rate_ratio": 0.4558,
+      "p99_9_latency": "10981376.0us"
     },
     "pipelined-4096": {
       "framework": "go-stdlib",

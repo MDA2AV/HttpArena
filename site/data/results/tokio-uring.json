@@ -102,7 +102,8 @@
       "cpu_usec": 505360885,
       "cpu_per_req_us": 25.3235,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "12292.0us"
     },
     "pipelined-4096": {
       "framework": "tokio-uring",

@@ -560,7 +560,8 @@
       "cpu_usec": 719012249,
       "cpu_per_req_us": 36.0222,
       "target_rate": 1000000,
-      "rate_ratio": 0.9978
+      "rate_ratio": 0.9978,
+      "p99_9_latency": "6766.0us"
     },
     "pipelined-4096": {
       "framework": "fulmine-tuned",

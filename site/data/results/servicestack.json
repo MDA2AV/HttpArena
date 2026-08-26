@@ -272,7 +272,8 @@
       "cpu_usec": 72681251,
       "cpu_per_req_us": 322.303,
       "target_rate": 1000000,
-      "rate_ratio": 0.0113
+      "rate_ratio": 0.0113,
+      "p99_9_latency": "19734528.0us"
     },
     "pipelined-4096": {
       "framework": "servicestack",

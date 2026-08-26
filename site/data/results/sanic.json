@@ -182,7 +182,8 @@
       "cpu_usec": 1274949207,
       "cpu_per_req_us": 99.761,
       "target_rate": 1000000,
-      "rate_ratio": 0.6388
+      "rate_ratio": 0.6388,
+      "p99_9_latency": "12890112.0us"
     },
     "pipelined-4096": {
       "framework": "sanic",

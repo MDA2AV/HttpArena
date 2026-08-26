@@ -578,7 +578,8 @@
       "cpu_usec": 1170238396,
       "cpu_per_req_us": 88.381,
       "target_rate": 1000000,
-      "rate_ratio": 0.6619
+      "rate_ratio": 0.6619,
+      "p99_9_latency": "12619776.0us"
     },
     "pipelined-4096": {
       "framework": "roadrunner",

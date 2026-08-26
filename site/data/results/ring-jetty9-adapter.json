@@ -202,7 +202,8 @@
       "cpu_usec": 820784656,
       "cpu_per_req_us": 59.1325,
       "target_rate": 1000000,
-      "rate_ratio": 0.6937
+      "rate_ratio": 0.6937,
+      "p99_9_latency": "7112704.0us"
     },
     "pipelined-4096": {
       "framework": "ring-jetty9-adapter",

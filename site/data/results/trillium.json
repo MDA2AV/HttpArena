@@ -579,7 +579,8 @@
       "cpu_usec": 1202057411,
       "cpu_per_req_us": 104.1445,
       "target_rate": 1000000,
-      "rate_ratio": 0.5769
+      "rate_ratio": 0.5769,
+      "p99_9_latency": "8001536.0us"
     },
     "pipelined-4096": {
       "framework": "trillium",

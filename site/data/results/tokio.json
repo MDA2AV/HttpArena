@@ -162,7 +162,8 @@
       "cpu_usec": 374086541,
       "cpu_per_req_us": 18.7453,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "25128.0us"
     },
     "pipelined-4096": {
       "framework": "tokio",

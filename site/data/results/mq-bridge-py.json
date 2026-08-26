@@ -406,7 +406,8 @@
       "cpu_usec": 1270243324,
       "cpu_per_req_us": 69.6763,
       "target_rate": 1000000,
-      "rate_ratio": 0.9112
+      "rate_ratio": 0.9112,
+      "p99_9_latency": "7223296.0us"
     },
     "pipelined-4096": {
       "framework": "mq-bridge-py",

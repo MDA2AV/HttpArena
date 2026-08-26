@@ -293,7 +293,8 @@
       "cpu_usec": 1276704972,
       "cpu_per_req_us": 155.3532,
       "target_rate": 1000000,
-      "rate_ratio": 0.4108
+      "rate_ratio": 0.4108,
+      "p99_9_latency": "15183872.0us"
     },
     "pipelined-4096": {
       "framework": "starlette",

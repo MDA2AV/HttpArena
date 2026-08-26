@@ -353,7 +353,8 @@
       "cpu_usec": 1275812873,
       "cpu_per_req_us": 211.6181,
       "target_rate": 1000000,
-      "rate_ratio": 0.3013
+      "rate_ratio": 0.3013,
+      "p99_9_latency": "16273408.0us"
     },
     "pipelined-4096": {
       "framework": "fastapi",

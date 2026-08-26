@@ -254,7 +254,8 @@
       "cpu_usec": 282138564,
       "cpu_per_req_us": 172.5612,
       "target_rate": 1000000,
-      "rate_ratio": 0.0817
+      "rate_ratio": 0.0817,
+      "p99_9_latency": "18161664.0us"
     },
     "pipelined-4096": {
       "framework": "slimeweb",

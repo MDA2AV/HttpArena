@@ -638,7 +638,8 @@
       "cpu_usec": 817249425,
       "cpu_per_req_us": 40.9477,
       "target_rate": 1000000,
-      "rate_ratio": 0.9977
+      "rate_ratio": 0.9977,
+      "p99_9_latency": "18296.0us"
     },
     "pipelined-4096": {
       "framework": "aspnet-minimal",

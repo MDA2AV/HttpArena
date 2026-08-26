@@ -221,7 +221,8 @@
       "cpu_usec": 1269180843,
       "cpu_per_req_us": 111.3198,
       "target_rate": 1000000,
-      "rate_ratio": 0.5698
+      "rate_ratio": 0.5698,
+      "p99_9_latency": "12341248.0us"
     },
     "pipelined-4096": {
       "framework": "fletch",

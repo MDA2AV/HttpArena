@@ -259,7 +259,8 @@
       "cpu_usec": 1263171571,
       "cpu_per_req_us": 227.3017,
       "target_rate": 1000000,
-      "rate_ratio": 0.2778
+      "rate_ratio": 0.2778,
+      "p99_9_latency": "16683008.0us"
     },
     "pipelined-4096": {
       "framework": "symfony-spawn-tas",

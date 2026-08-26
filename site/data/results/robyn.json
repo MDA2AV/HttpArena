@@ -122,7 +122,8 @@
       "cpu_usec": 1263595434,
       "cpu_per_req_us": 151.7105,
       "target_rate": 1000000,
-      "rate_ratio": 0.4163
+      "rate_ratio": 0.4163,
+      "p99_9_latency": "14348288.0us"
     },
     "pipelined-4096": {
       "framework": "robyn",

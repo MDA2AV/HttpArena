@@ -182,7 +182,8 @@
       "cpu_usec": 1102584289,
       "cpu_per_req_us": 237.1794,
       "target_rate": 1000000,
-      "rate_ratio": 0.2324
+      "rate_ratio": 0.2324,
+      "p99_9_latency": "15298560.0us"
     },
     "pipelined-4096": {
       "framework": "plug-cowboy",

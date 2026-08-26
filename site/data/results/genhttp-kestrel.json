@@ -347,7 +347,8 @@
       "cpu_usec": 879168059,
       "cpu_per_req_us": 44.0687,
       "target_rate": 1000000,
-      "rate_ratio": 0.9973
+      "rate_ratio": 0.9973,
+      "p99_9_latency": "22792.0us"
     },
     "pipelined-4096": {
       "framework": "genhttp-kestrel",

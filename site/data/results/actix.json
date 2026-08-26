@@ -540,7 +540,8 @@
       "cpu_usec": 497551976,
       "cpu_per_req_us": 24.9321,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "9300.0us"
     },
     "pipelined-4096": {
       "framework": "actix",

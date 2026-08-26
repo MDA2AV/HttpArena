@@ -254,7 +254,8 @@
       "cpu_usec": 1262029163,
       "cpu_per_req_us": 68.041,
       "target_rate": 1000000,
-      "rate_ratio": 0.9272
+      "rate_ratio": 0.9272,
+      "p99_9_latency": "5814272.0us"
     },
     "pipelined-4096": {
       "framework": "fastify",

@@ -122,7 +122,8 @@
       "cpu_usec": 378754773,
       "cpu_per_req_us": 18.9702,
       "target_rate": 1000000,
-      "rate_ratio": 0.9981
+      "rate_ratio": 0.9981,
+      "p99_9_latency": "24808.0us"
     },
     "pipelined-4096": {
       "framework": "minima-sync",

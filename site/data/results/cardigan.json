@@ -216,7 +216,8 @@
       "cpu_usec": 446005258,
       "cpu_per_req_us": 22.3419,
       "target_rate": 1000000,
-      "rate_ratio": 0.9979
+      "rate_ratio": 0.9979,
+      "p99_9_latency": "5362.0us"
     },
     "pipelined-4096": {
       "framework": "Cardigan",

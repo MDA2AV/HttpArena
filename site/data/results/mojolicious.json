@@ -182,7 +182,8 @@
       "cpu_usec": 1275409368,
       "cpu_per_req_us": 992.3311,
       "target_rate": 1000000,
-      "rate_ratio": 0.0642
+      "rate_ratio": 0.0642,
+      "p99_9_latency": "18980864.0us"
     },
     "pipelined-4096": {
       "framework": "mojolicious",

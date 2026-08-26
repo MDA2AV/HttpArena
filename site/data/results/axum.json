@@ -182,7 +182,8 @@
       "cpu_usec": 540342257,
       "cpu_per_req_us": 27.3924,
       "target_rate": 1000000,
-      "rate_ratio": 0.9861
+      "rate_ratio": 0.9861,
+      "p99_9_latency": "40880.0us"
     },
     "pipelined-4096": {
       "framework": "axum",

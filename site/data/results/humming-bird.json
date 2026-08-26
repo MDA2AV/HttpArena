@@ -254,7 +254,8 @@
       "cpu_usec": 1267605682,
       "cpu_per_req_us": 162.2958,
       "target_rate": 1000000,
-      "rate_ratio": 0.3904
+      "rate_ratio": 0.3904,
+      "p99_9_latency": "12046336.0us"
     },
     "pipelined-4096": {
       "framework": "humming-bird",

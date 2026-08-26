@@ -312,7 +312,8 @@
       "cpu_usec": 729487048,
       "cpu_per_req_us": 36.5518,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "191040.0us"
     },
     "pipelined-4096": {
       "framework": "deno",

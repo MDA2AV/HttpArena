@@ -22,7 +22,8 @@
       "cpu_usec": 20752141,
       "cpu_per_req_us": null,
       "target_rate": 1000000,
-      "rate_ratio": 0.0
+      "rate_ratio": 0.0,
+      "p99_9_latency": "19062784.0us"
     }
   }
 }

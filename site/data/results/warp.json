@@ -182,7 +182,8 @@
       "cpu_usec": 1045872709,
       "cpu_per_req_us": 52.4048,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "18424.0us"
     },
     "pipelined-4096": {
       "framework": "warp",

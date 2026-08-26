@@ -312,7 +312,8 @@
       "cpu_usec": 1054828499,
       "cpu_per_req_us": 52.8413,
       "target_rate": 1000000,
-      "rate_ratio": 0.9979
+      "rate_ratio": 0.9979,
+      "p99_9_latency": "47024.0us"
     },
     "static-1024": {
       "framework": "ring-http-exchange",

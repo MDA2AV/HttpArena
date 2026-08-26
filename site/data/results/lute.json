@@ -197,7 +197,8 @@
       "cpu_usec": 518390784,
       "cpu_per_req_us": 25.9758,
       "target_rate": 1000000,
-      "rate_ratio": 0.9977
+      "rate_ratio": 0.9977,
+      "p99_9_latency": "1711.0us"
     },
     "pipelined-4096": {
       "framework": "lute",

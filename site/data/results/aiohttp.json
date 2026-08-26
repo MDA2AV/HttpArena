@@ -293,7 +293,8 @@
       "cpu_usec": 1267747241,
       "cpu_per_req_us": 98.2365,
       "target_rate": 1000000,
-      "rate_ratio": 0.645
+      "rate_ratio": 0.645,
+      "p99_9_latency": "12832768.0us"
     },
     "pipelined-4096": {
       "framework": "aiohttp",

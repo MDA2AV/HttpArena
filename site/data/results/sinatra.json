@@ -293,7 +293,8 @@
       "cpu_usec": 1235383837,
       "cpu_per_req_us": 214.5243,
       "target_rate": 1000000,
-      "rate_ratio": 0.2878
+      "rate_ratio": 0.2878,
+      "p99_9_latency": "15642624.0us"
     },
     "pipelined-4096": {
       "framework": "sinatra",

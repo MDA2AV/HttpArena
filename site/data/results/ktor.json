@@ -559,7 +559,8 @@
       "cpu_usec": 1161023402,
       "cpu_per_req_us": 66.0281,
       "target_rate": 1000000,
-      "rate_ratio": 0.8788
+      "rate_ratio": 0.8788,
+      "p99_9_latency": "2962432.0us"
     },
     "pipelined-4096": {
       "framework": "ktor",

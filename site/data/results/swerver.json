@@ -444,7 +444,8 @@
       "cpu_usec": 451065807,
       "cpu_per_req_us": 22.6031,
       "target_rate": 1000000,
-      "rate_ratio": 0.9976
+      "rate_ratio": 0.9976,
+      "p99_9_latency": "5210.0us"
     },
     "pipelined-4096": {
       "framework": "swerver",

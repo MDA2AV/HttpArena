@@ -448,7 +448,8 @@
       "cpu_usec": 732907443,
       "cpu_per_req_us": 36.7335,
       "target_rate": 1000000,
-      "rate_ratio": 0.9974
+      "rate_ratio": 0.9974,
+      "p99_9_latency": "1745.0us"
     },
     "pipelined-4096": {
       "framework": "swoole",

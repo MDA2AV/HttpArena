@@ -142,7 +142,8 @@
       "cpu_usec": 447816072,
       "cpu_per_req_us": 22.4321,
       "target_rate": 1000000,
-      "rate_ratio": 0.998
+      "rate_ratio": 0.998,
+      "p99_9_latency": "1894.0us"
     },
     "pipelined-4096": {
       "framework": "hyper",

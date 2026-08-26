@@ -182,7 +182,8 @@
       "cpu_usec": 1276175913,
       "cpu_per_req_us": 98.4211,
       "target_rate": 1000000,
-      "rate_ratio": 0.6481
+      "rate_ratio": 0.6481,
+      "p99_9_latency": "9089024.0us"
     },
     "pipelined-4096": {
       "framework": "koa",

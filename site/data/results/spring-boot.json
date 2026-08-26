@@ -312,7 +312,8 @@
       "cpu_usec": 359851420,
       "cpu_per_req_us": 65.7423,
       "target_rate": 1000000,
-      "rate_ratio": 0.2736
+      "rate_ratio": 0.2736,
+      "p99_9_latency": "14413824.0us"
     },
     "pipelined-4096": {
       "framework": "spring-boot",

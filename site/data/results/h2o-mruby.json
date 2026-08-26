@@ -239,7 +239,8 @@
       "cpu_usec": 737702952,
       "cpu_per_req_us": 36.9743,
       "target_rate": 1000000,
-      "rate_ratio": 0.9974
+      "rate_ratio": 0.9974,
+      "p99_9_latency": "15132.0us"
     },
     "pipelined-4096": {
       "framework": "h2o-mruby",

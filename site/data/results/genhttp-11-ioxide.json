@@ -445,7 +445,8 @@
       "cpu_usec": 622517005,
       "cpu_per_req_us": 78.3977,
       "target_rate": 1000000,
-      "rate_ratio": 0.3969
+      "rate_ratio": 0.3969,
+      "p99_9_latency": "12029952.0us"
     },
     "pipelined-4096": {
       "framework": "genhttp-11-ioxide",
