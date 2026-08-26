@@ -323,13 +323,16 @@ async fn crud_list(state: &AppState, msg: &CanonicalMessage) -> CanonicalMessage
     };
     let page = msg.query_int("page").unwrap_or(1).max(1);
     let limit = msg.query_int("limit").unwrap_or(10).clamp(1, 50);
-    let rows = sqlx::query(SQL)
+    let rows = match sqlx::query(SQL)
         .bind(msg.query_param("category").unwrap_or("electronics"))
         .bind(limit as i32)
         .bind(((page - 1) * limit) as i32)
         .fetch_all(pool)
         .await
-        .unwrap_or_default();
+    {
+        Ok(rows) => rows,
+        Err(_) => return status(500, "Internal Server Error"),
+    };
 
     let items: Vec<DbItem> = rows.iter().map(row_to_item).collect();
     json(

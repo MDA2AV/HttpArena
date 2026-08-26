@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "mq-bridge",
-  "description": "mq-bridge async message-bridging library run as an HTTP server. A single catch-all http->response route dispatches on request metadata and replies through mq-bridge's inline-response fast path; hyper-util's auto connection builder serves HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the cleartext port (8080) and HTTP/2-over-TLS (ALPN h2) on 8443. Postgres via the library's re-exported sqlx for async-db and crud (in-process cache-aside, 200 ms TTL), fortunes rendered per request with the Askama template engine, dataset read from /data/dataset.json, static assets from /data/static, response compression negotiated per request by the library from Accept-Encoding (zstd > gzip > lz4).",
+  "description": "mq-bridge async message-bridging library run as an HTTP server. A single catch-all http->response route dispatches on request metadata and replies through mq-bridge's inline-response fast path; hyper-util's auto connection builder serves HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the cleartext port (8080) and HTTP/2-over-TLS (ALPN h2) on 8443. Postgres via the library's re-exported sqlx for async-db and crud (in-process cache-aside, one-second TTL), fortunes rendered per request with the Askama template engine, dataset read from /data/dataset.json, static assets from /data/static, response compression negotiated per request by the library from Accept-Encoding (zstd > gzip > lz4).",
   "repo": "https://github.com/marcomq/mq-bridge",
   "enabled": true,
   "tests": [
