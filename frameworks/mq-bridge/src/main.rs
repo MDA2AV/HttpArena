@@ -27,9 +27,6 @@
 //! `DATABASE_MAX_CONN`. A missing database is non-fatal — the DB-backed
 //! endpoints degrade rather than blocking the cleartext profiles.
 
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
-
 use askama::Template;
 use bytes::Bytes;
 use dashmap::DashMap;

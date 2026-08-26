@@ -33,10 +33,6 @@ dashmap = "6"
 # Template engine for the fortunes profile: compile-time, auto-escaping, and
 # the template lives in its own file, as the profile's standard-mode rules require.
 askama = "0.16"
-# Process-wide allocator. Every request allocates (JSON body, message metadata),
-# and the default glibc malloc is the weakest part of that path under this much
-# concurrency.
-mimalloc = { version = "0.1", default-features = false }
 # Install the process-default rustls crypto provider before the TLS endpoint.
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 
