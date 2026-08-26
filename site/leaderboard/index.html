@@ -1414,7 +1414,10 @@ document.addEventListener('DOMContentLoaded', function(){
             if(useMem && maxME[pid]>0){ var m=A.mem[pid][fw]||0; if(m>0) sc+=(Math.sqrt(rps)/m/maxME[pid])*100*0.5; }
           }
           var counts=isScored(pid,fw);
-          cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0)};
+          // `score` is set only where the cell must not print rps. Everywhere
+          // else it stays null and the renderer keeps showing throughput.
+          cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0),
+                      score:(pid==='millionaire'?sc:null)};
           if(counts) sum+=sc;
         }
       });
@@ -1620,9 +1623,10 @@ document.addEventListener('DOMContentLoaded', function(){
       pids.forEach(function(pid){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
-        var inner='<span class="pcv"><span class="crps">'+fmtK(cell.rps)+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
+        var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps);
+        var inner='<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'">'+inner+'</td>'; }
-        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile — not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
+        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile, not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');

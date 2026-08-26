@@ -67,7 +67,7 @@ CATALOG = [
         # much a real thing, because scoredForType() reads that flag *ahead* of
         # `scored` — setting it now would score this profile for infrastructure
         # alone while every other league ignored it.
-        ("millionaire", "Millionaire", "CPU spent serving a pinned 1M req/s.",
+        ("millionaire", "Millionaire", "Score out of 100: CPU and both latency tails at a pinned 1M req/s.",
                                                     [1024],              [1024],          False,True,False),
     ]),
     ("Workload", [
