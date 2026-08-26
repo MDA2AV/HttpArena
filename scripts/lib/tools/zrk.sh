@@ -10,12 +10,32 @@
 
 : "${ZRK_CMD:=}"
 
+# Resolve how to invoke zrk, and refuse rather than guess.
+#
+# The other adapters can fall through to a bare binary name because the bench
+# host has all of theirs on PATH. zrk's is not installed anywhere, so a silent
+# fall-through produces "command not found", an empty summary, and a row of
+# zeros that is indistinguishable from a server that served nothing. Failing
+# here instead aborts the run with the actual reason -- which is the right
+# outcome, because a missing generator fails every entry identically and there
+# is nothing to be learned by measuring the other 102 the same way.
 _zrk_cmd() {
     if [ -n "$ZRK_CMD" ]; then
         printf '%s\n' $ZRK_CMD
-    else
-        printf '%s\n' "$ZRK"
+        return 0
     fi
+    if command -v "$ZRK" >/dev/null 2>&1; then
+        printf '%s\n' "$ZRK"
+        return 0
+    fi
+    if docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
+        printf '%s\n' docker run --rm --network host \
+            --cpuset-cpus="$GCANNON_CPUS" --security-opt seccomp=unconfined \
+            --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 "$ZRK_IMAGE"
+        return 0
+    fi
+    fail "zrk not found: '$ZRK' is not on PATH and image '$ZRK_IMAGE' does not exist.
+      Build it with: docker build -t $ZRK_IMAGE -f docker/zrk.Dockerfile docker/"
 }
 
 # The rate the millionaire profile holds, in requests/second. It lives here
@@ -58,11 +78,15 @@ zrk_build_args() {
     printf '%s\n' "${cmd[@]}"
 }
 
+# stdout is the JSON summary and is captured by the caller; stderr is left
+# attached to the console on purpose. It used to go to /dev/null to keep the
+# dashboard out of the log -- but --format json already suppresses the
+# dashboard, so all that redirect ever hid was the reason a run failed.
 zrk_run() {
     if [ -n "$ZRK_CMD" ]; then
-        timeout 60 "$@" 2>/dev/null || true
+        timeout 60 "$@" || true
     else
-        timeout 60 taskset -c "$GCANNON_CPUS" "$@" 2>/dev/null || true
+        timeout 60 taskset -c "$GCANNON_CPUS" "$@" || true
     fi
 }
 
@@ -81,6 +105,11 @@ raw = sys.argv[1]
 # {...} rather than assuming the whole stream is the summary.
 start, end = raw.find("{"), raw.rfind("}")
 if start < 0 or end <= start:
+    # No summary at all. Say so on stderr rather than only emitting zeros,
+    # which downstream cannot tell apart from a server that served nothing.
+    sys.stderr.write("[zrk] no JSON summary in output — the generator did not "
+                     "run, or died before reporting. Raw output was:\n%s\n"
+                     % (raw[:2000] or "<empty>"))
     for k in ("rps=0", "avg_lat=", "p99_lat=", "reconnects=0", "bandwidth=0",
               "status_2xx=0", "status_3xx=0", "status_4xx=0", "status_5xx=0",
               "rate_ratio=0"):

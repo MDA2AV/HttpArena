@@ -174,6 +174,28 @@ for t in baseline pipelined limited-conn json json-comp json-tls upload \
 done
 $_has_isolated_test && framework_build
 
+# zrk is the one load generator with no native install on the bench host.
+# gcannon, wrk and h2load are all on PATH there, so the adapters can call them
+# bare when LOADGEN_DOCKER is false -- zrk cannot, and a `command not found`
+# inside a tool adapter reads downstream as a server that answered nothing.
+# That is exactly how the first board-wide millionaire run failed: every entry
+# reported 0 req/s and a rate_ratio of 0, and the run looked like 103 broken
+# frameworks instead of one missing binary.
+#
+# Built here rather than in the LOADGEN_DOCKER block because that block is
+# gated on a mode the bench host does not use, and built *before* system_tune()
+# for the reason the framework build above is: this Dockerfile needs DNS to
+# reach github.com, and the daemon restart in system_tune() breaks resolution
+# inside build containers for several seconds afterwards.
+if framework_subscribes_to "millionaire" && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
+    if ! docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
+        info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
+        docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — millionaire cannot run without it"
+    fi
+    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 $ZRK_IMAGE"
+    info "zrk: docker mode ($ZRK_IMAGE)"
+fi
+
 # ── System tuning — NOW, after all image builds are complete ───────────────
 
 if [ "${SKIP_TUNE:-}" != "true" ]; then
@@ -354,11 +376,18 @@ run_one() {
 
     # The millionaire profile's headline number, and the check that it counts.
     if [ "$endpoint" = "millionaire" ]; then
-        if [ -n "$best_cpu_usec" ] && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
+        # Two different failures that used to print the same line. "No CPU
+        # reading" is a cgroup problem; "no requests" is a generator or server
+        # problem, and saying the former when it is the latter sent the first
+        # board-wide run looking in the wrong place entirely.
+        if [ "${BEST_M[status_2xx]:-0}" -eq 0 ] 2>/dev/null; then
+            warn "no requests were served — there is nothing to measure here."
+            warn "  this is a load-generator or server failure, not a CPU one; see the zrk output above"
+        elif [ -z "$best_cpu_usec" ]; then
+            warn "no cgroup CPU reading for this run — the millionaire metric is missing"
+        else
             info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
 | $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
-        else
-            warn "no cgroup CPU reading for this run — the millionaire metric is missing"
         fi
         # Below ~0.98 the client never delivered the rate the profile is defined
         # by, so the CPU figure describes a different, lighter workload than
