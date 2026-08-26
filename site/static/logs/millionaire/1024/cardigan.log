@@ -1,0 +1,135 @@
+WARNING: Using incubator modules: jdk.incubator.vector
+Registered Route: [POST] /baseline11 -> HttpArenaController.baseline11
+Registered Route: [GET] /baseline11 -> HttpArenaController.baseline11
+Registered Route: [GET] /pipeline -> HttpArenaController.pipeline
+Registered Route: [GET] /baseline2 -> HttpArenaController.baseline2
+Starting Cardigan Server on port 8080 with 64 io_uring event loops on CPUs [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95], transport=plaintext...
+Pinned cardigan-loop-0 to Linux CPU 0
+Pinned cardigan-loop-1 to Linux CPU 1
+Pinned cardigan-loop-2 to Linux CPU 2
+Pinned cardigan-loop-3 to Linux CPU 3
+Pinned cardigan-loop-4 to Linux CPU 4
+Pinned cardigan-loop-5 to Linux CPU 5
+Pinned cardigan-loop-6 to Linux CPU 6
+Pinned cardigan-loop-7 to Linux CPU 7
+Pinned cardigan-loop-8 to Linux CPU 8
+Pinned cardigan-loop-9 to Linux CPU 9
+Pinned cardigan-loop-10 to Linux CPU 10
+Pinned cardigan-loop-11 to Linux CPU 11
+Pinned cardigan-loop-12 to Linux CPU 12
+Pinned cardigan-loop-13 to Linux CPU 13
+Pinned cardigan-loop-14 to Linux CPU 14
+Pinned cardigan-loop-15 to Linux CPU 15
+Pinned cardigan-loop-16 to Linux CPU 16
+Pinned cardigan-loop-17 to Linux CPU 17
+Pinned cardigan-loop-18 to Linux CPU 18
+Pinned cardigan-loop-19 to Linux CPU 19
+Pinned cardigan-loop-20 to Linux CPU 20
+Pinned cardigan-loop-21 to Linux CPU 21
+Pinned cardigan-loop-22 to Linux CPU 22
+Pinned cardigan-loop-23 to Linux CPU 23
+Pinned cardigan-loop-24 to Linux CPU 24
+Pinned cardigan-loop-25 to Linux CPU 25
+Pinned cardigan-loop-26 to Linux CPU 26
+Pinned cardigan-loop-27 to Linux CPU 27
+Pinned cardigan-loop-28 to Linux CPU 28
+Pinned cardigan-loop-29 to Linux CPU 29
+Pinned cardigan-loop-30 to Linux CPU 30
+Pinned cardigan-loop-31 to Linux CPU 31
+Pinned cardigan-loop-64 to Linux CPU 64
+Pinned cardigan-loop-65 to Linux CPU 65
+Pinned cardigan-loop-66 to Linux CPU 66
+Pinned cardigan-loop-67 to Linux CPU 67
+Pinned cardigan-loop-68 to Linux CPU 68
+Pinned cardigan-loop-69 to Linux CPU 69
+Pinned cardigan-loop-70 to Linux CPU 70
+Pinned cardigan-loop-71 to Linux CPU 71
+Pinned cardigan-loop-72 to Linux CPU 72
+Pinned cardigan-loop-73 to Linux CPU 73
+Pinned cardigan-loop-74 to Linux CPU 74
+Pinned cardigan-loop-75 to Linux CPU 75
+Pinned cardigan-loop-76 to Linux CPU 76
+Pinned cardigan-loop-77 to Linux CPU 77
+Pinned cardigan-loop-78 to Linux CPU 78
+Pinned cardigan-loop-79 to Linux CPU 79
+Pinned cardigan-loop-80 to Linux CPU 80
+Pinned cardigan-loop-81 to Linux CPU 81
+Pinned cardigan-loop-82 to Linux CPU 82
+Pinned cardigan-loop-83 to Linux CPU 83
+Pinned cardigan-loop-84 to Linux CPU 84
+Pinned cardigan-loop-85 to Linux CPU 85
+Pinned cardigan-loop-86 to Linux CPU 86
+Pinned cardigan-loop-87 to Linux CPU 87
+Pinned cardigan-loop-88 to Linux CPU 88
+Pinned cardigan-loop-89 to Linux CPU 89
+Pinned cardigan-loop-90 to Linux CPU 90
+Pinned cardigan-loop-91 to Linux CPU 91
+Pinned cardigan-loop-92 to Linux CPU 92
+Pinned cardigan-loop-93 to Linux CPU 93
+Pinned cardigan-loop-94 to Linux CPU 94
+Pinned cardigan-loop-95 to Linux CPU 95
+Loop 78 listening on socket FD 146
+Loop 88 listening on socket FD 192
+Loop 29 listening on socket FD 159
+Loop 74 listening on socket FD 173
+Loop 69 listening on socket FD 161
+Loop 15 listening on socket FD 148
+Loop 81 listening on socket FD 188
+Loop 67 listening on socket FD 177
+Loop 4 listening on socket FD 186
+Loop 30 listening on socket FD 136
+Loop 23 listening on socket FD 163
+Loop 12 listening on socket FD 134
+Loop 13 listening on socket FD 166
+Loop 14 listening on socket FD 147
+Loop 86 listening on socket FD 194
+Loop 21 listening on socket FD 193
+Loop 66 listening on socket FD 170
+Loop 64 listening on socket FD 175
+Loop 65 listening on socket FD 174
+Loop 83 listening on socket FD 183
+Loop 28 listening on socket FD 191
+Loop 89 listening on socket FD 152
+Loop 19 listening on socket FD 169
+Loop 24 listening on socket FD 145
+Loop 68 listening on socket FD 149
+Loop 5 listening on socket FD 153
+Loop 7 listening on socket FD 138
+Loop 75 listening on socket FD 181
+Loop 95 listening on socket FD 197
+Loop 85 listening on socket FD 185
+Loop 92 listening on socket FD 141
+Loop 93 listening on socket FD 160
+Loop 90 listening on socket FD 190
+Loop 3 listening on socket FD 142
+Loop 18 listening on socket FD 182
+Loop 11 listening on socket FD 167
+Loop 8 listening on socket FD 158
+Loop 10 listening on socket FD 196
+Loop 72 listening on socket FD 137
+Loop 73 listening on socket FD 140
+Loop 82 listening on socket FD 151
+Loop 16 listening on socket FD 135
+Loop 27 listening on socket FD 164
+Loop 9 listening on socket FD 139
+Loop 17 listening on socket FD 162
+Loop 79 listening on socket FD 155
+Loop 20 listening on socket FD 157
+Loop 87 listening on socket FD 184
+Loop 6 listening on socket FD 176
+Loop 70 listening on socket FD 172
+Loop 26 listening on socket FD 178
+Loop 77 listening on socket FD 154
+Loop 22 listening on socket FD 180
+Loop 94 listening on socket FD 165
+Loop 2 listening on socket FD 156
+Loop 31 listening on socket FD 171
+Loop 71 listening on socket FD 144
+Loop 91 listening on socket FD 195
+Loop 25 listening on socket FD 189
+Loop 0 listening on socket FD 143
+Loop 84 listening on socket FD 168
+Loop 1 listening on socket FD 150
+Loop 80 listening on socket FD 187
+Loop 76 listening on socket FD 179
+Cardigan HttpArena mode h1 is listening on 8080

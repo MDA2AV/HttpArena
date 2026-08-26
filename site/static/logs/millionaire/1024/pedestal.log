@@ -1,0 +1,6 @@
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 25.0.4+7-LTS
+[main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@6d3e1c6d{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@65a381ce{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@6d3e1c6d{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@65a381ce{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@175a0f81{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:8080}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@515c6338{STARTING}[12.0.36,sto=0] @5532ms
