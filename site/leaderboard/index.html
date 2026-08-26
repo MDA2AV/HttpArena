@@ -1133,7 +1133,8 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function pickProfile(id){
     var p=PROF[id]; if(!p) return;
-    state.view='profile'; state.profile=id; state.conns=p.conns[0]; state.sortKey='rps'; state.sortDir=-1; state.q=''; document.getElementById('q').value='';
+    var ds=defProfileSort(id);
+    state.view='profile'; state.profile=id; state.conns=p.conns[0]; state.sortKey=ds.k; state.sortDir=ds.d; state.q=''; document.getElementById('q').value='';
     expanded.add('detailed'); expanded.add(familyOf(p));
     buildNav(); renderHead(); render();
   }
@@ -1485,7 +1486,8 @@ document.addEventListener('DOMContentLoaded', function(){
     var p=[];
     if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
     else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); }
-    var defSort = state.view==='profile' ? (state.sortKey==='rps'&&state.sortDir===-1) : (state.sortKey==='score'&&state.sortDir===-1);
+    var _dps=defProfileSort(state.profile);
+    var defSort = state.view==='profile' ? (state.sortKey===_dps.k&&state.sortDir===_dps.d) : (state.sortKey==='score'&&state.sortDir===-1);
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
@@ -1508,7 +1510,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(p.p && PROF[p.p]){
       state.view='profile'; state.profile=p.p;
       var cc=+p.conns; state.conns=(PROF[p.p].conns.indexOf(cc)>=0)?cc:PROF[p.p].conns[0];
-      state.sortKey='rps'; state.sortDir=-1;
+      var _ds=defProfileSort(state.profile); state.sortKey=_ds.k; state.sortDir=_ds.d;
       expanded.add('detailed'); expanded.add(familyOf(PROF[p.p]));
     } else {
       state.view='composite';
@@ -1621,10 +1623,16 @@ document.addEventListener('DOMContentLoaded', function(){
     setupTopScroll();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
+  // What a profile's detail view ranks on. Everything here is "most requests
+  // per second wins" except the efficiency profile, which pins the rate: every
+  // entry delivers the same rps by construction, so ordering on it sorts by
+  // measurement noise. Its metric is the CPU each one spent to do it, and less
+  // of that is better.
+  function defProfileSort(id){ return id==='efficiency' ? {k:'cpureq',d:1} : {k:'rps',d:-1}; }
   function profileCols(){
     var W=window.innerWidth;
     var c=[
@@ -1635,6 +1643,7 @@ document.addEventListener('DOMContentLoaded', function(){
     ];
     if(state.profile==='json-comp') c.push({k:'bwreq', label:'BW / req', num:true, w:'100px', min:640, tip:'Bytes per request - lower means better compression.'});
     if(state.profile==='upload') c.push({k:'inbw', label:'In BW', num:true, w:'118px', min:640, tip:'Input bandwidth - bytes/sec the server ingests (upload throughput).'});
+    if(state.profile==='efficiency') c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
     c.push({k:'avg', label:'Avg', num:true, w:'92px', min:820, tip:TIP.avg});
     c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
     c.push({k:'cpu', label:'CPU %', num:true, w:'96px', min:1024, tip:TIP.cpu});
@@ -1648,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
     if(k==='inbw') return '<div class="c num sub">'+esc(r.input_bw||'-')+'</div>';
+    if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
     if(k==='cpu') return '<div class="c num sub">'+esc(r.cpu||'-')+'</div>';
@@ -1656,7 +1666,10 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function renderProfile(){
     var all=(D.results[state.profile+'-'+state.conns]||[]).slice();
-    var byRps=all.slice().sort(function(a,b){return (b.rps||0)-(a.rps||0);});
+    // Rank on whatever this profile is actually about. Ranking the fixed-rate
+    // profile by rps would number entries 1..N by noise around 500,000.
+    var _rk=defProfileSort(state.profile);
+    var byRps=all.slice().sort(function(a,b){var x=val(a,_rk.k),y=val(b,_rk.k); return x===y?0:(x<y?-1:1)*_rk.d;});
     var rankMap={}; byRps.forEach(function(r,i){rankMap[r.fw]=i+1;});
     var maxRps=byRps.length?(byRps[0].rps||0):0;
     renderTypes();

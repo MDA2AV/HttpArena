@@ -129,3 +129,58 @@ stats_stop() {
     STATS_PID=""
     STATS_LOG=""
 }
+
+# ── Exact CPU accounting (cgroup v2) ────────────────────────────────────────
+#
+# The sampler above averages an instantaneous percentage taken at ~2Hz. That is
+# fine where CPU is context for a throughput number. It is not fine where CPU
+# *is* the number: the error is whatever the container happened to be doing on
+# each tick, and a 20s run only gets ~40 of them.
+#
+# The kernel already has the exact figure. cgroup v2's cpu.stat carries a
+# monotonic usage_usec for the container's own cgroup, so the difference across
+# a run is the CPU time it actually consumed, to the microsecond, with no
+# sampling in the path at all.
+#
+# Sets CPU_ACCT_USEC to that delta, or leaves it empty when the cgroup file is
+# not readable — cgroup v1, rootless docker, or a container that already exited.
+# Callers must treat empty as "not measured" rather than as zero.
+CPU_ACCT_USEC=""
+_CPU_ACCT_START=""
+_CPU_ACCT_PATH=""
+
+_cgroup_cpu_path() {
+    local id
+    id=$(docker inspect -f '{{.Id}}' "$1" 2>/dev/null) || return 1
+    [ -n "$id" ] || return 1
+    local p
+    for p in "/sys/fs/cgroup/system.slice/docker-$id.scope/cpu.stat" \
+             "/sys/fs/cgroup/docker/$id/cpu.stat"; do
+        if [ -r "$p" ]; then printf '%s' "$p"; return 0; fi
+    done
+    return 1
+}
+
+_cgroup_cpu_usec() {
+    awk '/^usage_usec/ { print $2; exit }' "$1" 2>/dev/null
+}
+
+cpu_acct_start() {
+    CPU_ACCT_USEC=""
+    _CPU_ACCT_START=""
+    _CPU_ACCT_PATH=$(_cgroup_cpu_path "$1") || _CPU_ACCT_PATH=""
+    [ -n "$_CPU_ACCT_PATH" ] || return 0
+    _CPU_ACCT_START=$(_cgroup_cpu_usec "$_CPU_ACCT_PATH")
+}
+
+cpu_acct_stop() {
+    CPU_ACCT_USEC=""
+    [ -n "$_CPU_ACCT_PATH" ] && [ -n "$_CPU_ACCT_START" ] || return 0
+    local end
+    end=$(_cgroup_cpu_usec "$_CPU_ACCT_PATH")
+    [ -n "$end" ] || return 0
+    CPU_ACCT_USEC=$(( end - _CPU_ACCT_START ))
+    # A container restarted mid-run resets the counter; a negative delta is a
+    # measurement that did not happen, not a measurement of zero.
+    [ "$CPU_ACCT_USEC" -ge 0 ] 2>/dev/null || CPU_ACCT_USEC=""
+}

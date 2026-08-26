@@ -45,6 +45,7 @@ The reply states which baseline it used, and profiles the other framework does n
 |----------|----------|-------------|
 | Connection | `baseline`, `pipelined` *, `limited-conn` | Mixed GET/POST with query parsing (512/4K conns), 16× batched pipelining (reference-only, shown faded, excluded from the composite score), short-lived connections that close after 10 requests |
 | Concurrency | `async` * | `GET /delay/{ms}` with the wait named in the route, 64K held connections. Isolates what a framework does while a request is pending, with no database or I/O in the way. Reference-only for now — measured and shown, not yet part of the composite score |
+| Efficiency | `efficiency` * | Offered rate pinned at 500K req/s with zrk; the metric is CPU spent per request, read exactly from the container's cgroup rather than sampled. Asks who serves a load everyone can carry *cheaply*. Reference-only — its metric is lower-is-better, which the composite does not yet understand |
 | Workload | `json`, `json-comp`, `json-tls`, `upload`, `static`, `static-tls` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, 20 MB body ingestion, 20-file static asset serving (plaintext and TLS) |
 | Database | `async-db`, `crud` | Async Postgres sequential scan; realistic REST API with cached reads, list, upsert, update, and optional Redis cache |
 | Templates | `fortunes` * | DB query + HTML template render (TechEmpower-style Fortunes). Reference-only — measures template-engine throughput, not part of the composite score |

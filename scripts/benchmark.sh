@@ -28,6 +28,7 @@ source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
 source "$SOURCE_DIR/tools/wrk.sh"
+source "$SOURCE_DIR/tools/zrk.sh"
 
 cd "$ROOT_DIR"
 validate_profiles
@@ -126,11 +127,12 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     H2LOAD_CMD="docker run ${DOCKER_FLAGS[*]} $H2LOAD_IMAGE"
     H2LOAD_H3_CMD="docker run ${DOCKER_FLAGS[*]} $H2LOAD_H3_IMAGE"
     WRK_CMD="docker run ${DOCKER_FLAGS[*]} $WRK_IMAGE"
+    ZRK_CMD="docker run ${DOCKER_FLAGS[*]} $ZRK_IMAGE"
 
     # Parallel arrays — images can't be packed into "img:dockerfile" strings
     # because image names already contain ':' (e.g. wrk:local, h2load:local).
-    _loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE")
-    _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile")
+    _loadgen_images=("$GCANNON_IMAGE" "$H2LOAD_IMAGE" "$H2LOAD_H3_IMAGE" "$WRK_IMAGE" "$ZRK_IMAGE")
+    _loadgen_files=("gcannon.Dockerfile" "h2load.Dockerfile" "h2load-h3.Dockerfile" "wrk.Dockerfile" "zrk.Dockerfile")
     for i in "${!_loadgen_images[@]}"; do
         img="${_loadgen_images[$i]}"
         df="${_loadgen_files[$i]}"
@@ -163,7 +165,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         api-4 api-16 static static-tls async-db async \
+         api-4 api-16 static static-tls async-db async efficiency \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -274,6 +276,8 @@ run_one() {
     # even if its rps is 0 (ws-echo, zero-traffic regressions). Without this,
     # BEST_M would carry stale metrics from a previous profile.
     local best_rps=-1 best_output="" best_cpu="0%" best_mem="0MiB" best_breakdown=""
+    local best_cpu_usec="" best_rate_ratio=""
+
     BEST_M=()
     local run
 
@@ -288,7 +292,12 @@ run_one() {
         fi
 
         local output
+        # Exact cgroup CPU across exactly the window the load is applied in.
+        # Cheap enough to take on every profile — two file reads — and it is
+        # the measurement on the efficiency profile rather than context.
+        cpu_acct_start "$CONTAINER_NAME"
         output=$("${tool//-/_}_run" "${gc_args[@]}")
+        cpu_acct_stop
         stats_stop
 
         # Print trimmed output (drop h2load-h3 per-thread spawn chatter).
@@ -304,8 +313,25 @@ run_one() {
         done < <("${tool//-/_}_parse" "$endpoint" "$output")
 
         local rps_int=${m[rps]:-0}
-        if [ "$rps_int" -gt "$best_rps" ] 2>/dev/null; then
+
+        # Best-of-N keeps the fastest run — except on a fixed-rate profile,
+        # where every run delivers the same rps by construction, so picking on
+        # rps is a coin flip between them. There the run to keep is the cheapest
+        # one, which also discards the warm-up for free: an unsettled JIT or GC
+        # heap shows up as CPU, and run 1 is the one carrying it.
+        local better=false
+        if [ "$endpoint" = "efficiency" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
+            if [ -z "$best_cpu_usec" ] || [ "$CPU_ACCT_USEC" -lt "$best_cpu_usec" ]; then
+                better=true
+            fi
+        elif [ "$rps_int" -gt "$best_rps" ] 2>/dev/null; then
+            better=true
+        fi
+
+        if $better; then
             best_rps=$rps_int
+            best_cpu_usec="${CPU_ACCT_USEC:-}"
+            best_rate_ratio="${m[rate_ratio]:-}"
             best_output="$output"
             best_cpu="$STATS_AVG_CPU"
             best_mem="$STATS_PEAK_MEM"
@@ -325,6 +351,24 @@ run_one() {
     done
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
+
+    # The efficiency profile's headline number, and the check that it counts.
+    if [ "$endpoint" = "efficiency" ]; then
+        if [ -n "$best_cpu_usec" ] && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
+            info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
+| $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
+        else
+            warn "no cgroup CPU reading for this run — the efficiency metric is missing"
+        fi
+        # Below ~0.98 the client never delivered the rate the profile is defined
+        # by, so the CPU figure describes a different, lighter workload than
+        # every other entry's. Louder than a note: it invalidates the comparison.
+        if [ -n "$best_rate_ratio" ] \
+           && awk -v r="$best_rate_ratio" 'BEGIN{exit !(r+0 < 0.98)}'; then
+            warn "offered rate fell short: rate_ratio=$best_rate_ratio (target ${BEST_M[target_rate]:-?}/s)"
+            warn "  the CPU number is not comparable with runs that held the rate"
+        fi
+    fi
 
     # Input bandwidth — bytes the server ingests per second. Matters for
     # profiles where the *request* body dominates (upload, api-4/16 mixed
@@ -365,7 +409,8 @@ else: print(f'{bps}B/s')
 
     # ── Save results (--save) ───────────────────────────────────────────
     if [ "$SAVE_RESULTS" = "true" ]; then
-        save_result "$profile" "$CONNS" "$best_rps" "$best_cpu" "$best_mem"
+        save_result "$profile" "$CONNS" "$best_rps" "$best_cpu" "$best_mem" \
+                    "$best_cpu_usec" "$best_rate_ratio"
     else
         info "dry-run — not saving (use --save to persist)"
     fi
@@ -389,8 +434,31 @@ else: print(f'{bps}B/s')
 # proportionally across the 20-URI mix (6 static, 4 baseline, 7 json, 3 db).
 save_result() {
     local profile="$1" CONNS="$2" best_rps="$3" best_cpu="$4" best_mem="$5"
+    local best_cpu_usec="${6:-}" best_rate_ratio="${7:-}"
     local dir="$RESULTS_DIR/$profile/$CONNS"
     mkdir -p "$dir"
+
+    # Efficiency publishes what the profile is about. `cpu` above is still the
+    # sampled percentage every profile carries; these are the exact figures:
+    # CPU microseconds out of the container's own cgroup, the same number per
+    # request, and the evidence that the offered rate was actually delivered.
+    # rate_ratio is the one that decides whether the rest means anything — a run
+    # that fell short of 500K did not measure this profile, because the load was
+    # not the load, so the reason ships with the row rather than being inferred
+    # from an rps that looks merely slow.
+    local eff_extra=""
+    if [ "$profile" = "efficiency" ]; then
+        local _eff_reqs=${BEST_M[status_2xx]:-0}
+        local _eff_per_req="null"
+        if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then
+            _eff_per_req=$(awk -v c="$best_cpu_usec" -v r="$_eff_reqs" 'BEGIN{printf "%.4f", c/r}')
+        fi
+        eff_extra=",
+  \"cpu_usec\": ${best_cpu_usec:-null},
+  \"cpu_per_req_us\": $_eff_per_req,
+  \"target_rate\": ${BEST_M[target_rate]:-0},
+  \"rate_ratio\": ${best_rate_ratio:-0}"
+    fi
 
     local cpu_extra=""
     if [ -n "$best_breakdown" ]; then
@@ -442,14 +510,14 @@ save_result() {
   "memory": "$best_mem",
   "connections": $CONNS,
   "threads": $THREADS,
-  "duration": "$DURATION",
+  "duration": "${BEST_M[duration]:-$DURATION}",
   "pipeline": $PROF_PIPELINE,
   "bandwidth": "${BEST_M[bandwidth]:-0}",$([ -n "${BEST_M[input_bw]:-}" ] && printf '\n  "input_bw": "%s",' "${BEST_M[input_bw]}")
   "reconnects": ${BEST_M[reconnects]:-0},
   "status_2xx": ${BEST_M[status_2xx]:-0},
   "status_3xx": ${BEST_M[status_3xx]:-0},
   "status_4xx": ${BEST_M[status_4xx]:-0},
-  "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}${cpu_extra}
+  "status_5xx": ${BEST_M[status_5xx]:-0}${tpl_extra}${eff_extra}${cpu_extra}
 }
 EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"

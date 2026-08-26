@@ -56,6 +56,10 @@ H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"
 WRK="${WRK:-wrk}"
 WRK_IMAGE="${WRK_IMAGE:-wrk:local}"
 
+# zrk — constant-throughput generator for the efficiency profile.
+ZRK="${ZRK:-zrk}"
+ZRK_IMAGE="${ZRK_IMAGE:-zrk:local}"
+
 
 LOADGEN_DOCKER="${LOADGEN_DOCKER:-false}"
 

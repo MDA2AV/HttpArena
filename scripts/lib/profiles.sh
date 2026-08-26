@@ -41,6 +41,17 @@ declare -A PROFILES=(
     # is smaller than that. 64000 fits with ~500 ports to spare; if the ramp
     # ever shows up as connect errors, 61440 is the next stop down.
     [async]="1|0|0-31,64-95|64000|async"
+    # Efficiency: the offered rate is pinned at 500K req/s (see ZRK_FIXED_RATE
+    # in tools/zrk.sh) and the measurement is what the server spent to serve
+    # it, read exactly out of the container's cgroup rather than sampled.
+    #
+    # Every other profile here asks how fast a server can go. Real servers
+    # spend almost all of their time nowhere near that, so this asks the
+    # question from the other end: at a load everybody can carry, who carries
+    # it cheaply. 1024 connections because the socket count is part of the
+    # workload — 500K req/s needs only ~15 in flight, so the rest of them are
+    # there to be polled, which is exactly the cost being compared.
+    [efficiency]="1|0|0-31,64-95|1024|efficiency"
     [json]="1|0|0-31,64-95|4096|json"
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
@@ -81,6 +92,7 @@ PROFILE_ORDER=(
     production-stack
     unary-grpc unary-grpc-tls
     echo-ws echo-ws-pipeline echo-ws-limited
+    efficiency
     # Last on purpose. It closes ~49K sockets at exit and every one sits in
     # TIME_WAIT for the kernel's fixed ~60s, so anything scheduled after it
     # starts against a nearly full port table.
@@ -102,11 +114,13 @@ parse_profile() {
 }
 
 # Map an endpoint to the tool name that handles it.
-# Returns one of: gcannon, wrk, h2load, h2load-h3
+# Returns one of: gcannon, wrk, zrk, h2load, h2load-h3
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
         static|static-tls|json-tls)         echo "wrk" ;;
+        # zrk — the only paced generator; holds a fixed offered rate
+        efficiency)                         echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3
