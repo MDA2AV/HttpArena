@@ -2,7 +2,7 @@
 #
 # A rewrite of wrk2 with nanosecond pacing instead of wrk2's millisecond timer
 # wheel, coordinated-omission correction, and a JSON summary. Used by the
-# `efficiency` profile, which holds the offered rate fixed and measures what
+# `millionaire` profile, which holds the offered rate fixed and measures what
 # the server spends to serve it.
 #
 # Version-pinned with a checksum rather than tracking a branch the way gcannon

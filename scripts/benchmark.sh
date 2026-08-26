@@ -165,7 +165,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         api-4 api-16 static static-tls async-db async efficiency \
+         api-4 api-16 static static-tls async-db async millionaire \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -294,7 +294,7 @@ run_one() {
         local output
         # Exact cgroup CPU across exactly the window the load is applied in.
         # Cheap enough to take on every profile — two file reads — and it is
-        # the measurement on the efficiency profile rather than context.
+        # the measurement on the millionaire profile rather than context.
         cpu_acct_start "$CONTAINER_NAME"
         output=$("${tool//-/_}_run" "${gc_args[@]}")
         cpu_acct_stop
@@ -320,7 +320,7 @@ run_one() {
         # one, which also discards the warm-up for free: an unsettled JIT or GC
         # heap shows up as CPU, and run 1 is the one carrying it.
         local better=false
-        if [ "$endpoint" = "efficiency" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
+        if [ "$endpoint" = "millionaire" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
             if [ -z "$best_cpu_usec" ] || [ "$CPU_ACCT_USEC" -lt "$best_cpu_usec" ]; then
                 better=true
             fi
@@ -352,13 +352,13 @@ run_one() {
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
-    # The efficiency profile's headline number, and the check that it counts.
-    if [ "$endpoint" = "efficiency" ]; then
+    # The millionaire profile's headline number, and the check that it counts.
+    if [ "$endpoint" = "millionaire" ]; then
         if [ -n "$best_cpu_usec" ] && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
             info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
 | $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
         else
-            warn "no cgroup CPU reading for this run — the efficiency metric is missing"
+            warn "no cgroup CPU reading for this run — the millionaire metric is missing"
         fi
         # Below ~0.98 the client never delivered the rate the profile is defined
         # by, so the CPU figure describes a different, lighter workload than
@@ -438,7 +438,7 @@ save_result() {
     local dir="$RESULTS_DIR/$profile/$CONNS"
     mkdir -p "$dir"
 
-    # Efficiency publishes what the profile is about. `cpu` above is still the
+    # Millionaire publishes what the profile is about. `cpu` above is still the
     # sampled percentage every profile carries; these are the exact figures:
     # CPU microseconds out of the container's own cgroup, the same number per
     # request, and the evidence that the offered rate was actually delivered.
@@ -447,7 +447,7 @@ save_result() {
     # not the load, so the reason ships with the row rather than being inferred
     # from an rps that looks merely slow.
     local eff_extra=""
-    if [ "$profile" = "efficiency" ]; then
+    if [ "$profile" = "millionaire" ]; then
         local _eff_reqs=${BEST_M[status_2xx]:-0}
         local _eff_per_req="null"
         if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then

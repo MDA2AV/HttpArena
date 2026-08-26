@@ -67,7 +67,7 @@ CATALOG = [
         # much a real thing, because scoredForType() reads that flag *ahead* of
         # `scored` — setting it now would score this profile for infrastructure
         # alone while every other league ignored it.
-        ("efficiency", "CPU @ 500k", "CPU spent serving a pinned 500K req/s.",
+        ("millionaire", "Millionaire", "CPU spent serving a pinned 1M req/s.",
                                                     [1024],              [1024],          False,True,False),
     ]),
     ("Workload", [
@@ -134,7 +134,7 @@ PROFILE_DOC = {
     "static":           "test-profiles/h1/isolated/static/implementation",
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
     "async":            "test-profiles/h1/isolated/async/implementation",
-    "efficiency":       "test-profiles/h1/isolated/efficiency/implementation",
+    "millionaire":      "test-profiles/h1/isolated/millionaire/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",

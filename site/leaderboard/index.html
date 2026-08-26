@@ -1628,11 +1628,11 @@ document.addEventListener('DOMContentLoaded', function(){
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
   // What a profile's detail view ranks on. Everything here is "most requests
-  // per second wins" except the efficiency profile, which pins the rate: every
+  // per second wins" except the millionaire profile, which pins the rate: every
   // entry delivers the same rps by construction, so ordering on it sorts by
   // measurement noise. Its metric is the CPU each one spent to do it, and less
   // of that is better.
-  function defProfileSort(id){ return id==='efficiency' ? {k:'cpureq',d:1} : {k:'rps',d:-1}; }
+  function defProfileSort(id){ return id==='millionaire' ? {k:'cpureq',d:1} : {k:'rps',d:-1}; }
   function profileCols(){
     var W=window.innerWidth;
     var c=[
@@ -1643,7 +1643,7 @@ document.addEventListener('DOMContentLoaded', function(){
     ];
     if(state.profile==='json-comp') c.push({k:'bwreq', label:'BW / req', num:true, w:'100px', min:640, tip:'Bytes per request - lower means better compression.'});
     if(state.profile==='upload') c.push({k:'inbw', label:'In BW', num:true, w:'118px', min:640, tip:'Input bandwidth - bytes/sec the server ingests (upload throughput).'});
-    if(state.profile==='efficiency') c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
+    if(state.profile==='millionaire') c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
     c.push({k:'avg', label:'Avg', num:true, w:'92px', min:820, tip:TIP.avg});
     c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
     c.push({k:'cpu', label:'CPU %', num:true, w:'96px', min:1024, tip:TIP.cpu});

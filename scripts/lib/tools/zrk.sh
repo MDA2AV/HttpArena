@@ -2,7 +2,7 @@
 #
 # zrk is the only generator here that paces. gcannon, wrk and h2load all answer
 # "how fast can this go"; zrk answers "hold exactly this rate", which is what
-# the efficiency profile needs — with the rate pinned, the only thing left to
+# the millionaire profile needs — with the rate pinned, the only thing left to
 # vary between entries is what it cost them.
 #
 # It is also the only one that emits a machine-readable summary, so this
@@ -18,12 +18,12 @@ _zrk_cmd() {
     fi
 }
 
-# The rate the efficiency profile holds, in requests/second. It lives here
+# The rate the millionaire profile holds, in requests/second. It lives here
 # rather than in the profile spec because the spec's five fields are shaped for
 # closed-loop tools and have no slot for an offered rate — and because changing
 # it re-baselines every published number on the profile, so it should be a
 # visible edit rather than a digit inside a pipe-delimited string.
-ZRK_FIXED_RATE="${ZRK_FIXED_RATE:-500000}"
+ZRK_FIXED_RATE="${ZRK_FIXED_RATE:-1000000}"
 
 # ── Build arguments ─────────────────────────────────────────────────────────
 
@@ -33,17 +33,20 @@ zrk_build_args() {
     mapfile -t cmd < <(_zrk_cmd)
 
     case "$endpoint" in
-        efficiency)
+        millionaire)
             # Same GET the baseline profile is validated on, so nothing new has
             # to be implemented to subscribe and the handler is as thin as the
             # framework allows -- what is left in the CPU number is the
             # framework's own overhead rather than the workload's.
             #
-            # -t 16 rather than the 64 the closed-loop profiles use: pacing
-            # 500K req/s needs far fewer threads than saturating a server does,
-            # and idle generator threads spinning on their own rings is noise on
-            # the very box whose CPU is the measurement.
-            cmd+=(-t 16 -c "$conns" -d 20s -R "$ZRK_FIXED_RATE"
+            # Every thread the box will give it, like every other adapter.
+            # Generator threads cannot contaminate the measurement: they run on
+            # GCANNON_CPUS, a cpuset disjoint from the server's, and the metric
+            # is read out of the server container's own cgroup -- so a spinning
+            # generator shows up in nobody's number. What thread count does buy
+            # is schedule fidelity: at 1M req/s, -t 16 held rate_ratio 0.9934
+            # with 93ms of peak schedule lag against -t 24's 0.9955 and 46ms.
+            cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$ZRK_FIXED_RATE"
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")
             ;;
