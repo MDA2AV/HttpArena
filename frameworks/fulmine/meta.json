@@ -13,10 +13,12 @@
   "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
   "repo": "https://github.com/nigrosimone/fulmine.js",
   "enabled": true,
+  "tls_check": true,
   "tests": [
     "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
+    "async",
     "json",
     "json-comp",
     "upload",

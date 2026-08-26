@@ -13,10 +13,12 @@
   "description": "fulmine.js with the caches its standard entry has to leave off: the in-memory small-file cache and the stat cache, both shipped settings, both forbidden to a standard entry because they keep a static request off the disk.",
   "repo": "https://github.com/nigrosimone/fulmine.js",
   "enabled": true,
+  "tls_check": true,
   "tests": [
     "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
+    "async",
     "json",
     "json-comp",
     "upload",

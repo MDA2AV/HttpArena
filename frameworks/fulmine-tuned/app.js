@@ -160,6 +160,23 @@ app.get('/pipeline', (req, res) => {
     res.type('text/plain').send('ok');
 });
 
+// GET /delay/{ms} — answered once ms milliseconds have gone by. setTimeout hands the request
+// back to the event loop, so a request that is waiting costs one timer entry and the worker
+// stays free for the next one: at 64K held connections that is 64K timers rather than 64K
+// blocked threads.
+//
+// The value is read out of the path before the timer is armed, which is what this profile is
+// really testing. µWS invalidates the request object the moment the handler returns, so a
+// handler that reached for the parameter inside the callback would find it gone; keeping it in
+// the closure also gives every overlapping request its own delay, which is what the 32-way
+// concurrent probe looks for.
+app.get('/delay/:ms', (req, res) => {
+    const ms = parseInt(req.params.ms, 10) || 0;
+    setTimeout(() => {
+        res.type('text/plain').send(String(ms));
+    }, ms);
+});
+
 // shared by the plaintext listener and the TLS one on 8081: same handler, same shapes
 const registerJsonRoute = (target, path = '/json/:count') => target.get(path, compress, (req, res) => {
     if (datasetItems) {
@@ -471,6 +488,92 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     registerStaticRoute(tlsApp);
     tlsApp.use(answerError);
     tlsApp.listen(8081);
+}
+
+// tls_check: the opt-in TLS hardening section, on a listener of its own on 9000 reading a
+// certificate directory of its own. The section replaces the pair under the running server, and
+// /certs-tls exists so that doing so cannot move the ground under json-tls, static-tls and the h2
+// profiles, which read /certs and run in the same validation.
+//
+// Only validate.sh mounts the directory, so on a measured run this block does not exist: no
+// second listener is built and nothing is stat'd.
+if (fs.existsSync('/certs-tls/server.key') && fs.existsSync('/certs-tls/server.crt')) {
+    // What a rotation costs here is a listener rather than a handshake. µWS reads the pair once,
+    // when the SSL context is built, and nothing points an existing context at a new file
+    // afterwards: addServerName() replaces the certificate for one SNI name and leaves the
+    // default context -- which is what answers a client that sends no server name -- on the old
+    // one. Measured both ways: after addServerName('localhost', ...) an -servername handshake is
+    // served the new certificate and a -noservername handshake is still served the old. Building
+    // the listener again is the rotation that reaches both.
+    //
+    // And it interrupts nothing, because a worker binds the port shared -- SO_REUSEPORT -- so the
+    // replacement can be accepting on 9000 beside the listener it replaces before that one is
+    // told to stop. close() then closes the old listen socket, lets what it is already serving
+    // finish, and drops its idle keep-alives only after that: nothing is refused and no response
+    // is cut short.
+    const buildTlsCheckApp = () => {
+        const tlsCheckApp = express({
+            uwsOptions: {
+                key_file_name: '/certs-tls/server.key',
+                cert_file_name: '/certs-tls/server.crt'
+            }
+        });
+        tlsCheckApp.disable('x-powered-by');
+        tlsCheckApp.set('etag', false);
+        tlsCheckApp.set('file cache', true);
+        tlsCheckApp.set('connection headers', false);
+        registerJsonRoute(tlsCheckApp);
+        registerStaticRoute(tlsCheckApp);
+        tlsCheckApp.use(answerError);
+        return tlsCheckApp;
+    };
+
+    // What counts as a new pair. The section swaps both files with mv, so the inode moves along
+    // with the mtime, and the size is in here because a pair regenerated inside the same
+    // millisecond would otherwise read as unchanged.
+    const pairStamp = () => {
+        try {
+            const key = fs.statSync('/certs-tls/server.key');
+            const crt = fs.statSync('/certs-tls/server.crt');
+            return key.ino + ':' + key.size + ':' + key.mtimeMs + '|' + crt.ino + ':' + crt.size + ':' + crt.mtimeMs;
+        } catch (e) {
+            // mid-swap a file is missing for an instant. Reporting no reading rather than a new
+            // one picks the rotation up on the next tick instead of building a context out of
+            // half of one pair and half of the other
+            return '';
+        }
+    };
+
+    let live = buildTlsCheckApp();
+    let stamp = pairStamp();
+
+    const rotate = () => {
+        const next = buildTlsCheckApp();
+        const previous = live;
+        next.listen(9000, (err) => {
+            // the listener already up is still serving, so it is the right thing to keep when
+            // the replacement cannot bind
+            if (err) return;
+            live = next;
+            previous.close();
+        });
+    };
+
+    live.listen(9000, (err) => {
+        if (err) return;
+        // Armed from inside the listen callback because that is what says this process owns a
+        // listener: the primary of a clustered app returns from listen() without binding
+        // anything, so only the workers arrive here and only they have a certificate to rotate.
+        // One second is the reference entry's interval and is two orders off the 30s the section
+        // allows, and the stat is only paid while the section is mounted.
+        setInterval(() => {
+            const now = pairStamp();
+            if (now && now !== stamp) {
+                stamp = now;
+                rotate();
+            }
+        }, 1000).unref();
+    });
 }
 
 app.listen(8080);
