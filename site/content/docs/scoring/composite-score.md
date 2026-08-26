@@ -32,6 +32,10 @@ Framework types remain separate: engine entries are scored on their own subset o
 
 The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself, for example ranking the Ruby entries against each other rather than against the field.
 
+**Exception: Latency-1M.** That profile pins its request rate, so every entry that holds the rate delivers the same one and normalizing it on rps would score all of them 1,000. It contributes [its own score](/docs/test-profiles/h1/isolated/latency-1m/implementation/#scoring) instead, a 0–100 figure built from CPU and both latency tails, multiplied by 10 onto this scale.
+
+One consequence is worth naming: because that score is not rebased on the field leader, the best entry on Latency-1M contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
+
 ### Step 3: Sum across scored profiles
 
 The final composite score is the **sum** of per-profile scores across all **scored** profiles:
@@ -40,7 +44,7 @@ The final composite score is the **sum** of per-profile scores across all **scor
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 1,000 points per profile, so with the current 20 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is 20,000, rising to 30,000 when the memory-efficiency toggle is on (each profile adds up to 500 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 1,000 points per profile, so with the current 21 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is 21,000, rising to 31,500 when the memory-efficiency toggle is on (each profile adds up to 500 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 1,000-point ceiling of that profile.
 
@@ -114,7 +118,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static, Static TLS, Async Delay, Latency-1M, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined, Static, Static TLS, Async Delay, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 

@@ -20,9 +20,13 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import posixpath
 import html as _html
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import latency_1m_score as _l1m  # noqa: E402  (reference impl for the latency-1m score)
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -57,17 +61,16 @@ CATALOG = [
                                                     [64000],             [64000],         False,True,False),
     ]),
     ("Efficiency", [
-        # Unscored while the rate and the connection count settle (#1310). The
-        # ranking metric here is CPU, not rps, and the composite sums rps — so
-        # this cannot simply be switched on: scoring it means teaching
-        # aggregate() a lower-is-better metric first.
+        # Scored. The composite cannot rank this on rps the way it ranks every
+        # other profile, because the rate is pinned and every entry that holds it
+        # delivers the same one. It contributes its own score instead, which
+        # computeComposite() puts on the shared 0-1000 basis.
         #
         # infraScored stays False even though a proxy's CPU efficiency is very
-        # much a real thing, because scoredForType() reads that flag *ahead* of
-        # `scored` — setting it now would score this profile for infrastructure
-        # alone while every other league ignored it.
+        # much a real thing: scoredForType() reads that flag *ahead* of `scored`,
+        # and no infrastructure entry has been measured on this profile yet.
         ("latency-1m", "Latency-1M", "Score out of 100: CPU and both latency tails at a pinned 1M req/s.",
-                                                    [1024],              [1024],          False,True,False),
+                                                    [1024],              [1024],          True,True,False),
     ]),
     ("Workload", [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
@@ -1218,6 +1221,34 @@ def badge_aggregate(profiles, results):
     return {"avg": avg, "mem": amem, "bw": abw}
 
 
+# The latency-1m score, from the reference implementation rather than a third
+# copy of the formula. Field-wide and computed once, exactly like l1mEnsure() in
+# index.html: the bests are taken over every published row, not over whichever
+# league or filter happens to be on screen, so a framework's score does not move
+# when the view does.
+_L1M_CACHE = {}
+
+
+def l1m_scores():
+    if _L1M_CACHE:
+        return _L1M_CACHE
+    rows = [{"fw": r.get("framework") or r.get("fw"),
+             "rps": r.get("rps") or 0,
+             "cpu": r.get("cpu_per_req_us"),
+             "p99": _l1m.to_us(r.get("p99_latency")),
+             "p999": _l1m.to_us(r.get("p99_9_latency"))}
+            for key, rs in RESULTS.items() if key.startswith("latency-1m-")
+            for r in rs]
+    if not rows:
+        _L1M_CACHE["__empty__"] = 0.0
+        return _L1M_CACHE
+    _l1m.score_rows(rows)
+    for r in rows:
+        if r["fw"]:
+            _L1M_CACHE[r["fw"]] = r["score"]
+    return _L1M_CACHE
+
+
 def _scored_for(prof, meta, pid, fw):
     """scoredForType() in index.html. infraScored is read before the `scored`
     short-circuit, not behind it: the infra set is not a subset of the framework
@@ -1377,7 +1408,15 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 if is_scored(pid, fw):
                     # 0-1000 per profile; mirrors computeComposite() in
                     # index.html, which check_badge_parity.js diffs against.
-                    score += (eff(pid, fw) / max_r[pid]) * 1000
+                    #
+                    # latency-1m cannot be normalised on rps like the rest: its
+                    # rate is pinned, so every entry that holds it delivers the
+                    # same one and the column would read 1000 for all of them.
+                    # It contributes its own score, x10 onto the shared basis.
+                    if pid == "latency-1m":
+                        score += l1m_scores().get(fw, 0.0) * 10
+                    else:
+                        score += (eff(pid, fw) / max_r[pid]) * 1000
         if any_result:
             rows.append((fw, score * _cmp_factor(meta, fw, scope)))
     rows.sort(key=lambda r: (-r[1], r[0]))

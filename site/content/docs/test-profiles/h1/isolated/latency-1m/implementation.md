@@ -120,6 +120,8 @@ The reference implementation is [`scripts/latency_1m_score.py`](https://github.c
 
 ### Composite
 
-The profile is currently **reference-only**: measured, published and shown, but not contributing to the composite score ([#1310](https://github.com/MDA2AV/HttpArena/issues/1310)).
+This profile **counts toward the composite score**, for framework and engine entries alike.
 
-Unlike the other unscored profiles, this one cannot simply be switched on. The composite sums normalized requests-per-second across profiles; this profile's score is already a 0–100 quantity computed on entirely different axes, so folding it in is a decision about what the composite means, not a flag.
+It is the one profile the composite does not normalize on requests per second, because it cannot: the rate is pinned, so every entry that holds it delivers the same one and rps would score them all identically. The score above is contributed directly, multiplied by 10 onto the composite's 0–1,000 per-profile scale.
+
+Because that score is not rebased on the field leader, the best entry here contributes about 970 rather than a full 1,000, because nobody is simultaneously cheapest and best on both tails. That is the same deliberate choice as above, carried through to the sum.
