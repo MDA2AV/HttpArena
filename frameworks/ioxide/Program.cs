@@ -61,8 +61,18 @@ internal static class Program
         // Recv buffer ring, env-tunable: the upload profile moves large bodies, so each recv slice is
         // capped at the buffer size - bigger buffers mean far fewer slices (CQEs + returns) for the
         // same bytes. recvKb * ringEntries is the reserved recv memory per reactor.
+        //
+        // Slots are what a connection needs to have its next request picked up, so the count has to
+        // be read against connections per reactor, not against the box. The async profile holds
+        // 64,000 connections open, which is about 1,000 per reactor here, and at 256 slots most of
+        // them have nothing posted and wait for one to free. The measured shape fits: a request that
+        // asks for a 15ms wait comes back in 38ms, and the timer itself is only 3ms of that, so the
+        // other 20ms is the read and write path.
+        //
+        // 1024 costs 4x the reserved recv memory (16 MB per reactor, 1 GB across 64 of them, against
+        // 256 MB before) and memory is a scored factor, so this is a trade rather than a free win.
         int recvKb = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RECV_KB"), out int rk) && rk > 0 ? rk : 16;
-        int ringEntries = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RING_ENTRIES"), out int re) && re > 0 ? re : 256;
+        int ringEntries = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_RING_ENTRIES"), out int re) && re > 0 ? re : 1024;
 
         // h1 TLS terminates on :8081, h2 on :8443/tcp, h3 on :8443/udp - all OpenSSL in
         // userspace, the fastest backend on loopback.
