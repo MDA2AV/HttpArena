@@ -14,7 +14,7 @@ Single-endpoint benchmarks that measure framework performance on one task at a t
   {{< card link="json-compressed" title="JSON Compressed" subtitle="Same JSON workload with Accept-Encoding: gzip, br and a multiplier parameter - measures serialization plus compression throughput." icon="document-text" >}}
   {{< card link="json-tls" title="JSON over TLS" subtitle="Same JSON workload transported over HTTP/1.1 + TLS on port 8081 - measures the cost of encryption on top of serialization." icon="lock-closed" >}}
   {{< card link="upload" title="Upload (20 MB)" subtitle="Sends a 20 MB binary payload, server returns byte count. Measures body ingestion throughput." icon="cloud-upload" >}}
-  {{< card link="async" title="Async Delay" subtitle="A 10ms wait named in the route, at 64K held connections - measures what the framework does while a request waits." icon="clock" >}}
+  {{< card link="async" title="Async Delay" subtitle="A 15ms wait named in the route, at 64K held connections - measures what the framework does while a request waits." icon="clock" >}}
   {{< card link="async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization. Framework-only benchmark." icon="database" >}}
   {{< card link="static" title="Static Files" subtitle="Serves 20 static files - CSS, JS, HTML, fonts, images - over HTTP/1.1." icon="photograph" >}}
   {{< card link="static-tls" title="Static Files over TLS" subtitle="Same 20-file static workload transported over HTTP/1.1 + TLS on port 8081 - measures the cost of encryption on bulk file serving." icon="lock-closed" >}}

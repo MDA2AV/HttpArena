@@ -13,15 +13,26 @@ declare -A PROFILES=(
     [baseline]="1|0|0-31,64-95|512,4096|"
     [pipelined]="16|0|0-31,64-95|512,4096|pipeline"
     [limited-conn]="1|10|0-31,64-95|512,4096|"
-    # Async: GET /delay/10, a flat 10ms wait. Held connections
-    # (req_per_conn=0) so every one of them is a pending timer the server has to
-    # carry. Ceiling is arithmetic — conns / delay, i.e. ~6.4M rps — so a result
-    # above it is proof the delay was skipped, not a fast server.
+    # Async: GET /delay/15, a flat 15ms wait. Held connections (req_per_conn=0)
+    # so every one of them is a pending timer the server has to carry.
     #
-    # The first run (#1314) used a 10-30ms draw over 32768 and 49152, where the
-    # ceiling was 1.64M/2.46M and tokio reached 93%/83% of it. At 10ms the
-    # ceiling clears the ~4.4M baseline peak, so nothing is arithmetic-bound and
-    # the number is the framework's own capacity.
+    # History, since the delay is the knob everything else hangs off:
+    #   10-30ms draw, 32768/49152c  ceiling 1.64M/2.46M, tokio at 93%/83%
+    #   flat 10ms,    64000c        ceiling 6.4M,        tokio 2240622 (35%)
+    #   flat 15ms,    64000c        ceiling 4.27M
+    # tokio gained 10% for a ceiling that had more than doubled, which is what
+    # capacity-bound looks like — the delay stopped being the limiter at 10ms.
+    #
+    # Which is why 15 and not 5. The delay cuts both ways: an async server is
+    # capped at conns/delay, a blocking one at threads/delay, so shortening it
+    # frees a blocked thread sooner and narrows the gap this profile exists to
+    # show. At 15ms a 64-thread blocking server tops out at 4267 rps against
+    # tokio's measured 2.24M. It also leaves the 3-4ms a sloppy timer costs at
+    # about a quarter of the wait rather than most of it.
+    #
+    # 4.27M sits just under the ~4.4M baseline peak, which puts the ceiling back
+    # in play as a correctness check: nothing can beat conns/delay while
+    # honouring the delay, so a result above it did not wait.
     #
     # 64000 rather than 65536: system_tune() widens ip_local_port_range to
     # 1024-65535 and gcannon needs one ephemeral port per connection, so 64505

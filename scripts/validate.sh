@@ -1456,12 +1456,19 @@ if has_test "async"; then
     ASYNC_DOCS="$DOCS_BASE/h1/isolated/async/validation"
     echo "[test] async delay endpoint"
 
-    # The benchmark asks for a flat 10ms, so on-the-wire variation is not
+    # The benchmark asks for a flat 15ms, so on-the-wire variation is not
     # doing any anti-cheat work there and all of it lands here: draw the
     # value fresh, after the container is already up, so nothing can have
     # been prepared for it.
+    #
+    # The bound scales with the value drawn. A fixed floor only ever tested the
+    # bottom of the range -- an 8ms floor says nothing about an 84ms ask, which
+    # is most of what this draw produces -- so the check read as "did it wait at
+    # all" when the docs claim it asserts the requested delay. 0.9x leaves room
+    # for a timer that rounds down without letting a real skip through.
     ASYNC_MS=$(rand_between 10 90)
-    check_delay "GET /delay/$ASYNC_MS (random)" "$ASYNC_MS" 0.008 "$ASYNC_DOCS"
+    ASYNC_MIN=$(LC_ALL=C awk -v m="$ASYNC_MS" 'BEGIN{printf "%.3f", (m/1000)*0.9}')
+    check_delay "GET /delay/$ASYNC_MS (random)" "$ASYNC_MS" "$ASYNC_MIN" "$ASYNC_DOCS"
 
     check_header "GET /delay/$ASYNC_MS Content-Type" "Content-Type" "text/plain" "$ASYNC_DOCS" \
         "http://localhost:$PORT/delay/$ASYNC_MS"

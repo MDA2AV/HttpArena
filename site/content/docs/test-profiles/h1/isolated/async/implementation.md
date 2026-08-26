@@ -42,7 +42,7 @@ The body is the parsed integer, in decimal, with no surrounding whitespace or JS
 | Parameter | Value |
 |-----------|-------|
 | Endpoint | `GET /delay/{ms}` |
-| Delay | 10 ms |
+| Delay | 15 ms |
 | Connections | 64,000 |
 | Pipeline | 1 |
 | Requests per connection | unlimited (connections are held for the whole run) |
@@ -59,9 +59,9 @@ A connection cannot have more than one request in flight, and each request occup
 max rps = connections / mean(delay)
 ```
 
-At 10 ms and 64,000 connections that is **6.4M rps**, which is above the fastest number any entry has ever posted on the plain baseline profile. That is deliberate: the ceiling is set high enough not to bind, so what the profile reports is the framework's own capacity rather than the arithmetic.
+At 15 ms and 64,000 connections that is **4.27M rps**, just under the fastest number any entry has ever posted on the plain baseline profile. Nothing measured here comes close - the best so far is 2.24M - so the ceiling does not bind, and what the profile reports is the framework's own capacity.
 
-It still works as a free correctness check in the other direction. Nothing can exceed the ceiling while honouring the delays, so a result above it is not a fast server, it is a server that did not wait.
+It still works as a free correctness check in the other direction. Nothing can exceed the ceiling while honouring the delay, so a result above it is not a fast server, it is a server that did not wait.
 
 For a blocking implementation the ceiling is much lower, and it is set by the thread count rather than the connection count:
 
@@ -69,14 +69,16 @@ For a blocking implementation the ceiling is much lower, and it is set by the th
 max rps = threads / mean(delay)
 ```
 
-A 64-thread server at 10 ms tops out near 6,400 rps no matter how many connections are offered.
+A 64-thread server at 15 ms tops out near 4,270 rps no matter how many connections are offered - against 2.24M for the best async entry measured so far.
+
+Note which way the delay moves that gap. Shortening it frees a blocked thread sooner and raises the blocking ceiling proportionally, so a *longer* delay is what separates the two models most sharply. The delay is chosen to keep that separation wide while still leaving the async ceiling clear of what any framework can actually deliver.
 
 ## Implementation notes
 
 - **Prefer a real async wait.** `await Task.Delay(ms)`, `tokio::time::sleep`, `asyncio.sleep`, `setTimeout`, `time.After`, a suspended coroutine - whatever your framework's own idiom is. These cost a timer entry and keep the worker free
 - **Do not `Thread.sleep` on an event loop.** On a single-threaded or thread-per-core runtime this stalls every other connection that thread owns, not just this request. It is the one shape that will look worse here than a plain thread-per-request server
 - **Per-request state.** The delay belongs to the request. A field on the server, the connection, or a shared handler instance is read back by whichever request finishes parsing last, and validation runs 32 overlapping requests with 32 different delays specifically to find that
-- **Timer granularity matters more than it looks.** The delay is 10 ms, so a runtime that habitually overshoots by 3-4 ms is handing back 30-40% of the wait. That cost is real and the profile does charge for it. Validation never asserts an upper bound on a single response, though - only the benchmark prices it
+- **Timer granularity is priced in.** The delay is 15 ms, so a runtime that habitually overshoots by 3-4 ms is handing back a quarter of the wait before it has served a single request. That cost is real and the profile charges for it. Validation never asserts an upper bound on a single response, though - only the benchmark prices it
 - **Do not create a thread per request.** At 64,000 concurrent requests that is 64,000 threads. Frameworks without an async model should block on whatever pool they already have and accept the result - see the ceiling above
 - **No I/O.** Do not sleep by polling a socket, opening a file, or querying anything. The profile is a timer and nothing else
 

@@ -47,7 +47,7 @@ gcannon_build_args() {
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
         async)
-            # One template, a flat 10ms wait. The value still travels in the
+            # One template, a flat 15ms wait. The value still travels in the
             # path, so the handler has to parse it out of the route -- what a
             # constant delay gives up is the on-the-wire variation, which is why
             # validate.sh draws its own values and asserts the differential.

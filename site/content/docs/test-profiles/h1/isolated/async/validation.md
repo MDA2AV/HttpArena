@@ -16,7 +16,7 @@ Sends `GET /delay/{ms}` with `{ms}` drawn fresh between 10 and 90. Verifies:
 - the body is the requested number
 - the response did not arrive before the requested delay had elapsed
 
-Because the value is chosen after the container is up, nothing prepared at startup can answer it. The benchmark itself asks for a flat 10 ms, so this section carries all of the anti-cheat weight for the parameter.
+Because the value is chosen after the container is up, nothing prepared at startup can answer it. The benchmark itself asks for a flat 15 ms, so this section carries all of the anti-cheat weight for the parameter.
 
 ## Content-Type header
 
