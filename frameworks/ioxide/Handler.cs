@@ -81,6 +81,17 @@ internal static class Handler
                 // /async-db parks the parser: run the query (inline on this reactor's
                 // ring via ioxide.pg), stream rows into Out, then resume the carry -
                 // pipelined requests behind it are served in order.
+                // The async profile's wait. Parked here rather than inside the
+                // parser so the reactor keeps serving every other connection it
+                // owns while this one is pending, which is the whole measurement.
+                while (httpSession.PendingDelay)
+                {
+                    httpSession.PendingDelay = false;
+                    await ReactorDelay.Delay(reactor, httpSession.PendingDelayMs);
+                    httpSession.CompleteDelay();
+                    httpSession.ResumeFeed();
+                }
+
                 while (httpSession.PendingDb)
                 {
                     httpSession.PendingDb = false;
