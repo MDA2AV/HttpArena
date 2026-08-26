@@ -244,6 +244,8 @@ internal static class Handler
             // its own timeout.
             int fd = conn.ClientFd;
             if (fd >= 0) Shutdown(fd, ShutWr);
+            // The delay's timerfd is this connection's, so it goes with it.
+            httpSession.DelayWait.Dispose();
             conn.DecRef();
         }
     }
