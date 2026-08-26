@@ -159,7 +159,7 @@ struct CrudCache {
     entries: DashMap<i32, (Instant, Bytes)>,
 }
 
-const CRUD_TTL: Duration = Duration::from_millis(200);
+const CRUD_TTL: Duration = Duration::from_secs(1);
 
 impl CrudCache {
     fn get(&self, id: i32) -> Option<Bytes> {
