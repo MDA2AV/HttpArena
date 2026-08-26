@@ -11,15 +11,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0-preview.21" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.21" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.21" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.21" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.21" />
-    <PackageReference Include="GenHTTP.Modules.IoxideFiles" Version="11.0.0-preview.21" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.21" />
+    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0-preview.23" />
+    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.23" />
+    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.23" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.23" />
+    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.23" />
+    <PackageReference Include="GenHTTP.Modules.IoxideFiles" Version="11.0.0-preview.23" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.23" />
     <PackageReference Include="ioxide.pg" Version="0.0.17" />
-    <PackageReference Include="ioxide.tls" Version="0.0.17" />
+    <PackageReference Include="ioxide.tls" Version="0.1.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 
