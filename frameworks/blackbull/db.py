@@ -144,18 +144,17 @@ async def get_db_conn():
     response has been sent.
     """
     pool = await get_pool()
-    if pool is None:
-        yield None
-        return
-    try:
-        conn = await pool.acquire()
-    except Exception:  # noqa: BLE001 - acquire failure → DB-less mode
-        yield None
-        return
+    conn = None
+    if pool is not None:
+        try:
+            conn = await pool.acquire()
+        except Exception:  # noqa: BLE001 - acquire failure -> DB-less mode
+            conn = None
     try:
         yield conn
     finally:
-        await pool.release(conn)
+        if conn is not None:
+            await pool.release(conn)
 
 
 def _row_to_item(row) -> dict:
