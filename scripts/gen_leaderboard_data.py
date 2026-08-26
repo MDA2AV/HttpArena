@@ -1392,7 +1392,9 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                 # board renders, which is a number people can count (#1149).
                 any_result = True
                 if is_scored(pid, fw):
-                    score += (eff(pid, fw) / max_r[pid]) * 100
+                    # 0-1000 per profile; mirrors computeComposite() in
+                    # index.html, which check_badge_parity.js diffs against.
+                    score += (eff(pid, fw) / max_r[pid]) * 1000
         if any_result:
             rows.append((fw, score * _cmp_factor(meta, fw, scope)))
     rows.sort(key=lambda r: (-r[1], r[0]))

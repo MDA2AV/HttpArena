@@ -444,8 +444,13 @@
   .cm .fwcell .lang{flex:none; font-size:.72rem; white-space:nowrap}
   .cm .fwcell .nm a:hover{color:var(--accent)}
   /* 8px wider than it was: the ? and its gap are what the header gained, and an
-     auto-layout column would otherwise grow past the 104px floor on its own. */
-  .cm .scoreh,.cm .scorec{left:400px; width:112px; min-width:112px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
+     auto-layout column would otherwise grow past the 104px floor on its own.
+     Then 20px wider again for the 0-1000 per-profile scale: the largest total
+     on any board went from 1,041 to 10,412, and the completeness delta beside
+     it from (-26) to (-260). The cell is nowrap, so the digits had to fit.
+     Safe to widen because this is the last sticky column - nothing else has a
+     left offset that depends on its width. */
+  .cm .scoreh,.cm .scorec{left:400px; width:132px; min-width:132px; box-shadow:7px 0 9px -5px rgba(0,0,0,.22)}
   .cm .scoreh + th, .cm .scorec + td{padding-left:1.3rem}
   /* The one column with a method behind it, and the method has a term - the
      completeness factor - that cannot be read off the table. Every other header
@@ -1408,10 +1413,16 @@ document.addEventListener('DOMContentLoaded', function(){
             // latency tails, which is what the cell should show. No memory bonus:
             // the value is not a throughput for the bonus to scale.
             milEnsure();
-            sc=_milScores[fw]||0;
+            // x10 to land on the composite's 0-1000 basis. The profile's own
+            // score is defined 0-100 and the detail view shows it that way.
+            sc=(_milScores[fw]||0)*10;
           } else {
-            sc=(eff(pid,fw)/maxR[pid])*100;
-            if(useMem && maxME[pid]>0){ var m=A.mem[pid][fw]||0; if(m>0) sc+=(Math.sqrt(rps)/m/maxME[pid])*100*0.5; }
+            // 0-1000 per profile, not 0-100. At 24 scored profiles a 0-100
+            // basis put whole clusters of entries on the same rounded total,
+            // and the extra digit is free: nothing about the ranking changes,
+            // only how finely it can be read.
+            sc=(eff(pid,fw)/maxR[pid])*1000;
+            if(useMem && maxME[pid]>0){ var m=A.mem[pid][fw]||0; if(m>0) sc+=(Math.sqrt(rps)/m/maxME[pid])*1000*0.5; }
           }
           var counts=isScored(pid,fw);
           // `score` is set only where the cell must not print rps. Everywhere

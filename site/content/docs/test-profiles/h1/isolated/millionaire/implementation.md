@@ -112,6 +112,10 @@ All three are clamped to 0–1.
 
 **Best of three runs** is decided by this same formula, with each metric normalised against the best of that entry's own three runs rather than against the field, which does not exist yet while one entry is being measured. Choosing on CPU alone could keep a cheap run with a wrecked tail.
 
+On the composite board this score is shown ×10, on the 0–1,000 basis every
+profile column uses there. The detail view and `--table` report it as defined
+above, out of 100.
+
 The reference implementation is [`scripts/millionaire_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/millionaire_score.py); the board mirrors it in JavaScript. Run `python3 scripts/millionaire_score.py --table` to score the published results from the command line.
 
 ### Composite
