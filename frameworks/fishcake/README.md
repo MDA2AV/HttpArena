@@ -33,7 +33,7 @@ sibling [`genhttp-11`](../genhttp-11) entry, rebuilt on the port's webservice st
 ## Profiles
 
 Declared in `meta.json`: `baseline`, `pipelined`, `limited-conn`, `json`, `upload`,
-`async-db`, `crud`, `api-4`, `api-16`.
+`async-db`, `crud`.
 
 **Not implemented** — these depend on modules the port does not provide yet, so they are
 left out of `meta.json`:

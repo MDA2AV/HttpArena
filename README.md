@@ -47,9 +47,8 @@ The reply states which baseline it used, and profiles the other framework does n
 | Concurrency | `async` * | `GET /delay/{ms}` with the wait named in the route, 64K held connections. Isolates what a framework does while a request is pending, with no database or I/O in the way. Reference-only for now: measured and shown, but not yet part of the composite score |
 | Efficiency | `millionaire` * | One million req/s offered at a fixed rate with zrk; the metric is CPU spent per request, read exactly from the container's cgroup rather than sampled. Everyone who finishes serves the same million, so what separates them is the bill. Reference-only, because its metric is lower-is-better and the composite does not yet understand that |
 | Workload | `json`, `json-comp`, `json-tls`, `upload`, `static`, `static-tls` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, 20 MB body ingestion, 20-file static asset serving (plaintext and TLS) |
-| Database | `async-db`, `crud` | Async Postgres sequential scan; realistic REST API with cached reads, list, upsert, update, and optional Redis cache |
+| Database | `async-db` *, `crud` * | Async Postgres sequential scan; realistic REST API with cached reads, list, upsert, update, and optional Redis cache. Both reference-only: the database and its driver dominate these far more than the framework does, so they are measured and shown but no longer decide the ranking |
 | Templates | `fortunes` * | DB query + HTML template render (TechEmpower-style Fortunes). Reference-only: measures template-engine throughput, and is not part of the composite score |
-| Multi-endpoint | `api-4`, `api-16` | Mixed baseline + JSON + async-db at CPU-budget cliffs (4 and 16 logical CPUs, i.e. 2 and 8 full SMT cores) |
 | H/2 | `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c` | Baseline + static over TLS with h2 stream multiplexing; baseline + JSON over cleartext h2 (prior-knowledge, port 8082) |
 | H/3 | `baseline-h3`, `static-h3` | Baseline and static over QUIC with TLS 1.3 |
 | gRPC | `unary-grpc`, `unary-grpc-tls` | Unary gRPC over plaintext HTTP/2 and TLS |

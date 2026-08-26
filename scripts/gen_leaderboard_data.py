@@ -8,8 +8,7 @@ both the per-profile explorer and the composite ranking.
 
 The composite mirrors the canonical board: it averages RPS over each profile's
 *scored* connection set, applies per-type profile eligibility, and carries the
-tpl_*/bandwidth fields needed for the api-4/api-16 (template mix) and json-comp
-(compression-ratio) adjustments.
+bandwidth field the json-comp compression-ratio adjustment needs.
 
 Run after scripts/rebuild_site_data.py (or any time site/data changes):
     python3 scripts/gen_leaderboard_data.py
@@ -79,13 +78,13 @@ CATALOG = [
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
     ]),
     ("Database", [
-        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                [1024],     [1024],  True,True,False),
-        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update.",   [4096],     [4096],  True,False,False),
+        # Reference-only. The database and its driver dominate these two far
+        # more than the framework does, which is the case #1310 makes: they
+        # measure the connector, not the HTTP path. Still measured and shown,
+        # just no longer deciding the ranking.
+        ("async-db",  "Async DB",  "Async Postgres sequential scan (reference).",     [1024],     [1024],  False,True,False),
+        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update (reference).",   [4096],     [4096],  False,False,False),
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
-    ]),
-    ("Multi-endpoint", [
-        ("api-4",  "API-4",  "Mixed workload, server capped at 4 CPUs.",       [256],  [256],  True,False,False),
-        ("api-16", "API-16", "Mixed workload, server capped at 16 CPUs.",      [1024], [1024], True,False,False),
     ]),
     ("HTTP/2", [
         ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,True),
@@ -139,8 +138,6 @@ PROFILE_DOC = {
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",
-    "api-4":            "test-profiles/h1/workload/api-4/implementation",
-    "api-16":           "test-profiles/h1/workload/api-16/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
     "static-h2":        "test-profiles/h2/static-h2/implementation",
     "baseline-h2c":     "test-profiles/h2/baseline-h2c/implementation",
@@ -1179,9 +1176,6 @@ TYPE_COLOR = {
 }
 TYPE_COLOR_FALLBACK = "1f2937"
 
-# api-4/api-16 template mix — MIXW in index.html.
-MIXW = {"baseline": 0.15, "json": 1, "upload": 10, "static": 2, "async_db": 10}
-
 _MEM_RE = re.compile(r"([\d.]+)\s*([KMG]i?B)", re.I)
 _BW_RE = re.compile(r"([\d.]+)\s*([KMG]?B)/s", re.I)
 
@@ -1205,12 +1199,12 @@ def _bw(s):
 
 
 def badge_aggregate(profiles, results):
-    """Average rps/mem/bw (and the api template mix) over each profile's scored
-    conns. Port of aggregate() in index.html."""
-    avg, amem, abw, atpl = {}, {}, {}, {}
+    """Average rps/mem/bw over each profile's scored conns. Port of aggregate()
+    in index.html."""
+    avg, amem, abw = {}, {}, {}
     for p in profiles:
         pid = p["id"]
-        sums, ms, bs, cn, ts = {}, {}, {}, {}, {}
+        sums, ms, bs, cn = {}, {}, {}, {}
         for c in p["scoredConns"]:
             for r in results.get(f"{pid}-{c}", []):
                 fw = r["fw"]
@@ -1218,17 +1212,10 @@ def badge_aggregate(profiles, results):
                 cn[fw] = cn.get(fw, 0) + 1
                 ms[fw] = ms.get(fw, 0) + _mem(r.get("memory"))
                 bs[fw] = bs.get(fw, 0) + _bw(r.get("bandwidth"))
-                if pid in ("api-4", "api-16"):
-                    t = ts.setdefault(fw, dict.fromkeys(MIXW, 0.0) | {"n": 0})
-                    for k in MIXW:
-                        t[k] += r.get("tpl_" + k) or 0
-                    t["n"] += 1
         avg[pid] = {fw: sums[fw] / cn[fw] for fw in sums}
         amem[pid] = {fw: ms[fw] / cn[fw] for fw in sums}
         abw[pid] = {fw: bs[fw] / cn[fw] for fw in sums}
-        if pid in ("api-4", "api-16"):
-            atpl[pid] = {fw: {k: t[k] / t["n"] for k in MIXW} for fw, t in ts.items()}
-    return {"avg": avg, "mem": amem, "bw": abw, "tpl": atpl}
+    return {"avg": avg, "mem": amem, "bw": abw}
 
 
 def _scored_for(prof, meta, pid, fw):
@@ -1293,8 +1280,7 @@ def _cmp_factor(meta, fw, scope=None):
 def _eff_fn(A, in_league):
     """eff() in index.html: the number a profile is actually ranked on.
 
-    Plain average rps, except for the two profiles the board adjusts — the
-    api-4/api-16 template mix, and json-comp, which is scored on
+    Plain average rps, except for json-comp, which the board scores on
     bandwidth-adjusted rps: the best compressor sets the bar and everyone else
     is penalised by the square of their size ratio. The compression bar is per
     league, which is why this takes `in_league` rather than a finished set.
@@ -1313,9 +1299,6 @@ def _eff_fn(A, in_league):
         rps = A["avg"].get(pid, {}).get(fw, 0)
         if rps <= 0:
             return 0.0
-        t = A["tpl"].get(pid, {}).get(fw)
-        if pid in ("api-4", "api-16") and t:
-            return sum(t[k] * w for k, w in MIXW.items())
         if pid == "json-comp" and min_bpr is not None:
             b = A["bw"][pid].get(fw, 0)
             if b > 0:

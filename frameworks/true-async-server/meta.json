@@ -24,8 +24,6 @@
     "json-comp",
     "json-tls",
     "upload",
-    "api-4",
-    "api-16",
     "static-h2",
     "baseline-h2",
     "baseline-h2c",

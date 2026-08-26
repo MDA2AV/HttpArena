@@ -184,7 +184,7 @@ brotli / gzip from `Accept-Encoding` automatically.
 - `baseline-h2c`, `json-h2c` — HttpArena requires port 8082 to refuse
   HTTP/1.1, but `protocol_mask` in TrueAsync Server is currently
   per-server, not per-listener. Per-listener mask is on the roadmap.
-- `async-db`, `crud`, `api-4`, `api-16`, `fortunes` — DB-backed; we ship
+- `async-db`, `crud`, `fortunes` — DB-backed; we ship
   a PostgreSQL adapter (`PostgreSQL.php` via `pdo-async` connection
   pool) but haven't validated the full suite yet.
 - `baseline-h3`, `static-h3`, `gateway-h3` — HTTP/3 listener

@@ -22,9 +22,7 @@
     "json-comp",
     "upload",
     "static",
-    "async-db",
-    "api-4",
-    "api-16"
+    "async-db"
   ],
   "maintainers": []
 }

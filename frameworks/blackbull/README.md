@@ -49,7 +49,7 @@ Profiles **not** implemented (intentional carve-out):
 | Profile | Why not |
 |---|---|
 | `static-h3` | HTTP/3 / QUIC transport is intentionally out-of-scope per the project roadmap. |
-| `async-db`, `crud`, `fortunes`, `api-4`, `api-16` | Out of scope.  BlackBull is a protocol-layer framework, not a full-stack one — Postgres-backed implementations belong in a separate submission if we ever pursue the leaderboard (see Flask's HttpArena entry for the pattern). |
+| `async-db`, `crud`, `fortunes` | Out of scope.  BlackBull is a protocol-layer framework, not a full-stack one — Postgres-backed implementations belong in a separate submission if we ever pursue the leaderboard (see Flask's HttpArena entry for the pattern). |
 | `*-h3`           | HTTP/3 / QUIC is out-of-scope. |
 | `*-grpc`         | No gRPC. |
 | `gateway-*`, `production-stack` | Need sidecar + DB work first; same scope rationale as the DB profiles. |

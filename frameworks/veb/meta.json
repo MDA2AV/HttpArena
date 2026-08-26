@@ -16,9 +16,7 @@
     "static",
     "async-db",
     "crud",
-    "fortunes",
-    "api-4",
-    "api-16"
+    "fortunes"
   ],
   "maintainers": [
     "enghitalo"

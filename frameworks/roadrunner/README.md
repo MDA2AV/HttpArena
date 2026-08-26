@@ -9,7 +9,7 @@ Covered (21 of 28 profiles):
 - `baseline`, `pipelined`, `limited-conn`
 - `json`, `json-comp`, `json-tls`
 - `upload`
-- `async-db`, `api-4`, `api-16`
+- `async-db`
 - `static`, `static-h2`
 - `fortunes`, `crud`
 - `baseline-h2`, `baseline-h2c`, `json-h2c`

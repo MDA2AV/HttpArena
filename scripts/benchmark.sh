@@ -165,7 +165,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         api-4 api-16 static static-tls async-db async millionaire \
+         static static-tls async-db async millionaire \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -206,7 +206,7 @@ fi
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack fortunes; do
+for t in async-db crud gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
 if $need_pg; then postgres_start; fi
@@ -252,7 +252,7 @@ run_one() {
     # contention, collapsing crud from ~680k to ~210k rps. The first DB profile
     # already has a fresh server from the upfront postgres_start, so skip it.
     case "$endpoint" in
-        async-db|crud|api-4|api-16|fortunes)
+        async-db|crud|fortunes)
             if [ "${PG_DIRTY:-false}" = true ]; then
                 info "resetting postgres for a clean per-profile baseline"
                 postgres_start
@@ -287,7 +287,7 @@ run_one() {
     fi
 
     # Build the load-generator argument vector once up front. PROF_REQ is
-    # only meaningful for gcannon baseline/limited-conn/api-4/api-16; other
+    # only meaningful for gcannon baseline/limited-conn and ws-echo; other
     # tools ignore the extra positional argument.
     local -a gc_args
     mapfile -t gc_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$DURATION" "$PROF_REQ")
@@ -448,8 +448,7 @@ run_one() {
     fi
 
     # Input bandwidth — bytes the server ingests per second. Matters for
-    # profiles where the *request* body dominates (upload, api-4/16 mixed
-    # fixtures, crud writes) and where the response bandwidth alone
+    # profiles where the *request* body dominates (upload fixtures, crud writes) and where the response bandwidth alone
     # understates the actual work done. Computed as
     #    rps × mean(--raw fixture size)
     # which is the avg bytes/request sent by gcannon. Skipped when the
@@ -503,12 +502,12 @@ else: print(f'{bps}B/s')
 
 # save_result — write results/<profile>/<conns>/<framework>.json + docker logs.
 #
-# The leaderboard "composite score" for api-4 / api-16 / gateway-* is built
-# from per-template response counts (tpl_baseline / tpl_json / tpl_async_db /
-# tpl_static). Without these fields the site renders rps correctly but the
-# score column collapses to 0. For api-4/16 gcannon_parse already computes
-# them; for gateway-64 / gateway-h3 we split the load-generator's total 2xx
-# proportionally across the 20-URI mix (6 static, 4 baseline, 7 json, 3 db).
+# gateway-64 / gateway-h3 carry per-template response counts (tpl_baseline /
+# tpl_json / tpl_async_db / tpl_static), split from the load generator's total
+# 2xx proportionally across the 20-URI mix (6 static, 4 baseline, 7 json, 3 db).
+# The board does not read them today -- the only consumer was the api-4/api-16
+# template mix, which went with those profiles -- but they are the record of
+# what the gateway run was actually made of, so they keep being written.
 save_result() {
     local profile="$1" CONNS="$2" best_rps="$3" best_cpu="$4" best_mem="$5"
     local best_cpu_usec="${6:-}" best_rate_ratio="${7:-}"
@@ -545,15 +544,7 @@ save_result() {
     fi
 
     local tpl_extra=""
-    if [ "$profile" = "api-4" ] || [ "$profile" = "api-16" ]; then
-        tpl_extra=",
-  \"tpl_baseline\": ${BEST_M[tpl_baseline]:-0},
-  \"tpl_json\": ${BEST_M[tpl_json]:-0},
-  \"tpl_db\": 0,
-  \"tpl_upload\": 0,
-  \"tpl_static\": 0,
-  \"tpl_async_db\": ${BEST_M[tpl_async_db]:-0}"
-    elif { [ "$profile" = "gateway-64" ] || [ "$profile" = "gateway-h3" ]; } \
+    if { [ "$profile" = "gateway-64" ] || [ "$profile" = "gateway-h3" ]; } \
          && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
         # Gateway mix: 6 static / 4 baseline / 7 json / 3 async-db = 30 / 20 / 35 / 15 %.
         # Both gateway profiles share requests/gateway-64-uris.txt, so the

@@ -94,7 +94,7 @@ framework_start() {
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.
     case "$endpoint" in
-        async-db|crud|api-4|api-16|fortunes)
+        async-db|crud|fortunes)
             args+=(-e "DATABASE_URL=$DATABASE_URL" -e "DATABASE_MAX_CONN=256")
             ;;
     esac
@@ -103,12 +103,6 @@ framework_start() {
     # their shared cross-process cache. Single-heap frameworks ignore it.
     case "$endpoint" in
         crud) args+=(-e "REDIS_URL=$REDIS_URL") ;;
-    esac
-
-    # api-4 / api-16 additionally cap memory.
-    case "$endpoint" in
-        api-4)  args+=(--memory=16g --memory-swap=16g) ;;
-        api-16) args+=(--memory=32g --memory-swap=32g) ;;
     esac
 
     # Profile-declared CPU limit.

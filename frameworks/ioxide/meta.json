@@ -18,8 +18,6 @@
     "upload",
     "async-db",
     "crud",
-    "api-4",
-    "api-16",
     "baseline-h2",
     "static-h2",
     "baseline-h3",

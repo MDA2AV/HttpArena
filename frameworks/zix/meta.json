@@ -15,8 +15,6 @@
     "json",
     "json-comp",
     "json-tls",
-    "api-4",
-    "api-16",
     "async-db",
     "crud"
   ],

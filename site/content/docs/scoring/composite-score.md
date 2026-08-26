@@ -40,7 +40,7 @@ The final composite score is the **sum** of per-profile scores across all **scor
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 1,000 points per profile, so with the current 24 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is 24,000, rising to 36,000 when the memory-efficiency toggle is on (each profile adds up to 500 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 1,000 points per profile, so with the current 20 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is 20,000, rising to 30,000 when the memory-efficiency toggle is on (each profile adds up to 500 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 1,000-point ceiling of that profile.
 
@@ -114,7 +114,9 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes and Pipelined are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined, Static, Static TLS, Async Delay, Millionaire, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+
+The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 
 ## Memory efficiency bonus
 

@@ -56,8 +56,6 @@ declare -A PROFILES=(
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     [upload]="1|0|0-31,64-95|32,256|upload"
-    [api-4]="1|5|0-1,64-65|256|api-4"
-    [api-16]="1|5|0-7,64-71|1024|api-16"
     [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
@@ -82,7 +80,7 @@ declare -A PROFILES=(
 PROFILE_ORDER=(
     baseline pipelined limited-conn
     json json-comp json-tls
-    upload api-4 api-16
+    upload
     static static-tls async-db crud
     fortunes
     baseline-h2 static-h2
@@ -125,8 +123,7 @@ endpoint_tool() {
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3
         h3|static-h3|gateway-h3)            echo "h2load-h3" ;;
-        # gcannon for everything else (h1, upload, api-4, api-16, async-db,
-        # async, ws, ...)
+        # gcannon for everything else (h1, upload, async-db, async, ws, ...)
         *)                                  echo "gcannon" ;;
     esac
 }

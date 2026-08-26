@@ -23,8 +23,6 @@
     "upload",
     "echo-ws",
     "echo-ws-pipeline",
-    "api-4",
-    "api-16",
     "static",
     "async-db"
   ],

@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // the nav's only source of profiles, so a category missing here disappears
   // from Detailed Views entirely while still ranking on the composite --
   // which is how async and millionaire went missing when they were added.
-  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload','Database','Multi-endpoint']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
+  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload','Database']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
   var expanded=new Set(['composite']);
   // state.lang is an exact language filter, distinct from the q search box: q
   // matches substrings across name/language/engine, which is fine for typing but
@@ -1271,7 +1271,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   // ── COMPOSITE scoring (mirrors the canonical board) ─────
-  var MIXW={baseline:0.15, json:1, upload:10, static:2, async_db:10};
   // Completeness: the four things a framework can do for you between an
   // arriving request and a finished response - route it, run middleware around
   // the handler, hand the request over already made (path and query parameters,
@@ -1341,27 +1340,25 @@ document.addEventListener('DOMContentLoaded', function(){
   // framework selection shares the one framework scored set.
   function leagueType(){ for(var i=0;i<EXCLUSIVE_TYPES.length;i++){ if(state.types.indexOf(EXCLUSIVE_TYPES[i])>=0) return EXCLUSIVE_TYPES[i]; } return 'flagship'; }
   function aggregate(){
-    // avg rps/mem/bw over each profile's scored conns; tpl avg for api.
-    var avg={},amem={},abw={},atpl={};
+    // avg rps/mem/bw over each profile's scored conns.
+    var avg={},amem={},abw={};
     D.profiles.forEach(function(p){
       // Reference-only profiles (scored:false — pipelined, fortunes) aggregate
       // too: they render as faded columns in the matrix, they just never enter
       // the framework composite sum (#1058). Load-bearing for infrastructure,
       // whose composite does count Pipelined — scoredForType() can only pick a
       // profile up if there is an average here for it.
-      var pid=p.id, sums={},ms={},bs={},cn={},ts={};
+      var pid=p.id, sums={},ms={},bs={},cn={};
       p.scoredConns.forEach(function(c){
         (D.results[pid+'-'+c]||[]).forEach(function(r){
           var fw=r.fw; sums[fw]=(sums[fw]||0)+(r.rps||0); cn[fw]=(cn[fw]||0)+1;
           ms[fw]=(ms[fw]||0)+mem(r.memory); bs[fw]=(bs[fw]||0)+bw(r.bandwidth);
-          if(pid==='api-4'||pid==='api-16'){ if(!ts[fw])ts[fw]={baseline:0,json:0,upload:0,static:0,async_db:0,n:0}; var t=ts[fw]; t.baseline+=r.tpl_baseline||0; t.json+=r.tpl_json||0; t.upload+=r.tpl_upload||0; t.static+=r.tpl_static||0; t.async_db+=r.tpl_async_db||0; t.n++; }
         });
       });
       avg[pid]={};amem[pid]={};abw[pid]={};
       Object.keys(sums).forEach(function(fw){ var c=cn[fw]; avg[pid][fw]=sums[fw]/c; amem[pid][fw]=ms[fw]/c; abw[pid][fw]=bs[fw]/c; });
-      if(pid==='api-4'||pid==='api-16'){ atpl[pid]={}; Object.keys(ts).forEach(function(fw){ var t=ts[fw]; atpl[pid][fw]={baseline:t.baseline/t.n,json:t.json/t.n,upload:t.upload/t.n,static:t.static/t.n,async_db:t.async_db/t.n}; }); }
     });
-    return {avg:avg,mem:amem,bw:abw,tpl:atpl};
+    return {avg:avg,mem:amem,bw:abw};
   }
   var AGG=null;
   function computeComposite(){
@@ -1391,7 +1388,6 @@ document.addEventListener('DOMContentLoaded', function(){
     if(pids.indexOf('json-comp')>=0 && A.avg['json-comp']){ var mv=Infinity; Object.keys(A.avg['json-comp']).forEach(function(fw){ if(exclFromScale(fw))return; var rps=A.avg['json-comp'][fw]||0,b=A.bw['json-comp'][fw]||0; if(rps>0&&b>0){var bpr=b/rps; if(bpr<mv)mv=bpr;} }); if(mv<Infinity)minBpr=mv; }
     function eff(pid,fw){
       var rps=(A.avg[pid]&&A.avg[pid][fw])||0; if(rps<=0) return 0;
-      if((pid==='api-4'||pid==='api-16')&&A.tpl[pid]&&A.tpl[pid][fw]){ var t=A.tpl[pid][fw]; return t.baseline*MIXW.baseline+t.json*MIXW.json+t.upload*MIXW.upload+t.static*MIXW.static+t.async_db*MIXW.async_db; }
       if(pid==='json-comp'&&minBpr!=null){ var b=A.bw[pid][fw]||0; if(b>0) return rps*Math.pow(minBpr/(b/rps),2); }
       return rps;
     }

@@ -24,8 +24,6 @@
     "upload",
     "async-db",
     "crud",
-    "api-4",
-    "api-16",
     "echo-ws",
     "echo-ws-pipeline",
     "echo-ws-limited"

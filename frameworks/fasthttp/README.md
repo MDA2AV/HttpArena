@@ -24,7 +24,6 @@ live in `user_data`.
 | `async-db` | `GET /async-db?min&max&limit` via `db.pg` |
 | `crud` | `GET/POST /crud/items`, `GET/PUT /crud/items/{id}` (in-memory cache-aside, `X-Cache` MISS/HIT) |
 | `fortunes` | `GET /fortunes` (DB rows + a runtime row, HTML-escaped) |
-| `api-4` / `api-16` | mixed `/baseline11` + `/json` + `/async-db` workload |
 
 `json-tls` is **not** subscribed: the stdlib `fasthttp` server has no TLS
 backend. `async-db`, `crud` and `fortunes` issue blocking `db.pg` queries on the

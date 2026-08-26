@@ -17,8 +17,6 @@
     "async-db",
     "crud",
     "fortunes",
-    "api-4",
-    "api-16",
     "json-tls",
     "baseline-h2c",
     "json-h2c",

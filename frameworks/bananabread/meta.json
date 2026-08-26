@@ -20,9 +20,7 @@
     "json",
     "upload",
     "async-db",
-    "crud",
-    "api-4",
-    "api-16"
+    "crud"
   ],
   "maintainers": []
 }

@@ -20,8 +20,6 @@
     "json",
     "json-tls",
     "upload",
-    "api-4",
-    "api-16",
     "static",
     "static-tls",
     "baseline-h2",

@@ -17,8 +17,6 @@ The current subscribed benchmark profiles are:
 - `upload`
 - `static`
 - `async-db`
-- `api-4`
-- `api-16`
 - `baseline-h2`
 - `static-h2`
 - `unary-grpc`

@@ -7,6 +7,12 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 The CRUD profile benchmarks a realistic REST API with four operations against Postgres: paginated list, cached single-item read, create (upsert), and update with cache invalidation.
 
+> **Reference-only.** This profile is measured and published but does not contribute to the
+> composite score. The database and its driver dominate the result far more than the framework
+> does, so the number mostly reports which Postgres driver a language has rather than anything
+> about the HTTP path this board sets out to compare. It is still worth having, it just no
+> longer decides the ranking.
+
 **This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
 
 **Connections:** 4096

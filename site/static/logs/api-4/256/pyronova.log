@@ -1,6 +1,0 @@
-
-  Pyronova v2.4.2 [TPC mode, hybrid-inline]
-  Listening on http://0.0.0.0:8080
-  TPC threads: 4 (CPUs: 4, pinned)
-  Routes: 6 sub-interp + 5 GIL + 0 async (1 stream)
-

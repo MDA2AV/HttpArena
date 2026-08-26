@@ -176,7 +176,7 @@ fi
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 # Docker --ulimit nofile rejects "unlimited"; fall back to a large numeric cap
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
-if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
+if has_test "async-db" || has_test "crud" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
@@ -268,7 +268,7 @@ docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 # mirrors benchmark.sh, which always runs framework containers unconfined.
 
 # Start Postgres sidecar if async-db is needed
-if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
+if has_test "async-db" || has_test "crud" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker run -d --name "$PG_CONTAINER" --network host \
@@ -1246,7 +1246,7 @@ wait_h2() {
 # millionaire drives GET /baseline11 at a pinned rate, so it needs the same
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
-if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_test "api-16" || has_test "millionaire"; then
+if has_test "baseline" || has_test "limited-conn" || has_test "millionaire"; then
     BASELINE_DOCS="$DOCS_BASE/h1/isolated/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
@@ -1513,7 +1513,7 @@ fi
 
 # ───── JSON Processing (GET /json) ─────
 
-if has_test "json" || has_test "api-4" || has_test "api-16"; then
+if has_test "json"; then
     JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
     echo "[test] json endpoint"
     json_fail=false
@@ -2231,7 +2231,7 @@ fi
 
 # ───── Async Database (GET /async-db) ─────
 
-if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16"; then
+if has_test "async-db" || has_test "crud"; then
     ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false

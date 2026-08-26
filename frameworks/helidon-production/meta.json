@@ -28,9 +28,7 @@
     "echo-ws-pipeline",
     "unary-grpc",
     "unary-grpc-tls",
-    "async-db",
-    "api-4",
-    "api-16"
+    "async-db"
   ],
   "maintainers": [
     "tomas-langer"
