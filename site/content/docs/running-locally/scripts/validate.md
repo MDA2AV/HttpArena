@@ -1,6 +1,6 @@
 ---
 title: validate.sh
-seo_title: "validate.sh — Correctness Validation"
+seo_title: "validate.sh: Correctness Validation"
 description: "Run the correctness suite against a framework: builds the image, starts the container and sidecars, and checks every subscribed endpoint."
 weight: 1
 ---

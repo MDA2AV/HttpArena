@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "CRUD REST API Benchmark — Validation Checks"
+seo_title: "CRUD REST API Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the CRUD REST API benchmark before a framework's results are accepted."
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Async Database Benchmark (Postgres) — Validation Checks"
+seo_title: "Async Database Benchmark (Postgres): Validation Checks"
 description: "The correctness checks validate.sh runs against the async Postgres benchmark before a framework's results are accepted."
 ---
 

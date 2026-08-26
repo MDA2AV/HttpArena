@@ -1,6 +1,6 @@
 ---
 title: h2load-h3
-seo_title: "h2load-h3 — HTTP/3 QUIC Load Generator"
+seo_title: "h2load-h3: HTTP/3 QUIC Load Generator"
 description: "A custom h2load build linked against ngtcp2 that drives HttpArena's HTTP/3 profiles over QUIC with ALPN negotiation."
 ---
 

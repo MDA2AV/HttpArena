@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Fortunes Template Rendering Benchmark — Validation Checks"
+seo_title: "Fortunes Template Rendering Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the Fortunes template rendering benchmark before a framework's results are accepted."
 ---
 

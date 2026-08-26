@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Async Delay Benchmark — Implementation Guide"
+seo_title: "Async Delay Benchmark: Implementation Guide"
 description: "Endpoint contract, response shape, and the anti-cheat constraints a framework must satisfy for the async delay benchmark."
 ---
 {{< type-rules standard="Bind `/delay/{ms}` with the framework's own router and wait with the framework's own idiomatic mechanism. Blocking the request's thread for the duration is permitted - it is a legitimate implementation and the profile exists to price it - but you may not answer before the delay has elapsed, and the delay must be read from the path on every request." tuned="May use a custom timer wheel, a dedicated timer thread, coarser timer granularity, or batched expiry, so long as no response leaves before its own delay has elapsed." engine="Must derive the wait from the request path with a real timer. A fixed configured interval, a static delay directive, or anything that answers without reading `{ms}` is not an implementation of this profile." >}}

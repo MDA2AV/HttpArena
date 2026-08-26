@@ -1,6 +1,6 @@
 ---
 title: gcannon
-seo_title: "gcannon — io_uring HTTP/1.1 Load Generator"
+seo_title: "gcannon: io_uring HTTP/1.1 Load Generator"
 description: "gcannon is HttpArena's purpose-built HTTP/1.1 load generator, using Linux io_uring for zero-copy networking at very high request rates."
 ---
 

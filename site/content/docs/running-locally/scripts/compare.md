@@ -1,6 +1,6 @@
 ---
 title: compare.sh
-seo_title: "compare.sh — Compare Against Published Results"
+seo_title: "compare.sh: Compare Against Published Results"
 description: "Diff a framework's local results against the published leaderboard data and emit a Markdown table of deltas for a pull request."
 weight: 4
 ---

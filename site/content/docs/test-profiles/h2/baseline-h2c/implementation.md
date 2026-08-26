@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "HTTP/2 Cleartext Baseline Benchmark (h2c) — Implementation Guide"
+seo_title: "HTTP/2 Cleartext Baseline Benchmark (h2c): Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP/2 cleartext baseline benchmark."
 ---
 {{< type-rules standard="Must use the framework standard HTTP/2 cleartext (h2c) configuration. No custom ALPN settings or TLS cipher tuning (TLS isn't used on this port)." tuned="May tune HTTP/2 stream limits, window sizes, and connection parameters." engine="No specific rules. Ranked separately from frameworks." >}}

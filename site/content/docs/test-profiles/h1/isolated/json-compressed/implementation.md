@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Compressed JSON Benchmark (gzip and Brotli) — Implementation Guide"
+seo_title: "Compressed JSON Benchmark (gzip and Brotli): Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the compressed JSON benchmark."
 ---
 {{< type-rules standard="Must use the framework standard JSON serialization and the framework or engine's built-in response compression (middleware, filter, or equivalent). No pre-compressed caches, no bypassing the response pipeline." tuned="May use alternative JSON libraries, tuned compression libraries, and framework-specific optimizations as long as the output is valid gzip or brotli. The JSON body must still be serialized and compressed per request - pre-computed / pre-serialized / pre-compressed response caches are not allowed on either type; they defeat the serialization and compression workload the profile exists to measure." engine="No specific rules." >}}

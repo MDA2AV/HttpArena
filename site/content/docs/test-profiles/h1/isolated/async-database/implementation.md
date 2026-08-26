@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Async Database Benchmark (Postgres) — Implementation Guide"
+seo_title: "Async Database Benchmark (Postgres): Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the async Postgres benchmark."
 ---
 {{< type-rules standard="Must use an async PostgreSQL driver with standard connection pooling. Size the pool from `DATABASE_MAX_CONN` (currently 256), not from CPU count." tuned="May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults." engine="No specific rules." >}}

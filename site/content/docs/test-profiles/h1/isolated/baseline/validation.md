@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Baseline Throughput Benchmark — Validation Checks"
+seo_title: "Baseline Throughput Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the HTTP/1.1 baseline throughput benchmark before a framework's results are accepted."
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "API-16 Constrained Workload Benchmark — Validation Checks"
+seo_title: "API-16 Constrained Workload Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the API-16 constrained workload before a framework's results are accepted."
 ---
 

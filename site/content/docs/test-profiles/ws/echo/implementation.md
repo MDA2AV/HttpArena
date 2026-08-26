@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "WebSocket Echo Benchmark — Implementation Guide"
+seo_title: "WebSocket Echo Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the WebSocket echo benchmark."
 ---
 {{< type-rules standard="Must use the framework standard WebSocket API with default buffer sizes." tuned="May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers." engine="No specific rules. Ranked separately from frameworks." >}}

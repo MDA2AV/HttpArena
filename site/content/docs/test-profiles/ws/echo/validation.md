@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "WebSocket Echo Benchmark — Validation Checks"
+seo_title: "WebSocket Echo Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the WebSocket echo benchmark before a framework's results are accepted."
 ---
 

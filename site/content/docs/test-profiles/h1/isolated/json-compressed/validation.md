@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Compressed JSON Benchmark (gzip and Brotli) — Validation Checks"
+seo_title: "Compressed JSON Benchmark (gzip and Brotli): Validation Checks"
 description: "The correctness checks validate.sh runs against the compressed JSON benchmark before a framework's results are accepted."
 ---
 

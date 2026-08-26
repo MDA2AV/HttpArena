@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "API-4 Constrained Workload Benchmark — Validation Checks"
+seo_title: "API-4 Constrained Workload Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the API-4 constrained workload before a framework's results are accepted."
 ---
 

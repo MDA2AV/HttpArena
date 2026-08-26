@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "JSON Processing Benchmark — Validation Checks"
+seo_title: "JSON Processing Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the JSON processing benchmark before a framework's results are accepted."
 ---
 

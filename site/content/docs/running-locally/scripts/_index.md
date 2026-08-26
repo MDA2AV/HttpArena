@@ -1,7 +1,7 @@
 ---
 title: Scripts Reference
 seo_title: "Scripts Reference"
-description: "Every script in scripts/, what it does, and the arguments it takes — benchmark, validate, compare, archive and run."
+description: "Every script in scripts/, what it does, and the arguments it takes: benchmark, validate, compare, archive and run."
 weight: -1
 ---
 

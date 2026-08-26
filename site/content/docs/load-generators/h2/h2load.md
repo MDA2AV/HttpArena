@@ -1,6 +1,6 @@
 ---
 title: h2load
-seo_title: "h2load — HTTP/2 Load Generator"
+seo_title: "h2load: HTTP/2 Load Generator"
 description: "h2load from the nghttp2 project drives every HTTP/2 profile in HttpArena, with configurable concurrent streams per connection."
 ---
 

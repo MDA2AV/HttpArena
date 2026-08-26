@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Large Upload Benchmark (20 MB) — Validation Checks"
+seo_title: "Large Upload Benchmark (20 MB): Validation Checks"
 description: "The correctness checks validate.sh runs against the 20 MB upload benchmark before a framework's results are accepted."
 ---
 

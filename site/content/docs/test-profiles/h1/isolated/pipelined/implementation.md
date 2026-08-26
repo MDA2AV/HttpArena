@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "HTTP Pipelining Benchmark (16x) — Implementation Guide"
+seo_title: "HTTP Pipelining Benchmark (16x): Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the HTTP pipelining benchmark."
 ---
 {{< type-rules standard="Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations." tuned="May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags." engine="No specific rules. Ranked separately from frameworks." infrastructure="Configuration is free - worker counts, buffer sizes, event-loop and socket tuning are all allowed. Each request in a batch must produce its own response; coalescing the batch into one pre-built buffer, or answering from a cache keyed on the request line, is not allowed. This is the one profile scored for infrastructure and not for frameworks - for a proxy, pipelining behaviour is the thing being compared." >}}

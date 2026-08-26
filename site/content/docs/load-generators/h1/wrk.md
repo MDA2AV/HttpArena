@@ -1,6 +1,6 @@
 ---
 title: wrk
-seo_title: "wrk — Static File Load Generator"
+seo_title: "wrk: Static File Load Generator"
 description: "HttpArena uses wrk with a Lua script to rotate across 20 URIs for the static file profile, measuring realistic multi-asset page loads."
 ---
 

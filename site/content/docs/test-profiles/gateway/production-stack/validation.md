@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Production Stack Benchmark — Validation Checks"
+seo_title: "Production Stack Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the four-service Production Stack deployment before a framework's results are accepted."
 weight: 2
 ---
