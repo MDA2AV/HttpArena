@@ -1365,6 +1365,17 @@ document.addEventListener('DOMContentLoaded', function(){
     if(!AGG) AGG=aggregate();
     var A=AGG, useMem=state.useMem;
     var pids=[]; D.profiles.forEach(function(p){ if(state.scope==='all'||familyOf(p)===state.scope) pids.push(p.id); });
+    // Scored columns first, reference-only ones after, each keeping its catalog
+    // order. Reading left to right then follows the score: everything before the
+    // break is in the sum, everything after it is context.
+    //
+    // Decided here rather than by reordering the catalog, because which columns
+    // are reference-only is a property of the league being shown, not of the
+    // profile. Infrastructure scores Pipelined and the framework leagues do not,
+    // so a fixed order would have to be wrong for one of them.
+    var _lt=leagueType(), _scored=[], _ref=[];
+    pids.forEach(function(pid){ (scoredForType(pid,_lt)?_scored:_ref).push(pid); });
+    pids=_scored.concat(_ref);
     // Two different questions, previously answered by one predicate:
     //
     //   outOfLeague — is this entry ranked somewhere else entirely? Types are

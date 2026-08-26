@@ -48,6 +48,10 @@ const familyOf = grab(/^\s*function familyOf\(p\)\{.*$/m, 'familyOf()');
 const memFn = grab(/^\s*function mem\(s\)\{.*$/m, 'mem()');
 const bwFn = grab(/^\s*function bw\(s\)\{.*$/m, 'bw()');
 const latFn = grab(/^\s*function lat\(s\)\{.*$/m, 'lat()');
+// computeComposite() calls leagueType() to decide column order, and
+// leagueType() reads this. Lifted rather than restated here so the two lists
+// cannot drift apart.
+const exclTypes = grab(/^\s*var EXCLUSIVE_TYPES=.*$/m, 'EXCLUSIVE_TYPES');
 // The millionaire profile pins its rate, so the composite cannot render its
 // column off rps the way it does every other one and calls into this block for
 // a score instead. Lifted for the same reason as everything else here: the
@@ -82,6 +86,7 @@ const run = new Function('D', `
   ${memFn}
   ${bwFn}
   ${latFn}
+  ${exclTypes}
   ${milFns}
   ${composite}
   return function(scope, types, lang, showTuned){
