@@ -72,20 +72,27 @@ internal static class ReactorDelay
     // ioxide does not expose (MDA2AV/ioxide#212): io_uring arms a poll
     // internally rather than handing the read to a worker thread.
     //
-    // It is off by default because it measured worse, and the reason is
-    // instructive. A socket read is I/O the connection has to do regardless, so
-    // the ring is free for it. A timer is not: this costs a timerfd_settime
-    // syscall plus an SQE and a CQE per request, about 1.5M syscalls a second at
-    // this load, where the tick completes ~13 timers per drain and makes no
-    // syscall at all. Over four interleaved repetitions at 64,000 connections:
+    // The two mechanisms cost differently, and which wins depends on how many
+    // reactors there are - which is why this is on by default pending a reading
+    // from the bench hardware.
     //
-    //   ring  1.50M rps  2007% cpu  p99 104.2ms   overshoot 0.18ms
-    //   tick  1.58M rps  1765% cpu  p99  68.4ms   overshoot 0.25-0.82ms
+    // A socket read is I/O the connection has to do regardless, so the ring is
+    // free for it. A timer is not: this costs a timerfd_settime syscall plus an
+    // SQE and a CQE per request, about 1.5M syscalls a second at this load. That
+    // is per request and does not change with the reactor count. The tick's cost
+    // does: it posts once per reactor per tick, so 128,000 posts a second across
+    // 32 reactors and 256,000 across 64.
     //
-    // So it buys precision and pays in throughput. Worth revisiting if
-    // IORING_OP_TIMEOUT lands, which removes the syscall but not the SQE/CQE.
+    // On a 32-reactor box, four interleaved repetitions at 64,000 connections:
+    //
+    //   ring  1.50M rps  2007% cpu  p99 104.2ms  overshoot 0.18ms
+    //   tick  1.58M rps  1765% cpu  p99  68.4ms  overshoot 0.25-0.82ms
+    //
+    // The tick wins there. The bench box has twice the reactors and so twice the
+    // tick cost against the same per-request cost, so the ordering may not hold.
+    // IOXIDE_DELAY_MODE=tick selects the other one.
     private static readonly bool UseRingTimer =
-        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "ring";
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") != "tick";
 
     // Touched only by the reactor thread that owns it: the handler parks a
     // request from this thread, and the drain runs on this thread too.
