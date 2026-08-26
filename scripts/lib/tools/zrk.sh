@@ -124,6 +124,10 @@ print("rps=%d" % round(d.get("achieved_rate") or 0))
 # lat() on the board reads us/ms/s, so hand it microseconds unconverted.
 print("avg_lat=%.1fus" % (lat.get("mean") or 0))
 print("p99_lat=%.1fus" % (lat.get("p99") or 0))
+# p99.9 is not a field any other adapter produces, and the millionaire
+# score weights it, so it has to survive into the result row rather than
+# only existing in this summary.
+print("p999_lat=%.1fus" % (lat.get("p99_9") or 0))
 # Nothing reconnects on a paced run over held connections; report the real
 # connect failures instead of a zero that hides them.
 print("reconnects=%d" % ((d.get("errors") or {}).get("connect") or 0))

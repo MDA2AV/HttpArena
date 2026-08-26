@@ -300,6 +300,13 @@ run_one() {
     local best_rps=-1 best_output="" best_cpu="0%" best_mem="0MiB" best_breakdown=""
     local best_cpu_usec="" best_rate_ratio=""
 
+    # Millionaire picks its winner after the loop instead of during it: the run
+    # score normalises each metric against the best of this framework's own
+    # three runs, which is not known until all three have happened. Every run is
+    # recorded here and the choice is made below.
+    local _mdir=""
+    [ "$endpoint" = "millionaire" ] && _mdir=$(mktemp -d)
+
     BEST_M=()
     local run
 
@@ -350,6 +357,17 @@ run_one() {
             better=true
         fi
 
+        if [ -n "$_mdir" ]; then
+            "${tool//-/_}_parse" "$endpoint" "$output" > "$_mdir/$run.kv"
+            printf '%s' "$output" > "$_mdir/$run.out"
+            {
+                printf 'cpu_usec=%s\n' "${CPU_ACCT_USEC:-}"
+                printf 'stats_cpu=%s\n' "$STATS_AVG_CPU"
+                printf 'stats_mem=%s\n' "$STATS_PEAK_MEM"
+                printf 'stats_bd=%s\n' "$STATS_BREAKDOWN"
+            } > "$_mdir/$run.meta"
+        fi
+
         if $better; then
             best_rps=$rps_int
             best_cpu_usec="${CPU_ACCT_USEC:-}"
@@ -371,6 +389,36 @@ run_one() {
         # measured window. Two seconds is plenty below that.
         if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
     done
+
+    # ── Millionaire: pick the run by score, not by any single metric ─────
+    #
+    # The published score weights rate, CPU and both latency tails together, so
+    # choosing the run on CPU alone could keep a cheap run with a wrecked tail.
+    # Each metric is normalised against the best of this framework's own three
+    # runs -- self-contained, because the rest of the field does not exist yet
+    # while this entry is being measured, and monotonic in the same direction as
+    # the published score.
+    if [ -n "$_mdir" ]; then
+        local _win
+        _win=$(python3 "$SCRIPT_DIR/millionaire_score.py" --pick "$_mdir" 2>/dev/null || echo "")
+        if [ -n "$_win" ] && [ -f "$_mdir/$_win.kv" ]; then
+            info "run $_win wins on score"
+            BEST_M=()
+            while IFS= read -r line; do
+                [[ "$line" == *=* ]] && BEST_M["${line%%=*}"]="${line#*=}"
+            done < "$_mdir/$_win.kv"
+            best_rps=${BEST_M[rps]:-0}
+            best_rate_ratio="${BEST_M[rate_ratio]:-}"
+            best_output=$(cat "$_mdir/$_win.out")
+            best_cpu_usec=$(sed -n 's/^cpu_usec=//p' "$_mdir/$_win.meta")
+            best_cpu=$(sed -n 's/^stats_cpu=//p' "$_mdir/$_win.meta")
+            best_mem=$(sed -n 's/^stats_mem=//p' "$_mdir/$_win.meta")
+            best_breakdown=$(sed -n 's/^stats_bd=//p' "$_mdir/$_win.meta")
+        else
+            warn "could not score the runs — keeping the cheapest by CPU"
+        fi
+        rm -rf "$_mdir"
+    fi
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
@@ -486,7 +534,8 @@ save_result() {
   \"cpu_usec\": ${best_cpu_usec:-null},
   \"cpu_per_req_us\": $_eff_per_req,
   \"target_rate\": ${BEST_M[target_rate]:-0},
-  \"rate_ratio\": ${best_rate_ratio:-0}"
+  \"rate_ratio\": ${best_rate_ratio:-0},
+  \"p99_9_latency\": \"${BEST_M[p999_lat]:-}\""
     fi
 
     local cpu_extra=""
