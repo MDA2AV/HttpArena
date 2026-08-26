@@ -78,6 +78,11 @@ internal static class Handler
             // read. A read-first loop would deadlock on the bundled-request case.
             while (true)
             {
+                // Timers due on this reactor, completed from the reactor itself.
+                // Cheap enough to sit in the loop unconditionally: a thread-static
+                // read and a peek when there is nothing pending.
+                ReactorDelay.DrainDue();
+
                 // /async-db parks the parser: run the query (inline on this reactor's
                 // ring via ioxide.pg), stream rows into Out, then resume the carry -
                 // pipelined requests behind it are served in order.
@@ -87,7 +92,7 @@ internal static class Handler
                 while (httpSession.PendingDelay)
                 {
                     httpSession.PendingDelay = false;
-                    await ReactorDelay.Delay(reactor, httpSession.PendingDelayMs);
+                    await ReactorDelay.Delay(reactor, httpSession.PendingDelayMs, httpSession.DelayWait);
                     httpSession.CompleteDelay();
                     httpSession.ResumeFeed();
                 }
