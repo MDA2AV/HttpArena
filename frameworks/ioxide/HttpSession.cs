@@ -67,6 +67,8 @@ internal sealed unsafe partial class HttpSession
     public bool PendingDelay;
     public int PendingDelayMs;
     private bool _delayClose;
+    // One per connection, reused for every delay it ever asks for.
+    public readonly DelaySource DelayWait = new();
 
     // /upload streams its body: bytes are counted as they arrive, never buffered whole.
     public long PendingUploadRemaining;
