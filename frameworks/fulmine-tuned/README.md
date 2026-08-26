@@ -68,6 +68,14 @@ The rest is the standard entry's, unchanged and worth repeating here:
   ordinary path, because the compiler reads the source and cannot see into one.
 - `express.compression()` is the framework's own, taking the compression module's options: it is
   mounted on the json route, which is the only one the profiles ask to compress.
+- `tls_check` is opted into in `meta.json`, and the listener it asks for on :9000 is the 8081 one
+  again, reading `/certs-tls` rather than `/certs`. What it adds is the rotation, and that is a new
+  listener rather than a new certificate on the old one: µWS reads the pair when it builds the SSL
+  context, and `addServerName()` only replaces the certificate for one SNI name — a client sending
+  no server name is answered from the default context, still on the old pair. A worker binds the
+  port shared, so the replacement is accepting on 9000 before the listener it replaces is told to
+  stop, and `close()` drains that one instead of cutting it. The directory is mounted by
+  `validate.sh` alone, so on a measured run none of this is built.
 - `express({ cluster: "auto" })` is the framework's own fork, so there is no cluster boilerplate in
   the entry: one worker per usable core, each binding the same port with uWS's shared flag, which
   is `SO_REUSEPORT`. The kernel picks which worker gets a connection and the primary is not in the
