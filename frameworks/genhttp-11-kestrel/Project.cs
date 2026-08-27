@@ -28,6 +28,7 @@ public static class Project
                         .AddService<Upload>("upload")
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
+                        .AddService<AsyncDelay>("delay")
                         .Add("crud", crud)
                         .AddStaticFiles()
                         .AddWebsocket();
