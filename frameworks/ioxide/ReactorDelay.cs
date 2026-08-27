@@ -274,7 +274,9 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
     // Created on this connection's first delay and re-armed for every one after,
     // so a delay costs a settime and an SQE - no allocation, no timer object.
     private int _fd = -1;
-    private IntPtr _buf;   // the 8-byte expiration count the read returns
+    private IntPtr _buf;      // the 8-byte expiration count the read returns
+    private Reactor? _reactor;
+    private long _deadline;   // when this wait is actually allowed to end
 
     /// <summary>Arms the timer and parks on it through the reactor's ring.</summary>
     public unsafe ValueTask WaitOnRing(Reactor reactor, int ms)
@@ -298,13 +300,40 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
             throw new InvalidOperationException($"timerfd_settime failed, errno {Marshal.GetLastPInvokeError()}");
         }
 
+        _reactor = reactor;
+        _deadline = Stopwatch.GetTimestamp() + (long)(ms * (Stopwatch.Frequency / 1000.0));
+
         short token = _core.Version;
         reactor.SubmitRead(_fd, _buf, 8, 0, this);
         return new ValueTask(this, token);
     }
 
-    /// <summary>The ring completion: the timer fired, so the wait is over.</summary>
-    public void Complete(int result) => _core.SetResult(true);
+    /// <summary>
+    /// The ring completion. A completion is not on its own proof that this
+    /// connection's wait is over, so the deadline decides.
+    ///
+    /// Two ways it can arrive early. The fd is non-blocking, so a read the
+    /// kernel does not arm a poll for returns -EAGAIN immediately. And the fd is
+    /// reused across every request on the connection, so a read can pick up an
+    /// expiration left behind by an earlier one and return a perfectly valid 8
+    /// bytes for a timer that already fired. Measured under load, the second is
+    /// the one that actually happens: about 0.1% of waits, the worst of them
+    /// resuming 14.9ms into a 15ms delay, which is the whole wait skipped.
+    ///
+    /// Resuming there would answer before the profile's contract allows and
+    /// quietly inflate the number, so an early completion goes back on the ring
+    /// instead. It costs a comparison on a path that is already a syscall.
+    /// </summary>
+    public void Complete(int result)
+    {
+        if (Stopwatch.GetTimestamp() < _deadline)
+        {
+            _reactor!.SubmitRead(_fd, _buf, 8, 0, this);
+            return;
+        }
+
+        _core.SetResult(true);
+    }
 
     /// <summary>Releases the timer. Called when the connection is finished.</summary>
     public void Dispose()
