@@ -468,44 +468,6 @@ internal static class ReactorTimer
         }
     }
 
-    // Re-entrancy: completing a wait runs its continuation inline, and that continuation
-    // goes back round the handler loop, which drains again.
-    [ThreadStatic] private static bool _draining;
-
-    /// <summary>
-    /// Completes whatever is already due, from the reactor's own hot path.
-    ///
-    /// Without this the timerfd is the only thing that ever completes a wait, so every
-    /// distinct deadline costs its own arm and its own read - which at one wait per
-    /// request is the per-request syscall this design exists to avoid. The reactor
-    /// passes through here tens of thousands of times a second under load, so most waits
-    /// finish for nothing and the timer is left to cover only the case where the reactor
-    /// would otherwise go to sleep with work still due.
-    ///
-    /// Costs a thread-static read and a peek when there is nothing to do.
-    /// </summary>
-    public static void DrainDue()
-    {
-        PriorityQueue<DelaySource, long>? q = _queue;
-        if (q is null || q.Count == 0 || _draining) return;
-
-        long now = Stopwatch.GetTimestamp();
-        if (!q.TryPeek(out _, out long head) || head > now) return;
-
-        _draining = true;
-        try
-        {
-            while (q.TryPeek(out _, out long deadline) && deadline <= now)
-            {
-                q.Dequeue().Fire();
-            }
-        }
-        finally
-        {
-            _draining = false;
-        }
-    }
-
     /// <summary>The timer fired: complete everything due and re-arm to the next one.</summary>
     private static void OnFired(Reactor reactor)
     {
@@ -514,20 +476,9 @@ internal static class ReactorTimer
         if (q is null) return;
 
         long now = Stopwatch.GetTimestamp();
-        if (!_draining)
+        while (q.TryPeek(out _, out long deadline) && deadline <= now)
         {
-            _draining = true;
-            try
-            {
-                while (q.TryPeek(out _, out long deadline) && deadline <= now)
-                {
-                    q.Dequeue().Fire();
-                }
-            }
-            finally
-            {
-                _draining = false;
-            }
+            q.Dequeue().Fire();
         }
 
         // Whatever the completions just queued is in here too, so the front of the

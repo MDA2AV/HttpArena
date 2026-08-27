@@ -28,7 +28,7 @@ THREADS="${THREADS:-64}"
 # and the generator contributes to that latency. Holding the server fixed on a
 # 32-core box and changing only this moved the result from 1.42M at 8 threads to
 # 2.16M at 16, so the number is not the server's alone.
-ASYNC_THREADS="${ASYNC_THREADS:-128}"
+ASYNC_THREADS="${ASYNC_THREADS:-64}"
 H2THREADS="${H2THREADS:-64}"
 H3THREADS="${H3THREADS:-64}"
 

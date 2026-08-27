@@ -82,7 +82,6 @@ internal static class Handler
                 // Cheap enough to sit in the loop unconditionally: a thread-static
                 // read and a peek when there is nothing pending.
                 ReactorDelay.DrainDue();
-                ReactorTimer.DrainDue();
 
                 // /async-db parks the parser: run the query (inline on this reactor's
                 // ring via ioxide.pg), stream rows into Out, then resume the carry -
