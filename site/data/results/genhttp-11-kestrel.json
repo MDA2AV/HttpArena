@@ -1,6 +1,26 @@
 {
   "framework": "genhttp-11-kestrel",
   "results": {
+    "async-64000": {
+      "framework": "genhttp-11-kestrel",
+      "language": "C#",
+      "rps": 238308,
+      "avg_latency": "19.47ms",
+      "p99_latency": "37.60ms",
+      "cpu": "1442.4%",
+      "memory": "1.9GiB",
+      "connections": 64000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "31.14MB/s",
+      "input_bw": "10.91MB/s",
+      "reconnects": 33809,
+      "status_2xx": 2997915,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "genhttp-11-kestrel",
       "language": "C#",

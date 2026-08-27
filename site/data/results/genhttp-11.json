@@ -1,6 +1,26 @@
 {
   "framework": "genhttp-11",
   "results": {
+    "async-64000": {
+      "framework": "genhttp-11",
+      "language": "C#",
+      "rps": 741139,
+      "avg_latency": "61.41ms",
+      "p99_latency": "194.30ms",
+      "cpu": "3376.8%",
+      "memory": "3.9GiB",
+      "connections": 64000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "91.15MB/s",
+      "input_bw": "33.93MB/s",
+      "reconnects": 0,
+      "status_2xx": 7411395,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "genhttp-11",
       "language": "C#",
