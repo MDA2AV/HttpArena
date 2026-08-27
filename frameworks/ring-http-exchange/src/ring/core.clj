@@ -21,6 +21,8 @@
            (java.util.zip GZIPOutputStream))
   (:gen-class))
 
+(set! *warn-on-reflection* true)
+
 (def default-executor (Executors/newVirtualThreadPerTaskExecutor))
 
 (def ^:private ^:const ct-json "application/json")
@@ -33,7 +35,6 @@
 (def ^:private ^:const server-name "ring-http-exchange")
 (def ^:private ^:const enc-gzip "gzip")
 (def ^:private ^:const ae-header "accept-encoding")
-(def ^:private ^:const dot ".")
 (def ^:private ^:const not-found-body "Not found")
 (def ^:private ^:const dataset-path "/data/dataset.json")
 (def ^:private ^:const static-dir "/data/static")
@@ -63,7 +64,6 @@
 (def ^:private fortunes-query (boa/build-async-query adapter "sql/fortunes"))
 (def ^:private fortunes-render (majavat/build-html-renderer "fortunes.html"))
 
-
 (def ^:private ^:const extension-map
   {".css"   "text/css"
    ".js"    "application/javascript"
@@ -73,50 +73,94 @@
    ".webp"  "image/webp"
    ".json"  ct-json})
 
-(defn- safe-parse-long [^String s default]
-  (try (Long/parseLong s) (catch Exception _ default)))
+(def ^:private root-response
+  {:status 200 :headers text-headers :body server-name})
 
-(defn- safe-parse-double [^String s default]
-  (try (Double/parseDouble s) (catch Exception _ default)))
+(def ^:private zero-text-response
+  {:status 200 :headers text-headers :body "0"})
 
-(defn- safe-parse-int [^String s default]
-  (try (Integer/parseInt s) (catch Exception _ default)))
+(def ^:private text-response-base {:status 200 :headers text-headers})
 
-(defn- load-json [path]
-  (when (.exists (io/file path))
-    (json/read-value (slurp path) json/keyword-keys-object-mapper)))
+(defn- parse-long-or-zero ^long [^String s]
+  (if (nil? s) 0 (try (Long/parseLong s) (catch Exception _ 0))))
+
+(defn- parse-long-or-neg1 ^long [^String s]
+  (if (nil? s) -1 (try (Long/parseLong s) (catch Exception _ -1))))
+
+(defn- parse-long-or-1 ^long [^String s]
+  (if (nil? s) 1 (try (Long/parseLong s) (catch Exception _ 1))))
+
+(defn- parse-long-or-10 ^long [^String s]
+  (if (nil? s) 10 (try (Long/parseLong s) (catch Exception _ 10))))
+
+(defn- parse-long-or-50 ^long [^String s]
+  (if (nil? s) 50 (try (Long/parseLong s) (catch Exception _ 50))))
+
+(defn- parse-long-or-256 ^long [^String s]
+  (if (nil? s) 256 (try (Long/parseLong s) (catch Exception _ 256))))
+
+(defn- parse-double-or-10 ^double [^String s]
+  (if (nil? s) 10.0 (try (Double/parseDouble s) (catch Exception _ 10.0))))
+
+(defn- parse-double-or-50 ^double [^String s]
+  (if (nil? s) 50.0 (try (Double/parseDouble s) (catch Exception _ 50.0))))
+
+(defn- load-json [^String path]
+  (let [f (io/file path)]
+    (when (.exists f)
+      (json/read-value (slurp f) json/keyword-keys-object-mapper))))
 
 (defn- process-item [item ^long m]
-  (assoc item :total (* (:price item) (:quantity item) m)))
+  (assoc item :total (* (long (:price item)) (long (:quantity item)) m)))
 
 (defn- parse-qs [^String qs]
   (when qs
-    (loop [i 0 m (transient {})]
-      (if (>= i (.length qs))
-        (persistent! m)
-        (let [amp (.indexOf qs (int \&) i)
-              end (if (neg? amp) (.length qs) amp)
-              eq (.indexOf qs (int \=) i)]
-          (if (and (>= eq 0) (< eq end))
-            (recur (inc end) (assoc! m (subs qs i eq) (subs qs (inc eq) end)))
-            (recur (inc end) m)))))))
+    (let [len (.length qs)]
+      (loop [i (long 0) m (transient {})]
+        (if (>= i len)
+          (persistent! m)
+          (let [amp (.indexOf qs (int \&) (int i))
+                end (long (if (neg? amp) len amp))
+                eq (.indexOf qs (int \=) (int i))]
+            (if (and (>= eq 0) (< (long eq) end))
+              (recur (unchecked-inc end) (assoc! m (subs qs (int i) (int eq)) (subs qs (int (unchecked-inc (long eq))) (int end))))
+              (recur (unchecked-inc end) m))))))))
 
-(defn- sum-params [^String qs]
+(defn- parse-long-range ^long [^String s ^long from ^long to]
+  (if (>= from to)
+    0
+    (let [first-ch (.charAt s (int from))
+          negative (== (int first-ch) (int \-))
+          start (long (if negative (unchecked-inc from) from))]
+      (if (>= start to)
+        0
+        (loop [i start acc (long 0)]
+          (if (>= i to)
+            (if negative (unchecked-negate acc) acc)
+            (let [c (int (.charAt s (int i)))
+                  d (unchecked-subtract c (int \0))]
+              (if (or (< d 0) (> d 9))
+                0
+                (recur (unchecked-inc i)
+                       (unchecked-add (unchecked-multiply acc 10) (long d)))))))))))
+
+(defn- sum-params ^long [^String qs]
   (if (nil? qs)
     0
-    (loop [i 0 total-sum 0]
-      (if (>= i (.length qs))
-        total-sum
-        (let [amp (.indexOf qs (int \&) i)
-              end (if (neg? amp) (.length qs) amp)
-              eq (.indexOf qs (int \=) i)]
-          (if (and (>= eq 0) (< eq end))
-            (recur (inc end)
-                   (+ total-sum
-                      (safe-parse-long (subs qs (inc eq) end) 0)))
-            (recur (inc end) total-sum)))))))
+    (let [len (long (.length qs))]
+      (loop [i (long 0) total-sum (long 0)]
+        (if (>= i len)
+          total-sum
+          (let [amp (.indexOf qs (int \&) (int i))
+                end (long (if (neg? amp) len amp))
+                eq (.indexOf qs (int \=) (int i))]
+            (if (and (>= eq 0) (< (long eq) end))
+              (recur (unchecked-inc end)
+                     (unchecked-add total-sum
+                                    (parse-long-range qs (unchecked-inc (long eq)) end)))
+              (recur (unchecked-inc end) total-sum))))))))
 
-(defn- gzip-bytes [^bytes data]
+(defn- gzip-bytes ^bytes [^bytes data]
   (let [baos (ByteArrayOutputStream. (alength data))
         gos (GZIPOutputStream. baos)]
     (.write gos data)
@@ -127,19 +171,24 @@
   {:status 200 :headers json-headers :body (json/write-value-as-string data)})
 
 (defn- text-response [s]
-  {:status 200 :headers text-headers :body (str s)})
+  (assoc text-response-base :body (str s)))
+
+(defn- text-response-long [^long n]
+  (assoc text-response-base :body (Long/toString n)))
 
 (defn- accepts-gzip? [headers]
   (boolean
     (some (fn [[k v]]
-            (and (.equalsIgnoreCase ^String k ae-header)
-                 (.contains ^String v enc-gzip)))
+            (and (.equalsIgnoreCase ^String k ^String ae-header)
+                 (.contains ^String v ^String enc-gzip)))
           headers)))
 
-(defn- get-content-type [^String name]
-  (let [dot-index (.lastIndexOf name ^String dot)
-        ext (if (>= dot-index 0) (subs name dot-index) "")]
-    (get extension-map ext ct-octet)))
+(defn- get-content-type ^String [^String name]
+  (let [dot-index (.lastIndexOf name ".")]
+    (if (>= dot-index 0)
+      (let [ext (subs name dot-index)]
+        (or (get extension-map ext) ct-octet))
+      ct-octet)))
 
 (defn- transform-pg-row [row]
   {:id       (:id row)
@@ -161,8 +210,7 @@
       (.load nil password)
       (.setKeyEntry "server" private-key password cert-array))))
 
-(defn- load-ssl-context
-  []
+(defn- load-ssl-context []
   (let [cert-path (or (System/getenv "TLS_CERT") tls-cert-default)
         key-path (or (System/getenv "TLS_KEY") tls-key-default)]
     (if (and (.exists (io/file cert-path)) (.exists (io/file key-path)))
@@ -179,11 +227,10 @@
 (defn- start-server!
   ([handler port]
    (start-server! handler port nil))
-  ([handler port ssl-context]
-   (let [opts (cond-> {:port              port
-                       :lazy-request-map? true
-                       :async?            true
-                       :executor          default-executor}
+  ([handler ^long port ssl-context]
+   (let [opts (cond-> {:port     port
+                       :async?   true
+                       :executor default-executor}
                       ssl-context (assoc :ssl-context ssl-context))]
      (try
        (server/run-http-server handler opts)
@@ -197,21 +244,22 @@
     (try
       (let [uri (URI. (str/replace url pg-prefix pg-replace))
             host (.getHost uri)
-            port (if (pos? (.getPort uri)) (.getPort uri) 5432)
+            port (let [p (.getPort uri)] (if (pos? p) p 5432))
             db (subs (.getPath uri) 1)
             [user pass] (str/split (.getUserInfo uri) #":" 2)
-            max-conn (safe-parse-int (System/getenv "DATABASE_MAX_CONN") 256)
-            connect-opts (-> (PgConnectOptions.)
-                             (.setHost host)
-                             (.setPort port)
-                             (.setDatabase db)
-                             (.setUser user)
-                             (.setPassword (or pass "")))
-            pool-opts (-> (PoolOptions.) (.setMaxSize max-conn))
-            vertx (Vertx/vertx)]
-        (-> (PgBuilder/pool)
+            max-conn (parse-long-or-256 (System/getenv "DATABASE_MAX_CONN"))
+            connect-opts (doto (PgConnectOptions.)
+                           (.setHost ^String host)
+                           (.setPort (int port))
+                           (.setDatabase ^String db)
+                           (.setUser ^String user)
+                           (.setPassword (str (or pass ""))))
+            pool-opts (-> (PoolOptions.) (.setMaxSize (int max-conn)))
+            vertx (Vertx/vertx)
+            ^io.vertx.sqlclient.ClientBuilder builder (PgBuilder/pool)]
+        (-> builder
             (.with pool-opts)
-            (.connectingTo connect-opts)
+            (.connectingTo ^io.vertx.sqlclient.SqlConnectOptions connect-opts)
             (.using vertx)
             (.build)))
       (catch Throwable t
@@ -219,22 +267,26 @@
         nil))))
 
 (defn- handle-baseline-get [req respond _raise]
-  (respond (text-response (sum-params (:query-string req)))))
+  (let [qs (:query-string req)]
+    (if (nil? qs)
+      (respond zero-text-response)
+      (respond (text-response-long (sum-params qs))))))
 
 (defn- handle-baseline-post [req respond _raise]
   (let [s (sum-params (:query-string req))
         b (slurp (:body req))
-        n (safe-parse-long (str/trim b) 0)]
-    (respond (text-response (+ s n)))))
+        n (parse-long-or-zero (str/trim b))]
+    (respond (text-response-long (unchecked-add s n)))))
 
-(defn- handle-json [dataset req respond _raise]
-  (let [requested (safe-parse-long (get-in req [:params :count]) 50)
-        n (min requested (long (clojure.core/count dataset)))
+(defn- handle-json [^clojure.lang.IPersistentVector dataset req respond _raise]
+  (let [requested (parse-long-or-50 (get-in req [:params :count]))
+        ds-count (long (.count dataset))
+        n (long (min requested ds-count))
         params (parse-qs (:query-string req))
-        m (safe-parse-long (get params param-m) 1)
-        items (map #(process-item % m) (subvec dataset 0 n))
+        m (parse-long-or-1 (get params param-m))
+        items (mapv #(process-item % m) (subvec dataset 0 (int n)))
         body-bytes (json/write-value-as-bytes
-                     {:items items :count (clojure.core/count items)})]
+                     {:items items :count (long (.count ^clojure.lang.IPersistentCollection items))})]
     (respond
       (if (accepts-gzip? (:headers req))
         {:status 200 :headers json-gzip-headers :body (gzip-bytes body-bytes)}
@@ -242,16 +294,16 @@
 
 (defn- handle-upload [req respond _raise]
   (with-open [^InputStream in (:body req)]
-    (respond (text-response (.transferTo in (OutputStream/nullOutputStream))))))
+    (respond (text-response-long (.transferTo in (OutputStream/nullOutputStream))))))
 
 (defn- handle-pg [pg-pool req respond _raise]
   (let [params (parse-qs (:query-string req))
-        min-p (safe-parse-double (get params param-min) 10.0)
-        max-p (safe-parse-double (get params param-max) 50.0)
-        limit (safe-parse-long (get params param-limit) 50)]
+        min-p (parse-double-or-10 (get params param-min))
+        max-p (parse-double-or-50 (get params param-max))
+        limit (parse-long-or-50 (get params param-limit))]
     (pg-query pg-pool {:min min-p :max max-p :limit limit}
               (fn [rows]
-                (let [items (map transform-pg-row rows)]
+                (let [items (mapv transform-pg-row rows)]
                   (respond (json-response {:items items :count (count items)}))))
               (fn [_]
                 (respond (json-response {:items [] :count 0}))))))
@@ -295,12 +347,12 @@
 (defn- handle-crud-list [pg-pool req respond raise]
   (let [params (parse-qs (:query-string req))
         category (or (get params "category") "electronics")
-        page (max 1 (safe-parse-long (get params "page") 1))
-        limit (max 1 (min 50 (safe-parse-long (get params "limit") 10)))
-        offset (* (dec page) limit)]
+        page (max 1 (parse-long-or-1 (get params "page")))
+        limit (max 1 (min 50 (parse-long-or-10 (get params "limit"))))
+        offset (unchecked-multiply (unchecked-dec page) limit)]
     (crud-list-query pg-pool {:category category :limit limit :offset offset}
                      (fn [rows]
-                       (let [items (map transform-crud-row rows)]
+                       (let [items (mapv transform-crud-row rows)]
                          (respond (json-response {:items items
                                                   :total (count items)
                                                   :page  page
@@ -308,8 +360,8 @@
                      raise)))
 
 (defn- handle-crud-read [pg-pool req respond raise]
-  (let [id (safe-parse-long (get-in req [:params :id]) nil)]
-    (if (nil? id)
+  (let [id (parse-long-or-neg1 (get-in req [:params :id]))]
+    (if (neg? id)
       (respond {:status 404 :headers json-headers :body not-found-body})
       (if-let [cached (crud-cache-get id)]
         (respond {:status 200 :headers crud-hit-headers :body cached})
@@ -342,8 +394,8 @@
                        raise)))
 
 (defn- handle-crud-update [pg-pool req respond raise]
-  (let [id (safe-parse-long (get-in req [:params :id]) nil)]
-    (if (nil? id)
+  (let [id (parse-long-or-neg1 (get-in req [:params :id]))]
+    (if (neg? id)
       (respond {:status 404 :headers json-headers :body not-found-body})
       (let [body (json/read-value (:body req) json/keyword-keys-object-mapper)
             nm (or (:name body) "Updated")
@@ -364,29 +416,37 @@
                                (respond {:status 404 :headers json-headers :body not-found-body})))
                            raise)))))
 
+(defn- handle-delay [req respond _raise]
+  (let [ms (parse-long-or-zero (get-in req [:params :ms]))]
+    (when (pos? ms)
+      (Thread/sleep ms))
+    (respond (text-response-long ms))))
+
 (defn- handle-static [req respond _raise]
   (let [name (get-in req [:params :filename])
-        f (io/file static-dir name)]
+        ^java.io.File f (io/file static-dir name)]
     (if (.exists f)
       (respond {:status  200
-                :headers {hdr-ct (get-content-type name) hdr-server server-name}
+                :headers {hdr-ct (get-content-type ^String name) hdr-server server-name}
                 :body    f})
       (respond {:status 404 :body not-found-body}))))
 
 (defn- build-handler [{:keys [dataset pg-pool]}]
-  (async-route
-    {"/baseline11"       [(GET handle-baseline-get)
-                          (POST handle-baseline-post)]
-     "/json/:count"      [(GET (fn [req res rej] (handle-json dataset req res rej)))]
-     "/upload"           [(POST handle-upload)]
-     "/async-db"         [(GET (fn [req res rej] (handle-pg pg-pool req res rej)))]
-     "/fortunes"         [(GET (fn [_ res rej] (handle-fortunes pg-pool res rej)))]
-     "/crud/items"       [(GET (fn [req res rej] (handle-crud-list pg-pool req res rej)))
-                          (POST (fn [req res rej] (handle-crud-create pg-pool req res rej)))]
-     "/crud/items/:id"   [(GET (fn [req res rej] (handle-crud-read pg-pool req res rej)))
-                          (PUT (fn [req res rej] (handle-crud-update pg-pool req res rej)))]
-     "/static/:filename" [(GET handle-static)]
-     "/"                 [(GET (fn [_ res _] (res (text-response server-name))))]}))
+  (let [dataset (vec dataset)]
+    (async-route
+      {"/baseline11"       [(GET handle-baseline-get)
+                            (POST handle-baseline-post)]
+       "/json/:count"      [(GET (fn [req res rej] (handle-json dataset req res rej)))]
+       "/upload"           [(POST handle-upload)]
+       "/async-db"         [(GET (fn [req res rej] (handle-pg pg-pool req res rej)))]
+       "/fortunes"         [(GET (fn [_ res rej] (handle-fortunes pg-pool res rej)))]
+       "/crud/items"       [(GET (fn [req res rej] (handle-crud-list pg-pool req res rej)))
+                            (POST (fn [req res rej] (handle-crud-create pg-pool req res rej)))]
+       "/crud/items/:id"   [(GET (fn [req res rej] (handle-crud-read pg-pool req res rej)))
+                            (PUT (fn [req res rej] (handle-crud-update pg-pool req res rej)))]
+       "/delay/:ms"        [(GET handle-delay)]
+       "/static/:filename" [(GET handle-static)]
+       "/"                 [(GET (fn [_ res _] (res root-response)))]})))
 
 (defn -main [& _]
   (let [dataset (load-json (or (System/getenv "DATASET_PATH") dataset-path))
