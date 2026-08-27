@@ -200,8 +200,9 @@ internal sealed unsafe partial class HttpSession
         int bodyLen = 0;
         if (chunked)
         {
-            if (!DecodeChunked(buf[bodyStart..], out bodyInt, out int used)) return false;
+            if (!DecodeChunked(buf[bodyStart..], out bodyInt, out int used, out long decoded)) return false;
             total = bodyStart + used;
+            bodyLen = (int)Math.Min(decoded, int.MaxValue);
         }
         else if (contentLength > 0)
         {
@@ -262,6 +263,9 @@ internal sealed unsafe partial class HttpSession
             // Content negotiation is HTTP, so it lives here: serve the best precompressed
             // variant the client accepts (br > gzip), else ioxide.file's identity baked response,
             // else 404. Precompressed responses already carry Content-Encoding and Vary.
+            // Throttled stat of the tree: the rules require a replaced file to be
+            // visible on the next response, and neither cache below watches disk.
+            StaticRefresh.Poll();
             byte[]? pre = _precompressed?.Negotiate(path[7..], acceptBr, acceptGzip);
             if (pre != null)
             {
@@ -481,10 +485,15 @@ internal sealed unsafe partial class HttpSession
 
     /// Decode a chunked body into an integer. Returns false if the terminating
     /// 0-chunk isn't fully buffered. Bodies in these profiles are tiny.
-    private static bool DecodeChunked(ReadOnlySpan<byte> buf, out long bodyInt, out int used)
+    // `decoded` is the body length after de-chunking, which /upload answers with.
+    // It counts every chunk, while `body` below keeps only the first 256 bytes -
+    // that peek exists to parse an integer body for /baseline11 and is not a
+    // length. Reporting blen as the size is what made /upload answer 0.
+    private static bool DecodeChunked(ReadOnlySpan<byte> buf, out long bodyInt, out int used, out long decoded)
     {
         bodyInt = 0;
         used = 0;
+        decoded = 0;
         Span<byte> body = stackalloc byte[256];
         int blen = 0;
         int pos = 0;
@@ -508,6 +517,7 @@ internal sealed unsafe partial class HttpSession
                 buf.Slice(pos, size).CopyTo(body[blen..]);
                 blen += size;
             }
+            decoded += size;
             pos += size;
             if (!buf.Slice(pos, 2).SequenceEqual("\r\n"u8)) return false;
             pos += 2;

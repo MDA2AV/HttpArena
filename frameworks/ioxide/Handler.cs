@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 using ioxide;
 using ioxide.file;
 using ioxide.pg;
@@ -9,6 +11,21 @@ namespace IoxideArena;
 
 internal static class Handler
 {
+    // Connection: close is an HTTP decision, so honouring it is this entry's job
+    // rather than the transport's -- ioxide moves bytes and knows nothing about
+    // HTTP. It hands out the accepted descriptor, which is all that is needed:
+    // half-close the write side and the peer sees EOF.
+    //
+    // SHUT_WR rather than close(2) on purpose. The descriptor's lifetime belongs
+    // to ioxide, which closes it when the refcount drops in DecRef below;
+    // closing it here would free a number the reactor still holds and the next
+    // accept could hand the same integer to somebody else. Shutting down the
+    // write side sends the FIN without touching ownership.
+    private const int ShutWr = 1;
+
+    [DllImport("libc", EntryPoint = "shutdown", SetLastError = true)]
+    private static extern int Shutdown(int fd, int how);
+
     private static int _slab = 16 * 1024;
     private static Dataset _dataSet = Dataset.Empty;
     private static StaticAssets? _staticAssets;
@@ -203,6 +220,14 @@ internal static class Handler
         finally
         {
             tls?.Dispose();
+            // The loop only reaches here when this connection is finished: the
+            // peer closed, the request asked for Connection: close, or it
+            // faulted. Without the FIN the response goes out saying
+            // "Connection: close" and the socket stays open, so any client that
+            // reads to EOF -- curl, and scripts/validate-frag.py -- hangs until
+            // its own timeout.
+            int fd = conn.ClientFd;
+            if (fd >= 0) Shutdown(fd, ShutWr);
             conn.DecRef();
         }
     }

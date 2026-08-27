@@ -14,14 +14,33 @@ internal sealed class Precompressed
 {
     private readonly record struct Variant(byte[]? Br, byte[]? Gz);
 
-    private readonly Dictionary<string, Variant> _byPath = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, Variant>.AlternateLookup<ReadOnlySpan<char>> _lookup;
+    // Baked responses are swapped as one object rather than mutated in place. A
+    // reader holding the old snapshot keeps serving consistent bytes while a
+    // rebuild is in flight, and the dictionary and its alternate lookup can
+    // never be seen half-replaced.
+    private sealed class Snapshot
+    {
+        public required Dictionary<string, Variant> ByPath;
+        public required Dictionary<string, Variant>.AlternateLookup<ReadOnlySpan<char>> Lookup;
+    }
 
-    public int Count { get; }
+    private readonly string _root;
+    private Snapshot _snap;
+
+    public int Count => _snap.ByPath.Count;
 
     public Precompressed(string staticDir)
     {
-        string root = Path.GetFullPath(staticDir);
+        _root = Path.GetFullPath(staticDir);
+        _snap = Build(_root);
+    }
+
+    /// <summary>Re-bake every variant from disk. Called when the tree changes.</summary>
+    public void Rebuild() => Volatile.Write(ref _snap, Build(_root));
+
+    private static Snapshot Build(string root)
+    {
+        var byPath = new Dictionary<string, Variant>(StringComparer.Ordinal);
         foreach (string path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             if (path.EndsWith(".br", StringComparison.Ordinal) || path.EndsWith(".gz", StringComparison.Ordinal))
@@ -34,11 +53,10 @@ internal sealed class Precompressed
             byte[]? gz = File.Exists(path + ".gz") ? Bake(File.ReadAllBytes(path + ".gz"), contentType, "gzip") : null;
             if (br != null || gz != null)
             {
-                _byPath[url] = new Variant(br, gz);
+                byPath[url] = new Variant(br, gz);
             }
         }
-        _lookup = _byPath.GetAlternateLookup<ReadOnlySpan<char>>();
-        Count = _byPath.Count;
+        return new Snapshot { ByPath = byPath, Lookup = byPath.GetAlternateLookup<ReadOnlySpan<char>>() };
     }
 
     /// <summary>Best accepted precompressed response for the URL (br &gt; gzip), or null to use identity.</summary>
@@ -53,7 +71,7 @@ internal sealed class Precompressed
         {
             return null;
         }
-        if (!_lookup.TryGetValue(chars[..n], out Variant v))
+        if (!Volatile.Read(ref _snap).Lookup.TryGetValue(chars[..n], out Variant v))
         {
             return null;
         }
