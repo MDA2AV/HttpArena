@@ -104,11 +104,23 @@ internal static class ReactorDelay
     // it is the only one of the three that neither syscalls per request nor leaves the
     // reactor asleep past a deadline. With ~13 waits coming due together that is one
     // arming per 13 requests instead of 13 armings.
+    // IOXIDE_DELAY_MODE=native: IORING_OP_TIMEOUT. The deadline rides in the SQE and
+    // is submitted with the batch the reactor was sending anyway, so a wait wakes the
+    // reactor on its own account like the per-request timerfd does, but without the
+    // timerfd_settime that made that mode cost more CPU than it returned.
+    //
+    // That is the quadrant the other two miss. Measured on 16 cores: the per-request
+    // timerfd filled the box, 3192% of 3200%, and delivered less for it - 1,211,556 at
+    // 26.3us a request. The per-reactor timer costs 20.0us, against tokio's 18.3us, but
+    // wakes in bursts and left 2678% used of 3200% available. Neither can have both.
+    private static readonly bool UseNativeTimeout =
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") is not ("ring" or "queue" or "tick");
+
     private static readonly bool UseQueueTimer =
         Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "queue";
 
     private static readonly bool UseRingTimer =
-        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") is not ("queue" or "tick");
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "ring";
 
     // Touched only by the reactor thread that owns it: the handler parks a
     // request from this thread, and the drain runs on this thread too.
@@ -130,6 +142,7 @@ internal static class ReactorDelay
 
         // The ring holds the deadline itself: no tick, no drain, no second
         // thread. Everything below this line is the fallback for when it is off.
+        if (UseNativeTimeout) return source.WaitOnRingTimeout(reactor, ms);
         if (UseQueueTimer) return ReactorTimer.Park(reactor, source, ms);
         if (UseRingTimer) return source.WaitOnRing(reactor, ms);
 
@@ -287,6 +300,23 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
     private IntPtr _buf;      // the 8-byte expiration count the read returns
     private Reactor? _reactor;
     private long _deadline;   // when this wait is actually allowed to end
+    private bool _viaTimeoutOp;
+
+    /// <summary>
+    /// Parks on IORING_OP_TIMEOUT: the kernel holds the deadline on the ring, so there
+    /// is no timerfd to create, arm or read and no syscall beyond the ring enter this
+    /// reactor was making regardless.
+    /// </summary>
+    public ValueTask WaitOnRingTimeout(Reactor reactor, int ms)
+    {
+        _reactor = reactor;
+        _viaTimeoutOp = true;
+        _deadline = Stopwatch.GetTimestamp() + (long)(ms * (Stopwatch.Frequency / 1000.0));
+
+        short token = _core.Version;
+        reactor.SubmitTimeout((long)ms * 1_000_000L, this);
+        return new ValueTask(this, token);
+    }
 
     /// <summary>Arms the timer and parks on it through the reactor's ring.</summary>
     public unsafe ValueTask WaitOnRing(Reactor reactor, int ms)
@@ -311,6 +341,7 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
         }
 
         _reactor = reactor;
+        _viaTimeoutOp = false;
         _deadline = Stopwatch.GetTimestamp() + (long)(ms * (Stopwatch.Frequency / 1000.0));
 
         short token = _core.Version;
@@ -339,7 +370,17 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
         long now = Stopwatch.GetTimestamp();
         if (now < _deadline)
         {
-            _reactor!.SubmitRead(_fd, _buf, 8, 0, this);
+            // IORING_OP_TIMEOUT reports normal expiry as -ETIME, so the result is not
+            // what decides this either way; the deadline is.
+            if (_viaTimeoutOp)
+            {
+                long remainingNs = (long)((_deadline - now) / (Stopwatch.Frequency / 1_000_000_000.0));
+                _reactor!.SubmitTimeout(remainingNs < 1 ? 1 : remainingNs, this);
+            }
+            else
+            {
+                _reactor!.SubmitRead(_fd, _buf, 8, 0, this);
+            }
             return;
         }
 
