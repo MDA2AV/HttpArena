@@ -105,10 +105,10 @@ internal static class ReactorDelay
     // reactor asleep past a deadline. With ~13 waits coming due together that is one
     // arming per 13 requests instead of 13 armings.
     private static readonly bool UseQueueTimer =
-        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") is not ("ring" or "tick");
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "queue";
 
     private static readonly bool UseRingTimer =
-        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") != "tick";
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") is not ("queue" or "tick");
 
     // Touched only by the reactor thread that owns it: the handler parks a
     // request from this thread, and the drain runs on this thread too.
