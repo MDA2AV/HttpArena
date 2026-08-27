@@ -98,6 +98,15 @@ internal static class ReactorDelay
     // changes again.
     //
     // IOXIDE_DELAY_MODE=tick selects the other path.
+    // IOXIDE_DELAY_MODE=queue: one timerfd for the whole reactor rather than one per
+    // request, armed to the earliest deadline it is holding. This is how Node and Bun
+    // do it - the deadline goes into the wait the event loop was making anyway - and
+    // it is the only one of the three that neither syscalls per request nor leaves the
+    // reactor asleep past a deadline. With ~13 waits coming due together that is one
+    // arming per 13 requests instead of 13 armings.
+    private static readonly bool UseQueueTimer =
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") is not ("ring" or "tick");
+
     private static readonly bool UseRingTimer =
         Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") != "tick";
 
@@ -121,6 +130,7 @@ internal static class ReactorDelay
 
         // The ring holds the deadline itself: no tick, no drain, no second
         // thread. Everything below this line is the fallback for when it is off.
+        if (UseQueueTimer) return ReactorTimer.Park(reactor, source, ms);
         if (UseRingTimer) return source.WaitOnRing(reactor, ms);
 
         // Registering a reactor is permanent and per thread, so it belongs on the
@@ -326,7 +336,8 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
     /// </summary>
     public void Complete(int result)
     {
-        if (Stopwatch.GetTimestamp() < _deadline)
+        long now = Stopwatch.GetTimestamp();
+        if (now < _deadline)
         {
             _reactor!.SubmitRead(_fd, _buf, 8, 0, this);
             return;
@@ -371,4 +382,130 @@ internal sealed class DelaySource : IValueTaskSource, IRingCompletion
 
     public void OnCompleted(Action<object?> continuation, object? state, short token, ValueTaskSourceOnCompletedFlags flags)
         => _core.OnCompleted(continuation, state, token, flags);
+}
+
+/// <summary>
+/// One timerfd per reactor, armed to the earliest deadline that reactor is holding.
+///
+/// The per-request timerfd costs a settime, an SQE and a CQE every time anyone waits.
+/// The tick costs nothing per request but only completes a timer when something else
+/// happens to wake the reactor, which is what left it idle with deadlines already
+/// passed. This is the third option and the one an event loop normally takes: keep the
+/// deadlines in a queue, and hold a single timer set to the front of it.
+///
+/// Everything here is thread-static, so a reactor touches only its own queue and its
+/// own timer and nothing is shared between them.
+/// </summary>
+internal static class ReactorTimer
+{
+    private const int ClockMonotonic = 1;
+    private const int TfdNonblock = 0x800;
+    private const int TfdCloexec = 0x80000;
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern int timerfd_create(int clockid, int flags);
+
+    [DllImport("libc", SetLastError = true)]
+    private static extern unsafe int timerfd_settime(int fd, int flags, long* newValue, long* oldValue);
+
+    [ThreadStatic] private static PriorityQueue<DelaySource, long>? _queue;
+    [ThreadStatic] private static int _fd;
+    [ThreadStatic] private static IntPtr _buf;
+    [ThreadStatic] private static long _armedFor;      // the deadline the timerfd currently holds
+    [ThreadStatic] private static bool _readOutstanding;
+    [ThreadStatic] private static Completion? _completion;
+
+    /// <summary>Queues the wait and makes sure the reactor's timer covers it.</summary>
+    public static ValueTask Park(Reactor reactor, DelaySource source, int ms)
+    {
+        PriorityQueue<DelaySource, long>? q = _queue;
+        if (q is null)
+        {
+            q = _queue = new PriorityQueue<DelaySource, long>();
+            _fd = timerfd_create(ClockMonotonic, TfdNonblock | TfdCloexec);
+            if (_fd < 0) throw new InvalidOperationException($"timerfd_create failed, errno {Marshal.GetLastPInvokeError()}");
+            _buf = Marshal.AllocHGlobal(8);
+            _completion = new Completion { Owner = reactor };
+        }
+        _completion!.Owner = reactor;
+
+        long deadline = Stopwatch.GetTimestamp() + (long)(ms * (Stopwatch.Frequency / 1000.0));
+        ValueTask wait = source.Wait();
+        q.Enqueue(source, deadline);
+
+        // Only re-arm when this wait is due before whatever the timer already holds.
+        // Every wait that is not the new earliest costs nothing at all.
+        if (!_readOutstanding || deadline < _armedFor)
+        {
+            Arm(reactor, deadline);
+        }
+        return wait;
+    }
+
+    private static unsafe void Arm(Reactor reactor, long deadline)
+    {
+        long remaining = deadline - Stopwatch.GetTimestamp();
+        // A zero itimerspec disarms the timer rather than firing it, so a deadline
+        // already in the past has to become the smallest possible positive interval.
+        if (remaining < 1) remaining = 1;
+        double perMs = Stopwatch.Frequency / 1000.0;
+        long totalNs = (long)(remaining / perMs * 1_000_000.0);
+
+        long* spec = stackalloc long[4];
+        spec[0] = 0;
+        spec[1] = 0;
+        spec[2] = totalNs / 1_000_000_000L;
+        spec[3] = totalNs % 1_000_000_000L;
+        if (spec[2] == 0 && spec[3] == 0) spec[3] = 1;
+
+        timerfd_settime(_fd, 0, spec, null);
+        _armedFor = deadline;
+
+        if (!_readOutstanding)
+        {
+            _readOutstanding = true;
+            reactor.SubmitRead(_fd, _buf, 8, 0, _completion!);
+        }
+    }
+
+    /// <summary>The timer fired: complete everything due and re-arm to the next one.</summary>
+    private static void OnFired(Reactor reactor)
+    {
+        _readOutstanding = false;
+        PriorityQueue<DelaySource, long>? q = _queue;
+        if (q is null) return;
+
+        long now = Stopwatch.GetTimestamp();
+        while (q.TryPeek(out _, out long deadline) && deadline <= now)
+        {
+            q.Dequeue().Fire();
+        }
+
+        // Whatever the completions just queued is in here too, so the front of the
+        // queue after draining is the next deadline this reactor has to cover.
+        if (q.TryPeek(out _, out long next))
+        {
+            Arm(reactor, next);
+        }
+        else
+        {
+            _armedFor = 0;
+        }
+    }
+
+    /// <summary>
+    /// Carries the reactor so the completion can re-arm. One per reactor thread, made
+    /// once and reused, so the timer costs no allocation either.
+    /// </summary>
+    private sealed class Completion : IRingCompletion
+    {
+        public Reactor? Owner;
+        public void Complete(int result) => OnFired(Owner!);
+    }
+
+    /// <summary>Remembers which reactor this thread belongs to, for the re-arm.</summary>
+    public static void Bind(Reactor reactor)
+    {
+        if (_completion is not null) _completion.Owner = reactor;
+    }
 }
