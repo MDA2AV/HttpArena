@@ -101,11 +101,7 @@ class App < Sinatra::Base
   end
 
   post '/upload' do
-    size = 0
-    buf = request.body
-    while (chunk = buf.read(65536))
-      size += chunk.bytesize
-    end
+    size = request.body.size
     render_plain size.to_s
   end
 
