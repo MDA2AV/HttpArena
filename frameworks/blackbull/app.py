@@ -1,30 +1,8 @@
-"""BlackBull entrypoint for HttpArena benchmark profiles.
+"""BlackBull entrypoint for the HttpArena benchmark profiles.
 
-Implements the endpoint contract documented at
-https://www.http-arena.com/docs/add-framework/ for the H1 + WebSocket
-profiles BlackBull supports today:
-
-  GET  /pipeline                              → text/plain "ok"
-  GET  /baseline11?<int=int>&…                → text/plain sum of query ints
-  POST /baseline11?<int=int>&…  body=<int>    → text/plain sum
-  GET  /json/{count}?m=<float>                → JSON {items, count}
-  GET  /json-comp/{count}?m=<float>           → JSON, may be gzipped
-  POST /upload          body                  → text/plain byte count
-  GET  /async-db?min&max&limit                → JSON {items, count}
-  GET  /ws (Upgrade)                          → echoes frames
-
-Dataset is read from $DATASET_PATH (default /data/dataset.json, the
-read-only mount HttpArena's harness provides).
-
-Profiles intentionally NOT implemented:
-  - crud, *-grpc      (not in this entry's subscribed set)
-  - *-h3              (no HTTP/3 transport)
-  - production-stack / gateway / fortunes
-
-The container starts four BlackBull processes via ``launcher.py``:
-cleartext on :8080, h2c on :8082, TLS HTTP/1.1 on :8081, TLS HTTP/2
-on :8443.  Cleartext also serves h2c via prior-knowledge: BlackBull
-negotiates HTTP/2 on first preface bytes.
+Serves the H1 + WebSocket profiles; crud, *-grpc and *-h3 are not subscribed.
+``launcher.py`` starts one process per listener: cleartext :8080 (h2c by
+prior knowledge), h2c :8082, TLS HTTP/1.1 :8081, TLS HTTP/2 :8443.
 """
 import argparse
 import json
@@ -35,17 +13,14 @@ from urllib.parse import parse_qs
 
 from blackbull.utils import Scheme
 
-# Ensure the BlackBull source tree is importable when the Docker image
-# vendors it at /src/BlackBull/.  Local runs use `pip install -e .` so
-# this is a no-op then.
+# The image vendors the source at /src/BlackBull; a no-op for local runs.
 _repo_root = os.environ.get('BLACKBULL_SRC', '/src/BlackBull')
 if os.path.isdir(_repo_root) and _repo_root not in sys.path:
     sys.path.insert(0, _repo_root)
 
 from blackbull import BlackBull, Connection, Depends, JSONResponse, Response
 
-# import below: versions old enough to predate it still serve every other
-# profile, they just don't offer the native-channel endpoint.
+# Older versions serve every other profile; only /ws falls back.
 try:
     from blackbull.websocket import WebSocket
 except ImportError:                                   # pragma: no cover
@@ -86,14 +61,8 @@ async def pipeline():
 
 
 async def _baseline_handler(conn: Connection):
-    """Shared body for /baseline11 (H/1.1) and /baseline2 (H/2).
-
-    HttpArena uses path-suffix to distinguish the two profiles, but
-    the semantics are identical: sum integer query params, add posted
-    body if integer, return as text/plain.
-
-    Uses ``Connection`` instead of the raw ASGI triplet.
-    """
+    """Shared by /baseline11 and /baseline2: sum the integer query params,
+    add the body if it is an integer, return text/plain."""
     total = 0
     for vals in _qs(conn).values():
         for v in vals:
@@ -156,11 +125,8 @@ async def json_comp_endpoint(count: int, conn: Connection):
 
 @app.route(path='/upload', methods=[HTTPMethod.POST])
 async def upload_endpoint(conn: Connection):
-    # Stream the body with ``Connection.stream()``.  The profile only
-    # needs the byte count, so we never materialize the (up to 20 MB) payload.
-    # ``conn.body()`` would ``b''.join`` the whole upload (~4-12x the CPU and a
-    # multiple of the throughput under load); streaming keeps a one-chunk working
-    # set, matching the HttpArena "small read buffers" fast path.
+    # Only the byte count is needed, so the (up to 20 MB) payload is never
+    # materialized; ``conn.body()`` would join the whole upload.
     size = 0
     async for chunk in conn.stream():
         size += len(chunk)
@@ -209,7 +175,7 @@ def _int_qs(conn: Connection, name, default):
 
 
 @app.route(path='/async-db', methods=[HTTPMethod.GET])
-async def async_db_endpoint(req: Connection, db_conn=Depends(db.get_db_conn)):
+async def async_db_endpoint(req: Connection, db_conn=Depends(db.lease_connection)):
     min_price = _int_qs(req, 'min', 10)
     max_price = _int_qs(req, 'max', 50)
     limit = max(1, min(_int_qs(req, 'limit', 50), 50))
@@ -217,7 +183,6 @@ async def async_db_endpoint(req: Connection, db_conn=Depends(db.get_db_conn)):
     return JSONResponse({'items': items, 'count': len(items)})
 
 
-# Entry point, invoked by launcher.py once per listener port.
 
 def _parse_args():
     p = argparse.ArgumentParser(description='BlackBull on HttpArena')
@@ -231,20 +196,8 @@ def _parse_args():
 if __name__ == '__main__':
     args = _parse_args()
     os.environ.setdefault('BB_ACCESS_LOG', '0')
-    # Access logging goes through BlackBull's PRODUCTION async path, not a
-    # synchronous FileHandler.  When BB_ACCESS_LOG=1 the framework's per-worker
-    # setup_async_logging (worker.py, post-fork) installs the deferred-format
-    # QueueHandler on the 'blackbull' logger and a listener thread that writes
-    # to BB_LOG_FILE (injected by install_docker_shim.sh → /results/…, on the
-    # mounted volume).  Batching (O2) composes via BB_LOG_BATCH_SIZE.  So the
-    # event loop only does a queue put per request, exactly what ships, and
-    # the bench measures that, not format()+write()+flush() on the loop.
-    #
-    # The one thing the framework does not set is the access logger LEVEL, so
-    # do it here (pre-fork; inherited by every worker), because otherwise the default
-    # WARNING root level would drop the INFO access records before they enqueue.
-    # The legacy logging_access.ini (synchronous FileHandler) is intentionally
-    # no longer loaded.
+    # BB_ACCESS_LOG=1 wires the async queue handler per worker, but not the
+    # level; without this the default WARNING drops the INFO access records.
     if os.environ.get('BB_ACCESS_LOG', '0') not in ('0', '', 'false', 'False'):
         import logging as _logging
         _logging.getLogger('blackbull.access').setLevel(_logging.INFO)
