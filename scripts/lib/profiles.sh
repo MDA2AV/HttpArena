@@ -40,7 +40,7 @@ declare -A PROFILES=(
     # localhost:8080 cannot be established at all — the whole 16-bit port space
     # is smaller than that. 64000 fits with ~500 ports to spare; if the ramp
     # ever shows up as connect errors, 61440 is the next stop down.
-    [async]="1|0|0-31,64-95|64000|async"
+    [async]="1|0|0-31,64-95|32000|async"
     # Latency-1M: the offered rate is pinned at 1M req/s (see ZRK_FIXED_RATE
     # in tools/zrk.sh) and the measurement is what the server spent to serve
     # it, read exactly out of the container's cgroup rather than sampled.
