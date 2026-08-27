@@ -5,7 +5,6 @@ using GenHTTP.Modules.IO;
 using GenHTTP.Modules.Files;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
-using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
@@ -24,10 +23,10 @@ public static class Project
         var app = Layout.Create()
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
-                        .AddService<Baseline>("baseline2")
                         .AddService<Upload>("upload")
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
+                        .AddService<AsyncDelay>("delay")
                         .Add("crud", crud)
                         .AddStaticFiles()
                         .AddWebsocket();
