@@ -1,6 +1,26 @@
 {
   "framework": "ioxide",
   "results": {
+    "async-32000": {
+      "framework": "ioxide",
+      "language": "C#",
+      "rps": 2336243,
+      "avg_latency": "13.57ms",
+      "p99_latency": "20.80ms",
+      "cpu": "5988.1%",
+      "memory": "1.3GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "147.02MB/s",
+      "input_bw": "106.94MB/s",
+      "reconnects": 0,
+      "status_2xx": 23362435,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "ioxide",
       "language": "C#",

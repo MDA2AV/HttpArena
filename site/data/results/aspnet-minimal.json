@@ -1,6 +1,26 @@
 {
   "framework": "aspnet-minimal",
   "results": {
+    "async-32000": {
+      "framework": "aspnet-minimal",
+      "language": "C#",
+      "rps": 898863,
+      "avg_latency": "28.21ms",
+      "p99_latency": "56.80ms",
+      "cpu": "4649.8%",
+      "memory": "1.8GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "137.99MB/s",
+      "input_bw": "41.15MB/s",
+      "reconnects": 0,
+      "status_2xx": 8988639,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "aspnet-minimal",
       "language": "C#",

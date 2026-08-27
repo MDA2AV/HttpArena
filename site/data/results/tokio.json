@@ -1,6 +1,26 @@
 {
   "framework": "tokio",
   "results": {
+    "async-32000": {
+      "framework": "tokio",
+      "language": "Rust",
+      "rps": 2356577,
+      "avg_latency": "13.48ms",
+      "p99_latency": "16.40ms",
+      "cpu": "4262.9%",
+      "memory": "1.2GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "148.31MB/s",
+      "input_bw": "107.88MB/s",
+      "reconnects": 0,
+      "status_2xx": 23565776,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "tokio",
       "language": "Rust",

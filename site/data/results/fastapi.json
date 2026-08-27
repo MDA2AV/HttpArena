@@ -1,6 +1,26 @@
 {
   "framework": "fastapi",
   "results": {
+    "async-32000": {
+      "framework": "fastapi",
+      "language": "Python",
+      "rps": 190420,
+      "avg_latency": "160.33ms",
+      "p99_latency": "284.60ms",
+      "cpu": "6138.4%",
+      "memory": "6.0GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "24.51MB/s",
+      "input_bw": "8.72MB/s",
+      "reconnects": 0,
+      "status_2xx": 1904201,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "fastapi",
       "language": "Python",

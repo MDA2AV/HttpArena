@@ -1,6 +1,26 @@
 {
   "framework": "fulmine",
   "results": {
+    "async-32000": {
+      "framework": "fulmine",
+      "language": "JS",
+      "rps": 2116568,
+      "avg_latency": "14.98ms",
+      "p99_latency": "17.60ms",
+      "cpu": "6401.1%",
+      "memory": "5.8GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "335.02MB/s",
+      "input_bw": "96.89MB/s",
+      "reconnects": 0,
+      "status_2xx": 21165682,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "fulmine",
       "language": "JS",
