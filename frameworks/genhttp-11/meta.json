@@ -25,7 +25,7 @@
     "static-tls",
     "upload",
     "async-db",
-    "async-delay",
+    "async",
     "crud",
     "echo-ws",
     "echo-ws-pipeline",
