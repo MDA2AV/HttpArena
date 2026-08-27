@@ -85,7 +85,7 @@ internal static class ReactorDelay
     // So it buys precision and pays in throughput. Worth revisiting if
     // IORING_OP_TIMEOUT lands, which removes the syscall but not the SQE/CQE.
     private static readonly bool UseRingTimer =
-        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "ring";
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") != "tick";
 
     // Touched only by the reactor thread that owns it: the handler parks a
     // request from this thread, and the drain runs on this thread too.
