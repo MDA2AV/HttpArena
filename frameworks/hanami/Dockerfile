@@ -1,7 +1,7 @@
 FROM ruby:4.0-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libjemalloc2 && \
+    apt-get install -y --no-install-recommends build-essential libssl-dev libjemalloc2 && \
     rm -rf /var/lib/apt/lists/*
 
 # Use Jemalloc
@@ -17,11 +17,12 @@ ENV MAX_IO_THREADS=10
 
 WORKDIR /app
 
-COPY Gemfile .
+COPY Gemfile* .
+RUN bundle config set deployment 'true'
 RUN bundle install --jobs=$(nproc)
 
 COPY . .
 
-EXPOSE 8080
+EXPOSE 8080 8081
 
 CMD ["bundle", "exec", "puma", "-C", "puma.rb"]
