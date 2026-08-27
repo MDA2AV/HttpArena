@@ -72,20 +72,34 @@ internal static class ReactorDelay
     // ioxide does not expose (MDA2AV/ioxide#212): io_uring arms a poll
     // internally rather than handing the read to a worker thread.
     //
-    // It is off by default because it measured worse, and the reason is
-    // instructive. A socket read is I/O the connection has to do regardless, so
-    // the ring is free for it. A timer is not: this costs a timerfd_settime
-    // syscall plus an SQE and a CQE per request, about 1.5M syscalls a second at
-    // this load, where the tick completes ~13 timers per drain and makes no
-    // syscall at all. Over four interleaved repetitions at 64,000 connections:
+    // It is the default because it measured better on the hardware the profile is
+    // scored on, and the reason it looked worse before is worth keeping.
     //
-    //   ring  1.50M rps  2007% cpu  p99 104.2ms   overshoot 0.18ms
-    //   tick  1.58M rps  1765% cpu  p99  68.4ms   overshoot 0.25-0.82ms
+    // A socket read is I/O the connection has to do regardless, so the ring is
+    // free for it. A timer is not: this costs a timerfd_settime syscall plus an
+    // SQE and a CQE per request. That is real CPU, and on a box with no CPU to
+    // spare it can only come out of throughput. The 32-reactor box it was first
+    // measured on sat at 0.8% idle with the load generator on it, so the extra
+    // cost showed up as a loss and the tick won there:
     //
-    // So it buys precision and pays in throughput. Worth revisiting if
-    // IORING_OP_TIMEOUT lands, which removes the syscall but not the SQE/CQE.
+    //   ring  1.50M rps  2007% cpu       tick  1.58M rps  1765% cpu
+    //
+    // The bench box has 6400% available and the tick was using 3435% of it, so
+    // there the same trade buys something instead. At 16,000 connections and 5ms:
+    //
+    //   tick  1,842,424 rps  3435% cpu
+    //   ring  2,462,698 rps  5831% cpu   avg 6.48ms  p99 9.91ms  p99.9 16.50ms
+    //
+    // 34% more throughput for 70% more CPU, and 1.48ms of overhead on a 5ms wait.
+    // Handing each deadline to the kernel keeps the work flowing continuously
+    // where the tick completes timers only when a drain runs, which is what was
+    // leaving the reactors idle. The trade is only available where there is spare
+    // CPU to spend, so this is worth re-reading if the profile or the hardware
+    // changes again.
+    //
+    // IOXIDE_DELAY_MODE=tick selects the other path.
     private static readonly bool UseRingTimer =
-        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") == "ring";
+        Environment.GetEnvironmentVariable("IOXIDE_DELAY_MODE") != "tick";
 
     // Touched only by the reactor thread that owns it: the handler parks a
     // request from this thread, and the drain runs on this thread too.
