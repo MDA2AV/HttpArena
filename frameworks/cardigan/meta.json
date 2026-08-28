@@ -1,5 +1,5 @@
 {
-  "display_name": "Cardigan",
+  "display_name": "cardigan",
   "language": "Java",
   "type": "engine",
   "engine": "io_uring",
@@ -7,7 +7,8 @@
   "repo": "https://github.com/phjeltman/cardigan",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline",
+    "latency-1m",
     "pipelined",
     "limited-conn"
   ],
