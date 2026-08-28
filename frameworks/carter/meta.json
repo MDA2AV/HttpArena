@@ -1,0 +1,25 @@
+{
+  "display_name": "carter",
+  "language": "C#",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "kestrel",
+  "description": "Carter 10 on ASP.NET Core and Kestrel, default configuration. Routes declared in a Carter module and mapped onto the endpoint router, JSON through System.Text.Json, gzip and brotli through ResponseCompression at level 1, json-tls on 8081.",
+  "repo": "https://github.com/CarterCommunity/Carter",
+  "enabled": true,
+  "tests": [
+    "baseline", "latency-1m",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload"
+  ],
+  "maintainers": []
+}

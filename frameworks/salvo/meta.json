@@ -1,0 +1,25 @@
+{
+  "display_name": "salvo",
+  "language": "Rust",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "salvo",
+  "description": "Salvo 0.96 on tokio and hyper, default configuration. Routing through the Router tree, JSON through salvo's Json responder, gzip and brotli through the built-in Compression hoop at level 1, json-tls on 8081 through rustls.",
+  "repo": "https://github.com/salvo-rs/salvo",
+  "enabled": true,
+  "tests": [
+    "baseline", "latency-1m",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload"
+  ],
+  "maintainers": []
+}

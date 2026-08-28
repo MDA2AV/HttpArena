@@ -1,0 +1,25 @@
+{
+  "display_name": "ntex",
+  "language": "Rust",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "ntex",
+  "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+  "repo": "https://github.com/ntex-rs/ntex",
+  "enabled": true,
+  "tests": [
+    "baseline", "latency-1m",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload"
+  ],
+  "maintainers": []
+}

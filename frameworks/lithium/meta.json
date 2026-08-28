@@ -1,0 +1,25 @@
+{
+  "display_name": "lithium",
+  "language": "C++",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
+  "engine": "lithium",
+  "description": "Lithium's header-only HTTP server on its epoll/fiber backend. Disabled: lithium's own JSON serializer writes booleans as 1/0 rather than true/false, which the json profile rejects, and its decoder cannot read a JSON boolean at all.",
+  "repo": "https://github.com/matt-42/lithium",
+  "enabled": false,
+  "tests": [
+    "baseline", "latency-1m",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "json-tls",
+    "upload"
+  ],
+  "maintainers": []
+}

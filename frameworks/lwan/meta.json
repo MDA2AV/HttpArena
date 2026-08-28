@@ -1,0 +1,24 @@
+{
+  "display_name": "lwan",
+  "language": "C",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
+  "engine": "lwan",
+  "description": "lwan's own coroutine HTTP server. Disabled: lwan does not implement chunked request bodies, which the baseline and upload profiles both send, and its POST body cap stays at the default regardless of max_post_data_size.",
+  "repo": "https://github.com/lpereira/lwan",
+  "enabled": false,
+  "tests": [
+    "baseline", "latency-1m",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload"
+  ],
+  "maintainers": []
+}
