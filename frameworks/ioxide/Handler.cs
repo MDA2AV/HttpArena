@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 
 using ioxide;
+using ioxide.timer;
 using ioxide.file;
 using ioxide.pg;
 using ioxide.tls;
