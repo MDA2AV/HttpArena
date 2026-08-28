@@ -323,10 +323,17 @@ async fn crud_list(state: &AppState, msg: &CanonicalMessage) -> CanonicalMessage
     };
     let page = msg.query_int("page").unwrap_or(1).max(1);
     let limit = msg.query_int("limit").unwrap_or(10).clamp(1, 50);
+    // `page` is unbounded client input: the product overflows before the cast.
+    let Some(offset) = (page - 1)
+        .checked_mul(limit)
+        .and_then(|o| i32::try_from(o).ok())
+    else {
+        return status(400, "Bad Request");
+    };
     let rows = match sqlx::query(SQL)
         .bind(msg.query_param("category").unwrap_or("electronics"))
         .bind(limit as i32)
-        .bind(((page - 1) * limit) as i32)
+        .bind(offset)
         .fetch_all(pool)
         .await
     {

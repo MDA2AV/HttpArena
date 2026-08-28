@@ -9,7 +9,7 @@
 # `h2`. Pinned to a released `tag` so benchmarks are reproducible.
 [package]
 name = "httparena-mqbridge"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = false
 
@@ -21,7 +21,7 @@ path = "src/main.rs"
 # `rustls-ring` selects the ring crypto provider for the TLS (8443) listener;
 # `sqlx` pulls in the library's re-exported sqlx (`mq_bridge::sqlx`) for the
 # async-db and crud profiles, keeping one sqlx version in the graph.
-mq-bridge = { git = "https://github.com/marcomq/mq-bridge", tag = "v0.4.7", default-features = false, features = ["http", "rustls-ring", "sqlx"] }
+mq-bridge = { git = "https://github.com/marcomq/mq-bridge", tag = "v0.4.8", default-features = false, features = ["http", "rustls-ring", "sqlx"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

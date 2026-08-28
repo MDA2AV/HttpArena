@@ -1282,7 +1282,7 @@ dependencies = [
 
 [[package]]
 name = "httparena-mqbridge"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "askama",
@@ -1730,8 +1730,8 @@ dependencies = [
 
 [[package]]
 name = "mq-bridge"
-version = "0.4.7"
-source = "git+https://github.com/marcomq/mq-bridge?tag=v0.4.7#366ac4e5fe0ded589a00c7203045dab9c90d0391"
+version = "0.4.8"
+source = "git+https://github.com/marcomq/mq-bridge?tag=v0.4.8#9351bce6f6333b7eb6463c3b18d0ad955e722260"
 dependencies = [
  "anyhow",
  "arc-swap",
