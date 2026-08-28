@@ -78,21 +78,19 @@ internal static class Handler
             // read. A read-first loop would deadlock on the bundled-request case.
             while (true)
             {
-                // Timers due on this reactor, completed from the reactor itself.
-                // Cheap enough to sit in the loop unconditionally: a thread-static
-                // read and a peek when there is nothing pending.
-                ReactorDelay.DrainDue();
-
                 // /async-db parks the parser: run the query (inline on this reactor's
                 // ring via ioxide.pg), stream rows into Out, then resume the carry -
                 // pipelined requests behind it are served in order.
-                // The async profile's wait. Parked here rather than inside the
-                // parser so the reactor keeps serving every other connection it
-                // owns while this one is pending, which is the whole measurement.
+                // The async profile's wait, on ioxide.timer: the deadline goes to the
+                // kernel with the submission, so it completes on this reactor with the
+                // connection's state still warm and the reactor free for everything else
+                // it owns meanwhile, which is the whole measurement. One timer per
+                // connection, re-armed per request - a connection only ever waits once
+                // at a time, because the handler awaits before it reads again.
                 while (httpSession.PendingDelay)
                 {
                     httpSession.PendingDelay = false;
-                    await ReactorDelay.Delay(reactor, httpSession.PendingDelayMs, httpSession.DelayWait);
+                    await (httpSession.Timer ??= new RingTimer(reactor)).DelayAsync(httpSession.PendingDelayMs);
                     httpSession.CompleteDelay();
                     httpSession.ResumeFeed();
                 }
@@ -244,8 +242,6 @@ internal static class Handler
             // its own timeout.
             int fd = conn.ClientFd;
             if (fd >= 0) Shutdown(fd, ShutWr);
-            // The delay's timerfd is this connection's, so it goes with it.
-            httpSession.DelayWait.Dispose();
             conn.DecRef();
         }
     }

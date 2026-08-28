@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:11.0-preview AS build
 WORKDIR /source
-COPY ioxide-arena.csproj NuGet.config ./
-COPY localfeed/ ./localfeed/
+COPY ioxide-arena.csproj ./
 RUN dotnet restore
 COPY . .
 RUN dotnet publish -c Release --no-self-contained -o /app/out

@@ -67,8 +67,10 @@ internal sealed unsafe partial class HttpSession
     public bool PendingDelay;
     public int PendingDelayMs;
     private bool _delayClose;
-    // One per connection, reused for every delay it ever asks for.
-    public readonly DelaySource DelayWait = new();
+    // One per connection, reused for every delay it ever asks for. Built on first
+    // use rather than at construction, so a connection that never waits never makes
+    // one - which is every connection on every profile but this one.
+    public RingTimer? Timer;
 
     // /upload streams its body: bytes are counted as they arrive, never buffered whole.
     public long PendingUploadRemaining;
