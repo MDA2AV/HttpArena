@@ -23,7 +23,7 @@ Registered Route: [GET] /static/hero.webp -> HttpArenaStaticController.heroWebp
 Registered Route: [GET] /static/thumb1.webp -> HttpArenaStaticController.thumb1Webp
 Registered Route: [GET] /static/thumb2.webp -> HttpArenaStaticController.thumb2Webp
 Registered Route: [GET] /static/manifest.json -> HttpArenaStaticController.manifestJson
-Starting Cardigan Server on port 8443 with 64 io_uring event loops on CPUs [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95], transport=TLS/OpenSSL...
+Starting Cardigan Server on port 8443 with 64 io_uring event loops on CPUs [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95], transport=TLS/OpenSSL, fixed-files=async-alloc...
 Pinned cardigan-loop-0 to Linux CPU 0
 Pinned cardigan-loop-1 to Linux CPU 1
 Pinned cardigan-loop-2 to Linux CPU 2
@@ -88,69 +88,69 @@ Pinned cardigan-loop-92 to Linux CPU 92
 Pinned cardigan-loop-93 to Linux CPU 93
 Pinned cardigan-loop-94 to Linux CPU 94
 Pinned cardigan-loop-95 to Linux CPU 95
-Loop 11 listening on socket FD 151
-Loop 67 listening on socket FD 175
-Loop 79 listening on socket FD 145
-Loop 76 listening on socket FD 195
-Loop 24 listening on socket FD 192
-Loop 13 listening on socket FD 154
-Loop 16 listening on socket FD 190
-Loop 8 listening on socket FD 183
-Loop 22 listening on socket FD 180
-Loop 90 listening on socket FD 161
-Loop 72 listening on socket FD 159
-Loop 6 listening on socket FD 185
-Loop 85 listening on socket FD 163
-Loop 23 listening on socket FD 157
-Loop 80 listening on socket FD 189
-Loop 15 listening on socket FD 169
-Loop 26 listening on socket FD 150
-Loop 70 listening on socket FD 188
-Loop 20 listening on socket FD 194
-Loop 14 listening on socket FD 182
-Loop 91 listening on socket FD 197
-Loop 18 listening on socket FD 142
-Loop 30 listening on socket FD 173
-Loop 66 listening on socket FD 141
-Loop 12 listening on socket FD 170
-Loop 88 listening on socket FD 165
-Loop 19 listening on socket FD 187
-Loop 7 listening on socket FD 168
-Loop 0 listening on socket FD 176
-Loop 5 listening on socket FD 184
-Loop 10 listening on socket FD 135
-Loop 74 listening on socket FD 186
-Loop 29 listening on socket FD 174
-Loop 65 listening on socket FD 139
-Loop 93 listening on socket FD 152
-Loop 78 listening on socket FD 166
-Loop 89 listening on socket FD 160
-Loop 4 listening on socket FD 177
-Loop 77 listening on socket FD 147
-Loop 31 listening on socket FD 193
-Loop 87 listening on socket FD 156
-Loop 84 listening on socket FD 155
-Loop 64 listening on socket FD 140
-Loop 25 listening on socket FD 146
-Loop 28 listening on socket FD 181
-Loop 3 listening on socket FD 196
-Loop 82 listening on socket FD 164
-Loop 17 listening on socket FD 153
-Loop 94 listening on socket FD 138
-Loop 81 listening on socket FD 136
-Loop 2 listening on socket FD 162
-Loop 73 listening on socket FD 179
-Loop 9 listening on socket FD 137
-Loop 83 listening on socket FD 143
-Loop 75 listening on socket FD 172
-Loop 86 listening on socket FD 191
-Loop 21 listening on socket FD 158
-Loop 71 listening on socket FD 178
-Loop 68 listening on socket FD 134
-Loop 92 listening on socket FD 149
-Loop 69 listening on socket FD 171
-Loop 27 listening on socket FD 167
-Loop 95 listening on socket FD 148
-Loop 1 listening on socket FD 144
+Loop 10 listening on socket FD 210
+Loop 22 listening on socket FD 218
+Loop 72 listening on socket FD 232
+Loop 83 listening on socket FD 213
+Loop 26 listening on socket FD 171
+Loop 94 listening on socket FD 222
+Loop 31 listening on socket FD 175
+Loop 11 listening on socket FD 180
+Loop 14 listening on socket FD 198
+Loop 68 listening on socket FD 169
+Loop 75 listening on socket FD 200
+Loop 30 listening on socket FD 197
+Loop 27 listening on socket FD 190
+Loop 76 listening on socket FD 205
+Loop 77 listening on socket FD 185
+Loop 66 listening on socket FD 189
+Loop 12 listening on socket FD 194
+Loop 64 listening on socket FD 186
+Loop 0 listening on socket FD 203
+Loop 87 listening on socket FD 215
+Loop 16 listening on socket FD 214
+Loop 18 listening on socket FD 208
+Loop 69 listening on socket FD 174
+Loop 24 listening on socket FD 207
+Loop 65 listening on socket FD 184
+Loop 3 listening on socket FD 230
+Loop 1 listening on socket FD 193
+Loop 79 listening on socket FD 195
+Loop 67 listening on socket FD 176
+Loop 29 listening on socket FD 187
+Loop 93 listening on socket FD 219
+Loop 7 listening on socket FD 177
+Loop 71 listening on socket FD 179
+Loop 20 listening on socket FD 228
+Loop 84 listening on socket FD 224
+Loop 90 listening on socket FD 217
+Loop 73 listening on socket FD 173
+Loop 15 listening on socket FD 182
+Loop 91 listening on socket FD 220
+Loop 2 listening on socket FD 202
+Loop 5 listening on socket FD 191
+Loop 95 listening on socket FD 196
+Loop 8 listening on socket FD 192
+Loop 88 listening on socket FD 231
+Loop 21 listening on socket FD 183
+Loop 86 listening on socket FD 201
+Loop 4 listening on socket FD 221
+Loop 25 listening on socket FD 178
+Loop 80 listening on socket FD 216
+Loop 89 listening on socket FD 199
+Loop 28 listening on socket FD 188
+Loop 70 listening on socket FD 227
+Loop 85 listening on socket FD 209
+Loop 78 listening on socket FD 181
+Loop 17 listening on socket FD 212
+Loop 9 listening on socket FD 226
+Loop 19 listening on socket FD 229
+Loop 6 listening on socket FD 206
+Loop 74 listening on socket FD 170
+Loop 82 listening on socket FD 225
+Loop 23 listening on socket FD 204
+Loop 13 listening on socket FD 211
+Loop 92 listening on socket FD 223
+Loop 81 listening on socket FD 172
 Cardigan HttpArena mode h2 is listening on 8443
 TLS/OpenSSL negotiated h2; kTLS TX=true, RX=true, direct RX=false

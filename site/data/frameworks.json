@@ -255,7 +255,7 @@
     "type": "infrastructure",
     "engine": "caddy"
   },
-  "Cardigan": {
+  "cardigan": {
     "dir": "cardigan",
     "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
     "repo": "https://github.com/phjeltman/cardigan",
