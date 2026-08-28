@@ -10,7 +10,7 @@
     "response": false
   },
   "engine": "http.jl",
-  "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware.",
+  "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware. json-tls on 8081 through Reseau's TLS listener, the transport HTTP.jl already ships.",
   "repo": "https://github.com/JuliaWeb/HTTP.jl",
   "enabled": true,
   "tests": [
@@ -19,6 +19,7 @@
     "limited-conn",
     "json",
     "json-comp",
+    "json-tls",
     "upload"
   ],
   "maintainers": []

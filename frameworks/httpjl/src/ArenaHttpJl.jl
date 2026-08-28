@@ -1,6 +1,10 @@
 module ArenaHttpJl
 
 using HTTP, JSON3, StructTypes, CodecZlib, TranscodingStreams
+# Reseau is HTTP.jl's own transport, so its TLS is the standard stack here rather
+# than a second one bolted on. Imported as modules, not `using`, to keep names
+# like `listen`/`accept`/`Conn` out of this namespace.
+import Reseau: TCP, TLS
 using PrecompileTools: @setup_workload, @compile_workload
 
 # ── dataset ─────────────────────────────────────────────────────────────────
@@ -278,13 +282,48 @@ end
 
 # ── server ──────────────────────────────────────────────────────────────────
 
+# json-tls listens here; 8080 stays plaintext and 8443 belongs to h2/h3.
+const TLS_PORT = 8081
+const TLS_CERT = "/certs/server.crt"
+const TLS_KEY = "/certs/server.key"
+
+"""
+Start the json-tls listener, or return `nothing` when /certs was not mounted.
+
+Missing certificates are not fatal on purpose: `validate.sh` mounts the
+directory only for entries subscribed to a TLS test, so the plaintext profiles
+have to come up without it.
+
+`listen!` rather than `listen`, so this returns and the plaintext listener can
+take the main task. Both accept loops feed the same `:interactive` pool, so the
+TLS port is served by every thread and not by whichever one bound it.
+"""
+function listen_tls!(app::App, port::Int = TLS_PORT)
+    (isfile(TLS_CERT) && isfile(TLS_KEY)) || return nothing
+    config = TLS.Config(
+        cert_file = TLS_CERT,
+        key_file = TLS_KEY,
+        verify_peer = false,
+        # HTTP/1.1 only. The profile is h1-over-TLS and 8443 is where h2 lives,
+        # so an h2-capable client must never be offered the upgrade here.
+        alpn_protocols = ["http/1.1"],
+    )
+    listener = TLS.Listener(
+        TCP.listen("tcp", "0.0.0.0:$port"; backlog = 4096, reuseaddr = true),
+        config,
+    )
+    return HTTP.listen!(app, listener)
+end
+
 """
 HTTP.jl 2 runs every connection as a task on Julia's `:interactive` thread pool,
 so one process uses every core it is given. start.sh sizes that pool.
 """
 function main(port::Int = 8080)
     load_dataset!(get(ENV, "DATASET_PATH", "/data/dataset.json"))
-    return HTTP.listen(make_app(), "0.0.0.0", port; backlog = 4096)
+    app = make_app()
+    listen_tls!(app)
+    return HTTP.listen(app, "0.0.0.0", port; backlog = 4096)
 end
 
 # ── precompilation ──────────────────────────────────────────────────────────
