@@ -1745,6 +1745,13 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "tokio-websockets": {
+    "dir": "tokio-websockets",
+    "description": "High performance, strict, tokio-util based WebSockets implementation.",
+    "repo": "https://github.com/Gelbpunkt/tokio-websockets",
+    "type": "engine",
+    "engine": "tokio"
+  },
   "tokio-ws": {
     "dir": "tokio-ws",
     "description": "Hand-rolled WebSocket echo server on raw tokio \u2014 no WebSocket library. A current-thread runtime per core with SO_REUSEPORT sharding, a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and a manual frame parser/masking + echo write path.",
