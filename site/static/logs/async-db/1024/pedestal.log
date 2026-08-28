@@ -3,4 +3,7 @@
 [main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@6d3e1c6d{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@65a381ce{STARTED,min=32,inflate=-1}}
 [main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@6d3e1c6d{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@65a381ce{STARTED,min=32,inflate=-1}}
 [main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@175a0f81{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:8080}
-[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@515c6338{STARTING}[12.0.36,sto=0] @5475ms
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@515c6338{STARTING}[12.0.36,sto=0] @5469ms
+[] INFO com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+[] INFO com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@75714f47
+[] INFO com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
