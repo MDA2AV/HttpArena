@@ -1,0 +1,18 @@
+{
+  "display_name": "capra",
+  "language": "Clojure",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "Capra",
+  "description": "Experimental Ring adapter written entirely in Clojure, using Capra's default virtual-thread handler executor.",
+  "repo": "https://github.com/weavejester/capra",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "static"
+  ]
+}

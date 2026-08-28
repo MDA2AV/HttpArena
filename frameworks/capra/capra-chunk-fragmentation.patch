@@ -1,0 +1,11 @@
+diff --git a/src/capra/http.clj b/src/capra/http.clj
+--- a/src/capra/http.clj
++++ b/src/capra/http.clj
+@@ -434,6 +434,6 @@
+     (when-some [head (buf/read-line chunked-buffer StandardCharsets/US_ASCII)]
+       (let [start  (.position chunked-buffer)
+             length (Long/parseLong head 16)]
+-        (when (<= (+ length 2) (.remaining buffer))
++        (when (<= (+ length 2) (.remaining chunked-buffer))
+           (.position buffer (+ start length 2))
+           (doto chunked-buffer (.limit (+ start length))))))))
