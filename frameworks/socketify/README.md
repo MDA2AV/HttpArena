@@ -2,16 +2,25 @@
 
 socketify.py 0.0.31 on its uWebSockets bindings.
 
-> **Disabled.** uWebSockets' native HTTP parser rejects any request whose
+> **Disabled.** socketify's bundled `libsocketify` rejects any request whose
 > request line arrives split across TCP segments, answering
 > `HTTP Version Not Supported / This server does not support HTTP/1.0` instead
-> of parsing it. Splitting `GET /baseline11?a=13&b=42 HTTP/1.1\r\n` at every
-> byte offset, offsets 4-35 all fail — the whole request line through its CRLF
-> — while every split in the headers or body succeeds. That is in the bundled
-> C++ library, so it cannot be fixed from the Python entry, and it fails
-> `validate.sh` (30 passed, 10 failed) on the fragmentation checks alone. Every
-> other check, including json, json-comp, upload and json-tls, passes. Re-enable
-> if uWebSockets learns to buffer a partial request line.
+> of parsing it. Splitting at every byte offset, the failures are exactly the
+> request line through its CRLF, while every split in the headers or body
+> succeeds. `validate.sh`: 30 passed, 10 failed, all of them fragmentation —
+> json, json-comp, upload and json-tls all pass.
+>
+> **This is specific to socketify, not to uWebSockets.** The uWebSockets.js
+> entries here handle it correctly: `hyper-express` was checked against the same
+> byte-offset sweep and passed all 71 splits with zero failures. And it is not
+> this entry's code — a twelve-line socketify app whose only handler is
+> `lambda res, req: res.end("55")` fails the same way, at offsets 4-25 of a
+> 24-byte request line.
+>
+> Not fixable by upgrading: 0.0.31 is the newest release on PyPI, and installing
+> from the (actively maintained) git HEAD ships a byte-identical
+> `libsocketify_linux_amd64.so` — same md5. It needs a rebuilt native library
+> from upstream.
 
 ## Stack
 

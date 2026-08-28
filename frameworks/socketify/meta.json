@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "uwebsockets",
-  "description": "socketify.py 0.0.31 on its uWebSockets bindings, one process per core per port sharing the port through SO_REUSEPORT. Disabled: uWebSockets' native parser rejects a request whose request line is split across TCP segments, which fails the fragmentation suite.",
+  "description": "socketify.py 0.0.31 on its uWebSockets bindings, one process per core per port sharing the port through SO_REUSEPORT. Disabled: socketify's bundled libsocketify rejects a request whose request line is split across TCP segments, which fails the fragmentation suite. The uWebSockets.js entries here are unaffected.",
   "repo": "https://github.com/cirospaciari/socketify.py",
   "enabled": false,
   "tests": [
