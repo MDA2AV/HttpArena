@@ -1,10 +1,10 @@
-(ns httparena.ring.core-test
+(ns httparena.ring-jetty-adapter.core-test
   (:require
    [clojure.data.json :as json]
    [clojure.string :as str]
    [clojure.test :as test :refer [are deftest is]]
    [hikari-cp.core :as hikari]
-   [httparena.ring.core :as core]
+   [httparena.ring-jetty-adapter.core :as core]
    [next.jdbc :as jdbc]))
 
 (def dataset
@@ -163,6 +163,6 @@
                              :rating_count 9}]))))
 
 (defn -main [& _args]
-  (let [results (test/run-tests 'httparena.ring.core-test)]
+  (let [results (test/run-tests 'httparena.ring-jetty-adapter.core-test)]
     (when (pos? (+ (:fail results) (:error results)))
       (throw (ex-info "tests failed" results)))))

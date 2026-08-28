@@ -1,4 +1,4 @@
-(ns httparena.ring.core
+(ns httparena.ring-jetty-adapter.core
   (:gen-class)
   (:require
    [clojure.data.json :as json]
