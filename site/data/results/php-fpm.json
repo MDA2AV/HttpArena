@@ -201,6 +201,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "php-fpm",
+      "language": "PHP",
+      "rps": 221725,
+      "avg_latency": "18.38ms",
+      "p99_latency": "70.89ms",
+      "cpu": "6533.7%",
+      "memory": "3.9GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "785.25MB",
+      "reconnects": 0,
+      "status_2xx": 1130378,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "php-fpm",
       "language": "PHP",

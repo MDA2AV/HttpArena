@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "http4s",
+      "language": "Scala",
+      "rps": 207663,
+      "avg_latency": "3.39ms",
+      "p99_latency": "61.65ms",
+      "cpu": "6015.9%",
+      "memory": "11.3GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "723.40MB",
+      "reconnects": 0,
+      "status_2xx": 1058965,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "http4s",
       "language": "Scala",

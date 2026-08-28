@@ -141,6 +141,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "humming-bird",
+      "language": "Swift",
+      "rps": 80234,
+      "avg_latency": "28.21ms",
+      "p99_latency": "100.49ms",
+      "cpu": "6399.7%",
+      "memory": "327MiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "279.21MB",
+      "reconnects": 0,
+      "status_2xx": 409154,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "humming-bird",
       "language": "Swift",

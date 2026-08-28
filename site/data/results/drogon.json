@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "drogon",
+      "language": "C++",
+      "rps": 223522,
+      "avg_latency": "18.37ms",
+      "p99_latency": "215.13ms",
+      "cpu": "6369.2%",
+      "memory": "392MiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "781.55MB",
+      "reconnects": 0,
+      "status_2xx": 1139811,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "drogon",
       "language": "C++",

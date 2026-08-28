@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "warp",
+      "language": "Haskell",
+      "rps": 32008,
+      "avg_latency": "13.19ms",
+      "p99_latency": "406.28ms",
+      "cpu": "2531.6%",
+      "memory": "453MiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "112.09MB",
+      "reconnects": 0,
+      "status_2xx": 163179,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "warp",
       "language": "Haskell",

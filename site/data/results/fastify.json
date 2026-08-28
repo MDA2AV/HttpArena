@@ -141,6 +141,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "fastify",
+      "language": "JS",
+      "rps": 571431,
+      "avg_latency": "6.40ms",
+      "p99_latency": "31.69ms",
+      "cpu": "6431.0%",
+      "memory": "6.5GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "1.97GB",
+      "reconnects": 0,
+      "status_2xx": 2914857,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "fastify",
       "language": "JS",

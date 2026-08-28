@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "http4k",
+      "language": "Kotlin",
+      "rps": 173630,
+      "avg_latency": "64.19ms",
+      "p99_latency": "2.00s",
+      "cpu": "3331.1%",
+      "memory": "8.5GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "604.85MB",
+      "reconnects": 0,
+      "status_2xx": 885110,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "http4k",
       "language": "Kotlin",

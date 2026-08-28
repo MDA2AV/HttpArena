@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "lapis",
+      "language": "Lua",
+      "rps": 232196,
+      "avg_latency": "17.11ms",
+      "p99_latency": "40.86ms",
+      "cpu": "6474.6%",
+      "memory": "777MiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "819.17MB",
+      "reconnects": 0,
+      "status_2xx": 1184372,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "lapis",
       "language": "Lua",
