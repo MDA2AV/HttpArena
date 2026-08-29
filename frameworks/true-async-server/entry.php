@@ -56,9 +56,9 @@ $config = (new HttpServerConfig())
     ->addHttp2Listener('0.0.0.0', $h2cPort, false)
     ->setBacklog(2048)
     ->setMaxBodySize(32 * 1024 * 1024)
-    // Stream request bodies into per-request queue instead of buffering
-    // the whole Content-Length into req->body. Required for /upload to
-    // stay within RSS limits under concurrent 20 MiB POSTs (issue #26).
+    // Stream request bodies into a per-request queue instead of buffering
+    // the whole Content-Length into req->body. /echo collects the chunks it
+    // needs, so RSS stays bounded by the body rather than by the queue.
     ->setBodyStreamingEnabled(true)
     // Transparent gzip/brotli middleware — needed for the json-comp profile.
     // Drop both levels to 1 to match Swoole's http_compression_level=1 default

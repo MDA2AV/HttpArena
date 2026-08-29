@@ -85,7 +85,7 @@
     {:request-method :post :uri "/json/1" :params {}}
     {:request-method :post :uri "/async-db" :params {}}
     {:request-method :post :uri "/fortunes" :params {}}
-    {:request-method :get :uri "/upload" :params {}}
+    {:request-method :get :uri "/echo" :params {}}
     {:request-method :post :uri "/pipeline" :params {}}
     {:request-method :post :uri "/static/app.js" :params {}}))
 

@@ -380,7 +380,7 @@ object Main extends ZIOAppDefault:
       .port(8080)
       // gzip is the server's own response compression, Netty's compressor with its defaults
       .responseCompression()
-      // small bodies stay aggregated, /upload streams instead of buffering 20 MB
+      // small bodies stay aggregated; /echo collects so it can frame its response
       .hybridRequestStreaming(1024 * 100)
 
   // json-tls and static-tls on 8081, the same routes behind TLS. The harness only mounts

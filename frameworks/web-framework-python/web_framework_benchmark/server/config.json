@@ -18,7 +18,7 @@
       "app/Baseline11",
       "app/JsonExecutor",
       "app/Pipeline",
-      "app/Upload",
+      "app/Echo",
       "app/Ws"
     ],
     "HTTPS": {
