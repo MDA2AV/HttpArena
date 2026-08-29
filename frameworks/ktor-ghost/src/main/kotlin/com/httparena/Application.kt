@@ -1,27 +1,22 @@
 package com.httparena
 
+import com.ghost.serialization.Ghost
 import com.httparena.DbResponse.Companion.toResponse
 import io.ktor.http.*
 import io.ktor.http.content.*
-import com.ghost.serialization.Ghost
-import io.ktor.http.content.ByteArrayContent
-import io.ktor.server.request.receive
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.html.*
 import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.compression.*
-import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
-import io.netty.channel.ChannelOption
-import io.netty.channel.WriteBufferWaterMark
-import io.netty.handler.flush.FlushConsolidationHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -34,6 +29,8 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import kotlin.io.path.Path
+import kotlin.time.Duration.Companion.milliseconds
 
 fun main() {
     Ghost.prewarm()
@@ -243,7 +240,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
          * Static files
          * https://www.http-arena.com/docs/test-profiles/h1/isolated/static/
          */
-        staticFiles("/static", File("/data/static")) {
+        staticFiles("/static", dir = File("/data/static"), index = null) {
             preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP)
         }
 
@@ -301,6 +298,16 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                     }
                 }
             }
+        }
+
+        /**
+         * Async Delay benchmark.  Measures what a framework does with a request it cannot answer yet.
+         * https://www.http-arena.com/docs/test-profiles/h1/isolated/async/implementation/
+         */
+        get("/delay/{ms}") {
+            val delayParam = call.parameters["ms"] ?: "0"
+            delay(delayParam.toLong().milliseconds)
+            call.respond(TextContent(delayParam, ContentType.Text.Plain))
         }
 
     }
