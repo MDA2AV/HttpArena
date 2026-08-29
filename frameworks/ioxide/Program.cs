@@ -21,7 +21,7 @@ namespace IoxideArena;
 ///   GET      /json/{count}?m=N            -> application/json, total = price*quantity*N
 ///   GET      /static/{file}               -> asset read off the ring (ioxide.file)
 ///   GET      /delay/{ms}                  -> text/plain "{ms}", waited on the ring (ioxide.timer)
-///   POST     /upload                      -> text/plain, body byte count
+///   POST     /echo                        -> the request body, unchanged
 ///   GET      /async-db?min=&amp;max=&amp;limit= -> Postgres seq scan via ioxide.pg (SCRAM-SHA-256)
 ///
 /// Configuration is entirely environmental (IOXIDE_*, plus DATABASE_URL and TLS_CERT/TLS_KEY from
