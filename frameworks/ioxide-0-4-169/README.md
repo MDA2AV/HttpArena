@@ -25,6 +25,31 @@ and the entry's own changes together.
 Run this and the live entry back to back in the same session. Same numbers as
 today's ioxide means the machine moved; ~4.1M again means it is the library.
 
+## The runtime was the uncontrolled variable
+
+The first version of this entry pinned ioxide and left the base image on the
+floating `11.0-preview` tag — so both arms of the comparison ran the same
+runtime and the old entry regressed too, which proves nothing about the library.
+
+That tag moved:
+
+| tag | published | resolves to |
+|---|---|---|
+| `11.0.0-preview.6` | 2026-07-28 | 11.0.0-preview.6.26359.118 |
+| `11.0.0-preview.7` | 2026-08-28 | 11.0.0-preview.7.26381.103 |
+
+The 4.1M baseline was measured on **2026-08-09**, when `11.0-preview` was
+preview.6. The 3.9M was measured on **2026-08-28**, the day preview.7 shipped.
+
+So this entry pins both images. `DOTNET_SDK_TAG` and `DOTNET_RUNTIME_TAG` are
+separate build args because the two repositories version differently:
+`11.0.100-preview.N` for the SDK, `11.0.0-preview.N` for the runtime.
+
+Run it as-is (preview.6) against the same ioxide on preview.7 — override with
+`--build-arg DOTNET_SDK_TAG=11.0.100-preview.7 --build-arg
+DOTNET_RUNTIME_TAG=11.0.0-preview.7` — and the runtime is the only thing that
+differs.
+
 ## Not the FIN fix
 
 The baseline workload never sends `Connection: close` — zero occurrences in
