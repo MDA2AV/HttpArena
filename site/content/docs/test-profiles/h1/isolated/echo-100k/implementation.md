@@ -8,7 +8,7 @@ description: "How the 100 KB TLS echo profile is run, what it measures, and the 
 
 Both directions at once. A 100 KB body is posted over TLS and must come back verbatim, so a single request exercises the read path, the write path, and the TLS record layer **in both directions**.
 
-**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 32, 256 · **Duration:** 5s
+**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 256 · **Duration:** 5s
 
 ## The contract
 
@@ -73,7 +73,7 @@ Validation goes further and sends **random** bodies, comparing byte for byte. An
 | Port | 8081 (TLS, ALPN `http/1.1`) |
 | Body | 100 KB (102,400 bytes), `application/octet-stream` |
 | Framing | `Content-Length` both ways |
-| Connections | 32, 256 |
+| Connections | 256 |
 | Duration | 5s |
 | Runs | 3, best kept |
 | Load generator | [wrk](/docs/load-generators/h1/wrk/) with `requests/echo-100k-rotate.lua` |

@@ -75,7 +75,10 @@ declare -A PROFILES=(
     # bandwidth ceiling still leaves per-request framework overhead visible.
     # It is also ~7 TLS records and more than one socket buffer, so partial
     # reads, multi-record handling and partial writes all get exercised.
-    [echo-100k]="1|0|0-31,64-95|32,256|echo-100k"
+    # 256 connections only. wrk does not hold 32 here: at a 100 KB request body
+    # its per-connection write is large enough that 32 connections cannot keep
+    # the pipe full, and the point is measured throughput, not a connection ramp.
+    [echo-100k]="1|0|0-31,64-95|256|echo-100k"
     [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [fortunes]="1|0|0-31,64-95|1024|fortunes"
