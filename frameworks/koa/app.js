@@ -84,11 +84,11 @@ if (cluster.isPrimary) {
         ctx.body = { items, count };
     });
 
-    router.post('/upload', async ctx => {
-        let size = 0;
-        for await (const chunk of ctx.req) size += chunk.length;
-        ctx.type = 'text/plain';
-        ctx.body = String(size);
+    router.post('/echo', async ctx => {
+        const chunks = [];
+        for await (const chunk of ctx.req) chunks.push(chunk);
+        ctx.type = 'application/octet-stream';
+        ctx.body = Buffer.concat(chunks);
     });
 
     app.use(router.routes());

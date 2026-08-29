@@ -121,15 +121,18 @@ async fn json_items(req: &mut Request, res: &mut Response) {
 }
 
 #[handler]
-async fn upload(req: &mut Request, res: &mut Response) {
-    let len = req
+// Echo: the payload salvo collected goes back unchanged. It is read whole
+// first, which is also what makes a chunked request work -- there is no
+// Content-Length to frame the response from until the body is in.
+async fn echo_body(req: &mut Request, res: &mut Response) {
+    let body = req
         .payload_with_max_size(MAX_BODY)
         .await
-        .map(|b| b.len())
-        .unwrap_or(0);
+        .map(|b| b.to_vec())
+        .unwrap_or_default();
     res.headers_mut()
-        .insert("content-type", "text/plain".parse().unwrap());
-    res.write_body(len.to_string()).ok();
+        .insert("content-type", "application/octet-stream".parse().unwrap());
+    res.write_body(body).ok();
 }
 
 fn router() -> Router {
@@ -152,7 +155,7 @@ fn router() -> Router {
                 )
                 .get(json_items),
         )
-        .push(Router::with_path("upload").post(upload))
+        .push(Router::with_path("echo").post(echo_body))
 }
 
 #[tokio::main]

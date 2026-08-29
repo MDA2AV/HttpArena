@@ -207,9 +207,9 @@ if (cluster.isPrimary) {
         });
 
         // ── crud ────────────────────────────────────────────────────────────
-        // express.json() is mounted per route rather than globally: /upload takes a
-        // 20MB body that is counted as it streams, and a global parser would buffer
-        // and parse it.
+        // express.json() is mounted per route rather than globally: /echo takes a
+        // 100 KB body it returns verbatim, and a global parser would try to parse
+        // it as JSON.
         const jsonBody = express.json();
 
         app.get('/crud/items', async (req, res) => {
@@ -311,11 +311,11 @@ if (cluster.isPrimary) {
             }
         });
 
-        app.post('/upload', (req, res) => {
-            let size = 0;
-            req.on('data', chunk => size += chunk.length);
+        app.post('/echo', (req, res) => {
+            const chunks = [];
+            req.on('data', chunk => chunks.push(chunk));
             req.on('end', () => {
-                res.set(SERVER_HDR).type('text/plain').send(String(size));
+                res.set(SERVER_HDR).type('application/octet-stream').send(Buffer.concat(chunks));
             });
         });
 

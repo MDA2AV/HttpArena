@@ -120,11 +120,14 @@ fn json_items(
     Json(ProcessResponse { items, count })
 }
 
-#[post("/upload", data = "<data>")]
-async fn upload(data: Data<'_>) -> String {
-    match data.open(MAX_BODY_MIB.mebibytes()).stream_to(sink()).await {
-        Ok(written) => written.to_string(),
-        Err(_) => "0".to_string(),
+// Echo: read the body and hand it straight back. into_bytes() reads to the
+// cap regardless of framing, so a chunked request works without a
+// Content-Length to size it from.
+#[post("/echo", data = "<data>")]
+async fn echo_body(data: Data<'_>) -> Vec<u8> {
+    match data.open(MAX_BODY_MIB.mebibytes()).into_bytes().await {
+        Ok(buf) => buf.into_inner(),
+        Err(_) => Vec::new(),
     }
 }
 
@@ -133,7 +136,7 @@ async fn upload(data: Data<'_>) -> String {
 fn build(dataset: &'static [DatasetItem]) -> rocket::Rocket<rocket::Build> {
     rocket::build().manage(dataset).mount(
         "/",
-        routes![pipeline, baseline11_get, baseline11_post, json_items, upload],
+        routes![pipeline, baseline11_get, baseline11_post, json_items, echo_body],
     )
 }
 

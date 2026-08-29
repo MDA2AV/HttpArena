@@ -278,11 +278,11 @@ if (cluster.isPrimary) {
 
         // The request is a lazy Readable: counting bytes never needs the 20 MB body in memory,
         // which is what request.buffer() would cost
-        server.post('/upload', (request, response) => {
-            let size = 0;
-            request.on('data', chunk => size += chunk.length);
+        server.post('/echo', (request, response) => {
+            const chunks = [];
+            request.on('data', chunk => chunks.push(chunk));
             request.on('end', () => {
-                response.header('server', SERVER_HDR).type('text/plain').send(String(size));
+                response.header('server', SERVER_HDR).type('application/octet-stream').send(Buffer.concat(chunks));
             });
         });
 

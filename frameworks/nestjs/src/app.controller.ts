@@ -96,9 +96,13 @@ export class AppController {
     return { items, count };
   }
 
-  @Post('upload')
-  @Header('Content-Type', 'text/plain')
-  async upload(@Req() req: Request): Promise<string> {
-    return String(await countBody(req));
+  @Post('echo')
+  @Header('Content-Type', 'application/octet-stream')
+  async echoBody(@Req() req: Request): Promise<Buffer> {
+    // Collected rather than piped: the response carries a Content-Length, and
+    // a chunked request has no length to forward until the body is in.
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(Buffer.from(chunk));
+    return Buffer.concat(chunks);
   }
 }

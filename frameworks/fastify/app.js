@@ -144,15 +144,15 @@ async function build(serverOpts) {
         }
     });
 
-    fastify.post('/upload', (request, reply) => {
+    fastify.post('/echo', (request, reply) => {
         const payload = request.body;
         if (!payload || typeof payload.on !== 'function') {
-            return reply.header('server', 'fastify').type('text/plain').send('0');
+            return reply.header('server', 'fastify').type('application/octet-stream').send(Buffer.alloc(0));
         }
-        let size = 0;
-        payload.on('data', chunk => size += chunk.length);
+        const chunks = [];
+        payload.on('data', chunk => chunks.push(chunk));
         payload.on('end', () => {
-            reply.header('server', 'fastify').type('text/plain').send(String(size));
+            reply.header('server', 'fastify').type('application/octet-stream').send(Buffer.concat(chunks));
         });
     });
 

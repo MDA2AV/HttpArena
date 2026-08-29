@@ -107,15 +107,13 @@ function json(count_: string, query: string, req: Request): Response {
     return new Response(body, { headers: JSON_PLAIN });
 }
 
-async function upload(req: Request): Promise<Response> {
-    let size = 0;
-    const body = req.body;
-    if (body !== null) {
-        // Counted chunk by chunk. The profile posts up to 20 MB per request over
-        // hundreds of connections, and buffering the bodies would only cost memory.
-        for await (const chunk of body) size += chunk.byteLength;
-    }
-    return new Response(String(size), { headers: TEXT });
+async function echoBody(req: Request): Promise<Response> {
+    // arrayBuffer() reads to end regardless of framing, so a chunked request
+    // works and the Response gets a Content-Length from the buffer.
+    const buf = await req.arrayBuffer();
+    return new Response(buf, {
+        headers: { "content-type": "application/octet-stream" },
+    });
 }
 
 // ── static ──────────────────────────────────────────────────────────────────
@@ -339,7 +337,7 @@ const routes = {
 
     "/json/:count": (req: any) => json(req.params.count, qs(req), req),
 
-    "/upload": { POST: (req: Request) => upload(req) },
+    "/echo": { POST: (req: Request) => echoBody(req) },
 
     // one segment, so a path with a slash in it never reaches the handler
     "/static/:name": (req: any) => serveStatic(req.params.name, req),

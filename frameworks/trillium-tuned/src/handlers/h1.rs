@@ -1,5 +1,5 @@
 use crate::{
-    handlers::{json_response, plain_text, sum_query_values},
+    handlers::{json_response, octet_stream, plain_text, sum_query_values},
     state::{AppState, Item},
 };
 use futures_lite::AsyncReadExt;
@@ -36,8 +36,11 @@ pub async fn baseline_any(conn: Conn) -> Conn {
     }
 }
 
-pub async fn upload(mut conn: Conn) -> Conn {
-    let mut total: u64 = 0;
+pub async fn echo_body(mut conn: Conn) -> Conn {
+    // Echo: read the body and hand the same bytes back. It is collected whole
+    // because the response cannot be framed until the length is known, which
+    // is also what makes a chunked request work.
+    let mut body_bytes: Vec<u8> = Vec::new();
     let mut buf = vec![0u8; 64 * 1024];
     let mut errored = false;
     {
@@ -45,7 +48,7 @@ pub async fn upload(mut conn: Conn) -> Conn {
         loop {
             match body.read(&mut buf).await {
                 Ok(0) => break,
-                Ok(n) => total += n as u64,
+                Ok(n) => body_bytes.extend_from_slice(&buf[..n]),
                 Err(_) => {
                     errored = true;
                     break;
@@ -56,7 +59,7 @@ pub async fn upload(mut conn: Conn) -> Conn {
     if errored {
         conn.with_status(Status::BadRequest).halt()
     } else {
-        plain_text(conn, total.to_string())
+        octet_stream(conn, body_bytes)
     }
 }
 

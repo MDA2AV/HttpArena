@@ -8,8 +8,8 @@ mod state;
 use env_logger::Env;
 use grpc::{Benchmark, BenchmarkServiceServer};
 use handlers::{
-    async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, fortunes,
-    json_handler, pipeline, upload, ws_echo,
+    async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, echo_body,
+    fortunes, json_handler, pipeline, ws_echo,
 };
 use state::AppState;
 use std::{env, error::Error, fs};
@@ -33,7 +33,7 @@ fn build_handler() -> impl Handler {
             .any(&[Method::Get, Method::Post], "/baseline11", baseline_any)
             .get("/baseline2", baseline_get)
             .get("/json/:count", json_handler)
-            .post("/upload", upload)
+            .post("/echo", echo_body)
             .get(
                 "/static/*",
                 (

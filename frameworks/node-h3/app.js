@@ -67,21 +67,22 @@ if (cluster.isPrimary) {
         return { items, count };
     });
 
-    app.post('/upload', async (event) => {
-        // counted as it arrives: the profile posts bodies up to 20 MB
-        let size = 0;
+    app.post('/echo', async (event) => {
+        // Collected, not streamed through: the response needs a length, and a
+        // chunked request has none to forward until the body is in.
+        const chunks = [];
         const stream = getBodyStream(event);
         if (stream) {
             const reader = stream.getReader();
             for (;;) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                size += value.byteLength;
+                chunks.push(Buffer.from(value));
             }
         }
         event.res.headers.set('server', SERVER_HDR);
-        event.res.headers.set('content-type', 'text/plain');
-        return String(size);
+        event.res.headers.set('content-type', 'application/octet-stream');
+        return Buffer.concat(chunks);
     });
 
     app.get('/baseline11', (event) => {

@@ -188,17 +188,22 @@ async fn baseline2(query: web::Query<BaselineQuery>) -> HttpResponse {
         .body(sum.to_string())
 }
 
-async fn upload(mut payload: web::Payload) -> HttpResponse {
-    let mut size: usize = 0;
+// Echo: the bytes that arrived go back unchanged. The payload is collected
+// first because the response cannot be framed until the length is known --
+// which is also what makes a chunked request work, since there is no
+// Content-Length to read it from.
+async fn echo_body(mut payload: web::Payload) -> HttpResponse {
+    let mut body = web::BytesMut::new();
     while let Some(chunk) = payload.next().await {
-        if let Ok(data) = chunk {
-            size += data.len();
+        match chunk {
+            Ok(data) => body.extend_from_slice(&data),
+            Err(_) => return HttpResponse::BadRequest().finish(),
         }
     }
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
-        .content_type(ContentType::plaintext())
-        .body(size.to_string())
+        .content_type(ContentType::octet_stream())
+        .body(body.freeze())
 }
 
 // JSON endpoint. Serialize fresh per request with serde_json; the Compress
@@ -537,7 +542,7 @@ async fn main() -> io::Result<()> {
                 .route("/baseline11", web::get().to(baseline11_get))
                 .route("/baseline11", web::post().to(baseline11_post))
                 .route("/baseline2", web::get().to(baseline2))
-                .route("/upload", web::post().to(upload))
+                .route("/echo", web::post().to(echo_body))
                 .route("/async-db", web::get().to(pgdb_endpoint))
                 .route("/json/{count}", web::get().to(json_endpoint))
                 .route("/crud/items", web::get().to(crud_list))

@@ -79,7 +79,7 @@ if (cluster.isPrimary) {
     const dbError = (res, msg, status = 500) => sendJson(res, '{"error":"' + msg + '"}', status);
 
     // The two body-carrying crud verbs. Small JSON, so it is collected before it
-    // is parsed - unlike /upload, which is counted as it streams.
+    // is parsed - like /echo, which collects to frame its response.
     function readJson(req, cb) {
         let body = '';
         req.setEncoding('utf8');
@@ -364,12 +364,19 @@ if (cluster.isPrimary) {
 
         if (path.startsWith('/json/')) return json(req, res, path, query);
 
-        if (path === '/upload' && req.method === 'POST') {
-            // Counted chunk by chunk: the profile posts up to 20 MB per request over
-            // hundreds of connections, and buffering the bodies would only cost memory
-            let size = 0;
-            req.on('data', chunk => size += chunk.length);
-            req.on('end', () => sendText(res, String(size)));
+        if (path === '/echo' && req.method === 'POST') {
+            // Collected rather than piped: the response carries a Content-Length,
+            // and a chunked request has no length to forward until the body is in.
+            const chunks = [];
+            req.on('data', chunk => chunks.push(chunk));
+            req.on('end', () => {
+                const body = Buffer.concat(chunks);
+                res.writeHead(200, {
+                    'Content-Type': 'application/octet-stream',
+                    'Content-Length': body.length,
+                });
+                res.end(body);
+            });
             return;
         }
 

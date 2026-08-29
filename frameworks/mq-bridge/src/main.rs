@@ -11,7 +11,7 @@
 //! | `POST /baseline11?a=&b=` + body | `a+b+body`            | baseline |
 //! | `GET  /baseline2?a=&b=`         | `a+b`                 | baseline-h2, baseline-h2c |
 //! | `GET  /json/{count}?m=`         | processed dataset     | json, json-comp, json-tls, json-h2c |
-//! | `POST /upload` + body           | byte count            | upload |
+//! | `POST /echo` + body             | the body, unchanged   | in-out |
 //! | `GET  /async-db?min=&max=&limit=` | `items` rows        | async-db |
 //! | `GET  /static/{file}`           | cached asset          | static, static-tls, static-h2 |
 //! | `GET  /crud/items?category=&page=&limit=` | paginated list | crud |
@@ -559,7 +559,7 @@ async fn handle(state: Arc<AppState>, msg: CanonicalMessage) -> Result<Handled, 
             let sum = msg.query_int("a").unwrap_or(0) + msg.query_int("b").unwrap_or(0) + body;
             text(sum.to_string())
         }
-        ("POST", "/upload") => text(msg.payload.len().to_string()),
+        ("POST", "/echo") => reply_bytes(msg.payload.clone(), "application/octet-stream"),
         ("GET", "/async-db") => async_db(&state, &msg).await,
         ("GET", "/fortunes") => fortunes(&state).await,
         ("GET", "/crud/items") => crud_list(&state, &msg).await,

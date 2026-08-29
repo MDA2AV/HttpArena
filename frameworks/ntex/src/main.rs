@@ -143,10 +143,12 @@ async fn json_items(
     HttpResponse::Ok().content_type("application/json").body(body)
 }
 
-async fn upload(body: Bytes) -> HttpResponse {
+// Echo: ntex has already collected the body (chunked or not) into Bytes, so
+// the response is that buffer unchanged.
+async fn echo_body(body: Bytes) -> HttpResponse {
     HttpResponse::Ok()
-        .content_type("text/plain")
-        .body(body.len().to_string())
+        .content_type("application/octet-stream")
+        .body(body)
 }
 
 fn routes(cfg: &mut web::ServiceConfig, dataset: &'static [DatasetItem]) {
@@ -158,7 +160,7 @@ fn routes(cfg: &mut web::ServiceConfig, dataset: &'static [DatasetItem]) {
                 .route(web::post().to(baseline11)),
         )
         .service(web::resource("/json/{count}").route(web::get().to(json_items)))
-        .service(web::resource("/upload").route(web::post().to(upload)));
+        .service(web::resource("/echo").route(web::post().to(echo_body)));
 }
 
 #[ntex::main]

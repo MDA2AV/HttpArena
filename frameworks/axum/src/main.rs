@@ -113,8 +113,10 @@ async fn json_items(
     Json(ProcessResponse { items, count })
 }
 
-async fn upload(body: Bytes) -> String {
-    body.len().to_string()
+// Echo: axum has already collected the body (chunked or not) into Bytes, so
+// handing it straight back is the whole handler and costs no extra copy.
+async fn echo_body(body: Bytes) -> Bytes {
+    body
 }
 
 /// A listening socket with SO_REUSEPORT set, so several of them can share one
@@ -139,7 +141,7 @@ async fn main() {
         .route("/pipeline", get(pipeline))
         .route("/baseline11", get(baseline11).post(baseline11))
         .route("/json/{count}", get(json_items))
-        .route("/upload", post(upload))
+        .route("/echo", post(echo_body))
         .layer(CompressionLayer::new())
         .layer(DefaultBodyLimit::max(MAX_BODY))
         .with_state(dataset);

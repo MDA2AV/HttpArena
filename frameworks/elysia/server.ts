@@ -282,15 +282,10 @@ if (cluster.isPrimary) {
 				return { items: [], count: 0 };
 			}
 		})
-		.post("/upload", async ({ request }) => {
-			let size = 0;
-			if (request.body) {
-				for await (const chunk of request.body as any) {
-					size += (chunk as Uint8Array).byteLength;
-				}
-			}
-			return new Response(String(size), {
-				headers: { "content-type": "text/plain" },
+		.post("/echo", async ({ request }) => {
+			const buf = await request.arrayBuffer();
+			return new Response(buf, {
+				headers: { "content-type": "application/octet-stream" },
 			});
 		})
 		// ── crud ────────────────────────────────────────────────────────

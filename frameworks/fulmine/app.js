@@ -405,11 +405,11 @@ app.get('/api/me', async (req, res) => {
     }
 });
 
-app.post('/upload', (req, res) => {
-    let size = 0;
-    req.on('data', chunk => size += chunk.length);
+app.post('/echo', (req, res) => {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
     req.on('end', () => {
-        res.type('text/plain').send(String(size));
+        res.type('application/octet-stream').send(Buffer.concat(chunks));
     });
 });
 
