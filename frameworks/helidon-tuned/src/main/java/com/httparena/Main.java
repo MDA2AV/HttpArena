@@ -58,7 +58,7 @@ public final class Main {
                     .addRouting(GrpcRouting.builder().service(grpcService)));
         }
 
-        // h1-tls routing - json-tls and 8gbit, both of which drive :8081.
+        // h1-tls routing - json-tls, static-tls, and 8gbit.
         // The default listener's routing does not apply to a named socket, so
         // /echo has to be registered here as well or it 404s on 8081.
         var h1TlsListener = builder.sockets().get("h1-tls");
@@ -68,7 +68,19 @@ public final class Main {
                     .routing(routing -> routing
                             .get("/json/{count}", jsonHandler)
                             .get("/json", jsonHandler)
+                            .get("/static/{filename}", staticHandler)
                             .post("/echo", new EchoHandler())));
+        }
+
+        // h2c routing - prior-knowledge cleartext HTTP/2 only
+        var h2cListener = builder.sockets().get("h2c");
+        if (h2cListener != null) {
+            builder.putSocket("h2c", socket -> socket
+                    .from(h2cListener)
+                    .routing(routing -> routing
+                            .get("/baseline2", baselineHandler)
+                            .get("/json/{count}", jsonHandler)
+                            .get("/json", jsonHandler)));
         }
 
         WebServer server = builder.build().start();
@@ -76,8 +88,9 @@ public final class Main {
         int defaultPort = server.port();
         int h2TlsPort = server.port("h2-tls");
         int h1TlsPort = server.port("h1-tls");
+        int h2cPort = server.port("h2c");
 
-        if (defaultPort == -1 || h2TlsPort == -1 || h1TlsPort == -1) {
+        if (defaultPort == -1 || h2TlsPort == -1 || h1TlsPort == -1 || h2cPort == -1) {
             server.stop();
             System.err.println("Helidon HttpArena server failed to start");
             System.exit(-1);
@@ -86,6 +99,7 @@ public final class Main {
         System.out.println("Helidon HttpArena server started on ports: "
                                    + "\nplain (" + server.port() + ")"
                                    + "\nhttps (" + server.port("h2-tls") + ")"
-                                   + "\nh1tls (" + server.port("h1-tls") + ")");
+                                   + "\nh1tls (" + server.port("h1-tls") + ")"
+                                   + "\nh2c (" + server.port("h2c") + ")");
     }
 }
