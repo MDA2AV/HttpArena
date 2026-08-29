@@ -10,26 +10,26 @@
             [jj.tassu :refer [GET POST PUT route]]
             [jsonista.core :as json]
             [manifold.deferred :as d]
-            [manifold.stream :as s])
+            [manifold.stream :as s]
+            [ring.middleware.content-type :as content-type]
+            [ring.middleware.file :as file]
+            [ring.middleware.not-modified :as not-modified])
   (:import (io.netty.buffer ByteBuf PooledByteBufAllocator)
            (io.netty.channel ChannelOption)
            (io.netty.handler.codec.http HttpContentCompressor)
-           (io.netty.handler.ssl SslContextBuilder)
            (io.vertx.core Vertx)
            (io.vertx.pgclient PgBuilder PgConnectOptions)
            (io.vertx.sqlclient PoolOptions)
-           (java.io ByteArrayOutputStream FileInputStream)
-           (java.net URI))
+           (java.io ByteArrayOutputStream)
+           (java.net InetSocketAddress URI))
   (:gen-class))
 
 (def ^:private ^:const ct-json "application/json")
 (def ^:private ^:const ct-text "text/plain")
 (def ^:private ^:const ct-html "text/html; charset=utf-8")
-(def ^:private ^:const ct-octet "application/octet-stream")
 (def ^:private ^:const hdr-ct "Content-Type")
 (def ^:private ^:const hdr-server "Server")
 (def ^:private ^:const server-name "aleph")
-(def ^:private ^:const dot ".")
 (def ^:private ^:const not-found-body "Not found")
 (def ^:private ^:const empty-db-body "{\"items\":[],\"count\":0}")
 (def ^:private ^:const fortunes-error-body
@@ -44,6 +44,8 @@
 (def ^:private ^:const pg-replace "postgresql://")
 (def ^:private ^:const plain-port 8080)
 (def ^:private ^:const tls-port 8081)
+(def ^:private ^:const h2c-port 8082)
+(def ^:private ^:const h2-port 8443)
 (def ^:private ^:const tls-cert-default "/certs/server.crt")
 (def ^:private ^:const tls-key-default "/certs/server.key")
 
@@ -70,10 +72,6 @@
                                     [:tr
                                      [:td (:id f)]
                                      [:td (:message f)]])]]])))
-
-(def ^:private ^:const extension-map
-  {".css"   "text/css" ".js" "application/javascript" ".html" "text/html"
-   ".woff2" "font/woff2" ".svg" "image/svg+xml" ".webp" "image/webp" ".json" ct-json})
 
 (defn- load-json [path]
   (when (.exists (io/file path))
@@ -111,11 +109,6 @@
 
 (defn- process-item [item ^long m]
   (assoc item :total (* (:price item) (:quantity item) m)))
-
-(defn- get-content-type [^String name]
-  (let [dot-index (.lastIndexOf name ^String dot)
-        ext (if (>= dot-index 0) (subs name dot-index) "")]
-    (get extension-map ext ct-octet)))
 
 (defn- json-response [data]
   {:status 200 :headers json-headers :body (json/write-value-as-string data)})
@@ -174,15 +167,19 @@
 (def ^:private crud-update-q (async-boa/build-async-query adapter "sql/crud-update"))
 (def ^:private fortunes-q (async-boa/build-async-query adapter "sql/fortunes"))
 
-(defn- build-ssl-context []
+(defn- build-ssl-context [http-versions]
   (let [cert-path (or (System/getenv "TLS_CERT") tls-cert-default)
         key-path (or (System/getenv "TLS_KEY") tls-key-default)
         cert-file (io/file cert-path)
         key-file (io/file key-path)]
     (when (and (.exists cert-file) (.exists key-file))
       (try
-        (-> (SslContextBuilder/forServer cert-file key-file)
-            (.build))
+        (netty/ssl-server-context
+         (cond-> {:private-key       key-file
+                  :certificate-chain cert-file}
+           http-versions
+           (assoc :application-protocol-config
+                  (netty/application-protocol-config http-versions))))
         (catch Exception e
           (println "TLS init failed:" (.getMessage e))
           nil)))))
@@ -335,30 +332,34 @@
                          :body    fortunes-error-body})))
     dfd))
 
-(defn- handle-static [req]
-  (let [name (get-in req [:params :filename])
-        path (str "/data" (:uri req))
-        f (io/file path)]
-    (if (.isFile f)
-      {:status 200 :headers {hdr-ct (get-content-type name) hdr-server server-name} :body (FileInputStream. path)}
-      {:status 404 :body not-found-body})))
+(defn- handle-static [static-handler req]
+  (let [response (static-handler
+                  (assoc req :path-info (str "/" (get-in req [:params :filename]))))]
+    (cond-> response
+      (instance? java.io.File (:body response))
+      (update :body io/input-stream))))
 
 (defn- build-handler [{:keys [dataset json-body compression-body pg-pool]}]
-  (route
-    {"/baseline11"       [(GET handle-baseline-get)
-                          (POST handle-baseline-post)]
-     "/json/:count"      [(GET (fn [req] (handle-json dataset req)))]
-     "/json"             [(GET (fn [_] {:status 200 :headers json-headers :body json-body}))]
-     "/compression"      [(GET (fn [_] {:status 200 :headers json-headers :body compression-body}))]
-     "/upload"           [(POST handle-upload)]
-     "/async-db"         [(GET (fn [req] (handle-async-db pg-pool req)))]
-     "/crud/items"       [(GET (fn [req] (handle-crud-list pg-pool req)))
-                          (POST (fn [req] (handle-crud-create pg-pool req)))]
-     "/crud/items/:id"   [(GET (fn [req] (handle-crud-read pg-pool req)))
-                          (PUT (fn [req] (handle-crud-update pg-pool req)))]
-     "/fortunes"         [(GET (fn [req] (handle-fortunes pg-pool req)))]
-     "/static/:filename" [(GET handle-static)]
-     "/"                 [(GET (fn [_] (text-response server-name)))]}))
+  (let [static-handler (-> (constantly {:status 404 :body not-found-body})
+                           (file/wrap-file "/data/static" {:index-files? false})
+                           content-type/wrap-content-type
+                           not-modified/wrap-not-modified)]
+    (route
+     {"/baseline11"       [(GET handle-baseline-get)
+                           (POST handle-baseline-post)]
+      "/baseline2"        [(GET handle-baseline-get)]
+      "/json/:count"      [(GET (fn [req] (handle-json dataset req)))]
+      "/json"             [(GET (fn [_] {:status 200 :headers json-headers :body json-body}))]
+      "/compression"      [(GET (fn [_] {:status 200 :headers json-headers :body compression-body}))]
+      "/upload"           [(POST handle-upload)]
+      "/async-db"         [(GET (fn [req] (handle-async-db pg-pool req)))]
+      "/crud/items"       [(GET (fn [req] (handle-crud-list pg-pool req)))
+                           (POST (fn [req] (handle-crud-create pg-pool req)))]
+      "/crud/items/:id"   [(GET (fn [req] (handle-crud-read pg-pool req)))
+                           (PUT (fn [req] (handle-crud-update pg-pool req)))]
+      "/fortunes"         [(GET (fn [req] (handle-fortunes pg-pool req)))]
+      "/static/:filename" [(GET (fn [req] (handle-static static-handler req)))]
+      "/"                 [(GET (fn [_] (text-response server-name)))]})))
 
 (defn- start-server! [handler port opts]
   (try
@@ -377,11 +378,13 @@
   (netty/leak-detector-level! :disabled)
   (let [dataset (load-json (or (System/getenv "DATASET_PATH") dataset-path))
         json-body (let [items (mapv #(process-item % 1) dataset)]
-                    (json/write-value-as-string {:items items :count (clojure.core/count items)}))
+                    (json/write-value-as-string
+                     {:items items :count (clojure.core/count items)}))
         large-dataset (load-json dataset-large-path)
         compression-body (when large-dataset
                            (let [items (mapv #(process-item % 1) large-dataset)]
-                             (json/write-value-as-string {:items items :count (clojure.core/count items)})))
+                             (json/write-value-as-string
+                              {:items items :count (clojure.core/count items)})))
         pg-pool (init-pg-pool)
         handler (build-handler {:dataset          dataset
                                 :json-body        json-body
@@ -390,11 +393,21 @@
     (start-server! handler plain-port
                    {:pipeline-transform (fn [pipeline]
                                           (.remove pipeline "continue-handler")
-                                          (.addBefore pipeline "request-handler" "compressor" (HttpContentCompressor.)))})
-    (when-let [ssl-ctx (build-ssl-context)]
+                                          (.addBefore pipeline "request-handler" "compressor"
+                                                      (HttpContentCompressor.)))})
+    (start-server! handler h2c-port
+                   {:socket-address (InetSocketAddress. "127.0.0.1" h2c-port)
+                    :http-versions [:http2]
+                    :use-h2c?      true})
+    (when-let [ssl-ctx (build-ssl-context nil)]
       (start-server! handler tls-port
                      {:ssl-context        ssl-ctx
                       :http-versions      [:http1]
                       :pipeline-transform (fn [pipeline]
                                             (.remove pipeline "continue-handler"))}))
+    (when-let [ssl-ctx (build-ssl-context [:http2])]
+      (start-server! handler h2-port
+                     {:ssl-context   ssl-ctx
+                      :http-versions [:http2]
+                      :compression?  true}))
     @(promise)))

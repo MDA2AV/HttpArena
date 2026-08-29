@@ -13,7 +13,8 @@ use handlers::{
 };
 use state::AppState;
 use std::{env, error::Error, fs};
-use trillium::{Handler, HttpConfig, Method};
+use trillium::{Conn, Handler, HttpConfig, KnownHeaderName, Method};
+use trillium_cache::{Cache, InMemoryStorage};
 use trillium_compression::Compression;
 use trillium_quinn::QuicConfig;
 use trillium_router::Router;
@@ -35,7 +36,16 @@ fn build_handler() -> impl Handler {
             .post("/upload", upload)
             .get(
                 "/static/*",
-                StaticFileHandler::new(static_dir).with_precompressed(),
+                (
+                    // rfc 9111 cache over the filesystem handler. max-age=1 keeps hits in
+                    // memory while bounding staleness under the arena's follow-the-disk
+                    // window; past it the cache revalidates against the handler below.
+                    Cache::new(InMemoryStorage::new()).shared(),
+                    |conn: Conn| async move {
+                        conn.with_response_header(KnownHeaderName::CacheControl, "max-age=1")
+                    },
+                    StaticFileHandler::new(static_dir).with_precompressed(),
+                ),
             )
             .get("/async-db", async_db)
             .get("/fortunes", fortunes)

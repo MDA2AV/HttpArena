@@ -1,0 +1,17 @@
+[package]
+name = "httparena-tokio-websockets"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+futures-util = { features = ["sink"], version = "0.3" }
+http = { version = "1.0" }
+socket2 = { version = "0.5", features = ["all"] }
+tokio = { default-features = false, features = ["full"], version = "1.0" }
+tokio-websockets = { features = ["sha1_smol", "server", "nightly"], version = "0.13" }
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+panic = "abort"

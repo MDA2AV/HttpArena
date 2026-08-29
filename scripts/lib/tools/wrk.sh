@@ -23,11 +23,6 @@ wrk_build_args() {
     mapfile -t cmd < <(_wrk_cmd)
 
     case "$endpoint" in
-        static)
-            cmd+=(-t "$THREADS" -c "$conns" -d "$duration"
-                  -s "$REQUESTS_DIR/static-rotate.lua"
-                  "http://localhost:$PORT")
-            ;;
         static-tls)
             cmd+=(-t "$THREADS" -c "$conns" -d "$duration"
                   -s "$REQUESTS_DIR/static-rotate.lua"

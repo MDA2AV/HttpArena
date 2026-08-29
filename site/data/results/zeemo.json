@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "zeemo",
-      "language": "Zig",
-      "rps": 2389288,
-      "avg_latency": "686us",
-      "p99_latency": "2.94ms",
-      "cpu": "5854.7%",
-      "memory": "289MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "8.00GB/s",
-      "input_bw": "113.93MB/s",
-      "reconnects": 477021,
-      "status_2xx": 11946443,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "latency-1m-1024": {
       "framework": "zeemo",
       "language": "Zig",

@@ -1,164 +1,105 @@
-[2026-08-22T08:21:34Z INFO  trillium_static::handler] serving files within "/data/static"
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:34Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:35Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:36Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=2
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:39Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:41Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:48Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:52Z INFO  trillium_http::headers::qpack::encoder_dynamic_table] initialize_from_peer_settings: peer_max_capacity=4096 our_max_capacity=4096 chosen=4096 max_blocked_streams=100 prime_entries=3
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-08-22T08:21:53Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:13Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:19Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:26Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-08-26T22:35:33Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error

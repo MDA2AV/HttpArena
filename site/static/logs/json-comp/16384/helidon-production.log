@@ -1,27 +1,23 @@
-Apr 24, 2026 12:11:46 AM io.helidon.logging.jul.JulProvider doConfigureLogging
+Aug 29, 2026 12:56:38 PM io.helidon.logging.jul.JulProvider doConfigureLogging
 INFO: Logging at runtime configured using defaults
 WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
 WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
 WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
 WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
-Apr 24, 2026 12:11:46 AM io.helidon.common.features.HelidonFeatures features
-INFO: Helidon SE 4.4.1 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
-Apr 24, 2026 12:11:46 AM io.helidon.webserver.ServerListener startIt
-INFO: [0x07ab4680] http://0.0.0.0:8080 bound for socket '@default'
-Apr 24, 2026 12:11:47 AM io.helidon.common.features.HelidonFeatures features
-WARNING: You are using incubating features. These APIs are not production ready!
-Apr 24, 2026 12:11:47 AM io.helidon.common.features.HelidonFeatures lambda$features$8
-INFO: 	Incubating feature: JSON Binding (JSON/Binding)
-Apr 24, 2026 12:11:47 AM io.helidon.common.features.HelidonFeatures features
+Aug 29, 2026 12:56:39 PM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.5.4 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Aug 29, 2026 12:56:39 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x7508d728] http://0.0.0.0:8080 bound for socket '@default'
+Aug 29, 2026 12:56:39 PM io.helidon.common.features.HelidonFeatures features
 INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
-Apr 24, 2026 12:11:47 AM io.helidon.common.features.HelidonFeatures lambda$features$11
+Aug 29, 2026 12:56:39 PM io.helidon.common.features.HelidonFeatures lambda$features$11
 INFO: 	Preview feature: GRPC (WebServer/GRPC)
-Apr 24, 2026 12:11:47 AM io.helidon.webserver.ServerListener startIt
-INFO: [0x01b70812] https://0.0.0.0:8443 bound for socket 'h2-tls'
-Apr 24, 2026 12:11:47 AM io.helidon.webserver.ServerListener startIt
-INFO: [0x5b41cef1] https://0.0.0.0:8081 bound for socket 'h1-tls'
-Apr 24, 2026 12:11:47 AM io.helidon.webserver.LoomServer startIt
-INFO: Started all channels in 39 milliseconds. 1017 milliseconds since JVM startup. Java 25.0.2+10-LTS
+Aug 29, 2026 12:56:39 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x6549de04] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Aug 29, 2026 12:56:39 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x3ddfb56b] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Aug 29, 2026 12:56:39 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 40 milliseconds. 1039 milliseconds since JVM startup. Java 25.0.4+7-LTS
 Helidon HttpArena server started on ports: 
 plain (8080)
 https (8443)

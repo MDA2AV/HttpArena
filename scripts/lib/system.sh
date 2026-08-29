@@ -33,8 +33,8 @@ system_tune() {
     sudo sysctl -w net.core.netdev_max_backlog=65535  >/dev/null 2>&1 || true
 
     # Widen the ephemeral port range and cap TIME_WAIT bucket count so
-    # profiles that churn connections (crud with -r 25 does ~40K reconnects
-    # per iteration at 4096c) don't exhaust the default 28K-port range and
+    # profiles that churn connections (static-tls with -r 200 retires sockets
+    # continuously at 6800c) don't exhaust the default 28K-port range and
     # silently stall gcannon after the first iteration. TIME_WAIT duration
     # itself is hardcoded in the kernel (~60s) and cannot be shortened via
     # sysctl, so we rely on port-range + tw_reuse + between-iteration sleep

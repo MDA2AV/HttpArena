@@ -14,11 +14,11 @@
   "repo": "https://github.com/hanami/hanami",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
+    "json-tls",
     "upload"
   ],
   "maintainers": []

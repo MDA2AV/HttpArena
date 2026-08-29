@@ -11,6 +11,6 @@ RUN mkdir -p /data/static
 WORKDIR /app
 COPY --from=builder /app/target/aleph-bench-0.1.0-standalone.jar /app/app.jar
 
-EXPOSE 8080
+EXPOSE 8080 8081 8082 8443
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

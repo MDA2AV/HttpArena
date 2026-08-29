@@ -1413,16 +1413,15 @@ document.addEventListener('DOMContentLoaded', function(){
         var rps=(A.avg[pid]&&A.avg[pid][fw])||0;
         if(rps>0 && maxR[pid]>0){ any=true;
           var sc;
-          if(pid==='latency-1m'){
+          if(isLatProfile(pid)){
             // The rate is pinned on this profile, so normalising it on rps puts
             // every entry that held the rate at 100 and the column says nothing.
             // Its own score is already a 0-100 quantity built from cost and both
             // latency tails, which is what the cell should show. No memory bonus:
             // the value is not a throughput for the bonus to scale.
-            l1mEnsure();
             // x10 to land on the composite's 0-1000 basis. The profile's own
             // score is defined 0-100 and the detail view shows it that way.
-            sc=(_l1mScores[fw]||0)*10;
+            sc=latScore(pid,fw)*10;
           } else {
             // 0-1000 per profile, not 0-100. At 24 scored profiles a 0-100
             // basis put whole clusters of entries on the same rounded total,
@@ -1435,7 +1434,7 @@ document.addEventListener('DOMContentLoaded', function(){
           // `score` is set only where the cell must not print rps. Everywhere
           // else it stays null and the renderer keeps showing throughput.
           cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0),
-                      score:(pid==='latency-1m'?sc:null)};
+                      score:(isLatProfile(pid)?sc:null)};
           if(counts) sum+=sc;
         }
       });
@@ -1660,35 +1659,40 @@ document.addEventListener('DOMContentLoaded', function(){
     setupTopScroll();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return _l1mScores[r.fw]||0; if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
-  // Latency-1M scores on cost, not throughput. The rate is pinned, so every
+  // The fixed-rate profiles score on cost, not throughput. The rate is pinned, so every
   // entry that finishes serves the same load and rps cannot separate them; what
   // can is the bill and the tail. Kept byte-for-byte equivalent to
   // scripts/latency_1m_score.py, which is the reference implementation and
   // carries the reasoning for the two different curve shapes.
-  var L1M_FULL=950000, L1M_W_CPU=0.60, L1M_W_P99=0.25, L1M_W_P999=0.15, L1M_DEC=3;
-  var _l1mScores={}, _l1mBuilt=false;
+  // Offered rate that earns the whole rate factor, per profile. 95% of target:
+  // the generator never quite reaches its own number, so the threshold has to
+  // sit below it. Mirrors FULL_RATE in scripts/latency_score.py.
+  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500};
+  var LAT_W_CPU=0.60, LAT_W_P99=0.25, LAT_W_P999=0.15, LAT_DEC=3;
+  var _latScores={};
+  function isLatProfile(pid){ return Object.prototype.hasOwnProperty.call(LAT_FULL,pid); }
   function clamp01(v){ return v<0?0:v>1?1:v; }
   // CPU spans ~3.3x across rate-holders, so a plain ratio behaves over it.
-  function l1mLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
+  function latLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
   // The tails span five orders of magnitude, where a ratio would collapse to
   // zero for everyone but the leader. A decade scale keeps the field separable
   // and still charges a third of the term for every 10x.
-  function l1mDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/L1M_DEC); }
+  function latDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/LAT_DEC); }
   // Build from the canonical result set when the caller has no rows of its own,
   // so the composite and the detail view agree on the same normalisation.
-  function l1mEnsure(){
-    if(_l1mBuilt) return;
-    var p=PROF['latency-1m'];
-    var rows=[]; if(p) p.conns.forEach(function(c){ rows=rows.concat(D.results['latency-1m-'+c]||[]); });
-    l1mBuild(rows);
+  function latEnsure(pid){
+    if(_latScores[pid]) return;
+    var p=PROF[pid], rows=[];
+    if(p) p.conns.forEach(function(c){ rows=rows.concat(D.results[pid+'-'+c]||[]); });
+    latBuild(pid, rows);
   }
-  function l1mBuild(rows){
-    _l1mScores={}; _l1mBuilt=true;
-    var bc=Infinity,bp=Infinity,b9=Infinity;
+  function latBuild(pid, rows){
+    var out={}; _latScores[pid]=out;
+    var bc=Infinity,bp=Infinity,b9=Infinity, full=LAT_FULL[pid]||1;
     rows.forEach(function(r){
       var c=+r.cpu_per_req_us, p=lat(r.p99_latency), q=lat(r.p99_9_latency);
       if(c>0) bc=Math.min(bc,c);
@@ -1696,19 +1700,20 @@ document.addEventListener('DOMContentLoaded', function(){
       if(q>0&&isFinite(q)) b9=Math.min(b9,q);
     });
     rows.forEach(function(r){
-      var rf=clamp01((r.rps||0)/L1M_FULL);
-      _l1mScores[r.fw]=100*rf*(L1M_W_CPU*l1mLinear(+r.cpu_per_req_us,bc)
-                              +L1M_W_P99*l1mDecade(lat(r.p99_latency),bp)
-                              +L1M_W_P999*l1mDecade(lat(r.p99_9_latency),b9));
+      var rf=clamp01((r.rps||0)/full);
+      out[r.fw]=100*rf*(LAT_W_CPU*latLinear(+r.cpu_per_req_us,bc)
+                       +LAT_W_P99*latDecade(lat(r.p99_latency),bp)
+                       +LAT_W_P999*latDecade(lat(r.p99_9_latency),b9));
     });
   }
+  function latScore(pid,fw){ latEnsure(pid); return (_latScores[pid]||{})[fw]||0; }
 
   // What a profile's detail view ranks on. Everything here is "most requests
   // per second wins" except the latency-1m profile, which pins the rate: every
   // entry delivers the same rps by construction, so ordering on it sorts by
   // measurement noise. Its metric is the CPU each one spent to do it, and less
   // of that is better.
-  function defProfileSort(id){ return id==='latency-1m' ? {k:'l1mscore',d:-1} : {k:'rps',d:-1}; }
+  function defProfileSort(id){ return isLatProfile(id) ? {k:'l1mscore',d:-1} : {k:'rps',d:-1}; }
   function profileCols(){
     var W=window.innerWidth;
     var c=[
@@ -1726,7 +1731,7 @@ document.addEventListener('DOMContentLoaded', function(){
     // exact one. Avg latency is dominated by the same coordinated-omission
     // inflation that p99 and p99.9 already show, only less legibly. Dropping them
     // buys the name back ~300px and loses no information.
-    if(state.profile==='latency-1m'){
+    if(isLatProfile(state.profile)){
       c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
       c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
       c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
@@ -1752,7 +1757,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
     if(k==='inbw') return '<div class="c num sub">'+esc(r.input_bw||'-')+'</div>';
-    if(k==='l1mscore'){ var v=_l1mScores[r.fw]; return '<div class="c num"><b>'+(v==null?'-':v.toFixed(1))+'</b></div>'; }
+    if(k==='l1mscore'){ var v=latScore(state.profile,r.fw); return '<div class="c num"><b>'+(v?v.toFixed(1):'-')+'</b></div>'; }
     if(k==='p999') return '<div class="c num sub">'+esc(r.p99_9_latency||'-')+'</div>';
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
@@ -1763,7 +1768,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function renderProfile(){
     var all=(D.results[state.profile+'-'+state.conns]||[]).slice();
-    if(state.profile==='latency-1m') l1mBuild(all);
+    if(isLatProfile(state.profile)) latBuild(state.profile, all);
     // Rank on whatever this profile is actually about. Ranking the fixed-rate
     // profile by rps would number entries 1..N by noise around 500,000.
     var _rk=defProfileSort(state.profile);

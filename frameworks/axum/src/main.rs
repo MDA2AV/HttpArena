@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::net::SocketAddr;
+
+use socket2::{Domain, Protocol, Socket, Type};
 
 use axum::body::Bytes;
 use axum::extract::{DefaultBodyLimit, Path, Query, State};
@@ -114,6 +117,18 @@ async fn upload(body: Bytes) -> String {
     body.len().to_string()
 }
 
+/// A listening socket with SO_REUSEPORT set, so several of them can share one
+/// port and the kernel spreads inbound connections across their accept queues.
+fn reuseport_listener(addr: SocketAddr) -> std::net::TcpListener {
+    let sock = Socket::new(Domain::IPV4, Type::STREAM, Some(Protocol::TCP)).unwrap();
+    sock.set_reuse_address(true).unwrap();
+    sock.set_reuse_port(true).unwrap();
+    sock.set_nonblocking(true).unwrap();
+    sock.bind(&addr.into()).unwrap();
+    sock.listen(4096).unwrap();
+    sock.into()
+}
+
 #[tokio::main]
 async fn main() {
     // Leaked once at startup so handlers can borrow the items instead of
@@ -148,6 +163,30 @@ async fn main() {
         });
     }
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    // One listener per core rather than one for the process.
+    //
+    // axum::serve drives a single accept task, so every inbound connection is
+    // accepted by one thread no matter how many the runtime has. That costs
+    // nothing while connections are held, and everything once they churn:
+    // measured on the bench box, this entry served json (gcannon -r 25, a new
+    // connection every 25 requests) at 216K rps on 1526% CPU, and json-tls
+    // (wrk, connections held) at 992K on 6313% -- same handler, same payloads,
+    // same machine, four times the CPU purely because nothing was reconnecting.
+    // A single accept loop looks worse the more cores it is given.
+    //
+    // SO_REUSEPORT gives each accept loop its own queue and lets the kernel
+    // balance across them, which is what bun, go-fasthttp, hono-bun and fletch
+    // already do here.
+    let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let addr: SocketAddr = "0.0.0.0:8080".parse().unwrap();
+    let mut tasks = Vec::new();
+    for _ in 0..workers {
+        let app = app.clone();
+        let std_listener = reuseport_listener(addr);
+        tasks.push(tokio::spawn(async move {
+            let l = tokio::net::TcpListener::from_std(std_listener).unwrap();
+            axum::serve(l, app).await.unwrap();
+        }));
+    }
+    for t in tasks { let _ = t.await; }
 }

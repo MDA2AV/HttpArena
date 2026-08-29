@@ -22,6 +22,13 @@ H2C_PORT=8082     # h2c prior-knowledge (baseline-h2c, json-h2c profiles)
 DURATION="${DURATION:-5s}"
 RUNS="${RUNS:-3}"
 THREADS="${THREADS:-64}"
+# The async profile's generator thread count, separately settable. It gets its own
+# knob because the profile is closed-loop - every connection holds one request for
+# the length of its wait - so what it reports is latency divided into connections,
+# and the generator contributes to that latency. Holding the server fixed on a
+# 32-core box and changing only this moved the result from 1.42M at 8 threads to
+# 2.16M at 16, so the number is not the server's alone.
+ASYNC_THREADS="${ASYNC_THREADS:-64}"
 H2THREADS="${H2THREADS:-64}"
 H3THREADS="${H3THREADS:-64}"
 

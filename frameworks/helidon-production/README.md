@@ -3,7 +3,7 @@ Helidon Production
 
 # Project
 
-This framework runs Helidon SE 4.4.1 on Níma WebServer as a `production`
+This framework runs Helidon SE 4.5.4 on Níma WebServer as a `production`
 benchmark entry.
 
 The current subscribed benchmark profiles are:

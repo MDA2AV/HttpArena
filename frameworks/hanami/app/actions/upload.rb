@@ -2,14 +2,11 @@ module Arena
   module Actions
     class Upload < Arena::Action
       def handle(request, response)
-        input = request.env["rack.input"]
         size = 0
+        buf = request.body
 
-        if input
-          input.rewind
-          while (chunk = input.read(65_536))
-            size += chunk.bytesize
-          end
+        while (chunk = buf.read(65_536))
+          size += chunk.bytesize
         end
 
         response.format = :txt

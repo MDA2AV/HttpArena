@@ -48,27 +48,6 @@ PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 [ -n "$FRAMEWORK_ARG" ] || fail "usage: benchmark.sh <framework> [profile] [--save]"
 
-# crud-only experiment: carve 16 physical cores out of gcannon's cpuset and
-# hand them to postgres. Leaves gcannon with 16 phys (still plenty — gcannon
-# was using ~10 cores at 300K+ rps) and bounds PG's CPU so its consumption
-# is explicit and attributable. SMT pairs preserved: N and N+64 always go
-# to the same consumer. Applied only when the user filtered to crud exactly,
-# and BEFORE the LOADGEN_DOCKER block below so docker-mode DOCKER_FLAGS
-# captures the narrowed GCANNON_CPUS if it's the active mode.
-if [ "$PROFILE_FILTER" = "crud" ]; then
-    # Reshape the server's cpuset inside the PROFILES dict so run_one's
-    # parse_profile picks up the widened range; pair with the pinned
-    # redis/gcannon cpusets below. Postgres left unpinned — the kernel
-    # scheduler naturally co-locates PG backends with the server on the
-    # same socket's L3, and forcing a cpuset hurt rps in earlier runs.
-    # SMT pairs preserved (N, N+64) for all pinned consumers.
-    PROFILES[crud]="1|200|1-31,65-95|4096|crud"             # server:  31 phys / 62 threads
-    export GCANNON_CPUS="32-63,96-127"                      # gcannon: 32 phys / 64 threads
-    export REDIS_CPUSET="0,64"                              # redis:    1 phys /  2 threads
-    unset PG_CPUSET                                         # postgres unpinned (kernel-scheduled)
-    info "crud experiment CPU layout: redis=$REDIS_CPUSET | server=1-31,65-95 | gcannon=$GCANNON_CPUS | postgres=unpinned"
-fi
-
 # ── Cleanup + tuning ────────────────────────────────────────────────────────
 
 cleanup_all() {
@@ -164,8 +143,8 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # not from frameworks/<fw>/. Covers gateway-64, gateway-h3, production-stack,
 # and any combination thereof.
 _has_isolated_test=false
-for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         static static-tls async-db async latency-1m \
+for t in baseline pipelined limited-conn json-comp json-tls upload \
+         static-tls async-db async latency-1m latency-10k \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -187,10 +166,10 @@ $_has_isolated_test && framework_build
 # for the reason the framework build above is: this Dockerfile needs DNS to
 # reach github.com, and the daemon restart in system_tune() breaks resolution
 # inside build containers for several seconds afterwards.
-if framework_subscribes_to "latency-1m" && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
+if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10k"; } && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
     if ! docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
-        docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — latency-1m cannot run without it"
+        docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — the fixed-rate profiles cannot run without it"
     fi
     ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 $ZRK_IMAGE"
     info "zrk: docker mode ($ZRK_IMAGE)"
@@ -206,21 +185,10 @@ fi
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db crud gateway-64 gateway-h3 production-stack fortunes; do
+for t in async-db gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
 if $need_pg; then postgres_start; fi
-
-# Redis sidecar — started whenever crud is in play so multi-process
-# frameworks can use it as a shared cache. Single-heap frameworks
-# (aspnet-minimal, Go, etc.) just ignore REDIS_URL and keep using their
-# in-process IMemoryCache/sync.Map equivalents. The sidecar is cheap to
-# leave running if unused.
-need_redis=false
-for t in crud; do
-    if framework_subscribes_to "$t"; then need_redis=true; break; fi
-done
-if $need_redis; then redis_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
@@ -246,13 +214,10 @@ run_one() {
     # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
     # Postgres is started once and shared across the whole run, so otherwise the
     # previous profile's warm buffers / planner stats / table bloat bleed into
-    # this one. That contamination is severe: after async-db's seq-scan load
-    # leaves every page resident, crud's cached-read backends all become
-    # runnable at once and Postgres spins ~120 cores on snapshot/buffer
-    # contention, collapsing crud from ~680k to ~210k rps. The first DB profile
-    # already has a fresh server from the upfront postgres_start, so skip it.
+    # this one. The first DB profile already has a fresh server from the
+    # upfront postgres_start, so skip it.
     case "$endpoint" in
-        async-db|crud|fortunes)
+        async-db|fortunes)
             if [ "${PG_DIRTY:-false}" = true ]; then
                 info "resetting postgres for a clean per-profile baseline"
                 postgres_start
@@ -305,7 +270,7 @@ run_one() {
     # three runs, which is not known until all three have happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
-    [ "$endpoint" = "latency-1m" ] && _mdir=$(mktemp -d)
+    case "$endpoint" in latency-1m|latency-10k) _mdir=$(mktemp -d) ;; esac
 
     BEST_M=()
     local run
@@ -323,7 +288,7 @@ run_one() {
         local output
         # Exact cgroup CPU across exactly the window the load is applied in.
         # Cheap enough to take on every profile — two file reads — and it is
-        # the measurement on the latency-1m profile rather than context.
+        # the measurement on the fixed-rate profiles rather than context.
         cpu_acct_start "$CONTAINER_NAME"
         output=$("${tool//-/_}_run" "${gc_args[@]}")
         cpu_acct_stop
@@ -349,7 +314,7 @@ run_one() {
         # one, which also discards the warm-up for free: an unsettled JIT or GC
         # heap shows up as CPU, and run 1 is the one carrying it.
         local better=false
-        if [ "$endpoint" = "latency-1m" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
+        if [ -n "$_mdir" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
             if [ -z "$best_cpu_usec" ] || [ "$CPU_ACCT_USEC" -lt "$best_cpu_usec" ]; then
                 better=true
             fi
@@ -400,7 +365,7 @@ run_one() {
     # the published score.
     if [ -n "$_mdir" ]; then
         local _win
-        _win=$(python3 "$SCRIPT_DIR/latency_1m_score.py" --pick "$_mdir" 2>/dev/null || echo "")
+        _win=$(python3 "$SCRIPT_DIR/latency_score.py" --pick "$_mdir" --profile "$endpoint" 2>/dev/null || echo "")
         if [ -n "$_win" ] && [ -f "$_mdir/$_win.kv" ]; then
             info "run $_win wins on score"
             BEST_M=()
@@ -422,8 +387,8 @@ run_one() {
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
-    # The latency-1m profile's headline number, and the check that it counts.
-    if [ "$endpoint" = "latency-1m" ]; then
+    # The fixed-rate profiles' headline number, and the check that it counts.
+    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ]; then
         # Two different failures that used to print the same line. "No CPU
         # reading" is a cgroup problem; "no requests" is a generator or server
         # problem, and saying the former when it is the latter sent the first
@@ -432,7 +397,7 @@ run_one() {
             warn "no requests were served — there is nothing to measure here."
             warn "  this is a load-generator or server failure, not a CPU one; see the zrk output above"
         elif [ -z "$best_cpu_usec" ]; then
-            warn "no cgroup CPU reading for this run — the latency-1m metric is missing"
+            warn "no cgroup CPU reading for this run — the profile metric is missing"
         else
             info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
 | $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
@@ -448,7 +413,7 @@ run_one() {
     fi
 
     # Input bandwidth — bytes the server ingests per second. Matters for
-    # profiles where the *request* body dominates (upload fixtures, crud writes) and where the response bandwidth alone
+    # profiles where the *request* body dominates (upload fixtures) and where the response bandwidth alone
     # understates the actual work done. Computed as
     #    rps × mean(--raw fixture size)
     # which is the avg bytes/request sent by gcannon. Skipped when the
@@ -523,7 +488,7 @@ save_result() {
     # not the load, so the reason ships with the row rather than being inferred
     # from an rps that looks merely slow.
     local eff_extra=""
-    if [ "$profile" = "latency-1m" ]; then
+    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ]; then
         local _eff_reqs=${BEST_M[status_2xx]:-0}
         local _eff_per_req="null"
         if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then

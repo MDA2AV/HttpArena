@@ -31,7 +31,7 @@ Five load generators are dispatched per profile - each one is built for a specif
 |-----------|-------|
 | Load generators | `gcannon` (HTTP/1.1, upload, WebSocket), `wrk` (static + json-tls rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC) |
 | Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`) |
-| Duration | 5s default; `async-db` 10s; `api-4`, `api-16`, `crud` 15s (hardcoded in the profile dispatcher) |
+| Duration | 5s default; `async-db` 10s (hardcoded in the profile dispatcher) |
 | Runs | 3 per (profile, connection count) - best RPS wins |
 | Networking | Docker `--network host` for all containers (server + load generator + Postgres + Redis sidecars) |
 
@@ -42,7 +42,7 @@ Data files are **mounted automatically** by the benchmark runner - your Dockerfi
 | Path | Description |
 |------|-------------|
 | `/data/dataset.json` | 50-item dataset for `/json`, `/db`, and `/async-db` |
-| `/data/static/` | 20 static assets for `/static/*` (HTML, JS, CSS, SVG, WebP, woff2, JSON). 15 assets ship with pre-built `.gz` and `.br` sibling files (e.g. `app.js`, `app.js.gz`, `app.js.br`) so frameworks that support precompressed serving can skip on-the-fly compression. The 5 already-binary formats (`hero.webp`, `thumb1.webp`, `thumb2.webp`, `bold.woff2`, `regular.woff2`) have no precompressed variants. See the [Static](h1/isolated/static/) profile for how to wire Accept-Encoding lookup. |
+| `/data/static/` | 20 static assets for `/static/*` (HTML, JS, CSS, SVG, WebP, woff2, JSON). 15 assets ship with pre-built `.gz` and `.br` sibling files (e.g. `app.js`, `app.js.gz`, `app.js.br`) so frameworks that support precompressed serving can skip on-the-fly compression. The 5 already-binary formats (`hero.webp`, `thumb1.webp`, `thumb2.webp`, `bold.woff2`, `regular.woff2`) have no precompressed variants. See the [Static TLS](h1/isolated/static-tls/) profile for how to wire Accept-Encoding lookup. |
 | `/certs/server.crt`, `/certs/server.key` | TLS certificate and key for HTTPS / H2 / H2 h2c (port 8082 is cleartext) / H3 |
 
 ## Environment variables
@@ -51,9 +51,8 @@ Set by the benchmark runner when the relevant profile runs - your process will s
 
 | Variable | Profiles | Value |
 |----------|----------|-------|
-| `DATABASE_URL` | `async-db`, `crud`, `api-4`, `api-16` | Postgres connection string (`postgres://bench:bench@127.0.0.1:5432/benchmark`) |
+| `DATABASE_URL` | `async-db`, `fortunes` | Postgres connection string (`postgres://bench:bench@127.0.0.1:5432/benchmark`) |
 | `DATABASE_MAX_CONN` | same as above | `256` - the Postgres sidecar's `max_connections`; size your pool ≤ this |
-| `REDIS_URL` | `crud` | `redis://127.0.0.1:6379` - multi-process frameworks can use Redis as a cross-process cache; single-heap frameworks (Go, ASP.NET, etc.) typically ignore it and keep their in-process cache |
 
 Gateway and `production-stack` profiles are compose-orchestrated, so their services receive additional env (e.g. `JWT_SECRET` for the production-stack auth sidecar) via their `compose.*.yml` files rather than through the runner. See the per-profile pages under [Gateway](gateway/) for details.
 

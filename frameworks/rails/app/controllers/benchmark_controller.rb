@@ -64,11 +64,7 @@ class BenchmarkController < ApplicationController
   end
 
   def upload
-    size = 0
-    buf = request.body
-    while (chunk = buf.read(65536))
-      size += chunk.bytesize
-    end
+    size = request.body.size
     render plain: size.to_s
   end
 

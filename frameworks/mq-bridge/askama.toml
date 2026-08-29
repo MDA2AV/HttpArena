@@ -1,0 +1,5 @@
+# Askama's built-in HTML escaper emits numeric entities (`&#60;`), but the
+# fortunes validator greps for the named form. See `NamedHtmlEscaper`.
+[[escaper]]
+path = "crate::NamedHtmlEscaper"
+extensions = ["html"]

@@ -14,10 +14,9 @@
   "repo": "https://github.com/honojs/node-server",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-tls",
     "json-comp",
     "upload"

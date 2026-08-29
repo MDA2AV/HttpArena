@@ -4,7 +4,6 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 mod grpc;
 mod handlers;
 mod state;
-mod static_preload;
 
 use env_logger::Env;
 use grpc::{Benchmark, BenchmarkServiceServer};
@@ -13,13 +12,14 @@ use handlers::{
     json_handler, pipeline, upload, ws_echo,
 };
 use state::{AppState, SharedState, build_pg_pool};
-use static_preload::StaticPreload;
 use std::{env, error::Error, fs, sync::Arc};
-use trillium::{Handler, HttpConfig, Method};
+use trillium::{Conn, Handler, HttpConfig, KnownHeaderName, Method};
+use trillium_cache::{Cache, InMemoryStorage};
 use trillium_compression::Compression;
 use trillium_quinn::QuicConfig;
 use trillium_router::Router;
 use trillium_rustls::RustlsAcceptor;
+use trillium_static::StaticFileHandler;
 use trillium_tokio::config;
 use trillium_websockets::websocket;
 
@@ -34,7 +34,7 @@ fn tuned_http_config() -> HttpConfig {
         .with_request_buffer_initial_len(256)
 }
 
-fn build_handler(static_files: StaticPreload) -> impl Handler {
+fn build_handler(static_dir: String) -> impl Handler {
     (
         BenchmarkServiceServer::new(Benchmark),
         Compression::new(),
@@ -44,7 +44,19 @@ fn build_handler(static_files: StaticPreload) -> impl Handler {
             .get("/baseline2", baseline_get)
             .get("/json/:count", json_handler)
             .post("/upload", upload)
-            .get("/static/*", static_files)
+            .get(
+                "/static/*",
+                (
+                    // rfc 9111 cache over the filesystem handler. max-age=1 keeps hits in
+                    // memory while bounding staleness under the arena's follow-the-disk
+                    // window; past it the cache revalidates against the handler below.
+                    Cache::new(InMemoryStorage::new()).shared(),
+                    |conn: Conn| async move {
+                        conn.with_response_header(KnownHeaderName::CacheControl, "max-age=1")
+                    },
+                    StaticFileHandler::new(static_dir).with_precompressed(),
+                ),
+            )
             .get("/async-db", async_db)
             .get("/fortunes", fortunes)
             .get("/crud/items", crud_list)
@@ -61,7 +73,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     let shared = SharedState::init();
 
     let static_dir = env::var("STATIC_DIR").unwrap_or_else(|_| "/data/static".into());
-    let static_files = StaticPreload::load(&static_dir);
 
     let cert = fs::read(env::var("TLS_CERT").unwrap_or_else(|_| "/certs/server.crt".into())).ok();
     let key = fs::read(env::var("TLS_KEY").unwrap_or_else(|_| "/certs/server.key".into())).ok();
@@ -110,6 +121,6 @@ fn main() -> Result<(), Box<dyn Error>> {
          for h3"
     );
 
-    builder.run(build_handler(static_files));
+    builder.run(build_handler(static_dir));
     Ok(())
 }

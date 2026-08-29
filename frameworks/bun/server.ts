@@ -344,6 +344,20 @@ const routes = {
     // one segment, so a path with a slash in it never reaches the handler
     "/static/:name": (req: any) => serveStatic(req.params.name, req),
 
+    // GET /delay/{ms} - answered once ms milliseconds have gone by. Bun.sleep returns a
+    // promise the scheduler resolves on a timer, so awaiting it parks this request and
+    // hands the thread back: a wait costs a timer entry rather than a blocked worker,
+    // which is what lets one process hold tens of thousands of them at once.
+    //
+    // The value is parsed per request, out of the path Bun.serve matched. Keeping it in
+    // this scope rather than anywhere shared is what makes overlapping requests with
+    // different delays each get their own, which validation checks with 32 at a time.
+    "/delay/:ms": async (req: any) => {
+        const ms = parseInt(req.params.ms, 10) || 0;
+        if (ms > 0) await Bun.sleep(ms);
+        return new Response(String(ms), { headers: TEXT });
+    },
+
     "/async-db": (req: Request) => asyncDb(qs(req)),
 
     "/fortunes": () => fortunes(),

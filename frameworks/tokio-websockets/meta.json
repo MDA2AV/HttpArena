@@ -1,0 +1,14 @@
+{
+  "display_name": "tokio-websockets",
+  "language": "Rust",
+  "type": "engine",
+  "engine": "tokio",
+  "description": "High performance, strict, tokio-util based WebSockets implementation.",
+  "repo": "https://github.com/Gelbpunkt/tokio-websockets",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ]
+}

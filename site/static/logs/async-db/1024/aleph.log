@@ -4,4 +4,8 @@ WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers i
 WARNING: Restricted methods will be blocked in a future release unless native access is enabled
 
 Server running on port 8080
+Server running on port 8082
 Server running on port 8081
+Aug 29, 2026 1:31:40 PM clojure.tools.logging$eval134$fn__137 invoke
+INFO: Application protocol config supports protocols: h2
+Server running on port 8443

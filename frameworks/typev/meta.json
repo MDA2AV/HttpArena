@@ -8,10 +8,8 @@
   "enabled": false,
   "tests": [
     "pipelined",
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "limited-conn",
-    "json",
-    "static",
     "upload",
     "echo-ws",
     "echo-ws-pipeline"

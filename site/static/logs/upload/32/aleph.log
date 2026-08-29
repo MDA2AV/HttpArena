@@ -1,2 +1,6 @@
 Server running on port 8080
+Server running on port 8082
 Server running on port 8081
+Aug 29, 2026 1:28:07 PM clojure.tools.logging$eval134$fn__137 invoke
+INFO: Application protocol config supports protocols: h2
+Server running on port 8443

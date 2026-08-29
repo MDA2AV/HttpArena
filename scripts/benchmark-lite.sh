@@ -76,10 +76,8 @@ declare -A PROFILES=(
     [baseline]="1|0||512|"
     [pipelined]="16|0||512|pipeline"
     [limited-conn]="1|10||512|"
-    [json]="1|0||512|json"
     [json-comp]="1|0||512|json-compressed"
     [upload]="1|0||128|upload"
-    [static]="1|10||512|static"
     [async-db]="1|0||512|async-db"
     [baseline-h2]="1|0||512|h2"
     [static-h2]="1|0||512|static-h2"
@@ -91,8 +89,8 @@ declare -A PROFILES=(
 )
 PROFILE_ORDER=(
     baseline pipelined limited-conn
-    json json-comp
-    upload static async-db
+    json-comp
+    upload async-db
     baseline-h2 static-h2
     baseline-h3 static-h3
     unary-grpc unary-grpc-tls

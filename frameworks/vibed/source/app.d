@@ -8,9 +8,13 @@ import vibe.data.serialization : optional;
 import vibe.http.router : URLRouter;
 import vibe.http.server;
 import vibe.stream.operations : readAllUTF8;
+import vibe.stream.tls : createTLSContext, TLSContext, TLSContextKind;
 
 import std.algorithm.comparison : min;
 import std.conv : to;
+
+// json-tls listens here; 8080 stays plaintext and 8443 belongs to h2/h3.
+enum H1TLS_PORT = 8081;
 
 struct Rating {
     long score;
@@ -114,6 +118,40 @@ void handleUpload(scope HTTPServerRequest req, scope HTTPServerResponse res)
     res.writeBody(received.to!string, "text/plain");
 }
 
+/// Server TLS context for the json-tls listener, or null when the harness did
+/// not mount /certs. Returning null rather than throwing keeps the plaintext
+/// profiles startable on their own: validate.sh only mounts the directory for
+/// entries that subscribe to a TLS test.
+TLSContext serverTLSContext()
+@safe nothrow {
+    import std.file : exists;
+
+    enum certPath = "/certs/server.crt";
+    enum keyPath = "/certs/server.key";
+
+    try {
+        if (!exists(certPath) || !exists(keyPath)) {
+            logWarn("No certificate at %s, the TLS listener stays down", certPath);
+            return null;
+        }
+        auto ctx = createTLSContext(TLSContextKind.server);
+        ctx.useCertificateChainFile(certPath);
+        ctx.usePrivateKeyFile(keyPath);
+        // json-tls is HTTP/1.1 only. Without this the extension is absent and a
+        // client falls back to 1.1 anyway, but saying so explicitly keeps an h2
+        // capable client from ever being offered the upgrade.
+        ctx.alpnCallback = (string[] offered) {
+            foreach (proto; offered)
+                if (proto == "http/1.1") return proto;
+            return null;  // no overlap: let the client fall back
+        };
+        return ctx;
+    } catch (Exception e) {
+        logWarn("TLS setup failed (%s), the TLS listener stays down", e.msg);
+        return null;
+    }
+}
+
 /// Cores this container may actually use: the cgroup v2 quota first, then the
 /// CPU affinity mask, and the machine size only if both are unavailable.
 uint availableCores()
@@ -193,6 +231,21 @@ int main(string[] args)
             settings.serverString = "vibe.d";
 
             listenHTTP(settings, router);
+
+            // json-tls: the same router behind TLS on 8081, one listener per
+            // worker exactly like the plaintext one, so the profile is served
+            // by every core instead of whichever thread happened to bind it.
+            if (auto tlsCtx = serverTLSContext()) {
+                auto tlsSettings = new HTTPServerSettings;
+                tlsSettings.port = H1TLS_PORT;
+                tlsSettings.bindAddresses = ["0.0.0.0"];
+                tlsSettings.options = HTTPServerOption.reusePort | HTTPServerOption.reuseAddress;
+                tlsSettings.maxRequestSize = 64 * 1024 * 1024;
+                tlsSettings.useCompressionIfPossible = true;
+                tlsSettings.serverString = "vibe.d";
+                tlsSettings.tlsContext = tlsCtx;
+                listenHTTP(tlsSettings, router);
+            }
         } catch (Exception e) assert(false, e.msg);
     });
 

@@ -14,17 +14,14 @@
   "repo": "https://github.com/stratdev3/SimpleW",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
     "upload",
-    "static",
     "static-tls",
     "async-db",
-    "crud",
     "echo-ws",
     "echo-ws-pipeline"
   ],

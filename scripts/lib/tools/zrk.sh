@@ -2,7 +2,7 @@
 #
 # zrk is the only generator here that paces. gcannon, wrk and h2load all answer
 # "how fast can this go"; zrk answers "hold exactly this rate", which is what
-# the latency-1m profile needs — with the rate pinned, the only thing left to
+# the fixed-rate profiles need — with the rate pinned, the only thing left to
 # vary between entries is what it cost them.
 #
 # It is also the only one that emits a machine-readable summary, so this
@@ -38,12 +38,13 @@ _zrk_cmd() {
       Build it with: docker build -t $ZRK_IMAGE -f docker/zrk.Dockerfile docker/"
 }
 
-# The rate the latency-1m profile holds, in requests/second. It lives here
+# The rate each fixed-rate profile holds, in requests/second. They live here
 # rather than in the profile spec because the spec's five fields are shaped for
 # closed-loop tools and have no slot for an offered rate — and because changing
 # it re-baselines every published number on the profile, so it should be a
 # visible edit rather than a digit inside a pipe-delimited string.
-ZRK_FIXED_RATE="${ZRK_FIXED_RATE:-1000000}"
+ZRK_RATE_LATENCY_1M="${ZRK_RATE_LATENCY_1M:-1000000}"
+ZRK_RATE_LATENCY_10K="${ZRK_RATE_LATENCY_10K:-10000}"
 
 # ── Build arguments ─────────────────────────────────────────────────────────
 
@@ -53,7 +54,7 @@ zrk_build_args() {
     mapfile -t cmd < <(_zrk_cmd)
 
     case "$endpoint" in
-        latency-1m)
+        latency-1m|latency-10k)
             # Same GET the baseline profile is validated on, so nothing new has
             # to be implemented to subscribe and the handler is as thin as the
             # framework allows -- what is left in the CPU number is the
@@ -66,7 +67,9 @@ zrk_build_args() {
             # generator shows up in nobody's number. What thread count does buy
             # is schedule fidelity: at 1M req/s, -t 16 held rate_ratio 0.9934
             # with 93ms of peak schedule lag against -t 24's 0.9955 and 46ms.
-            cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$ZRK_FIXED_RATE"
+            local _rate="$ZRK_RATE_LATENCY_1M"
+            [ "$endpoint" = "latency-10k" ] && _rate="$ZRK_RATE_LATENCY_10K"
+            cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$_rate"
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")
             ;;
@@ -124,7 +127,7 @@ print("rps=%d" % round(d.get("achieved_rate") or 0))
 # lat() on the board reads us/ms/s, so hand it microseconds unconverted.
 print("avg_lat=%.1fus" % (lat.get("mean") or 0))
 print("p99_lat=%.1fus" % (lat.get("p99") or 0))
-# p99.9 is not a field any other adapter produces, and the latency-1m
+# p99.9 is not a field any other adapter produces, and the fixed-rate
 # score weights it, so it has to survive into the result row rather than
 # only existing in this summary.
 print("p999_lat=%.1fus" % (lat.get("p99_9") or 0))

@@ -9,8 +9,10 @@ trillium-tokio = { version = "0.6", features = ["reuseport"] }
 trillium-router = "0.5"
 trillium-rustls = "0.11"
 trillium-quinn = "0.1"
-trillium-websockets = "0.8"
+trillium-websockets = "0.9"
 trillium-compression = "0.3"
+trillium-static = { version = "0.6", features = ["tokio"] }
+trillium-cache = "0.2"
 trillium-grpc = "0.3"
 trillium-askama = "0.5"
 askama = "0.16"

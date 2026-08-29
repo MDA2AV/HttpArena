@@ -188,7 +188,7 @@ Everything under `requests/` is fair game:
 | File | What it is |
 |---|---|
 | `requests/get.raw`, `post_cl.raw`, `post_chunked.raw` | Raw HTTP/1.1 requests for `--raw` mode. |
-| `requests/json-{1,5,10,...}.raw` | Different JSON body sizes for the `json` profile. |
+| `requests/json-gzip-{25,40,50}.raw` | Compressed-negotiation bodies for the `json-comp` profile. |
 | `requests/async-db-{5,10,20,35,50}.raw` | Different `limit=N` query variants. |
 | `requests/upload-{500k,2m,10m,20m}.raw` | Upload bodies for the `upload` profile. |
 | `requests/static-rotate.lua` / `json-tls-rotate.lua` | wrk rotation scripts. |

@@ -6,6 +6,14 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 {{< type-rules standard="Must use the framework standard body reading API. Streaming is allowed if the framework supports it natively." tuned="May use custom buffer sizes, direct socket reads, or bypass framework body parsing for maximum throughput." engine="No specific rules." >}}
 
 
+> **Reference-only.** This profile is measured and published but does not contribute to the
+> composite score, pending a rework of both the workload and how it is validated. Every check
+> currently sends a body with an accurate `Content-Length` and compares the returned count
+> against it, so a handler that echoes that header without reading a single body byte passes
+> all of them - and would outrank one that actually ingests 20 MB. Until a chunked or
+> short-body probe closes that hole, the number is worth publishing but not worth ranking on.
+
+
 The Upload profile measures how efficiently a framework handles large request body ingestion. The benchmark rotates across four payload sizes: 500 KB, 2 MB, 10 MB, and 20 MB. The server returns the byte count.
 
 **Connections:** 32, 256

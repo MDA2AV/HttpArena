@@ -2,13 +2,13 @@
 
 package dev.cardigan.httparena;
 
-import dev.cardigan.http.StreamingBody;
+import dev.cardigan.ffi.RawSegment;
+import dev.cardigan.http.EncodedBody;
 import dev.cardigan.serdes.Serdes;
 import dev.cardigan.simdjson.ondemand.Value;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -64,7 +64,7 @@ final class HttpArenaDataset {
         return new HttpArenaDataset(prefixes, totals);
     }
 
-    StreamingBody render(int requestedCount, long multiplier) {
+    EncodedBody render(int requestedCount, long multiplier) {
         int count = Math.max(0, Math.min(requestedCount, itemPrefixes.length));
         int length = PREFIX.length + COUNT.length + digits(count) + 1;
         for (int index = 0; index < count; index++) {
@@ -75,44 +75,37 @@ final class HttpArenaDataset {
             }
         }
 
-        byte[] output = new byte[length];
-        int offset = copy(PREFIX, output, 0);
+        int encodedLength = length;
+        return EncodedBody.of(
+            encodedLength,
+            output -> renderInto(
+                output.address(), count, multiplier, encodedLength));
+    }
+
+    private int renderInto(
+            long outputAddress,
+            int count,
+            long multiplier,
+            int length) {
+        int offset = copy(PREFIX, outputAddress, 0);
         for (int index = 0; index < count; index++) {
             if (index != 0) {
-                output[offset++] = ',';
+                putByte(outputAddress, offset++, (byte) ',');
             }
-            offset = copy(itemPrefixes[index], output, offset);
-            offset = copy(TOTAL, output, offset);
+            offset = copy(itemPrefixes[index], outputAddress, offset);
+            offset = copy(TOTAL, outputAddress, offset);
             offset = writeLong(
-                output, offset,
+                outputAddress, offset,
                 Math.multiplyExact(baseTotals[index], multiplier));
-            output[offset++] = '}';
+            putByte(outputAddress, offset++, (byte) '}');
         }
-        offset = copy(COUNT, output, offset);
-        offset = writeLong(output, offset, count);
-        output[offset++] = '}';
-        if (offset != output.length) {
+        offset = copy(COUNT, outputAddress, offset);
+        offset = writeLong(outputAddress, offset, count);
+        putByte(outputAddress, offset++, (byte) '}');
+        if (offset != length) {
             throw new IllegalStateException("Incorrect JSON response length");
         }
-
-        MemorySegment bytes = MemorySegment.ofArray(output);
-        return StreamingBody.of(output.length, new StreamingBody.Reader() {
-            private int position;
-
-            @Override
-            public int read(MemorySegment destination) {
-                if (position == output.length) {
-                    return -1;
-                }
-                int amount = Math.min(
-                    output.length - position,
-                    Math.toIntExact(destination.byteSize()));
-                MemorySegment.copy(
-                    bytes, position, destination, 0, amount);
-                position += amount;
-                return amount;
-            }
-        });
+        return offset;
     }
 
     int size() {
@@ -166,8 +159,8 @@ final class HttpArenaDataset {
         return ranges;
     }
 
-    private static int copy(byte[] source, byte[] target, int offset) {
-        System.arraycopy(source, 0, target, offset, source.length);
+    private static int copy(byte[] source, long target, int offset) {
+        RawSegment.copy(source, 0, target + offset, source.length);
         return offset + source.length;
     }
 
@@ -180,20 +173,28 @@ final class HttpArenaDataset {
         return result;
     }
 
-    private static int writeLong(byte[] target, int offset, long value) {
+    private static int writeLong(long target, int offset, long value) {
         int length = digits(value);
         int end = offset + length;
         int cursor = end;
         boolean negative = value < 0;
         do {
             long remainder = value % 10;
-            target[--cursor] = (byte) ('0' + Math.abs(remainder));
+            putByte(
+                target,
+                --cursor,
+                (byte) ('0' + Math.abs(remainder)));
             value /= 10;
         } while (value != 0);
         if (negative) {
-            target[offset] = '-';
+            putByte(target, offset, (byte) '-');
         }
         return end;
+    }
+
+    private static void putByte(long target, int offset, byte value) {
+        RawSegment.BYTE.set(
+            RawSegment.ADDRESS_SPACE, target + offset, value);
     }
 
     private static boolean isWhitespace(byte value) {

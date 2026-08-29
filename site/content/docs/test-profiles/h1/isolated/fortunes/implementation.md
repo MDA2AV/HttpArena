@@ -15,7 +15,7 @@ The Fortunes profile measures template-engine throughput on a realistic page-ren
 
 ## How it works
 
-1. A Postgres container runs alongside the framework container on the same host, listening on `localhost:5432`. The same connection pool used by `async-db` / `crud` is shared.
+1. A Postgres container runs alongside the framework container on the same host, listening on `localhost:5432`. The same connection pool used by `async-db` is shared.
 2. On each `GET /fortunes` request the framework:
    - Reads all 200 rows from the `fortune` table (`id`, `message`).
    - Appends a runtime row in memory: `{ id: 0, message: "Additional fortune added at request time." }` - total 201 rows.
@@ -33,7 +33,7 @@ The runtime-injected row is the load-bearing design decision - it forces the ren
 
 ## Database schema
 
-The `fortune` table in Postgres (200 rows seeded; same Postgres instance as `async-db` / `crud`):
+The `fortune` table in Postgres (200 rows seeded; same Postgres instance as `async-db`):
 
 ```sql
 CREATE TABLE fortune (

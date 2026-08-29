@@ -10,7 +10,6 @@
     "baseline",
     "pipelined",
     "limited-conn",
-    "json",
     "json-tls",
     "baseline-h2",
     "static-h2"

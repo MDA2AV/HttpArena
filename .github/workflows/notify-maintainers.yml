@@ -12,6 +12,21 @@ permissions:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    # Opt-out for repo-wide sweeps. A change that touches every entry - renaming a
+    # profile, retiring an endpoint - is not news to any single maintainer, and the
+    # ping is a notification to dozens of people who have nothing to do.
+    #
+    # Both forms are checked because they fail differently. The label is the
+    # discoverable one and can be added after the fact; the body marker is the one
+    # that is guaranteed to be in the payload of the `opened` event, before a label
+    # applied by a second API call could race the run that pings everybody.
+    #
+    # pull_request_target reads this file from the BASE branch, so a PR cannot
+    # grant itself the opt-out - it has to already be on main. That is the point.
+    if: >-
+      !contains(github.event.pull_request.labels.*.name, 'skip-maintainer-ping') &&
+      !contains(github.event.pull_request.body, '[skip-maintainer-ping]') &&
+      !contains(github.event.pull_request.title, '[skip-maintainer-ping]')
     steps:
       # No ref: on pull_request_target the default is the base branch, which is the only side this
       # job needs. It reads meta.json to know who to ping, and that must come from the base anyway.
