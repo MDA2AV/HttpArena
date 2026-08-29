@@ -16,7 +16,7 @@ HTTP.jl on its stream handler, the plain server the Julia ecosystem builds on.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Reads the body in 64 KB chunks and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 The same routes are served over TLS on port 8081 for `json-tls`.
 

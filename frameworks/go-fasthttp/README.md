@@ -18,7 +18,7 @@ High-performance Go HTTP server using fasthttp with zero-allocation design and b
 | `/json` | GET | Processes 50-item dataset, serializes JSON |
 | `/compression` | GET | Gzip-compressed large JSON response |
 | `/db` | GET | SQLite range query with JSON response |
-| `/upload` | POST | Receives 1 MB body, returns byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 

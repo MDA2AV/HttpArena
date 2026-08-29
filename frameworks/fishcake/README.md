@@ -23,7 +23,7 @@ sibling [`genhttp-11`](../genhttp-11) entry, rebuilt on the port's webservice st
 | `/baseline11` | POST | Sums `a` + `b` + a value read from the body |
 | `/baseline2` | GET | Sums query parameters `a` + `b` |
 | `/json/{count}` | GET | Processes the first `count` dataset items; `?m=` scales each total (default 1) |
-| `/upload` | POST | Drains the request body, returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/async-db` | GET | `price BETWEEN min AND max` range query (sequential scan) |
 | `/crud/items` | GET | Paged listing by category |
 | `/crud/items/{id}` | GET | Cached single-item read (`X-Cache: HIT\|MISS`) |
@@ -32,7 +32,7 @@ sibling [`genhttp-11`](../genhttp-11) entry, rebuilt on the port's webservice st
 
 ## Profiles
 
-Declared in `meta.json`: `baseline`, `pipelined`, `limited-conn`, `json`, `upload`,
+Declared in `meta.json`: `baseline`, `pipelined`, `limited-conn`, `json`, `in-out`,
 `async-db`, `crud`.
 
 **Not implemented** — these depend on modules the port does not provide yet, so they are

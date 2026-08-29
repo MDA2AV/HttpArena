@@ -45,16 +45,6 @@ function readBody(req: Request): Promise<Buffer> {
   });
 }
 
-function countBody(req: Request): Promise<number> {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    req.on('data', (chunk: Buffer) => {
-      size += chunk.length;
-    });
-    req.on('end', () => resolve(size));
-    req.on('error', reject);
-  });
-}
 
 @Controller()
 export class AppController {

@@ -19,7 +19,7 @@ Fastify 5 on node's own HTTP server, with the cluster module for multi-core scal
 | `/json/:count` | GET | Serializes a slice of the dataset |
 | `/db` | GET | Reads from SQLite, read-only, memory mapped |
 | `/async-db` | GET | Reads from PostgreSQL through a pool of four |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/:filename` | GET | Serves a file from disk through `@fastify/static` |
 
 ## Notes

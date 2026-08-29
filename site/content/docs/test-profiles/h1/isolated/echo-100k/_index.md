@@ -1,6 +1,6 @@
 ---
-title: In-Out
-seo_title: "In-Out: 100 KB Echoed Over TLS, Both Directions at Once"
+title: Echo-100K
+seo_title: "Echo-100K: 100 KB Echoed Over TLS, Both Directions at Once"
 description: "Posts a 100 KB body over TLS and requires it back verbatim, loading ingest and egress together rather than one at a time."
 ---
 

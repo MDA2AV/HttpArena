@@ -18,23 +18,27 @@ end
 
 local dataset = load_dataset()
 
-local function body_size()
+-- The request body, byte for byte. read_body() undoes the framing (a chunked
+-- request included), after which the bytes are in memory unless they outgrew
+-- client_body_buffer_size, in which case nginx spooled them to a temp file that
+-- has to be read back. Lua strings are 8-bit clean, so binary survives both.
+local function body_bytes()
   ngx.req.read_body()
   local data = ngx.req.get_body_data()
   if data then
-    return #data
+    return data
   end
   local path = ngx.req.get_body_file()
   if not path then
-    return 0
+    return ""
   end
   local file = io.open(path, "rb")
   if not file then
-    return 0
+    return ""
   end
-  local size = file:seek("end")
+  local content = file:read("*a")
   file:close()
-  return size
+  return content or ""
 end
 
 local app = lapis.Application()
@@ -85,8 +89,8 @@ app:get("/json/:count", function(self)
   return { json = { items = items, count = count } }
 end)
 
-app:post("/upload", function(self)
-  return { layout = false, content_type = "text/plain", tostring(body_size()) }
+app:post("/echo", function(self)
+  return { layout = false, content_type = "application/octet-stream", body_bytes() }
 end)
 
 return app

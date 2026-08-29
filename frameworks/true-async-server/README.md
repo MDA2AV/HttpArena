@@ -143,7 +143,7 @@ $server->addHttpHandler(static function ($req, $res) use ($dataset, $datasetCoun
     if ($path === '/baseline11' || $path === '/baseline2') { ... sum ... }
     if ($path === '/pipeline')                              { ... 'ok' ... }
     if (str_starts_with($path, '/json/'))                   { ... slice + json_encode ... }
-    if ($path === '/upload')                                { ... awaitBody ... }
+    if ($path === '/echo')                                  { ... readBody ... }
     /* /static/* is served by StaticHandler above; anything else → 404 */
 });
 ```
@@ -156,7 +156,7 @@ goes first because it's the hottest endpoint across `baseline`,
 
 | Port | Protocol | Used by profile |
 |------|----------|----------------|
-| 8080 | h1 cleartext | `baseline`, `pipelined`, `limited-conn`, `json`, `upload` |
+| 8080 | h1 cleartext | `baseline`, `pipelined`, `limited-conn`, `json`, `in-out` |
 | 8081 | h1 + TLS | `json-tls` |
 | 8443 | h1 + h2 + TLS (ALPN) | `baseline-h2` |
 

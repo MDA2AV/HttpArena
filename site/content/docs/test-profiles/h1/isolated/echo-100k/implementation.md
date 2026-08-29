@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "In-Out Benchmark: Implementation Guide"
+seo_title: "Echo-100K Benchmark: Implementation Guide"
 description: "How the 100 KB TLS echo profile is run, what it measures, and the type-specific rules that apply to it."
 ---
 {{< type-rules standard="Must read the request body through the framework's standard body API and write it back through the standard response API. Streaming is allowed and encouraged. What is not allowed is answering without reading: a response assembled from Content-Length, or a canned buffer of the right size, is not an echo." tuned="May stream, use vectored writes, reuse buffers, or hand the bytes back with zero copies. The body must still be the bytes that arrived - the profile is defined by what comes back, not by how it is moved." engine="Same as above. An engine is free to splice or reuse the receive buffer directly for the response; that is the point of the profile." infrastructure="A proxy may stream the body through to an origin and back, or echo it itself. Either way the bytes returned must be the bytes sent." >}}
@@ -76,7 +76,7 @@ Validation goes further and sends **random** bodies, comparing byte for byte. An
 | Connections | 32, 256 |
 | Duration | 5s |
 | Runs | 3, best kept |
-| Load generator | [wrk](/docs/load-generators/h1/wrk/) with `requests/in-out-rotate.lua` |
+| Load generator | [wrk](/docs/load-generators/h1/wrk/) with `requests/echo-100k-rotate.lua` |
 | Metrics | rps, response bandwidth, and ingest bandwidth as `rps × 102400` |
 
 wrk reports only the bytes it *read*, so its `Transfer/sec` is the download half of the echo. The ingest half is reconstructed in `benchmark.sh` from the request size, which is constant - without that the profile would report half the I/O it actually moves.

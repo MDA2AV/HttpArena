@@ -30,7 +30,7 @@ gRPC shares these listeners: `unary-grpc` runs over h2c prior-knowledge on 8080,
 | `/baseline2` | GET | Same shape as `/baseline11` GET, exercised over h2/h3 |
 | `/pipeline` | GET | Returns `ok` (plain text) |
 | `/json/:count` | GET | Loads `:count` items from `/data/dataset.json`, computes `total = price * quantity * m` |
-| `/upload` | POST | Streams the request body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/*` | GET | Serves files from `/data/static` via `trillium-static` |
 | `/async-db` | GET | Postgres range query via deadpool-postgres pool |
 | `/crud/items` | GET / POST | Paginated list / upsert |

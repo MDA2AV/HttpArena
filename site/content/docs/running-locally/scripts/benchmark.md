@@ -127,7 +127,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `limited-conn` | 1 | 10 | `0-31,64-95` | 512, 4096 | gcannon | `/baseline11` (reconnect every 10 req) |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
-| `in-out` | 1 | ∞ | `0-31,64-95` | 32, 256 | wrk | `POST /echo` on TLS `:8081` - 100 KB echoed, 8 rotating bodies |
+| `echo-100k` | 1 | ∞ | `0-31,64-95` | 32, 256 | wrk | `POST /echo` on TLS `:8081` - 100 KB echoed, 8 rotating bodies |
 | `api-4` | 1 | 5 | `0-3` | 256 | gcannon | 8-template mix (baseline / json / async-db) |
 | `api-16` | 1 | 5 | `0-7,64-71` | 1024 | gcannon | 8-template mix |
 | `static` | 1 | 200 | `0-31,64-95` | 1024, 4096, 6800 | wrk | 20 files via `static-rotate.lua` |

@@ -20,7 +20,7 @@
     "limited-conn", "async", "latency-1m", "latency-10k",
     "json-comp",
     "json-tls",
-    "in-out",
+    "echo-100k",
     "static-tls",
     "async-db",
     "fortunes",

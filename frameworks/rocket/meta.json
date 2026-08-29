@@ -18,7 +18,7 @@
     "pipelined",
     "limited-conn",
     "json-tls",
-    "in-out"
+    "echo-100k"
   ],
   "maintainers": []
 }

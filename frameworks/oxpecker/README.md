@@ -19,7 +19,7 @@ F# web framework built on ASP.NET Core endpoint routing, running on .NET 10 with
 | `/baseline2` | GET | Sums query parameter values (HTTP/2 variant) |
 | `/json/{count}` | GET | Returns `count` items from the preloaded dataset; honors `Accept-Encoding: gzip/br` for the `json-comp` profile |
 | `/async-db` | GET | Postgres range query: `SELECT ... WHERE price BETWEEN $1 AND $2 LIMIT $3` |
-| `/upload` | POST | Streams the request body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/crud/items` | GET | Paginated list by category |
 | `/crud/items/{id}` | GET | Single item read, cache-aside with 200ms TTL, returns `X-Cache: HIT/MISS` |
 | `/crud/items` | POST | Create item via INSERT with ON CONFLICT upsert, returns 201 |
@@ -38,7 +38,7 @@ F# web framework built on ASP.NET Core endpoint routing, running on .NET 10 with
 - HTTP/2 tuned: 256 max streams per connection, 2 MB initial connection window, 1 MB stream window
 - `AddResponseCompression()` + `UseResponseCompression()` for `json-comp`
 - `UseStaticFiles` for `/static/*` with a `PhysicalFileProvider` on `/data/static`, so what is served follows the directory the harness mounts rather than a build-time copy in `wwwroot` (see #1268); `.webp` and `.woff2` are added to the content type provider, and compression is left to the response compression middleware
-- `/upload` drains the body through a 64 KB pooled buffer (`ArrayPool<byte>.Shared`)
+- `/echo` drains the body through a 64 KB pooled buffer (`ArrayPool<byte>.Shared`)
 - Postgres pooled via `NpgsqlDataSource` with auto-prepare; crud read cache is Redis when `REDIS_URL` is set, else in-process `MemoryCache`
 - Logging disabled (`ClearProviders()`); `ServerGarbageCollection` enabled
 - Project is `HttpArena.Oxpecker.fsproj` — an assembly named `oxpecker` collides with the `Oxpecker` package it depends on

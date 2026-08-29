@@ -352,16 +352,17 @@ router.get("json/{count}") { request, context -> Response in
     )
 }
 
-// POST /upload
-router.post("upload") { request, _ -> Response in
-    var size = 0
-    for try await buffer in request.body {
-        size += buffer.readableBytes
-    }
+// POST /echo — the body handed back byte for byte. It is collected before the
+// response is written rather than streamed through: the response cannot carry a
+// Content-Length until the length is known, and a chunked request brings none to
+// forward. `collect` reads to the end of the body whatever the framing was, and
+// a ByteBuffer response body frames itself from what it holds.
+router.post("echo") { request, _ -> Response in
+    let body = try await request.body.collect(upTo: 32 * 1_048_576)
     return Response(
         status: .ok,
-        headers: [.contentType: "text/plain"],
-        body: .init(byteBuffer: ByteBuffer(string: "\(size)"))
+        headers: [.contentType: "application/octet-stream"],
+        body: .init(byteBuffer: body)
     )
 }
 

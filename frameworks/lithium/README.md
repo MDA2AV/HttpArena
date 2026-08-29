@@ -34,7 +34,7 @@ Lithium's header-only HTTP server on its epoll/fiber backend.
 |----------|--------|-------------|
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body on POST |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Reads the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
@@ -49,4 +49,4 @@ Lithium's header-only HTTP server on its epoll/fiber backend.
   be guarded the same way or it is a redefinition
 - The raw query string and the request body are on `req.http_ctx`
   (`get_parameters_string()`, `read_whole_body()`), not on `http_request`
-- Chunked request bodies work, including chunked `/upload`
+- Chunked request bodies work, including chunked `/echo`

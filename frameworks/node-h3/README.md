@@ -16,7 +16,7 @@ H3 v2 on node's own HTTP server, with the cluster module for multi-core scaling.
 | `/pipeline` | GET | Returns `ok` (plain text) |
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzip when the client accepts it |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 

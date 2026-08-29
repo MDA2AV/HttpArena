@@ -19,7 +19,7 @@ live in `user_data`.
 | `pipelined` | `GET /pipeline` |
 | `json` | `GET /json/{count}?m=M` over `/data/dataset.json` |
 | `json-comp` | `GET /json/{count}?m=M` + `Accept-Encoding: gzip` → gzipped (process-shared cache) |
-| `upload` | `POST /upload` → received byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `static` | `GET /static/*` → `sendfile(2)` from a preloaded MIME/size table, 404 for misses |
 | `async-db` | `GET /async-db?min&max&limit` via `db.pg` |
 | `crud` | `GET/POST /crud/items`, `GET/PUT /crud/items/{id}` (in-memory cache-aside, `X-Cache` MISS/HIT) |

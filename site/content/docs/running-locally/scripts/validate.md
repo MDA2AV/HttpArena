@@ -39,7 +39,7 @@ Several validations use randomized inputs to detect hardcoded responses:
 
 ```
 === Validating: express ===
-[info] Subscribed tests: baseline json-comp in-out
+[info] Subscribed tests: baseline json-comp echo-100k
 [build] Building Docker image...
 [ready] Server is up
 [test] baseline endpoints

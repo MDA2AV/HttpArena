@@ -14,9 +14,9 @@
 #include "handlers/async_db/handler.hpp"
 #include "handlers/baseline11/handler.hpp"
 #include "handlers/baseline2/handler.hpp"
+#include "handlers/echo/handler.hpp"
 #include "handlers/json/handler.hpp"
 #include "handlers/plaintext/handler.hpp"
-#include "handlers/upload/handler.hpp"
 #include "middlewares/compression.hpp"
 #include "middlewares/compression_pipeline_builder.hpp"
 
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
                             .Append<userver_httparena::plaintext::Handler>()
                             .Append<userver_httparena::baseline11::Handler>()
                             .Append<userver_httparena::json::Handler>()
-                            .Append<userver_httparena::upload::Handler>()
+                            .Append<userver_httparena::echo::Handler>()
                             .Append<userver_httparena::async_db::Handler>()
                             .Append<userver_httparena::baseline2::Handler>()
                             .Append<userver_httparena::DatasetProvider>()

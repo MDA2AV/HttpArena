@@ -100,10 +100,6 @@
                  0)]
     (+ a b body)))
 
-(defn count-stream-bytes [^InputStream in]
-  (with-open [^InputStream stream in]
-    (.transferTo stream (OutputStream/nullOutputStream))))
-
 (defn echo-response
   "The bytes that arrived, unchanged. Collected because the response needs a
   Content-Length, and a chunked request carries none to forward."

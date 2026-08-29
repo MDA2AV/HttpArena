@@ -191,7 +191,7 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls" || has_test "static-tls" || has_test "in-out"; then
+if has_test "json-tls" || has_test "static-tls" || has_test "echo-100k"; then
     needs_h1tls=true
 fi
 
@@ -1725,17 +1725,25 @@ print(f'{count} {valid} {faithful}')
     fi
 fi
 
-# ───── In-Out (POST /echo over TLS) ─────
+# ───── Echo-100K (POST /echo over TLS) ─────
 #
 # The profile loads both directions at once, so what has to be established is
 # that the bytes come back UNCHANGED - not that a count matches. Every check
 # here is byte-exact against what was sent.
+#
+# --http1.1 on every probe, and it is load-bearing. :8081 advertises ALPN h2,
+# so curl would negotiate HTTP/2 - and an echo that is broken under HTTP/1.1
+# can pass under h2. Go is the case in point: net/http drains and closes the
+# request body when response headers flush with unread body left, truncating a
+# streamed echo, while its h2 server does no such thing. wrk speaks only
+# HTTP/1.1, so validating over h2 would green-light a profile that benchmarks
+# torn responses.
 
-if has_test "in-out"; then
-    INOUT_DOCS="$DOCS_BASE/h1/isolated/in-out/validation"
-    tls_posture_probe "in-out" "$H1TLS_PORT" "$INOUT_DOCS" "http/1.1"
-    echo "[test] in-out endpoint"
-    inout_fail=false
+if has_test "echo-100k"; then
+    ECHO_DOCS="$DOCS_BASE/h1/isolated/echo-100k/validation"
+    tls_posture_probe "echo-100k" "$H1TLS_PORT" "$ECHO_DOCS" "http/1.1"
+    echo "[test] echo-100k endpoint"
+    echo_fail=false
 
     # Random bodies, and the echo compared byte for byte. Random because a
     # fixed one can be answered from a canned response: the benchmark rotates
@@ -1744,7 +1752,7 @@ if has_test "in-out"; then
     for _sz in 1 1024 102400; do
         _src=$(mktemp); _got=$(mktemp)
         head -c "$_sz" /dev/urandom > "$_src"
-        curl -sk --max-time 30 -X POST --data-binary "@$_src" \
+        curl -sk --http1.1 --max-time 30 -X POST --data-binary "@$_src" \
              -H "Content-Type: application/octet-stream" \
              "https://localhost:$H1TLS_PORT/echo" -o "$_got" 2>/dev/null || true
         if cmp -s "$_src" "$_got"; then
@@ -1752,8 +1760,8 @@ if has_test "in-out"; then
             PASS=$((PASS + 1))
         else
             _gotsz=$(wc -c < "$_got" 2>/dev/null || echo 0)
-            fail_with_link "[POST /echo ${_sz}B]: expected ${_sz} bytes echoed verbatim, got ${_gotsz} bytes that differ" "$INOUT_DOCS"
-            inout_fail=true
+            fail_with_link "[POST /echo ${_sz}B]: expected ${_sz} bytes echoed verbatim, got ${_gotsz} bytes that differ" "$ECHO_DOCS"
+            echo_fail=true
         fi
         rm -f "$_src" "$_got"
     done
@@ -1765,7 +1773,7 @@ if has_test "in-out"; then
     # handler that echoed that header without reading a byte passed all of them.
     _src=$(mktemp); _got=$(mktemp)
     head -c 102400 /dev/urandom > "$_src"
-    cat "$_src" | curl -sk --max-time 30 -X POST --data-binary @- \
+    cat "$_src" | curl -sk --http1.1 --max-time 30 -X POST --data-binary @- \
          -H "Content-Type: application/octet-stream" \
          -H "Transfer-Encoding: chunked" \
          "https://localhost:$H1TLS_PORT/echo" -o "$_got" 2>/dev/null || true
@@ -1774,25 +1782,25 @@ if has_test "in-out"; then
         PASS=$((PASS + 1))
     else
         _gotsz=$(wc -c < "$_got" 2>/dev/null || echo 0)
-        fail_with_link "[POST /echo chunked]: expected 102400 bytes echoed verbatim, got ${_gotsz} bytes that differ - the body must be read from the chunked framing, not from Content-Length" "$INOUT_DOCS"
-        inout_fail=true
+        fail_with_link "[POST /echo chunked]: expected 102400 bytes echoed verbatim, got ${_gotsz} bytes that differ - the body must be read from the chunked framing, not from Content-Length" "$ECHO_DOCS"
+        echo_fail=true
     fi
     rm -f "$_src" "$_got"
 
     # An empty body is still a body: the response must be a 200 with nothing in
     # it, not a 411 or a hang.
-    _code=$(curl -sk --max-time 30 -o /dev/null -w '%{http_code}' -X POST --data-binary "" \
+    _code=$(curl -sk --http1.1 --max-time 30 -o /dev/null -w '%{http_code}' -X POST --data-binary "" \
             "https://localhost:$H1TLS_PORT/echo" 2>/dev/null || echo 000)
     if [ "$_code" = "200" ]; then
         echo "  PASS [POST /echo empty body] (200)"
         PASS=$((PASS + 1))
     else
-        fail_with_link "[POST /echo empty body]: expected 200, got $_code" "$INOUT_DOCS"
-        inout_fail=true
+        fail_with_link "[POST /echo empty body]: expected 200, got $_code" "$ECHO_DOCS"
+        echo_fail=true
     fi
 
-    if [ "$inout_fail" = "false" ]; then
-        echo "  PASS [in-out] (all echoes byte-exact, Content-Length and chunked)"
+    if [ "$echo_fail" = "false" ]; then
+        echo "  PASS [echo-100k] (all echoes byte-exact, Content-Length and chunked)"
         PASS=$((PASS + 1))
     fi
 fi

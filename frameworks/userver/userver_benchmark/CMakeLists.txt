@@ -33,12 +33,12 @@ add_library(
 		src/handlers/baseline11/handler.cpp
 		src/handlers/baseline2/handler.hpp
 		src/handlers/baseline2/handler.cpp
+		src/handlers/echo/handler.hpp
+		src/handlers/echo/handler.cpp
 		src/handlers/json/handler.hpp
 		src/handlers/json/handler.cpp
 		src/handlers/plaintext/handler.hpp
 		src/handlers/plaintext/handler.cpp
-		src/handlers/upload/handler.hpp
-		src/handlers/upload/handler.cpp
 		src/handlers/async_db/handler.hpp
 		src/handlers/async_db/handler.cpp
 		src/dataset_provider.hpp

@@ -1,0 +1,5 @@
+{
+  "framework": "ntex",
+  "tls": "pass",
+  "check": "none"
+}

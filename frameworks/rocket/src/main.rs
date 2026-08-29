@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use rocket::data::{Data, ToByteUnit};
 use rocket::serde::json::Json;
 use rocket::serde::{Deserialize, Serialize};
-use rocket::tokio::io::sink;
 use rocket::State;
 
 const MAX_BODY_MIB: usize = 25;

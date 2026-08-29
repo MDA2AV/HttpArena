@@ -19,7 +19,7 @@
     "limited-conn",
     "json-tls",
     "json-comp",
-    "in-out"
+    "echo-100k"
   ],
   "maintainers": []
 }

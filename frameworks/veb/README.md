@@ -15,7 +15,7 @@ chunked bodies — which is what lets veb subscribe to the `baseline` profile
 | `pipelined` | `GET /pipeline` |
 | `json` | `GET /json/{count}?m=M` over `/data/dataset.json` |
 | `json-comp` | `GET /json/{count}?m=M` + `Accept-Encoding: gzip` → gzipped (process-shared cache) |
-| `upload` | `POST /upload` → received byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `static` | `GET /static/*` via veb's static handler (mounted from `/data/static`), 404 for misses |
 | `async-db` | `GET /async-db?min&max&limit` via `db.pg` |
 | `crud` | `GET/POST /crud/items`, `GET/PUT /crud/items/{id}` (in-memory cache-aside, `X-Cache` MISS/HIT) |

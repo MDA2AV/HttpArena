@@ -1,0 +1,5 @@
+{
+  "framework": "socketify",
+  "tls": "pass",
+  "check": "none"
+}

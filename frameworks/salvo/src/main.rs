@@ -125,11 +125,11 @@ async fn json_items(req: &mut Request, res: &mut Response) {
 // first, which is also what makes a chunked request work -- there is no
 // Content-Length to frame the response from until the body is in.
 async fn echo_body(req: &mut Request, res: &mut Response) {
-    let body = req
-        .payload_with_max_size(MAX_BODY)
-        .await
-        .map(|b| b.to_vec())
-        .unwrap_or_default();
+    // clone() on Bytes is a refcount bump, not a 100 KB copy.
+    let Ok(body) = req.payload_with_max_size(MAX_BODY).await.map(|b| b.clone()) else {
+        res.status_code(StatusCode::BAD_REQUEST);
+        return;
+    };
     res.headers_mut()
         .insert("content-type", "application/octet-stream".parse().unwrap());
     res.write_body(body).ok();

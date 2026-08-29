@@ -670,48 +670,73 @@ fn body_int(req fasthttp.HttpRequest) i64 {
 	if req.body.len == 0 {
 		return 0
 	}
-	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
 	if header_val(req, 'transfer-encoding').contains('chunked') {
-		return dechunk(raw).i64()
+		return dechunk(req.buffer, req.body.start, req.body.len).bytestr().i64()
 	}
+	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
 	return raw.i64()
 }
 
-// dechunk reassembles a chunked transfer-encoded body into its raw bytes.
-fn dechunk(s string) string {
-	mut out := strings.new_builder(s.len)
-	mut i := 0
-	for i < s.len {
-		nl := s.index_after('\r\n', i) or { break }
-		size := hex_int(s[i..nl])
+// dechunk reassembles the chunked body region buf[start..start+length] into its
+// raw bytes: read each chunk-size line, copy that many data bytes, drop the
+// framing, and stop at the terminating 0-size chunk or any malformation. Bytes
+// in, bytes out — a body of arbitrary binary passes through unchanged.
+@[direct_array_access]
+fn dechunk(buf []u8, start int, length int) []u8 {
+	end := start + length
+	mut body := []u8{cap: length}
+	mut i := start
+	for i < end {
+		// the CRLF that ends the chunk-size line
+		mut nl := -1
+		for j := i; j + 1 < end; j++ {
+			if buf[j] == `\r` && buf[j + 1] == `\n` {
+				nl = j
+				break
+			}
+		}
+		if nl < 0 {
+			break
+		}
+		size := hex_int(buf, i, nl - i)
 		if size <= 0 {
 			break
 		}
-		ds := nl + 2
-		if ds + size > s.len {
+		data_start := nl + 2
+		// `data_start + size` is computed in i32 and would WRAP negative for a
+		// chunk size near 0x7fffffff, slipping past a naive bound check; compare
+		// the other way, where both sides stay small and non-negative.
+		if size > end - data_start {
 			break
 		}
-		out.write_string(s[ds..ds + size])
-		i = ds + size + 2
+		unsafe { body.push_many(&buf[data_start], size) }
+		i = data_start + size + 2 // past the data and its trailing CRLF
 	}
-	return out.str()
+	return body
 }
 
-fn hex_int(s string) int {
-	mut n := 0
-	for c in s.trim_space() {
+// hex_int reads a hex integer from buf[start..start+length], stopping at the
+// first non-hex byte (a chunk extension's `;`, or the CRLF).
+@[direct_array_access]
+fn hex_int(buf []u8, start int, length int) int {
+	mut n := i64(0)
+	for k in start .. start + length {
+		c := buf[k]
 		d := if c >= `0` && c <= `9` {
-			int(c - `0`)
+			i64(c - `0`)
 		} else if c >= `a` && c <= `f` {
-			int(c - `a` + 10)
+			i64(c - `a` + 10)
 		} else if c >= `A` && c <= `F` {
-			int(c - `A` + 10)
+			i64(c - `A` + 10)
 		} else {
 			break
 		}
 		n = n * 16 + d
+		if n > 0x7fff_ffff {
+			return 0x7fff_ffff // saturate: the caller's bound check then rejects it
+		}
 	}
-	return n
+	return int(n)
 }
 
 // parse_u_at reads a non-negative integer from `s` starting at byte `start`,

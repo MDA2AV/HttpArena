@@ -1,7 +1,6 @@
 module HttpArena.Handlers
 
 open System
-open System.Buffers
 open System.Globalization
 open System.IO
 open System.Text
@@ -58,25 +57,20 @@ let baselineWithBody: EndpointHandler =
 
 // ── Workload profiles ──────────────────────────────────────────────────────
 
-/// POST /upload — drains the request body through a pooled 64 KB buffer and
-/// returns the byte count, so a 20 MB upload never lands in one allocation.
-let upload: EndpointHandler =
+/// POST /echo — the request body written back verbatim.
+///
+/// The body is copied into a MemoryStream rather than piped straight to the
+/// response because the length has to be known before the first byte goes out:
+/// a chunked request carries no Content-Length to forward, and WriteBytes sets
+/// one from the array it is given — zero included, for an empty body.
+let echo: EndpointHandler =
     fun ctx ->
         task {
-            let buffer = ArrayPool<byte>.Shared.Rent 65536
+            use body = new MemoryStream()
+            do! ctx.Request.Body.CopyToAsync body
 
-            try
-                let mutable size = 0L
-                let mutable read = 1
-
-                while read > 0 do
-                    let! bytesRead = ctx.Request.Body.ReadAsync(buffer.AsMemory())
-                    read <- bytesRead
-                    size <- size + int64 bytesRead
-
-                return! ctx.WriteText(string size)
-            finally
-                ArrayPool<byte>.Shared.Return buffer
+            ctx.SetContentType "application/octet-stream"
+            return! ctx.WriteBytes(body.ToArray())
         }
 
 /// GET /json/{count}?m=N — the first `count` dataset items, each carrying a

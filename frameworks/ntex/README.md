@@ -15,7 +15,7 @@ ntex 2 on its own tokio-backed runtime, default configuration.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Reads the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 The same routes are served over TLS on port 8081 for `json-tls`.
 

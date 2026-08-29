@@ -1,0 +1,5 @@
+{
+  "framework": "httpjl",
+  "tls": "pass",
+  "check": "none"
+}

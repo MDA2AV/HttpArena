@@ -1,0 +1,5 @@
+{
+  "framework": "jooby",
+  "tls": "pass",
+  "check": "none"
+}

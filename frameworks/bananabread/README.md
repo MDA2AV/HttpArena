@@ -21,14 +21,14 @@ It runs GenHTTP's own internal HTTP/1.1 engine, built on `Bun.listen` raw TCP (n
 | `/baseline11` | GET / POST | Sums `a` + `b` (POST adds a body value) |
 | `/baseline2` | GET | Sums `a` + `b` |
 | `/json/{count}` | GET | Processes `count` dataset items; `?m=` scales the total (default 1) |
-| `/upload` | POST | Streams the body, returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/async-db` | GET | `price BETWEEN min AND max` range query |
 | `/crud/items` | GET | Paged listing by category |
 | `/crud/items/{id}` | GET | Cached read (`X-Cache: HIT\|MISS`) |
 | `/crud/items` | POST | Upsert → `201 Created` |
 | `/crud/items/{id}` | PUT | Update, `404` when unknown |
 
-Declared profiles (`meta.json`): `baseline`, `pipelined`, `limited-conn`, `json`, `upload`,
+Declared profiles (`meta.json`): `baseline`, `pipelined`, `limited-conn`, `json`, `in-out`,
 `async-db`, `crud`. TLS/HTTP-2, compression, static files, websockets and
 gRPC are omitted (those Seagreen modules are not ported yet).
 

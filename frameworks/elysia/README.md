@@ -20,7 +20,7 @@ Ergonomic Bun-native TypeScript framework running a multi-process cluster behind
 | `/baseline2` | GET | Sums query parameter values (HTTP/2 variant) |
 | `/json/{count}` | GET | Returns `count` items from the preloaded dataset; honors `Accept-Encoding: gzip/br/deflate` (gzip via `Bun.gzipSync`, brotli via `node:zlib`, deflate via `Bun.deflateSync`) |
 | `/async-db` | GET | Postgres range query: `SELECT ... WHERE price BETWEEN $min AND $max LIMIT $limit` |
-| `/upload` | POST | Streams `request.body` via `for await` chunks, returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/*` | GET | Served by `@elysiajs/static` in dynamic mode (`alwaysStatic: false`) from `/data/static` |
 | `/crud/items` | GET | Paginated list by `category`, `page`, `limit` |
 | `/crud/items` | POST | Upsert via `INSERT ... ON CONFLICT DO UPDATE`, returns 201 |

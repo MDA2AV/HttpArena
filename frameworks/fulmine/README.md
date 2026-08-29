@@ -19,7 +19,7 @@ A drop-in replacement for Express 5 running on uWebSockets.js, with its own `clu
 | `/json/:count` | GET | Serializes a slice of the dataset |
 | `/delay/:ms` | GET | Waits the milliseconds named in the path, then echoes them back |
 | `/async-db` | GET | Reads from PostgreSQL, prepared statement, pool sized under max_connections |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/*` | GET | `express.static()` with `preCompressed`, so the `.br` or `.gz` on disk is served when the client accepts one |
 
 ## Notes

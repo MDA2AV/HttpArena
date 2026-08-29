@@ -13,7 +13,7 @@ backend. The harness runs it with `--security-opt seccomp=unconfined` and
 |---|---|---|
 | `baseline` | `GET/POST /baseline11` | `a + b` (+ body on POST); handles chunked + TCP-fragmented requests |
 | `pipelined` | `GET /pipeline` | returns `ok` |
-| `upload` | `POST /upload` | returns body byte count (up to 20+ MiB via `max_request_bytes`) |
+| `/echo` | POST | Returns the request body back verbatim |
 | `limited-conn` | `GET /baseline11` | short-lived connections |
 | `json` | `GET /json/{count}?m=M` | single-allocation response, precomputed item prefixes |
 | `json-comp` | `GET /json/...` + `Accept-Encoding` | gzip-compressed response |

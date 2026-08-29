@@ -93,8 +93,8 @@ components_manager:
             middlewares:
                 pipeline-builder: compression-pipeline-builder
 
-        upload-handler:
-            path: /upload
+        echo-handler:
+            path: /echo
             method: POST
             decompress_request: false
             task_processor: main-task-processor

@@ -16,7 +16,7 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Streams the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/baseline2` | GET | Sums query parameter values |
 | `/async-db` | GET | Reads from PostgreSQL through the reactive pg client |
 | `/static/:filename` | GET | Serves a file from disk with `sendFile`, the brotli or gzip variant when the client accepts one |
@@ -29,7 +29,7 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 - JSON built as `JsonObject` and written with `RoutingContext.json`
 - Compression through `HttpServerOptions.setCompressionSupported(true)`
 - The verticle is deployed once per core, all instances sharing port 8080
-- `/upload` is read from the request stream, so the 20 MB body is never buffered
+- `/echo` is read from the request stream, so the 20 MB body is never buffered
 
 `json-tls` and `static-tls` listen on `8081` when `/certs/server.crt` and `/certs/server.key` are
 mounted. The verticle is deployed once per core and each instance binds both ports, so the TLS

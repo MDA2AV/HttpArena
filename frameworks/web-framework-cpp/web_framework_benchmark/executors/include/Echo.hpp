@@ -1,19 +1,21 @@
 #pragma once
 
+#include <string>
+
 #include <Executors/StatefulExecutor.hpp>
 
 namespace executor
 {
-	class Upload : public framework::StatefulExecutor
+	class Echo : public framework::StatefulExecutor
 	{
 	private:
-		size_t currentSize;
+		std::string buffer;
 
 	public:
-		Upload();
+		Echo() = default;
 
 		void doPost(framework::HttpRequest& request, framework::HttpResponse& response) override;
 
-		~Upload() = default;
+		~Echo() = default;
 	};
 }

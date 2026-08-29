@@ -412,12 +412,12 @@ run_one() {
         fi
     fi
 
-    # in-out is wrk-driven and has no --raw fixture to size. wrk reports only
+    # echo-100k is wrk-driven and has no --raw fixture to size. wrk reports only
     # the bytes it read, so its Transfer/sec is the download half of the echo;
-    # the request body is a fixed 100 KB (requests/in-out-rotate.lua), so the
+    # the request body is a fixed 100 KB (requests/echo-100k-rotate.lua), so the
     # ingest half is that constant times rps. Without this the profile would
     # report half the I/O it actually moves.
-    if [ "$endpoint" = "in-out" ] && [ "${best_rps:-0}" -gt 0 ] 2>/dev/null; then
+    if [ "$endpoint" = "echo-100k" ] && [ "${best_rps:-0}" -gt 0 ] 2>/dev/null; then
         BEST_M[input_bw]=$(python3 -c "
 bps = $best_rps * 102400
 if bps >= 1073741824: print(f'{bps/1073741824:.2f}GB/s')

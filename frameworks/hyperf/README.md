@@ -20,7 +20,7 @@ A coroutine framework that focuses on hyperspeed and flexibility. Building micro
 | `/baseline11`        | GET POST  | `baseline`         |
 | `/json/{count}`      | GET       | `json` `json-comp` |
 | `/async-db`          | GET       | `async-db`         |
-| `/upload`            | POST      | `upload`           |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/{filename}` | GET       | `static`           |
 | `/ws/`               | WEBSOCKET | `ws`               |
 

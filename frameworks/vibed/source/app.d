@@ -2,12 +2,11 @@ module app;
 
 import vibe.core.core : runApplication, runWorkerTaskDist, setupWorkerThreads;
 import vibe.core.log : logInfo, logWarn;
-import vibe.core.stream : nullSink, pipe;
 import vibe.data.json : deserializeJson, parseJsonString;
 import vibe.data.serialization : optional;
 import vibe.http.router : URLRouter;
 import vibe.http.server;
-import vibe.stream.operations : readAllUTF8;
+import vibe.stream.operations : readAll, readAllUTF8;
 import vibe.stream.tls : createTLSContext, TLSContext, TLSContextKind;
 
 import std.algorithm.comparison : min;
@@ -112,10 +111,14 @@ void handleJson(scope HTTPServerRequest req, scope HTTPServerResponse res)
     res.writeJsonBody(ItemList(items, count));
 }
 
-void handleUpload(scope HTTPServerRequest req, scope HTTPServerResponse res)
+/// POST /echo, the body handed back byte for byte. It is read through vibe.d's
+/// own body reader, which has already undone chunked framing, so the response
+/// is sized from what actually arrived rather than from a Content-Length the
+/// request need not carry. writeBody sets that length and the content type.
+void handleEcho(scope HTTPServerRequest req, scope HTTPServerResponse res)
 @safe {
-    auto received = req.bodyReader.pipe(nullSink);
-    res.writeBody(received.to!string, "text/plain");
+    auto payload = req.bodyReader.readAll();
+    res.writeBody(payload, "application/octet-stream");
 }
 
 /// Server TLS context for the json-tls listener, or null when the harness did
@@ -216,14 +219,15 @@ int main(string[] args)
             router.get("/baseline11", &handleBaseline11);
             router.post("/baseline11", &handleBaseline11);
             router.get("/json/:count", &handleJson);
-            router.post("/upload", &handleUpload);
+            router.post("/echo", &handleEcho);
             router.rebuild();
 
             auto settings = new HTTPServerSettings;
             settings.port = 8080;
             settings.bindAddresses = ["0.0.0.0"];
             settings.options = HTTPServerOption.reusePort | HTTPServerOption.reuseAddress;
-            // The upload profile posts bodies of up to 20 MB; the default cap is 2 MB.
+            // /echo takes a 100 KB body; the default cap is 2 MB, and this
+            // leaves room for anything a later profile posts.
             settings.maxRequestSize = 64 * 1024 * 1024;
             // standard mode: gzip is vibe.d's own Accept-Encoding negotiation,
             // nothing hand-rolled and nothing compressed unasked.

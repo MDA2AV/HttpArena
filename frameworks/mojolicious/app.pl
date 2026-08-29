@@ -85,21 +85,6 @@ my @UNIT;    # price * quantity, the part of total that does not depend on m
     }
 }
 
-# Count the request body as it arrives instead of buffering it. /upload takes
-# 20 MB bodies, and the stock reader would keep them in memory and then spool
-# them to a temp file. The first 4 KB are kept because POST /baseline11 needs
-# to read its number back.
-app->hook(after_build_tx => sub ($tx, $app) {
-    my %arena = (size => 0, head => '');
-    $tx->{arena} = \%arena;
-    my $req = $tx->req;
-    $req->max_message_size(64 * 1024 * 1024);
-    $req->content->unsubscribe('read')->on(read => sub ($content, $bytes) {
-        $arena{size} += length $bytes;
-        $arena{head} .= $bytes if length($arena{head}) < 4096;
-    });
-});
-
 # parseInt on a string: leading sign and digits, anything else contributes nothing
 sub _int ($str) {
     return undef unless defined $str && $str =~ /^\s*([-+]?[0-9]+)/;
@@ -121,7 +106,7 @@ get '/pipeline' => sub ($c) { $c->render(text => 'ok', format => 'txt') };
 my $baseline11 = sub ($c) {
     my $total = _sum_query($c);
     if ($c->req->method eq 'POST') {
-        my $n = _int($c->tx->{arena}{head});
+        my $n = _int($c->req->body);
         $total += $n if defined $n;
     }
     $c->render(text => "$total", format => 'txt');
@@ -144,9 +129,12 @@ get '/json/:count' => sub ($c) {
     $c->render(json => {items => \@items, count => $count});
 };
 
-post '/upload' => sub ($c) {
-    my $size = $c->tx->{arena}{size};
-    $c->render(text => "$size", format => 'txt');
+# The body back byte for byte. ->body is the whole decoded body, so a chunked
+# request is dechunked by Mojo's own parser and no Content-Length is consulted;
+# the 'bin' format renders it as application/octet-stream, with the length of
+# what was rendered. An empty body renders an empty 200.
+post '/echo' => sub ($c) {
+    $c->render(data => $c->req->body, format => 'bin');
 };
 
 app->log->level('info');

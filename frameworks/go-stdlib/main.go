@@ -178,20 +178,21 @@ func jsonItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func echoBody(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/octet-stream")
-	// Content-Length known: stream it straight back, no intermediate buffer.
-	if r.ContentLength >= 0 {
-		w.Header().Set("Content-Length", strconv.FormatInt(r.ContentLength, 10))
-		io.Copy(w, r.Body)
-		return
-	}
-	// Chunked: the length is not known up front, so it has to be read before
-	// the response can be framed.
+	// Always read the body BEFORE writing a byte of the response.
+	//
+	// Streaming it back with the request's Content-Length looks tempting and is
+	// wrong here: net/http drains and closes the request body as soon as the
+	// response headers flush while unread body remains (chunkWriter.writeHeader,
+	// maxPostHandlerReadBytes = 256 KB). io.Copy then fails mid-way and the
+	// response is short under a Content-Length already promised, which kills the
+	// connection. The old 20 MB upload was over that threshold so the body was
+	// left open; 100 KB is not.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.Write(body)
 }

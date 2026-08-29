@@ -16,11 +16,11 @@ http4k on the Undertow backend, default configuration.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Streams the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
 - Routing and path/query access through the http4k `routes` DSL
 - JSON through the http4k Jackson module, serialized per request
 - Compression through `ServerFilters.GZip()`
-- `/upload` reads the request stream in chunks, so the 20 MB body is not buffered
+- `/echo` reads the request stream in chunks, so the 20 MB body is not buffered

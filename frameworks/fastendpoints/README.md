@@ -20,7 +20,7 @@
 | `/baseline2` | GET | Sums query parameter values (HTTP/2 variant) |
 | `/json/{count}` | GET | Returns `count` items from the preloaded dataset; honors `Accept-Encoding: gzip/br/deflate` for the `json-comp` profile |
 | `/async-db` | GET | Postgres range query: `SELECT ... WHERE price BETWEEN $min AND $max LIMIT $limit` |
-| `/upload` | POST | Streams the request body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/crud/items` | GET | Paginated list by category |
 | `/crud/items/{id}` | GET | Single item read with cache-aside (200ms TTL), returns `X-Cache: HIT/MISS` |
 | `/crud/items` | POST | Create item via INSERT with ON CONFLICT upsert, returns 201 |
@@ -30,7 +30,7 @@
 ## Notes
 
 - Endpoints follow the idiomatic FastEndpoints style: one endpoint class per route with a
-  request DTO bound from route/query/body and `Send.*` response methods. Baseline/upload
+  request DTO bound from route/query/body and `Send.*` response methods. Baseline/echo
   endpoints use `EndpointWithoutRequest` and read the raw body directly.
 - No `/fortunes` entry: server-rendered HTML templating is outside FastEndpoints' scope
   (the aspnet-minimal entry covers that profile via Razor Pages).

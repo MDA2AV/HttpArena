@@ -21,7 +21,7 @@ Ultra-high-performance custom HTTP server for .NET 10 — built from scratch for
 | `/compression` | GET | Gzip-compressed large JSON response |
 | `/db` | GET | SQLite range query with JSON response |
 | `/async-db` | GET | PostgreSQL async range query |
-| `/upload` | POST | Streams request body, returns byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/*` | GET | Serves files from `/data/static` with MIME types and ETag support |
 | `/ws` | GET | WebSocket echo — reflects text, binary, and ping/pong frames |
 

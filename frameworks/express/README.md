@@ -19,7 +19,7 @@ Express 5 on node's own HTTP server, with the cluster module for multi-core scal
 | `/json/:count` | GET | Serializes a slice of the dataset |
 | `/db` | GET | Reads from SQLite, read-only, memory mapped |
 | `/async-db` | GET | Reads from PostgreSQL through a pool of four |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/:filename` | GET | Serves a file from disk through `express.static` |
 | `/crud/items` | GET/POST | Lists items by category with paging, or inserts one |
 | `/crud/items/:id` | GET/PUT | Reads one item through a Redis cache-aside, or updates it and drops the cached copy |
@@ -36,7 +36,7 @@ Express 5 on node's own HTTP server, with the cluster module for multi-core scal
   `/certs/server.crt` and `/certs/server.key` are mounted. Every worker binds it exactly as they
   all bind `8080`, so the cluster shares the port.
 - `express.json()` is mounted on the two crud routes that carry a body rather than globally, so
-  `/upload` keeps counting its 20MB body as it streams instead of having it buffered and parsed.
+  `/echo` returns its 100 KB body verbatim instead of having it buffered and parsed as JSON.
   The other two POST endpoints read the request stream themselves, which is all they need.
 - `x-powered-by` and `etag` are off, so the responses carry exactly the headers the profiles ask
   for and nothing computed per request that no profile reads.

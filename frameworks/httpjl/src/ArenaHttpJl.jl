@@ -154,16 +154,13 @@ function body_int(stream::HTTP.Stream)
     return v === nothing ? 0 : v
 end
 
-const UPLOAD_CHUNK = 64 * 1024
-
-# Count the body without keeping it: a 20 MB upload goes through one 64 KB buffer.
-function upload_size(stream::HTTP.Stream)
-    buf = Vector{UInt8}(undef, UPLOAD_CHUNK)
-    total = 0
-    while !eof(stream)
-        total += readbytes!(stream, buf)
-    end
-    return total
+# The body back, byte for byte. `read(stream)` returns the decoded body whatever
+# the framing was -- HTTP.jl dechunks a Transfer-Encoding: chunked request -- so
+# the length that frames the response is the length that actually arrived, never
+# a Content-Length a chunked POST does not carry.
+function echo_body(stream::HTTP.Stream)
+    bytes = read(stream)
+    respond(stream, "application/octet-stream", bytes)
 end
 
 function accepts_gzip(req::HTTP.Request)
@@ -272,8 +269,8 @@ function (app::App)(stream::HTTP.Stream)
         else
             respond(stream, "application/json", body)
         end
-    elseif path == "/upload" && req.method == "POST"
-        respond(stream, "text/plain", string(upload_size(stream)))
+    elseif path == "/echo" && req.method == "POST"
+        echo_body(stream)
     else
         respond_404(stream)
     end
@@ -354,7 +351,7 @@ end
                 HTTP.post("$base/baseline11?a=13&b=42", [], "20")
                 HTTP.get("$base/json/1?m=3")
                 HTTP.get("$base/json/1?m=3", ["Accept-Encoding" => "gzip"]; decompress = false)
-                HTTP.post("$base/upload", [], rand(UInt8, 128 * 1024))
+                HTTP.post("$base/echo", [], rand(UInt8, 128 * 1024))
                 HTTP.get("$base/nope"; status_exception = false)
             end
         finally

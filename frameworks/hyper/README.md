@@ -20,7 +20,7 @@ Low-level Rust HTTP library built on tokio with multi-threaded async runtime and
 | `/json` | GET | Processes 50-item dataset, serializes JSON |
 | `/compression` | GET | Gzip-compressed large JSON response |
 | `/db` | GET | SQLite range query with JSON response |
-| `/upload` | POST | Receives 1 MB body, returns byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/{filename}` | GET | Serves preloaded static files with MIME types |
 
 ## Notes

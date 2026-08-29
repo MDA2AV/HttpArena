@@ -104,14 +104,10 @@ func jsonItems(c echo.Context) error {
 }
 
 func echoBody(c echo.Context) error {
-	r := c.Request()
-	// Content-Length known: stream it back without buffering the whole body.
-	if r.ContentLength >= 0 {
-		c.Response().Header().Set(echo.HeaderContentLength, strconv.FormatInt(r.ContentLength, 10))
-		return c.Stream(http.StatusOK, "application/octet-stream", r.Body)
-	}
-	// Chunked: read it before the response can be framed.
-	body, err := io.ReadAll(r.Body)
+	// Read the whole body first: c.Stream is io.Copy underneath, and net/http
+	// closes the request body once response headers flush with unread body
+	// left (maxPostHandlerReadBytes = 256 KB), which truncates a 100 KB echo.
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.NoContent(http.StatusBadRequest)
 	}

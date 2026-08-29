@@ -1,4 +1,4 @@
--- wrk Lua script for the in-out profile.
+-- wrk Lua script for the echo-100k profile.
 --
 -- POST /echo with a 100 KB body; the server returns it verbatim, so every
 -- request moves 100 KB in and 100 KB out. Content-Length both ways: wrk frames
@@ -19,7 +19,7 @@ local bodies = {}
 for i = 1, N do
   -- A distinct repeating unit per body, so the bytes differ throughout rather
   -- than only in a header. Truncated to exactly SIZE.
-  local unit = string.format("in-out-body-%d:", i)
+  local unit = string.format("echo-100k-body-%d:", i)
   local reps = math.ceil(SIZE / #unit)
   bodies[i] = string.sub(string.rep(unit, reps), 1, SIZE)
 end

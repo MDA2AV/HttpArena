@@ -21,7 +21,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "in-out",
+    "echo-100k",
     "async-db",
     "static-h2",
     "static-h3",

@@ -107,13 +107,13 @@ defmodule PhoenixBanditWeb.BenchmarkController do
     end
   end
 
-  def upload(conn, _params) do
-    {size, conn} = read_body_chunks(conn, 0)
+  def echo(conn, _params) do
+    {body, conn} = read_body_chunks(conn, [])
 
     conn
     |> put_resp_header("server", "Phoenix")
-    |> put_resp_content_type("text/plain")
-    |> send_resp(200, to_string(size))
+    |> put_resp_content_type("application/octet-stream", nil)
+    |> send_resp(200, body)
   end
 
   def ws(conn, _params) do
@@ -174,13 +174,17 @@ defmodule PhoenixBanditWeb.BenchmarkController do
     end
   end
 
-  defp read_body_chunks(conn, acc_size) do
+  # Collects the body a chunk at a time and hands back the accumulated iodata.
+  # read_body/2 decodes chunked framing itself, so nothing here reads
+  # content-length - a chunked request has none - and send_resp/3 takes iodata
+  # and derives content-length from it, zero included for an empty body.
+  defp read_body_chunks(conn, acc) do
     case read_body(conn, length: @body_length) do
       {:ok, binary, conn} ->
-        {acc_size + byte_size(binary), conn}
+        {Enum.reverse([binary | acc]), conn}
 
       {:more, binary, conn} ->
-        read_body_chunks(conn, acc_size + byte_size(binary))
+        read_body_chunks(conn, [binary | acc])
     end
   end
 end

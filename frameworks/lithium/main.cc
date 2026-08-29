@@ -229,9 +229,16 @@ li::http_api build_api() {
     res.write(out_list().encode(li::mmm(s::items = items, s::count = (int)n)));
   };
 
-  api.post("/upload") = [](li::http_request& req, li::http_response& res) {
-    res.set_header("Content-Type", "text/plain");
-    res.write(std::to_string(req.http_ctx.read_whole_body().size()));
+  // read_whole_body() decodes chunked framing itself and returns a view of the
+  // assembled bytes, so nothing here consults Content-Length -- a chunked
+  // request has none. respond() takes that view straight from the read buffer
+  // and emits its own Content-Length (0 for an empty body); res.write() cannot
+  // be used for this, because its std::string_view overload declares template
+  // parameters that appear nowhere in its signature and so never deduces,
+  // leaving every call to go through lexical_cast and an extra copy.
+  api.post("/echo") = [](li::http_request& req, li::http_response& res) {
+    res.set_header("Content-Type", "application/octet-stream");
+    res.http_ctx.respond(req.http_ctx.read_whole_body());
   };
 
   return api;

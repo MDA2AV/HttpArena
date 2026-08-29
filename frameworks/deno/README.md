@@ -17,7 +17,7 @@ Deno's own HTTP server, `Deno.serve`, with no framework on top.
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/:file` | GET | Serves one of the 20 files from `/data/static`, read off disk per request |
 | `/async-db` | GET | Postgres range query over `items`, `min`/`max`/`limit` |
 | `/crud/items` | GET/POST | Paginated list by category; POST upserts |
