@@ -1,5 +1,5 @@
 # scripts/lib/redis.sh — Redis sidecar for profiles that need a shared
-# cross-process cache. Currently used by the crud profile so multi-process
+# cross-process cache. Used by the production-stack compose flow so multi-process
 # frameworks (hono-bun, workerman, etc.) can present a unified cache to
 # requests load-balanced across their SO_REUSEPORT workers.
 #

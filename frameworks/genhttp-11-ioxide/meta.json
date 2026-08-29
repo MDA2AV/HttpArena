@@ -20,10 +20,8 @@
     "json",
     "json-comp",
     "json-tls",
-    "static",
     "upload",
     "async-db",
-    "crud",
     "echo-ws",
     "echo-ws-pipeline",
     "echo-ws-limited"

@@ -1,5 +1,5 @@
-# scripts/lib/postgres.sh — Postgres sidecar lifecycle for async-db, crud,
-# and api-{4,16} tests. Single well-known container name, host networking,
+# scripts/lib/postgres.sh — Postgres sidecar lifecycle for the async-db and
+# fortunes profiles and the gateway / production-stack stacks. Single well-known container name, host networking,
 # persistent init from data/pgdb-seed.sql.
 
 postgres_start() {

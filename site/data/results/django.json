@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "crud-4096": {
-      "framework": "django",
-      "language": "Python",
-      "rps": 17342,
-      "avg_latency": "199.04ms",
-      "p99_latency": "680.00ms",
-      "cpu": "5404.5%",
-      "memory": "5.9GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "7.16MB/s",
-      "input_bw": "1.49MB/s",
-      "reconnects": 1,
-      "status_2xx": 260136,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 26892
-    },
     "json-4096": {
       "framework": "django",
       "language": "Python",

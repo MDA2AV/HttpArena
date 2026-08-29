@@ -176,7 +176,7 @@ fi
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 # Docker --ulimit nofile rejects "unlimited"; fall back to a large numeric cap
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
-if has_test "async-db" || has_test "crud" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
+if has_test "async-db" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
@@ -268,7 +268,7 @@ docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 # mirrors benchmark.sh, which always runs framework containers unconfined.
 
 # Start Postgres sidecar if async-db is needed
-if has_test "async-db" || has_test "crud" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
+if has_test "async-db" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker run -d --name "$PG_CONTAINER" --network host \
@@ -326,19 +326,6 @@ redis_sidecar_start() {
     return 1
 }
 
-# Start Redis sidecar if needed
-if has_test "crud"; then
-
-    REDIS_CONTAINER="httparena-redis"
-    REDIS_URL="redis://localhost:6379"
-    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
-    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
-    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
-    REDIS_CPUSET="${REDIS_CPUSET:-}"
-
-    redis_sidecar_start || { echo "FAIL: Redis sidecar not ready"; exit 1; }
-    docker_args+=(-e "REDIS_URL=$REDIS_URL")
-fi
 
 # Start container (skip for gateway-only — compose handles it later)
 if [ "$GATEWAY_ONLY" = "false" ]; then
@@ -348,8 +335,8 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
     # and the suite happily reports the previous framework's behaviour under the
     # new framework's name.
     # The sidecars this run just started share the prefix, so they are excluded
-    # by name - sweeping them would take Postgres out from under the async-db and
-    # crud checks.
+    # by name - sweeping them would take Postgres out from under the async-db
+    # checks.
     _stale=""
     for _c in $(docker ps --filter "name=httparena-validate-" --format '{{.Names}}' 2>/dev/null); do
         case "$_c" in
@@ -1948,82 +1935,6 @@ print(f'{count} {items_n} {valid} {correct_totals}')
     fi
 fi
 
-# ───── Static Files H1 (GET /static/* over HTTP/1.1) ─────
-
-if has_test "static"; then
-    STATIC_DOCS="$DOCS_BASE/h1/isolated/static/validation"
-    echo "[test] static endpoint"
-    check_header "GET /static/reset.css Content-Type" "Content-Type" "text/css" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/reset.css"
-
-    check_header "GET /static/app.js Content-Type" "Content-Type" "application/javascript" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/app.js"
-
-    check_header "GET /static/manifest.json Content-Type" "Content-Type" "application/json" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/manifest.json"
-
-    # Verify file sizes match actual files on disk
-    static_fail=false
-    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
-        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        actual_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/$sf" || echo "0")
-        if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
-            true
-        else
-            fail_with_link "[static/$sf size]: expected $expected_size bytes, got $actual_size" "$STATIC_DOCS"
-            static_fail=true
-        fi
-    done
-    if [ "$static_fail" = "false" ]; then
-        echo "  PASS [static file sizes] (20 files verified)"
-        PASS=$((PASS + 1))
-    fi
-
-    # Verify compression works when Accept-Encoding is sent — for each file, if server compresses, decompressed size must match original
-    static_comp_fail=false
-    static_comp_count=0
-    static_comp_skip=0
-    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
-        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        _hdr_tmp=$(mktemp)
-        _body_tmp=$(mktemp)
-        curl -s --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "http://localhost:$PORT/static/$sf" || true
-        comp_enc=$(grep -i "^content-encoding:" "$_hdr_tmp" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
-        decompressed=$(wc -c < "$_body_tmp")
-        rm -f "$_hdr_tmp" "$_body_tmp"
-        if [ -n "$comp_enc" ]; then
-            if [ "$decompressed" -eq "$expected_size" ] 2>/dev/null; then
-                static_comp_count=$((static_comp_count + 1))
-            else
-                fail_with_link "[static/$sf compression]: Content-Encoding: $comp_enc but decompressed size $decompressed != expected $expected_size" "$STATIC_DOCS"
-                static_comp_fail=true
-            fi
-        else
-            static_comp_skip=$((static_comp_skip + 1))
-        fi
-    done
-    if [ "$static_comp_fail" = "false" ]; then
-        if [ "$static_comp_count" -gt 0 ]; then
-            echo "  PASS [static compression] ($static_comp_count files compressed, $static_comp_skip skipped)"
-            PASS=$((PASS + 1))
-        else
-            echo "  SKIP [static compression] (server does not compress static files)"
-        fi
-    fi
-
-    check_status "GET /static/nonexistent.txt" "404" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/nonexistent.txt"
-
-    # hero.webp has no pre-compressed twin, so this is the plain identity path.
-    static_staleness_probe "static file follows the disk" "http://localhost:$PORT" "$STATIC_DOCS" \
-        "hero.webp" "identity"
-    # app.js does, and after the pre-compressed rule change that is the path most
-    # of the payload takes: 15 of the 20 files are served encoded. q-values on
-    # purpose -- that is what the load generator sends, and an exact-token match
-    # against it silently serves the original instead.
-    static_staleness_probe "static variant follows the disk" "http://localhost:$PORT" "$STATIC_DOCS" \
-        "app.js" "br;q=1, gzip;q=0.8"
-fi
 
 
 # ───── TLS hardening (opt-in; validation only, nothing is measured) ─────
@@ -2231,7 +2142,7 @@ fi
 
 # ───── Async Database (GET /async-db) ─────
 
-if has_test "async-db" || has_test "crud"; then
+if has_test "async-db"; then
     ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false
@@ -2353,94 +2264,6 @@ if has_test "fortunes"; then
     fi
 fi
 
-# ───── CRUD (list + read + create + update /crud/items) ─────
-
-if has_test "crud"; then
-    CRUD_DOCS="$DOCS_BASE/h1/isolated/crud/validation"
-    echo "[test] crud endpoints"
-
-    # 1. GET list — paginated with category filter
-    crud_list=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items?category=electronics&page=1&limit=5" || true)
-    crud_list_result=$(echo "$crud_list" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-items = d.get('items', [])
-total = d.get('total', 0)
-page = d.get('page', 0)
-has_rating = all('rating' in i for i in items) if items else False
-print(f'{len(items)} {total} {page} {has_rating}')
-" 2>/dev/null || echo "0 0 0 False")
-    crud_list_count=$(echo "$crud_list_result" | cut -d' ' -f1)
-    crud_list_total=$(echo "$crud_list_result" | cut -d' ' -f2)
-    crud_list_page=$(echo "$crud_list_result" | cut -d' ' -f3)
-    crud_list_rating=$(echo "$crud_list_result" | cut -d' ' -f4)
-    if [ "$crud_list_count" = "5" ] && [ "$crud_list_total" -gt 0 ] 2>/dev/null && [ "$crud_list_page" = "1" ] && [ "$crud_list_rating" = "True" ]; then
-        echo "  PASS [GET /crud/items?category=electronics] ($crud_list_count items, total=$crud_list_total, page=$crud_list_page)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /crud/items list]: count=$crud_list_count, total=$crud_list_total, page=$crud_list_page, rating=$crud_list_rating" "$CRUD_DOCS"
-    fi
-
-    # 2. GET single item — with cache check
-    crud_get=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items/1" || true)
-    crud_get_id=$(echo "$crud_get" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id','-1'))" 2>/dev/null || echo "-1")
-    if [ "$crud_get_id" = "1" ]; then
-        echo "  PASS [GET /crud/items/1] (returned id=1)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /crud/items/1]: expected id=1, got $crud_get_id" "$CRUD_DOCS"
-    fi
-
-    # 3. Cache-aside check — first call MISS, second call HIT
-    crud_cache1=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/42" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
-    crud_cache2=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/42" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
-    if [ "$crud_cache1" = "MISS" ] && [ "$crud_cache2" = "HIT" ]; then
-        echo "  PASS [crud cache-aside] (first=MISS, second=HIT)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[crud cache-aside]: expected MISS then HIT, got '$crud_cache1' then '$crud_cache2'" "$CRUD_DOCS"
-    fi
-
-    # 4. GET non-existent item — 404
-    check_status "GET /crud/items/999999 (not found)" "404" "$CRUD_DOCS" \
-        -s --max-time 30 "http://localhost:$PORT/crud/items/999999"
-
-    # 5. POST — create a new item
-    crud_post_status=$(curl -s --max-time 30 -o /tmp/crud-post.json -w '%{http_code}' \
-        -X POST -H "Content-Type: application/json" \
-        -d '{"id":200001,"name":"ValidateItem","category":"test","price":42,"quantity":7}' \
-        "http://localhost:$PORT/crud/items" || echo "0")
-    if [ "$crud_post_status" = "201" ]; then
-        echo "  PASS [POST /crud/items] (201 Created)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[POST /crud/items]: expected 201, got $crud_post_status" "$CRUD_DOCS"
-    fi
-
-    # 6. GET back the created item
-    crud_verify=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items/200001" || true)
-    crud_verify_id=$(echo "$crud_verify" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id','-1'))" 2>/dev/null || echo "-1")
-    if [ "$crud_verify_id" = "200001" ]; then
-        echo "  PASS [GET /crud/items/200001] (read back created item)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /crud/items/200001]: expected id=200001, got $crud_verify_id" "$CRUD_DOCS"
-    fi
-
-    # 7. PUT — update, then verify cache was invalidated
-    curl -s --max-time 30 -o /dev/null "http://localhost:$PORT/crud/items/200001"  # warm cache
-    crud_put_status=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' \
-        -X PUT -H "Content-Type: application/json" \
-        -d '{"name":"UpdatedItem","category":"test","price":99,"quantity":1}' \
-        "http://localhost:$PORT/crud/items/200001" || echo "0")
-    crud_after_put=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/200001" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
-    if [ "$crud_put_status" = "200" ] && [ "$crud_after_put" = "MISS" ]; then
-        echo "  PASS [PUT /crud/items/200001] (200 OK, cache invalidated)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[PUT /crud/items/200001]: status=$crud_put_status, cache_after=$crud_after_put" "$CRUD_DOCS"
-    fi
-fi
 
 # ───── gRPC unary (benchmark.BenchmarkService/GetSum) ─────
 #
@@ -2801,14 +2624,17 @@ fi
 # api returns 401 without a cookie) and the authenticated path (api
 # returns 200 with a pre-seeded session cookie).
 
-# The stack ships its own Redis on the host's 6379, and the validate sidecar
-# above already holds it whenever the entry subscribes to crud — fulmine is
-# subscribed to both. The benchmark driver handles this in gateway.sh
-# (_gateway_yield_redis); validate.sh has its own compose handling and needs the
-# same. It used to go unnoticed because the server depended on the cache with
-# the short list form and started anyway; now that the compose files wait for a
-# healthy cache, an unavailable port fails the stack instead of quietly
-# validating against the wrong Redis.
+# The stack ships its own Redis on the host's 6379, which used to collide with
+# the validate sidecar started for crud - fulmine was subscribed to both. It
+# went unnoticed because the server depended on the cache with the short list
+# form and started anyway; once the compose files began waiting for a healthy
+# cache, an unavailable port failed the stack instead of quietly validating
+# against the wrong Redis.
+#
+# With crud gone nothing here starts a sidecar, so REDIS_CONTAINER is never set
+# and both helpers below return early - they are inert, not load-bearing. Kept
+# rather than deleted because the collision returns the moment anything starts
+# a Redis on 6379 again, and this is the guard that handles it.
 PRODSTACK_STOPPED_REDIS=false
 
 _prodstack_yield_redis() {

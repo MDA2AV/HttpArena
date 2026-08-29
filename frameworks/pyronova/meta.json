@@ -24,7 +24,6 @@
     "async-db",
     "baseline-h2",
     "static-h2",
-    "crud",
     "unary-grpc",
     "unary-grpc-tls"
   ],

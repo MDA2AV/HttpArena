@@ -20,7 +20,6 @@
     "json",
     "json-comp",
     "upload",
-    "static",
     "async-db",
     "baseline-h2",
     "static-h2",

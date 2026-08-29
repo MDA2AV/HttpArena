@@ -21,7 +21,6 @@
     "json-comp",
     "json-tls",
     "upload",
-    "static",
     "baseline-h2",
     "static-h2",
     "echo-ws",

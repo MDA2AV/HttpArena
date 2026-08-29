@@ -25,8 +25,7 @@
     "upload",
     "async-db",
     "static-h2",
-    "static-h3",
-    "crud"
+    "static-h3"
   ],
   "maintainers": [
     "Kaliumhexacyanoferrat"

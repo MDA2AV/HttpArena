@@ -13,9 +13,7 @@
     "json",
     "json-comp",
     "upload",
-    "static",
     "async-db",
-    "crud",
     "fortunes"
   ],
   "maintainers": [

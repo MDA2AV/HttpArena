@@ -24,7 +24,6 @@
     "json-tls",
     "upload",
     "async-db",
-    "crud",
     "static-h2",
     "static-h3",
     "echo-ws",

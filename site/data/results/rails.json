@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "crud-4096": {
-      "framework": "rails",
-      "language": "Ruby",
-      "rps": 59053,
-      "avg_latency": "66.63ms",
-      "p99_latency": "87.70ms",
-      "cpu": "4322.2%",
-      "memory": "4.0GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "26.38MB/s",
-      "input_bw": "5.07MB/s",
-      "reconnects": 3146,
-      "status_2xx": 885799,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-4096": {
       "framework": "rails",
       "language": "Ruby",

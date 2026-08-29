@@ -201,7 +201,7 @@ All four services run on `network_mode: host`, so for the duration of the profil
 
 Two things the benchmark driver does so they are actually free:
 
-- It **stops its own Redis sidecar** before bringing the stack up, and restarts it afterwards. That sidecar is started once per run whenever the entry also subscribes to [CRUD](../../h1/isolated/crud/implementation/) and holds 6379 for the whole run, so an entry subscribed to both would otherwise collide with itself on every run.
+- It **stops any harness Redis sidecar** before bringing the stack up, and restarts it afterwards, so a sidecar holding 6379 for the whole run cannot collide with the cache this stack ships. Nothing starts one today - the CRUD profile that did was removed - so in practice this is an inert guard.
 - It keeps all four **out of the ephemeral port range**. `ip_local_port_range` is widened to `1024 65535` for connection-churning profiles, which would otherwise let a load generator be holding one of these when the stack starts. See [Kernel tuning](../../../hardware/#kernel-tuning-applied-per-run).
 
 ### Environment variables

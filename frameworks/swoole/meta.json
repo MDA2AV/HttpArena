@@ -22,10 +22,8 @@
     "json-tls",
     "json-comp",
     "upload",
-    "static",
     "static-tls",
     "static-h2",
-    "async-db",
-    "crud"
+    "async-db"
   ]
 }

@@ -22,8 +22,6 @@
     "json-tls",
     "upload",
     "async-db",
-    "crud",
-    "static",
     "static-tls"
   ],
   "maintainers": ["p8"]

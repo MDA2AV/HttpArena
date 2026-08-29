@@ -17,9 +17,7 @@ Single-endpoint benchmarks that measure framework performance on one task at a t
   {{< card link="async" title="Async Delay" subtitle="A 15ms wait named in the route, at 64K held connections - measures what the framework does while a request waits." icon="clock" >}}
   {{< card link="latency-1m" title="Latency-1M" subtitle="One million req/s offered at a fixed rate; the metric is the CPU each framework spends to serve it, read exactly from its cgroup." icon="chip" >}}
   {{< card link="async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization. Framework-only benchmark." icon="database" >}}
-  {{< card link="static" title="Static Files" subtitle="Serves 20 static files - CSS, JS, HTML, fonts, images - over HTTP/1.1." icon="photograph" >}}
   {{< card link="static-tls" title="Static Files over TLS" subtitle="Same 20-file static workload transported over HTTP/1.1 + TLS on port 8081 - measures the cost of encryption on bulk file serving." icon="lock-closed" >}}
   {{< card link="pipelined" title="Pipelined (16x) *" subtitle="16 requests sent back-to-back per connection, testing raw I/O and pipeline batching. Reference-only - not part of the composite score." icon="fast-forward" >}}
-  {{< card link="crud" title="CRUD (REST API)" subtitle="Realistic REST API with paginated list, cached reads, create, and update against Postgres." icon="database" >}}
   {{< card link="fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Reference-only - measures template-engine throughput, not part of the composite score." icon="document-text" >}}
 {{< /cards >}}

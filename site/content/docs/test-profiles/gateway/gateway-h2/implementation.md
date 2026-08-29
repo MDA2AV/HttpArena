@@ -39,7 +39,7 @@ Rules:
 
 See the individual test profile docs for each endpoint's exact request/response format:
 
-- [`/static/*`](/docs/test-profiles/h1/isolated/static/implementation/)
+- [`/static/*`](/docs/test-profiles/h1/isolated/static-tls/implementation/)
 - [`/baseline2`](/docs/test-profiles/h2/baseline-h2/implementation/)
 - [`/json`](/docs/test-profiles/h1/isolated/json-processing/implementation/)
 - [`/async-db`](/docs/test-profiles/h1/isolated/async-database/implementation/)

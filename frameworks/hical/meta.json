@@ -13,7 +13,6 @@
     "json",
     "json-comp",
     "upload",
-    "static",
     "echo-ws"
   ],
   "maintainers": ["Hical61"]

@@ -77,7 +77,6 @@ CATALOG = [
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
         ("upload",    "Upload",          "Large request-body ingestion (reference).", [32,64,256,512],    [32,256],        False,False,False),
-        ("static",    "Static",          "20-file static asset serving (reference for frameworks).", [1024,4096,6800,16384],[1024,4096,6800],False,False,True),
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
     ]),
     ("Database", [
@@ -86,7 +85,6 @@ CATALOG = [
         # measure the connector, not the HTTP path. Still measured and shown,
         # just no longer deciding the ranking.
         ("async-db",  "Async DB",  "Async Postgres sequential scan (reference).",     [1024],     [1024],  False,True,False),
-        ("crud",      "CRUD",      "REST API: list, cached read, upsert, update (reference).",   [4096],     [4096],  False,False,False),
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("HTTP/2", [
@@ -134,12 +132,10 @@ PROFILE_DOC = {
     "json-comp":        "test-profiles/h1/isolated/json-compressed/implementation",
     "json-tls":         "test-profiles/h1/isolated/json-tls/implementation",
     "upload":           "test-profiles/h1/isolated/upload/implementation",
-    "static":           "test-profiles/h1/isolated/static/implementation",
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
     "async":            "test-profiles/h1/isolated/async/implementation",
     "latency-1m":      "test-profiles/h1/isolated/latency-1m/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
-    "crud":             "test-profiles/h1/isolated/crud/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
     "static-h2":        "test-profiles/h2/static-h2/implementation",

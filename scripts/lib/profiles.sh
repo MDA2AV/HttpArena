@@ -56,10 +56,8 @@ declare -A PROFILES=(
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     [upload]="1|0|0-31,64-95|32,256|upload"
-    [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
-    [crud]="1|200|1-31,65-95|4096|crud"
     [fortunes]="1|0|0-31,64-95|1024|fortunes"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
@@ -81,7 +79,7 @@ PROFILE_ORDER=(
     baseline pipelined limited-conn
     json json-comp json-tls
     upload
-    static static-tls async-db crud
+    static-tls async-db
     fortunes
     baseline-h2 static-h2
     baseline-h2c json-h2c
@@ -116,7 +114,7 @@ parse_profile() {
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
-        static|static-tls|json-tls)         echo "wrk" ;;
+        static-tls|json-tls)                echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
         latency-1m)                        echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)

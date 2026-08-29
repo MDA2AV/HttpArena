@@ -90,28 +90,6 @@ gcannon_build_args() {
             # redoes the HTTP/1.1 upgrade, which is what that profile measures.
             [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
-        crud)
-            # CRUD mix: 75% single-item read + 15% update + 5% list + 5% create.
-            # Template counts (20 total): 15 gets, 3 updates, 1 list, 1 create.
-            # Create path uses {SEQ:100001} monotonic IDs; iteration 1 is pure
-            # INSERT, iterations 2+ become upserts via ON CONFLICT DO UPDATE
-            # because gcannon's SEQ counter resets per invocation.
-            # List queries always hit DB (two queries: data + count). Single-item
-            # reads are cached in-process with 1s TTL. Uses {RAND} and {SEQ}
-            # placeholders for realistic ID distribution. -r req_per_conn forces
-            # reconnection every N requests so gcannon rotates through the
-            # template list — without it, fast templates dominate because each
-            # keep-alive connection sticks to one template.
-            local _crud_files=""
-            for f in $(ls "$REQUESTS_DIR"/crud-list-*.raw "$REQUESTS_DIR"/crud-get-*.raw \
-                         "$REQUESTS_DIR"/crud-create-*.raw "$REQUESTS_DIR"/crud-update-*.raw 2>/dev/null | sort); do
-                _crud_files="${_crud_files:+$_crud_files,}$f"
-            done
-            args=("http://localhost:$PORT"
-                  --raw "$_crud_files"
-                  -c "$conns" -t "$THREADS" -d 15s -p "$pipeline")
-            [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
-            ;;
         *)
             fail "gcannon_build_args: unknown endpoint '$endpoint'"
             ;;

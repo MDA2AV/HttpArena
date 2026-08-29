@@ -30,7 +30,6 @@
     "json-h2c",
     "baseline-h3",
     "static-h3",
-    "async-db",
-    "crud"
+    "async-db"
   ]
 }

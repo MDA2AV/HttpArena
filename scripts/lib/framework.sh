@@ -94,15 +94,9 @@ framework_start() {
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.
     case "$endpoint" in
-        async-db|crud|fortunes)
+        async-db|fortunes)
             args+=(-e "DATABASE_URL=$DATABASE_URL" -e "DATABASE_MAX_CONN=256")
             ;;
-    esac
-
-    # crud also gets REDIS_URL so multi-process frameworks can use Redis as
-    # their shared cross-process cache. Single-heap frameworks ignore it.
-    case "$endpoint" in
-        crud) args+=(-e "REDIS_URL=$REDIS_URL") ;;
     esac
 
     # Profile-declared CPU limit.
@@ -198,9 +192,6 @@ framework_wait_ready() {
             # on port 8082 or the probe fails.
             probe_url="http://localhost:$H2C_PORT/baseline2?a=1&b=1"
             probe_extra+=(--http2-prior-knowledge)
-            ;;
-        static)
-            probe_url="http://localhost:$PORT/static/reset.css"
             ;;
         static-tls)
             probe_url="https://localhost:$H1TLS_PORT/static/reset.css"

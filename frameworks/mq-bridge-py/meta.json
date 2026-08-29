@@ -21,7 +21,6 @@
     "json-comp",
     "upload",
     "async-db",
-    "crud",
     "json-tls",
     "baseline-h2",
     "static-h2",

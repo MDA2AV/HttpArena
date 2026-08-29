@@ -48,27 +48,6 @@ PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 [ -n "$FRAMEWORK_ARG" ] || fail "usage: benchmark.sh <framework> [profile] [--save]"
 
-# crud-only experiment: carve 16 physical cores out of gcannon's cpuset and
-# hand them to postgres. Leaves gcannon with 16 phys (still plenty — gcannon
-# was using ~10 cores at 300K+ rps) and bounds PG's CPU so its consumption
-# is explicit and attributable. SMT pairs preserved: N and N+64 always go
-# to the same consumer. Applied only when the user filtered to crud exactly,
-# and BEFORE the LOADGEN_DOCKER block below so docker-mode DOCKER_FLAGS
-# captures the narrowed GCANNON_CPUS if it's the active mode.
-if [ "$PROFILE_FILTER" = "crud" ]; then
-    # Reshape the server's cpuset inside the PROFILES dict so run_one's
-    # parse_profile picks up the widened range; pair with the pinned
-    # redis/gcannon cpusets below. Postgres left unpinned — the kernel
-    # scheduler naturally co-locates PG backends with the server on the
-    # same socket's L3, and forcing a cpuset hurt rps in earlier runs.
-    # SMT pairs preserved (N, N+64) for all pinned consumers.
-    PROFILES[crud]="1|200|1-31,65-95|4096|crud"             # server:  31 phys / 62 threads
-    export GCANNON_CPUS="32-63,96-127"                      # gcannon: 32 phys / 64 threads
-    export REDIS_CPUSET="0,64"                              # redis:    1 phys /  2 threads
-    unset PG_CPUSET                                         # postgres unpinned (kernel-scheduled)
-    info "crud experiment CPU layout: redis=$REDIS_CPUSET | server=1-31,65-95 | gcannon=$GCANNON_CPUS | postgres=unpinned"
-fi
-
 # ── Cleanup + tuning ────────────────────────────────────────────────────────
 
 cleanup_all() {
@@ -165,7 +144,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json json-comp json-tls upload \
-         static static-tls async-db async latency-1m \
+         static-tls async-db async latency-1m \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -206,21 +185,10 @@ fi
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db crud gateway-64 gateway-h3 production-stack fortunes; do
+for t in async-db gateway-64 gateway-h3 production-stack fortunes; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
 if $need_pg; then postgres_start; fi
-
-# Redis sidecar — started whenever crud is in play so multi-process
-# frameworks can use it as a shared cache. Single-heap frameworks
-# (aspnet-minimal, Go, etc.) just ignore REDIS_URL and keep using their
-# in-process IMemoryCache/sync.Map equivalents. The sidecar is cheap to
-# leave running if unused.
-need_redis=false
-for t in crud; do
-    if framework_subscribes_to "$t"; then need_redis=true; break; fi
-done
-if $need_redis; then redis_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
@@ -246,13 +214,10 @@ run_one() {
     # freshly-seeded server a standalone `benchmark.sh <fw> <profile>` run gets.
     # Postgres is started once and shared across the whole run, so otherwise the
     # previous profile's warm buffers / planner stats / table bloat bleed into
-    # this one. That contamination is severe: after async-db's seq-scan load
-    # leaves every page resident, crud's cached-read backends all become
-    # runnable at once and Postgres spins ~120 cores on snapshot/buffer
-    # contention, collapsing crud from ~680k to ~210k rps. The first DB profile
-    # already has a fresh server from the upfront postgres_start, so skip it.
+    # this one. The first DB profile already has a fresh server from the
+    # upfront postgres_start, so skip it.
     case "$endpoint" in
-        async-db|crud|fortunes)
+        async-db|fortunes)
             if [ "${PG_DIRTY:-false}" = true ]; then
                 info "resetting postgres for a clean per-profile baseline"
                 postgres_start
@@ -448,7 +413,7 @@ run_one() {
     fi
 
     # Input bandwidth — bytes the server ingests per second. Matters for
-    # profiles where the *request* body dominates (upload fixtures, crud writes) and where the response bandwidth alone
+    # profiles where the *request* body dominates (upload fixtures) and where the response bandwidth alone
     # understates the actual work done. Computed as
     #    rps × mean(--raw fixture size)
     # which is the avg bytes/request sent by gcannon. Skipped when the

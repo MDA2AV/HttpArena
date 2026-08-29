@@ -10,13 +10,11 @@
     "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
-    "static",
     "static-tls",
     "json",
     "json-comp",
     "json-tls",
-    "async-db",
-    "crud"
+    "async-db"
   ],
   "maintainers": [
     "prothegee"

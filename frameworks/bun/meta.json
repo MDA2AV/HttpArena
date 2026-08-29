@@ -23,10 +23,8 @@
     "json-comp",
     "json-tls",
     "upload",
-    "static",
     "static-tls",
     "async-db",
-    "crud",
     "fortunes"
   ],
   "maintainers": []

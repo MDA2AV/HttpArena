@@ -23,7 +23,6 @@
     "upload",
     "echo-ws",
     "echo-ws-pipeline",
-    "static",
     "async-db"
   ],
   "maintainers": [

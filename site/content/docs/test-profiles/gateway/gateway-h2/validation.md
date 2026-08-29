@@ -91,7 +91,7 @@ Sends `GET /baseline2?a=<random>&b=<random>` with random values and verifies the
 The gateway-64 test relies on endpoint implementations that are validated individually in other test profiles:
 
 - `/json` - [JSON Processing validation](/docs/test-profiles/h1/isolated/json-processing/validation)
-- `/static/*` - [Static Files validation](/docs/test-profiles/h1/isolated/static/validation)
+- `/static/*` - [Static Files validation](/docs/test-profiles/h1/isolated/static-tls/validation)
 - `/async-db` - [Async Database validation](/docs/test-profiles/h1/isolated/async-database/validation)
 - `/baseline2` - [Baseline H2 validation](/docs/test-profiles/h2/baseline-h2/validation)
 

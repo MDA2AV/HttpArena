@@ -98,14 +98,16 @@ _gateway_dump_logs() {
 }
 
 # The harness Redis sidecar and a stack's own `cache` both want the host's
-# 6379, and redis_start runs once for the whole run whenever the entry
-# subscribes to crud — so for any entry subscribed to both crud and
-# production-stack the two collide on every run. It was invisible because the
-# server depended on `cache` with the short form, which only waits for the
-# container to start: the cache died, the server carried on against the
-# harness Redis, and the profile published numbers measured against a cache it
-# never configured. The compose files now wait for a healthy cache, which turns
-# that into a failure; this gives the port up so it can succeed instead.
+# 6379. This collided on every run for entries subscribed to both crud and
+# production-stack, and was invisible because the server depended on `cache`
+# with the short form, which only waits for the container to start: the cache
+# died, the server carried on against the harness Redis, and the profile
+# published numbers measured against a cache it never configured.
+#
+# Since crud was removed nothing in a benchmark run starts the harness sidecar,
+# so this is now a no-op in practice - both this and the restore in
+# gateway_down() are guarded on the container actually running. Kept because
+# the collision is real whenever something else does start one.
 _gateway_yield_redis() {
     local compose_file="$1" project="$2"
     GATEWAY_STOPPED_REDIS=false

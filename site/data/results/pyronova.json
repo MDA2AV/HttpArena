@@ -99,26 +99,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "crud-4096": {
-      "framework": "pyronova",
-      "language": "Python",
-      "rps": 12019,
-      "avg_latency": "336.94ms",
-      "p99_latency": "377.60ms",
-      "cpu": "289.6%",
-      "memory": "1001MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "4.34MB/s",
-      "input_bw": "1.03MB/s",
-      "reconnects": 0,
-      "status_2xx": 180288,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-4096": {
       "framework": "pyronova",
       "language": "Python",

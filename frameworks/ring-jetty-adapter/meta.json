@@ -22,7 +22,6 @@
     "json-tls",
     "json-comp",
     "upload",
-    "static",
     "async-db",
     "fortunes"
   ]

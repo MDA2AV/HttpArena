@@ -21,7 +21,6 @@
     "json-comp",
     "json-tls",
     "upload",
-    "static",
     "static-tls",
     "async-db",
     "baseline-h2",
@@ -30,7 +29,6 @@
     "json-h2c",
     "echo-ws",
     "echo-ws-pipeline",
-    "crud",
     "fortunes"
   ],
   "maintainers": [

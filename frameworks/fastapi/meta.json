@@ -22,9 +22,7 @@
     "json-tls",
     "upload",
     "async-db",
-    "static",
-    "static-tls",
-    "crud"
+    "static-tls"
   ],
   "maintainers": []
 }

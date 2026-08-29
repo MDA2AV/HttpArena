@@ -19,8 +19,7 @@
     "limited-conn",
     "json",
     "upload",
-    "async-db",
-    "crud"
+    "async-db"
   ],
   "maintainers": []
 }

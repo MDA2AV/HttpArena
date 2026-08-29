@@ -19,7 +19,6 @@
     "limited-conn",
     "json",
     "json-tls",
-    "static",
     "async-db",
     "upload"
   ],

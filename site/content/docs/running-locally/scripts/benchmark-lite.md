@@ -15,7 +15,7 @@ weight: 4
 | CPU pinning | Per-profile `--cpuset-cpus` | None - all containers see every core |
 | `THREADS` default | 64 | `nproc / 2` |
 | `H2THREADS` / `H3THREADS` default | 64 / 64 | Same as `THREADS` |
-| Profile set | 24 profiles | 15 - skips `api-4`, `api-16`, `json-tls`, `crud`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack` |
+| Profile set | 26 profiles | 14 - skips `json-tls`, `static-tls`, `async`, `latency-1m`, `fortunes`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `echo-ws-pipeline`, `echo-ws-limited` |
 | Connection counts | Varies (512, 1024, 4096, 16384, …) | One per profile (mostly 512; upload 128; h3 64) |
 | Framework selection | One framework, always | Optional - runs every enabled framework if omitted |
 

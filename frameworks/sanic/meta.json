@@ -20,9 +20,7 @@
     "json",
     "json-comp",
     "upload",
-    "static",
-    "async-db",
-    "crud"
+    "async-db"
   ],
   "maintainers": []
 }

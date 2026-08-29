@@ -1,6 +1,0 @@
-PUT /crud/items/{RAND:1:50000} HTTP/1.1
-Host: localhost:8080
-Content-Type: application/json
-Content-Length: 70
-
-{"name":"Updated Product","category":"test","price":200,"quantity":25}

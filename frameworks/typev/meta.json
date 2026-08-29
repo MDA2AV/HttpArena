@@ -11,7 +11,6 @@
     "baseline", "latency-1m",
     "limited-conn",
     "json",
-    "static",
     "upload",
     "echo-ws",
     "echo-ws-pipeline"
