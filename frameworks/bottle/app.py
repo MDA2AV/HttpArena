@@ -355,20 +355,20 @@ def async_db_endpoint():
         return { "items": [ ], "count": 0 }
 
 
-@app.post('/upload')
-def upload_endpoint():
-    size = 0
+@app.post('/echo')
+def echo_endpoint():
+    chunks = []
     try:
         body = request.body
         while True:
             chunk = body.read(256*1024)
             if not chunk:
                 break
-            size += len(chunk)
+            chunks.append(chunk)
     except Exception:
         pass
-    response.content_type = 'text/plain; charset=utf-8'
-    return str(size)
+    response.content_type = 'application/octet-stream'
+    return b"".join(chunks)
 
 
 mimetypes.add_type('.woff2', 'font/woff2')

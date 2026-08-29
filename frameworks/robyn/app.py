@@ -82,10 +82,15 @@ def json_endpoint(request: Request):
         return { "items": [ ], "count": 0 }
 
 
-@app.post("/upload")
-def upload_endpoint(request: Request):
-    size = len(request.body)
-    return str(size)
+@app.post("/echo")
+def echo_endpoint(request: Request):
+    # robyn has already read the body, chunked or not.
+    body = request.body
+    if isinstance(body, str):
+        body = body.encode()
+    return Response(status_code=200,
+                    headers={"Content-Type": "application/octet-stream"},
+                    description=body)
 
 
 # -- APP executor -----------------------------------------------------------

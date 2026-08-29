@@ -123,14 +123,14 @@ async def json_comp_endpoint(count: int, conn: Connection):
     return JSONResponse(_json_payload(count, m))
 
 
-@app.route(path='/upload', methods=[HTTPMethod.POST])
-async def upload_endpoint(conn: Connection):
-    # Only the byte count is needed, so the (up to 20 MB) payload is never
-    # materialized; ``conn.body()`` would join the whole upload.
-    size = 0
+@app.route(path='/echo', methods=[HTTPMethod.POST])
+async def echo_endpoint(conn: Connection):
+    # Collected: the response needs a Content-Length, and a chunked request has
+    # none to forward until the body is in.
+    chunks = []
     async for chunk in conn.stream():
-        size += len(chunk)
-    return Response(str(size).encode(), content_type=_PLAIN)
+        chunks.append(chunk)
+    return Response(b''.join(chunks), content_type='application/octet-stream')
 
 
 @app.route(path='/healthz', methods=[HTTPMethod.GET])

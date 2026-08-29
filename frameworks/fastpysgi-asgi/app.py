@@ -233,22 +233,21 @@ async def static_file_endpoint(scope, receive, send):
         entry = STATIC_FILES[entry['ENC']['gzip']]
     return make_resp(200, [[ b'Content-Type', entry['TYPE'] ]], entry['data'], contenc = entry['enc'])
 
-async def upload_endpoint(scope, receive, send):
-    size = 0
+async def echo_endpoint(scope, receive, send):
+    chunks = []
     while True:
         message = await receive()
-        chunk = message.get('body', b'')
-        size += len(chunk)
+        chunks.append(message.get('body', b''))
         if not message.get('more_body', False):
             break
-    return text_resp(str(size))
+    return make_resp(200, [[ b'Content-Type', b'application/octet-stream' ]], b''.join(chunks))
 
 ROUTES = {
     '/pipeline': pipeline,
     '/baseline11': baseline11,
     '/json/': json_endpoint,
     '/json-comp/': json_endpoint,
-    '/upload': upload_endpoint,
+    '/echo': echo_endpoint,
     '/static/': static_file_endpoint,
     '/async-db': async_db_endpoint,
 }

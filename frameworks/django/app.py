@@ -61,14 +61,16 @@ async def json_items(request, count):
     return JsonResponse({"items": items, "count": len(items)})
 
 
-async def upload(request):
-    size = 0
+async def echo_body(request):
+    # Collected: the response needs a Content-Length, and a chunked request has
+    # none to forward until the body is in.
+    chunks = []
     while True:
         chunk = request.read(262144)
         if not chunk:
             break
-        size += len(chunk)
-    return HttpResponse(str(size), content_type="text/plain")
+        chunks.append(chunk)
+    return HttpResponse(b"".join(chunks), content_type="application/octet-stream")
 
 
 
@@ -301,7 +303,7 @@ urlpatterns = [
     path("baseline11", baseline11),
     path("baseline2", baseline11),
     path("json/<int:count>", json_items),
-    path("upload", upload),
+    path("echo", echo_body),
     path("async-db", async_db),
     path("crud/items", crud_items),
     path("crud/items/<int:item_id>", crud_item),

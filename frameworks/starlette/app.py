@@ -66,11 +66,11 @@ async def json_items(request: Request):
     return JSONResponse({"items": items, "count": count})
 
 
-async def upload(request: Request):
-    size = 0
+async def echo_body(request: Request):
+    chunks = []
     async for chunk in request.stream():
-        size += len(chunk)
-    return PlainTextResponse(str(size))
+        chunks.append(chunk)
+    return Response(content=b"".join(chunks), media_type="application/octet-stream")
 
 
 
@@ -275,7 +275,7 @@ routes = [
     Route("/baseline11", baseline11, methods=["GET", "POST"]),
     Route("/baseline2", baseline11, methods=["GET"]),
     Route("/json/{count:int}", json_items, methods=["GET"]),
-    Route("/upload", upload, methods=["POST"]),
+    Route("/echo", echo_body, methods=["POST"]),
     Route("/async-db", async_db, methods=["GET"]),
     Route("/crud/items", crud_list, methods=["GET"]),
     Route("/crud/items", crud_create, methods=["POST"]),

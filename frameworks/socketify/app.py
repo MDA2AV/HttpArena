@@ -98,10 +98,10 @@ def json_items(res, req):
     res.end(body)
 
 
-async def upload(res, req):
+async def echo_body(res, req):
     data = await res.get_data()
-    res.write_header("Content-Type", "text/plain")
-    res.end(str(len(data.getvalue())))
+    res.write_header("Content-Type", "application/octet-stream")
+    res.end(data.getvalue())
 
 
 def build_app(options=None):
@@ -109,7 +109,7 @@ def build_app(options=None):
     app.get("/baseline11", baseline11)
     app.post("/baseline11", baseline11)
     app.get("/json/:count", json_items)
-    app.post("/upload", upload)
+    app.post("/echo", echo_body)
     return app
 
 

@@ -240,9 +240,10 @@ def static_file_endpoint(env):
 
 READ_BUF_SIZE = 256*1024
 
-def upload_endpoint(env):
+def echo_endpoint(env):
     wsgi_input = env["wsgi.input"]
     content_length = int(env.get("CONTENT_LENGTH", -1))
+    chunks = []
     size = 0
     if content_length != 0:
         while True:
@@ -250,10 +251,11 @@ def upload_endpoint(env):
             chunk = wsgi_input.read(to_read)
             if not chunk:
                 break
+            chunks.append(chunk)
             size += len(chunk)
             if content_length > 0 and size >= content_length:
                 break
-    return text_resp(str(size))
+    return make_resp(200, [('Content-Type', 'application/octet-stream')], b"".join(chunks))
 
 
 ROUTES = {
@@ -262,7 +264,7 @@ ROUTES = {
     '/baseline2': baseline2,
     '/json/': json_endpoint,
     '/json-comp/': json_endpoint,
-    '/upload': upload_endpoint,
+    '/echo': echo_endpoint,
     '/static/': static_file_endpoint,
     '/async-db': async_db_endpoint,
 }

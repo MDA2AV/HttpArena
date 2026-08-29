@@ -13,7 +13,7 @@ Endpoints (HttpArena reference contract)
 * ``POST /baseline11?a=&b=`` + body int -> ``a+b+body``
 * ``GET  /baseline2?a=&b=``             -> ``a+b``
 * ``GET  /json/{count}?m=``             -> processed dataset JSON  (json/json-comp)
-* ``POST /upload`` + body               -> received byte count     (upload)
+* ``POST /echo`` + body                 -> the body, unchanged     (in-out)
 * ``GET  /async-db?min=&max=&limit=``   -> Postgres ``items`` rows  (async-db)
 * ``GET  /static/{file}``               -> file from /data/static   (static)
 
@@ -54,6 +54,7 @@ STATIC_DIR = Path(os.environ.get("STATIC_DIR", "/data/static")).resolve()
 SERVER = "mq-bridge-py"
 JSON_META = {"content-type": "application/json", "Server": SERVER}
 TEXT_META = {"content-type": "text/plain; charset=utf-8", "Server": SERVER}
+OCTET_META = {"content-type": "application/octet-stream", "Server": SERVER}
 NOT_FOUND_META = {
     "content-type": "text/plain; charset=utf-8",
     "Server": SERVER,
@@ -530,8 +531,8 @@ def handle(message: Message) -> Message:
         except (ValueError, UnicodeDecodeError):
             pass
         return _reply(message, str(total).encode(), TEXT_META)
-    if method == "POST" and path == "/upload":
-        return _reply(message, str(len(message.payload)).encode(), TEXT_META)
+    if method == "POST" and path == "/echo":
+        return _reply(message, message.payload, OCTET_META)
     if method == "GET" and path == "/async-db":
         return _reply(message, _async_db(qs), JSON_META)
     if method == "GET" and path.startswith("/json/"):

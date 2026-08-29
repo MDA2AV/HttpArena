@@ -129,16 +129,14 @@ def baseline2(req: "Request"):
     return Response(str(_sum_query_params(req)), content_type="text/plain")
 
 
-@app.post("/upload", gil=True, stream=True)
-def upload(req: "Request"):
-    # drain_count() runs the whole consume loop in Rust with the GIL
-    # released once — vs a Python `for chunk in req.stream:` that pays
-    # GIL release+reacquire + PyBytes alloc per 16 KB hyper frame
-    # (~1600 iterations for a 25 MB upload). Worth ~50% throughput on
-    # the /upload profile; zero impact on streaming use cases that
-    # actually want the per-chunk bytes.
-    size = req.stream.drain_count()
-    return Response(str(size), content_type="text/plain")
+@app.post("/echo", gil=True, stream=True)
+def echo_body(req: "Request"):
+    # The echo needs the bytes, not a count, so drain_count() cannot be used
+    # here: the body is collected and handed straight back. Collected rather
+    # than streamed through because the response needs a Content-Length, and a
+    # chunked request has none to forward until the body is in.
+    chunks = [chunk for chunk in req.stream]
+    return Response(b"".join(chunks), content_type="application/octet-stream")
 
 
 # Same payload shape + multiplier semantics as Actix/FastAPI reference:

@@ -47,10 +47,12 @@ def pipeline_test(req, resp):
 
 # body_size by default it will read 10MB
 # setting read_size as 25MB
-@app.route("/upload", method="POST", body_size=1024 * 1024 * 25)
-def upload_test(req, resp):
-    result = len(req.body)
-    return resp.plain(str(result))
+@app.route("/echo", method="POST", body_size=1024 * 1024 * 25)
+def echo_test(req, resp):
+    body = req.body
+    if isinstance(body, str):
+        body = body.encode()
+    return resp.bytes(body, content_type="application/octet-stream")
 
 
 @app.route(
