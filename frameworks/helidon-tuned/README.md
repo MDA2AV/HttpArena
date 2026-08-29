@@ -9,24 +9,27 @@ benchmark entry.
 The current subscribed benchmark profiles are:
 
 - `baseline`
+- `latency-1m`
+- `latency-10k`
 - `pipelined`
 - `limited-conn`
-- `json`
 - `json-comp`
 - `json-tls`
 - `upload`
-- `static`
 - `async-db`
 - `baseline-h2`
 - `static-h2`
 - `unary-grpc`
 - `unary-grpc-tls`
 - `echo-ws`
+- `echo-ws-pipeline`
+- `echo-ws-limited`
 
 Profiles not currently supported here:
 
+- application profiles: `async`, `static-tls`, `fortunes`, `baseline-h2c`, `json-h2c`
 - HTTP/3: `baseline-h3`, `static-h3`
-- `gateway-64`
+- composed deployments: `gateway-64`, `gateway-h3`, `production-stack`
 
 # Listener layout
 

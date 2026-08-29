@@ -24,6 +24,7 @@
     "static-h2",
     "echo-ws",
     "echo-ws-pipeline",
+    "echo-ws-limited",
     "unary-grpc",
     "unary-grpc-tls",
     "async-db"
