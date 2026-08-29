@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using ioxide.file;
 using ioxide.pg;
+using ioxide.timer;
 
 namespace IoxideArena;
 
@@ -61,6 +62,17 @@ internal sealed unsafe partial class HttpSession
     private bool _dbFirstRow;
     private int _dbRows;
 
+    // /delay/{ms} parks the parser the way /async-db does: the wait happens in
+    // the handler, on this reactor, and the carry resumes behind it so pipelined
+    // requests are still answered in order.
+    public bool PendingDelay;
+    public int PendingDelayMs;
+    private bool _delayClose;
+    // One per connection, reused for every delay it ever asks for. Built on first
+    // use rather than at construction, so a connection that never waits never makes
+    // one - which is every connection on every profile but this one.
+    public RingTimer? Timer;
+
     // /upload streams its body: bytes are counted as they arrive, never buffered whole.
     public long PendingUploadRemaining;
     private long _uploadTotal;
@@ -90,6 +102,18 @@ internal sealed unsafe partial class HttpSession
         Pump();
     }
 
+    /// <summary>The wait is over: answer with the number of milliseconds asked for.</summary>
+    public void CompleteDelay()
+    {
+        Span<byte> num = stackalloc byte[16];
+        Utf8Formatter.TryFormat(PendingDelayMs, num, out int n);
+        WriteResp(num[..n], _delayClose);
+        if (_delayClose)
+        {
+            WantClose = true;
+        }
+    }
+
     // The streamed upload's body is fully counted; emit the 200 with the total byte count.
     private void FinishUpload()
     {
@@ -106,7 +130,7 @@ internal sealed unsafe partial class HttpSession
     private void Pump()
     {
         int pos = 0;
-        while (!PendingDb && PendingUploadRemaining == 0
+        while (!PendingDb && !PendingDelay && PendingUploadRemaining == 0
                && TryOne(_carry.AsSpan(pos, _carryLen - pos), out int consumed, out bool close))
         {
             pos += consumed;
@@ -301,6 +325,22 @@ internal sealed unsafe partial class HttpSession
             ParseDbParams(query);
             PendingDb = true;
             PendingDbClose = close;
+        }
+        else if (path.StartsWith("/delay/"u8))
+        {
+            // The value is echoed back, so it has to be the number that was
+            // parsed rather than the text: "007" answers 7.
+            ReadOnlySpan<byte> tail = path[7..];
+            if (Utf8Parser.TryParse(tail, out int ms, out int used) && used == tail.Length && ms >= 0)
+            {
+                PendingDelayMs = ms;
+                _delayClose = close;
+                PendingDelay = true;
+            }
+            else
+            {
+                Write404(close);
+            }
         }
         else if (path.SequenceEqual("/upload"u8))
         {

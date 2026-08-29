@@ -141,6 +141,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "ring-jetty9-adapter",
+      "language": "Clojure",
+      "rps": 83767,
+      "avg_latency": "45.24ms",
+      "p99_latency": "198.62ms",
+      "cpu": "6481.4%",
+      "memory": "5.1GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "293.78MB",
+      "reconnects": 0,
+      "status_2xx": 427239,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "ring-jetty9-adapter",
       "language": "Clojure",

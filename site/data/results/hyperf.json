@@ -196,6 +196,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "hyperf",
+      "language": "PHP",
+      "rps": 199611,
+      "avg_latency": "24.85ms",
+      "p99_latency": "422.16ms",
+      "cpu": "3049.5%",
+      "memory": "2.1GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "701.26MB",
+      "reconnects": 0,
+      "status_2xx": 1018197,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "hyperf",
       "language": "PHP",

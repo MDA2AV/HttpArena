@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "micronaut",
+      "language": "Java",
+      "rps": 673146,
+      "avg_latency": "6.54ms",
+      "p99_latency": "225.88ms",
+      "cpu": "6239.5%",
+      "memory": "5.2GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "2.28GB",
+      "reconnects": 0,
+      "status_2xx": 3432918,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "micronaut",
       "language": "Java",

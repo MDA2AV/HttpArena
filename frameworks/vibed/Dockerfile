@@ -1,6 +1,6 @@
 FROM debian:trixie-slim AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates dub gcc ldc libc6-dev \
+        ca-certificates dub gcc ldc libc6-dev libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY dub.json dub.selections.json ./

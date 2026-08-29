@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 
 using ioxide;
+using ioxide.timer;
 using ioxide.file;
 using ioxide.pg;
 using ioxide.tls;
@@ -81,6 +82,20 @@ internal static class Handler
                 // /async-db parks the parser: run the query (inline on this reactor's
                 // ring via ioxide.pg), stream rows into Out, then resume the carry -
                 // pipelined requests behind it are served in order.
+                // The async profile's wait, on ioxide.timer: the deadline goes to the
+                // kernel with the submission, so it completes on this reactor with the
+                // connection's state still warm and the reactor free for everything else
+                // it owns meanwhile, which is the whole measurement. One timer per
+                // connection, re-armed per request - a connection only ever waits once
+                // at a time, because the handler awaits before it reads again.
+                while (httpSession.PendingDelay)
+                {
+                    httpSession.PendingDelay = false;
+                    await (httpSession.Timer ??= new RingTimer(reactor)).DelayAsync(httpSession.PendingDelayMs);
+                    httpSession.CompleteDelay();
+                    httpSession.ResumeFeed();
+                }
+
                 while (httpSession.PendingDb)
                 {
                     httpSession.PendingDb = false;

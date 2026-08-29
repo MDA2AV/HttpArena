@@ -121,6 +121,25 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
+    "json-tls-4096": {
+      "framework": "koa",
+      "language": "JS",
+      "rps": 388391,
+      "avg_latency": "9.48ms",
+      "p99_latency": "52.63ms",
+      "cpu": "6409.4%",
+      "memory": "6.5GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "1.34GB",
+      "reconnects": 0,
+      "status_2xx": 1979878,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "latency-1m-1024": {
       "framework": "koa",
       "language": "JS",
