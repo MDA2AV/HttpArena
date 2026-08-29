@@ -5,7 +5,7 @@
   "engine": "libuv",
   "description": "An ultra fast WSGI/ASGI server for Python",
   "repo": "https://github.com/remittor/fastpysgi",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline", "latency-1m", "latency-10k",
     "pipelined",

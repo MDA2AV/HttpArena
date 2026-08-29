@@ -98,7 +98,7 @@ fun echoBody(request: Request): Response {
     // Collected: the response needs a Content-Length, and a chunked request
     // carries none to forward until the body is in.
     val body = request.body.stream.use { it.readBytes() }
-    return Response(Status.OK)
+    return Response(OK)
         .header("Content-Type", "application/octet-stream")
         .body(java.io.ByteArrayInputStream(body), body.size.toLong())
 }

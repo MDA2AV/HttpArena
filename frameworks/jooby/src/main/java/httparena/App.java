@@ -79,7 +79,7 @@ public class App extends Jooby {
       try (InputStream in = ctx.body().stream()) {
         body = in.readAllBytes();
       }
-      ctx.setResponseType(MediaType.octetstream);
+      ctx.setResponseType(MediaType.valueOf("application/octet-stream"));
       return body;
     });
   }

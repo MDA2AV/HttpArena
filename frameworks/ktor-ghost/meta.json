@@ -27,9 +27,7 @@
     "baseline-h2c",
     "json-h2c",
     "echo-ws",
-    "echo-ws-pipeline",
-    "fortunes"
-  ],
+    "echo-ws-pipeline"],
   "maintainers": [
     "bjhham",
     "juanchurtado1991"

@@ -276,14 +276,12 @@ if (cluster.isPrimary) {
             }
         });
 
-        // The request is a lazy Readable: counting bytes never needs the 20 MB body in memory,
-        // which is what request.buffer() would cost
-        server.post('/echo', (request, response) => {
-            const chunks = [];
-            request.on('data', chunk => chunks.push(chunk));
-            request.on('end', () => {
-                response.header('server', SERVER_HDR).type('application/octet-stream').send(Buffer.concat(chunks));
-            });
+        // request.buffer() rather than the data/end events: with an EMPTY body
+        // uWebSockets emits neither, so an event-driven handler never replies
+        // and the connection just hangs.
+        server.post('/echo', async (request, response) => {
+            const body = await request.buffer();
+            response.header('server', SERVER_HDR).type('application/octet-stream').send(body);
         });
 
         server.get('/baseline2', (request, response) => {
