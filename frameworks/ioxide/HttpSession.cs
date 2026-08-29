@@ -348,10 +348,6 @@ internal sealed unsafe partial class HttpSession
             Utf8Formatter.TryFormat(bodyLen, num, out int n);
             WriteResp(num[..n], close);
         }
-        else if (path.StartsWith("/crud/items"u8))
-        {
-            RouteCrud(method, path, query, body, close);
-        }
         else
         {
             long sum = SumAB(query) + bodyInt;

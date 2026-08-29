@@ -27,28 +27,26 @@ internal static class Handler
     [DllImport("libc", EntryPoint = "shutdown", SetLastError = true)]
     private static extern int Shutdown(int fd, int how);
 
+    private static Config _config = null!;
     private static int _slab = 16 * 1024;
     private static Dataset _dataSet = Dataset.Empty;
     private static StaticAssets? _staticAssets;
     private static Precompressed? _precompressed;
     private static bool _hasPg;
-    private static bool _hasTls;
-    private static bool _hasCache;
 
-    public static void Init(ServerConfig config, Dataset ds, StaticAssets? assets, Precompressed? precompressed, bool hasPg, bool hasTls, bool hasCache)
+    public static void Init(Config config, Dataset ds, StaticAssets? assets, Precompressed? precompressed)
     {
-        _slab = config.Tcp!.WriteSlabSize;
+        _config = config;
+        _slab = config.Server.Tcp!.WriteSlabSize;
         _dataSet = ds;
         _staticAssets = assets;
         _precompressed = precompressed;
-        _hasPg = hasPg;
-        _hasTls = hasTls;
-        _hasCache = hasCache;
+        _hasPg = config.Pg != null;
     }
 
     public static async Task HandleAsync(Reactor reactor, TcpConnection conn)
     {
-        if (conn.ListenerPort == 8443)
+        if (_config.Tls && conn.ListenerPort == _config.H2Port)
         {
             await ServeH2Async(reactor, conn);
             return;
@@ -56,15 +54,12 @@ internal static class Handler
 
         var httpSession = new HttpSession(_dataSet, _staticAssets, _precompressed);
         PgPool? pool = _hasPg ? reactor.GetService<PgPool>() : null;
-        ICrudCache? cache = _hasCache ? reactor.GetService<ICrudCache>() : null;
-        PgRowHandler rowSink = httpSession.AppendDbRow;       // async-db rows
-        PgRowHandler listSink = httpSession.AppendCrudRow;    // crud list rows
-        PgRowHandler itemSink = httpSession.CaptureCrudItem;  // crud single item
+        PgRowHandler rowSink = httpSession.AppendDbRow;   // async-db rows
         TlsSession? tls = null;
 
         try
         {
-            if (_hasTls && conn.ListenerPort == 8081)
+            if (_config.Tls && conn.ListenerPort == _config.TlsPort)
             {
                 // Handshake over the ring, then kTLS TX: outbound writes below are plaintext
                 // and the kernel produces the records. Inbound stays userspace: each slice
@@ -79,9 +74,6 @@ internal static class Handler
             // read. A read-first loop would deadlock on the bundled-request case.
             while (true)
             {
-                // /async-db parks the parser: run the query (inline on this reactor's
-                // ring via ioxide.pg), stream rows into Out, then resume the carry -
-                // pipelined requests behind it are served in order.
                 // The async profile's wait, on ioxide.timer: the deadline goes to the
                 // kernel with the submission, so it completes on this reactor with the
                 // connection's state still warm and the reactor free for everything else
@@ -96,6 +88,9 @@ internal static class Handler
                     httpSession.ResumeFeed();
                 }
 
+                // /async-db parks the parser: run the query (inline on this reactor's
+                // ring via ioxide.pg), stream rows into Out, then resume the carry -
+                // pipelined requests behind it are served in order.
                 while (httpSession.PendingDb)
                 {
                     httpSession.PendingDb = false;
@@ -111,63 +106,6 @@ internal static class Handler
                     }
 
                     if (httpSession.PendingDbClose) httpSession.WantClose = true;
-                    else httpSession.ResumeFeed();
-                }
-
-                while (httpSession.PendingCrud != CrudKind.None)
-                {
-                    CrudKind kind = httpSession.PendingCrud;
-                    httpSession.PendingCrud = CrudKind.None;
-
-                    if (pool == null)
-                    {
-                        httpSession.WriteCrudUnavailable();
-                    }
-                    else switch (kind)
-                    {
-                        case CrudKind.List:
-                            httpSession.BeginCrudList();
-                            await httpSession.SubmitCrudList(pool, listSink);
-                            httpSession.EndCrudList();
-                            break;
-
-                        case CrudKind.GetOne:
-                            string key = httpSession.CacheKey();
-                            string? cached = cache != null ? await cache.GetAsync(key) : null;
-                            if (cached != null)
-                            {
-                                httpSession.WriteCrudItemResponse(System.Text.Encoding.UTF8.GetBytes(cached), cacheHit: true);
-                            }
-                            else
-                            {
-                                httpSession.ResetCrudItem();
-                                await httpSession.SubmitCrudItem(pool, itemSink);
-                                if (httpSession.CrudItemFound)
-                                {
-                                    if (cache != null)
-                                        await cache.SetExAsync(key, System.Text.Encoding.UTF8.GetString(httpSession.CrudItemBody()), 1);
-                                    httpSession.WriteCrudItemResponse(httpSession.CrudItemBody(), cacheHit: false);
-                                }
-                                else
-                                {
-                                    httpSession.WriteCrud404();
-                                }
-                            }
-                            break;
-
-                        case CrudKind.Create:
-                            await httpSession.SubmitCrudInsert(pool);
-                            httpSession.WriteCrudStatus("HTTP/1.1 201 Created\r\nContent-Length: 0\r\n"u8);
-                            break;
-
-                        case CrudKind.Update:
-                            await httpSession.SubmitCrudUpdate(pool);
-                            if (cache != null) await cache.DelAsync(httpSession.CacheKey());
-                            httpSession.WriteCrudStatus("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n"u8);
-                            break;
-                    }
-
-                    if (httpSession.PendingCrudClose) httpSession.WantClose = true;
                     else httpSession.ResumeFeed();
                 }
 
@@ -269,7 +207,7 @@ internal static class Handler
         {
             session = await reactor.GetService<H2Tls>().Service.AcceptAsync(conn);
             await using var pipe = new TlsConnectionDualPipe(conn, session, ownsSession: false);
-            await new Http2Connection(pipe).RunBufferedAsync(Multiplexed.RouteH2);
+            await new Http2Connection(pipe, _config.Http2).RunBufferedAsync(Multiplexed.RouteH2);
         }
         catch
         {
