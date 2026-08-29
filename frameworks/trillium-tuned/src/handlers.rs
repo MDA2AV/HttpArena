@@ -1,21 +1,24 @@
 //! HTTP endpoint handlers, split by section:
 //!
-//! - [`h1`] — `/pipeline`, `/baseline11`, `/baseline2`, `/json/:count`, `/echo`
+//! - [`h1`] — `/pipeline`, `/baseline11`, `/baseline2`, `/json/:count`, `/echo`, `/delay/:ms`
 //! - [`db`] — `/async-db`
+//! - [`api`] — production-stack `/api/items/:id` and `/api/me`
 //! - [`crud`] — `/crud/items` and `/crud/items/:id`
 //! - [`fortunes`] — `/fortunes`
 //! - [`ws`] — `/ws` echo
 
+mod api;
 mod crud;
 mod db;
 mod fortunes;
 mod h1;
 mod ws;
 
+pub use api::{api_item_read, api_item_write, api_me};
 pub use crud::{crud_create, crud_list, crud_read, crud_update};
 pub use db::async_db;
 pub use fortunes::fortunes;
-pub use h1::{baseline_any, baseline_get, echo_body, json_handler, pipeline};
+pub use h1::{baseline_any, baseline_get, delay, echo_body, json_handler, pipeline};
 use querystrong::QueryStrong;
 use trillium::{Conn, KnownHeaderName, Status};
 pub use ws::ws_echo;

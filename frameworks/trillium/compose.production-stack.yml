@@ -1,0 +1,120 @@
+# production-stack — edge + cache + authsvc + server on a 64 logical CPU budget.
+#
+#   edge     (caddy)  - 30, terminates TLS and h2, serves /static off disk, one auth
+#                           subrequest per /api/* call
+#   cache    (redis)  -  2, single-threaded on the data path, so more would sit idle
+#   authsvc  (rust)   -  8, one HMAC-SHA256 per /api request and nothing else
+#   server   (trillium) 24, JSON, Postgres, the moka L1 and the Redis client
+#
+# The split is the reference entry's, which is where to start rather than where to end: the
+# optimum is wherever edge, authsvc and server all saturate at once, and EDGE_CPUSET /
+# SERVER_CPUSET are the two knobs to sweep first. Terminating TLS under multiplexed h2 is
+# usually the expensive half, which is why the edge gets the larger share.
+#
+# All four on host networking, so what goes between them is loopback rather than a bridge.
+# Redis binds 6379, authsvc 9090, the server 8080 (plus the UDS the edge actually uses), the
+# edge 8443.
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "${EDGE_CPUSET:-0-14,64-78}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+      - appsock:/run/app
+    # authsvc has to be answering, not merely started: the edge asks it about every /api
+    # request, so a stack that comes up without it measures 5xx from the edge and never
+    # reaches the server at all.
+    depends_on:
+      authsvc:
+        condition: service_healthy
+      server:
+        condition: service_started
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "${CACHE_CPUSET:-15,79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+    # A cache that cannot bind is a silent downgrade rather than a failure: with the short
+    # `depends_on: - cache` form the server starts anyway and quietly talks to whatever else
+    # holds 6379, publishing numbers measured against a Redis this profile never configured.
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "${AUTH_CPUSET:-16-19,80-83}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/_health"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - LISTEN_UDS=/run/app/app.sock
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - REDIS_URL=redis://127.0.0.1:6379
+      - DATASET_PATH=/data/dataset.json
+      - RUST_LOG=info
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      - appsock:/run/app
+    depends_on:
+      cache:
+        condition: service_healthy
+
+# Shared rendezvous for the UDS. network_mode: host shares the net namespace but not the
+# filesystem, so the socket needs an explicit shared volume mounted into both at the same path.
+volumes:
+  appsock:

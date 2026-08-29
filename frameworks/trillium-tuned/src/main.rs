@@ -8,10 +8,10 @@ mod state;
 use env_logger::Env;
 use grpc::{Benchmark, BenchmarkServiceServer};
 use handlers::{
-    async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, echo_body,
-    fortunes, json_handler, pipeline, ws_echo,
+    api_item_read, api_item_write, api_me, async_db, baseline_any, baseline_get, crud_create,
+    crud_list, crud_read, crud_update, delay, echo_body, fortunes, json_handler, pipeline, ws_echo,
 };
-use state::{AppState, SharedState, build_pg_pool};
+use state::{AppState, SharedState, build_pg_pool, build_redis_pool};
 use std::{env, error::Error, fs, sync::Arc};
 use trillium::{Conn, Handler, HttpConfig, KnownHeaderName, Method};
 use trillium_cache::{Cache, InMemoryStorage};
@@ -43,6 +43,7 @@ fn build_handler(static_dir: String) -> impl Handler {
             .any(&[Method::Get, Method::Post], "/baseline11", baseline_any)
             .get("/baseline2", baseline_get)
             .get("/json/:count", json_handler)
+            .get("/delay/:ms", delay)
             .post("/echo", echo_body)
             .get(
                 "/static/*",
@@ -63,6 +64,14 @@ fn build_handler(static_dir: String) -> impl Handler {
             .post("/crud/items", crud_create)
             .get("/crud/items/:id", crud_read)
             .put("/crud/items/:id", crud_update)
+            // production-stack. `/public/*` is the same work as the isolated profiles under a
+            // path the edge forwards without auth; `/api/*` arrives already authenticated, with
+            // the user id in a header the edge set.
+            .get("/public/baseline", baseline_get)
+            .get("/public/json/:count", json_handler)
+            .get("/api/items/:id", api_item_read)
+            .post("/api/items/:id", api_item_write)
+            .get("/api/me", api_me)
             .get("/ws", websocket(ws_echo)),
     )
 }
@@ -91,7 +100,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let state = Arc::new(AppState {
         dataset: shared.dataset.clone(),
         crud_cache: shared.crud_cache.clone(),
+        items_l1: shared.items_l1.clone(),
+        users_l1: shared.users_l1.clone(),
+        // Per-worker, matching the existing `pg` arrangement. Not asserted to be optimal —
+        // a single shared pool would let a busy worker borrow idle capacity instead of being
+        // capped at its own slice, and is worth measuring for both pools together.
         pg: build_pg_pool(),
+        redis: build_redis_pool(),
     });
 
     let mut builder = config()
@@ -100,7 +115,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_shared_state(state)
         .listeners()
         .with_reuseport_workers(n_workers)
-        .bind_reuseport_tcp(8080)?;
+        .bind_reuseport_tcp(8080)?
+        // h2c on 8082 for the cleartext-h2 profiles — see the trillium entry. A cleartext
+        // trillium listener speaks both h1 and h2c by matching the connection preface.
+        .bind_reuseport_tcp(8082)?;
 
     if let Ok(uds) = env::var("LISTEN_UDS") {
         let _ = std::fs::remove_file(&uds);

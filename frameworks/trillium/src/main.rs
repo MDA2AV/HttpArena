@@ -8,8 +8,8 @@ mod state;
 use env_logger::Env;
 use grpc::{Benchmark, BenchmarkServiceServer};
 use handlers::{
-    async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, echo_body,
-    fortunes, json_handler, pipeline, ws_echo,
+    api_item_read, api_item_write, api_me, async_db, baseline_any, baseline_get, crud_create,
+    crud_list, crud_read, crud_update, delay, echo_body, fortunes, json_handler, pipeline, ws_echo,
 };
 use state::AppState;
 use std::{env, error::Error, fs};
@@ -34,6 +34,7 @@ fn build_handler() -> impl Handler {
             .get("/baseline2", baseline_get)
             .get("/json/:count", json_handler)
             .post("/echo", echo_body)
+            .get("/delay/:ms", delay)
             .get(
                 "/static/*",
                 (
@@ -53,6 +54,14 @@ fn build_handler() -> impl Handler {
             .post("/crud/items", crud_create)
             .get("/crud/items/:id", crud_read)
             .put("/crud/items/:id", crud_update)
+            // production-stack. `/public/*` is the same work as the isolated profiles under a
+            // path the edge forwards without auth; `/api/*` arrives already authenticated, with
+            // the user id in a header the edge set.
+            .get("/public/baseline", baseline_get)
+            .get("/public/json/:count", json_handler)
+            .get("/api/items/:id", api_item_read)
+            .post("/api/items/:id", api_item_write)
+            .get("/api/me", api_me)
             .get("/ws", websocket(ws_echo)),
     )
 }
@@ -77,7 +86,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_http_config(http_config)
         .with_shared_state(state)
         .listeners()
-        .bind_tcp(8080)?;
+        .bind_tcp(8080)?
+        .bind_tcp(8082)?;
 
     if let Ok(uds) = env::var("LISTEN_UDS") {
         let _ = std::fs::remove_file(&uds);
