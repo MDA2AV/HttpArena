@@ -299,6 +299,20 @@
       }
     ]
   },
+  "carter": {
+    "dir": "carter",
+    "description": "Carter 10 on ASP.NET Core and Kestrel, default configuration. Routes declared in a Carter module and mapped onto the endpoint router, JSON through System.Text.Json, gzip and brotli through ResponseCompression at level 1, json-tls on 8081.",
+    "repo": "https://github.com/CarterCommunity/Carter",
+    "type": "flagship",
+    "engine": "kestrel",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "chi": {
     "dir": "chi",
     "description": "chi v5 router on the Go net/http server, default configuration. Routing and path parameters through the chi API, encoding/json for the response body, gzip through the chi middleware.Compress middleware.",
@@ -934,6 +948,20 @@
     "type": "engine",
     "engine": "epoll"
   },
+  "jooby": {
+    "dir": "jooby",
+    "description": "Jooby 3.9 on Jetty in the script API. Routing and path/query values through Jooby's Context, JSON through the Jackson module, gzip through the built-in compression at level 1, json-tls on 8081.",
+    "repo": "https://github.com/jooby-project/jooby",
+    "type": "flagship",
+    "engine": "jetty",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "koa": {
     "dir": "koa",
     "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
@@ -1025,6 +1053,20 @@
       "response": true
     }
   },
+  "lithium": {
+    "dir": "lithium",
+    "description": "Lithium's header-only HTTP server on its epoll/fiber backend. Disabled: lithium's own JSON serializer writes booleans as 1/0 rather than true/false, which the json profile rejects, and its decoder cannot read a JSON boolean at all.",
+    "repo": "https://github.com/matt-42/lithium",
+    "type": "flagship",
+    "engine": "lithium",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
   "lute": {
     "dir": "lute",
     "description": "Lute standalone Luau runtime",
@@ -1034,6 +1076,20 @@
     "mode": "standard",
     "completeness": {
       "routing": false,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
+  "lwan": {
+    "dir": "lwan",
+    "description": "lwan's own coroutine HTTP server. Disabled: lwan does not implement chunked request bodies, which the baseline and upload profiles both send, and its POST body cap stays at the default regardless of max_post_data_size.",
+    "repo": "https://github.com/lpereira/lwan",
+    "type": "flagship",
+    "engine": "lwan",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
       "middleware": false,
       "request": true,
       "response": true
@@ -1196,6 +1252,20 @@
     "repo": "https://github.com/nodejs/node",
     "type": "engine",
     "engine": "node:http"
+  },
+  "ntex": {
+    "dir": "ntex",
+    "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+    "repo": "https://github.com/ntex-rs/ntex",
+    "type": "flagship",
+    "engine": "ntex",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "oxpecker": {
     "dir": "oxpecker",
@@ -1368,6 +1438,20 @@
       "response": true
     }
   },
+  "reitit": {
+    "dir": "reitit",
+    "description": "Reitit 0.9 routing on Ring and the Jetty adapter, default configuration. Routes and path parameters through reitit.ring, query parsing through ring's wrap-params on the router, JSON through clojure.data.json, gzip through Jetty's GzipHandler, json-tls on 8081.",
+    "repo": "https://github.com/metosin/reitit",
+    "type": "flagship",
+    "engine": "jetty",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "ring-http-exchange": {
     "dir": "ring-http-exchange",
     "description": "",
@@ -1486,6 +1570,20 @@
     "repo": "",
     "type": "engine",
     "engine": "epoll"
+  },
+  "salvo": {
+    "dir": "salvo",
+    "description": "Salvo 0.96 on tokio and hyper, default configuration. Routing through the Router tree, JSON through salvo's Json responder, gzip and brotli through the built-in Compression hoop at level 1, json-tls on 8081 through rustls.",
+    "repo": "https://github.com/salvo-rs/salvo",
+    "type": "flagship",
+    "engine": "salvo",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "sanic": {
     "dir": "sanic",
@@ -1622,6 +1720,20 @@
     "type": "emerging",
     "engine": "hyper",
     "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
+  "socketify": {
+    "dir": "socketify",
+    "description": "socketify.py 0.0.31 on its uWebSockets bindings, one process per core per port sharing the port through SO_REUSEPORT. Disabled: socketify's bundled libsocketify rejects a request whose request line is split across TCP segments, which fails the fragmentation suite. The uWebSockets.js entries here are unaffected.",
+    "repo": "https://github.com/cirospaciari/socketify.py",
+    "type": "flagship",
+    "engine": "uwebsockets",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": false,
