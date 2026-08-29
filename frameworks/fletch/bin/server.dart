@@ -177,12 +177,15 @@ Future<void> _run(dynamic _) async {
   });
 
   
-  app.post('/upload', (req, res) async {
-    var size = 0;
+  app.post('/echo', (req, res) async {
+    // Collected: the response needs a Content-Length, and a chunked request
+    // carries none to forward until the body is in.
+    final chunks = <int>[];
     await for (final chunk in req.httpRequest) {
-      size += chunk.length;
+      chunks.addAll(chunk);
     }
-    res.text('$size');
+    res.bytes(Uint8List.fromList(chunks),
+        contentType: 'application/octet-stream');
   });
 
   app.get('/compression', (req, res) {

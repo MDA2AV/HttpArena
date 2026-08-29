@@ -127,13 +127,15 @@ bodyInt req = do
     Just (n, _) -> n
     Nothing     -> 0
 
--- Streamed, so a 20 MB upload is never held in memory.
-countBody :: Request -> IO Int
-countBody req = go 0
+-- Collected: /echo has to hand the bytes back, and the response cannot carry a
+-- Content-Length until they are all in -- which is also what makes a chunked
+-- request work, since there is none to forward.
+readBody :: Request -> IO B.ByteString
+readBody req = go []
   where
-    go !n = do
+    go !acc = do
       chunk <- getRequestBodyChunk req
-      if B.null chunk then return n else go (n + B.length chunk)
+      if B.null chunk then return (B.concat (reverse acc)) else go (chunk : acc)
 
 parseCount :: Text -> Int
 parseCount t = case TR.decimal t of
@@ -151,6 +153,12 @@ plain body = responseBuilder status200
 
 plainInt :: Int -> Response
 plainInt = plain . BC.pack . show
+
+octets :: B.ByteString -> Response
+octets body = responseBuilder status200
+  [ (hContentType, "application/octet-stream")
+  , (hContentLength, BC.pack (show (B.length body)))
+  ] (BB.byteString body)
 
 jsonResponse :: BL.ByteString -> Response
 jsonResponse body = responseLBS status200
@@ -179,9 +187,9 @@ app items total req respond =
           m     = queryInt "m" 1 (queryString req)
       respond $ jsonResponse (encodeItems (take count items) count m)
 
-    ("POST", ["upload"]) -> do
-      n <- countBody req
-      respond $ plainInt n
+    ("POST", ["echo"]) -> do
+      body <- readBody req
+      respond $ octets body
 
     _ -> respond $ responseLBS status404 [(hContentType, "text/plain")] "not found"
 

@@ -223,10 +223,8 @@ fn handle(req fasthttp.HttpRequest, mut out []u8, worker_state voidptr, mut ctl 
 		}
 		w.emit_int(mut out, sum)
 		return .done
-	} else if route == '/upload' {
-		cl := header_val(req, 'content-length')
-		n := if cl.len > 0 { cl.i64() } else { i64(req.body.len) }
-		w.emit_int(mut out, n)
+	} else if route == '/echo' {
+		echo_body(mut out, req)
 		return .done
 	} else if route.starts_with('/json/') {
 		count := clamp_count(parse_u_at(route, 6), sh.dataset.len)
@@ -287,6 +285,23 @@ fn (mut w WorkerCtx) emit_int(mut out []u8, n i64) {
 	unsafe { w.scratch.len = 0 }
 	wi(mut w.scratch, n)
 	emit(mut out, 'text/plain', w.scratch)
+}
+
+// ── /echo ────────────────────────────────────────────────────────────────────
+
+// echo_body hands the request body back byte for byte. The parser exposes the
+// RAW body region, so a chunked request still carries its framing here and is
+// decoded first: the response is framed from the bytes that actually arrived,
+// never from Content-Length (a chunked POST carries none). Nothing goes through
+// a string on the way out either, so any byte value survives the round trip.
+fn echo_body(mut out []u8, req fasthttp.HttpRequest) {
+	if header_val(req, 'transfer-encoding').contains('chunked') {
+		emit(mut out, 'application/octet-stream', dechunk(req.buffer, req.body.start,
+			req.body.len))
+		return
+	}
+	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
+	emit(mut out, 'application/octet-stream', body)
 }
 
 // ── /json (non-DB) ───────────────────────────────────────────────────────────
