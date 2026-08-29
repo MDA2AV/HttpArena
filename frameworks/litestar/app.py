@@ -263,7 +263,7 @@ app = Litestar(
         pipeline,
         baseline11,
         json_items,
-        upload,
+        echo_body,
         async_db,
         crud_list,
         crud_create,

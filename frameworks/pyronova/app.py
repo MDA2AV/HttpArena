@@ -67,9 +67,9 @@ if DATABASE_URL:
 # ---------------------------------------------------------------------------
 
 app = Pyronova()
-# Arena's upload profile sends bodies up to 20 MiB; the engine default
-# is 10 MiB (set to protect normal apps from run-away uploads). Bump to
-# 25 MiB for the benchmark target so the 20 MiB template isn't 413'd.
+# The in-out profile posts 100 KB and validation goes no higher, but the
+# engine default of 10 MiB is left raised so an oversized body is answered
+# rather than 413'd.
 app.max_body_size = 25 * 1024 * 1024
 # min_size=256 skips tiny bodies (/pipeline "ok", short query params).
 # Arena's json-comp rotates through /json/1..50 with pipeline depth 25
