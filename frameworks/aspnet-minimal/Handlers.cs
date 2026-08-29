@@ -1,4 +1,3 @@
-using System.Buffers;
 
 using HttpArena.Services;
 using HttpArena.Types;
@@ -26,24 +25,17 @@ static class Handlers
         return ms.ToString();
     }
 
-    public static async ValueTask<string> Upload(HttpRequest req)
+    // Echo: the bytes that arrived go back unchanged. Collected first because
+    // the response needs a Content-Length, and a chunked request carries none
+    // to forward until the body is in.
+    public static async Task EchoBody(HttpContext ctx)
     {
-        long size = 0;
-        var buffer = ArrayPool<byte>.Shared.Rent(65536);
-        try
-        {
-            int read;
-            while ((read = await req.Body.ReadAsync(buffer.AsMemory(0, buffer.Length))) > 0)
-            {
-                size += read;
-            }
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-
-        return size.ToString();
+        using var ms = new MemoryStream();
+        await ctx.Request.Body.CopyToAsync(ms);
+        var body = ms.GetBuffer().AsMemory(0, (int)ms.Length);
+        ctx.Response.ContentType = "application/octet-stream";
+        ctx.Response.ContentLength = body.Length;
+        await ctx.Response.Body.WriteAsync(body);
     }
 
     public static IResult Json(int count, DatasetService dataset, int m = 1)

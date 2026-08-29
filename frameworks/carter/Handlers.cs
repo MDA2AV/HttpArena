@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text;
 using System.Text.Json;
 
@@ -62,23 +61,16 @@ public static class Handlers
         await JsonSerializer.SerializeAsync(ctx.Response.Body, new OutList { Items = items, Count = n }, JsonOpts);
     }
 
-    /// Counts the body without keeping it: a 20 MB upload goes through one
-    /// rented 64 KB buffer.
-    public static async Task Upload(HttpContext ctx)
+    /// Echo: the bytes that arrived go back unchanged. Collected first because
+    /// the response needs a Content-Length, and a chunked request carries none
+    /// to forward until the body is in.
+    public static async Task EchoBody(HttpContext ctx)
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(64 * 1024);
-        long total = 0;
-        try
-        {
-            int read;
-            while ((read = await ctx.Request.Body.ReadAsync(buffer)) > 0) total += read;
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-
-        ctx.Response.ContentType = "text/plain";
-        await ctx.Response.WriteAsync(total.ToString());
+        using var ms = new MemoryStream();
+        await ctx.Request.Body.CopyToAsync(ms);
+        var body = ms.GetBuffer().AsMemory(0, (int)ms.Length);
+        ctx.Response.ContentType = "application/octet-stream";
+        ctx.Response.ContentLength = body.Length;
+        await ctx.Response.Body.WriteAsync(body);
     }
 }

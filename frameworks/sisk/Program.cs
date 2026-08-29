@@ -39,9 +39,12 @@ Router BuildRouter () {
 
     router.MapGet ( "/pipeline", r => new HttpResponse ( "ok" ) );
 
-    router.MapPost ( "/upload", r => {
+    router.MapPost ( "/echo", r => {
+        // sisk has already read the body, chunked or not.
         var body = r.GetBodyContents ();
-        return new HttpResponse ( body.Length.ToString () );
+        var content = new ByteArrayContent ( body );
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue ( "application/octet-stream" );
+        return new HttpResponse ( content );
     } );
 
     var datasetItems = LoadItems ();

@@ -25,7 +25,7 @@ public static class Project
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
                         .AddService<Baseline>("baseline2")
-                        .AddService<Upload>("upload")
+                        .AddService<Echo>("echo")
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
                         .Add("crud", crud)

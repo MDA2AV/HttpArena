@@ -25,8 +25,8 @@ public class Baseline2Get : IReturn<HttpResult>
 [Route("/pipeline", "GET")]
 public class PipelineGet : IReturn<string> { }
 
-[Route("/upload", "POST")]
-public class UploadPost : IReturn<HttpResult> { }
+[Route("/echo", "POST")]
+public class EchoPost : IReturn<HttpResult> { }
 
 [Route("/json/{Count}", "GET")]
 public class JsonGet : IReturn<ListWithCount<ProcessedItem>>
