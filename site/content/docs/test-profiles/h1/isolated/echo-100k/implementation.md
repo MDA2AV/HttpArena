@@ -8,7 +8,7 @@ description: "How the 100 KB TLS echo profile is run, what it measures, and the 
 
 Both directions at once. A 100 KB body is posted over TLS and must come back verbatim, so a single request exercises the read path, the write path, and the TLS record layer **in both directions**.
 
-**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 256 · **Duration:** 5s
+**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 4096 · **Duration:** 5s
 
 ## The contract
 
@@ -55,7 +55,7 @@ The benchmark sends `Content-Length`. That is a property of the load generator r
 ## What it measures
 
 - **Copies.** A framework that buffers the whole body, then copies it into a response buffer, then copies that into the socket, pays three times. One that streams the bytes back as they arrive pays once.
-- **Streaming versus buffering.** Memory per connection is flat for a streaming implementation and proportional to body size for a buffering one. At 256 connections that is the difference between a few megabytes and a few hundred.
+- **Streaming versus buffering.** Memory per connection is flat for a streaming implementation and proportional to body size for a buffering one. At 4096 connections that is the difference between a few megabytes and several gigabytes.
 - **The TLS record layer in both directions.** Encrypt and decrypt, on every request, at a size that spans several records. kTLS offload shows up here.
 - **Partial writes.** 100 KB does not leave in one `write`. A handler that assumes it does will stall or corrupt under load.
 
@@ -73,7 +73,7 @@ Validation goes further and sends **random** bodies, comparing byte for byte. An
 | Port | 8081 (TLS, ALPN `http/1.1`) |
 | Body | 100 KB (102,400 bytes), `application/octet-stream` |
 | Framing | `Content-Length` both ways |
-| Connections | 256 |
+| Connections | 4096 |
 | Duration | 5s |
 | Runs | 3, best kept |
 | Load generator | [wrk](/docs/load-generators/h1/wrk/) with `requests/echo-100k-rotate.lua` |
