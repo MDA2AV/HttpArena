@@ -64,10 +64,10 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | JSON | Yes | Dataset processing and serialization |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
-| Upload | Yes | 20 MB body ingestion, return byte count |
-| Static | Yes | 20 static files served over HTTP/1.1 |
-| Async DB | Yes | Async Postgres query with connection pooling |
-| CRUD | Yes | Realistic REST API against Postgres: cached reads (75%), updates (15%), list (5%), upsert create (5%). Cache-aside with 200ms TTL (in-process or Redis sidecar) |
+| Upload | No (*) | 20 MB body ingestion, return byte count. Reference-only - the validation cannot yet tell an honest handler from one that echoes `Content-Length`, so the profile is published but does not rank |
+| Static | No (*) | 20 static files served over HTTP/1.1. Reference-only for frameworks and engines - it counts only for infrastructure entries, where serving files is the thing being compared |
+| Async DB | No (*) | Async Postgres query with connection pooling. Reference-only since #1331 - the driver dominates the result more than the framework does |
+| CRUD | No (*) | Realistic REST API against Postgres: cached reads (75%), updates (15%), list (5%), upsert create (5%). Cache-aside with 200ms TTL (in-process or Redis sidecar) |
 | Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
 
 ### H/1.1 Workload
@@ -118,7 +118,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static, Static TLS, Async Delay, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined, Static, Static TLS, Async Delay, Async DB, CRUD and Upload are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 

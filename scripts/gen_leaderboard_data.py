@@ -76,7 +76,7 @@ CATALOG = [
         ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
-        ("upload",    "Upload",          "Large request-body ingestion.",            [32,64,256,512],     [32,256],        True,False,False),
+        ("upload",    "Upload",          "Large request-body ingestion (reference).", [32,64,256,512],    [32,256],        False,False,False),
         ("static",    "Static",          "20-file static asset serving (reference for frameworks).", [1024,4096,6800,16384],[1024,4096,6800],False,False,True),
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
     ]),
