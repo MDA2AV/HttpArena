@@ -26,20 +26,5 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(WebFramework)
 
-execute_process(
-	COMMAND ${CMAKE_COMMAND} -G "Ninja" .
-	WORKING_DIRECTORY ${webframework_SOURCE_DIR}
-)
-
-execute_process(
-	COMMAND ${CMAKE_COMMAND} --build . -j
-	WORKING_DIRECTORY ${webframework_SOURCE_DIR}
-)
-
-execute_process(
-	COMMAND ${CMAKE_COMMAND} --install .
-	WORKING_DIRECTORY ${webframework_SOURCE_DIR}
-)
-
 add_subdirectory(server)
 add_subdirectory(executors)

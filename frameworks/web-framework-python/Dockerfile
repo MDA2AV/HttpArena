@@ -15,7 +15,7 @@ FROM ubuntu:26.04
 ENV LD_LIBRARY_PATH=/app/lib
 
 RUN apt update
-RUN apt install -y python3 python3-pip
+RUN apt install -y python3 python3-dev python3-pip
 
 COPY --from=build /app/build/bin /app
 
