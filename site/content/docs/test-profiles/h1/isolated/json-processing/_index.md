@@ -1,7 +1,7 @@
 ---
 title: JSON Processing
-seo_title: "JSON Processing Benchmark"
-description: "A typical API workload: load a dataset, compute derived fields and serialize the JSON response under load."
+seo_title: "JSON Processing: the /json endpoint contract"
+description: "The /json/{count}?m=N endpoint shared by the JSON TLS, JSON Compressed and JSON h2c profiles - dataset load, derived fields and serialization. Not a profile of its own."
 ---
 
 The `/json/{count}?m=N` endpoint contract, shared by every JSON profile on the board.

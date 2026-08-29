@@ -1,12 +1,17 @@
 ---
 title: Implementation Guidelines
-seo_title: "JSON Processing Benchmark: Implementation Guide"
-description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the JSON processing benchmark."
+seo_title: "JSON Processing: /json Implementation Guide"
+description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy on /json - the endpoint behind the JSON TLS, JSON Compressed and JSON h2c profiles."
 ---
-{{< type-rules standard="Must use the framework standard JSON serialization. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline." tuned="May use alternative JSON libraries (simd-json, sonic-json) and framework-specific optimizations. The JSON body must still be serialized per request from live data - pre-computed / pre-serialized response caches or response-lookup tables are not allowed on either type; they short-circuit the serialization workload the profile exists to measure." engine="No specific rules." infrastructure="The JSON body must be serialized per request by the handler module. A static file on disk, a literal-response config directive, or any pre-serialized response cache does not qualify - the profile exists to measure serialization work. Configuration is otherwise free." >}}
+{{< type-rules standard="Must use the framework standard JSON serialization. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline." tuned="May use alternative JSON libraries (simd-json, sonic-json) and framework-specific optimizations. The JSON body must still be serialized per request from live data - pre-computed / pre-serialized response caches or response-lookup tables are not allowed on either type; they short-circuit the serialization workload these profiles exist to measure." engine="No specific rules." infrastructure="The JSON body must be serialized per request by the handler module. A static file on disk, a literal-response config directive, or any pre-serialized response cache does not qualify - these profiles exist to measure serialization work. Configuration is otherwise free." >}}
 
 
-The JSON Processing profile measures how efficiently a framework handles a typical real-world API workload: loading data, computing derived fields, and serializing a JSON response.
+The `/json/{count}?m=N` endpoint measures how efficiently a framework handles a typical real-world
+API workload: loading data, computing derived fields, and serializing a JSON response.
+
+It is not a profile of its own. [JSON TLS](../json-tls/) measures this endpoint over TLS,
+[JSON Compressed](../json-compressed/) measures it under content negotiation, and
+[JSON h2c](../../../h2/json-h2c/) serves it over cleartext h2. The rules below apply to all three.
 
 ## How it works
 
