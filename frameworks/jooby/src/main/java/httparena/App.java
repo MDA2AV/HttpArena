@@ -24,8 +24,22 @@ public class App extends Jooby {
   private final List<Item> dataset = loadDataset();
 
   public App() {
+    // Both thread counts are set explicitly, and that is load-bearing.
+    //
+    // JettyServer.setOptions does setWorkerThreads(getWorkerThreads(THREADS))
+    // with a hardcoded THREADS = 200, so leaving it unset does NOT fall back to
+    // Jooby's own WORKER_THREADS (cores * 8) -- it pins the pool at 200. And
+    // Jetty sizes its selectors from ioThreads, which defaults to cores * 2.
+    // On the 64-core/128-thread bench box that is 256 selectors against a
+    // 200-thread pool, so Jetty's ThreadPoolBudget throws
+    // "Insufficient configured threads: required=290 < max=200" and the JVM
+    // exits before it ever listens. It only shows up above ~48 cores, which is
+    // why a smaller machine starts fine.
+    int cores = Runtime.getRuntime().availableProcessors();
     ServerOptions options = new ServerOptions()
         .setPort(8080)
+        .setIoThreads(cores)
+        .setWorkerThreads(Math.max(512, cores * 8))
         .setMaxRequestSize(MAX_BODY)
         .setCompressionLevel(1);   // json-comp: gzip at the level the profile asks for
 

@@ -21,6 +21,16 @@ The same routes are served over TLS on port 8081 for `json-tls`.
 
 ## Notes
 
+- `ioThreads` and `workerThreads` are both set explicitly, and that is
+  load-bearing. `JettyServer.setOptions` does
+  `setWorkerThreads(getWorkerThreads(THREADS))` against a hardcoded
+  `THREADS = 200`, so leaving it unset does **not** fall back to Jooby's own
+  `WORKER_THREADS` (cores × 8) — it pins the pool at 200. Jetty meanwhile sizes
+  its selectors from `ioThreads`, which defaults to cores × 2. On the
+  64-core/128-thread bench box that is 256 selectors against a 200-thread pool,
+  so `ThreadPoolBudget` throws `Insufficient configured threads: required=290 <
+  max=200` and the JVM exits before it ever listens. It only appears above
+  ~48 cores, so a smaller machine starts fine and hides it
 - Jetty rather than Netty, which is Jooby's default. On Netty this entry never
   closes the socket on `Connection: close` — it answers 200 with the right body
   and then holds the connection open, so every fragmentation probe sits waiting
