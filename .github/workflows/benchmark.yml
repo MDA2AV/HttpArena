@@ -202,7 +202,14 @@ jobs:
 
           branch="benchmark-results/$(date +%Y%m%d-%H%M%S)"
           git fetch origin main
-          git checkout -B "$branch" origin/main
+          # -f is required, not cosmetic. When the benchmarked ref already
+          # carries result files for the frameworks being run -- which is the
+          # case for any branch that keeps an entry and its results together --
+          # rebuild_site_data.py rewrites tracked files, and a plain checkout
+          # aborts with "Your local changes would be overwritten by checkout".
+          # Discarding them here is safe: everything was copied to /tmp above,
+          # and it is restored from there immediately after the switch.
+          git checkout -f -B "$branch" origin/main
           rm -rf site/data site/static/logs
           mkdir -p site/static
           cp -r /tmp/bench_out/data site/data
