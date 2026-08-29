@@ -1,0 +1,16 @@
+{
+  "display_name": "ioxide-0.4.169",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "The ioxide entry exactly as it stood at cc794d06 on ioxide 0.4.169, kept only as an A/B reference for the baseline regression. Disabled: it never sends FIN on Connection: close, which is why the live entry was disabled at #1289 and fixed in 0.7.210, so it does not pass validate.sh. Benchmark it by name to separate a library regression from a change in the box.",
+  "repo": "https://github.com/MDA2AV/ioxide",
+  "enabled": false,
+  "tests": [
+    "baseline",
+    "json"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}
