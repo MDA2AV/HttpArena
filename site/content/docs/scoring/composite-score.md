@@ -172,7 +172,7 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (compression negotiation, upload).
+- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (compression negotiation, the TLS echo).
 - **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
 
 Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there.

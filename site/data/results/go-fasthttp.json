@@ -298,46 +298,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "go-fasthttp",
-      "language": "Go",
-      "rps": 2157,
-      "avg_latency": "114.94ms",
-      "p99_latency": "678.00ms",
-      "cpu": "5964.0%",
-      "memory": "49.0GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "272.53KB/s",
-      "input_bw": "17.11GB/s",
-      "reconnects": 2146,
-      "status_2xx": 10810,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "go-fasthttp",
-      "language": "Go",
-      "rps": 2031,
-      "avg_latency": "15.73ms",
-      "p99_latency": "81.00ms",
-      "cpu": "3078.3%",
-      "memory": "15.3GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "256.22KB/s",
-      "input_bw": "16.11GB/s",
-      "reconnects": 2034,
-      "status_2xx": 10155,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

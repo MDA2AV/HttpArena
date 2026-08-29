@@ -236,46 +236,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "uvicorn",
-      "language": "Python",
-      "rps": 1174,
-      "avg_latency": "208.56ms",
-      "p99_latency": "1.04s",
-      "cpu": "6289.7%",
-      "memory": "3.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "182.59KB/s",
-      "input_bw": "9.31GB/s",
-      "reconnects": 1100,
-      "status_2xx": 5872,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "uvicorn",
-      "language": "Python",
-      "rps": 1668,
-      "avg_latency": "19.11ms",
-      "p99_latency": "84.00ms",
-      "cpu": "2698.9%",
-      "memory": "3.2GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "259.42KB/s",
-      "input_bw": "13.23GB/s",
-      "reconnects": 1665,
-      "status_2xx": 8344,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

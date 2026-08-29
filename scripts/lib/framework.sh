@@ -209,6 +209,13 @@ framework_wait_ready() {
         json-tls)
             probe_url="https://localhost:$H1TLS_PORT/json/1?m=1"
             ;;
+        in-out)
+            # POST, so the probe has to carry a body: a GET /echo may well 404
+            # or 405 on an entry whose echo route is POST-only, which would read
+            # as "never came up".
+            probe_url="https://localhost:$H1TLS_PORT/echo"
+            probe_extra+=(-X POST --data-binary "probe")
+            ;;
         ws-echo)
             probe_url="http://localhost:$PORT/ws"
             ;;

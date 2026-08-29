@@ -526,46 +526,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "oxpecker",
-      "language": "F#",
-      "rps": 1563,
-      "avg_latency": "159.38ms",
-      "p99_latency": "827.30ms",
-      "cpu": "6370.8%",
-      "memory": "341MiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "188.09KB/s",
-      "input_bw": "12.40GB/s",
-      "reconnects": 1540,
-      "status_2xx": 7815,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "oxpecker",
-      "language": "F#",
-      "rps": 1296,
-      "avg_latency": "24.63ms",
-      "p99_latency": "66.50ms",
-      "cpu": "6392.3%",
-      "memory": "151MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "155.95KB/s",
-      "input_bw": "10.28GB/s",
-      "reconnects": 1293,
-      "status_2xx": 6481,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

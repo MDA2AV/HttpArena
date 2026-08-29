@@ -30,11 +30,6 @@ gcannon_build_args() {
             args=("http://localhost:$PORT/pipeline"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
             ;;
-        upload)
-            args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/upload-500k.raw,$REQUESTS_DIR/upload-2m.raw,$REQUESTS_DIR/upload-10m.raw,$REQUESTS_DIR/upload-20m.raw"
-                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 5)
-            ;;
         async-db)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"

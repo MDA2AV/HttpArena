@@ -19,7 +19,7 @@
     "limited-conn",
     "json-tls",
     "json-comp",
-    "upload"
+    "in-out"
   ],
   "maintainers": []
 }

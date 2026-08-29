@@ -18,7 +18,7 @@
     "pipelined",
     "limited-conn",
     "json-tls",
-    "upload"
+    "in-out"
   ],
   "maintainers": []
 }

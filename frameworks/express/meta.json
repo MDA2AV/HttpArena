@@ -19,7 +19,7 @@
     "limited-conn", "async", "latency-1m", "latency-10k",
     "json-comp",
     "json-tls",
-    "upload",
+    "in-out",
     "async-db",
     "static-tls",
     "fortunes"

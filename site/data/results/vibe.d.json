@@ -221,46 +221,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "vibe.d",
-      "language": "D",
-      "rps": 3104,
-      "avg_latency": "77.53ms",
-      "p99_latency": "317.60ms",
-      "cpu": "3297.7%",
-      "memory": "183MiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "449.06KB/s",
-      "input_bw": "24.62GB/s",
-      "reconnects": 3093,
-      "status_2xx": 15585,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "vibe.d",
-      "language": "D",
-      "rps": 2659,
-      "avg_latency": "12.01ms",
-      "p99_latency": "55.70ms",
-      "cpu": "1822.5%",
-      "memory": "99MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "384.88KB/s",
-      "input_bw": "21.09GB/s",
-      "reconnects": 2661,
-      "status_2xx": 13297,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

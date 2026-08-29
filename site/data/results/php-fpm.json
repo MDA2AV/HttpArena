@@ -363,46 +363,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "php-fpm",
-      "language": "PHP",
-      "rps": 869,
-      "avg_latency": "282.75ms",
-      "p99_latency": "1.02s",
-      "cpu": "10244.2%",
-      "memory": "10.7GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "174.24KB/s",
-      "input_bw": "6.89GB/s",
-      "reconnects": 772,
-      "status_2xx": 4357,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "php-fpm",
-      "language": "PHP",
-      "rps": 1041,
-      "avg_latency": "30.74ms",
-      "p99_latency": "93.70ms",
-      "cpu": "3428.3%",
-      "memory": "7.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "208.58KB/s",
-      "input_bw": "8.26GB/s",
-      "reconnects": 1040,
-      "status_2xx": 5207,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

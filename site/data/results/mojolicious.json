@@ -221,46 +221,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "mojolicious",
-      "language": "Perl",
-      "rps": 1611,
-      "avg_latency": "154.65ms",
-      "p99_latency": "659.20ms",
-      "cpu": "6230.8%",
-      "memory": "1.0GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "236.48KB/s",
-      "input_bw": "12.78GB/s",
-      "reconnects": 1557,
-      "status_2xx": 8059,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "mojolicious",
-      "language": "Perl",
-      "rps": 2422,
-      "avg_latency": "13.14ms",
-      "p99_latency": "58.10ms",
-      "cpu": "2156.2%",
-      "memory": "529MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "355.23KB/s",
-      "input_bw": "19.21GB/s",
-      "reconnects": 2422,
-      "status_2xx": 12111,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

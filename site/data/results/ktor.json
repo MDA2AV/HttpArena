@@ -602,46 +602,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "ktor",
-      "language": "Kotlin",
-      "rps": 1833,
-      "avg_latency": "134.47ms",
-      "p99_latency": "714.00ms",
-      "cpu": "4740.0%",
-      "memory": "1.5GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "154.46KB/s",
-      "input_bw": "14.54GB/s",
-      "reconnects": 1772,
-      "status_2xx": 9169,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "ktor",
-      "language": "Kotlin",
-      "rps": 1529,
-      "avg_latency": "20.84ms",
-      "p99_latency": "110.60ms",
-      "cpu": "3240.4%",
-      "memory": "1.4GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "128.81KB/s",
-      "input_bw": "12.13GB/s",
-      "reconnects": 1526,
-      "status_2xx": 7649,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

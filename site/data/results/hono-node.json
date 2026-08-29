@@ -221,46 +221,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "hono-node",
-      "language": "TS",
-      "rps": 1395,
-      "avg_latency": "176.38ms",
-      "p99_latency": "933.70ms",
-      "cpu": "6473.7%",
-      "memory": "7.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "237.33KB/s",
-      "input_bw": "11.06GB/s",
-      "reconnects": 1328,
-      "status_2xx": 6976,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "hono-node",
-      "language": "TS",
-      "rps": 1461,
-      "avg_latency": "21.86ms",
-      "p99_latency": "86.70ms",
-      "cpu": "4701.1%",
-      "memory": "7.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "248.48KB/s",
-      "input_bw": "11.59GB/s",
-      "reconnects": 1460,
-      "status_2xx": 7305,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

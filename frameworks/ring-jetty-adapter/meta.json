@@ -20,7 +20,7 @@
     "limited-conn",
     "json-tls",
     "json-comp",
-    "upload",
+    "in-out",
     "async-db",
     "fortunes"
   ]

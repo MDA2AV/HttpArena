@@ -412,8 +412,24 @@ run_one() {
         fi
     fi
 
+    # in-out is wrk-driven and has no --raw fixture to size. wrk reports only
+    # the bytes it read, so its Transfer/sec is the download half of the echo;
+    # the request body is a fixed 100 KB (requests/in-out-rotate.lua), so the
+    # ingest half is that constant times rps. Without this the profile would
+    # report half the I/O it actually moves.
+    if [ "$endpoint" = "in-out" ] && [ "${best_rps:-0}" -gt 0 ] 2>/dev/null; then
+        BEST_M[input_bw]=$(python3 -c "
+bps = $best_rps * 102400
+if bps >= 1073741824: print(f'{bps/1073741824:.2f}GB/s')
+elif bps >= 1048576: print(f'{bps/1048576:.2f}MB/s')
+elif bps >= 1024: print(f'{bps/1024:.2f}KB/s')
+else: print(f'{bps}B/s')
+" 2>/dev/null || echo "")
+        [ -n "${BEST_M[input_bw]}" ] && info "input BW: ${BEST_M[input_bw]} (100 KB body x $best_rps rps)"
+    fi
+
     # Input bandwidth — bytes the server ingests per second. Matters for
-    # profiles where the *request* body dominates (upload fixtures) and where the response bandwidth alone
+    # profiles where the *request* body dominates and where the response bandwidth alone
     # understates the actual work done. Computed as
     #    rps × mean(--raw fixture size)
     # which is the avg bytes/request sent by gcannon. Skipped when the

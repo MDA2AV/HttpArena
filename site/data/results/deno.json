@@ -317,46 +317,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "deno",
-      "language": "TS",
-      "rps": 1918,
-      "avg_latency": "122.27ms",
-      "p99_latency": "531.20ms",
-      "cpu": "5982.2%",
-      "memory": "5.8GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "264.51KB/s",
-      "input_bw": "15.21GB/s",
-      "reconnects": 9595,
-      "status_2xx": 9592,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "deno",
-      "language": "TS",
-      "rps": 1702,
-      "avg_latency": "17.41ms",
-      "p99_latency": "81.40ms",
-      "cpu": "2996.1%",
-      "memory": "5.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "234.73KB/s",
-      "input_bw": "13.50GB/s",
-      "reconnects": 8513,
-      "status_2xx": 8512,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

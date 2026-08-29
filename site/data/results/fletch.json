@@ -243,46 +243,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "fletch",
-      "language": "Dart",
-      "rps": 1231,
-      "avg_latency": "196.55ms",
-      "p99_latency": "874.20ms",
-      "cpu": "5811.4%",
-      "memory": "7.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "241.05KB/s",
-      "input_bw": "9.76GB/s",
-      "reconnects": 1188,
-      "status_2xx": 6221,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "fletch",
-      "language": "Dart",
-      "rps": 1239,
-      "avg_latency": "25.74ms",
-      "p99_latency": "144.70ms",
-      "cpu": "3182.6%",
-      "memory": "3.2GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "242.36KB/s",
-      "input_bw": "9.83GB/s",
-      "reconnects": 1239,
-      "status_2xx": 6199,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

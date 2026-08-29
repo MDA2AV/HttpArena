@@ -393,46 +393,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "pyronova",
-      "language": "Python",
-      "rps": 2541,
-      "avg_latency": "100.27ms",
-      "p99_latency": "141.70ms",
-      "cpu": "1379.6%",
-      "memory": "2.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "328.05KB/s",
-      "input_bw": "20.15GB/s",
-      "reconnects": 2505,
-      "status_2xx": 12707,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "pyronova",
-      "language": "Python",
-      "rps": 2766,
-      "avg_latency": "11.54ms",
-      "p99_latency": "32.00ms",
-      "cpu": "1295.4%",
-      "memory": "1.8GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "357.04KB/s",
-      "input_bw": "21.94GB/s",
-      "reconnects": 2767,
-      "status_2xx": 13831,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

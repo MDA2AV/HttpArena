@@ -243,46 +243,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "humming-bird",
-      "language": "Swift",
-      "rps": 3156,
-      "avg_latency": "74.74ms",
-      "p99_latency": "256.50ms",
-      "cpu": "3914.8%",
-      "memory": "183.8MiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "398.42KB/s",
-      "input_bw": "25.03GB/s",
-      "reconnects": 3122,
-      "status_2xx": 15908,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "humming-bird",
-      "language": "Swift",
-      "rps": 3000,
-      "avg_latency": "10.60ms",
-      "p99_latency": "36.50ms",
-      "cpu": "2519.9%",
-      "memory": "89.7MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "378.90KB/s",
-      "input_bw": "23.80GB/s",
-      "reconnects": 3006,
-      "status_2xx": 15034,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

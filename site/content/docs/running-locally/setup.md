@@ -34,7 +34,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh actix --save
 
 Install these on the host only if you want `benchmark.sh` to run in its default native mode. You can pick and choose - every tool has a docker fallback, so missing one isn't fatal as long as you don't run the profiles that need it (or you flip on `LOADGEN_DOCKER=true`).
 
-### gcannon - h1 / pipelined / upload / api-4/16 / async-db / ws-echo
+### gcannon - h1 / pipelined / json-comp / async-db / ws-echo
 
 Requires Linux kernel ≥ 6.1 (`io_uring`). Build `liburing 2.9` first to match the production binary.
 

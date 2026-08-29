@@ -298,46 +298,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "roda",
-      "language": "Ruby",
-      "rps": 1236,
-      "avg_latency": "203.36ms",
-      "p99_latency": "772.40ms",
-      "cpu": "6319.6%",
-      "memory": "8.3GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "112.52KB/s",
-      "input_bw": "9.80GB/s",
-      "reconnects": 1173,
-      "status_2xx": 6180,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "roda",
-      "language": "Ruby",
-      "rps": 1255,
-      "avg_latency": "25.46ms",
-      "p99_latency": "102.90ms",
-      "cpu": "3059.6%",
-      "memory": "7.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "114.31KB/s",
-      "input_bw": "9.95GB/s",
-      "reconnects": 1251,
-      "status_2xx": 6278,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

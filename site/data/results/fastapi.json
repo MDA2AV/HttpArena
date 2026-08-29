@@ -318,46 +318,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "fastapi",
-      "language": "Python",
-      "rps": 1527,
-      "avg_latency": "162.58ms",
-      "p99_latency": "839.90ms",
-      "cpu": "6299.6%",
-      "memory": "5.1GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "209.20KB/s",
-      "input_bw": "12.11GB/s",
-      "reconnects": 1482,
-      "status_2xx": 7639,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "fastapi",
-      "language": "Python",
-      "rps": 2117,
-      "avg_latency": "15.05ms",
-      "p99_latency": "66.10ms",
-      "cpu": "2412.5%",
-      "memory": "4.9GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "289.92KB/s",
-      "input_bw": "16.79GB/s",
-      "reconnects": 2115,
-      "status_2xx": 10588,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

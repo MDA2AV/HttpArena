@@ -241,46 +241,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "sisk",
-      "language": "C#",
-      "rps": 824,
-      "avg_latency": "295.37ms",
-      "p99_latency": "1.10s",
-      "cpu": "3573.0%",
-      "memory": "30.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "110.53KB/s",
-      "input_bw": "6.54GB/s",
-      "reconnects": 754,
-      "status_2xx": 4124,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "sisk",
-      "language": "C#",
-      "rps": 695,
-      "avg_latency": "46.02ms",
-      "p99_latency": "240.20ms",
-      "cpu": "2192.6%",
-      "memory": "7.7GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "93.12KB/s",
-      "input_bw": "5.51GB/s",
-      "reconnects": 691,
-      "status_2xx": 3475,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

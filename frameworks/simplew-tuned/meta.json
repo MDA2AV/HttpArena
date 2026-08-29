@@ -19,7 +19,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "upload",
+    "in-out",
     "static-tls",
     "async-db",
     "echo-ws",

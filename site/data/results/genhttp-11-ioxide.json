@@ -393,46 +393,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "genhttp-11-ioxide",
-      "language": "C#",
-      "rps": 2253,
-      "avg_latency": "100.21ms",
-      "p99_latency": "501.60ms",
-      "cpu": "5772.2%",
-      "memory": "830MiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "290.71KB/s",
-      "input_bw": "17.87GB/s",
-      "reconnects": 2683,
-      "status_2xx": 11269,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "genhttp-11-ioxide",
-      "language": "C#",
-      "rps": 2189,
-      "avg_latency": "14.59ms",
-      "p99_latency": "74.80ms",
-      "cpu": "2053.3%",
-      "memory": "761MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "282.62KB/s",
-      "input_bw": "17.36GB/s",
-      "reconnects": 2189,
-      "status_2xx": 10946,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

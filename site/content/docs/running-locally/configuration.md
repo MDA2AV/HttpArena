@@ -47,7 +47,7 @@ Each load generator has a pair of variables - native binary name and docker imag
 
 | Native (`$TOOL`) | Docker (`$TOOL_IMAGE`) | Used for | Source |
 |---|---|---|---|
-| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | h1, pipelined, limited-conn, json, json-comp, upload, api-4/16, async-db, echo-ws | `docker/gcannon.Dockerfile` |
+| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | h1, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws | `docker/gcannon.Dockerfile` |
 | `H2LOAD=h2load` | `H2LOAD_IMAGE=h2load:latest` | baseline-h2, static-h2, unary-grpc, unary-grpc-tls, gateway-64 | `docker/h2load.Dockerfile` (Ubuntu + glibc, **not** alpine) |
 | `H2LOAD_H3=h2load-h3` | `H2LOAD_H3_IMAGE=h2load-h3:local` | baseline-h3, static-h3 | `docker/h2load-h3.Dockerfile` (quictls + ngtcp2 + nghttp3) |
 | `WRK=wrk` | `WRK_IMAGE=wrk:local` | static, json-tls | `docker/wrk.Dockerfile` |
@@ -88,7 +88,7 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 | `static`, `json-tls` | wrk |
 | `h2`, `static-h2`, `h2c`, `json-h2c`, `gateway-64`, `grpc`, `grpc-tls`, `production-stack` | h2load |
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
-| everything else (`""`, `pipeline`, `upload`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`) | gcannon |
+| everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`) | gcannon |
 
 ## Small-machine overrides
 

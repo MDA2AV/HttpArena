@@ -412,46 +412,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "simplew",
-      "language": "C#",
-      "rps": 1989,
-      "avg_latency": "126.46ms",
-      "p99_latency": "788.10ms",
-      "cpu": "5648.0%",
-      "memory": "5.8GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "285.89KB/s",
-      "input_bw": "15.78GB/s",
-      "reconnects": 1923,
-      "status_2xx": 9946,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "simplew",
-      "language": "C#",
-      "rps": 1878,
-      "avg_latency": "17.14ms",
-      "p99_latency": "75.10ms",
-      "cpu": "3077.3%",
-      "memory": "2.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "269.91KB/s",
-      "input_bw": "14.90GB/s",
-      "reconnects": 1869,
-      "status_2xx": 9390,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

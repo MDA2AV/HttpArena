@@ -421,46 +421,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "true-async-server",
-      "language": "PHP",
-      "rps": 3022,
-      "avg_latency": "80.13ms",
-      "p99_latency": "336.60ms",
-      "cpu": "3622.3%",
-      "memory": "520MiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "210.33KB/s",
-      "input_bw": "23.97GB/s",
-      "reconnects": 2998,
-      "status_2xx": 15173,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "true-async-server",
-      "language": "PHP",
-      "rps": 2583,
-      "avg_latency": "12.36ms",
-      "p99_latency": "57.20ms",
-      "cpu": "1855.3%",
-      "memory": "302MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "179.65KB/s",
-      "input_bw": "20.49GB/s",
-      "reconnects": 2581,
-      "status_2xx": 12916,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

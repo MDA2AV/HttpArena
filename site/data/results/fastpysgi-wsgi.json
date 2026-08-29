@@ -241,46 +241,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "fastpysgi-wsgi",
-      "language": "Python",
-      "rps": 1473,
-      "avg_latency": "159.95ms",
-      "p99_latency": "1.39s",
-      "cpu": "4955.4%",
-      "memory": "4.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "244.88KB/s",
-      "input_bw": "11.68GB/s",
-      "reconnects": 1420,
-      "status_2xx": 7369,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "fastpysgi-wsgi",
-      "language": "Python",
-      "rps": 1902,
-      "avg_latency": "16.77ms",
-      "p99_latency": "160.10ms",
-      "cpu": "1848.1%",
-      "memory": "2.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "316.17KB/s",
-      "input_bw": "15.09GB/s",
-      "reconnects": 1906,
-      "status_2xx": 9514,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

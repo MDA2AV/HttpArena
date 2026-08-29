@@ -2,7 +2,7 @@
 weight: 1
 title: Isolated
 seo_title: "Isolated HTTP/1.1 Benchmarks"
-description: "Single-endpoint benchmarks that measure one dimension at a time: throughput, JSON serialization, uploads, static files and database access."
+description: "Single-endpoint benchmarks that measure one dimension at a time: throughput, JSON serialization, TLS echo, static files and database access."
 ---
 
 Single-endpoint benchmarks that measure framework performance on one task at a time.
@@ -12,7 +12,7 @@ Single-endpoint benchmarks that measure framework performance on one task at a t
   {{< card link="short-lived" title="Short-lived Connection" subtitle="Connections closed after 10 requests, measuring TCP handshake and connection setup overhead." icon="refresh" >}}
   {{< card link="json-compressed" title="JSON Compressed" subtitle="Same JSON workload with Accept-Encoding: gzip, br and a multiplier parameter - measures serialization plus compression throughput." icon="document-text" >}}
   {{< card link="json-tls" title="JSON over TLS" subtitle="Same JSON workload transported over HTTP/1.1 + TLS on port 8081 - measures the cost of encryption on top of serialization." icon="lock-closed" >}}
-  {{< card link="upload" title="Upload (20 MB)" subtitle="Sends a 20 MB binary payload, server returns byte count. Measures body ingestion throughput." icon="cloud-upload" >}}
+  {{< card link="in-out" title="In-Out (100 KB echo)" subtitle="Posts 100 KB over TLS and requires it back verbatim - the only profile that loads ingest and egress at once." icon="cloud-upload" >}}
   {{< card link="async" title="Async Delay" subtitle="A 15ms wait named in the route, at 64K held connections - measures what the framework does while a request waits." icon="clock" >}}
   {{< card link="latency-10k" title="Latency-10K" subtitle="Latency-1M's setup at a near-idle 10K req/s; the metric is the CPU and latency of a server with almost nothing to do." icon="chip" >}}
   {{< card link="latency-1m" title="Latency-1M" subtitle="One million req/s offered at a fixed rate; the metric is the CPU each framework spends to serve it, read exactly from its cgroup." icon="chip" >}}

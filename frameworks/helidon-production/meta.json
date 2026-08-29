@@ -19,7 +19,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "upload",
+    "in-out",
     "baseline-h2",
     "static-h2",
     "echo-ws",

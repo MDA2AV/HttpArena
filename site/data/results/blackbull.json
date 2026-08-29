@@ -431,46 +431,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "blackbull",
-      "language": "Python",
-      "rps": 2182,
-      "avg_latency": "115.16ms",
-      "p99_latency": "559.10ms",
-      "cpu": "6483.1%",
-      "memory": "2.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "311.58KB/s",
-      "input_bw": "17.31GB/s",
-      "reconnects": 2130,
-      "status_2xx": 10912,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "blackbull",
-      "language": "Python",
-      "rps": 2446,
-      "avg_latency": "13.03ms",
-      "p99_latency": "54.60ms",
-      "cpu": "2115.8%",
-      "memory": "2.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "349.26KB/s",
-      "input_bw": "19.40GB/s",
-      "reconnects": 2449,
-      "status_2xx": 12232,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

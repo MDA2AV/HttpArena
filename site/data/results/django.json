@@ -241,46 +241,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "django",
-      "language": "Python",
-      "rps": 643,
-      "avg_latency": "368.83ms",
-      "p99_latency": "1.39s",
-      "cpu": "6367.8%",
-      "memory": "5.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "90.73KB/s",
-      "input_bw": "5.10GB/s",
-      "reconnects": 548,
-      "status_2xx": 3219,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "django",
-      "language": "Python",
-      "rps": 640,
-      "avg_latency": "49.87ms",
-      "p99_latency": "227.70ms",
-      "cpu": "2147.7%",
-      "memory": "5.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "90.17KB/s",
-      "input_bw": "5.08GB/s",
-      "reconnects": 631,
-      "status_2xx": 3201,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

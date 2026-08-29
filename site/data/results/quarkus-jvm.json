@@ -568,46 +568,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "quarkus-jvm",
-      "language": "Java",
-      "rps": 1763,
-      "avg_latency": "141.66ms",
-      "p99_latency": "612.10ms",
-      "cpu": "5689.9%",
-      "memory": "10.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "182.99KB/s",
-      "input_bw": "13.98GB/s",
-      "reconnects": 1693,
-      "status_2xx": 8818,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "quarkus-jvm",
-      "language": "Java",
-      "rps": 1297,
-      "avg_latency": "24.77ms",
-      "p99_latency": "84.30ms",
-      "cpu": "3984.1%",
-      "memory": "6.7GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "134.56KB/s",
-      "input_bw": "10.29GB/s",
-      "reconnects": 1295,
-      "status_2xx": 6486,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

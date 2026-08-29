@@ -602,46 +602,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "swerver",
-      "language": "Zig",
-      "rps": 2199,
-      "avg_latency": "112.72ms",
-      "p99_latency": "679.20ms",
-      "cpu": "5062.9%",
-      "memory": "2.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "299.03KB/s",
-      "input_bw": "17.44GB/s",
-      "reconnects": 2150,
-      "status_2xx": 10997,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "swerver",
-      "language": "Zig",
-      "rps": 2112,
-      "avg_latency": "15.11ms",
-      "p99_latency": "84.60ms",
-      "cpu": "1913.4%",
-      "memory": "2.5GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "287.18KB/s",
-      "input_bw": "16.75GB/s",
-      "reconnects": 2108,
-      "status_2xx": 10564,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

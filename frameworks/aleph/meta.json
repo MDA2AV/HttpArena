@@ -19,7 +19,7 @@
     "baseline-h2c", "json-h2c",
     "limited-conn",
     "json-comp",
-    "upload",
+    "in-out",
     "json-tls",
     "async-db",
     "static-tls",

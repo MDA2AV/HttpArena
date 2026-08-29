@@ -11,7 +11,7 @@
     "pipelined",
     "limited-conn",
     "json-tls",
-    "upload",
+    "in-out",
     "async-db"
   ],
   "maintainers": ["Cobra007-star-source"]

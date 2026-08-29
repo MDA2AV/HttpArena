@@ -221,46 +221,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "micronaut",
-      "language": "Java",
-      "rps": 216,
-      "avg_latency": "598.36ms",
-      "p99_latency": "4.14s",
-      "cpu": "1217.7%",
-      "memory": "4.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "43.95KB/s",
-      "input_bw": "1.71GB/s",
-      "reconnects": 203,
-      "status_2xx": 1084,
-      "status_3xx": 0,
-      "status_4xx": 142,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "micronaut",
-      "language": "Java",
-      "rps": 63,
-      "avg_latency": "369.50ms",
-      "p99_latency": "2.12s",
-      "cpu": "558.5%",
-      "memory": "3.9GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "17.32KB/s",
-      "input_bw": "511.69MB/s",
-      "reconnects": 67,
-      "status_2xx": 319,
-      "status_3xx": 0,
-      "status_4xx": 71,
-      "status_5xx": 0
     }
   }
 }

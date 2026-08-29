@@ -238,46 +238,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "bottle",
-      "language": "Python",
-      "rps": 933,
-      "avg_latency": "264.64ms",
-      "p99_latency": "462.90ms",
-      "cpu": "5808.2%",
-      "memory": "4.1GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "146.07KB/s",
-      "input_bw": "7.40GB/s",
-      "reconnects": 4667,
-      "status_2xx": 4666,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "bottle",
-      "language": "Python",
-      "rps": 874,
-      "avg_latency": "35.05ms",
-      "p99_latency": "103.50ms",
-      "cpu": "3312.9%",
-      "memory": "3.9GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "136.84KB/s",
-      "input_bw": "6.93GB/s",
-      "reconnects": 4374,
-      "status_2xx": 4374,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

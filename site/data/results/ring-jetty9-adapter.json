@@ -241,46 +241,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "ring-jetty9-adapter",
-      "language": "Clojure",
-      "rps": 2836,
-      "avg_latency": "82.98ms",
-      "p99_latency": "304.10ms",
-      "cpu": "4095.2%",
-      "memory": "1.1GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "430.47KB/s",
-      "input_bw": "22.49GB/s",
-      "reconnects": 2815,
-      "status_2xx": 14240,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "ring-jetty9-adapter",
-      "language": "Clojure",
-      "rps": 2624,
-      "avg_latency": "12.17ms",
-      "p99_latency": "34.70ms",
-      "cpu": "2370.7%",
-      "memory": "1.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "397.66KB/s",
-      "input_bw": "20.81GB/s",
-      "reconnects": 2631,
-      "status_2xx": 13120,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

@@ -241,46 +241,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "rails",
-      "language": "Ruby",
-      "rps": 1197,
-      "avg_latency": "208.10ms",
-      "p99_latency": "913.10ms",
-      "cpu": "6282.8%",
-      "memory": "8.3GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "264.40KB/s",
-      "input_bw": "9.49GB/s",
-      "reconnects": 1120,
-      "status_2xx": 5987,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "rails",
-      "language": "Ruby",
-      "rps": 1223,
-      "avg_latency": "26.06ms",
-      "p99_latency": "98.00ms",
-      "cpu": "3123.1%",
-      "memory": "9.7GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "270.26KB/s",
-      "input_bw": "9.70GB/s",
-      "reconnects": 1220,
-      "status_2xx": 6118,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

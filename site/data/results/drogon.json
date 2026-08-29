@@ -221,46 +221,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 2238,
-      "avg_latency": "111.30ms",
-      "p99_latency": "668.50ms",
-      "cpu": "6217.0%",
-      "memory": "20.5GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "319.54KB/s",
-      "input_bw": "17.75GB/s",
-      "reconnects": 2196,
-      "status_2xx": 11191,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 2091,
-      "avg_latency": "15.28ms",
-      "p99_latency": "73.80ms",
-      "cpu": "2283.4%",
-      "memory": "7.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "298.55KB/s",
-      "input_bw": "16.59GB/s",
-      "reconnects": 2093,
-      "status_2xx": 10456,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

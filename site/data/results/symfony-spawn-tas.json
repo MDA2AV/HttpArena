@@ -317,46 +317,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "symfony-spawn-tas",
-      "language": "PHP",
-      "rps": 2271,
-      "avg_latency": "110.40ms",
-      "p99_latency": "621.10ms",
-      "cpu": "6489.1%",
-      "memory": "13.8GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "348.56KB/s",
-      "input_bw": "18.01GB/s",
-      "reconnects": 2209,
-      "status_2xx": 11359,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "symfony-spawn-tas",
-      "language": "PHP",
-      "rps": 2107,
-      "avg_latency": "15.16ms",
-      "p99_latency": "70.90ms",
-      "cpu": "2234.8%",
-      "memory": "8.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "323.52KB/s",
-      "input_bw": "16.71GB/s",
-      "reconnects": 2109,
-      "status_2xx": 10538,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

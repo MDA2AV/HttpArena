@@ -298,46 +298,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "fiber",
-      "language": "Go",
-      "rps": 2370,
-      "avg_latency": "105.16ms",
-      "p99_latency": "321.30ms",
-      "cpu": "6157.7%",
-      "memory": "12.9GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "338.52KB/s",
-      "input_bw": "18.80GB/s",
-      "reconnects": 2329,
-      "status_2xx": 11899,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "fiber",
-      "language": "Go",
-      "rps": 2176,
-      "avg_latency": "14.68ms",
-      "p99_latency": "46.50ms",
-      "cpu": "2994.6%",
-      "memory": "2.9GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "310.71KB/s",
-      "input_bw": "17.26GB/s",
-      "reconnects": 2180,
-      "status_2xx": 10884,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

@@ -379,46 +379,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "spring-boot",
-      "language": "Java",
-      "rps": 2924,
-      "avg_latency": "81.05ms",
-      "p99_latency": "336.50ms",
-      "cpu": "3737.2%",
-      "memory": "1.1GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "343.44KB/s",
-      "input_bw": "23.19GB/s",
-      "reconnects": 2912,
-      "status_2xx": 14741,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "spring-boot",
-      "language": "Java",
-      "rps": 2674,
-      "avg_latency": "11.93ms",
-      "p99_latency": "36.30ms",
-      "cpu": "2264.2%",
-      "memory": "1.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "313.93KB/s",
-      "input_bw": "21.21GB/s",
-      "reconnects": 2677,
-      "status_2xx": 13373,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

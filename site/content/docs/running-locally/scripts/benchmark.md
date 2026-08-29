@@ -96,7 +96,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 
 | Variable | Default | Used for |
 |---|---|---|
-| `GCANNON` | `gcannon` | Native binary - baseline, pipelined, limited-conn, json, json-comp, upload, api-4/16, async-db, crud, echo-ws. |
+| `GCANNON` | `gcannon` | Native binary - baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws. |
 | `GCANNON_IMAGE` | `gcannon:latest` | Docker image when `LOADGEN_DOCKER=true`. |
 | `H2LOAD` | `h2load` | Native binary - baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack. |
 | `H2LOAD_IMAGE` | `h2load:latest` | Docker image (Ubuntu 24.04 + glibc build; do **not** use the alpine/musl image - it's 20–40% slower). |
@@ -127,7 +127,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `limited-conn` | 1 | 10 | `0-31,64-95` | 512, 4096 | gcannon | `/baseline11` (reconnect every 10 req) |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
-| `upload` | 1 | ∞ | `0-31,64-95` | 32, 256 | gcannon | `/upload` - 500K / 2M / 10M / 20M bodies, `-r 5` |
+| `in-out` | 1 | ∞ | `0-31,64-95` | 32, 256 | wrk | `POST /echo` on TLS `:8081` - 100 KB echoed, 8 rotating bodies |
 | `api-4` | 1 | 5 | `0-3` | 256 | gcannon | 8-template mix (baseline / json / async-db) |
 | `api-16` | 1 | 5 | `0-7,64-71` | 1024 | gcannon | 8-template mix |
 | `static` | 1 | 200 | `0-31,64-95` | 1024, 4096, 6800 | wrk | 20 files via `static-rotate.lua` |

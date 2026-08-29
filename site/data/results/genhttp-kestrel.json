@@ -350,46 +350,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "genhttp-kestrel",
-      "language": "C#",
-      "rps": 1534,
-      "avg_latency": "162.21ms",
-      "p99_latency": "822.10ms",
-      "cpu": "6390.3%",
-      "memory": "322MiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "210.15KB/s",
-      "input_bw": "12.17GB/s",
-      "reconnects": 1517,
-      "status_2xx": 7673,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "genhttp-kestrel",
-      "language": "C#",
-      "rps": 1267,
-      "avg_latency": "25.24ms",
-      "p99_latency": "68.80ms",
-      "cpu": "6045.7%",
-      "memory": "158MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "173.54KB/s",
-      "input_bw": "10.05GB/s",
-      "reconnects": 1267,
-      "status_2xx": 6338,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

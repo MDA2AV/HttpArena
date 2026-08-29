@@ -654,46 +654,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "mq-bridge",
-      "language": "Rust",
-      "rps": 1504,
-      "avg_latency": "164.52ms",
-      "p99_latency": "972.50ms",
-      "cpu": "5320.3%",
-      "memory": "5.0GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "260.33KB/s",
-      "input_bw": "11.93GB/s",
-      "reconnects": 1487,
-      "status_2xx": 7524,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "mq-bridge",
-      "language": "Rust",
-      "rps": 1404,
-      "avg_latency": "22.77ms",
-      "p99_latency": "79.80ms",
-      "cpu": "2803.3%",
-      "memory": "1.5GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "242.93KB/s",
-      "input_bw": "11.14GB/s",
-      "reconnects": 1405,
-      "status_2xx": 7020,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

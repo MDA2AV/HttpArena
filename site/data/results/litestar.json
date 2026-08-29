@@ -298,46 +298,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "litestar",
-      "language": "Python",
-      "rps": 1534,
-      "avg_latency": "161.86ms",
-      "p99_latency": "947.60ms",
-      "cpu": "6448.5%",
-      "memory": "4.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "210.13KB/s",
-      "input_bw": "12.17GB/s",
-      "reconnects": 1478,
-      "status_2xx": 7672,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "litestar",
-      "language": "Python",
-      "rps": 2111,
-      "avg_latency": "15.11ms",
-      "p99_latency": "66.20ms",
-      "cpu": "2546.4%",
-      "memory": "4.4GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "289.06KB/s",
-      "input_bw": "16.74GB/s",
-      "reconnects": 2113,
-      "status_2xx": 10558,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

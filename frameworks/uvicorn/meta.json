@@ -12,7 +12,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "upload",
+    "in-out",
     "async-db"
   ],
   "maintainers": []

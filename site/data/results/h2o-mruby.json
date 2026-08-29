@@ -335,46 +335,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "h2o-mruby",
-      "language": "Ruby",
-      "rps": 768,
-      "avg_latency": "310.95ms",
-      "p99_latency": "1.69s",
-      "cpu": "6065.2%",
-      "memory": "45.2GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "122.52KB/s",
-      "input_bw": "6.09GB/s",
-      "reconnects": 703,
-      "status_2xx": 3843,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "h2o-mruby",
-      "language": "Ruby",
-      "rps": 956,
-      "avg_latency": "33.42ms",
-      "p99_latency": "159.20ms",
-      "cpu": "2722.2%",
-      "memory": "30.8GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "152.42KB/s",
-      "input_bw": "7.58GB/s",
-      "reconnects": 949,
-      "status_2xx": 4782,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

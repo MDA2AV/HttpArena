@@ -10,7 +10,7 @@
     "pipelined",
     "baseline", "latency-1m", "latency-10k",
     "limited-conn",
-    "upload",
+    "in-out",
     "echo-ws",
     "echo-ws-pipeline"
   ],

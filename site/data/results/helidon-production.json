@@ -507,46 +507,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "helidon-production",
-      "language": "Java",
-      "rps": 2285,
-      "avg_latency": "110.65ms",
-      "p99_latency": "393.60ms",
-      "cpu": "6239.3%",
-      "memory": "5.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "333.29KB/s",
-      "input_bw": "18.12GB/s",
-      "reconnects": 2263,
-      "status_2xx": 11449,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "helidon-production",
-      "language": "Java",
-      "rps": 2033,
-      "avg_latency": "15.71ms",
-      "p99_latency": "43.60ms",
-      "cpu": "3212.8%",
-      "memory": "4.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "296.31KB/s",
-      "input_bw": "16.13GB/s",
-      "reconnects": 2040,
-      "status_2xx": 10169,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

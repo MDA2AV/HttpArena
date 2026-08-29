@@ -491,46 +491,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "swoole",
-      "language": "PHP",
-      "rps": 345,
-      "avg_latency": "601.63ms",
-      "p99_latency": "3.51s",
-      "cpu": "6454.1%",
-      "memory": "1.5GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "54.14KB/s",
-      "input_bw": "2.74GB/s",
-      "reconnects": 294,
-      "status_2xx": 1729,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "swoole",
-      "language": "PHP",
-      "rps": 278,
-      "avg_latency": "110.97ms",
-      "p99_latency": "875.20ms",
-      "cpu": "2476.6%",
-      "memory": "717MiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "43.54KB/s",
-      "input_bw": "2.21GB/s",
-      "reconnects": 271,
-      "status_2xx": 1391,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

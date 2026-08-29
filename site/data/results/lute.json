@@ -217,46 +217,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "lute",
-      "language": "Luau",
-      "rps": 1003,
-      "avg_latency": "227.40ms",
-      "p99_latency": "2.02s",
-      "cpu": "3350.3%",
-      "memory": "6.6GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "122.64KB/s",
-      "input_bw": "7.96GB/s",
-      "reconnects": 972,
-      "status_2xx": 5015,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "lute",
-      "language": "Luau",
-      "rps": 920,
-      "avg_latency": "34.65ms",
-      "p99_latency": "277.90ms",
-      "cpu": "1698.5%",
-      "memory": "4.0GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "112.54KB/s",
-      "input_bw": "7.30GB/s",
-      "reconnects": 910,
-      "status_2xx": 4602,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

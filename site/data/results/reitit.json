@@ -183,46 +183,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "reitit",
-      "language": "Clojure",
-      "rps": 2666,
-      "avg_latency": "94.22ms",
-      "p99_latency": "471.20ms",
-      "cpu": "2720.2%",
-      "memory": "1.2GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "401.32KB/s",
-      "input_bw": "21.15GB/s",
-      "reconnects": 2652,
-      "status_2xx": 13333,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "reitit",
-      "language": "Clojure",
-      "rps": 2520,
-      "avg_latency": "12.67ms",
-      "p99_latency": "37.10ms",
-      "cpu": "2305.8%",
-      "memory": "1.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "379.44KB/s",
-      "input_bw": "19.99GB/s",
-      "reconnects": 2528,
-      "status_2xx": 12600,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

@@ -221,46 +221,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "warp",
-      "language": "Haskell",
-      "rps": 1537,
-      "avg_latency": "163.46ms",
-      "p99_latency": "778.70ms",
-      "cpu": "2542.0%",
-      "memory": "5.2GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "228.62KB/s",
-      "input_bw": "12.19GB/s",
-      "reconnects": 1538,
-      "status_2xx": 7688,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "warp",
-      "language": "Haskell",
-      "rps": 1387,
-      "avg_latency": "22.99ms",
-      "p99_latency": "206.40ms",
-      "cpu": "1585.8%",
-      "memory": "6.1GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "206.20KB/s",
-      "input_bw": "11.00GB/s",
-      "reconnects": 1388,
-      "status_2xx": 6938,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

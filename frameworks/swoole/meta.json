@@ -20,7 +20,7 @@
     "limited-conn",
     "json-tls",
     "json-comp",
-    "upload",
+    "in-out",
     "static-tls",
     "static-h2",
     "async-db"

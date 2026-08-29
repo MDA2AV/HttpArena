@@ -450,46 +450,6 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
-    },
-    "upload-256": {
-      "framework": "aleph",
-      "language": "Clojure",
-      "rps": 586,
-      "avg_latency": "388.68ms",
-      "p99_latency": "2.21s",
-      "cpu": "5849.8%",
-      "memory": "31.4GiB",
-      "connections": 256,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "92.85KB/s",
-      "input_bw": "4.65GB/s",
-      "reconnects": 528,
-      "status_2xx": 2930,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
-    "upload-32": {
-      "framework": "aleph",
-      "language": "Clojure",
-      "rps": 650,
-      "avg_latency": "49.15ms",
-      "p99_latency": "181.60ms",
-      "cpu": "2874.2%",
-      "memory": "19.6GiB",
-      "connections": 32,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "103.04KB/s",
-      "input_bw": "5.16GB/s",
-      "reconnects": 642,
-      "status_2xx": 3253,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
     }
   }
 }

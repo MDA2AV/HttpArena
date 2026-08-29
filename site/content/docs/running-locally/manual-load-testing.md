@@ -190,7 +190,7 @@ Everything under `requests/` is fair game:
 | `requests/get.raw`, `post_cl.raw`, `post_chunked.raw` | Raw HTTP/1.1 requests for `--raw` mode. |
 | `requests/json-gzip-{25,40,50}.raw` | Compressed-negotiation bodies for the `json-comp` profile. |
 | `requests/async-db-{5,10,20,35,50}.raw` | Different `limit=N` query variants. |
-| `requests/upload-{500k,2m,10m,20m}.raw` | Upload bodies for the `upload` profile. |
+| `requests/in-out-rotate.lua` | Eight distinct 100 KB bodies for the `in-out` profile, rotated per request. |
 | `requests/static-rotate.lua` / `json-tls-rotate.lua` | wrk rotation scripts. |
 | `requests/static-h2-uris.txt` | URI list for `h2load -i` (static-h2 / static-h3). |
 | `requests/benchmark.proto` | gRPC service definition. |
