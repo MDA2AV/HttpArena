@@ -52,6 +52,18 @@ declare -A PROFILES=(
     # workload — 500K req/s needs only ~15 in flight, so the rest of them are
     # there to be polled, which is exactly the cost being compared.
     [latency-1m]="1|0|0-31,64-95|1024|latency-1m"
+    # Latency-10K: latency-1m's shape with the offered rate two orders of
+    # magnitude lower. Same cpuset, same connection count, same endpoint, same
+    # duration -- the rate is the only variable, which is what makes the two
+    # numbers comparable.
+    #
+    # Where latency-1m asks what a server costs at a load only the fastest
+    # entries carry, this asks what it costs while nearly idle, which is where
+    # most services actually sit. At 10K req/s across 64 threads the work is
+    # negligible, so what is left in the CPU figure is the standing cost:
+    # poll loops, timers, background GC, wakeups. A busy box amortises those
+    # away; this one does not.
+    [latency-10k]="1|0|0-31,64-95|1024|latency-10k"
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     [upload]="1|0|0-31,64-95|32,256|upload"
@@ -87,7 +99,7 @@ PROFILE_ORDER=(
     production-stack
     unary-grpc unary-grpc-tls
     echo-ws echo-ws-pipeline echo-ws-limited
-    latency-1m
+    latency-1m latency-10k
     # Last on purpose. It closes ~49K sockets at exit and every one sits in
     # TIME_WAIT for the kernel's fixed ~60s, so anything scheduled after it
     # starts against a nearly full port table.
@@ -115,7 +127,7 @@ endpoint_tool() {
         # wrk (lua script rotation)
         static-tls|json-tls)                echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
-        latency-1m)                        echo "zrk" ;;
+        latency-1m|latency-10k)             echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3

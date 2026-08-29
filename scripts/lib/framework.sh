@@ -114,6 +114,11 @@ framework_start() {
             else
                 args+=(--cpuset-cpus="$cpu_limit")
             fi
+        elif [ "$cpu_limit" = "0" ]; then
+            # --cpus=0 means *unlimited*, so a profile asking for CPU 0 by index
+            # would silently get the whole machine. Range syntax ("0-0") is the
+            # way to pin one CPU; refuse rather than measure the wrong thing.
+            fail "profile cpu limit \"0\" is ambiguous: use \"0-0\" for cpuset CPU 0"
         else
             local avail
             avail=$(nproc 2>/dev/null || echo 64)

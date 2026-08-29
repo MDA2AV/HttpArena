@@ -14,7 +14,7 @@
   "repo": "https://github.com/h3js/h3",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
     "json-tls",

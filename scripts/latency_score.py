@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scoring for the `latency-1m` profile.
+"""Scoring for the fixed-rate latency profiles: `latency-1m` and `latency-10k`.
 
 Every other profile here ranks on one number, requests per second. This one
 cannot: the rate is pinned, so every entry that finishes serves the same load
@@ -33,8 +33,8 @@ best on cost and on both tails, and that gap is information.
 
 Two modes:
 
-    latency_1m_score.py --pick <dir>   pick the best of N runs (benchmark.sh)
-    latency_1m_score.py --table        score the published results
+    latency_score.py --pick <dir> [--profile P]   best of N runs (benchmark.sh)
+    latency_score.py --table [--profile P]        score the published results
 """
 
 from __future__ import annotations
@@ -45,7 +45,14 @@ import re
 import sys
 from pathlib import Path
 
-RATE_FULL = 950_000.0
+# Full credit at 95% of what was offered. The generator never quite reaches its
+# target -- ~998K against 1M is a clean run -- so the threshold has to sit below
+# it or nobody would ever earn the whole factor.
+FULL_RATE = {
+    "latency-1m":  950_000.0,
+    "latency-10k":   9_500.0,
+}
+DEFAULT_PROFILE = "latency-1m"
 W_CPU, W_P99, W_P999 = 0.60, 0.25, 0.15
 DECADES = 3.0
 
@@ -67,8 +74,8 @@ def _clamp(v: float) -> float:
     return 0.0 if v < 0 else 1.0 if v > 1 else v
 
 
-def rate_factor(rps: float) -> float:
-    return _clamp(rps / RATE_FULL)
+def rate_factor(rps: float, full: float) -> float:
+    return _clamp(rps / full)
 
 
 def decade_score(value: float | None, best: float | None) -> float:
@@ -84,7 +91,7 @@ def linear_score(value: float | None, best: float | None) -> float:
     return _clamp(best / value)
 
 
-def score_rows(rows: list[dict]) -> list[dict]:
+def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
     """Annotate rows with their score. Each row needs rps, cpu, p99, p999.
 
     Bests are taken over the rows given, so a caller scoring one framework's
@@ -97,7 +104,7 @@ def score_rows(rows: list[dict]) -> list[dict]:
 
     b_cpu, b_p99, b_p999 = best_of("cpu"), best_of("p99"), best_of("p999")
     for r in rows:
-        rf = rate_factor(r.get("rps") or 0)
+        rf = rate_factor(r.get("rps") or 0, FULL_RATE[profile])
         cpu_s = linear_score(r.get("cpu"), b_cpu)
         p99_s = decade_score(r.get("p99"), b_p99)
         p999_s = decade_score(r.get("p999"), b_p999)
@@ -116,7 +123,7 @@ def _kv(path: Path) -> dict:
     return out
 
 
-def pick(dirpath: str) -> int | None:
+def pick(dirpath: str, profile: str = DEFAULT_PROFILE) -> int | None:
     """Best of the runs recorded under dirpath. Prints nothing on failure."""
     d = Path(dirpath)
     rows = []
@@ -143,11 +150,11 @@ def pick(dirpath: str) -> int | None:
         })
     if not rows:
         return None
-    score_rows(rows)
+    score_rows(rows, profile)
     return max(rows, key=lambda r: (r["score"], r["rps"]))["run"]
 
 
-def table(results_dir: Path) -> None:
+def table(results_dir: Path, profile: str = DEFAULT_PROFILE) -> None:
     rows = []
     for f in sorted(results_dir.glob("*.json")):
         try:
@@ -155,7 +162,7 @@ def table(results_dir: Path) -> None:
         except Exception:
             continue
         for key, r in (d.get("results") or {}).items():
-            if not key.startswith("latency-1m-"):
+            if not key.startswith(profile + "-"):
                 continue
             rows.append({
                 "fw": d.get("framework", f.stem),
@@ -165,9 +172,9 @@ def table(results_dir: Path) -> None:
                 "p999": to_us(r.get("p99_9_latency")),
             })
     if not rows:
-        print("no latency-1m results found", file=sys.stderr)
+        print(f"no {profile} results found", file=sys.stderr)
         return
-    score_rows(rows)
+    score_rows(rows, profile)
     rows.sort(key=lambda r: -r["score"])
     print("%-24s %7s %7s %9s %11s %12s" %
           ("framework", "score", "rate", "us/req", "p99", "p99.9"))
@@ -184,16 +191,18 @@ def main() -> int:
     ap.add_argument("--pick", metavar="DIR", help="print the winning run number")
     ap.add_argument("--table", action="store_true", help="score published results")
     ap.add_argument("--results", default=None, help="results dir for --table")
+    ap.add_argument("--profile", default=DEFAULT_PROFILE, choices=sorted(FULL_RATE),
+                    help="which fixed-rate profile to score")
     a = ap.parse_args()
     if a.pick:
-        w = pick(a.pick)
+        w = pick(a.pick, a.profile)
         if w is None:
             return 1
         print(w)
         return 0
     if a.table:
         root = Path(__file__).resolve().parent.parent
-        table(Path(a.results) if a.results else root / "site" / "data" / "results")
+        table(Path(a.results) if a.results else root / "site" / "data" / "results", a.profile)
         return 0
     ap.print_help()
     return 2

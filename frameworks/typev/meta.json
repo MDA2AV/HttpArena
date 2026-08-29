@@ -8,7 +8,7 @@
   "enabled": false,
   "tests": [
     "pipelined",
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "limited-conn",
     "upload",
     "echo-ws",

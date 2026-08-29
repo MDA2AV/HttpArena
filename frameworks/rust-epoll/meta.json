@@ -6,7 +6,7 @@
   "description": "Zero-dependency Rust HTTP engine using raw epoll syscalls, one-thread-per-core with SO_REUSEPORT.",
   "enabled": false,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn"
   ],

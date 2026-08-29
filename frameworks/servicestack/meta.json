@@ -14,7 +14,7 @@
   "repo": "https://github.com/ServiceStack/ServiceStack",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
     "json-tls",

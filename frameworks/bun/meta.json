@@ -16,7 +16,7 @@
   "tests": [
     "baseline",
     "async",
-    "latency-1m",
+    "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
     "json-comp",

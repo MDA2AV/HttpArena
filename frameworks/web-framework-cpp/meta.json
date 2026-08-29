@@ -6,6 +6,6 @@
   "description": "Web framework in C++ with different language APIs(Python, C, C++, C#)",
   "repo": "https://github.com/LazyPanda07/WebFramework",
   "enabled": true,
-  "tests": [ "baseline", "latency-1m", "limited-conn", "pipelined", "upload", "echo-ws" ],
+  "tests": [ "baseline", "latency-1m", "latency-10k", "limited-conn", "pipelined", "upload", "echo-ws" ],
   "maintainers": [ "LazyPanda07" ]
 }

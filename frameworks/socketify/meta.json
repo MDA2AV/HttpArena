@@ -15,7 +15,7 @@
   "enabled": false,
   "tests": [
     "baseline",
-    "latency-1m",
+    "latency-1m", "latency-10k",
     "limited-conn",
     "json-comp",
     "json-tls",

@@ -57,7 +57,7 @@ const exclTypes = grab(/^\s*var EXCLUSIVE_TYPES=.*$/m, 'EXCLUSIVE_TYPES');
 // a score instead. Lifted for the same reason as everything else here: the
 // composite reaches for it, so evaluating the composite without it throws.
 const milFns = grab(
-  /\s*\/\/ Latency-1M scores on cost[\s\S]*?(?=\s*\/\/ What a profile's detail view ranks on)/,
+  /\s*\/\/ The fixed-rate profiles score on cost[\s\S]*?(?=\s*\/\/ What a profile's detail view ranks on)/,
   'the latency-1m scoring block');
 
 // ── the data the browser would have ─────────────────────────────────────────

@@ -26,7 +26,7 @@ import html as _html
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import latency_1m_score as _l1m  # noqa: E402  (reference impl for the latency-1m score)
+import latency_score as _lat  # noqa: E402  (reference impl for the fixed-rate scores)
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,6 +61,10 @@ CATALOG = [
                                                     [32000],             [32000],         False,True,False),
     ]),
     ("Efficiency", [
+        # Unscored until it has been run board-wide, like every profile here
+        # starts. Flip `scored` once the rate has been shown to be the right one.
+        ("latency-10k", "Latency-10K", "Score out of 100: CPU and both latency tails at a near-idle 10K req/s.",
+                                                    [1024],              [1024],          False,True,False),
         # Scored. The composite cannot rank this on rps the way it ranks every
         # other profile, because the rate is pinned and every entry that holds it
         # delivers the same one. It contributes its own score instead, which
@@ -133,6 +137,7 @@ PROFILE_DOC = {
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
     "async":            "test-profiles/h1/isolated/async/implementation",
     "latency-1m":      "test-profiles/h1/isolated/latency-1m/implementation",
+    "latency-10k":     "test-profiles/h1/isolated/latency-10k/implementation",
     "async-db":         "test-profiles/h1/isolated/async-database/implementation",
     "fortunes":         "test-profiles/h1/isolated/fortunes/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
@@ -1215,32 +1220,32 @@ def badge_aggregate(profiles, results):
     return {"avg": avg, "mem": amem, "bw": abw}
 
 
-# The latency-1m score, from the reference implementation rather than a third
-# copy of the formula. Field-wide and computed once, exactly like l1mEnsure() in
-# index.html: the bests are taken over every published row, not over whichever
-# league or filter happens to be on screen, so a framework's score does not move
-# when the view does.
-_L1M_CACHE = {}
+# The fixed-rate profile scores, from the reference implementation rather than a
+# third copy of the formula. Field-wide and computed once per profile, exactly
+# like latEnsure() in index.html: the bests are taken over every published row,
+# not over whichever league or filter happens to be on screen, so a framework's
+# score does not move when the view does.
+_LAT_CACHE: dict[str, dict] = {}
 
 
-def l1m_scores():
-    if _L1M_CACHE:
-        return _L1M_CACHE
+def lat_scores(pid):
+    if pid in _LAT_CACHE:
+        return _LAT_CACHE[pid]
     rows = [{"fw": r.get("framework") or r.get("fw"),
              "rps": r.get("rps") or 0,
              "cpu": r.get("cpu_per_req_us"),
-             "p99": _l1m.to_us(r.get("p99_latency")),
-             "p999": _l1m.to_us(r.get("p99_9_latency"))}
-            for key, rs in RESULTS.items() if key.startswith("latency-1m-")
+             "p99": _lat.to_us(r.get("p99_latency")),
+             "p999": _lat.to_us(r.get("p99_9_latency"))}
+            for key, rs in RESULTS.items() if key.startswith(pid + "-")
             for r in rs]
-    if not rows:
-        _L1M_CACHE["__empty__"] = 0.0
-        return _L1M_CACHE
-    _l1m.score_rows(rows)
-    for r in rows:
-        if r["fw"]:
-            _L1M_CACHE[r["fw"]] = r["score"]
-    return _L1M_CACHE
+    out: dict = {}
+    if rows:
+        _lat.score_rows(rows, pid)
+        for r in rows:
+            if r["fw"]:
+                out[r["fw"]] = r["score"]
+    _LAT_CACHE[pid] = out
+    return out
 
 
 def _scored_for(prof, meta, pid, fw):
@@ -1403,12 +1408,13 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                     # 0-1000 per profile; mirrors computeComposite() in
                     # index.html, which check_badge_parity.js diffs against.
                     #
-                    # latency-1m cannot be normalised on rps like the rest: its
-                    # rate is pinned, so every entry that holds it delivers the
-                    # same one and the column would read 1000 for all of them.
-                    # It contributes its own score, x10 onto the shared basis.
-                    if pid == "latency-1m":
-                        score += l1m_scores().get(fw, 0.0) * 10
+                    # The fixed-rate profiles cannot be normalised on rps like
+                    # the rest: the rate is pinned, so every entry that holds it
+                    # delivers the same one and the column would read 1000 for
+                    # all of them. They contribute their own score, x10 onto the
+                    # shared basis.
+                    if pid in _lat.FULL_RATE:
+                        score += lat_scores(pid).get(fw, 0.0) * 10
                     else:
                         score += (eff(pid, fw) / max_r[pid]) * 1000
         if any_result:
