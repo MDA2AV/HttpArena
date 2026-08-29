@@ -768,7 +768,7 @@
   },
   "helidon-production": {
     "dir": "helidon-production",
-    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.5.4 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
@@ -782,7 +782,7 @@
   },
   "helidon-tuned": {
     "dir": "helidon-tuned",
-    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.5.4 on N\u00edma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
@@ -1076,20 +1076,6 @@
     "mode": "standard",
     "completeness": {
       "routing": false,
-      "middleware": false,
-      "request": true,
-      "response": true
-    }
-  },
-  "lwan": {
-    "dir": "lwan",
-    "description": "lwan's own coroutine HTTP server. Disabled: lwan does not implement chunked request bodies, which the baseline and upload profiles both send, and its POST body cap stays at the default regardless of max_post_data_size.",
-    "repo": "https://github.com/lpereira/lwan",
-    "type": "flagship",
-    "engine": "lwan",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
       "middleware": false,
       "request": true,
       "response": true
