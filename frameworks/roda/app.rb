@@ -79,7 +79,7 @@ class App < Roda
 
     r.is 'echo' do
       request.env["puma.mark_as_io_bound"].call
-      response['Content-Type'] = 'application/octet-stream'
+      response[RodaResponseHeaders::CONTENT_TYPE] = 'application/octet-stream'
       request.body.read || ''
     end
 

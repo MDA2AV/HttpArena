@@ -381,7 +381,7 @@ const listener = {
     // which is how this entry uses more than one core.
     reusePort: true,
     development: false,
-    // A 20 MB upload on a saturated server takes longer than the 10s default.
+    // A saturated server can take longer than the 10s default.
     idleTimeout: 120,
     routes,
     fetch: handle,

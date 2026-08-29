@@ -49,10 +49,16 @@ def pipeline_test(req, resp):
 # setting read_size as 25MB
 @app.route("/echo", method="POST", body_size=1024 * 1024 * 25)
 def echo_test(req, resp):
+    # slimeweb's response object exposes only plain/html/json plus set_header -
+    # there is no binary responder and none of them take a content type - so the
+    # header is set explicitly and the body handed to plain(). If the pinned
+    # build coerces the body to str this will not round-trip binary; that is the
+    # check to watch on this entry.
     body = req.body
     if isinstance(body, str):
         body = body.encode()
-    return resp.bytes(body, content_type="application/octet-stream")
+    resp.set_header("Content-Type", "application/octet-stream")
+    return resp.plain(body)
 
 
 @app.route(

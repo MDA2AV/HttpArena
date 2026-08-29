@@ -12,7 +12,6 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "echo-100k",
     "async-db",
     "fortunes"
   ],

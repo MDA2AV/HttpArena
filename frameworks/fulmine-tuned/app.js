@@ -404,13 +404,17 @@ app.get('/api/me', async (req, res) => {
     }
 });
 
-app.post('/echo', (req, res) => {
-    const chunks = [];
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end', () => {
-        res.type('application/octet-stream').send(Buffer.concat(chunks));
+function registerEchoRoute(target) {
+    target.post('/echo', (req, res) => {
+        const chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
+        req.on('end', () => {
+            res.type('application/octet-stream').send(Buffer.concat(chunks));
+        });
     });
-});
+}
+
+registerEchoRoute(app);
 
 app.get('/baseline2', (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
@@ -486,6 +490,7 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     tlsApp.set('connection headers', false);
     registerJsonRoute(tlsApp);
     registerStaticRoute(tlsApp);
+    registerEchoRoute(tlsApp);
     tlsApp.use(answerError);
     tlsApp.listen(8081);
 }

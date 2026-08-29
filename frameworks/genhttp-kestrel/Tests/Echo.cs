@@ -1,3 +1,4 @@
+using GenHTTP.Api.Protocol;
 using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 
@@ -12,7 +13,7 @@ public class Echo
     /// the body is collected first because the response cannot be framed until
     /// its length is known, which is also what makes a chunked request work.
     /// </summary>
-    [ResourceMethod(Method.Post)]
+    [ResourceMethod(RequestMethod.Post)]
     public async ValueTask<Stream> Compute(Stream input)
     {
         var buffer = new MemoryStream();

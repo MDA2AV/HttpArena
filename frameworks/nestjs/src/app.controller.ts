@@ -1,5 +1,5 @@
-import { Controller, Get, Header, Param, Post, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Header, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { readFileSync } from 'node:fs';
 
 interface Rating {
@@ -86,13 +86,14 @@ export class AppController {
     return { items, count };
   }
 
+  // Written through @Res rather than returned: Nest's express adapter does
+  // `isObject(body) ? res.json(body) : res.send(String(body))`, and a Buffer is
+  // an object - so a returned Buffer comes back as {"type":"Buffer","data":[...]}.
   @Post('echo')
-  @Header('Content-Type', 'application/octet-stream')
-  async echoBody(@Req() req: Request): Promise<Buffer> {
-    // Collected rather than piped: the response carries a Content-Length, and
-    // a chunked request has no length to forward until the body is in.
+  async echoBody(@Req() req: Request, @Res() res: Response): Promise<void> {
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(Buffer.from(chunk));
-    return Buffer.concat(chunks);
+    const body = Buffer.concat(chunks);
+    res.type('application/octet-stream').send(body);
   }
 }

@@ -205,8 +205,8 @@ check "POST /echo 10 bytes" "0123456789" \
     -X POST -H "Content-Type: application/octet-stream" -d "0123456789" "$H1/echo"
 check "POST /echo 0 bytes"  "" \
     -X POST -H "Content-Type: application/octet-stream" -d "" "$H1/echo"
-check_header "upload Content-Type" "Content-Type" "text/plain" \
-    -X POST -d "x" "$H1/upload"
+check_header "echo Content-Type" "Content-Type" "application/octet-stream" \
+    -X POST -d "x" "$H1/echo"
 
 echo "=== static files ==="
 

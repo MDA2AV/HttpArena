@@ -106,6 +106,13 @@ $https->name = 'bench';
 
 $https->onMessage = static function ($connection, $request) {
 
+    // echo-100k drives :8081, which has its own onMessage -- the '/echo' case
+    // in the plaintext worker above is not reachable from here.
+    if ($request->path() === '/echo') {
+        $connection->headers = ['Content-Type' => 'application/octet-stream'];
+        return $connection->send($request->rawBody());
+    }
+
     if(str_starts_with($request->path(), '/json/')) {
         $count = explode('/', $request->path())[2];
         $m = $request->get('m', 1);

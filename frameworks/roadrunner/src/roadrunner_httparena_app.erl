@@ -14,10 +14,10 @@ start(_StartType, _StartArgs) ->
         port => HttpPort,
         routes => Routes,
         middlewares => [roadrunner_compress],
-        %% 25 MB headroom for the upload profile (validator goes up to 20 MB).
+        %% 25 MB headroom for the echo-100k profile (validator goes up to 20 MB).
         max_content_length => 26214400,
         %% Manual body buffering: handlers read the body themselves via
-        %% `roadrunner_req:read_body[_chunked]/1`. Lets the upload handler
+        %% `roadrunner_req:read_body[_chunked]/1`. Lets the echo handler
         %% stream chunks instead of buffering the entire 20 MB body in
         %% the conn process before dispatch. Auto-mode handlers
         %% (`baseline11` POST) still work transparently via `read_body/1`.

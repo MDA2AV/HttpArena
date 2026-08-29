@@ -252,7 +252,6 @@ app.post("/echo", async (c) => {
     headers: { "content-type": "application/octet-stream", server: SERVER_NAME },
   });
 });
-});
 
 // --- /static/* ---
 // Hono's own static handler rather than a hand-rolled Bun.file route, which is

@@ -94,13 +94,12 @@ if (cluster.isPrimary) {
 
   // --- /echo ---
   app.post("/echo", async (c) => {
-  // arrayBuffer() reads to end regardless of framing, so a chunked request
-  // works and the Response gets a Content-Length from the buffer.
-  const buf = await c.req.raw.arrayBuffer();
-  return new Response(buf, {
-    headers: { "content-type": "application/octet-stream", server: SERVER_NAME },
-  });
-});
+    // arrayBuffer() reads to end regardless of framing, so a chunked request
+    // works and the Response gets a Content-Length from the buffer.
+    const buf = await c.req.raw.arrayBuffer();
+    return new Response(buf, {
+      headers: { "content-type": "application/octet-stream", server: SERVER_NAME },
+    });
   });
 
   // Catch-all

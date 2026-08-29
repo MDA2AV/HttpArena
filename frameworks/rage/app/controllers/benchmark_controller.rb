@@ -86,7 +86,7 @@ class BenchmarkController < ApplicationController
     while (chunk = rack_input.read(65536))
       chunks << chunk
     end
-    headers["Content-Type"] = "application/octet-stream"
+    headers["content-type"] = "application/octet-stream"
     render plain: chunks.join
   end
 

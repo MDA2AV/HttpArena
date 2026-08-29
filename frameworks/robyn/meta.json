@@ -16,8 +16,6 @@
   "tests": [
     "baseline", "latency-1m", "latency-10k",
     "pipelined",
-    "limited-conn",
-    "echo-100k"
-  ],
+    "limited-conn"],
   "maintainers": []
 }
