@@ -1507,7 +1507,7 @@ fi
 # against :8081 in its own block.
 
 if has_test "json-comp" || has_test "json-h2c"; then
-    JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
+    JSON_DOCS="$DOCS_BASE/h1/isolated/json-compressed/validation"
     echo "[test] json endpoint"
     json_fail=false
     # counts and multipliers drawn per run, and every field checked against
@@ -1572,7 +1572,7 @@ fi
 # ───── JSON Compressed (GET /json/{count}?m=X with Accept-Encoding) ─────
 
 if has_test "json-comp"; then
-    JSONCOMP_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
+    JSONCOMP_DOCS="$DOCS_BASE/h1/isolated/json-compressed/validation"
     echo "[test] json-comp endpoint"
 
     # Must return Content-Encoding: gzip or br when Accept-Encoding is sent

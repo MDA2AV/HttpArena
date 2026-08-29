@@ -5,13 +5,13 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 ---
 {{< type-rules standard="Must use the framework standard JSON serialization and a standard TLS stack (OpenSSL, BoringSSL, rustls, SChannel, JDK JSSE, etc.). No pre-serialized caches, no bypassing the framework response pipeline, no TLS session-ticket shortcuts that skip real handshakes." tuned="May use alternative JSON libraries, tuned TLS providers, and framework-specific optimizations. The JSON body must still be serialized per request from live data - pre-computed / pre-serialized response caches are not allowed on either type; they short-circuit the serialization workload the profile exists to measure." engine="No specific rules." infrastructure="The JSON body must be serialized per request by the handler module. A static file on disk, a literal-response config directive, or any pre-serialized response cache does not qualify - the profile exists to measure serialization work. Configuration is otherwise free. TLS must come from a standard stack (OpenSSL, BoringSSL, rustls, quictls) and every connection must complete a real handshake." >}}
 
-The JSON over TLS profile is the [JSON Processing](../json-processing/implementation/) workload transported over HTTP/1.1 + TLS on a dedicated port. It measures how much of a framework's plaintext JSON throughput survives encryption.
+The JSON over TLS profile serves `GET /json/{count}?m={multiplier}` over HTTP/1.1 + TLS on a dedicated port. It is the reference definition of the `/json` endpoint: [JSON Compressed](../json-compressed/) and [JSON h2c](../../../h2/json-h2c/) serve the same response shape under content negotiation and over cleartext h2 respectively.
 
 ## How it works
 
 1. The framework loads `/data/dataset.json` at startup (the 50-item mixed-type dataset)
 2. The framework listens on **port 8081** with HTTPS, serving HTTP/1.1 only (ALPN advertises `http/1.1`)
-3. On each `GET /json/{count}?m={multiplier}` request, the server returns the [shared response shape](../json-processing/implementation/): first `count` items with `total = price × quantity × m`, wrapped in `{items, count}`
+3. On each `GET /json/{count}?m={multiplier}` request, the server returns the first `count` items with `total = price × quantity × m`, wrapped in `{items, count}`
 4. Returns `Content-Type: application/json`
 5. Client sends **no** `Accept-Encoding` header - compression is out of scope for this profile
 
@@ -19,7 +19,7 @@ The load generator is **wrk** with a Lua rotation script (`requests/json-tls-rot
 
 ## What it measures
 
-- Everything [JSON Processing](../json-processing/implementation/#what-it-measures) measures
+- Dataset load, per-item derived fields and JSON serialization
 - **TLS handshake cost amortized over keep-alive** - connections are long-lived at 4096 concurrent
 - **Record framing overhead** - every HTTP request gets wrapped in one or more TLS records
 - **Symmetric cipher throughput** - AES-GCM / ChaCha20-Poly1305 on the hot path
@@ -30,6 +30,26 @@ The load generator is **wrk** with a Lua rotation script (`requests/json-tls-rot
 - **Port**: 8081 (distinct from 8080 plaintext and 8443 which is dedicated to HTTP/2 / HTTP/3 profiles)
 - **ALPN**: advertise `http/1.1` only. HTTP/1.1-only clients (wrk) negotiate correctly and never upgrade to h2.
 - **Certificates**: the same PEM files used by `baseline-h2` / `static-h2`, mounted at `/certs/server.crt` and `/certs/server.key`. Frameworks typically read them via environment variables (`TLS_CERT`, `TLS_KEY`) or a hardcoded path, same pattern as the other TLS tests.
+
+## Dataset format
+
+Each item in `dataset.json`:
+
+```json
+{
+  "id": 1,
+  "name": "Alpha Widget",
+  "category": "electronics",
+  "price": 328,
+  "quantity": 15,
+  "active": true,
+  "tags": ["fast", "new"],
+  "rating": {
+    "score": 48,
+    "count": 127
+  }
+}
+```
 
 ## Expected response
 

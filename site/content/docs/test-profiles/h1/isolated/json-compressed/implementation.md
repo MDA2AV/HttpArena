@@ -5,7 +5,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 ---
 {{< type-rules standard="Must use the framework standard JSON serialization and the framework or engine's built-in response compression (middleware, filter, or equivalent). No pre-compressed caches, no bypassing the response pipeline." tuned="May use alternative JSON libraries, tuned compression libraries, and framework-specific optimizations as long as the output is valid gzip or brotli. The JSON body must still be serialized and compressed per request - pre-computed / pre-serialized / pre-compressed response caches are not allowed on either type; they defeat the serialization and compression workload the profile exists to measure." engine="No specific rules." >}}
 
-The JSON Compressed profile is the same workload as [JSON Processing](../json-processing/implementation/) with one difference: the client sends `Accept-Encoding: gzip, br` and the server must return a compressed response with a matching `Content-Encoding` header.
+The JSON Compressed profile is the same workload as [JSON TLS](../json-tls/implementation/), minus the TLS, with one difference: the client sends `Accept-Encoding: gzip, br` and the server must return a compressed response with a matching `Content-Encoding` header.
 
 ## How it works
 
@@ -22,7 +22,7 @@ The benchmark round-robins across counts 25, 40, and 50 paired with multipliers 
 
 ## What it measures
 
-- Everything [JSON Processing](../json-processing/implementation/#what-it-measures) measures
+- Everything [JSON TLS](../json-tls/implementation/#what-it-measures) measures, minus the TLS work
 - **Response compression throughput** - gzip or brotli encoding of the serialized body
 - **Content negotiation** - honoring `Accept-Encoding` per request
 - **Framework compression middleware overhead** - how cheaply the framework wires compression into the response pipeline
