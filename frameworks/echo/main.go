@@ -103,12 +103,19 @@ func jsonItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, ProcessResponse{Items: items, Count: count})
 }
 
-func upload(c echo.Context) error {
-	size, err := io.Copy(io.Discard, c.Request().Body)
-	if err != nil {
-		return c.String(http.StatusBadRequest, "0")
+func echoBody(c echo.Context) error {
+	r := c.Request()
+	// Content-Length known: stream it back without buffering the whole body.
+	if r.ContentLength >= 0 {
+		c.Response().Header().Set(echo.HeaderContentLength, strconv.FormatInt(r.ContentLength, 10))
+		return c.Stream(http.StatusOK, "application/octet-stream", r.Body)
 	}
-	return c.String(http.StatusOK, strconv.FormatInt(size, 10))
+	// Chunked: read it before the response can be framed.
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return c.NoContent(http.StatusBadRequest)
+	}
+	return c.Blob(http.StatusOK, "application/octet-stream", body)
 }
 
 var pgPool *pgxpool.Pool
@@ -384,7 +391,7 @@ func main() {
 	e.GET("/baseline11", baseline11)
 	e.POST("/baseline11", baseline11)
 	e.GET("/json/:count", jsonItems)
-	e.POST("/upload", upload)
+	e.POST("/echo", echoBody)
 	e.GET("/baseline2", baseline11)
 	e.GET("/static/:filename", staticFile)
 	e.GET("/async-db", asyncDb)

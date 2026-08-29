@@ -98,8 +98,11 @@ func jsonItems(c fiber.Ctx) error {
 	return c.JSON(ProcessResponse{Items: items, Count: count})
 }
 
-func upload(c fiber.Ctx) error {
-	return c.SendString(strconv.Itoa(len(c.Body())))
+func echoBody(c fiber.Ctx) error {
+	// fasthttp has already read the body, chunked or not, so the echo is the
+	// buffer it holds -- Send sets Content-Length from it.
+	c.Set(fiber.HeaderContentType, "application/octet-stream")
+	return c.Send(c.Body())
 }
 
 var pgPool *pgxpool.Pool
@@ -376,7 +379,7 @@ func main() {
 	app.Get("/baseline11", baseline11)
 	app.Post("/baseline11", baseline11)
 	app.Get("/json/:count", jsonItems)
-	app.Post("/upload", upload)
+	app.Post("/echo", echoBody)
 	app.Get("/baseline2", baseline11)
 	app.Get("/static/:filename", staticFile)
 	app.Get("/async-db", asyncDb)

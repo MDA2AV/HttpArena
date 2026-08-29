@@ -110,15 +110,23 @@ func jsonItems(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ProcessResponse{Items: items, Count: count})
 }
 
-func upload(w http.ResponseWriter, r *http.Request) {
-	size, err := io.Copy(io.Discard, r.Body)
-	w.Header().Set("Content-Type", "text/plain")
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("0"))
+func echoBody(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/octet-stream")
+	// Content-Length known: stream it straight back, no intermediate buffer.
+	if r.ContentLength >= 0 {
+		w.Header().Set("Content-Length", strconv.FormatInt(r.ContentLength, 10))
+		io.Copy(w, r.Body)
 		return
 	}
-	w.Write([]byte(strconv.FormatInt(size, 10)))
+	// Chunked: the length is not known up front, so it has to be read before
+	// the response can be framed.
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+	w.Write(body)
 }
 
 var pgPool *pgxpool.Pool
@@ -441,7 +449,7 @@ func main() {
 	r.Get("/baseline11", baseline11)
 	r.Post("/baseline11", baseline11)
 	r.Get("/json/{count}", jsonItems)
-	r.Post("/upload", upload)
+	r.Post("/echo", echoBody)
 	r.Get("/baseline2", baseline11)
 	r.Get("/static/{filename}", staticFile)
 	r.Get("/async-db", asyncDb)
