@@ -56,6 +56,27 @@ internal sealed unsafe partial class HttpSession
     public int  PendingStaticFd;
     public long PendingStaticLen;
     public bool PendingStaticClose;
+
+    // The echoed body, left where it was received instead of copied into Out. The handler writes
+    // it into the write slab directly behind the header, so /echo copies the body ONCE (source ->
+    // slab) instead of twice (source -> Out -> slab). Same trick as PendingStaticFd, with a memory
+    // span in place of a file descriptor.
+    public byte[]? PendingEchoBuf;
+    public int  PendingEchoOff;
+    public int  PendingEchoLen;
+    public void ClearPendingEcho()
+    {
+        // Recycle the retired carry buffer so a steady echo load stops allocating.
+        if (PendingEchoBuf != null && !ReferenceEquals(PendingEchoBuf, _chunkBuf)) _spare = PendingEchoBuf;
+        PendingEchoBuf = null; PendingEchoOff = 0; PendingEchoLen = 0;
+    }
+
+    // Where Pump is reading from, so TryOne can turn a body span back into an absolute _carry
+    // offset. Only meaningful for the duration of one TryOne call.
+    private int _carryPos;
+    private byte[]? _spare;
+    private byte[]? _echoSrc;
+    private int _echoSrcOff;
     private long _dbMin = 10, _dbMax = 50;
     private int _dbLimit = 50;
     private int _dbClOff;
@@ -103,6 +124,7 @@ internal sealed unsafe partial class HttpSession
     {
         int pos = 0;
         while (!PendingDb && !PendingDelay
+               && SetPos(pos)
                && TryOne(_carry.AsSpan(pos, _carryLen - pos), out int consumed, out bool close))
         {
             pos += consumed;
@@ -114,7 +136,16 @@ internal sealed unsafe partial class HttpSession
         if (pos > 0)
         {
             int rem = _carryLen - pos;
-            if (rem > 0)
+            if (PendingEchoLen > 0 && ReferenceEquals(PendingEchoBuf, _carry))
+            {
+                // The handler still has to write this body out of _carry, so _carry cannot be
+                // compacted or appended to underneath it. Retire the buffer to the pending echo
+                // and take a fresh one. Only committed when the echo ended the buffer (rem == 0),
+                // so there is nothing left here to carry over.
+                _carry = _spare ?? new byte[2048];
+                _spare = null;
+            }
+            else if (rem > 0)
             {
                 Array.Copy(_carry, pos, _carry, 0, rem);
             }
@@ -210,7 +241,20 @@ internal sealed unsafe partial class HttpSession
             total = bodyStart;
         }
 
+        // A body may be echoed straight out of where it landed only if nothing else in this
+        // batch can disturb it first: it has to be the last complete request in the buffer (so no
+        // pipelined remainder gets compacted over it, and no later slice appends onto it), and no
+        // static file may already be queued to write at the same spot behind Out. Small bodies are
+        // not worth the bookkeeping - a short memcpy is cheaper.
+        _echoSrc = null;
+        _echoSrcOff = 0;
+        if (total == buf.Length && PendingStaticFd == 0 && bodyLen >= 4096)
+        {
+            if (chunked) { _echoSrc = _chunkBuf; _echoSrcOff = 0; }
+            else if (contentLength > 0) { _echoSrc = _carry; _echoSrcOff = _carryPos + bodyStart; }
+        }
         Respond(method, target, body, bodyLen, bodyInt, close, acceptBr, acceptGzip);
+        _echoSrc = null;
         consumed = total;
         return true;
     }
@@ -337,8 +381,20 @@ internal sealed unsafe partial class HttpSession
         Utf8Formatter.TryFormat(body.Length, num, out int n);
         AppendOut(num[..n]);
         AppendOut(close ? "\r\nConnection: close\r\n\r\n"u8 : "\r\n\r\n"u8);
+        if (_echoSrc != null && PendingEchoLen == 0
+            && _echoSrcOff + body.Length <= _echoSrc.Length
+            && _echoSrc.AsSpan(_echoSrcOff, body.Length) == body)
+        {
+            PendingEchoBuf = _echoSrc;
+            PendingEchoOff = _echoSrcOff;
+            PendingEchoLen = body.Length;
+            return;
+        }
         AppendOut(body);
     }
+
+    /// <summary>Records where Pump is reading from; always true so it can sit in the while test.</summary>
+    private bool SetPos(int pos) { _carryPos = pos; return true; }
 
     private void WriteResp(ReadOnlySpan<byte> body, bool close)
     {
