@@ -1,0 +1,29 @@
+{
+  "framework": "jooby",
+  "results": {
+    "latency-10k-1024": {
+      "framework": "jooby",
+      "language": "Java",
+      "rps": 9805,
+      "avg_latency": "127.1us",
+      "p99_latency": "165.0us",
+      "cpu": "64.4%",
+      "memory": "8.6GiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "20s",
+      "pipeline": 1,
+      "bandwidth": "1.47MB/s",
+      "reconnects": 24,
+      "status_2xx": 196134,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0,
+      "cpu_usec": 14082374,
+      "cpu_per_req_us": 71.7998,
+      "target_rate": 10000,
+      "rate_ratio": 0.9805,
+      "p99_9_latency": "20456.0us"
+    }
+  }
+}
