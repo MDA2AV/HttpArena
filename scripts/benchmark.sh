@@ -419,7 +419,7 @@ run_one() {
     # report half the I/O it actually moves.
     if [ "$endpoint" = "echo-100k" ] && [ "${best_rps:-0}" -gt 0 ] 2>/dev/null; then
         BEST_M[input_bw]=$(python3 -c "
-bps = $best_rps * 102400
+bps = $best_rps * 10240
 if bps >= 1073741824: print(f'{bps/1073741824:.2f}GB/s')
 elif bps >= 1048576: print(f'{bps/1048576:.2f}MB/s')
 elif bps >= 1024: print(f'{bps/1024:.2f}KB/s')
