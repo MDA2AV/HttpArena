@@ -175,26 +175,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "fastendpoints",
-      "language": "C#",
-      "rps": 544549,
-      "avg_latency": "5.67ms",
-      "p99_latency": "22.90ms",
-      "cpu": "5804.3%",
-      "memory": "511MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.87GB/s",
-      "input_bw": "25.97MB/s",
-      "reconnects": 107331,
-      "status_2xx": 2722748,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "fastendpoints",
       "language": "C#",

@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "litestar",
-      "language": "Python",
-      "rps": 268753,
-      "avg_latency": "13.80ms",
-      "p99_latency": "201.00ms",
-      "cpu": "6502.8%",
-      "memory": "4.7GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "933.91MB/s",
-      "input_bw": "12.82MB/s",
-      "reconnects": 53009,
-      "status_2xx": 1343768,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "litestar",
       "language": "Python",

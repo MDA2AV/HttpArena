@@ -327,26 +327,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "zix",
-      "language": "Zig",
-      "rps": 2325200,
-      "avg_latency": "917us",
-      "p99_latency": "3.38ms",
-      "cpu": "6534.2%",
-      "memory": "287MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "7.78GB/s",
-      "input_bw": "110.87MB/s",
-      "reconnects": 464196,
-      "status_2xx": 11626000,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "zix",
       "language": "Zig",

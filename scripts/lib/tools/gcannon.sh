@@ -71,11 +71,6 @@ gcannon_build_args() {
             args=("http://localhost:$PORT/fortunes"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
             ;;
-        json)
-            args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"
-                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 25)
-            ;;
         json-compressed)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/json-gzip-25.raw,$REQUESTS_DIR/json-gzip-40.raw,$REQUESTS_DIR/json-gzip-50.raw"

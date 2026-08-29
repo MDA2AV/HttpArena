@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "node-h3",
-      "language": "JS",
-      "rps": 606800,
-      "avg_latency": "6.40ms",
-      "p99_latency": "172.50ms",
-      "cpu": "6382.9%",
-      "memory": "5.6GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.09GB/s",
-      "input_bw": "28.93MB/s",
-      "reconnects": 121077,
-      "status_2xx": 3034002,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "node-h3",
       "language": "JS",

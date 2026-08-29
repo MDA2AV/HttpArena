@@ -328,26 +328,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "aspnet-minimal",
-      "language": "C#",
-      "rps": 568890,
-      "avg_latency": "4.65ms",
-      "p99_latency": "22.00ms",
-      "cpu": "5805.2%",
-      "memory": "561MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.96GB/s",
-      "input_bw": "27.13MB/s",
-      "reconnects": 112049,
-      "status_2xx": 2844454,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "aspnet-minimal",
       "language": "C#",

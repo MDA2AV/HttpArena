@@ -88,7 +88,7 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 | `static`, `json-tls` | wrk |
 | `h2`, `static-h2`, `h2c`, `json-h2c`, `gateway-64`, `grpc`, `grpc-tls`, `production-stack` | h2load |
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
-| everything else (`""`, `pipeline`, `upload`, `async-db`, `async`, `fortunes`, `json`, `json-compressed`, `ws-echo`) | gcannon |
+| everything else (`""`, `pipeline`, `upload`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`) | gcannon |
 
 ## Small-machine overrides
 

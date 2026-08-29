@@ -196,9 +196,6 @@ framework_wait_ready() {
         static-tls)
             probe_url="https://localhost:$H1TLS_PORT/static/reset.css"
             ;;
-        json)
-            probe_url="http://localhost:$PORT/json/1"
-            ;;
         async)
             # Shortest delay the profile ever asks for, so readiness costs 10ms
             # rather than a tenth of the 2s curl budget.

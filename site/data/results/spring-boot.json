@@ -101,26 +101,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "spring-boot",
-      "language": "Java",
-      "rps": 244820,
-      "avg_latency": "7.76ms",
-      "p99_latency": "15.40ms",
-      "cpu": "2687.5%",
-      "memory": "2.0GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "852.00MB/s",
-      "input_bw": "11.67MB/s",
-      "reconnects": 47836,
-      "status_2xx": 1224103,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "spring-boot",
       "language": "Java",

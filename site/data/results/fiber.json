@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "fiber",
-      "language": "Go",
-      "rps": 307066,
-      "avg_latency": "12.83ms",
-      "p99_latency": "322.40ms",
-      "cpu": "4161.1%",
-      "memory": "266MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.05GB/s",
-      "input_bw": "14.64MB/s",
-      "reconnects": 61277,
-      "status_2xx": 1535334,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "fiber",
       "language": "Go",

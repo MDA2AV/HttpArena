@@ -213,26 +213,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "phoenix-bandit",
-      "language": "Elixir",
-      "rps": 196508,
-      "avg_latency": "13.97ms",
-      "p99_latency": "153.70ms",
-      "cpu": "6281.5%",
-      "memory": "1020MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "701.48MB/s",
-      "input_bw": "9.37MB/s",
-      "reconnects": 38471,
-      "status_2xx": 982543,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "phoenix-bandit",
       "language": "Elixir",

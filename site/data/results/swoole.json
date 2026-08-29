@@ -216,26 +216,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "swoole",
-      "language": "PHP",
-      "rps": 975727,
-      "avg_latency": "3.86ms",
-      "p99_latency": "22.30ms",
-      "cpu": "6508.3%",
-      "memory": "302MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "3.35GB/s",
-      "input_bw": "46.53MB/s",
-      "reconnects": 193628,
-      "status_2xx": 4878636,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "swoole",
       "language": "PHP",

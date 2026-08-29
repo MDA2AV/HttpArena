@@ -9,8 +9,7 @@
   "tests": [
     "baseline", "latency-1m",
     "pipelined",
-    "limited-conn",
-    "json"
+    "limited-conn"
   ],
   "maintainers": []
 }

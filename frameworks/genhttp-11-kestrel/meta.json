@@ -19,7 +19,6 @@
     "baseline-h3",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
     "upload",

@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "pedestal",
-      "language": "Clojure",
-      "rps": 80918,
-      "avg_latency": "24.31ms",
-      "p99_latency": "80.30ms",
-      "cpu": "6249.3%",
-      "memory": "6.5GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "283.58MB/s",
-      "input_bw": "3.86MB/s",
-      "reconnects": 15035,
-      "status_2xx": 404594,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "pedestal",
       "language": "Clojure",

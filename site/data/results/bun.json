@@ -80,26 +80,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "bun",
-      "language": "TS",
-      "rps": 1122348,
-      "avg_latency": "3.29ms",
-      "p99_latency": "10.40ms",
-      "cpu": "6333.5%",
-      "memory": "1.1GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "3.81GB/s",
-      "input_bw": "53.52MB/s",
-      "reconnects": 223004,
-      "status_2xx": 5611743,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "bun",
       "language": "TS",

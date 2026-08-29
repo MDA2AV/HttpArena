@@ -138,26 +138,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "ioxide",
-      "language": "C#",
-      "rps": 1725815,
-      "avg_latency": "1.71ms",
-      "p99_latency": "13.70ms",
-      "cpu": "5923.9%",
-      "memory": "864MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "5.78GB/s",
-      "input_bw": "82.29MB/s",
-      "reconnects": 344813,
-      "status_2xx": 8629078,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "ioxide",
       "language": "C#",

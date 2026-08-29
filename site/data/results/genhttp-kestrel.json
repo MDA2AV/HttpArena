@@ -116,26 +116,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "genhttp-kestrel",
-      "language": "C#",
-      "rps": 589491,
-      "avg_latency": "5.03ms",
-      "p99_latency": "23.80ms",
-      "cpu": "5855.0%",
-      "memory": "513MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.01GB/s",
-      "input_bw": "28.11MB/s",
-      "reconnects": 116618,
-      "status_2xx": 2947457,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "genhttp-kestrel",
       "language": "C#",

@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "hono-node",
-      "language": "TS",
-      "rps": 387272,
-      "avg_latency": "2.58ms",
-      "p99_latency": "32.40ms",
-      "cpu": "6093.3%",
-      "memory": "5.1GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.34GB/s",
-      "input_bw": "18.47MB/s",
-      "reconnects": 77338,
-      "status_2xx": 1936360,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "hono-node",
       "language": "TS",

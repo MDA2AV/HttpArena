@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "servicestack",
-      "language": "C#",
-      "rps": 22976,
-      "avg_latency": "139.68ms",
-      "p99_latency": "462.80ms",
-      "cpu": "650.3%",
-      "memory": "434MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "42.48MB/s",
-      "input_bw": "1.10MB/s",
-      "reconnects": 2717,
-      "status_2xx": 114884,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "servicestack",
       "language": "C#",

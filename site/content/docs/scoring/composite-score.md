@@ -61,7 +61,6 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Baseline | Yes | Mixed GET/POST with query parsing |
 | Pipelined | No (*) | 16 requests batched per connection. Reference-only - a raw I/O and middleware-efficiency indicator; HTTP/1.1 pipelining is disabled in modern browsers and proxies, so it no longer counts toward the composite ranking |
 | Short-lived | Yes | Connections closed after 10 requests |
-| JSON | Yes | Dataset processing and serialization |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
 | Upload | No (*) | 20 MB body ingestion, return byte count. Reference-only - the validation cannot yet tell an honest handler from one that echoes `Content-Length`, so the profile is published but does not rank |
@@ -173,8 +172,8 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload).
-- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the ten profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
+- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (compression negotiation, upload).
+- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
 
 Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there.
 

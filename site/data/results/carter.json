@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "carter",
-      "language": "C#",
-      "rps": 663190,
-      "avg_latency": "3.80ms",
-      "p99_latency": "18.00ms",
-      "cpu": "5968.2%",
-      "memory": "423MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.26GB/s",
-      "input_bw": "31.62MB/s",
-      "reconnects": 131478,
-      "status_2xx": 3315953,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "carter",
       "language": "C#",

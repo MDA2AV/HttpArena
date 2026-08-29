@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "roda",
-      "language": "Ruby",
-      "rps": 250452,
-      "avg_latency": "14.64ms",
-      "p99_latency": "45.00ms",
-      "cpu": "6215.9%",
-      "memory": "5.1GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "863.16MB/s",
-      "input_bw": "11.94MB/s",
-      "reconnects": 48137,
-      "status_2xx": 1252260,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "roda",
       "language": "Ruby",

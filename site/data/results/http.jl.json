@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "http.jl",
-      "language": "Julia",
-      "rps": 63158,
-      "avg_latency": "64.64ms",
-      "p99_latency": "154.70ms",
-      "cpu": "2113.3%",
-      "memory": "740MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "219.39MB/s",
-      "input_bw": "3.01MB/s",
-      "reconnects": 10747,
-      "status_2xx": 315793,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "http.jl",
       "language": "Julia",

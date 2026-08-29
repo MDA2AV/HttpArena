@@ -289,26 +289,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "ktor",
-      "language": "Kotlin",
-      "rps": 395250,
-      "avg_latency": "10.11ms",
-      "p99_latency": "34.60ms",
-      "cpu": "4723.0%",
-      "memory": "9.9GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.32GB/s",
-      "input_bw": "18.85MB/s",
-      "reconnects": 77272,
-      "status_2xx": 1976253,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "ktor",
       "language": "Kotlin",

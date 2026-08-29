@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "ntex",
-      "language": "Rust",
-      "rps": 1233661,
-      "avg_latency": "2.91ms",
-      "p99_latency": "23.70ms",
-      "cpu": "6335.7%",
-      "memory": "193MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "4.17GB/s",
-      "input_bw": "58.83MB/s",
-      "reconnects": 245018,
-      "status_2xx": 6168309,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "ntex",
       "language": "Rust",

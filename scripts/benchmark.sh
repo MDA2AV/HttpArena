@@ -143,7 +143,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # not from frameworks/<fw>/. Covers gateway-64, gateway-h3, production-stack,
 # and any combination thereof.
 _has_isolated_test=false
-for t in baseline pipelined limited-conn json json-comp json-tls upload \
+for t in baseline pipelined limited-conn json-comp json-tls upload \
          static-tls async-db async latency-1m \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \

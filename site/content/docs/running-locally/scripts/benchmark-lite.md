@@ -74,7 +74,6 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 | `baseline` | 1 | ∞ | 512 | gcannon | `/baseline11` |
 | `pipelined` | 16 | ∞ | 512 | gcannon | `/pipeline` |
 | `limited-conn` | 1 | 10 | 512 | gcannon | `/baseline11` |
-| `json` | 1 | ∞ | 512 | gcannon | `/json/{count}` |
 | `json-comp` | 1 | ∞ | 512 | gcannon | `/json/{count}` + compression |
 | `upload` | 1 | ∞ | 128 | gcannon | `/upload` |
 | `static` | 1 | 10 | 512 | wrk | `/static/*` |

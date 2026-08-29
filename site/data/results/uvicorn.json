@@ -58,25 +58,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "uvicorn",
-      "language": "Python",
-      "rps": 465616,
-      "avg_latency": "7.99ms",
-      "p99_latency": "115.70ms",
-      "cpu": "6317.1%",
-      "memory": "3.8GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.61GB/s",
-      "reconnects": 92215,
-      "status_2xx": 2328081,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "uvicorn",
       "language": "Python",

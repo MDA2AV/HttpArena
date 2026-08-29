@@ -1499,8 +1499,14 @@ if has_test "async"; then
 fi
 
 # ───── JSON Processing (GET /json) ─────
+#
+# The `json` profile was removed, but this check was not: /json/{count} is still
+# the endpoint json-comp compresses and json-h2c serves, and this is the strict
+# form of the body check - every field diffed against data/dataset.json rather
+# than only against the response's own arithmetic. json-tls runs the same check
+# against :8081 in its own block.
 
-if has_test "json"; then
+if has_test "json-comp" || has_test "json-h2c"; then
     JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
     echo "[test] json endpoint"
     json_fail=false
@@ -1658,16 +1664,17 @@ if has_test "json-tls"; then
     # Response body correctness across 3 (count, m) pairs (different from json-comp so a caller can't share state)
     jt_fail=false
     jt_params=""
-    for _ in 1 2 3; do
-        jt_params="$jt_params $(rand_between 5 50):$(rand_between 2 89)"
+    for _ in 1 2 3 4; do
+        jt_params="$jt_params $(rand_between 1 50):$(rand_between 2 89)"
     done
     for jtp in $jt_params; do
         jtcount="${jtp%%:*}"
         jtm="${jtp##*:}"
         jt_response=$(curl -sk --max-time 30 "https://localhost:$H1TLS_PORT/json/$jtcount?m=$jtm" || true)
-        jt_result=$(echo "$jt_response" | python3 -c "
-import sys, json
-m = $jtm
+        jt_result=$(echo "$jt_response" | JM="$jtm" JCOUNT="$jtcount" DATASET="$DATA_DIR/dataset.json" python3 -c "
+import sys, json, os
+m = int(os.environ['JM']); want = int(os.environ['JCOUNT'])
+source = json.load(open(os.environ['DATASET']))
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
@@ -1677,14 +1684,20 @@ def valid_item(it):
             and 'quantity' in it and 'total' in it
             and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
             and isinstance(r, dict) and 'score' in r and 'count' in r)
-valid = all(valid_item(it) for it in items) if items else False
-correct_totals = True
-for item in items:
-    expected = item.get('price', 0) * item.get('quantity', 0) * m
-    if item.get('total', 0) != expected:
-        correct_totals = False
-        break
-print(f'{count} {valid} {correct_totals}')
+valid = bool(items) and all(valid_item(it) for it in items)
+# Every field checked against data/dataset.json, not just the response's own
+# arithmetic: a made-up item with a self-consistent total used to pass this.
+faithful = len(items) == want
+if faithful:
+    for got, src in zip(items, source[:want]):
+        if (got.get('id') != src['id'] or got.get('name') != src['name']
+                or got.get('category') != src['category'] or got.get('price') != src['price']
+                or got.get('quantity') != src['quantity'] or got.get('active') != src['active']
+                or got.get('tags') != src['tags']
+                or got.get('total') != src['price'] * src['quantity'] * m):
+            faithful = False
+            break
+print(f'{count} {valid} {faithful}')
 " 2>/dev/null || echo "0 False False")
         jt_count=$(echo "$jt_result" | cut -d' ' -f1)
         jt_valid=$(echo "$jt_result" | cut -d' ' -f2)
@@ -1693,12 +1706,12 @@ print(f'{count} {valid} {correct_totals}')
         if [ "$jt_count" = "$jtcount" ] && [ "$jt_valid" = "True" ] && [ "$jt_correct" = "True" ]; then
             :
         else
-            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, schema=$jt_valid, correct=$jt_correct" "$JSONTLS_DOCS"
+            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, schema=$jt_valid, matches dataset=$jt_correct" "$JSONTLS_DOCS"
             jt_fail=true
         fi
     done
     if [ "$jt_fail" = "false" ]; then
-        echo "  PASS [json-tls response] (3 (count, m) pairs over TLS, full item schema)"
+        echo "  PASS [json-tls response] (4 random counts x multipliers over TLS, items matched against data/dataset.json)"
         PASS=$((PASS + 1))
     fi
 

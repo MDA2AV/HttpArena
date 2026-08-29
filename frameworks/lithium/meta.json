@@ -16,7 +16,6 @@
   "tests": [
     "baseline", "latency-1m",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
     "upload"

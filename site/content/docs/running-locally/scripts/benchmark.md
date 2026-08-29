@@ -125,7 +125,6 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `baseline` | 1 | ∞ | `0-31,64-95` | 512, 4096 | gcannon | `/baseline11` |
 | `pipelined` | 16 | ∞ | `0-31,64-95` | 512, 4096 | gcannon | `/pipeline` |
 | `limited-conn` | 1 | 10 | `0-31,64-95` | 512, 4096 | gcannon | `/baseline11` (reconnect every 10 req) |
-| `json` | 1 | ∞ | `0-31,64-95` | 4096 | gcannon | `/json/{1..50}` - 7 body sizes |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
 | `upload` | 1 | ∞ | `0-31,64-95` | 32, 256 | gcannon | `/upload` - 500K / 2M / 10M / 20M bodies, `-r 5` |

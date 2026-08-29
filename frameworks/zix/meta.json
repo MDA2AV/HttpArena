@@ -11,7 +11,6 @@
     "pipelined",
     "limited-conn",
     "static-tls",
-    "json",
     "json-comp",
     "json-tls",
     "async-db"

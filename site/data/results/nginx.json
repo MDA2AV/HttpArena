@@ -155,26 +155,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "nginx",
-      "language": "C",
-      "rps": 1734072,
-      "avg_latency": "1.87ms",
-      "p99_latency": "9.30ms",
-      "cpu": "6693.4%",
-      "memory": "3.5GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "5.93GB/s",
-      "input_bw": "82.69MB/s",
-      "reconnects": 345277,
-      "status_2xx": 8670361,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-h2c-1024": {
       "framework": "nginx",
       "language": "C",

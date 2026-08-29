@@ -59,26 +59,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "flask",
-      "language": "Python",
-      "rps": 82137,
-      "avg_latency": "26.28ms",
-      "p99_latency": "52.90ms",
-      "cpu": "6077.8%",
-      "memory": "3.2GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "290.42MB/s",
-      "input_bw": "3.92MB/s",
-      "reconnects": 410689,
-      "status_2xx": 410688,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "flask",
       "language": "Python",

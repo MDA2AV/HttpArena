@@ -81,26 +81,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "fastapi",
-      "language": "Python",
-      "rps": 155615,
-      "avg_latency": "23.82ms",
-      "p99_latency": "348.10ms",
-      "cpu": "6287.8%",
-      "memory": "5.2GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "549.46MB/s",
-      "input_bw": "7.42MB/s",
-      "reconnects": 30400,
-      "status_2xx": 778077,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "fastapi",
       "language": "Python",

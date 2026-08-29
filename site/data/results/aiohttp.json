@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "aiohttp",
-      "language": "Python",
-      "rps": 286695,
-      "avg_latency": "13.78ms",
-      "p99_latency": "317.70ms",
-      "cpu": "6288.0%",
-      "memory": "561MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.11GB/s",
-      "input_bw": "13.67MB/s",
-      "reconnects": 56794,
-      "status_2xx": 1433475,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "aiohttp",
       "language": "Python",

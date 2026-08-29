@@ -156,26 +156,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "mq-bridge-py",
-      "language": "Python",
-      "rps": 331599,
-      "avg_latency": "12.06ms",
-      "p99_latency": "49.50ms",
-      "cpu": "6500.5%",
-      "memory": "3.6GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.14GB/s",
-      "input_bw": "15.81MB/s",
-      "reconnects": 64544,
-      "status_2xx": 1657998,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "mq-bridge-py",
       "language": "Python",

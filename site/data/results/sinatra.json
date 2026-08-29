@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "sinatra",
-      "language": "Ruby",
-      "rps": 211817,
-      "avg_latency": "17.00ms",
-      "p99_latency": "48.70ms",
-      "cpu": "6409.1%",
-      "memory": "4.7GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "730.56MB/s",
-      "input_bw": "10.10MB/s",
-      "reconnects": 40557,
-      "status_2xx": 1059086,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "sinatra",
       "language": "Ruby",

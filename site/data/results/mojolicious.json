@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "mojolicious",
-      "language": "Perl",
-      "rps": 31276,
-      "avg_latency": "128.41ms",
-      "p99_latency": "296.30ms",
-      "cpu": "6350.8%",
-      "memory": "594MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "110.06MB/s",
-      "input_bw": "1.49MB/s",
-      "reconnects": 4232,
-      "status_2xx": 156383,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "mojolicious",
       "language": "Perl",

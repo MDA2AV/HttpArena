@@ -98,26 +98,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "lute",
-      "language": "Luau",
-      "rps": 65763,
-      "avg_latency": "61.52ms",
-      "p99_latency": "176.00ms",
-      "cpu": "5626.0%",
-      "memory": "139MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "275.52MB/s",
-      "input_bw": "3.14MB/s",
-      "reconnects": 11438,
-      "status_2xx": 328817,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-tls-4096": {
       "framework": "lute",
       "language": "Luau",

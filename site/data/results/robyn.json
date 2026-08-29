@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "robyn",
-      "language": "Python",
-      "rps": 139934,
-      "avg_latency": "27.83ms",
-      "p99_latency": "254.50ms",
-      "cpu": "2720.2%",
-      "memory": "1.1GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "491.24MB/s",
-      "input_bw": "6.67MB/s",
-      "reconnects": 26132,
-      "status_2xx": 699671,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "latency-1m-1024": {
       "framework": "robyn",
       "language": "Python",

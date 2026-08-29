@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "userver",
-      "language": "C++",
-      "rps": 659597,
-      "avg_latency": "5.84ms",
-      "p99_latency": "12.40ms",
-      "cpu": "6387.2%",
-      "memory": "559MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.28GB/s",
-      "input_bw": "31.45MB/s",
-      "reconnects": 130091,
-      "status_2xx": 3297988,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "userver",
       "language": "C++",

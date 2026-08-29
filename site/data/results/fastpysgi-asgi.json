@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "fastpysgi-asgi",
-      "language": "Python",
-      "rps": 631455,
-      "avg_latency": "6.17ms",
-      "p99_latency": "14.90ms",
-      "cpu": "6794.1%",
-      "memory": "2.5GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.19GB/s",
-      "input_bw": "30.11MB/s",
-      "reconnects": 124279,
-      "status_2xx": 3157278,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "fastpysgi-asgi",
       "language": "Python",

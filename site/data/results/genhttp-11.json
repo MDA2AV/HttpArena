@@ -213,26 +213,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "genhttp-11",
-      "language": "C#",
-      "rps": 837480,
-      "avg_latency": "4.49ms",
-      "p99_latency": "35.30ms",
-      "cpu": "6114.2%",
-      "memory": "648MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.87GB/s",
-      "input_bw": "39.93MB/s",
-      "reconnects": 166356,
-      "status_2xx": 4187403,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "genhttp-11",
       "language": "C#",

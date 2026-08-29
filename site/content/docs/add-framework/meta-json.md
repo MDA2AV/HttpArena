@@ -45,7 +45,6 @@ Create a `meta.json` file in your framework directory:
 | `baseline` | HTTP/1.1 | `/baseline11` |
 | `pipelined` | HTTP/1.1 | `/pipeline` |
 | `limited-conn` | HTTP/1.1 | `/baseline11` |
-| `json` | HTTP/1.1 | `/json/{count}?m=N` |
 | `json-comp` | HTTP/1.1 | `/json/{count}?m=N` (must honor `Accept-Encoding: gzip, br`) |
 | `json-tls` | HTTP/1.1 + TLS | `/json/{count}?m=N` (port 8081, ALPN `http/1.1`) |
 | `upload` | HTTP/1.1 | `/upload` |

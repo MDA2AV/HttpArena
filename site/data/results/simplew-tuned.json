@@ -175,26 +175,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "simplew-tuned",
-      "language": "C#",
-      "rps": 1011983,
-      "avg_latency": "3.65ms",
-      "p99_latency": "15.90ms",
-      "cpu": "6203.8%",
-      "memory": "1.7GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "3.46GB/s",
-      "input_bw": "48.26MB/s",
-      "reconnects": 201236,
-      "status_2xx": 5059917,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "simplew-tuned",
       "language": "C#",

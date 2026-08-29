@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "salvo",
-      "language": "Rust",
-      "rps": 268524,
-      "avg_latency": "3.30ms",
-      "p99_latency": "12.60ms",
-      "cpu": "2668.6%",
-      "memory": "114MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "933.34MB/s",
-      "input_bw": "12.80MB/s",
-      "reconnects": 52960,
-      "status_2xx": 1342621,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "salvo",
       "language": "Rust",

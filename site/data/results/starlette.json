@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "starlette",
-      "language": "Python",
-      "rps": 225181,
-      "avg_latency": "16.59ms",
-      "p99_latency": "241.00ms",
-      "cpu": "6382.3%",
-      "memory": "3.8GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "786.47MB/s",
-      "input_bw": "10.74MB/s",
-      "reconnects": 44308,
-      "status_2xx": 1125909,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "starlette",
       "language": "Python",

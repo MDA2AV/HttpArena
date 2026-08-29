@@ -121,26 +121,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "php-fpm",
-      "language": "PHP",
-      "rps": 221243,
-      "avg_latency": "18.16ms",
-      "p99_latency": "22.90ms",
-      "cpu": "6412.7%",
-      "memory": "3.9GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "782.99MB/s",
-      "input_bw": "10.55MB/s",
-      "reconnects": 41655,
-      "status_2xx": 1106219,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "php-fpm",
       "language": "PHP",

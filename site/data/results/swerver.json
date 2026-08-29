@@ -194,26 +194,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "swerver",
-      "language": "Zig",
-      "rps": 1851933,
-      "avg_latency": "1.66ms",
-      "p99_latency": "4.84ms",
-      "cpu": "6635.8%",
-      "memory": "1.1GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "6.31GB/s",
-      "input_bw": "88.31MB/s",
-      "reconnects": 369430,
-      "status_2xx": 9259668,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "swerver",
       "language": "Zig",

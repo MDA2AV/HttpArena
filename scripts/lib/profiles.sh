@@ -52,7 +52,6 @@ declare -A PROFILES=(
     # workload — 500K req/s needs only ~15 in flight, so the rest of them are
     # there to be polled, which is exactly the cost being compared.
     [latency-1m]="1|0|0-31,64-95|1024|latency-1m"
-    [json]="1|0|0-31,64-95|4096|json"
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     [upload]="1|0|0-31,64-95|32,256|upload"
@@ -77,7 +76,7 @@ declare -A PROFILES=(
 
 PROFILE_ORDER=(
     baseline pipelined limited-conn
-    json json-comp json-tls
+    json-comp json-tls
     upload
     static-tls async-db
     fortunes

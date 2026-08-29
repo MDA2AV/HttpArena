@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "http4k",
-      "language": "Kotlin",
-      "rps": 182865,
-      "avg_latency": "19.29ms",
-      "p99_latency": "77.70ms",
-      "cpu": "2881.4%",
-      "memory": "8.6GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "637.72MB/s",
-      "input_bw": "8.72MB/s",
-      "reconnects": 34774,
-      "status_2xx": 914328,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "http4k",
       "language": "Kotlin",

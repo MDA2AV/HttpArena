@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "hanami",
-      "language": "Ruby",
-      "rps": 124566,
-      "avg_latency": "28.70ms",
-      "p99_latency": "71.20ms",
-      "cpu": "6344.3%",
-      "memory": "3.2GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "476.41MB/s",
-      "input_bw": "5.94MB/s",
-      "reconnects": 23042,
-      "status_2xx": 622834,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "hanami",
       "language": "Ruby",

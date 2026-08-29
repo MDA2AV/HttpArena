@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "bottle",
-      "language": "Python",
-      "rps": 105902,
-      "avg_latency": "20.51ms",
-      "p99_latency": "106.10ms",
-      "cpu": "3864.3%",
-      "memory": "2.5GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "421.58MB/s",
-      "input_bw": "5.05MB/s",
-      "reconnects": 529510,
-      "status_2xx": 529511,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-tls-4096": {
       "framework": "bottle",
       "language": "Python",

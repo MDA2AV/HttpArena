@@ -73,7 +73,6 @@ CATALOG = [
                                                     [1024],              [1024],          True,True,False),
     ]),
     ("Workload", [
-        ("json",      "JSON",            "Per-request JSON serialization.",          [4096],              [4096],          True,False,True),
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
         ("upload",    "Upload",          "Large request-body ingestion (reference).", [32,64,256,512],    [32,256],        False,False,False),
@@ -128,7 +127,6 @@ PROFILE_DOC = {
     "baseline":         "test-profiles/h1/isolated/baseline/implementation",
     "pipelined":        "test-profiles/h1/isolated/pipelined/implementation",
     "limited-conn":     "test-profiles/h1/isolated/short-lived/implementation",
-    "json":             "test-profiles/h1/isolated/json-processing/implementation",
     "json-comp":        "test-profiles/h1/isolated/json-compressed/implementation",
     "json-tls":         "test-profiles/h1/isolated/json-tls/implementation",
     "upload":           "test-profiles/h1/isolated/upload/implementation",

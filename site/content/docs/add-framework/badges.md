@@ -127,7 +127,7 @@ nothing, because a rank is only worth showing once there was somebody to beat.
 **The field is every row the board lists.** `#1 of 31` is the number you get
 counting rows in that league on the linked page. That includes entries sitting
 at 0 because nothing they ran counts for their tier. An engine whose only
-HTTP/1.1 results are `json` (not scored for engines) and `pipelined`
+HTTP/1.1 results are `json-tls` and `pipelined`
 (reference-only) still holds a place in the field. Those entries are counted,
 but get no badge of their own: there is no placing to claim.
 

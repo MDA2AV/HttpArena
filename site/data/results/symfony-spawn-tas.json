@@ -99,26 +99,6 @@
       "status_4xx": 0,
       "status_5xx": 1990
     },
-    "json-4096": {
-      "framework": "symfony-spawn-tas",
-      "language": "PHP",
-      "rps": 233995,
-      "avg_latency": "17.22ms",
-      "p99_latency": "67.00ms",
-      "cpu": "6590.6%",
-      "memory": "590MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "816.60MB/s",
-      "input_bw": "11.16MB/s",
-      "reconnects": 44931,
-      "status_2xx": 1169977,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "symfony-spawn-tas",
       "language": "PHP",

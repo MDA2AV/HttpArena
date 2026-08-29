@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "rocket",
-      "language": "Rust",
-      "rps": 553071,
-      "avg_latency": "2.76ms",
-      "p99_latency": "6.75ms",
-      "cpu": "5985.9%",
-      "memory": "152MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.93GB/s",
-      "input_bw": "26.37MB/s",
-      "reconnects": 109988,
-      "status_2xx": 2765358,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-tls-4096": {
       "framework": "rocket",
       "language": "Rust",

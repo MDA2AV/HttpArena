@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "koa",
-      "language": "JS",
-      "rps": 423265,
-      "avg_latency": "3.14ms",
-      "p99_latency": "31.50ms",
-      "cpu": "6008.8%",
-      "memory": "4.3GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.46GB/s",
-      "input_bw": "20.18MB/s",
-      "reconnects": 84142,
-      "status_2xx": 2116328,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "koa",
       "language": "JS",

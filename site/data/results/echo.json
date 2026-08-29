@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "echo",
-      "language": "Go",
-      "rps": 227296,
-      "avg_latency": "17.12ms",
-      "p99_latency": "419.10ms",
-      "cpu": "3344.7%",
-      "memory": "115MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "794.72MB/s",
-      "input_bw": "10.84MB/s",
-      "reconnects": 45373,
-      "status_2xx": 1136484,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "echo",
       "language": "Go",

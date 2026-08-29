@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "sisk",
-      "language": "C#",
-      "rps": 447725,
-      "avg_latency": "8.79ms",
-      "p99_latency": "210.50ms",
-      "cpu": "5516.2%",
-      "memory": "231MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.52GB/s",
-      "input_bw": "21.35MB/s",
-      "reconnects": 89516,
-      "status_2xx": 2238628,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "sisk",
       "language": "C#",

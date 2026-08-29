@@ -19,7 +19,6 @@
     "latency-1m",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
     "upload",

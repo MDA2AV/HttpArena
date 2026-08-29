@@ -98,26 +98,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "h2o-mruby",
-      "language": "Ruby",
-      "rps": 134014,
-      "avg_latency": "28.86ms",
-      "p99_latency": "585.30ms",
-      "cpu": "6207.4%",
-      "memory": "278MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "470.81MB/s",
-      "input_bw": "6.39MB/s",
-      "reconnects": 26317,
-      "status_2xx": 670074,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "h2o-mruby",
       "language": "Ruby",

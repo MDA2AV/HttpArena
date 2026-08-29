@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "rails",
-      "language": "Ruby",
-      "rps": 122740,
-      "avg_latency": "30.03ms",
-      "p99_latency": "79.60ms",
-      "cpu": "6379.1%",
-      "memory": "4.4GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "439.15MB/s",
-      "input_bw": "5.85MB/s",
-      "reconnects": 22634,
-      "status_2xx": 613701,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "rails",
       "language": "Ruby",

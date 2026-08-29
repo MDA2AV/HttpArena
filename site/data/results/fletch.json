@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "fletch",
-      "language": "Dart",
-      "rps": 529153,
-      "avg_latency": "7.66ms",
-      "p99_latency": "23.10ms",
-      "cpu": "6292.2%",
-      "memory": "3.4GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.82GB/s",
-      "input_bw": "25.23MB/s",
-      "reconnects": 104273,
-      "status_2xx": 2645766,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "fletch",
       "language": "Dart",

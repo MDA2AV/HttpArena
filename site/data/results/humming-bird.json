@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "humming-bird",
-      "language": "Swift",
-      "rps": 74874,
-      "avg_latency": "9.81ms",
-      "p99_latency": "98.20ms",
-      "cpu": "7174.8%",
-      "memory": "65.0MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "260.76MB/s",
-      "input_bw": "3.57MB/s",
-      "reconnects": 14762,
-      "status_2xx": 374371,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "humming-bird",
       "language": "Swift",

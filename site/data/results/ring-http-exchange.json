@@ -80,26 +80,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "ring-http-exchange",
-      "language": "Clojure",
-      "rps": 450353,
-      "avg_latency": "8.88ms",
-      "p99_latency": "46.90ms",
-      "cpu": "5374.0%",
-      "memory": "13.7GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.53GB/s",
-      "input_bw": "21.47MB/s",
-      "reconnects": 87898,
-      "status_2xx": 2251766,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "ring-http-exchange",
       "language": "Clojure",

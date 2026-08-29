@@ -213,26 +213,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "helidon-production",
-      "language": "Java",
-      "rps": 181392,
-      "avg_latency": "19.91ms",
-      "p99_latency": "42.10ms",
-      "cpu": "2341.7%",
-      "memory": "3.6GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "666.33MB/s",
-      "input_bw": "8.65MB/s",
-      "reconnects": 34602,
-      "status_2xx": 906961,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "helidon-production",
       "language": "Java",

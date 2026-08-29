@@ -348,26 +348,6 @@
       "tpl_async_db": 67926,
       "cpu_breakdown": "server: 766% 3.0GiB | proxy: 2519% 448MiB"
     },
-    "json-4096": {
-      "framework": "fulmine",
-      "language": "JS",
-      "rps": 1120941,
-      "avg_latency": "3.29ms",
-      "p99_latency": "11.10ms",
-      "cpu": "6459.4%",
-      "memory": "6.9GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "3.88GB/s",
-      "input_bw": "53.45MB/s",
-      "reconnects": 223365,
-      "status_2xx": 5604707,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "fulmine",
       "language": "JS",

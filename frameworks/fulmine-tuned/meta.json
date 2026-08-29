@@ -19,7 +19,6 @@
     "pipelined",
     "limited-conn",
     "async",
-    "json",
     "json-comp",
     "upload",
     "async-db",

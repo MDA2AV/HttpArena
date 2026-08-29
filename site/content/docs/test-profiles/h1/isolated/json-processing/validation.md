@@ -4,7 +4,7 @@ seo_title: "JSON Processing Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the JSON processing benchmark before a framework's results are accepted."
 ---
 
-The following checks are executed by `validate.sh` for every framework subscribed to the `json` test.
+The following checks are executed by `validate.sh` for every framework subscribed to `json-comp` or `json-h2c`. `json-tls` runs the same body check against port 8081 - see its own [validation page](../json-tls/validation/).
 
 ## Response structure and computed totals
 

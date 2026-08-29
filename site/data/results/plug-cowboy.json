@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "plug-cowboy",
-      "language": "Elixir",
-      "rps": 167877,
-      "avg_latency": "14.07ms",
-      "p99_latency": "113.00ms",
-      "cpu": "6348.4%",
-      "memory": "963MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "603.48MB/s",
-      "input_bw": "8.00MB/s",
-      "reconnects": 32481,
-      "status_2xx": 839386,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "plug-cowboy",
       "language": "Elixir",

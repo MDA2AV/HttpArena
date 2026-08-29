@@ -156,26 +156,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "blackbull",
-      "language": "Python",
-      "rps": 207791,
-      "avg_latency": "19.15ms",
-      "p99_latency": "47.70ms",
-      "cpu": "6236.2%",
-      "memory": "2.5GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "823.91MB/s",
-      "input_bw": "9.91MB/s",
-      "reconnects": 39755,
-      "status_2xx": 1038956,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "blackbull",
       "language": "Python",

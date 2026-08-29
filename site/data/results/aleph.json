@@ -175,26 +175,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "aleph",
-      "language": "Clojure",
-      "rps": 554906,
-      "avg_latency": "2.73ms",
-      "p99_latency": "44.00ms",
-      "cpu": "4958.3%",
-      "memory": "6.8GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "1.90GB/s",
-      "input_bw": "26.46MB/s",
-      "reconnects": 110462,
-      "status_2xx": 2774534,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "aleph",
       "language": "Clojure",

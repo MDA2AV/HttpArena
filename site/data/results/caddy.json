@@ -98,26 +98,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "caddy",
-      "language": "Go",
-      "rps": 157333,
-      "avg_latency": "24.70ms",
-      "p99_latency": "681.90ms",
-      "cpu": "3513.2%",
-      "memory": "281MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "545.45MB/s",
-      "input_bw": "7.50MB/s",
-      "reconnects": 31314,
-      "status_2xx": 786668,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-tls-4096": {
       "framework": "caddy",
       "language": "Go",

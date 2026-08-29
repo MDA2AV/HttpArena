@@ -41,26 +41,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "reitit",
-      "language": "Clojure",
-      "rps": 73650,
-      "avg_latency": "27.48ms",
-      "p99_latency": "166.80ms",
-      "cpu": "4196.2%",
-      "memory": "4.6GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "259.35MB/s",
-      "input_bw": "3.51MB/s",
-      "reconnects": 13581,
-      "status_2xx": 368253,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "reitit",
       "language": "Clojure",

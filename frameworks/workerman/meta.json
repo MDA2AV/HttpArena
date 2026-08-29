@@ -17,7 +17,6 @@
     "baseline", "latency-1m",
     "pipelined",
     "limited-conn",
-    "json",
     "json-tls",
     "async-db",
     "upload"

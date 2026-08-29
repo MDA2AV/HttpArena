@@ -61,26 +61,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "vertx",
-      "language": "Java",
-      "rps": 671315,
-      "avg_latency": "5.80ms",
-      "p99_latency": "29.90ms",
-      "cpu": "6382.1%",
-      "memory": "6.6GiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "2.25GB/s",
-      "input_bw": "32.01MB/s",
-      "reconnects": 132671,
-      "status_2xx": 3356579,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "vertx",
       "language": "Java",

@@ -308,26 +308,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "roadrunner",
-      "language": "Erlang",
-      "rps": 206364,
-      "avg_latency": "3.25ms",
-      "p99_latency": "95.70ms",
-      "cpu": "5528.3%",
-      "memory": "730MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "718.18MB/s",
-      "input_bw": "9.84MB/s",
-      "reconnects": 108349,
-      "status_2xx": 1031823,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-comp-16384": {
       "framework": "roadrunner",
       "language": "Erlang",

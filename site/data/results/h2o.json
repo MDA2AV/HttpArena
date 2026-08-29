@@ -79,26 +79,6 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "json-4096": {
-      "framework": "h2o",
-      "language": "C",
-      "rps": 1491320,
-      "avg_latency": "2.32ms",
-      "p99_latency": "11.50ms",
-      "cpu": "6714.2%",
-      "memory": "84MiB",
-      "connections": 4096,
-      "threads": 64,
-      "duration": "5s",
-      "pipeline": 1,
-      "bandwidth": "5.04GB/s",
-      "input_bw": "71.11MB/s",
-      "reconnects": 296520,
-      "status_2xx": 7456604,
-      "status_3xx": 0,
-      "status_4xx": 0,
-      "status_5xx": 0
-    },
     "json-tls-4096": {
       "framework": "h2o",
       "language": "C",
