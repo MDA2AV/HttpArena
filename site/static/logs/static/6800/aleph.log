@@ -1,2 +1,31 @@
 Server running on port 8080
+Server running on port 8082
 Server running on port 8081
+Aug 29, 2026 1:29:53 PM clojure.tools.logging$eval134$fn__137 invoke
+INFO: Application protocol config supports protocols: h2
+Server running on port 8443
+Aug 29, 2026 1:29:59 PM clojure.tools.logging$eval134$fn__137 invoke
+SEVERE: error in message propagation
+io.netty.handler.codec.EncoderException: java.lang.IllegalStateException: unexpected message type: io.netty.handler.codec.http.DefaultHttpContent (expected: HttpResponse)
+	at io.netty.handler.codec.MessageToMessageEncoder.write(MessageToMessageEncoder.java:107)
+	at io.netty.handler.codec.MessageToMessageCodec.write(MessageToMessageCodec.java:130)
+	at io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:798)
+	at io.netty.channel.AbstractChannelHandlerContext$WriteTask.run(AbstractChannelHandlerContext.java:1126)
+	at io.netty.util.concurrent.AbstractEventExecutor.runTask(AbstractEventExecutor.java:148)
+	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:141)
+	at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:535)
+	at io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:201)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1195)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at manifold.executor$thread_factory$reify__575$f__576.invoke(executor.clj:71)
+	at clojure.lang.AFn.run(AFn.java:22)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Unknown Source)
+Caused by: java.lang.IllegalStateException: unexpected message type: io.netty.handler.codec.http.DefaultHttpContent (expected: HttpResponse)
+	at io.netty.handler.codec.http.HttpContentEncoder.ensureHeaders(HttpContentEncoder.java:259)
+	at io.netty.handler.codec.http.HttpContentEncoder.encode(HttpContentEncoder.java:114)
+	at io.netty.handler.codec.http.HttpContentEncoder.encode(HttpContentEncoder.java:57)
+	at io.netty.handler.codec.MessageToMessageCodec$2.encode(MessageToMessageCodec.java:85)
+	at io.netty.handler.codec.MessageToMessageEncoder.write(MessageToMessageEncoder.java:90)
+	... 13 more
+
