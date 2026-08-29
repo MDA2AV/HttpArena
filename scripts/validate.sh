@@ -1501,12 +1501,18 @@ fi
 # ───── JSON Processing (GET /json) ─────
 #
 # The `json` profile was removed, but this check was not: /json/{count} is still
-# the endpoint json-comp compresses and json-h2c serves, and this is the strict
-# form of the body check - every field diffed against data/dataset.json rather
-# than only against the response's own arithmetic. json-tls runs the same check
-# against :8081 in its own block.
+# the endpoint json-comp compresses, and this is the strict form of the body
+# check - every field diffed against data/dataset.json rather than only against
+# the response's own arithmetic.
+#
+# Gated on json-comp ALONE, and deliberately not on json-h2c. This block probes
+# plaintext :8080, and an h2c-only entry has no HTTP/1.1 listener there at all -
+# actix-h2c, quarkus-jvm-h2c, vanilla-h2c, wtx-http2, zix-http2 and nginx would
+# every one of them fail a check for a port they never open. json-h2c validates
+# the same endpoint over :8082 in its own block below, and json-tls over :8081
+# in its own.
 
-if has_test "json-comp" || has_test "json-h2c"; then
+if has_test "json-comp"; then
     JSON_DOCS="$DOCS_BASE/h1/isolated/json-compressed/validation"
     echo "[test] json endpoint"
     json_fail=false
@@ -1916,9 +1922,10 @@ if has_test "json-h2c"; then
         jm="${jp##*:}"
         resp=$(curl -s --max-time 30 --http2-prior-knowledge \
             "http://localhost:$H2C_PORT/json/$jcount?m=$jm" 2>/dev/null || true)
-        parsed=$(echo "$resp" | python3 -c "
-import sys, json
-m = $jm
+        parsed=$(echo "$resp" | JM="$jm" JCOUNT="$jcount" DATASET="$DATA_DIR/dataset.json" python3 -c "
+import sys, json, os
+m = int(os.environ['JM']); want = int(os.environ['JCOUNT'])
+source = json.load(open(os.environ['DATASET']))
 d = json.load(sys.stdin)
 count = d.get('count', -1)
 items = d.get('items', [])
@@ -1930,13 +1937,19 @@ def valid_item(it):
             and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
             and isinstance(r, dict) and 'score' in r and 'count' in r)
 valid = all(valid_item(it) for it in items) if items else False
-correct_totals = True
-for item in items:
-    expected = item.get('price', 0) * item.get('quantity', 0) * m
-    if item.get('total', 0) != expected:
-        correct_totals = False
-        break
-print(f'{count} {items_n} {valid} {correct_totals}')
+# Against data/dataset.json, not the response's own arithmetic: a made-up item
+# with a self-consistent total would otherwise pass.
+faithful = items_n == want
+if faithful:
+    for got, src in zip(items, source[:want]):
+        if (got.get('id') != src['id'] or got.get('name') != src['name']
+                or got.get('category') != src['category'] or got.get('price') != src['price']
+                or got.get('quantity') != src['quantity'] or got.get('active') != src['active']
+                or got.get('tags') != src['tags']
+                or got.get('total') != src['price'] * src['quantity'] * m):
+            faithful = False
+            break
+print(f'{count} {items_n} {valid} {faithful}')
 " 2>/dev/null || echo "-1 -1 False False")
         pc=$(echo "$parsed" | cut -d' ' -f1)
         pn=$(echo "$parsed" | cut -d' ' -f2)
