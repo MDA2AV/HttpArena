@@ -86,25 +86,20 @@
      :headers {"Content-Type" json-content-type}
      :body    (json/write-str (array-map :items items :count count'))}))
 
-;; Counts the body without keeping it: a 20 MB upload goes through one 64 KB
-;; buffer rather than being read into memory.
-(defn upload [request]
-  (let [^InputStream body (:body request)
-        buf (byte-array 65536)]
-    (loop [total 0]
-      (let [read (if body (.read body buf) -1)]
-        (if (pos? read)
-          (recur (+ total read))
-          {:status  200
-           :headers {"Content-Type" text-content-type}
-           :body    (str total)})))))
+;; Echo: the bytes that arrived go back unchanged. Collected because the
+;; response needs a Content-Length, and a chunked request carries none.
+(defn echo [request]
+  (let [^InputStream body (:body request)]
+    {:status  200
+     :headers {"Content-Type" "application/octet-stream"}
+     :body    (if body (.readAllBytes body) (byte-array 0))}))
 
 (def app
   (ring/ring-handler
    (ring/router
     [["/baseline11" {:get baseline11 :post baseline11}]
      ["/json/:count" {:get json-items}]
-     ["/upload" {:post upload}]]
+     ["/echo" {:post echo}]]
     ;; params middleware on the router, so query parsing is reitit's own
     ;; middleware chain rather than a hand-rolled decode in the handler.
     {:data {:middleware [params/wrap-params]}})

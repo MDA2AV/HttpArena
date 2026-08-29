@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.Future;
 import io.vertx.core.VerticleBase;
 import io.vertx.core.http.HttpServerOptions;
@@ -81,7 +82,7 @@ public class ServerVerticle extends VerticleBase {
         router.put("/crud/items/:id")
                 .handler(BodyHandler.create())
                 .handler(this::crudUpdate);
-        router.post("/upload").handler(this::upload);
+        router.post("/echo").handler(this::echo);
 
         HttpServerOptions options = new HttpServerOptions()
                 .setHost("0.0.0.0")
@@ -423,11 +424,13 @@ public class ServerVerticle extends VerticleBase {
                 .onFailure(e -> dbError(ctx, "update failed", 500));
     }
 
-    private void upload(RoutingContext ctx) {
+    private void echo(RoutingContext ctx) {
         HttpServerRequest request = ctx.request();
-        long[] size = {0};
-        request.handler(buffer -> size[0] += buffer.length());
-        request.endHandler(v -> text(ctx, Long.toString(size[0])));
+        Buffer body = Buffer.buffer();
+        request.handler(body::appendBuffer);
+        request.endHandler(v -> ctx.response()
+                .putHeader("content-type", "application/octet-stream")
+                .end(body));
         request.resume();
     }
 }

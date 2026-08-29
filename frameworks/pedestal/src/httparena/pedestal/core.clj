@@ -131,10 +131,13 @@
                           :count (count items)}))
     (text-response 500 "dataset.json not available")))
 
-(defn upload-handler [request]
+(defn echo-handler [request]
+  ;; Collected: the response needs a Content-Length, and a chunked request
+  ;; carries none to forward until the body is in.
   (with-open [^InputStream stream (:body request)]
-    (text-response 200
-                   (str (.transferTo stream (OutputStream/nullOutputStream))))))
+    {:status  200
+     :headers {"Content-Type" "application/octet-stream"}
+     :body    (.readAllBytes stream)}))
 
 (defn tags->vector [tags]
   (cond
@@ -217,7 +220,7 @@
     ["/baseline11" :post baseline-handler :route-name ::baseline-post]
     ["/json/:count" :get json-handler :route-name ::json]
     ["/async-db" :get async-db-handler :route-name ::async-db]
-    ["/upload" :post upload-handler :route-name ::upload]
+    ["/echo" :post echo-handler :route-name ::echo]
     ["/static/:filename" :get static-handler :route-name ::static]
     ["/pipeline" :get pipeline-handler :route-name ::pipeline]})
 

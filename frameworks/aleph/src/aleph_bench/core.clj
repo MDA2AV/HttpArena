@@ -227,9 +227,13 @@
     {:status 200 :headers json-headers
      :body   (json/write-value-as-string {:items items :count (clojure.core/count items)})}))
 
-(defn- handle-upload [req]
+(defn- handle-echo [req]
+  ;; The bytes that arrived go back unchanged.
   (d/chain (read-body-bytes (:body req))
-           (fn [^bytes bs] (text-response (alength bs)))))
+           (fn [^bytes bs]
+             {:status  200
+              :headers {"content-type" "application/octet-stream"}
+              :body    bs})))
 
 (defn- handle-async-db [pg-pool req]
   (let [params (parse-qs (:query-string req))
@@ -351,7 +355,7 @@
       "/json/:count"      [(GET (fn [req] (handle-json dataset req)))]
       "/json"             [(GET (fn [_] {:status 200 :headers json-headers :body json-body}))]
       "/compression"      [(GET (fn [_] {:status 200 :headers json-headers :body compression-body}))]
-      "/upload"           [(POST handle-upload)]
+      "/echo"             [(POST handle-echo)]
       "/async-db"         [(GET (fn [req] (handle-async-db pg-pool req)))]
       "/crud/items"       [(GET (fn [req] (handle-crud-list pg-pool req)))
                            (POST (fn [req] (handle-crud-create pg-pool req)))]

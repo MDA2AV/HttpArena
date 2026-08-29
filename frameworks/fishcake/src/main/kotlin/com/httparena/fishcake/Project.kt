@@ -4,7 +4,7 @@ import com.httparena.fishcake.services.AsyncDatabase
 import com.httparena.fishcake.services.Baseline
 import com.httparena.fishcake.services.Crud
 import com.httparena.fishcake.services.JsonService
-import com.httparena.fishcake.services.Upload
+import com.httparena.fishcake.services.Echo
 import org.codegreen.modules.io.Content
 import org.codegreen.modules.io.Resource
 import org.codegreen.modules.layouting.Layout
@@ -27,7 +27,7 @@ object Project {
             .add("pipeline", Content.from(Resource.fromString("ok")))
             .addService<Baseline>("baseline11")
             .addService<Baseline>("baseline2")
-            .addService<Upload>("upload")
+            .addService<Echo>("echo")
             .addService<JsonService>("json")
             .addService<AsyncDatabase>("async-db")
             .add("crud", Layout.create().addService<Crud>("items"))

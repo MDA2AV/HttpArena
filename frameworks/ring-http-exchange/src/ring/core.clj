@@ -292,9 +292,12 @@
         {:status 200 :headers json-gzip-headers :body (gzip-bytes body-bytes)}
         {:status 200 :headers json-headers :body (String. ^bytes body-bytes)}))))
 
-(defn- handle-upload [req respond _raise]
+(defn- handle-echo [req respond _raise]
+  ;; The bytes that arrived go back unchanged.
   (with-open [^InputStream in (:body req)]
-    (respond (text-response-long (.transferTo in (OutputStream/nullOutputStream))))))
+    (respond {:status  200
+              :headers {"content-type" "application/octet-stream"}
+              :body    (.readAllBytes in)})))
 
 (defn- handle-pg [pg-pool req respond _raise]
   (let [params (parse-qs (:query-string req))
@@ -437,7 +440,7 @@
       {"/baseline11"       [(GET handle-baseline-get)
                             (POST handle-baseline-post)]
        "/json/:count"      [(GET (fn [req res rej] (handle-json dataset req res rej)))]
-       "/upload"           [(POST handle-upload)]
+       "/echo"             [(POST handle-echo)]
        "/async-db"         [(GET (fn [req res rej] (handle-pg pg-pool req res rej)))]
        "/fortunes"         [(GET (fn [_ res rej] (handle-fortunes pg-pool res rej)))]
        "/crud/items"       [(GET (fn [req res rej] (handle-crud-list pg-pool req res rej)))

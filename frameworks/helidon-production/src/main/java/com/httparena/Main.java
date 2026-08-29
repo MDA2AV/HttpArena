@@ -40,7 +40,7 @@ public final class Main {
                         .get("/json/{count}", jsonHandler)
                         .get("/json", jsonHandler)
                         .post("/baseline11", new BaselinePostHandler())
-                        .post("/upload", new UploadHandler())
+                        .post("/echo", new EchoHandler())
                         .get("/async-db", new DbHandler()))
                 .addRouting(GrpcRouting.builder().service(grpcService))
                 .addRouting(WsRouting.builder().endpoint("/ws", new EchoWsListener()));

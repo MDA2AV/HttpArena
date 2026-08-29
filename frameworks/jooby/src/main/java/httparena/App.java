@@ -72,15 +72,15 @@ public class App extends Jooby {
       return new OutList(items, n);
     });
 
-    post("/upload", ctx -> {
-      long total = 0;
-      byte[] buf = new byte[64 * 1024];
+    post("/echo", ctx -> {
+      // Collected: the response needs a Content-Length, and a chunked request
+      // carries none to forward until the body is in.
+      byte[] body;
       try (InputStream in = ctx.body().stream()) {
-        int read;
-        while ((read = in.read(buf)) > 0) total += read;
+        body = in.readAllBytes();
       }
-      ctx.setResponseType(MediaType.text);
-      return Long.toString(total);
+      ctx.setResponseType(MediaType.octetstream);
+      return body;
     });
   }
 

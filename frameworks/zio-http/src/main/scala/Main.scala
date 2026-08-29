@@ -250,11 +250,13 @@ object Main extends ZIOAppDefault:
       val m = request.url.queryParams.getAll("m").headOption.flatMap(parseLong).getOrElse(1L)
       Response.json(payload(count, m).toJson)
     },
-    // Folded over the body stream, so the 20 MB upload is never held in one buffer.
-    Method.POST / "upload" -> handler { (request: Request) =>
-      request.body.asStream.chunks
-        .runFold(0L)((size, chunk) => size + chunk.length)
-        .map(size => Response.text(size.toString))
+    // Collected: the response needs a Content-Length, and a chunked request
+    // carries none to forward until the body is in.
+    Method.POST / "echo" -> handler { (request: Request) =>
+      request.body.asChunk
+        .map(chunk => Response(
+          body = Body.fromChunk(chunk),
+          headers = Headers(Header.ContentType(MediaType.application.`octet-stream`))))
         .orDie
     },
     Method.GET / "baseline2" -> handler { (request: Request) =>
