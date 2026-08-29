@@ -13,7 +13,6 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "in-out",
     "async-db",
     "baseline-h2",
     "static-h2",
