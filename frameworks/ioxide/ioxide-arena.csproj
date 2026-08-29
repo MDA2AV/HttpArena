@@ -6,7 +6,14 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <!--<Features>runtime-async=on</Features>-->
+        <!-- Runtime async: the runtime suspends and resumes async methods
+             itself instead of the compiler generating a state machine. Needs
+             EnablePreviewFeatures and net11.0 on the .NET 11 SDK; the old
+             DOTNET_RuntimeAsync=1 env gate is gone as of preview 1. $(Features)
+             is prepended so this appends rather than replacing whatever the SDK
+             already set. Still not the default upstream. -->
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
+        <Features>$(Features);runtime-async=on</Features>
         <RootNamespace>IoxideArena</RootNamespace>
         <AssemblyName>ioxide-arena</AssemblyName>
         <ServerGarbageCollection>true</ServerGarbageCollection>
