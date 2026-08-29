@@ -17,6 +17,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -29,6 +30,8 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import kotlin.io.path.Path
+import kotlin.time.Duration.Companion.milliseconds
 
 fun main() {
     println("Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (HTTP/3), :8443 (HTTPS/HTTP2)")
@@ -37,14 +40,22 @@ fun main() {
 
     val server = embeddedServer(Netty, environment, {
         enableHttp2 = true
+        enableH2c = true
         @OptIn(ExperimentalKtorApi::class)
         enableHttp3()
 
+        // HTTP/1.1
         connector {
             port = 8080
             host = "0.0.0.0"
         }
+        // h2c
+        connector {
+            port = 8082
+            host = "0.0.0.0"
+        }
         deps.keyStore?.let { keyStore ->
+            // JSON + TLS
             sslConnector(
                 keyStore = keyStore,
                 keyAlias = KEY_ALIAS,
@@ -54,6 +65,7 @@ fun main() {
                 port = 8081
                 host = "0.0.0.0"
             }
+            // HTTP/2 HTTP/3
             sslConnector(
                 keyStore = keyStore,
                 keyAlias = KEY_ALIAS,
@@ -67,31 +79,6 @@ fun main() {
     }) {
         mainModule(deps)
     }
-
-    // Spin up a second server for H2C
-    embeddedServer(Netty, environment, {
-        enableH2c = true
-
-        connector {
-            port = 8082
-            host = "0.0.0.0"
-        }
-    }) {
-        // Reject any non-HTTP/2 request hitting the H2C connector
-        intercept(ApplicationCallPipeline.Plugins) {
-            val version = call.request.httpVersion
-            if (!version.startsWith("HTTP/2")) {
-                call.response.headers.append(HttpHeaders.Upgrade, "h2c")
-                call.response.headers.append(HttpHeaders.Connection, "Upgrade")
-                call.respond(HttpStatusCode.UpgradeRequired, "HTTP/2 (h2c) required")
-                finish()
-                return@intercept
-            }
-        }
-        // Import the same endpoints for this server
-        mainModule(deps)
-
-    }.start(wait = false)
 
     server.start(wait = true)
 }
@@ -245,7 +232,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
          * Static files
          * https://www.http-arena.com/docs/test-profiles/h1/isolated/static/
          */
-        staticFiles("/static", File("/data/static")) {
+        staticFiles("/static", dir = File("/data/static"), index = null) {
             preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP)
         }
 
@@ -303,6 +290,16 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                     }
                 }
             }
+        }
+
+        /**
+         * Async Delay benchmark.  Measures what a framework does with a request it cannot answer yet.
+         * https://www.http-arena.com/docs/test-profiles/h1/isolated/async/implementation/
+         */
+        get("/delay/{ms}") {
+            val delayParam = call.parameters["ms"] ?: "0"
+            delay(delayParam.toLong().milliseconds)
+            call.respond(TextContent(delayParam, ContentType.Text.Plain))
         }
 
     }
