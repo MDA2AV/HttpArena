@@ -132,8 +132,13 @@ internal sealed class Config : IDisposable
             // at the buffer size, so buffer size trades directly against slice count (CQEs +
             // returns) for the same bytes; slots × size is the reserved recv memory per reactor.
             // 16 KB × 256 was measured here, against the library's 32 KB × 4096.
-            RecvBufferSize = Env.Int("IOXIDE_RECV_BUF_KB", 16) * 1024,
-            RecvSlots      = Env.Int("IOXIDE_RECV_SLOTS", 256),
+            // ENTRY DEFAULT: 128 KB x 32 rather than 16 KB x 256. Identical ring bytes per
+            // reactor (4 MB), reshaped - a 100 KB echo body now lands in one recv instead of
+            // seven, which is worth ~7% requests-per-CPU on echo-100k. Measured neutral on the
+            // profiles that do not care: baseline at 512 and 4096 connections, and json-tls,
+            // all within noise, and 32 buffers per reactor does not starve at 4096 connections.
+            RecvBufferSize = Env.Int("IOXIDE_RECV_BUF_KB", 128) * 1024,
+            RecvSlots      = Env.Int("IOXIDE_RECV_SLOTS", 32),
 
             // Per-connection buffer rings (IOU_PBUF_RING_INC, kernel 6.12+). Setting it IS
             // enabling the mode, and the two shared-ring knobs above then go unused - so it stays
