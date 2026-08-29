@@ -61,10 +61,14 @@ CATALOG = [
                                                     [32000],             [32000],         False,True,False),
     ]),
     ("Efficiency", [
-        # Unscored until it has been run board-wide, like every profile here
-        # starts. Flip `scored` once the rate has been shown to be the right one.
+        # Scored, on the same terms as latency-1m below: the rate is pinned, so
+        # it contributes its own 0-100 score rather than an rps ranking.
+        #
+        # infraScored stays False for the same reason it does on latency-1m -
+        # scoredForType() reads that flag ahead of `scored`, and no
+        # infrastructure entry is measured on either profile yet.
         ("latency-10k", "Latency-10K", "Score out of 100: CPU and both latency tails at a near-idle 10K req/s.",
-                                                    [1024],              [1024],          False,True,False),
+                                                    [1024],              [1024],          True,True,False),
         # Scored. The composite cannot rank this on rps the way it ranks every
         # other profile, because the rate is pinned and every entry that holds it
         # delivers the same one. It contributes its own score instead, which
