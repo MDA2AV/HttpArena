@@ -39,12 +39,6 @@ Route::get('/json/{count}', function (Request $request, int $count) use ($datase
     return response()->json(['items' => $items, 'count' => count($items)]);
 });
 
-Route::post('/upload', function (Request $request) {
-    $size = 0;
-    $stream = $request->getContent(true);
-    while (! feof($stream)) {
-        $size += strlen(fread($stream, 262144));
-    }
-
-    return response((string) $size)->header('Content-Type', 'text/plain');
+Route::post('/echo', function (Request $request) {
+    return response($request->getContent())->header('Content-Type', 'application/octet-stream');
 });

@@ -4,6 +4,6 @@ module Arena
     get "/baseline11", to: "baseline11"
     post "/baseline11", to: "baseline11"
     get "/json/:count", to: "items"
-    post "/upload", to: "upload"
+    post "/echo", to: "echo"
   end
 end

@@ -181,10 +181,12 @@ function handleJson(int $count, Request $request, Response $response): void
     jsonResponseRaw($response, json_encode(['items' => $items, 'count' => $count]));
 }
 
-function handleUpload(Request $request, Response $response): void
+function handleEcho(Request $request, Response $response): void
 {
-    $body = $request->getBody();
-    textResponse($response, (string)strlen($body));
+    $response->setStatus(200);
+    $response->setHeader('Content-Type', 'application/octet-stream');
+    $response->write($request->getBody());
+    $response->end();
 }
 
 function handleStatic(string $path, Request $request, Response $response): void
@@ -251,7 +253,7 @@ HttpServer::onRequest(function (Request $request, Response $response): void {
         $path === '/baseline2'    => handleBaseline($request, $response),
         $path === '/pipeline'     => handlePipeline($response),
         preg_match('#^/json/(\d+)$#', $path, $m) === 1 => handleJson((int)$m[1], $request, $response),
-        $path === '/upload'       => handleUpload($request, $response),
+        $path === '/echo'         => handleEcho($request, $response),
         $path === '/db'           => handleSyncDb($request, $response),
         $path === '/async-db'     => handleAsyncDb($request, $response),
         str_starts_with($path, '/static/') => handleStatic($path, $request, $response),

@@ -88,10 +88,10 @@ class BenchmarkController
         );
     }
 
-    #[Route('/upload', methods: ['POST'])]
-    public function upload(Request $request): Response
+    #[Route('/echo', methods: ['POST'])]
+    public function echoBody(Request $request): Response
     {
-        return new Response((string) strlen($request->getContent()), 200, ['Content-Type' => 'text/plain']);
+        return new Response($request->getContent(), 200, ['Content-Type' => 'application/octet-stream']);
     }
 
     #[Route('/async-db')]

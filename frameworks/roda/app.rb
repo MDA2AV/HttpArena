@@ -77,9 +77,10 @@ class App < Roda
       render_json JSON.generate(items: items, count: count)
     end
 
-    r.is 'upload' do
+    r.is 'echo' do
       request.env["puma.mark_as_io_bound"].call
-      request.body.size.to_s
+      response['Content-Type'] = 'application/octet-stream'
+      request.body.read || ''
     end
 
     r.is 'async-db' do

@@ -63,9 +63,11 @@ class BenchmarkController < ApplicationController
     render json: { items: items, count: items.length }
   end
 
-  def upload
-    size = request.body.size
-    render plain: size.to_s
+  def echo_body
+    # read regardless of framing, so a chunked request works without a
+    # Content-Length to size it from
+    body = request.body.read || ""
+    send_data body, type: "application/octet-stream", disposition: "inline"
   end
 
   def not_found

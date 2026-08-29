@@ -183,17 +183,18 @@ $server->addHttpHandler(
             }
         }
 
-        if ($path === '/upload') {
-            // Streaming-body fast path (issue #26): never materialise the
-            // 20 MiB body into a single zend_string. Count chunks as they
-            // arrive, peak memory bounded by socket buffer + one chunk.
-            $bytes = 0;
+        if ($path === '/echo') {
+            // The echo needs the bytes, not a count, so the streaming chunks
+            // are collected rather than discarded. Collected rather than
+            // written through because the response needs a Content-Length,
+            // and a chunked request carries none to forward.
+            $chunks = [];
             while (($c = $request->readBody()) !== null) {
-                $bytes += strlen($c);
+                $chunks[] = $c;
             }
             $response->setStatusCode(200)
-                ->setHeader('Content-Type', 'text/plain')
-                ->setBody((string)$bytes);
+                ->setHeader('Content-Type', 'application/octet-stream')
+                ->setBody(implode('', $chunks));
             return;
         }
 

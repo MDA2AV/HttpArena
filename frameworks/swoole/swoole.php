@@ -99,9 +99,9 @@ $http->on('request', function (Request $request, Response $response) use ($datas
         return;
     }
 
-    if ($path === '/upload') {
-        $response->header['Content-Type'] = 'text/plain';
-        $response->end((string)strlen($request->getContent()));
+    if ($path === '/echo') {
+        $response->header['Content-Type'] = 'application/octet-stream';
+        $response->end($request->getContent());
         return;
     }
 
