@@ -25,7 +25,7 @@ The load generator ([h2load](https://nghttp2.org/documentation/h2load-howto.html
 
 Total payload: ~1.16 MB across 20 files (~966 KB compressible text + ~200 KB binary).
 
-Pre-compressed versions (`.gz`, `.br`) are available on disk. See the [Static TLS compression section](/docs/test-profiles/h1/isolated/static-tls/implementation/#compression) for full compression rules.
+Pre-compressed versions (`.gz`, `.br`) are available on disk. See the [Static TLS compression section](/docs/test-profiles/h1/static-tls/implementation/#compression) for full compression rules.
 
 ## What it measures
 

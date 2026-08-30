@@ -49,7 +49,7 @@ Sends `GET /json` over HTTP/2 and validates:
 - Every item carries the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
 - Each `total` is correctly computed as `price * quantity` (rounded to 2 decimal places)
 
-This is the same validation as the [JSON Compressed test](../../h1/isolated/json-compressed/validation), but routed through the proxy.
+This is the same validation as the [JSON Compressed test](../../h1/json-compressed/validation), but routed through the proxy.
 
 ### Content-Type header
 
@@ -66,7 +66,7 @@ Sends `GET /async-db?min=10&max=50` over HTTP/2 and validates:
 - Every item has a `tags` array
 - Every item's `active` field is a boolean (not a string or integer)
 
-This is the same validation as the [Async Database test](../../h1/isolated/async-database/validation), but routed through the proxy.
+This is the same validation as the [Async Database test](../../h1/async-database/validation), but routed through the proxy.
 
 ### Content-Type header
 
@@ -90,9 +90,9 @@ Sends `GET /baseline2?a=<random>&b=<random>` with random values and verifies the
 
 The gateway-64 test relies on endpoint implementations that are validated individually in other test profiles:
 
-- `/json` - [JSON Compressed validation](/docs/test-profiles/h1/isolated/json-compressed/validation)
-- `/static/*` - [Static Files validation](/docs/test-profiles/h1/isolated/static-tls/validation)
-- `/async-db` - [Async Database validation](/docs/test-profiles/h1/isolated/async-database/validation)
+- `/json` - [JSON Compressed validation](/docs/test-profiles/h1/json-compressed/validation)
+- `/static/*` - [Static Files validation](/docs/test-profiles/h1/static-tls/validation)
+- `/async-db` - [Async Database validation](/docs/test-profiles/h1/async-database/validation)
 - `/baseline2` - [Baseline H2 validation](/docs/test-profiles/h2/baseline-h2/validation)
 
 Frameworks subscribing to `gateway-64` should also subscribe to these individual tests to ensure each endpoint passes validation independently before testing through the proxy.

@@ -1,56 +1,36 @@
 ---
 title: Implementation Guidelines
 seo_title: "Latency-10K Benchmark: Implementation Guide"
-description: "How the 10,000 requests per second near-idle fixed-rate CPU profile is run, what it measures, and the type-specific rules that apply to it."
+description: "What to implement, what is measured, and how the near-idle fixed-rate CPU profile at 10,000 requests per second is scored."
 ---
 {{< type-rules standard="Nothing to implement: the profile drives `GET /baseline11`, which the baseline profile already specifies and validates. What it asks of you is that your serving model is quiet when there is nothing to do. A framework that polls on a timer, spins a worker between requests, or wakes every thread on every arrival pays for it here in a way a saturated benchmark hides." tuned="May tune poll intervals, spin thresholds, affinity and pool sizing freely. Note that a busy-poll setting chosen to win a saturation benchmark is charged here rather than rewarded: CPU burned while idle is exactly what this profile reports." engine="Same as above. An engine that busy-polls its completion queue will show a large fixed cost at this rate; one that blocks until work arrives will not." >}}
 
 
-[Latency-1M](../latency-1m/implementation/) asks what a server costs at a load only the fastest entries carry. This asks what the same server, on the same cores, costs when it is nearly idle.
+[Latency-1M](../latency-1m/implementation/) asks what a server costs at a load only the fastest entries carry. This asks what the same server, on the same cores, costs when it is nearly idle. **Only the rate changes** - cpuset, connections, endpoint, duration and generator are Latency-1M's, unchanged, so the two numbers are directly comparable and the difference is attributable to load rather than setup.
 
-The load is **10,000 requests per second**, offered at a paced constant rate. Everything else is Latency-1M's setup unchanged.
-
-**CPU:** cpuset `0-31,64-95` · **Rate:** 10,000 req/s · **Connections:** 1,024 · **Duration:** 20s
-
-## Only the rate changes
-
-The two profiles share their cpuset, connection count, endpoint, duration and load generator. That is deliberate and it is the whole design: with a single variable, the two published numbers are directly comparable, and the difference between them is attributable to load rather than to setup.
-
-At 10,000 req/s spread over 64 hardware threads the request work is close to nothing. What is left in the CPU figure is the **standing cost** - the price of being a running server rather than of serving this particular load:
-
-- poll loops and spin thresholds that never sleep
-- timer wheels and keep-alive sweeps that tick regardless of traffic
-- background GC, JIT and runtime threads
-- a wake-up path that touches more threads than the one request needs
-
-A saturated box amortises all of that across a million requests a second until it disappears into the noise. Here it is most of the number.
+**Endpoint:** `GET /baseline11?a=1&b=2` · **CPU:** cpuset `0-31,64-95` · **Rate:** 10,000 req/s · **Connections:** 1,024 · **Duration:** 20s
 
 ## Nothing to implement
 
-The load is `GET /baseline11?a=1&b=2`, the same endpoint the [baseline profile](../baseline/implementation) specifies, GET only and no request body. If your entry already subscribes to `baseline`, subscribing to `latency-10k` costs you no code.
+The same endpoint the [baseline profile](../baseline/implementation) already specifies and validates, GET only, no request body. **If your entry subscribes to `baseline`, subscribing here costs no code.**
 
 ## What is measured
 
-Exactly what Latency-1M measures, by the same means: the CPU the container consumed, taken from cgroup v2's `cpu.stat` `usage_usec` either side of the load window, reported as `cpu_usec` and as `cpu_per_req_us`, plus the p99 and p99.9 service latencies. Nothing is sampled.
+The CPU the container consumed, from cgroup v2 `cpu.stat` `usage_usec` either side of the load window - reported as `cpu_usec` and `cpu_per_req_us` - plus p99 and p99.9 latency. Nothing is sampled.
 
-Latency matters here for a different reason than it does at 1M. With 1,024 connections and 10,000 requests per second there is no queueing to speak of, so a tail is not congestion - it is a scheduler that took its time waking the right thread, a GC pause, or a timer that fired late. The tails at this rate read as responsiveness from idle rather than as capacity.
+At 10,000 req/s spread over 64 hardware threads the request work is close to nothing, so what the figure reports is the **standing cost** of being a running server. That is what to look at when optimising for this profile:
 
-## Reading it against Latency-1M
+- **Busy-polling.** A runtime that spins rather than blocking burns whole cores here while serving almost nothing
+- **Fixed-cadence timers.** Timer wheels and keep-alive sweeps that tick regardless of traffic
+- **Background runtime threads.** GC and JIT threads are a rounding error at 1M req/s and a large share of the bill at 10K
+- **Oversized thread pools.** Threads that never run still cost scheduling, stacks and wake-ups
+- **Wake-up amplification.** Waking every worker on every arrival is invisible under saturation, where they all had work anyway, and expensive when they did not
 
-Per-request CPU is not comparable between the two profiles, and it is not meant to be. At a million requests per second a large share of the per-request cost is contention - cache lines moving between cores, the socket table, the scheduler - which a near-idle server never pays. Expect this profile's per-request figure to be *higher*, not lower: the standing cost is divided across a hundredth of the requests.
+Tails read differently here than at 1M: with no queueing to speak of, a tail is not congestion but a scheduler that took its time waking the right thread, a GC pause, or a timer that fired late.
 
-The two are scored independently and should be read that way. The interesting comparison is between entries at the same rate, not between rates.
+**Per-request CPU is not comparable between the two profiles and is not meant to be.** Expect this one to be *higher* - the standing cost is divided across a hundredth of the requests. Compare entries at the same rate, not rates against each other.
 
-## What it exposes
-
-- **Busy-polling.** A runtime that spins rather than blocking burns whole cores here while serving almost nothing, and the CPU figure says so plainly.
-- **Fixed-cost runtimes.** A background GC thread, a JIT compiler thread or a millisecond timer is a rounding error at 1M req/s and a large share of the bill at 10K.
-- **Oversized thread pools.** Threads that never run still cost scheduling, stacks and wake-ups.
-- **Wake-up amplification.** A design that wakes every worker on every arrival is invisible under saturation, where they all had work anyway, and expensive when they did not.
-
-## Validity
-
-`rate_ratio` is still the gate, though it should be uncontroversial at this rate: an entry that cannot hold 10,000 requests per second across 64 threads has a problem this profile is not the right place to diagnose. It is published for every result all the same, because the arithmetic that makes a saturated entry look good on CPU applies at any rate - a server that serves fewer requests spends proportionally less CPU on each, so a per-request figure can look better while the entry is failing.
+`rate_ratio` is still published as the validity gate, though it should be uncontroversial at this rate.
 
 ## Parameters
 
@@ -75,12 +55,6 @@ quality    = 0.60 x cpuScore + 0.25 x p99Score + 0.15 x p999Score
 score      = 100 x rateFactor x quality
 ```
 
-Full credit at 9,500 req/s, which is 95% of the offered rate. The generator never quite reaches its own target, so the threshold sits below it.
+Full credit at 9,500 req/s, 95% of the rate offered. Computed by [`scripts/latency_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/latency_score.py); run `python3 scripts/latency_score.py --table --profile latency-10k` for the published results.
 
-Both profiles are scored by [`scripts/latency_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/latency_score.py); run `python3 scripts/latency_score.py --table --profile latency-10k` to score the published results.
-
-### Composite
-
-**Scored**, on the same terms as Latency-1M: because the rate is pinned, the profile contributes its own 0-100 score multiplied onto the shared 0-1000 basis rather than an rps ranking. It counts for framework entries (flagship, emerging, experimental) and for engines.
-
-It does not count for infrastructure entries, matching Latency-1M - no proxy is measured on either profile yet.
+Scored for framework entries (flagship, emerging, experimental) and for engines; not for infrastructure, matching Latency-1M - no proxy is measured on either profile yet.
