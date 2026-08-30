@@ -54,6 +54,13 @@ start(_StartType, _StartArgs) ->
         %% streams ≈ 3.5 GB, the regime measured stable — 16 × put it
         %% near 14 GB and the profile timed out entirely.
         max_clients => 8192,
+        %% The connection-heavy profiles open thousands of connections at
+        %% once while accepted ones already run compressed handlers, so
+        %% deepen the kernel accept queue past the storm size (default
+        %% 1024 overflowed, black-holing connections) and widen the
+        %% acceptor pool like the h1 listeners above.
+        socket_backlog => 8192,
+        num_acceptors => 100,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
