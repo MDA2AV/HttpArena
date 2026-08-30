@@ -145,33 +145,9 @@ internal static class Handler
                         if (httpSession.PendingStaticClose) httpSession.WantClose = true;
                     }
 
-                    // Same idea for an echoed body: it goes into the slab right behind the header
-                    // so header + body leave in ONE flush, and the body is copied once instead of
-                    // twice. Only when it fits alongside what was just written; the tail below
-                    // covers anything larger.
-                    if (sent + chunk == httpSession.OutLen && httpSession.PendingEchoLen > 0
-                        && chunk + httpSession.PendingEchoLen <= _slab)
-                    {
-                        conn.Write(httpSession.PendingEchoBuf!.AsSpan(httpSession.PendingEchoOff,
-                                                                      httpSession.PendingEchoLen));
-                        httpSession.ClearPendingEcho();
-                    }
-
                     await conn.FlushAsync();
                     sent += chunk;
                 }
-
-                // A body too big to ride behind the header goes out on its own.
-                while (httpSession.PendingEchoLen > 0)
-                {
-                    int ec = Math.Min(httpSession.PendingEchoLen, _slab);
-                    conn.Write(httpSession.PendingEchoBuf!.AsSpan(httpSession.PendingEchoOff, ec));
-                    await conn.FlushAsync();
-                    httpSession.PendingEchoOff += ec;
-                    httpSession.PendingEchoLen -= ec;
-                    if (httpSession.PendingEchoLen == 0) httpSession.ClearPendingEcho();
-                }
-
                 httpSession.OutLen = 0;
                 httpSession.PendingStaticFd = 0;
 
