@@ -128,16 +128,12 @@ internal sealed class Config : IDisposable
             RingEntries  = Env.UInt("IOXIDE_SQ_ENTRIES", srvDefault.RingEntries),
             DualStack    = Env.Bool("IOXIDE_DUAL_STACK", srvDefault.DualStack),
 
-            // ENTRY DEFAULTS, against the library's 32 KB × 4096. Each recv slice is capped at
-            // the buffer size, so for a body of a given size the buffer size trades directly
-            // against slice count (CQEs + buffer returns); slots × size is the reserved recv
-            // memory per reactor. 128 KB × 32 is the same 4 MB per reactor the previous
-            // 16 KB × 256 reserved, carved so that a 100 KB echo body arrives in one recv
-            // instead of seven. Measured neutral where it does not matter: baseline at 512 and
-            // at 4096 connections and json-tls all within noise, and 32 buffers per reactor
-            // showed no starvation at 4096 connections.
-            RecvBufferSize = Env.Int("IOXIDE_RECV_BUF_KB", 128) * 1024,
-            RecvSlots      = Env.Int("IOXIDE_RECV_SLOTS", 32),
+            // ENTRY DEFAULTS. The upload profile moves large bodies and each recv slice is capped
+            // at the buffer size, so buffer size trades directly against slice count (CQEs +
+            // returns) for the same bytes; slots × size is the reserved recv memory per reactor.
+            // 16 KB × 256 was measured here, against the library's 32 KB × 4096.
+            RecvBufferSize = Env.Int("IOXIDE_RECV_BUF_KB", 16) * 1024,
+            RecvSlots      = Env.Int("IOXIDE_RECV_SLOTS", 256),
 
             // Per-connection buffer rings (IOU_PBUF_RING_INC, kernel 6.12+). Setting it IS
             // enabling the mode, and the two shared-ring knobs above then go unused - so it stays
