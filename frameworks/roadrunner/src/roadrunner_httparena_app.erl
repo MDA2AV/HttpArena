@@ -43,17 +43,21 @@ start(_StartType, _StartArgs) ->
         %% h2 multiplexes many streams per connection: the connection cap
         %% covers the largest h2c profile (4096 connections) with headroom,
         %% and the advertised `max_concurrent_streams` bounds per-stream
-        %% state (e.g. `/json` gzip contexts, otherwise measured in the
-        %% multi-GiB range here) the way h2 servers conventionally do —
-        %% clients window themselves to the advertised limit (RFC 9113
-        %% §5.1.2), so unlike a server-side refusal cap this sheds no
-        %% requests. 16 × the connection cap keeps the worst-case live
-        %% streams well inside the BEAM process limit.
+        %% state the way h2 servers conventionally do — clients window
+        %% themselves to the advertised limit (RFC 9113 §5.1.2), so unlike
+        %% a server-side refusal cap this sheds no requests (roadrunner's
+        %% resource-limits guide recommends sizing the advertised limits
+        %% over the refusal cap). This listener serves the compressed
+        %% `/json` route, where every in-flight stream holds a deflate
+        %% context (~200 KB measured), so the window is sized for
+        %% worst-case handler memory: 4 × 4096 connections ≈ 16K live
+        %% streams ≈ 3.5 GB, the regime measured stable — 16 × put it
+        %% near 14 GB and the profile timed out entirely.
         max_clients => 8192,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
-        protocols => [{http2, #{max_concurrent_streams => 16}}],
+        protocols => [{http2, #{max_concurrent_streams => 4}}],
         body_buffering => manual
     }),
     case tls_opts() of
