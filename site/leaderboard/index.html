@@ -429,6 +429,15 @@
   .cm td.pc.lead .crps{font-weight:700}
   .cm td.pc.nc{opacity:.4}
   .cm th.pcol.refcol{opacity:.45}
+  /* Two affordances per profile column: open that profile's detail view, and
+     open its implementation guide. They sit on their own line under the label,
+     so the column (width:1px, shrink-to-fit) does not get any wider. */
+  .cm th.pcol .pnav{display:flex; gap:.18rem; justify-content:center; margin-top:.25rem}
+  .cm th.pcol .pico{display:inline-flex; align-items:center; justify-content:center;
+    width:12px; height:12px; border:1px solid currentColor; font:700 .58rem/1 var(--sans);
+    text-transform:none; letter-spacing:0; opacity:.4; color:inherit; cursor:pointer;
+    text-decoration:none}
+  .cm th.pcol .pico:hover{opacity:1; color:var(--accent); border-color:var(--accent)}
   /* flexible trailing column absorbs leftover width (keeps the box filled) */
   .cm .spacer{width:auto; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
   .cm .sticky{position:sticky}
@@ -1617,7 +1626,18 @@ document.addEventListener('DOMContentLoaded', function(){
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
       +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
-    pids.forEach(function(pid){ var p=PROF[pid]; var ref=!scoredForType(pid, leagueType()); th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
+    pids.forEach(function(pid){
+      var p=PROF[pid]; var ref=!scoredForType(pid, leagueType());
+      var nav='<span class="pnav">'
+        + '<a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0"'
+        +   ' data-tip="'+esc('Open the '+p.label+' detail view — every entry\u2019s result on this profile, with the columns that profile reports.')+'"'
+        +   ' aria-label="Open the '+esc(p.label)+' detail view">▤</a>'
+        + (p.doc?('<a class="pico" href="/docs/'+esc(p.doc)+'/"'
+        +   ' data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'"'
+        +   ' aria-label="'+esc(p.label)+' implementation guide">?</a>'):'')
+        + '</span>';
+      th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+nav+'</th>';
+    });
     th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
@@ -1652,14 +1672,18 @@ document.addEventListener('DOMContentLoaded', function(){
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
     // navigation.
-    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&(ev.target.closest('.hq')||ev.target.closest('.fwtog'))) return; sortBy(h.dataset.k); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&(ev.target.closest('.hq')||ev.target.closest('.fwtog')||ev.target.closest('.pico'))) return; sortBy(h.dataset.k); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th .pico.pgo'), function(a){
+      a.onclick=function(ev){ ev.preventDefault(); ev.stopPropagation(); pickProfile(a.dataset.pid); };
+      a.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); pickProfile(a.dataset.pid); } };
+    });
     var _ft=document.getElementById('fwTog');
     if(_ft){ _ft.onclick=function(ev){ ev.stopPropagation(); toggleCompactFw(); };
              _ft.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); toggleCompactFw(); } }; }
     setupTopScroll();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cputot'){var t=cpuTotPct(r); return t==null?Infinity:t;} if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
@@ -1672,6 +1696,16 @@ document.addEventListener('DOMContentLoaded', function(){
   // the generator never quite reaches its own number, so the threshold has to
   // sit below it. Mirrors FULL_RATE in scripts/latency_score.py.
   var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, '8gbit':47500};
+  // Logical CPUs the fixed-rate profiles are pinned to - cpuset 0-31,64-95 in
+  // scripts/lib/profiles.sh, i.e. 32 cores with both threads, so 64. Used to turn
+  // CPU-per-request into "how much of the machine it was allowed did this take".
+  var LAT_CPUS=64;
+  // CPU microseconds per second / 1e6 = cores in use; over the allowance = 0-100%.
+  function cpuTotPct(r){
+    if(r==null||r.cpu_per_req_us==null) return null;
+    var q=r.rps||0; if(!(q>0)) return null;
+    return (+r.cpu_per_req_us)*q/1e6/LAT_CPUS*100;
+  }
   var LAT_W_CPU=0.60, LAT_W_P99=0.25, LAT_W_P999=0.15, LAT_DEC=3;
   var _latScores={};
   function isLatProfile(pid){ return Object.prototype.hasOwnProperty.call(LAT_FULL,pid); }
@@ -1735,6 +1769,7 @@ document.addEventListener('DOMContentLoaded', function(){
       c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
       c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
       c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
+      c.push({k:'cputot', label:'CPU used', num:true, w:'100px', min:520, tip:'The same CPU cost read as a share of the machine this profile allows: CPU-per-request \u00d7 the rate delivered, over the 64 logical CPUs the profile pins (cpuset 0-31,64-95). 100% would mean the entry saturated everything it was given.'});
       c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
       c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:640, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
       c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
@@ -1760,6 +1795,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='l1mscore'){ var v=latScore(state.profile,r.fw); return '<div class="c num"><b>'+(v?v.toFixed(1):'-')+'</b></div>'; }
     if(k==='p999') return '<div class="c num sub">'+esc(r.p99_9_latency||'-')+'</div>';
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
+    if(k==='cputot'){ var t=cpuTotPct(r); return '<div class="c num sub">'+(t==null?'-':esc(t.toFixed(1))+'%')+'</div>'; }
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
     if(k==='cpu') return '<div class="c num sub">'+esc(r.cpu||'-')+'</div>';
