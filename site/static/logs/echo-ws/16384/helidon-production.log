@@ -1,53 +1,27 @@
-Aug 29, 2026 1:04:17 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+Aug 30, 2026 5:38:35 PM io.helidon.logging.jul.JulProvider doConfigureLogging
 INFO: Logging at runtime configured using defaults
 WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
 WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
 WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
 WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
-Aug 29, 2026 1:04:18 PM io.helidon.common.features.HelidonFeatures features
+Aug 30, 2026 5:38:36 PM io.helidon.common.features.HelidonFeatures features
 INFO: Helidon SE 4.5.4 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
-Aug 29, 2026 1:04:18 PM io.helidon.webserver.ServerListener startIt
-INFO: [0x62d23a73] http://0.0.0.0:8080 bound for socket '@default'
-Aug 29, 2026 1:04:18 PM io.helidon.common.features.HelidonFeatures features
+Aug 30, 2026 5:38:36 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x185d4ab2] http://0.0.0.0:8082 bound for socket 'h2c'
+Aug 30, 2026 5:38:36 PM io.helidon.common.features.HelidonFeatures features
 INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
-Aug 29, 2026 1:04:18 PM io.helidon.common.features.HelidonFeatures lambda$features$11
+Aug 30, 2026 5:38:36 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x14a3a070] http://0.0.0.0:8080 bound for socket '@default'
+Aug 30, 2026 5:38:36 PM io.helidon.common.features.HelidonFeatures lambda$features$11
 INFO: 	Preview feature: GRPC (WebServer/GRPC)
-Aug 29, 2026 1:04:18 PM io.helidon.webserver.ServerListener startIt
-INFO: [0x0a216700] https://0.0.0.0:8443 bound for socket 'h2-tls'
-Aug 29, 2026 1:04:18 PM io.helidon.webserver.ServerListener startIt
-INFO: [0x2e839976] https://0.0.0.0:8081 bound for socket 'h1-tls'
-Aug 29, 2026 1:04:18 PM io.helidon.webserver.LoomServer startIt
-INFO: Started all channels in 39 milliseconds. 1041 milliseconds since JVM startup. Java 25.0.4+7-LTS
+Aug 30, 2026 5:38:36 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x6b810235] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Aug 30, 2026 5:38:36 PM io.helidon.webserver.ServerListener startIt
+INFO: [0x69c507db] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Aug 30, 2026 5:38:36 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 38 milliseconds. 1020 milliseconds since JVM startup. Java 25.0.4+7-LTS
 Helidon HttpArena server started on ports: 
 plain (8080)
 https (8443)
 h1tls (8081)
-Aug 29, 2026 1:04:19 PM io.helidon.webserver.http.DirectHandlers handle
-WARNING: Internal server error
-io.helidon.http.RequestException: Internal Server Error
-	at io.helidon.http.RequestException$Builder.build(RequestException.java:157)
-	at io.helidon.webserver.http.ErrorHandlers.unhandledError(ErrorHandlers.java:213)
-	at io.helidon.webserver.http.ErrorHandlers.lambda$handleError$1(ErrorHandlers.java:185)
-	at java.base/java.util.Optional.ifPresentOrElse(Unknown Source)
-	at io.helidon.webserver.http.ErrorHandlers.handleError(ErrorHandlers.java:184)
-	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:115)
-	at io.helidon.webserver.http.Filters.filter(Filters.java:83)
-	at io.helidon.webserver.http.HttpRoutingImpl.routeUpgrade(HttpRoutingImpl.java:99)
-	at io.helidon.webserver.http1.Http1Connection.handle(Http1Connection.java:226)
-	at io.helidon.webserver.ConnectionHandler.run(ConnectionHandler.java:191)
-	at io.helidon.common.task.InterruptableTask.call(InterruptableTask.java:47)
-	at io.helidon.webserver.ThreadPerTaskExecutor$ThreadBoundFuture.run(ThreadPerTaskExecutor.java:241)
-	at java.base/java.lang.VirtualThread.run(Unknown Source)
-Caused by: java.util.ConcurrentModificationException
-	at java.base/java.util.ArrayList$Itr.checkForComodification(Unknown Source)
-	at java.base/java.util.ArrayList$Itr.next(Unknown Source)
-	at io.helidon.http.Headers.containsToken(Headers.java:88)
-	at io.helidon.webserver.websocket.WsUpgrader.isWebSocketUpgrade(WsUpgrader.java:219)
-	at io.helidon.webserver.websocket.WsUpgrader$PreparedUpgrade.upgrade(WsUpgrader.java:405)
-	at io.helidon.webserver.websocket.WsUpgrader$RoutedUpgrader.lambda$routedUpgrade$0(WsUpgrader.java:447)
-	at io.helidon.webserver.http.HttpRoutingImpl$UpgradeRoutingExecutor.doRoute(HttpRoutingImpl.java:354)
-	at io.helidon.webserver.http.HttpRoutingImpl$UpgradeRoutingExecutor.call(HttpRoutingImpl.java:279)
-	at io.helidon.webserver.http.HttpRoutingImpl$UpgradeRoutingExecutor.call(HttpRoutingImpl.java:247)
-	at io.helidon.webserver.http.ErrorHandlers.runWithErrorHandling(ErrorHandlers.java:78)
-	... 7 more
-
+h2c (8082)

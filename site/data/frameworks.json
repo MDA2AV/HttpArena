@@ -782,7 +782,7 @@
   },
   "helidon-tuned": {
     "dir": "helidon-tuned",
-    "description": "Helidon SE 4.5.4 on N\u00edma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.5.4 on N\u00edma WebServer with Java 25, tuned socket and protocol-validation settings, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
