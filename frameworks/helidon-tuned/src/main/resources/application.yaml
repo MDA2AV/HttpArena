@@ -51,7 +51,7 @@ server:
             cert-chain:
               resource:
                 path: "${cert.dir}/server.crt"
-    - name: "h1-tls"  # json-tls, static-tls
+    - name: "h1-tls"  # json-tls, static-tls, 8gbit
       host: "0.0.0.0"
       port: 8081
       backlog: 8192

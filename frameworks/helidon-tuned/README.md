@@ -16,7 +16,7 @@ The current subscribed benchmark profiles are:
 - `json-comp`
 - `json-tls`
 - `static-tls`
-- `upload`
+- `8gbit`
 - `async-db`
 - `baseline-h2`
 - `static-h2`
@@ -39,7 +39,7 @@ Profiles not currently supported here:
 The benchmark wiring is split by listener:
 
 - `8080` (`default`): HTTP/1.1 endpoints, cleartext gRPC for `unary-grpc`, and WebSocket
-- `8081` (`h1-tls`): HTTP/1.1 + TLS for `json-tls` and `static-tls`
+- `8081` (`h1-tls`): HTTP/1.1 + TLS for `json-tls`, `static-tls`, and `8gbit`
 - `8082` (`h2c`): cleartext prior-knowledge HTTP/2 for `baseline-h2c` and `json-h2c`
 - `8443` (`h2-tls`): HTTP/2 + TLS for `baseline-h2`, `static-h2`, and `unary-grpc-tls`
 
