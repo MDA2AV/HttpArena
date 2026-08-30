@@ -8,7 +8,7 @@ description: "How the 100 KB TLS echo profile is run, what it measures, and the 
 
 Both directions at once. A 100 KB body is posted over TLS and must come back verbatim, so a single request exercises the read path, the write path, and the TLS record layer **in both directions**.
 
-**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 4096 · **Duration:** 5s
+**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 512 · **Offered rate:** 50,000 req/s
 
 ## The contract
 
@@ -48,9 +48,13 @@ A **7% spread across 99 entries** spanning D, Rust, Go, Ruby and C++ - which is 
 
 ## Content-Length, not chunked
 
-The benchmark sends `Content-Length`. That is a property of the load generator rather than a preference: wrk frames the request body itself and always emits `Content-Length`, and setting `Transfer-Encoding` as well produces a request carrying both, which [RFC 9112 §6.1](https://www.rfc-editor.org/rfc/rfc9112#section-6.1) makes an error - wrk rejects it outright.
+The benchmark sends `Content-Length`, which is what a real client sends for a body of known size. Chunked exists for bodies whose length is not known yet; at 100 KB it almost always is, so `Content-Length` is the realistic framing rather than merely the convenient one.
 
 **Chunked is covered by [validation](../validation/) instead**, and it is not optional there: a 100 KB chunked body must be decoded and echoed byte-for-byte. An implementation that reads the body length from `Content-Length` rather than from the framing will pass the benchmark and fail validation.
+
+## Paced, not open-loop
+
+The other H1 profiles ask how fast a server can go. This one pins the offered rate at **50,000 req/s across 512 held connections** and asks what serving exactly that cost - CPU, memory and latency - so the variable between entries is cost rather than throughput. An entry that cannot hold the rate reports it in `rate_ratio` instead of quietly returning a smaller number that reads like a like-for-like result; a run whose `rate_ratio` is well under 1 was not offered the load the profile claims and is not comparable.
 
 ## What it measures
 
@@ -61,9 +65,11 @@ The benchmark sends `Content-Length`. That is a property of the load generator r
 
 ## Anti-cheat
 
-The load generator rotates **eight distinct 100 KB bodies** rather than sending one repeatedly. With a single constant body a server could return a canned buffer of the right size without ever reading the request, and the measurement would not notice; rotating makes that answer wrong seven times out of eight.
+zrk posts **one constant body** - it takes a single `-b @FILE`, so unlike the wrk script this profile previously ran there is no rotation to make a canned reply wrong most of the time. A server that cached the first response, or that sized a reply from `Content-Length` without ever reading the body, would not be caught by the benchmark itself.
 
-Validation goes further and sends **random** bodies, comparing byte for byte. Answering without reading is not merely penalised, it fails.
+**The guard is therefore entirely in [validation](../validation/)**, which posts **random** bodies and compares them byte for byte, at 1 B, 1 KB and 100 KB, plus a 100 KB chunked body that cannot be sized from `Content-Length` at all, plus an empty one. Answering without reading is not penalised there, it fails.
+
+That is a real trade for the paced measurement below, and worth stating plainly: the benchmark run no longer proves the bytes came back, validation does.
 
 ## Parameters
 
@@ -73,11 +79,12 @@ Validation goes further and sends **random** bodies, comparing byte for byte. An
 | Port | 8081 (TLS, ALPN `http/1.1`) |
 | Body | 100 KB (102,400 bytes), `application/octet-stream` |
 | Framing | `Content-Length` both ways |
-| Connections | 4096 |
+| Connections | 512 |
+| Offered rate | 50,000 req/s (`ZRK_RATE_ECHO_100K`) |
 | Duration | 5s |
 | Runs | 3, best kept |
-| Load generator | [wrk](/docs/load-generators/h1/wrk/) with `requests/echo-100k-rotate.lua` |
-| Metrics | rps, response bandwidth, and ingest bandwidth as `rps × 102400` |
+| Load generator | [zrk](/docs/load-generators/h1/zrk/) — paced, `-m POST -b @<body>` |
+| Metrics | rps, `rate_ratio`, latency (p50/p99/p99.9), response bandwidth, and ingest bandwidth as `rps × body size` |
 
 wrk reports only the bytes it *read*, so its `Transfer/sec` is the download half of the echo. The ingest half is reconstructed in `benchmark.sh` from the request size, which is constant - without that the profile would report half the I/O it actually moves.
 

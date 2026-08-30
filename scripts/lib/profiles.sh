@@ -75,12 +75,12 @@ declare -A PROFILES=(
     # bandwidth ceiling still leaves per-request framework overhead visible.
     # It is also ~7 TLS records and more than one socket buffer, so partial
     # reads, multi-record handling and partial writes all get exercised.
-    # 4096 connections. wrk does not hold 32 here: at this body size its
-    # per-connection write is large enough that a low connection count cannot keep
-    # the pipe full, and the point is measured throughput, not a connection ramp.
-    # 4096 also puts the per-connection memory of a buffering implementation under
-    # real pressure, which is one of the things this profile is meant to show.
-    [echo-100k]="1|0|0-31,64-95|4096|echo-100k"
+    # Paced, not open-loop: zrk holds a fixed offered rate (ZRK_RATE_ECHO_100K)
+    # over 512 held connections, so the question stops being "how fast can this
+    # go" and becomes "what did it cost to serve exactly this much". An entry
+    # that cannot hold the rate says so in rate_ratio rather than quietly
+    # reporting a lower number that reads like a like-for-like result.
+    [echo-100k]="1|0|0-31,64-95|512|echo-100k"
     [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [fortunes]="1|0|0-31,64-95|1024|fortunes"
@@ -139,9 +139,9 @@ parse_profile() {
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
-        static-tls|json-tls|echo-100k)         echo "wrk" ;;
+        static-tls|json-tls)                 echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
-        latency-1m|latency-10k)             echo "zrk" ;;
+        latency-1m|latency-10k|echo-100k)             echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3

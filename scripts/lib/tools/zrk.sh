@@ -31,7 +31,8 @@ _zrk_cmd() {
     if docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
         printf '%s\n' docker run --rm --network host \
             --cpuset-cpus="$GCANNON_CPUS" --security-opt seccomp=unconfined \
-            --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 "$ZRK_IMAGE"
+            --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 \
+            -v "$REQUESTS_DIR:$REQUESTS_DIR:ro" "$ZRK_IMAGE"
         return 0
     fi
     fail "zrk not found: '$ZRK' is not on PATH and image '$ZRK_IMAGE' does not exist.
@@ -45,6 +46,32 @@ _zrk_cmd() {
 # visible edit rather than a digit inside a pipe-delimited string.
 ZRK_RATE_LATENCY_1M="${ZRK_RATE_LATENCY_1M:-1000000}"
 ZRK_RATE_LATENCY_10K="${ZRK_RATE_LATENCY_10K:-10000}"
+ZRK_RATE_ECHO_100K="${ZRK_RATE_ECHO_100K:-50000}"
+
+# The body zrk posts to /echo. zrk takes a single body (-b @FILE), so unlike the
+# wrk script this profile used to run there is no eight-way rotation making a
+# canned response wrong seven times out of eight. The anti-cheat therefore rests
+# entirely on validation, which posts RANDOM bodies and compares byte for byte:
+# a server answering from a cache, or sizing a reply from Content-Length without
+# reading, fails there. Keep the size in step with benchmark.sh's input_bw.
+ZRK_ECHO_BODY_BYTES="${ZRK_ECHO_BODY_BYTES:-10240}"
+ZRK_ECHO_BODY_FILE="${ZRK_ECHO_BODY_FILE:-$REQUESTS_DIR/.echo-body.bin}"
+
+# Written on the host before the container starts (REQUESTS_DIR is mounted into
+# it read-only). Deterministic, so a run is reproducible and no two entries are
+# ever measured against different bytes.
+_zrk_echo_body() {
+    local have=0
+    [ -s "$ZRK_ECHO_BODY_FILE" ] && have=$(stat -c%s "$ZRK_ECHO_BODY_FILE" 2>/dev/null || echo 0)
+    if [ "$have" != "$ZRK_ECHO_BODY_BYTES" ]; then
+        python3 -c "
+import sys
+n = $ZRK_ECHO_BODY_BYTES
+unit = b'echo-body:'
+sys.stdout.buffer.write((unit * (n // len(unit) + 1))[:n])
+" > "$ZRK_ECHO_BODY_FILE" || fail "could not write the zrk echo body fixture"
+    fi
+}
 
 # ── Build arguments ─────────────────────────────────────────────────────────
 
@@ -72,6 +99,18 @@ zrk_build_args() {
             cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$_rate"
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")
+            ;;
+        echo-100k)
+            # POST the body over TLS and take the same bytes back, so one
+            # request loads both directions. -k because the bench certs are
+            # self-signed. Paced rather than open-loop: what varies between
+            # entries is the cost of serving the rate, not the rate itself.
+            _zrk_echo_body
+            cmd+=(-t "$THREADS" -c "$conns" -d "$duration" -R "$ZRK_RATE_ECHO_100K"
+                  -m POST -b "@$ZRK_ECHO_BODY_FILE"
+                  -H "Content-Type: application/octet-stream"
+                  -k --format json --plain
+                  "https://localhost:$H1TLS_PORT/echo")
             ;;
         *)
             fail "zrk_build_args: unknown endpoint '$endpoint'"

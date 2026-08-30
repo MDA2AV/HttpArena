@@ -166,12 +166,12 @@ $_has_isolated_test && framework_build
 # for the reason the framework build above is: this Dockerfile needs DNS to
 # reach github.com, and the daemon restart in system_tune() breaks resolution
 # inside build containers for several seconds afterwards.
-if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10k"; } && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
+if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10k" || framework_subscribes_to "echo-100k"; } && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
     if ! docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
         docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — the fixed-rate profiles cannot run without it"
     fi
-    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 $ZRK_IMAGE"
+    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
     info "zrk: docker mode ($ZRK_IMAGE)"
 fi
 
@@ -412,11 +412,11 @@ run_one() {
         fi
     fi
 
-    # echo-100k is wrk-driven and has no --raw fixture to size. wrk reports only
-    # the bytes it read, so its Transfer/sec is the download half of the echo;
-    # the request body is a fixed 100 KB (requests/echo-100k-rotate.lua), so the
-    # ingest half is that constant times rps. Without this the profile would
-    # report half the I/O it actually moves.
+    # echo-100k's generator reports only the bytes it read back, so that figure
+    # is the download half of the echo; the request body is a fixed size
+    # (ZRK_ECHO_BODY_BYTES in scripts/lib/tools/zrk.sh - keep the two in step),
+    # so the ingest half is that constant times rps. Without this the profile
+    # would report half the I/O it actually moves.
     if [ "$endpoint" = "echo-100k" ] && [ "${best_rps:-0}" -gt 0 ] 2>/dev/null; then
         BEST_M[input_bw]=$(python3 -c "
 bps = $best_rps * 10240
