@@ -453,8 +453,24 @@
   .heatkey .hk-l{margin-right:.1rem}
   .heatkey .hk{display:inline-flex; align-items:center; gap:.28rem; white-space:nowrap}
   .heatkey .hk i{width:11px; height:11px; border-radius:2px; display:inline-block}
+  /* The column leader. In heat mode it is otherwise just another cell in the top
+     band - everything above 75% of the leader is the same green, the leader
+     included - so the one cell that won the column carried no mark at all. Sits
+     over the band rather than replacing it, so the band still reads. */
+  .cm td.pc .hcrown{display:none}
+  .cm.heat td.pc .hcrown{display:block; position:absolute; left:0; right:0; top:50%;
+    z-index:1; transform:translateY(-50%); text-align:center; line-height:1;
+    font-size:.74rem; pointer-events:none; filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
+  .heatkey .hk i.hk-crown{width:auto; height:auto; font-size:.8rem; line-height:1;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
   .cm.heat td.pc .pcv{visibility:hidden}
   .cm.heat td.pc .cbar{left:0; right:0; top:0; bottom:0; width:auto; height:auto; opacity:1}
+  /* .cm td.pc.lead .cbar sets opacity:.7 for the non-heat bar and sits later in
+     this sheet at equal specificity, so it was still dimming the leader here -
+     rendering its band at 70% as a darker green that is in no legend. The crown
+     is the mark now, so the cell keeps its band exactly. Before the .nc rule, so
+     a leader in a column that does not count still reads as not counting. */
+  .cm.heat td.pc.lead .cbar{opacity:1}
   .cm.heat td.pc.nc .cbar{opacity:.55}
   .cm td.pc.lead .cbar{background:var(--accent); opacity:.7}
   .cm td.pc .pcv{display:flex; align-items:baseline; justify-content:space-between; gap:.45rem}
@@ -1333,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function(){
       lg.setAttribute('data-tip','Each cell is coloured by its score as a share of the best score in that column.');
       lg.innerHTML='<span class="hk-l">share of column leader</span>'+HEAT_BANDS.map(function(b){
         return '<span class="hk"><i style="background:'+b[1]+'"></i>'+esc(b[2])+'</span>';
-      }).join('');
+      }).join('')+'<span class="hk"><i class="hk-crown">\u{1F451}</i>best in column</span>';
       lg.style.display = state.heat ? '' : 'none';
       ctl.appendChild(lg);
       hm.onclick=function(){
@@ -1847,6 +1863,7 @@ document.addEventListener('DOMContentLoaded', function(){
         var inner = '<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span>'
           + (state.heat
               ? '<span class="cbar" style="background:'+heatColor(barPct/100)+'"></span>'
+                + (cell.best?'<span class="hcrown" aria-label="best in this column">\u{1F451}</span>':'')
               : '<span class="cbar" style="width:'+barPct.toFixed(0)+'%"></span>');
         var dat=' data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"');
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
