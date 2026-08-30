@@ -48,6 +48,14 @@ programmatically from `/data/static`, reading from disk on each request while
 preferring precompressed `.br` / `.gz` variants and setting
 `Vary: Accept-Encoding`.
 
+# Tuned protocol configuration
+
+For the benchmark's fixed valid requests, `application.yaml` disables Helidon's
+configurable HTTP/2 request-header, response-header, and path validation. Core
+HTTP/2 framing, pseudo-header, and connection-header validation remains
+enabled. This benchmark-specific setting applies only to `helidon-tuned`;
+`helidon-production` retains the standard validation configuration.
+
 # Divergence from benchmark guidance
 
 ## `async-db` uses JDBC + HikariCP
