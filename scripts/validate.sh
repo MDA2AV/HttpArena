@@ -191,7 +191,7 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls" || has_test "static-tls" || has_test "echo-100k"; then
+if has_test "json-tls" || has_test "static-tls" || has_test "echo-10k"; then
     needs_h1tls=true
 fi
 
@@ -1731,7 +1731,7 @@ print(f'{count} {valid} {faithful}')
     fi
 fi
 
-# ───── Echo-100K (POST /echo over TLS) ─────
+# ───── Echo-10K (POST /echo over TLS) ─────
 #
 # The profile loads both directions at once, so what has to be established is
 # that the bytes come back UNCHANGED - not that a count matches. Every check
@@ -1745,17 +1745,19 @@ fi
 # HTTP/1.1, so validating over h2 would green-light a profile that benchmarks
 # torn responses.
 
-if has_test "echo-100k"; then
-    ECHO_DOCS="$DOCS_BASE/h1/isolated/echo-100k/validation"
-    tls_posture_probe "echo-100k" "$H1TLS_PORT" "$ECHO_DOCS" "http/1.1"
-    echo "[test] echo-100k endpoint"
+if has_test "echo-10k"; then
+    ECHO_DOCS="$DOCS_BASE/h1/isolated/echo-10k/validation"
+    tls_posture_probe "echo-10k" "$H1TLS_PORT" "$ECHO_DOCS" "http/1.1"
+    echo "[test] echo-10k endpoint"
     echo_fail=false
 
     # Random bodies, and the echo compared byte for byte. Random because a
-    # fixed one can be answered from a canned response: the benchmark rotates
-    # eight bodies for the same reason, and this is the check that makes
+    # fixed one can be answered from a canned response, and the paced generator
+    # sends a single constant body -- so this is the ONLY check that makes
     # answering without reading impossible rather than merely unlikely.
-    for _sz in 1 1024 102400; do
+    # 10240 is the benchmark's own size; 102400 is deliberately larger, so a
+    # handler that only works at the size it was tuned for is caught here.
+    for _sz in 1 1024 10240 102400; do
         _src=$(mktemp); _got=$(mktemp)
         head -c "$_sz" /dev/urandom > "$_src"
         curl -sk --http1.1 --max-time 30 -X POST --data-binary "@$_src" \
@@ -1777,21 +1779,23 @@ if has_test "echo-100k"; then
     # trust a Content-Length. This is the check the old upload profile never
     # had: every one of its probes sent an accurate Content-Length, so a
     # handler that echoed that header without reading a byte passed all of them.
-    _src=$(mktemp); _got=$(mktemp)
-    head -c 102400 /dev/urandom > "$_src"
-    cat "$_src" | curl -sk --http1.1 --max-time 30 -X POST --data-binary @- \
-         -H "Content-Type: application/octet-stream" \
-         -H "Transfer-Encoding: chunked" \
-         "https://localhost:$H1TLS_PORT/echo" -o "$_got" 2>/dev/null || true
-    if cmp -s "$_src" "$_got"; then
-        echo "  PASS [POST /echo chunked 100KB] (decoded and echoed byte-for-byte)"
-        PASS=$((PASS + 1))
-    else
-        _gotsz=$(wc -c < "$_got" 2>/dev/null || echo 0)
-        fail_with_link "[POST /echo chunked]: expected 102400 bytes echoed verbatim, got ${_gotsz} bytes that differ - the body must be read from the chunked framing, not from Content-Length" "$ECHO_DOCS"
-        echo_fail=true
-    fi
-    rm -f "$_src" "$_got"
+    for _csz in 10240 102400; do
+        _src=$(mktemp); _got=$(mktemp)
+        head -c "$_csz" /dev/urandom > "$_src"
+        cat "$_src" | curl -sk --http1.1 --max-time 30 -X POST --data-binary @- \
+             -H "Content-Type: application/octet-stream" \
+             -H "Transfer-Encoding: chunked" \
+             "https://localhost:$H1TLS_PORT/echo" -o "$_got" 2>/dev/null || true
+        if cmp -s "$_src" "$_got"; then
+            echo "  PASS [POST /echo chunked ${_csz}B] (decoded and echoed byte-for-byte)"
+            PASS=$((PASS + 1))
+        else
+            _gotsz=$(wc -c < "$_got" 2>/dev/null || echo 0)
+            fail_with_link "[POST /echo chunked ${_csz}B]: expected ${_csz} bytes echoed verbatim, got ${_gotsz} bytes that differ - the body must be read from the chunked framing, not from Content-Length" "$ECHO_DOCS"
+            echo_fail=true
+        fi
+        rm -f "$_src" "$_got"
+    done
 
     # An empty body is still a body: the response must be a 200 with nothing in
     # it, not a 411 or a hang.
@@ -1806,7 +1810,7 @@ if has_test "echo-100k"; then
     fi
 
     if [ "$echo_fail" = "false" ]; then
-        echo "  PASS [echo-100k] (all echoes byte-exact, Content-Length and chunked)"
+        echo "  PASS [echo-10k] (all echoes byte-exact, Content-Length and chunked)"
         PASS=$((PASS + 1))
     fi
 fi

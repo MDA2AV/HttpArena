@@ -19,7 +19,7 @@
     "limited-conn",
     "json-tls",
     "json-comp",
-    "echo-100k",
+    "echo-10k",
     "async-db",
     "echo-ws",
     "echo-ws-pipeline",

@@ -23,7 +23,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "echo-100k",
+    "echo-10k",
     "async-db",
     "static-tls"
   ],

@@ -1,37 +1,37 @@
 ---
 title: Implementation Guidelines
-seo_title: "Echo-100K Benchmark: Implementation Guide"
-description: "How the 100 KB TLS echo profile is run, what it measures, and the type-specific rules that apply to it."
+seo_title: "Echo-10K Benchmark: Implementation Guide"
+description: "How the 10 KB TLS echo profile is run, what it measures, and the type-specific rules that apply to it."
 ---
 {{< type-rules standard="Must read the request body through the framework's standard body API and write it back through the standard response API. Streaming is allowed and encouraged. What is not allowed is answering without reading: a response assembled from Content-Length, or a canned buffer of the right size, is not an echo." tuned="May stream, use vectored writes, reuse buffers, or hand the bytes back with zero copies. The body must still be the bytes that arrived - the profile is defined by what comes back, not by how it is moved." engine="Same as above. An engine is free to splice or reuse the receive buffer directly for the response; that is the point of the profile." infrastructure="A proxy may stream the body through to an origin and back, or echo it itself. Either way the bytes returned must be the bytes sent." >}}
 
 
-Both directions at once. A 100 KB body is posted over TLS and must come back verbatim, so a single request exercises the read path, the write path, and the TLS record layer **in both directions**.
+Both directions at once. A 10 KB body is posted over TLS and must come back verbatim, so a single request exercises the read path, the write path, and the TLS record layer **in both directions**.
 
-**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 100 KB · **Connections:** 512 · **Offered rate:** 50,000 req/s
+**Endpoint:** `POST /echo` · **Port:** `8081` (TLS) · **Body:** 10 KB · **Connections:** 512 · **Offered rate:** 50,000 req/s
 
 ## The contract
 
 ```
 POST /echo HTTP/1.1
 Content-Type: application/octet-stream
-Content-Length: 102400
+Content-Length: 10240
 
-<102400 bytes>
+<10240 bytes>
 ```
 
 The response is those bytes, unchanged:
 
 ```
 HTTP/1.1 200 OK
-Content-Length: 102400
+Content-Length: 10240
 
-<the same 102400 bytes>
+<the same 10240 bytes>
 ```
 
 The endpoint is deliberately named `/echo` rather than after the profile, so other profiles can drive it later at different sizes or framings without a second route to implement.
 
-## Why 100 KB, and not 20 MB
+## Why 10 KB, and not 20 MB
 
 The profile this replaces posted bodies of 500 KB to 20 MB and measured ingest alone. At that size it had stopped saying anything about frameworks:
 
@@ -44,13 +44,15 @@ The profile this replaces posted bodies of 500 KB to 20 MB and measured ingest a
 
 A **7% spread across 99 entries** spanning D, Rust, Go, Ruby and C++ - which is what it looks like when a benchmark is measuring `memcpy` and the loopback rather than the server.
 
-100 KB in and 100 KB out is 200 KB per request, which leaves the box's bandwidth ceiling far enough away that per-request framework overhead is still visible. It is also large enough to force the things worth measuring: **around seven TLS records** (16 KB is the maximum record payload) and more than one socket buffer, so partial reads, multi-record handling and partial writes all happen on every request.
+10 KB in and 10 KB out is 20 KB per request. That is far enough below the box's bandwidth ceiling that what the column reports is per-request framework overhead rather than `memcpy` throughput, which is the failure the 20 MB profile fell into.
+
+It is deliberately **one TLS record** (16 KB is the maximum record payload) and one socket write in each direction. This profile is not trying to exercise multi-record handling or partial writes - the body is small enough that a correct implementation does each side in a single pass, so what is left in the measurement is the cost of getting a request in and a response out, doubled.
 
 ## Content-Length, not chunked
 
-The benchmark sends `Content-Length`, which is what a real client sends for a body of known size. Chunked exists for bodies whose length is not known yet; at 100 KB it almost always is, so `Content-Length` is the realistic framing rather than merely the convenient one.
+The benchmark sends `Content-Length`, which is what a real client sends for a body of known size. Chunked exists for bodies whose length is not known yet; at this size it almost always is, so `Content-Length` is the realistic framing rather than merely the convenient one.
 
-**Chunked is covered by [validation](../validation/) instead**, and it is not optional there: a 100 KB chunked body must be decoded and echoed byte-for-byte. An implementation that reads the body length from `Content-Length` rather than from the framing will pass the benchmark and fail validation.
+**Chunked is covered by [validation](../validation/) instead**, and it is not optional there: a chunked body must be decoded and echoed byte-for-byte, at 10 KB and at 100 KB. An implementation that reads the body length from `Content-Length` rather than from the framing will pass the benchmark and fail validation.
 
 ## Paced, not open-loop
 
@@ -58,16 +60,16 @@ The other H1 profiles ask how fast a server can go. This one pins the offered ra
 
 ## What it measures
 
-- **Copies.** A framework that buffers the whole body, then copies it into a response buffer, then copies that into the socket, pays three times. One that streams the bytes back as they arrive pays once.
-- **Streaming versus buffering.** Memory per connection is flat for a streaming implementation and proportional to body size for a buffering one. At 4096 connections that is the difference between a few megabytes and several gigabytes.
+- **Copies and allocations.** A framework that buffers the whole body, then copies it into a response buffer, then copies that into the socket, pays three times. One that streams the bytes back as they arrive pays once. A per-request allocation of this size shows up here as GC pressure on managed runtimes.
+- **Streaming versus buffering.** Memory per connection is flat for a streaming implementation and proportional to body size for a buffering one.
 - **The TLS record layer in both directions.** Encrypt and decrypt, on every request, at a size that spans several records. kTLS offload shows up here.
-- **Partial writes.** 100 KB does not leave in one `write`. A handler that assumes it does will stall or corrupt under load.
+- **Cost per request, doubled.** Every request pays for a body read and a body write. At 10 KB neither side is bandwidth-bound, so the number is dominated by what the framework spends framing, allocating and moving one small body twice.
 
 ## Anti-cheat
 
 zrk posts **one constant body** - it takes a single `-b @FILE`, so unlike the wrk script this profile previously ran there is no rotation to make a canned reply wrong most of the time. A server that cached the first response, or that sized a reply from `Content-Length` without ever reading the body, would not be caught by the benchmark itself.
 
-**The guard is therefore entirely in [validation](../validation/)**, which posts **random** bodies and compares them byte for byte, at 1 B, 1 KB and 100 KB, plus a 100 KB chunked body that cannot be sized from `Content-Length` at all, plus an empty one. Answering without reading is not penalised there, it fails.
+**The guard is therefore entirely in [validation](../validation/)**, which posts **random** bodies and compares them byte for byte, at 1 B, 1 KB, 10 KB (the benchmark's own size) and 100 KB, plus a chunked body that cannot be sized from `Content-Length` at all, plus an empty one. Answering without reading is not penalised there, it fails.
 
 That is a real trade for the paced measurement below, and worth stating plainly: the benchmark run no longer proves the bytes came back, validation does.
 
@@ -77,10 +79,10 @@ That is a real trade for the paced measurement below, and worth stating plainly:
 |-----------|-------|
 | Endpoint | `POST /echo` |
 | Port | 8081 (TLS, ALPN `http/1.1`) |
-| Body | 100 KB (102,400 bytes), `application/octet-stream` |
+| Body | 10 KB (10,240 bytes), `application/octet-stream` |
 | Framing | `Content-Length` both ways |
 | Connections | 512 |
-| Offered rate | 50,000 req/s (`ZRK_RATE_ECHO_100K`) |
+| Offered rate | 50,000 req/s (`ZRK_RATE_ECHO_10K`) |
 | Duration | 5s |
 | Runs | 3, best kept |
 | Load generator | [zrk](/docs/load-generators/h1/zrk/) — paced, `-m POST -b @<body>` |

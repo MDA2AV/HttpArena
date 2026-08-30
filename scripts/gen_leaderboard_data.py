@@ -79,7 +79,7 @@ CATALOG = [
     ("Workload", [
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
-        ("echo-100k",    "Echo-100K",          "100 KB echoed over TLS: both directions loaded at once (reference).", [512],      [512],           False,False,False),
+        ("echo-10k",    "Echo-10K",          "10 KB echoed over TLS at a fixed rate: both directions loaded at once (reference).", [512],      [512],           False,False,False),
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
     ]),
     ("Database", [
@@ -133,7 +133,7 @@ PROFILE_DOC = {
     "limited-conn":     "test-profiles/h1/isolated/short-lived/implementation",
     "json-comp":        "test-profiles/h1/isolated/json-compressed/implementation",
     "json-tls":         "test-profiles/h1/isolated/json-tls/implementation",
-    "echo-100k":           "test-profiles/h1/isolated/echo-100k/implementation",
+    "echo-10k":           "test-profiles/h1/isolated/echo-10k/implementation",
     "static-tls":       "test-profiles/h1/isolated/static-tls/implementation",
     "async":            "test-profiles/h1/isolated/async/implementation",
     "latency-1m":      "test-profiles/h1/isolated/latency-1m/implementation",

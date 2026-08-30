@@ -1,7 +1,7 @@
 # scripts/lib/tools/wrk.sh — wrk dispatch + parse.
 #
 # Used for: static files (with a Lua rotation script for multi-URI workloads),
-# json-tls and echo-100k (same pattern, TLS port). wrk is the sweet spot for
+# json-tls and echo-10k (same pattern, TLS port). wrk is the sweet spot for
 # multi-URI HTTP/1.1 tests because its Lua scripting is tiny and the output
 # parser is trivial.
 
@@ -33,13 +33,13 @@ wrk_build_args() {
                   -s "$REQUESTS_DIR/json-tls-rotate.lua"
                   "https://localhost:$H1TLS_PORT")
             ;;
-        echo-100k)
+        echo-10k)
             # POST /echo, 100 KB in and the same 100 KB back. wrk reports only
             # the bytes it READ, so the Transfer/sec it prints is the download
             # half; the input half is reconstructed in benchmark.sh from
             # rps x ECHO_BODY_BYTES.
             cmd+=(-t "$THREADS" -c "$conns" -d "$duration"
-                  -s "$REQUESTS_DIR/echo-100k-rotate.lua"
+                  -s "$REQUESTS_DIR/echo-10k-rotate.lua"
                   "https://localhost:$H1TLS_PORT")
             ;;
         *)
