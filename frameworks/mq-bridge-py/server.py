@@ -1,36 +1,48 @@
-"""HttpArena core server for mq-bridge-py (Python).
+"""HttpArena entry for mq-bridge-py (Python).
 
-Serves the cleartext HTTP/1.1 + HTTP/2 (h2c) profiles on ``0.0.0.0:8080`` via a
-single catch-all ``http -> response`` route. mq-bridge keeps all HTTP framing in
-Rust (hyper-util's auto connection builder negotiates HTTP/1.1 and h2 prior
-knowledge on the plaintext port), and the inline-response fast path keeps the
-response on the Rust side; the Python handler runs only the per-request dispatch.
+One catch-all ``http -> response`` route per listener, dispatching on the
+request's ``http_method`` / ``http_path`` / ``http_query`` metadata. mq-bridge
+keeps all HTTP framing in Rust (hyper-util's auto connection builder negotiates
+HTTP/1.1 and h2 prior knowledge on the plaintext port) and the inline-response
+fast path keeps the reply on the Rust side, so the Python handler runs only the
+per-request dispatch.
 
-Endpoints (HttpArena reference contract)
-----------------------------------------
-* ``GET  /pipeline``                    -> ``ok``             (baseline/pipelined/limited-conn)
-* ``GET  /baseline11?a=&b=``            -> ``a+b``            (baseline)
-* ``POST /baseline11?a=&b=`` + body int -> ``a+b+body``
-* ``GET  /baseline2?a=&b=``             -> ``a+b``
-* ``GET  /json/{count}?m=``             -> processed dataset JSON  (json/json-comp)
-* ``POST /echo`` + body                 -> the body, unchanged     (in-out)
-* ``GET  /async-db?min=&max=&limit=``   -> Postgres ``items`` rows  (async-db)
-* ``GET  /static/{file}``               -> file from /data/static   (static)
+===============================  ==========================  =====================
+Endpoint                         Reply                       Profiles
+===============================  ==========================  =====================
+``GET  /pipeline``               ``ok``                      baseline, pipelined,
+                                                             limited-conn
+``GET  /baseline11?a=&b=``       ``a+b``                     baseline
+``POST /baseline11?a=&b=``+body  ``a+b+body``                baseline
+``GET  /baseline2?a=&b=``        ``a+b``                     baseline-h2, -h2c
+``GET  /json/{count}?m=``        processed dataset           json-comp, json-tls,
+                                                             json-h2c
+``POST /echo`` + body            the body, unchanged         8gbit
+``GET  /delay/{ms}``             ``{ms}`` after waiting      async
+``GET  /async-db?min=&max=&limit=``  ``items`` rows          async-db
+``GET  /fortunes``               rendered HTML table         fortunes
+``GET  /static/{file}``          file from /data/static      static-h2
+``GET  /crud/items?...``         paginated list              crud
+``GET  /crud/items/{id}``        cached item                 crud
+``POST /crud/items`` + JSON      201 + upserted item         crud
+``PUT  /crud/items/{id}`` + JSON updated item                crud
+===============================  ==========================  =====================
 
-Harness inputs: dataset from ``/data/dataset.json`` (``DATASET_PATH`` overrides),
-static assets from ``/data/static`` (``STATIC_DIR``), Postgres from
-``DATABASE_URL``. A missing DB / driver is non-fatal: ``/async-db`` then returns
-an empty result so the cleartext profiles still run.
+Listeners: 8080 HTTP/1.1 + h2c (auto), 8082 h2c-only, 8443 h2-over-TLS, 8081
+HTTP/1.1-over-TLS. The TLS ports bind only when certs are mounted.
 
-``json-comp`` is handled by mq-bridge's response compression
+Harness inputs: ``DATASET_PATH``, ``STATIC_DIR``, ``DATABASE_URL``,
+``DATABASE_MAX_CONN``, ``REDIS_URL``. A missing database is non-fatal — the
+DB-backed endpoints degrade rather than blocking the cleartext profiles.
+
+``json-comp`` is served by mq-bridge's own response compression
 (``compression_enabled``): bodies over the threshold are gzip-encoded when the
-client advertises ``Accept-Encoding: gzip``, identity otherwise — so the same
+client advertises ``Accept-Encoding: gzip``, identity otherwise — so one
 ``/json`` handler serves both ``json`` and ``json-comp``.
 """
 
 from __future__ import annotations
 
-import gzip as _gzip
 import json as _json
 import os
 import signal
@@ -50,16 +62,26 @@ TLS_CERT = os.environ.get("TLS_CERT", "/certs/server.crt")
 TLS_KEY = os.environ.get("TLS_KEY", "/certs/server.key")
 DATASET_PATH = os.environ.get("DATASET_PATH", "/data/dataset.json")
 STATIC_DIR = Path(os.environ.get("STATIC_DIR", "/data/static")).resolve()
+TEMPLATE_DIR = Path(os.environ.get("TEMPLATE_DIR", Path(__file__).parent / "templates"))
 
 SERVER = "mq-bridge-py"
 JSON_META = {"content-type": "application/json", "Server": SERVER}
 TEXT_META = {"content-type": "text/plain; charset=utf-8", "Server": SERVER}
+HTML_META = {"content-type": "text/html; charset=utf-8", "Server": SERVER}
 OCTET_META = {"content-type": "application/octet-stream", "Server": SERVER}
-NOT_FOUND_META = {
-    "content-type": "text/plain; charset=utf-8",
-    "Server": SERVER,
-    "http_status_code": "404",
-}
+
+
+def _status_meta(code: int, base: dict = JSON_META) -> dict:
+    return dict(base, http_status_code=str(code))
+
+
+NOT_FOUND = (b"Not Found", _status_meta(404, TEXT_META))
+BAD_REQUEST = (b"Bad Request", _status_meta(400, TEXT_META))
+SERVER_ERROR = (b"Internal Server Error", _status_meta(500, TEXT_META))
+UNAVAILABLE = (b"Service Unavailable", _status_meta(503, TEXT_META))
+
+
+# ---------- route configuration ----------
 
 def _tls_available() -> bool:
     return Path(TLS_CERT).is_file() and Path(TLS_KEY).is_file()
@@ -135,11 +157,19 @@ def _config(http_workers: int) -> tuple[str, list[str]]:
     return "routes:\n" + "\n".join(routes), names
 
 
-# Static assets are pre-gzipped once at startup (see CachedBody) and the reply
-# carries `content-encoding: gzip` when the client accepts it — mq-bridge honors
-# that and skips re-compressing them per request. Dynamic `/json` responses are
-# serialized fresh per request (no response caching) and compressed by the
-# library's per-request gzip when the client advertises Accept-Encoding.
+# ---------- static ----------
+#
+# Read from disk on every request. The profile allows serving file contents from
+# memory only out of the framework's own static handler; a cache assembled here
+# — a startup directory scan, pre-loaded buffers — is explicitly not allowed,
+# and the response has to follow the disk. mq-bridge has no static file handler,
+# so there is nothing to cache behind and every hit is a real read.
+#
+# The `.gz` variants ship on disk beside the originals, so picking one off
+# Accept-Encoding is a file read rather than compression, which is the one
+# entry-side choice the profile permits. Everything else is left to mq-bridge's
+# own per-request compression — as `/json` is, serialized fresh and compressed
+# by the library when the client advertises an encoding.
 
 CONTENT_TYPES = {
     "js": "application/javascript",
@@ -152,144 +182,26 @@ CONTENT_TYPES = {
 }
 
 
-class CachedBody:
-    """A response body cached in both identity and gzip form, with pre-built
-    reply metadata for each. Lets a hot endpoint serve a request with a dict
-    lookup and zero per-request serialization, gzip, or metadata allocation.
-    The gzip variant is only kept when it actually shrinks the body."""
-
-    __slots__ = ("plain", "gzip", "_meta_plain", "_meta_gzip")
-
-    def __init__(self, body: bytes, content_type: str):
-        self.plain = body
-        self._meta_plain = {"content-type": content_type, "Server": SERVER}
-        # mtime=0 keeps the gzip bytes deterministic across processes/restarts.
-        compressed = _gzip.compress(body, compresslevel=6, mtime=0)
-        if len(compressed) < len(body):
-            self.gzip = compressed
-            self._meta_gzip = {
-                "content-type": content_type,
-                "Server": SERVER,
-                "content-encoding": "gzip",
-            }
-        else:
-            self.gzip = None
-            self._meta_gzip = None
-
-    def message(self, request: "Message", want_gzip: bool) -> "Message":
-        if want_gzip and self.gzip is not None:
-            return request.__class__(self.gzip, self._meta_gzip)
-        return request.__class__(self.plain, self._meta_plain)
-
-
-def _load_dataset() -> list[dict]:
-    try:
-        with open(DATASET_PATH, "rb") as f:
-            data = _json.load(f)
-        return data if isinstance(data, list) else []
-    except (OSError, ValueError):
-        return []
-
-
-DATASET = _load_dataset()
-
-
-# ---------- optional Postgres (async-db) ----------
-
-_POOL = None
-
-
-def _init_pool():
-    url = os.environ.get("DATABASE_URL", "")
-    if not url:
-        return None
-    try:
-        from psycopg_pool import ConnectionPool
-    except ImportError:
-        return None
-    budget = int(os.environ.get("DATABASE_MAX_CONN", "256"))
-    # One pool per forked worker, so the budget has to be divided by the worker
-    # count rather than handed to each. Postgres runs with max_connections=256
-    # and reserves a few of those for the superuser; the crud profile hands the
-    # container a 62-CPU cpuset, so a per-worker max of the full budget asked
-    # for 62 x 256.
-    max_conn = max(1, (budget - 8) // max(1, _worker_count()))
-    try:
-        pool = ConnectionPool(url, min_size=1, max_size=max_conn, open=True)
-        return pool
-    except Exception as exc:  # noqa: BLE001 - non-fatal, /async-db degrades to empty
-        print(f"Postgres connection failed ({exc}); /async-db returns empty")
-        return None
-
-
-def _query_int(qs: dict[str, list[str]], key: str, default: int) -> int:
-    try:
-        return int(qs[key][0])
-    except (KeyError, IndexError, ValueError):
-        return default
-
-
-# ---------- handlers ----------
-
-def _build_json(count: int, m: int) -> bytes:
-    count = min(count, len(DATASET))
-    items = []
-    for d in DATASET[:count]:
-        items.append(
-            {
-                "id": d["id"],
-                "name": d["name"],
-                "category": d["category"],
-                "price": d["price"],
-                "quantity": d["quantity"],
-                "active": d["active"],
-                "tags": d["tags"],
-                "rating": {"score": d["rating"]["score"], "count": d["rating"]["count"]},
-                "total": d["price"] * d["quantity"] * m,
-            }
-        )
-    return _json.dumps({"items": items, "count": count}, separators=(",", ":")).encode()
-
-
-def _async_db(qs: dict[str, list[str]]) -> bytes:
-    if _POOL is None:
-        return b'{"items":[],"count":0}'
-    min_p = _query_int(qs, "min", 10)
-    max_p = _query_int(qs, "max", 50)
-    limit = max(1, min(_query_int(qs, "limit", 50), 50))
-    try:
-        with _POOL.connection() as conn:
-            cur = conn.execute(
-                "SELECT id, name, category, price, quantity, active, tags, "
-                "rating_score, rating_count FROM items WHERE price BETWEEN %s AND %s LIMIT %s",
-                (min_p, max_p, limit),
-            )
-            rows = cur.fetchall()
-    except Exception:  # noqa: BLE001 - degrade to empty result
-        return b'{"items":[],"count":0}'
-    items = [
-        {
-            "id": r[0],
-            "name": r[1],
-            "category": r[2],
-            "price": r[3],
-            "quantity": r[4],
-            "active": r[5],
-            "tags": r[6],
-            "rating": {"score": r[7], "count": r[8]},
-        }
-        for r in rows
-    ]
-    return _json.dumps({"count": len(items), "items": items}, separators=(",", ":")).encode()
-
-
 def _content_type_for(name: str) -> str:
     ext = name.rsplit(".", 1)[-1] if "." in name else ""
     return CONTENT_TYPES.get(ext, "application/octet-stream")
 
 
-def _reply(request: Message, body: bytes, metadata: dict[str, str]) -> Message:
-    return request.__class__(body, metadata)
+def _serve_static(name: str, want_gzip: bool) -> tuple[bytes, dict]:
+    # Reject traversal: the name must be a single normal path component.
+    if not name or "/" in name or name in (".", ".."):
+        return NOT_FOUND
+    meta = {"content-type": _content_type_for(name), "Server": SERVER}
+    if want_gzip:
+        try:
+            body = (STATIC_DIR / (name + ".gz")).read_bytes()
+            return body, dict(meta, **{"content-encoding": "gzip"})
+        except OSError:
+            pass  # no pre-compressed variant; fall through to the original
+    try:
+        return (STATIC_DIR / name).read_bytes(), meta
+    except OSError:
+        return NOT_FOUND
 
 
 def _accepts_gzip(message: Message) -> bool:
@@ -310,54 +222,92 @@ def _accepts_gzip(message: Message) -> bool:
     return False
 
 
-def _load_static_cache() -> dict[str, CachedBody]:
-    # Read and pre-gzip every static asset once at startup so each request is a
-    # dict lookup with no filesystem I/O or per-request allocation. Built at
-    # import (before fork), so worker processes share it copy-on-write.
-    cache: dict[str, CachedBody] = {}
+# ---------- dataset (json profile) ----------
+
+def _load_dataset() -> list[dict]:
     try:
-        entries = list(STATIC_DIR.iterdir())
-    except OSError:
-        return cache
-    for entry in entries:
-        try:
-            if entry.is_file():
-                cache[entry.name] = CachedBody(
-                    entry.read_bytes(), _content_type_for(entry.name)
-                )
-        except OSError:
-            continue
-    return cache
+        with open(DATASET_PATH, "rb") as f:
+            data = _json.load(f)
+        return data if isinstance(data, list) else []
+    except (OSError, ValueError):
+        return []
 
 
-STATIC_CACHE = _load_static_cache()
+DATASET = _load_dataset()
 
 
-def _serve_static(request: Message, name: str, want_gzip: bool) -> Message:
-    # Reject path traversal: the name must be a single normal path component.
-    # (The cache is keyed by bare filename, so traversal can't hit an entry, but
-    # keep the explicit guard for clarity.)
-    if not name or "/" in name or name in (".", ".."):
-        return _reply(request, b"Not Found", NOT_FOUND_META)
-    cached = STATIC_CACHE.get(name)
-    if cached is None:
-        return _reply(request, b"Not Found", NOT_FOUND_META)
-    return cached.message(request, want_gzip)
+def _query_int(qs: dict[str, list[str]], key: str, default: int) -> int:
+    try:
+        return int(qs[key][0])
+    except (KeyError, IndexError, ValueError):
+        return default
 
 
+def _dumps(obj) -> bytes:
+    return _json.dumps(obj, separators=(",", ":")).encode()
 
 
-# ---------- crud ----------
+def _build_json(qs: dict[str, list[str]], count: int) -> tuple[bytes, dict]:
+    """Serialized fresh per request — no response caching. mq-bridge compresses
+    it per request when the client advertises an encoding, so `json` and
+    `json-comp` both measure real serialization and compression work."""
+    m = _query_int(qs, "m", 1)
+    count = min(count, len(DATASET))
+    items = [
+        {
+            "id": d["id"],
+            "name": d["name"],
+            "category": d["category"],
+            "price": d["price"],
+            "quantity": d["quantity"],
+            "active": d["active"],
+            "tags": d["tags"],
+            "rating": {"score": d["rating"]["score"], "count": d["rating"]["count"]},
+            "total": d["price"] * d["quantity"] * m,
+        }
+        for d in DATASET[:count]
+    ]
+    return _dumps({"items": items, "count": count}), JSON_META
 
+
+# ---------- database ----------
+
+_POOL = None
 _REDIS = None
 
-CRUD_COLUMNS = (
+ITEM_COLUMNS = (
     "id, name, category, price, quantity, active, tags, rating_score, rating_count"
 )
 
-# The crud profile reads and writes the same ids, so a long TTL would answer from
-# a copy the writes have already moved past.
-CRUD_TTL_MS = 200
+
+class _DbError(Exception):
+    """Raised by `_fetch`; `handle` maps `.code` to the matching status reply.
+    503 means the pool is absent, 500 that the query itself failed."""
+
+    def __init__(self, code: int):
+        self.code = code
+
+
+def _init_pool():
+    url = os.environ.get("DATABASE_URL", "")
+    if not url:
+        return None
+    try:
+        from psycopg_pool import ConnectionPool
+    except ImportError:
+        return None
+    budget = int(os.environ.get("DATABASE_MAX_CONN", "256"))
+    # One pool per forked worker, so the budget has to be divided by the worker
+    # count rather than handed to each. Postgres runs with max_connections=256
+    # and reserves a few of those for the superuser; the crud profile hands the
+    # container a 62-CPU cpuset, so a per-worker max of the full budget asked
+    # for 62 x 256.
+    max_conn = max(1, (budget - 8) // max(1, _worker_count()))
+    try:
+        return ConnectionPool(url, min_size=1, max_size=max_conn, open=True)
+    except Exception as exc:  # noqa: BLE001 - non-fatal, DB endpoints degrade
+        print(f"Postgres connection failed ({exc}); DB endpoints degrade")
+        return None
 
 
 def _init_redis():
@@ -372,7 +322,21 @@ def _init_redis():
         return None
 
 
-def _crud_row(r) -> dict:
+def _fetch(sql: str, params: tuple = (), one: bool = False):
+    """Run one query on the pool. Returns the rows (or the single row, which is
+    None when nothing matched); raises `_DbError` when the pool is missing or
+    the query fails, so callers never confuse "no such row" with "no database"."""
+    if _POOL is None:
+        raise _DbError(503)
+    try:
+        with _POOL.connection() as conn:
+            cur = conn.execute(sql, params)
+            return cur.fetchone() if one else cur.fetchall()
+    except Exception:  # noqa: BLE001
+        raise _DbError(500) from None
+
+
+def _item_row(r) -> dict:
     tags = r[6]
     return {
         "id": r[0],
@@ -387,69 +351,62 @@ def _crud_row(r) -> dict:
     }
 
 
+def _async_db(qs: dict[str, list[str]]) -> tuple[bytes, dict]:
+    """A missing database is not an error here: the profile's other listeners
+    have to keep serving, so an unreachable pool degrades to an empty result."""
+    try:
+        rows = _fetch(
+            f"SELECT {ITEM_COLUMNS} FROM items WHERE price BETWEEN %s AND %s LIMIT %s",
+            (
+                _query_int(qs, "min", 10),
+                _query_int(qs, "max", 50),
+                max(1, min(_query_int(qs, "limit", 50), 50)),
+            ),
+        )
+    except _DbError:
+        return b'{"items":[],"count":0}', JSON_META
+    items = [_item_row(r) for r in rows]
+    return _dumps({"count": len(items), "items": items}), JSON_META
+
+
+# ---------- crud ----------
+#
+# Cache-aside on Redis where the harness provides it — crud is the one profile
+# that does, and the cache is shared across the forked workers as a per-process
+# dict would not be. The profile reads and writes the same ids, so a long TTL
+# would answer from a copy the writes have already moved past.
+
+CRUD_ITEM = "/crud/items/"
+CRUD_TTL_MS = 200
+
+
+def _crud_invalidate(item_id: int) -> None:
+    if _REDIS is not None:
+        try:
+            _REDIS.delete("crud:%d" % item_id)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def _crud_list(qs: dict[str, list[str]]) -> tuple[bytes, dict]:
-    if _POOL is None:
-        return b'{"error":"DB not available"}', _status_meta(500)
-    category = (qs.get("category") or ["electronics"])[0]
+    """One query, no `SELECT COUNT(*)`: `total` reports the rows in this
+    response, which is what the profile asks for — the full-filter count was
+    dropped from the spec because it dominated Postgres CPU under writes."""
     page = max(1, _query_int(qs, "page", 1))
     limit = max(1, min(_query_int(qs, "limit", 10), 50))
-    try:
-        with _POOL.connection() as conn:
-            rows = conn.execute(
-                f"SELECT {CRUD_COLUMNS} FROM items WHERE category = %s ORDER BY id "
-                "LIMIT %s OFFSET %s",
-                (category, limit, (page - 1) * limit),
-            ).fetchall()
-    except Exception:  # noqa: BLE001
-        return b'{"error":"query failed"}', _status_meta(500)
-    items = [_crud_row(r) for r in rows]
-    body = _json.dumps(
-        {"items": items, "total": len(items), "page": page, "limit": limit},
-        separators=(",", ":"),
-    ).encode()
-    return body, JSON_META
+    rows = _fetch(
+        f"SELECT {ITEM_COLUMNS} FROM items WHERE category = %s ORDER BY id "
+        "LIMIT %s OFFSET %s",
+        ((qs.get("category") or ["electronics"])[0], limit, (page - 1) * limit),
+    )
+    items = [_item_row(r) for r in rows]
+    return (
+        _dumps({"items": items, "total": len(items), "page": page, "limit": limit}),
+        JSON_META,
+    )
 
 
-def _crud_create(payload: bytes) -> tuple[bytes, dict]:
-    if _POOL is None:
-        return b'{"error":"DB not available"}', _status_meta(500)
-    try:
-        body = _json.loads(payload)
-    except Exception:  # noqa: BLE001
-        return b'{"error":"insert failed"}', _status_meta(500)
-    name = body.get("name", "New Product")
-    price = body.get("price", 0)
-    quantity = body.get("quantity", 0)
-    try:
-        with _POOL.connection() as conn:
-            row = conn.execute(
-                "INSERT INTO items (id, name, category, price, quantity, active, "
-                "tags, rating_score, rating_count) "
-                "VALUES (%s, %s, %s, %s, %s, true, '[\"bench\"]', 0, 0) "
-                "ON CONFLICT (id) DO UPDATE SET name = %s, price = %s, quantity = %s "
-                "RETURNING id",
-                (body.get("id"), name, body.get("category", "test"), price, quantity,
-                 name, price, quantity),
-            ).fetchone()
-    except Exception:  # noqa: BLE001
-        return b'{"error":"insert failed"}', _status_meta(500)
-    out = _json.dumps(
-        {
-            "id": row[0], "name": body.get("name"),
-            "category": body.get("category"), "price": body.get("price"),
-            "quantity": body.get("quantity"),
-        },
-        separators=(",", ":"),
-    ).encode()
-    return out, _status_meta(201)
-
-
-# Cache-aside on Redis where the harness provides it - crud is the one profile
-# that does, and the cache is shared across the forked workers as a per-process
-# dict would not be.
 def _crud_read(item_id: int) -> tuple[bytes, dict]:
-    if _POOL is None:
-        return b'{"error":"DB not available"}', _status_meta(500)
     key = "crud:%d" % item_id
     if _REDIS is not None:
         try:
@@ -458,16 +415,10 @@ def _crud_read(item_id: int) -> tuple[bytes, dict]:
             hit = None
         if hit:
             return hit.encode(), dict(JSON_META, **{"X-Cache": "HIT"})
-    try:
-        with _POOL.connection() as conn:
-            row = conn.execute(
-                f"SELECT {CRUD_COLUMNS} FROM items WHERE id = %s LIMIT 1", (item_id,)
-            ).fetchone()
-    except Exception:  # noqa: BLE001
-        return b'{"error":"query failed"}', _status_meta(500)
+    row = _fetch(f"SELECT {ITEM_COLUMNS} FROM items WHERE id = %s", (item_id,), one=True)
     if row is None:
-        return b"", _status_meta(404)
-    body = _json.dumps(_crud_row(row), separators=(",", ":")).encode()
+        return NOT_FOUND
+    body = _dumps(_item_row(row))
     if _REDIS is not None:
         try:
             _REDIS.set(key, body, px=CRUD_TTL_MS)
@@ -476,92 +427,202 @@ def _crud_read(item_id: int) -> tuple[bytes, dict]:
     return body, dict(JSON_META, **{"X-Cache": "MISS"})
 
 
-def _crud_update(item_id: int, payload: bytes) -> tuple[bytes, dict]:
-    if _POOL is None:
-        return b'{"error":"DB not available"}', _status_meta(500)
+def _crud_create(payload: bytes) -> tuple[bytes, dict]:
+    """`active` / `tags` / `rating_*` are NOT NULL with no default and the create
+    body carries none of them, so a new row seeds them; a conflict updates only
+    the four fields the body actually sends."""
     try:
         body = _json.loads(payload)
-    except Exception:  # noqa: BLE001
-        return b'{"error":"update failed"}', _status_meta(500)
+    except ValueError:
+        return BAD_REQUEST
+    row = _fetch(
+        f"INSERT INTO items ({ITEM_COLUMNS}) "
+        "VALUES (%s, %s, %s, %s, %s, true, '[]'::jsonb, 0, 0) "
+        "ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, "
+        "category = EXCLUDED.category, price = EXCLUDED.price, "
+        f"quantity = EXCLUDED.quantity RETURNING {ITEM_COLUMNS}",
+        (
+            body.get("id"),
+            body.get("name", "New Product"),
+            body.get("category", "test"),
+            body.get("price", 0),
+            body.get("quantity", 0),
+        ),
+        one=True,
+    )
+    if row is None:
+        return SERVER_ERROR
+    # The upsert may have replaced a row someone already read.
+    _crud_invalidate(row[0])
+    return _dumps(_item_row(row)), _status_meta(201)
+
+
+def _crud_update(item_id: int, payload: bytes) -> tuple[bytes, dict]:
+    """A partial PUT leaves the rest of the row alone: each bind is COALESCEd
+    against the current value, so an absent field is not an overwrite with a
+    default. The casts are what let psycopg send an untyped NULL."""
     try:
-        with _POOL.connection() as conn:
-            cur = conn.execute(
-                "UPDATE items SET name = %s, price = %s, quantity = %s WHERE id = %s",
-                (body.get("name", "Updated"), body.get("price", 0),
-                 body.get("quantity", 0), item_id),
-            )
-            affected = cur.rowcount
-    except Exception:  # noqa: BLE001
-        return b'{"error":"update failed"}', _status_meta(500)
-    if not affected:
-        return b"", _status_meta(404)
-    if _REDIS is not None:
-        try:
-            _REDIS.delete("crud:%d" % item_id)
-        except Exception:  # noqa: BLE001
-            pass
-    out = _json.dumps(
-        {
-            "id": item_id, "name": body.get("name"), "price": body.get("price"),
-            "quantity": body.get("quantity"),
-        },
-        separators=(",", ":"),
-    ).encode()
-    return out, JSON_META
+        body = _json.loads(payload)
+    except ValueError:
+        return BAD_REQUEST
+    row = _fetch(
+        "UPDATE items SET name = COALESCE(%s::text, name), "
+        "category = COALESCE(%s::text, category), price = COALESCE(%s::int, price), "
+        "quantity = COALESCE(%s::int, quantity) "
+        f"WHERE id = %s RETURNING {ITEM_COLUMNS}",
+        (
+            body.get("name"),
+            body.get("category"),
+            body.get("price"),
+            body.get("quantity"),
+            item_id,
+        ),
+        one=True,
+    )
+    if row is None:
+        return NOT_FOUND
+    _crud_invalidate(item_id)
+    return _dumps(_item_row(row)), JSON_META
 
 
-def _status_meta(code: int) -> dict:
-    return dict(JSON_META, **{"http_status_code": str(code)})
+# ---------- fortunes ----------
+
+RUNTIME_FORTUNE = (0, "Additional fortune added at request time.")
 
 
-def handle(message: Message) -> Message:
-    method = message.metadata.get("http_method", "")
-    path = message.metadata.get("http_path", "")
-    qs = parse_qs(message.metadata.get("http_query", ""))
+def _load_fortunes_template():
+    """Jinja2 with autoescape on, loaded from `templates/fortunes.html`. The
+    profile's standard rules require a real engine and a template kept as its
+    own artifact, so the page is rendered — never concatenated — per request.
+    Compiled at import, before the fork, so workers share it copy-on-write."""
+    try:
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+    except ImportError:
+        return None
+    env = Environment(
+        loader=FileSystemLoader(str(TEMPLATE_DIR)),
+        autoescape=select_autoescape(["html"]),
+    )
+    try:
+        return env.get_template("fortunes.html")
+    except Exception:  # noqa: BLE001 - /fortunes then reports unavailable
+        return None
 
-    if method == "GET" and path == "/pipeline":
-        return _reply(message, b"ok", TEXT_META)
-    if method == "GET" and path in ("/baseline11", "/baseline2"):
-        total = _query_int(qs, "a", 0) + _query_int(qs, "b", 0)
-        return _reply(message, str(total).encode(), TEXT_META)
-    if method == "POST" and path == "/baseline11":
-        total = _query_int(qs, "a", 0) + _query_int(qs, "b", 0)
+
+FORTUNES_TEMPLATE = _load_fortunes_template()
+
+
+def _fortunes() -> tuple[bytes, dict]:
+    """Query, append the runtime row in memory, sort by ordinal byte order
+    (never locale-aware — that reorders per runtime), then render per request."""
+    if FORTUNES_TEMPLATE is None:
+        return UNAVAILABLE
+    rows = list(_fetch("SELECT id, message FROM fortune"))
+    rows.append(RUNTIME_FORTUNE)
+    # Python compares str by code point, which is the same ordering as UTF-8
+    # byte order, so this is the ordinal sort the profile asks for.
+    rows.sort(key=lambda r: r[1])
+    return FORTUNES_TEMPLATE.render(fortunes=rows).encode(), HTML_META
+
+
+# ---------- async delay ----------
+
+def _delay(raw: str) -> tuple[bytes, dict]:
+    """Blocking sleep, which the profile's standard rules permit explicitly.
+
+    mq-bridge calls the Python handler from a single thread per process, so the
+    wait is not overlapped within a worker and concurrency is the process count
+    (`MQB_WORKERS`, one per core by default) rather than the connection count.
+    That is the cost this profile exists to price; nothing here answers before
+    its own delay has elapsed."""
+    try:
+        ms = int(raw)
+    except ValueError:
+        return NOT_FOUND
+    if ms > 0:
+        time.sleep(ms / 1000.0)
+    return str(ms).encode(), TEXT_META
+
+
+# ---------- dispatch ----------
+
+def _baseline(message: Message, qs: dict[str, list[str]]) -> tuple[bytes, dict]:
+    total = _query_int(qs, "a", 0) + _query_int(qs, "b", 0)
+    if message.metadata.get("http_method") == "POST":
         try:
             total += int(bytes(message.payload).decode().strip())
         except (ValueError, UnicodeDecodeError):
             pass
-        return _reply(message, str(total).encode(), TEXT_META)
-    if method == "POST" and path == "/echo":
-        return _reply(message, message.payload, OCTET_META)
-    if method == "GET" and path == "/async-db":
-        return _reply(message, _async_db(qs), JSON_META)
-    if method == "GET" and path.startswith("/json/"):
-        try:
-            count = int(path[len("/json/"):])
-        except ValueError:
-            count = 0
-        return _reply(message, _build_json(count, _query_int(qs, "m", 1)), JSON_META)
-    if method == "GET" and path.startswith("/static/"):
-        return _serve_static(message, path[len("/static/"):], _accepts_gzip(message))
-    if path == "/crud/items":
-        if method == "POST":
-            body, meta = _crud_create(bytes(message.payload))
-            return _reply(message, body, meta)
-        if method == "GET":
-            body, meta = _crud_list(qs)
-            return _reply(message, body, meta)
-    if path.startswith("/crud/items/") and method in ("GET", "PUT"):
-        try:
-            item_id = int(path[len("/crud/items/"):])
-        except ValueError:
-            return _reply(message, b"Not Found", NOT_FOUND_META)
-        if method == "PUT":
-            body, meta = _crud_update(item_id, bytes(message.payload))
-        else:
-            body, meta = _crud_read(item_id)
-        return _reply(message, body, meta)
-    return _reply(message, b"Not Found", NOT_FOUND_META)
+    return str(total).encode(), TEXT_META
 
+
+# Exact (method, path) matches. Every handler takes (message, query) and returns
+# (body, metadata) so `handle` builds the reply Message in exactly one place.
+EXACT_ROUTES = {
+    ("GET", "/pipeline"): lambda m, qs: (b"ok", TEXT_META),
+    ("GET", "/baseline11"): _baseline,
+    ("GET", "/baseline2"): _baseline,
+    ("POST", "/baseline11"): _baseline,
+    ("POST", "/echo"): lambda m, qs: (m.payload, OCTET_META),
+    ("GET", "/async-db"): lambda m, qs: _async_db(qs),
+    ("GET", "/fortunes"): lambda m, qs: _fortunes(),
+    ("GET", "/crud/items"): lambda m, qs: _crud_list(qs),
+    ("POST", "/crud/items"): lambda m, qs: _crud_create(bytes(m.payload)),
+}
+
+# Prefix matches, checked only when no exact route matched. The prefixes are
+# disjoint, so order carries no meaning; the tail is passed to the handler.
+PREFIX_ROUTES = (
+    ("GET", "/json/", lambda m, qs, t: _build_json(qs, _int_or(t, 0))),
+    ("GET", "/static/", lambda m, qs, t: _serve_static(t, _accepts_gzip(m))),
+    ("GET", "/delay/", lambda m, qs, t: _delay(t)),
+    ("GET", CRUD_ITEM, lambda m, qs, t: _crud_by_id(t, _crud_read)),
+    ("PUT", CRUD_ITEM, lambda m, qs, t: _crud_by_id(t, _crud_update, bytes(m.payload))),
+)
+
+
+def _int_or(text: str, default: int) -> int:
+    try:
+        return int(text)
+    except ValueError:
+        return default
+
+
+def _crud_by_id(tail: str, fn, *args) -> tuple[bytes, dict]:
+    try:
+        item_id = int(tail)
+    except ValueError:
+        return NOT_FOUND
+    return fn(item_id, *args)
+
+
+_DB_ERRORS = {503: UNAVAILABLE, 500: SERVER_ERROR}
+
+
+def handle(message: Message) -> Message:
+    meta = message.metadata
+    method = meta.get("http_method", "")
+    path = meta.get("http_path", "")
+    qs = parse_qs(meta.get("http_query", ""))
+
+    try:
+        route = EXACT_ROUTES.get((method, path))
+        if route is not None:
+            body, reply_meta = route(message, qs)
+        else:
+            for verb, prefix, fn in PREFIX_ROUTES:
+                if method == verb and path.startswith(prefix):
+                    body, reply_meta = fn(message, qs, path[len(prefix):])
+                    break
+            else:
+                body, reply_meta = NOT_FOUND
+    except _DbError as exc:
+        body, reply_meta = _DB_ERRORS[exc.code]
+
+    return message.__class__(body, reply_meta)
+
+
+# ---------- process model ----------
 
 def _run_secondary_listener(route: Route) -> None:
     try:
@@ -581,7 +642,7 @@ def _run_worker(http_workers: int) -> None:
         f.write(config)
         config_path = f.name
 
-    routes = [Route.from_yaml(config_path, name).with_handler(handle) for name in names]
+    routes = [Route.from_file(config_path, name).with_handler(handle) for name in names]
     # Keep every port fail-fast: if any secondary listener exits, signal this
     # worker so the parent supervisor restarts a clean set instead of leaving a
     # partially serving process behind.
