@@ -432,12 +432,21 @@
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
      so the column (width:1px, shrink-to-fit) does not get any wider. */
-  .cm th.pcol .pnav{display:flex; gap:.18rem; justify-content:center; margin-top:.25rem}
-  .cm th.pcol .pico{display:inline-flex; align-items:center; justify-content:center;
-    width:12px; height:12px; border:1px solid currentColor; font:700 .58rem/1 var(--sans);
-    text-transform:none; letter-spacing:0; opacity:.4; color:inherit; cursor:pointer;
-    text-decoration:none}
-  .cm th.pcol .pico:hover{opacity:1; color:var(--accent); border-color:var(--accent)}
+  /* One segmented control spanning the column: left half opens the profile's
+     detail view, right half its implementation guide. Full width rather than a
+     pair of 12px squares - these are the only way into a profile from here, and
+     a target that small is hard to hit and easy to miss entirely. The 1px gap
+     over a --line background is the divider, so no inner borders are needed.
+     min-width:0 on the halves keeps min-content at zero, so a narrow column is
+     never widened by the control. */
+  .cm th.pcol .pnav{display:flex; gap:1px; margin:.4rem -.45rem -.24rem;
+    background:var(--line-soft); border-top:1px solid var(--line-soft)}
+  .cm th.pcol .pico{flex:1 1 0; min-width:0; display:inline-flex; align-items:center;
+    justify-content:center; height:21px; background:var(--panel); color:var(--text-2);
+    font:600 .74rem/1 var(--sans); text-transform:none; letter-spacing:0;
+    cursor:pointer; text-decoration:none; transition:background .12s ease, color .12s ease}
+  .cm th.pcol .pico:hover{background:var(--accent); color:var(--bg)}
+  .cm th.pcol .pico:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
   /* flexible trailing column absorbs leftover width (keeps the box filled) */
   .cm .spacer{width:auto; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
   .cm .sticky{position:sticky}
