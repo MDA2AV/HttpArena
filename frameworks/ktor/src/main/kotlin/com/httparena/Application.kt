@@ -30,15 +30,17 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.milliseconds
 
 fun main() {
-    println("Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (HTTP/3), :8443 (HTTPS/HTTP2)")
+    println("Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (H2C), :8443 (HTTPS/HTTP2/HTTP3)")
     val deps = ArenaApplicationDepsFactory.load()
     val environment = applicationEnvironment {}
 
     val server = embeddedServer(Netty, environment, {
+        runHandlersOnEventLoop = true
+        shareWorkGroup = true
+        workerGroupSize = parallelism * 4
         enableHttp2 = true
         enableH2c = true
         @OptIn(ExperimentalKtorApi::class)

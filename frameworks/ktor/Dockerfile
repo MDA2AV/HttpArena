@@ -15,12 +15,8 @@ ENTRYPOINT ["java", \
   "-XX:+UseG1GC", \
   "-XX:+UseNUMA", \
   "-XX:+AlwaysPreTouch", \
-  "-XX:-OmitStackTraceInFastThrow", \
   "-Dio.netty.transport.noNative=false", \
   "-Dio.netty.buffer.checkBounds=false", \
   "-Dio.netty.buffer.checkAccessible=false", \
-  "-Dio.netty.allocator.maxOrder=10", \
   "-Dio.netty.leakDetection.level=disabled", \
-  "-Dio.netty.recycler.maxCapacityPerThread=4096", \
-  "-Dio.netty.eventLoopThreads=0", \
   "-jar", "ktor-httparena.jar"]
