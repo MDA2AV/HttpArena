@@ -1,16 +1,19 @@
-# gateway-64 - stock Caddy (TLS + h2 on 8443) in front of the fulmine server,
+# gateway-64 - stock nginx (TLS + h2 on 8443) in front of the fulmine server,
 # forwarding the dynamic endpoints over loopback h1 with keepalive. The server
-# gets no certs here, so it comes up cleartext on 8080 only.
+# gets no certs here, so it comes up cleartext on 8080 only. Caddy stays on
+# the h3 profile only: here the edge is what saturates, and the Caddy one
+# topped out near a third of what nginx moves on the same split.
 #
 # The CPU split is the knob worth sweeping, via PROXY_CPUSET / SERVER_CPUSET.
-# Terminating TLS under multiplexed h2 is usually the heavier half, so the
-# proxy starts with the same share as the server rather than less.
+# Terminating TLS under multiplexed h2 is the heavier half even for nginx, so
+# the proxy gets 20 cores against 12, the split the aspnet nginx entry holds
+# 312k req/s with on the same box.
 services:
   proxy:
     build:
-      context: ./proxy
+      context: ./proxy-nginx
     network_mode: host
-    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    cpuset: "${PROXY_CPUSET:-0-19,64-83}"
     ulimits:
       memlock: -1
       nofile:
@@ -29,7 +32,7 @@ services:
       context: .
       dockerfile: Dockerfile
     network_mode: host
-    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
     ulimits:
       memlock: -1
       nofile:
