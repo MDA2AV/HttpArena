@@ -458,11 +458,12 @@
      included - so the one cell that won the column carried no mark at all. Sits
      over the band rather than replacing it, so the band still reads. */
   .cm td.pc .hcrown{display:none}
-  .cm.heat td.pc .hcrown{display:block; position:absolute; left:0; right:0; top:50%;
-    z-index:1; transform:translateY(-50%); text-align:center; line-height:1;
-    font-size:.74rem; pointer-events:none; filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
-  .heatkey .hk i.hk-crown{width:auto; height:auto; font-size:.8rem; line-height:1;
-    filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+  .cm.heat td.pc .hcrown{display:flex; position:absolute; inset:0; z-index:1;
+    align-items:center; justify-content:center; pointer-events:none}
+  .cm.heat td.pc .hcrown svg{width:17px; height:17px; display:block;
+    fill:var(--gold); filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.55))}
+  .heatkey .hk i.hk-crown{width:auto; height:auto; display:inline-flex; align-items:center}
+  .heatkey .hk i.hk-crown svg{width:13px; height:13px; display:block; fill:var(--gold)}
   .cm.heat td.pc .pcv{visibility:hidden}
   .cm.heat td.pc .cbar{left:0; right:0; top:0; bottom:0; width:auto; height:auto; opacity:1}
   /* .cm td.pc.lead .cbar sets opacity:.7 for the non-heat bar and sits later in
@@ -1349,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', function(){
       lg.setAttribute('data-tip','Each cell is coloured by its score as a share of the best score in that column.');
       lg.innerHTML='<span class="hk-l">share of column leader</span>'+HEAT_BANDS.map(function(b){
         return '<span class="hk"><i style="background:'+b[1]+'"></i>'+esc(b[2])+'</span>';
-      }).join('')+'<span class="hk"><i class="hk-crown">\u{1F451}</i>best in column</span>';
+      }).join('')+'<span class="hk"><i class="hk-crown">'+CROWN_SVG+'</i>best in column</span>';
       lg.style.display = state.heat ? '' : 'none';
       ctl.appendChild(lg);
       hm.onclick=function(){
@@ -1653,6 +1654,12 @@ document.addEventListener('DOMContentLoaded', function(){
     [0.75, 'rgb(226,192,44)', '50-75%'],
     [1.01, 'rgb(45,172,94)',  'over 75%']
   ];
+  // Six points and a base, filled rather than stroked: a stroked outline closes
+  // up at this size and reads as a smudge. Gold is the token the board already
+  // uses for a first place in the rank column.
+  var CROWN_SVG='<svg viewBox="0 0 24 24" aria-hidden="true">'
+    + '<path d="M3.2 17.6 1.7 6.4 7.6 11 12 3.8 16.4 11 22.3 6.4 20.8 17.6Z"/>'
+    + '<rect x="3.2" y="18.6" width="17.6" height="2.2"/></svg>';
   function heatColor(t){
     t=(!isFinite(t)||t<0)?0:(t>1?1:t);
     for(var i=0;i<HEAT_BANDS.length;i++) if(t<HEAT_BANDS[i][0]) return HEAT_BANDS[i][1];
@@ -1863,7 +1870,7 @@ document.addEventListener('DOMContentLoaded', function(){
         var inner = '<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span>'
           + (state.heat
               ? '<span class="cbar" style="background:'+heatColor(barPct/100)+'"></span>'
-                + (cell.best?'<span class="hcrown" aria-label="best in this column">\u{1F451}</span>':'')
+                + (cell.best?'<span class="hcrown" aria-label="best in this column">'+CROWN_SVG+'</span>':'')
               : '<span class="cbar" style="width:'+barPct.toFixed(0)+'%"></span>');
         var dat=' data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"');
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
