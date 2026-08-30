@@ -1,5 +1,45 @@
 Exec: /app/erts-17.0.2/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
 Root: /app
 /app
-=ESOCK WARNING MSG==== 30-Aug-2026::18:22:19.026896 ===
+=ESOCK WARNING MSG==== 30-Aug-2026::19:44:38.036565 ===
 [UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1
+=NOTICE REPORT==== 30-Aug-2026::19:44:51.240825 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:51.241392 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608421 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608441 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608454 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608464 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608474 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608488 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608538 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::19:44:58.608575 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
