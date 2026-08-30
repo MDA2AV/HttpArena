@@ -438,6 +438,17 @@
   .cm td.pc{color:var(--text-2); line-height:1.1; vertical-align:middle; position:relative}
   /* slim per-cell quality cue: bar length = this result's normalized score in its profile */
   .cm td.pc .cbar{position:absolute; left:0; bottom:0; height:2px; background:var(--muted); opacity:.45}
+  /* Heat map: the cell becomes the reading. The number and the memory figure go
+     away, the quality bar fills the cell instead of sitting 2px along the
+     bottom, and the score is carried by colour rather than by width - so a
+     column can be scanned vertically for shape instead of read value by value.
+     The hover popup still has every figure for the cell under the cursor. */
+  .cm.heat td.pc{padding:0; position:relative}
+  .cm.heat td.pc .pcv{display:none}
+  .cm.heat td.pc .cbar{left:0; top:0; bottom:0; width:100% !important; height:auto; opacity:1}
+  .cm.heat td.pc.nc .cbar{opacity:.55}
+  .cm.heat td.pc.empty{padding:.24rem .45rem}
+  .cm.heat tbody tr{height:22px}
   .cm td.pc.lead .cbar{background:var(--accent); opacity:.7}
   .cm td.pc .pcv{display:flex; align-items:baseline; justify-content:space-between; gap:.45rem}
   .cm td.pc .crps{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text)}
@@ -692,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -1302,6 +1313,11 @@ document.addEventListener('DOMContentLoaded', function(){
       rs.setAttribute('data-tip','Off: each profile is worth 100 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
       rs.onclick=function(){ state.rescale=!state.rescale; rs.classList.toggle('on', state.rescale); render(); };
       ctl.appendChild(rs);
+      var hm=document.createElement('div'); hm.className='toggle'+(state.heat?' on':'');
+      hm.innerHTML='<span class="sw"><i></i></span> Heat map';
+      hm.setAttribute('data-tip','Replace every profile cell with a colour block: dark red for the weakest score in that column, through orange and yellow, to green for the leader. The numbers stay in the hover popup - this is for reading a column\u2019s shape at a glance.');
+      hm.onclick=function(){ state.heat=!state.heat; hm.classList.toggle('on', state.heat); render(); };
+      ctl.appendChild(hm);
       // Arriving on #lang=X (from a language rank badge) filters the board to
       // one language. Say so, and make it one click to leave - a filter with no
       // visible cause reads as missing data.
@@ -1580,6 +1596,25 @@ document.addEventListener('DOMContentLoaded', function(){
   // says nothing about completeness rather than reporting a clean sheet it was
   // never given.
   function cmpGraded(fw){ return cmpInScope() && CMP_TYPES.indexOf(typeOf(fw))>=0; }
+  // Dark red -> orange -> amber -> yellow-green -> green. Explicit stops rather
+  // than an HSL sweep: straight hue interpolation runs through an olive that
+  // reads as "bad" in the middle of the range, which is the one place the ramp
+  // has to stay legible.
+  var HEAT_STOPS=[[0,124,25,25],[0.25,205,74,10],[0.5,224,168,0],[0.75,138,192,30],[1,58,198,110]];
+  function heatColor(t){
+    t=(!isFinite(t)||t<0)?0:(t>1?1:t);
+    for(var i=1;i<HEAT_STOPS.length;i++){
+      var b=HEAT_STOPS[i];
+      if(t<=b[0]){
+        var a=HEAT_STOPS[i-1], f=(t-a[0])/(b[0]-a[0]);
+        return 'rgb('+Math.round(a[1]+(b[1]-a[1])*f)+','
+                    +Math.round(a[2]+(b[2]-a[2])*f)+','
+                    +Math.round(a[3]+(b[3]-a[3])*f)+')';
+      }
+    }
+    return 'rgb(58,198,110)';
+  }
+
   function cmpTip(r){
     if(!cmpGraded(r.fw)) return 'composite '+r.score.toFixed(1);
     if(!r.dec) return 'composite '+r.score.toFixed(1)+' - completeness not assessed yet, so nothing is deducted (x1.00)';
@@ -1643,7 +1678,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     var p=[];
     if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); }
+    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); if(state.heat) p.push('heat=1'); }
     var _dps=defProfileSort(state.profile);
     var defSort = state.view==='profile' ? (state.sortKey===_dps.k&&state.sortDir===_dps.d) : (state.sortKey==='score'&&state.sortDir===-1);
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
@@ -1775,7 +1810,10 @@ document.addEventListener('DOMContentLoaded', function(){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
         var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps);
-        var inner='<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
+        var barPct=Math.max(0,Math.min(100,cell.bar));
+        var inner = state.heat
+          ? '<span class="cbar" style="background:'+heatColor(barPct/100)+'"></span>'
+          : '<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+barPct.toFixed(0)+'%"></span>';
         var dat=' data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"');
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
         else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
@@ -1783,7 +1821,7 @@ document.addEventListener('DOMContentLoaded', function(){
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
     var colspan=pids.length+4;
-    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
+    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
     // navigation.
