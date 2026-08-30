@@ -42,18 +42,18 @@ start(_StartType, _StartArgs) ->
         max_content_length => 26214400,
         %% h2 multiplexes many streams per connection: the connection cap
         %% covers the largest h2c profile (4096 connections) with headroom,
-        %% and `max_concurrent_requests` bounds the live-handler product
-        %% listener-wide, per roadrunner's guidance to set it finite when
-        %% enabling HTTP/2 under a high `max_clients` — the per-stream
-        %% state (e.g. `/json` gzip contexts) otherwise measured in the
-        %% multi-GiB range here. Over-limit streams get REFUSED_STREAM,
-        %% which clients retry safely.
+        %% and the advertised `max_concurrent_streams` bounds per-stream
+        %% state (e.g. `/json` gzip contexts, otherwise measured in the
+        %% multi-GiB range here) the way h2 servers conventionally do —
+        %% clients window themselves to the advertised limit (RFC 9113
+        %% §5.1.2), so unlike a server-side refusal cap this sheds no
+        %% requests. 16 × the connection cap keeps the worst-case live
+        %% streams well inside the BEAM process limit.
         max_clients => 8192,
-        max_concurrent_requests => 8192,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
-        protocols => [http2],
+        protocols => [{http2, #{max_concurrent_streams => 16}}],
         body_buffering => manual
     }),
     case tls_opts() of
@@ -74,15 +74,14 @@ start(_StartType, _StartArgs) ->
                 routes => Routes,
                 max_content_length => 26214400,
                 tls => TlsOpts,
-                %% Same connection/handler bounds as the h2c listener above.
+                %% Same connection/stream bounds as the h2c listener above.
                 max_clients => 8192,
-                max_concurrent_requests => 8192,
                 %% Listener derives `alpn_preferred_protocols` from
                 %% this list — `h2` preferred, fall back to `http/1.1`.
                 %% `http3` co-serves over QUIC on UDP 8443 (same port
                 %% number) and auto-advertises `Alt-Svc: h3=":8443"` on
                 %% the h1/h2 responses. Serves baseline-h3 / static-h3.
-                protocols => [http2, http1, http3],
+                protocols => [{http2, #{max_concurrent_streams => 16}}, http1, http3],
                 body_buffering => manual
             });
         skip ->
