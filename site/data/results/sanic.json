@@ -226,6 +226,46 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
+    },
+    "upload-256": {
+      "framework": "sanic",
+      "language": "Python",
+      "rps": 1244,
+      "avg_latency": "197.43ms",
+      "p99_latency": "1.07s",
+      "cpu": "6234.2%",
+      "memory": "1.8GiB",
+      "connections": 256,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "133.93KB/s",
+      "input_bw": "9.87GB/s",
+      "reconnects": 1195,
+      "status_2xx": 6220,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
+    "upload-32": {
+      "framework": "sanic",
+      "language": "Python",
+      "rps": 1814,
+      "avg_latency": "17.57ms",
+      "p99_latency": "80.40ms",
+      "cpu": "2657.3%",
+      "memory": "1.6GiB",
+      "connections": 32,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "195.31KB/s",
+      "input_bw": "14.39GB/s",
+      "reconnects": 1816,
+      "status_2xx": 9074,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
     }
   }
 }

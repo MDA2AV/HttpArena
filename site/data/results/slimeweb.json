@@ -265,6 +265,46 @@
       "status_3xx": 0,
       "status_4xx": 0,
       "status_5xx": 0
+    },
+    "upload-256": {
+      "framework": "slimeweb",
+      "language": "Python",
+      "rps": 1185,
+      "avg_latency": "208.46ms",
+      "p99_latency": "1.14s",
+      "cpu": "5203.3%",
+      "memory": "1.7GiB",
+      "connections": 256,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "149.53KB/s",
+      "input_bw": "9.40GB/s",
+      "reconnects": 1150,
+      "status_2xx": 5926,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
+    "upload-32": {
+      "framework": "slimeweb",
+      "language": "Python",
+      "rps": 1107,
+      "avg_latency": "28.83ms",
+      "p99_latency": "83.10ms",
+      "cpu": "2869.1%",
+      "memory": "1.1GiB",
+      "connections": 32,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "139.75KB/s",
+      "input_bw": "8.78GB/s",
+      "reconnects": 1101,
+      "status_2xx": 5539,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
     }
   }
 }

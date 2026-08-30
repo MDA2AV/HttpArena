@@ -1,0 +1,1 @@
+20260830 01:10:46.565351 UTC 88 FATAL Transport endpoint is not connected (errno=107) sockets::shutdownWrite - Socket.cc:110
