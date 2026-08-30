@@ -448,7 +448,16 @@
      ink (visibility, not display - display:none collapses the row height), and
      the bar is stretched over the whole cell by its four offsets rather than by
      a width. Nothing here sets a padding, a height or a row height. */
-  .heatkey{display:flex; align-items:center; flex-wrap:wrap; gap:.1rem .55rem; margin-top:.3rem;
+  /* Deliberately not a .toggle. The two switches above the table change how the
+     numbers are computed - memory in the score, what the scale is relative to -
+     and belong with the heading that describes them. This changes how the table
+     is drawn, so it sits with the other thing that acts on the table, and looks
+     like a button you press rather than a setting you leave set. */
+  .heat-btn{cursor:pointer; font-family:inherit; font-size:.78rem; padding:.4rem .66rem}
+  .heat-btn svg{width:14px; height:14px; flex:none; fill:currentColor}
+  .heat-btn:hover{background:var(--accent); color:var(--bg)}
+  .heat-btn[aria-pressed="true"]{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+  .heatkey{display:flex; align-items:center; flex-wrap:wrap; gap:.1rem .55rem;
     font-size:.66rem; color:var(--muted)}
   .heatkey .hk-l{margin-right:.1rem}
   .heatkey .hk{display:inline-flex; align-items:center; gap:.28rem; white-space:nowrap}
@@ -668,6 +677,9 @@
           <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off">
         </div>
         <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
+        <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
+                data-tip="Colour every profile cell by its score as a share of that column\u2019s leader, instead of printing the number. For reading a column\u2019s shape at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.6" height="7.6" rx="1.2"/><rect x="13.4" y="3" width="7.6" height="7.6" rx="1.2" opacity=".5"/><rect x="3" y="13.4" width="7.6" height="7.6" rx="1.2" opacity=".5"/><rect x="13.4" y="13.4" width="7.6" height="7.6" rx="1.2"/></svg><span>Heat map</span></button>
+        <div class="heatkey" id="heatKey" style="display:none"></div>
         <span class="count" id="count"></span>
       </div>
 
@@ -889,6 +901,35 @@ document.addEventListener('DOMContentLoaded', function(){
     return '<div class="dh">'+esc(fw)+'</div><div class="dsub">'+esc(p.label)
          + (p.category?' \u00b7 '+esc(p.category):'')+esc(why)+'</div>'+blocks
          + (foot?'<div class="dfoot">'+esc(foot)+'</div>':'');
+  }
+
+  // The heat-map control lives in the tools row beside Head to Head Comparison
+  // rather than with the two switches over the heading, and is wired once here
+  // instead of being rebuilt by renderHead: the button's own handler calls
+  // render(), which redraws the table and not the control strip, so anything
+  // rebuilt there would not react to the click that changed it.
+  function initHeat(){
+    var btn=document.getElementById('heatBtn'), key=document.getElementById('heatKey');
+    if(!btn||!key) return;
+    key.innerHTML='<span class="hk-l">share of column leader</span>'
+      + HEAT_BANDS.map(function(b){
+          return '<span class="hk"><i style="background:'+b[1]+'"></i>'+esc(b[2])+'</span>';
+        }).join('')
+      + '<span class="hk"><i class="hk-crown">'+CROWN_SVG+'</i>best in column</span>';
+    key.setAttribute('data-tip','Each cell is coloured by its score as a share of the best score in that column.');
+    function paint(){
+      btn.setAttribute('aria-pressed', state.heat?'true':'false');
+      key.style.display = state.heat ? '' : 'none';
+    }
+    btn.onclick=function(){ state.heat=!state.heat; paint(); render(); };
+    paint();
+  }
+  // Only the composite view has profile columns to colour.
+  function syncHeatCtl(){
+    var btn=document.getElementById('heatBtn'), key=document.getElementById('heatKey');
+    var on = state.view==='composite';
+    if(btn) btn.style.display = on ? '' : 'none';
+    if(key) key.style.display = (on && state.heat) ? '' : 'none';
   }
 
   function initTips(){
@@ -1337,28 +1378,6 @@ document.addEventListener('DOMContentLoaded', function(){
       rs.setAttribute('data-tip','Off: each profile is worth 100 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
       rs.onclick=function(){ state.rescale=!state.rescale; rs.classList.toggle('on', state.rescale); render(); };
       ctl.appendChild(rs);
-      var hm=document.createElement('div'); hm.className='toggle'+(state.heat?' on':'');
-      hm.innerHTML='<span class="sw"><i></i></span> Heat map';
-      hm.setAttribute('data-tip','Replace every profile cell with a colour block: dark red for the weakest score in that column, through orange and yellow, to green for the leader. The numbers stay in the hover popup - this is for reading a column\u2019s shape at a glance.');
-      ctl.appendChild(hm);
-      // Without this the colours are a code nobody was given. Built once and
-      // shown with the toggle: the toggle's own handler calls render(), which
-      // redraws the table but not this control strip, so a legend created only
-      // when state.heat is already true would never appear on the click that
-      // set it.
-      var lg=document.createElement('div'); lg.className='heatkey';
-      lg.setAttribute('data-tip','Each cell is coloured by its score as a share of the best score in that column.');
-      lg.innerHTML='<span class="hk-l">share of column leader</span>'+HEAT_BANDS.map(function(b){
-        return '<span class="hk"><i style="background:'+b[1]+'"></i>'+esc(b[2])+'</span>';
-      }).join('')+'<span class="hk"><i class="hk-crown">'+CROWN_SVG+'</i>best in column</span>';
-      lg.style.display = state.heat ? '' : 'none';
-      ctl.appendChild(lg);
-      hm.onclick=function(){
-        state.heat=!state.heat;
-        hm.classList.toggle('on', state.heat);
-        lg.style.display = state.heat ? '' : 'none';
-        render();
-      };
       // Arriving on #lang=X (from a language rank badge) filters the board to
       // one language. Say so, and make it one click to leave - a filter with no
       // visible cause reads as missing data.
@@ -1710,6 +1729,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     if(dv)dv.style.display='none';
     if(grid)grid.style.display=''; if(tools)tools.style.display=''; if(phead)phead.style.display='';
+    syncHeatCtl();
     if(seo)seo.style.display='';
     if(state.view==='composite'){ th.style.display='none'; if(mn)mn.classList.add('cmfull'); renderComposite(); }
     else { th.style.display=''; if(mn)mn.classList.remove('cmfull'); renderProfile(); }
@@ -2080,7 +2100,7 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
-  initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  initTips(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });
