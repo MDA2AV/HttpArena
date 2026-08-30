@@ -13,7 +13,19 @@ start(_StartType, _StartArgs) ->
     {ok, _} = roadrunner:start_listener(httparena_http, #{
         port => HttpPort,
         routes => Routes,
-        middlewares => [roadrunner_compress],
+        %% High-concurrency profiles offer thousands of connections (async
+        %% holds 32768 at once); size the cap above the largest profile plus
+        %% churn headroom so the listener keeps every offered connection live
+        %% instead of capping and forcing the load generator into a
+        %% reconnect storm, and widen the acceptor pool for the
+        %% connection-churn profiles.
+        max_clients => 65536,
+        num_acceptors => 100,
+        %% WebSocket sessions inherit the listener's 64 KB socket buffer,
+        %% held live per socket; the echo profiles exchange small text
+        %% frames, so shrink it per roadrunner's ws.recv_buffer production
+        %% guidance for small-message, high-concurrency deployments.
+        ws => #{recv_buffer => 4096},
         %% 25 MB headroom for the 8gbit profile (validator goes up to 20 MB).
         max_content_length => 26214400,
         %% Manual body buffering: handlers read the body themselves via
@@ -27,8 +39,17 @@ start(_StartType, _StartArgs) ->
     {ok, _} = roadrunner:start_listener(httparena_h2c, #{
         port => H2cPort,
         routes => Routes,
-        middlewares => [roadrunner_compress],
         max_content_length => 26214400,
+        %% h2 multiplexes many streams per connection: the connection cap
+        %% covers the largest h2c profile (4096 connections) with headroom,
+        %% and `max_concurrent_requests` bounds the live-handler product
+        %% listener-wide, per roadrunner's guidance to set it finite when
+        %% enabling HTTP/2 under a high `max_clients` — the per-stream
+        %% state (e.g. `/json` gzip contexts) otherwise measured in the
+        %% multi-GiB range here. Over-limit streams get REFUSED_STREAM,
+        %% which clients retry safely.
+        max_clients => 8192,
+        max_concurrent_requests => 8192,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
@@ -41,7 +62,8 @@ start(_StartType, _StartArgs) ->
             {ok, _} = roadrunner:start_listener(httparena_tls, #{
                 port => TlsPort,
                 routes => Routes,
-                middlewares => [roadrunner_compress],
+                max_clients => 65536,
+                num_acceptors => 100,
                 max_content_length => 26214400,
                 tls => TlsOpts,
                 body_buffering => manual
@@ -50,9 +72,11 @@ start(_StartType, _StartArgs) ->
             {ok, _} = roadrunner:start_listener(httparena_h2, #{
                 port => H2Port,
                 routes => Routes,
-                middlewares => [roadrunner_compress],
                 max_content_length => 26214400,
                 tls => TlsOpts,
+                %% Same connection/handler bounds as the h2c listener above.
+                max_clients => 8192,
+                max_concurrent_requests => 8192,
                 %% Listener derives `alpn_preferred_protocols` from
                 %% this list — `h2` preferred, fall back to `http/1.1`.
                 %% `http3` co-serves over QUIC on UDP 8443 (same port
