@@ -5,6 +5,11 @@ edition = "2021"
 
 [dependencies]
 rocket = { version = "0.5", features = ["json", "tls"] }
+# Rocket 0.5 ships no response compression - 0.4 had rocket_contrib::compression
+# and it was dropped. This is the fairing equivalent, i.e. compression through
+# Rocket's own middleware pipeline rather than by hand in the handler, and it
+# takes an explicit level so the profile's level 1 is expressible.
+rocket_async_compression = "0.6"
 
 [profile.release]
 opt-level = 3

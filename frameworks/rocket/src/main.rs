@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use rocket::data::{Data, ToByteUnit};
 use rocket::serde::json::Json;
+use rocket_async_compression::{Compress, Level};
 use rocket::serde::{Deserialize, Serialize};
 use rocket::State;
 
@@ -89,12 +90,21 @@ fn baseline11_post(params: HashMap<String, String>, body: String) -> String {
     sum.to_string()
 }
 
+// Compression is applied by wrapping this route's responder rather than by
+// attaching the crate's fairing. A fairing runs on every response, and measured
+// here it cost about 5% of baseline throughput to do nothing at all - only
+// json-comp sends an Accept-Encoding, so everywhere else the hook ran, found
+// nothing to do, and returned. Compress is the same crate's Responder, so the
+// encoding still happens in Rocket's response pipeline rather than by hand.
+//
+// Level::Precise(1) is the level the profile asks for. The crate's Level::Default
+// is 4, and its Fastest is not pinned to 1 either, so the level is stated.
 #[get("/json/<count>?<m>")]
 fn json_items(
     count: usize,
     m: Option<i64>,
     dataset: &State<&'static [DatasetItem]>,
-) -> Json<ProcessResponse> {
+) -> Compress<Json<ProcessResponse>> {
     let count = count.min(dataset.len());
     let m = m.unwrap_or(1);
 
@@ -116,7 +126,7 @@ fn json_items(
         })
         .collect();
 
-    Json(ProcessResponse { items, count })
+    Compress(Json(ProcessResponse { items, count }), Level::Precise(1))
 }
 
 // Echo: read the body and hand it straight back. into_bytes() reads to the
@@ -133,10 +143,12 @@ async fn echo_body(data: Data<'_>) -> Vec<u8> {
 // Single definition of the app; both the plaintext and the TLS listener are
 // configured from it, so the two ports cannot drift apart.
 fn build(dataset: &'static [DatasetItem]) -> rocket::Rocket<rocket::Build> {
-    rocket::build().manage(dataset).mount(
-        "/",
-        routes![pipeline, baseline11_get, baseline11_post, json_items, echo_body],
-    )
+    rocket::build()
+        .manage(dataset)
+        .mount(
+            "/",
+            routes![pipeline, baseline11_get, baseline11_post, json_items, echo_body],
+        )
 }
 
 #[rocket::main]
