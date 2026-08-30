@@ -443,12 +443,14 @@
      bottom, and the score is carried by colour rather than by width - so a
      column can be scanned vertically for shape instead of read value by value.
      The hover popup still has every figure for the cell under the cursor. */
-  .cm.heat td.pc{padding:0; position:relative}
-  .cm.heat td.pc .pcv{display:none}
-  .cm.heat td.pc .cbar{left:0; top:0; bottom:0; width:100% !important; height:auto; opacity:1}
+  /* Geometry must not move when the toggle flips: the same table, recoloured.
+     So the cell keeps its padding, the value keeps its box and only loses its
+     ink (visibility, not display - display:none collapses the row height), and
+     the bar is stretched over the whole cell by its four offsets rather than by
+     a width. Nothing here sets a padding, a height or a row height. */
+  .cm.heat td.pc .pcv{visibility:hidden}
+  .cm.heat td.pc .cbar{left:0; right:0; top:0; bottom:0; width:auto; height:auto; opacity:1}
   .cm.heat td.pc.nc .cbar{opacity:.55}
-  .cm.heat td.pc.empty{padding:.24rem .45rem}
-  .cm.heat tbody tr{height:22px}
   .cm td.pc.lead .cbar{background:var(--accent); opacity:.7}
   .cm td.pc .pcv{display:flex; align-items:baseline; justify-content:space-between; gap:.45rem}
   .cm td.pc .crps{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text)}
@@ -1811,9 +1813,15 @@ document.addEventListener('DOMContentLoaded', function(){
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
         var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps);
         var barPct=Math.max(0,Math.min(100,cell.bar));
-        var inner = state.heat
-          ? '<span class="cbar" style="background:'+heatColor(barPct/100)+'"></span>'
-          : '<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+barPct.toFixed(0)+'%"></span>';
+        // The value markup is emitted in both modes and only hidden by CSS in
+        // heat mode. The profile columns are width:1px shrink-to-fit, so their
+        // width comes from this content - drop it from the DOM and every column
+        // narrows (measured: -41px each, -573px of table). visibility:hidden
+        // keeps the box, so toggling recolours the table without moving it.
+        var inner = '<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span>'
+          + (state.heat
+              ? '<span class="cbar" style="background:'+heatColor(barPct/100)+'"></span>'
+              : '<span class="cbar" style="width:'+barPct.toFixed(0)+'%"></span>');
         var dat=' data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"');
         if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
         else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
