@@ -360,6 +360,23 @@
   .stattip span{display:flex; justify-content:space-between; gap:.7rem}
   .stattip b{color:var(--text); font-weight:600}
   .statwrap:hover .stattip{display:flex}
+  /* The whole result row behind one composite cell. Separate from #tip, which
+     is plain text by design (textContent + pre-line); this one is a table. */
+  #dtip{position:fixed; z-index:101; display:none; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
+    padding:.55rem .7rem; font-size:.72rem; line-height:1.4; pointer-events:none;
+    max-width:340px}
+  #dtip .dh{font-weight:700; font-size:.76rem}
+  #dtip .dsub{color:var(--muted); font-size:.68rem; margin-bottom:.35rem}
+  #dtip .dc{color:var(--text-2); font-weight:650; font-size:.67rem; text-transform:uppercase;
+    letter-spacing:.03em; margin:.45rem 0 .16rem; padding-top:.34rem; border-top:1px solid var(--line-soft)}
+  #dtip .dc .dtag{float:right; text-transform:none; letter-spacing:0; font-weight:500; color:var(--muted)}
+  #dtip table{border-collapse:collapse; width:100%}
+  #dtip td{padding:.05rem 0; vertical-align:baseline}
+  #dtip td.k{color:var(--muted); padding-right:.8rem; white-space:nowrap}
+  #dtip td.v{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+  #dtip .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft);
+    color:var(--muted); font-size:.67rem}
   #tip{position:fixed; z-index:100; display:none; white-space:pre-line; max-width:280px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.5rem .65rem; font-size:.74rem; line-height:1.45; font-weight:500; pointer-events:none}
 
   /* row-click info modal */
@@ -779,8 +796,90 @@ document.addEventListener('DOMContentLoaded', function(){
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
     fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.'
   };
+  // Every field the published row carries for one framework on one profile,
+  // across each connection count the profile ran. A column can only show one
+  // number; this is the rest of it, so a cell can be interrogated rather than
+  // only read.
+  var DT_ROWS=[
+    ['rps','Requests/sec',1],['cpu','CPU'],['cpu_per_req_us','CPU / req','us'],
+    ['memory','Memory'],['avg_latency','Avg latency'],['p99_latency','p99'],
+    ['p99_9_latency','p99.9'],['rate_ratio','Rate held'],['target_rate','Target rate',1],
+    ['bandwidth','Bandwidth'],['input_bw','Ingress BW'],
+    ['status_2xx','2xx',1],['status_3xx','3xx',1],['status_4xx','4xx',1],
+    ['status_5xx','5xx',1],['reconnects','Reconnects',1]
+  ];
+  // 3xx/4xx/5xx are zero on almost every row, and three zero lines per
+  // connection count is most of the popup's height on a profile that ran four
+  // of them. Collapsed to one line unless something actually happened.
+  function dtipStatus(r){
+    var n=['status_3xx','status_4xx','status_5xx'], any=false;
+    n.forEach(function(k){ if(+(r[k]||0)>0) any=true; });
+    return any?null:'<tr><td class="k">non-2xx</td><td class="v">0</td></tr>';
+  }
+  function dtipHtml(pid,fw,nc){
+    var p=PROF[pid]; if(!p) return '';
+    var scored={}; (p.scoredConns||[]).forEach(function(c){scored[c]=1;});
+    var blocks='', foot='';
+    (p.conns||[]).forEach(function(c){
+      var list=(D.results&&D.results[pid+'-'+c])||[];
+      var r=null; for(var i=0;i<list.length;i++){ if(list[i].fw===fw){r=list[i];break;} }
+      if(!r) return;
+      var tr='';
+      var collapsed=dtipStatus(r);
+      DT_ROWS.forEach(function(f){
+        if(collapsed && (f[0]==='status_3xx'||f[0]==='status_4xx'||f[0]==='status_5xx')) return;
+        var v=r[f[0]];
+        if(v===undefined||v===null||v==='') return;
+        if(f[2]===1) v=(+v).toLocaleString(); else if(f[2]) v=v+f[2];
+        tr+='<tr><td class="k">'+esc(f[1])+'</td><td class="v">'+esc(String(v))+'</td></tr>';
+        if(collapsed && f[0]==='status_2xx') tr+=collapsed;
+      });
+      if(!tr) return;
+      blocks+='<div class="dc">'+(+c).toLocaleString()+' conn'
+            + '<span class="dtag">'+(scored[c]?'counts':'not counted')+'</span></div>'
+            + '<table>'+tr+'</table>';
+      var rm=(D.runmeta||{})[pid+'-'+c];
+      if(rm&&!foot){
+        var bits=[];
+        if(rm.threads) bits.push(rm.threads+' gen threads');
+        if(rm.duration) bits.push(rm.duration);
+        if(rm.pipeline&&+rm.pipeline>1) bits.push('pipeline '+rm.pipeline);
+        foot=bits.join(' \u00b7 ');
+      }
+    });
+    if(!blocks) return '';
+    var why=nc?(p.scored===false
+        ? ' \u00b7 reference profile, not part of the composite'
+        : ' \u00b7 ran, but not counted toward this type\u2019s composite'):'';
+    return '<div class="dh">'+esc(fw)+'</div><div class="dsub">'+esc(p.label)
+         + (p.category?' \u00b7 '+esc(p.category):'')+esc(why)+'</div>'+blocks
+         + (foot?'<div class="dfoot">'+esc(foot)+'</div>':'');
+  }
+
   function initTips(){
     var tip=document.createElement('div'); tip.id='tip'; document.body.appendChild(tip);
+    var dtip=document.createElement('div'); dtip.id='dtip'; document.body.appendChild(dtip);
+    function dpos(el){
+      var r=el.getBoundingClientRect(); dtip.style.display='block';
+      var w=dtip.offsetWidth, h=dtip.offsetHeight;
+      var l=r.left+r.width/2-w/2, t=r.top-h-8;
+      if(t<6) t=r.bottom+8;
+      if(t+h>window.innerHeight-6) t=Math.max(6, window.innerHeight-h-6);
+      l=Math.max(6,Math.min(l,window.innerWidth-w-6));
+      dtip.style.left=l+'px'; dtip.style.top=t+'px';
+    }
+    document.addEventListener('mouseover', function(e){
+      var td=e.target.closest?e.target.closest('td.pc[data-pid]'):null;
+      if(!td) return;
+      var h=dtipHtml(td.dataset.pid, td.dataset.fw, td.dataset.nc==='1');
+      if(!h){ dtip.style.display='none'; return; }
+      dtip.innerHTML=h; dpos(td);
+    });
+    document.addEventListener('mouseout', function(e){
+      var td=e.target.closest?e.target.closest('td.pc[data-pid]'):null;
+      if(td && !td.contains(e.relatedTarget)) dtip.style.display='none';
+    });
+    document.addEventListener('scroll', function(){ dtip.style.display='none'; }, true);
     function pos(el){ var r=el.getBoundingClientRect(); tip.style.display='block'; var tw=tip.offsetWidth, th=tip.offsetHeight; var l=r.left+r.width/2-tw/2, t=r.top-th-8; if(t<6)t=r.bottom+8; l=Math.max(6,Math.min(l,window.innerWidth-tw-6)); tip.style.left=l+'px'; tip.style.top=t+'px'; }
     document.addEventListener('mouseover', function(e){ var el=e.target.closest?e.target.closest('[data-tip]'):null; if(!el)return; tip.textContent=el.getAttribute('data-tip'); pos(el); });
     document.addEventListener('mouseout', function(e){ var el=e.target.closest?e.target.closest('[data-tip]'):null; if(el && !el.contains(e.relatedTarget)) tip.style.display='none'; });
@@ -1677,8 +1776,9 @@ document.addEventListener('DOMContentLoaded', function(){
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
         var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps);
         var inner='<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
-        if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'">'+inner+'</td>'; }
-        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile, not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
+        var dat=' data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"');
+        if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
+        else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');

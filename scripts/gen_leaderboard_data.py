@@ -130,7 +130,15 @@ CATALOG = [
 
 # Fields kept per result row. tpl_* only emitted when present (api/gateway/prod).
 BASE_FIELDS = ("rps", "avg_latency", "p99_latency", "cpu", "memory", "bandwidth", "input_bw",
-               "status_2xx", "status_3xx", "status_4xx", "status_5xx")
+               "status_2xx", "status_3xx", "status_4xx", "status_5xx",
+               # Varies per entry, so it has to live on the row. The cell popup
+               # reports the whole row and reconnect churn is a real signal.
+               "reconnects")
+
+# Constant across every row of a profile-conn - checked, 0 of 52 keys vary - so
+# emitted once per key rather than ~2,300 times. Carried per row they cost
+# 123 KB, 18.5% of data.js, to repeat three numbers.
+RUNMETA_FIELDS = ("threads", "duration", "pipeline")
 TPL_FIELDS = ("tpl_baseline", "tpl_json", "tpl_upload", "tpl_static", "tpl_async_db")
 # Efficiency-only. Emitted like TPL_FIELDS - only where present - so the
 # other ~2,300 rows in data.js do not each grow four nulls.
@@ -3549,7 +3557,7 @@ def main():
 
     docs_tree, docs_content = build_docs()
 
-    profiles, results = [], {}
+    profiles, results, runmeta = [], {}, {}
     for category, entries in CATALOG:
         for pid, label, blurb, explorer, scored, s, es, isf in entries:
             present = []
@@ -3574,6 +3582,11 @@ def main():
                     trimmed.append(row)
                 if trimmed:
                     results[f"{pid}-{c}"] = trimmed
+                    for src in rows:
+                        rm = {f: src.get(f) for f in RUNMETA_FIELDS if src.get(f) is not None}
+                        if rm:
+                            runmeta[f"{pid}-{c}"] = rm
+                            break
                     present.append(c)
             if present:
                 prof = {
@@ -3596,7 +3609,7 @@ def main():
     achievements = compute_achievements(agg, profiles, meta, badge_index)
 
     payload = {"current": current, "langColors": langcolors, "meta": meta,
-               "profiles": profiles, "results": results, "docs": docs_tree,
+               "profiles": profiles, "results": results, "runmeta": runmeta, "docs": docs_tree,
                "achievements": achievements, "rounds": build_rounds()}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(js_payload("LB_DATA", payload))
