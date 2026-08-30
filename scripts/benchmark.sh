@@ -402,6 +402,17 @@ run_one() {
             info "exact CPU: $(awk -v c="$best_cpu_usec" 'BEGIN{printf "%.2f", c/1e6}') core-seconds \
 | $(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.3f", c/r}') us/req"
         fi
+        # One machine-readable line carrying what this profile is actually
+        # ranked on. The results table in a PR comment reports rps, which on a
+        # paced profile is the same number for everyone who held the rate and
+        # says nothing; these are the figures the score is built from. Parsed by
+        # .github/workflows/benchmark-pr.yml - keep the shape stable.
+        local _cpr="n/a"
+        if [ -n "$best_cpu_usec" ] && [ "${BEST_M[status_2xx]:-0}" -gt 0 ] 2>/dev/null; then
+            _cpr=$(awk -v c="$best_cpu_usec" -v r="${BEST_M[status_2xx]}" 'BEGIN{printf "%.2fus", c/r}')
+        fi
+        echo "=== Fixed-rate: cpu/req ${_cpr} | p99 ${BEST_M[p99_lat]:-n/a} | p99.9 ${BEST_M[p999_lat]:-n/a} | rate_ratio ${best_rate_ratio:-n/a} ==="
+
         # Below ~0.98 the client never delivered the rate the profile is defined
         # by, so the CPU figure describes a different, lighter workload than
         # every other entry's. Louder than a note: it invalidates the comparison.

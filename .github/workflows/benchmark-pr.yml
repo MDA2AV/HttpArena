@@ -322,17 +322,48 @@ jobs:
                       if cur_profile and re.match(r"^=== Best:", line):
                           m2 = re.match(r"^=== Best: (\d+) req/s \(CPU: ([\d.]+)%, Mem: ([^\)]+)\)", line)
                           if m2:
-                              rows.append((cur_profile, cur_conns, int(m2.group(1)), m2.group(2), m2.group(3)))
-                          cur_profile = None
+                              rows.append({"prof": cur_profile, "conns": cur_conns,
+                                           "rps": int(m2.group(1)), "cpu": m2.group(2),
+                                           "mem": m2.group(3)})
+                          continue
+                      # The paced profiles report what they are actually ranked
+                      # on. rps is the same for every entry that held the rate,
+                      # so on its own it says nothing about them.
+                      m3 = re.match(r"^=== Fixed-rate: cpu/req (\S+) \| p99 (\S+) \| p99\.9 (\S+) \| rate_ratio (\S+) ===$", line)
+                      if m3 and rows:
+                          rows[-1].update(cpureq=m3.group(1), p99=m3.group(2),
+                                          p999=m3.group(3), ratio=m3.group(4))
               return rows
 
           def table(rows, deltas):
-              out = ["| Test | Conn | RPS | CPU | Mem | Δ RPS | Δ Mem |",
-                     "|------|------|-----|-----|-----|-------|-------|"]
-              for prof, conns, rps, cpu, mem in rows:
-                  d = deltas.get(prof + "/" + conns, {})
-                  out.append("| {} | {} | {:,} | {}% | {} | {} | {} |".format(
-                      prof, conns, rps, cpu, mem, d.get("rps", ""), d.get("mem", "")))
+              paced = any("cpureq" in r for r in rows)
+              if paced:
+                  out = ["| Test | Conn | RPS | Rate | CPU/req | p99 | p99.9 | CPU | Mem | Δ RPS | Δ Mem |",
+                         "|------|------|-----|------|---------|-----|-------|-----|-----|-------|-------|"]
+              else:
+                  out = ["| Test | Conn | RPS | CPU | Mem | Δ RPS | Δ Mem |",
+                         "|------|------|-----|-----|-----|-------|-------|"]
+              for r in rows:
+                  d = deltas.get(r["prof"] + "/" + r["conns"], {})
+                  base = "| {} | {} | {:,} |".format(r["prof"], r["conns"], r["rps"])
+                  tail_ = " {}% | {} | {} | {} |".format(
+                      r["cpu"], r["mem"], d.get("rps", ""), d.get("mem", ""))
+                  if paced:
+                      # A rate_ratio under 0.98 means the offered load was not
+                      # the load the profile is defined by, so flag it here
+                      # rather than leaving it to be inferred from a low rps.
+                      ratio = r.get("ratio", "")
+                      try:
+                          if ratio and float(ratio) < 0.98:
+                              ratio = "**" + ratio + "** ⚠️"
+                      except ValueError:
+                          pass
+                      mid = " {} | {} | {} | {} |".format(
+                          ratio or "—", r.get("cpureq", "—"),
+                          r.get("p99", "—"), r.get("p999", "—"))
+                      out.append(base + mid + tail_)
+                  else:
+                      out.append(base + tail_)
               return "\n".join(out)
 
           def tail(path, n):
