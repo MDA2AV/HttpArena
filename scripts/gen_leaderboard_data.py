@@ -1399,6 +1399,16 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
         vals = [eff(pid, fw) for fw in A["avg"].get(pid, {}) if in_league(fw)]
         max_r[pid] = max(vals, default=0.0)
 
+    # Leading fixed-rate score per profile, on the same eligibility basis as
+    # max_r. Mirrors maxLat in computeComposite().
+    max_lat = {}
+    for pid in pids:
+        if pid in _lat.FULL_RATE:
+            ls = lat_scores(pid)
+            max_lat[pid] = max(
+                (ls.get(fw, 0.0) for fw in A["avg"].get(pid, {}) if in_league(fw)),
+                default=0.0)
+
     rows = []
     fwset = {fw for pid in pids for fw in A["avg"].get(pid, {})}
     for fw in fwset:
@@ -1423,10 +1433,13 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
                     # The fixed-rate profiles cannot be normalised on rps like
                     # the rest: the rate is pinned, so every entry that holds it
                     # delivers the same one and the column would read 1000 for
-                    # all of them. They contribute their own score, x10 onto the
-                    # shared basis.
+                    # all of them. Their own 0-100 score is normalised against
+                    # the leader of the field instead, so this column's leader is
+                    # worth the same 1000 as any other column's.
                     if pid in _lat.FULL_RATE:
-                        score += lat_scores(pid).get(fw, 0.0) * 10
+                        _m = max_lat.get(pid, 0.0)
+                        if _m > 0:
+                            score += (lat_scores(pid).get(fw, 0.0) / _m) * 1000
                     else:
                         score += (eff(pid, fw) / max_r[pid]) * 1000
         if any_result:

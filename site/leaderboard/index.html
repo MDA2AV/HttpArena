@@ -762,10 +762,10 @@ document.addEventListener('DOMContentLoaded', function(){
     p99:'99th-percentile latency - 99% of requests were faster than this.',
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
-    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
-    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 100). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
-    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
-    scoreHelpWs:'How the composite is built: every scored profile is worth 100 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
+    score:'Composite - sum of normalized per-profile scores (each profile leader = 1000), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 1000). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
+    scoreHelp:'How the composite is built: every scored profile is worth 1000 to the entry leading it - including the fixed-rate profiles, which are normalized on their own CPU-and-tails score rather than on requests per second. Those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
+    scoreHelpWs:'How the composite is built: every scored profile is worth 1000 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.',
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
     fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.'
@@ -1411,8 +1411,8 @@ document.addEventListener('DOMContentLoaded', function(){
       if(pid==='json-comp'&&minBpr!=null){ var b=A.bw[pid][fw]||0; if(b>0) return rps*Math.pow(minBpr/(b/rps),2); }
       return rps;
     }
-    var maxR={},maxME={};
-    pids.forEach(function(pid){ maxR[pid]=0; maxME[pid]=0; Object.keys(A.avg[pid]||{}).forEach(function(fw){ if(exclFromScale(fw))return; var e=eff(pid,fw); if(e>maxR[pid])maxR[pid]=e; var rps=A.avg[pid][fw]||0,m=A.mem[pid][fw]||0; if(m>0&&rps>0){var me=Math.sqrt(rps)/m; if(me>maxME[pid])maxME[pid]=me;} }); });
+    var maxR={},maxME={},maxLat={};
+    pids.forEach(function(pid){ maxR[pid]=0; maxME[pid]=0; maxLat[pid]=0; Object.keys(A.avg[pid]||{}).forEach(function(fw){ if(exclFromScale(fw))return; var e=eff(pid,fw); if(e>maxR[pid])maxR[pid]=e; var rps=A.avg[pid][fw]||0,m=A.mem[pid][fw]||0; if(m>0&&rps>0){var me=Math.sqrt(rps)/m; if(me>maxME[pid])maxME[pid]=me;} if(isLatProfile(pid)){ var ls=latScore(pid,fw); if(ls>maxLat[pid])maxLat[pid]=ls; } }); });
     var fwset={}; pids.forEach(function(pid){ Object.keys(A.avg[pid]||{}).forEach(function(fw){fwset[fw]=1;}); });
     var rows=[];
     Object.keys(fwset).forEach(function(fw){
@@ -1424,13 +1424,19 @@ document.addEventListener('DOMContentLoaded', function(){
           var sc;
           if(isLatProfile(pid)){
             // The rate is pinned on this profile, so normalising it on rps puts
-            // every entry that held the rate at 100 and the column says nothing.
-            // Its own score is already a 0-100 quantity built from cost and both
-            // latency tails, which is what the cell should show. No memory bonus:
-            // the value is not a throughput for the bonus to scale.
-            // x10 to land on the composite's 0-1000 basis. The profile's own
-            // score is defined 0-100 and the detail view shows it that way.
-            sc=latScore(pid,fw)*10;
+            // every entry that held the rate at 1000 and the column says nothing.
+            // Its own 0-100 score, built from cost and both latency tails, is
+            // what the cell ranks on instead. No memory bonus: the value is not
+            // a throughput for the bonus to scale.
+            //
+            // Normalised against the leading score in the field, exactly as the
+            // rps profiles are normalised against the leading rps, so the column
+            // leader is worth 1000 here too. A flat x10 was the old behaviour and
+            // it quietly capped this column below every other one: nobody is
+            // simultaneously cheapest on CPU and best on both tails, so the best
+            // entry scored in the low 90s and the column could never contribute
+            // its full 1000 the way an rps column does.
+            sc=maxLat[pid]>0?(latScore(pid,fw)/maxLat[pid])*1000:0;
           } else {
             // 0-1000 per profile, not 0-100. At 24 scored profiles a 0-100
             // basis put whole clusters of entries on the same rounded total,
