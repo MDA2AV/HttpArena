@@ -409,7 +409,8 @@ function registerEchoRoute(target) {
         const chunks = [];
         req.on('data', chunk => chunks.push(chunk));
         req.on('end', () => {
-            res.type('application/octet-stream').send(Buffer.concat(chunks));
+            // one chunk is the whole body at this size, and concat of one still copies
+            res.type('application/octet-stream').send(chunks.length === 1 ? chunks[0] : Buffer.concat(chunks));
         });
     });
 }
@@ -420,20 +421,24 @@ app.get('/baseline2', (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
 });
 
-app.all('/baseline11', (req, res) => {
+// get and post rather than one app.all: registered per method the route goes native on uWS,
+// and the GET chain provably reads no header, so the framework skips the header copy on the
+// route every fixed-rate profile drives. app.all keeps it off both fast paths, and the split
+// measured 6.6% of CPU per response on the GET.
+app.get('/baseline11', (req, res) => {
+    res.type('text/plain').send(String(sumQuery(req.query)));
+});
+
+app.post('/baseline11', (req, res) => {
     const querySum = sumQuery(req.query);
-    if (req.method === 'POST') {
-        let body = '';
-        req.on('data', chunk => body += chunk);
-        req.on('end', () => {
-            let total = querySum;
-            const n = parseInt(body.trim(), 10);
-            if (n === n) total += n;
-            res.type('text/plain').send(String(total));
-        });
-    } else {
-        res.type('text/plain').send(String(querySum));
-    }
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+        let total = querySum;
+        const n = parseInt(body.trim(), 10);
+        if (n === n) total += n;
+        res.type('text/plain').send(String(total));
+    });
 });
 
 // shared by the plaintext listener and the TLS one on 8081, as the JSON route is: static-tls

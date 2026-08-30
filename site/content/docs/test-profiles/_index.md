@@ -42,7 +42,7 @@ Data files are **mounted automatically** by the benchmark runner - your Dockerfi
 | Path | Description |
 |------|-------------|
 | `/data/dataset.json` | 50-item dataset for `/json`, `/db`, and `/async-db` |
-| `/data/static/` | 20 static assets for `/static/*` (HTML, JS, CSS, SVG, WebP, woff2, JSON). 15 assets ship with pre-built `.gz` and `.br` sibling files (e.g. `app.js`, `app.js.gz`, `app.js.br`) so frameworks that support precompressed serving can skip on-the-fly compression. The 5 already-binary formats (`hero.webp`, `thumb1.webp`, `thumb2.webp`, `bold.woff2`, `regular.woff2`) have no precompressed variants. See the [Static TLS](h1/isolated/static-tls/) profile for how to wire Accept-Encoding lookup. |
+| `/data/static/` | 20 static assets for `/static/*` (HTML, JS, CSS, SVG, WebP, woff2, JSON). 15 assets ship with pre-built `.gz` and `.br` sibling files (e.g. `app.js`, `app.js.gz`, `app.js.br`) so frameworks that support precompressed serving can skip on-the-fly compression. The 5 already-binary formats (`hero.webp`, `thumb1.webp`, `thumb2.webp`, `bold.woff2`, `regular.woff2`) have no precompressed variants. See the [Static TLS](h1/static-tls/) profile for how to wire Accept-Encoding lookup. |
 | `/certs/server.crt`, `/certs/server.key` | TLS certificate and key for HTTPS / H2 / H2 h2c (port 8082 is cleartext) / H3 |
 
 ## Environment variables

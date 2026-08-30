@@ -1,6 +1,6 @@
-# Stock Caddy, which ships h1/h2/h3 in the base image, so no custom build. It
-# covers gateway-64 (h2 over TCP) and gateway-h3 (QUIC over UDP) from the one
-# Caddyfile, which binds 8443 on both.
+# Stock Caddy, which ships h3 in the base image, so no custom build. It covers
+# gateway-h3 (QUIC over UDP) only; gateway-64 uses the nginx edge in
+# ../proxy-nginx.
 FROM caddy:2-alpine
 
 COPY Caddyfile /etc/caddy/Caddyfile

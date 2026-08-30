@@ -39,7 +39,7 @@ The HTTP/3 Static Files profile serves 20 static files of various types over QUI
 | WebP | 3 | `hero.webp`, `thumb1.webp`, `thumb2.webp` |
 | JSON | 1 | `manifest.json` |
 
-Pre-compressed versions (`.gz`, `.br`) are available on disk. See the [Static TLS compression section](/docs/test-profiles/h1/isolated/static-tls/implementation/#compression) for full compression rules.
+Pre-compressed versions (`.gz`, `.br`) are available on disk. See the [Static TLS compression section](/docs/test-profiles/h1/static-tls/implementation/#compression) for full compression rules.
 
 ## Expected request/response
 

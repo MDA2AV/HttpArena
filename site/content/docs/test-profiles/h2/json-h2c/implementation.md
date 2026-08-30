@@ -5,7 +5,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 ---
 {{< type-rules standard="Must use the framework standard JSON serialization and standard HTTP/2 cleartext configuration. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline." tuned="May use alternative JSON libraries (simd-json, sonic-json), tune HTTP/2 stream and window parameters, and apply framework-specific optimizations. The JSON body must still be serialized per request from live data - pre-computed / pre-serialized response caches or response-lookup tables are not allowed on either type; they short-circuit the serialization workload the profile exists to measure." engine="No specific rules. Ranked separately from frameworks." >}}
 
-Same `/json` workload as [JSON TLS](../../h1/isolated/json-tls/) (dataset slice + per-item derived field + JSON serialization) served over HTTP/2 cleartext. Exercises the JSON pipeline under multiplexed h2 streams without the TLS CPU tax the `baseline-h2` profile carries.
+Same `/json` workload as [JSON TLS](../../h1/json-tls/) (dataset slice + per-item derived field + JSON serialization) served over HTTP/2 cleartext. Exercises the JSON pipeline under multiplexed h2 streams without the TLS CPU tax the `baseline-h2` profile carries.
 
 **Port:** 8082
 **Connections:** 1,024, 4,096
