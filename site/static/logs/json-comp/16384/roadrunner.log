@@ -1,41 +1,233 @@
 Exec: /app/erts-17.0.2/bin/erlexec -noinput +Bd -boot /app/releases/0.1.0/start -mode embedded -boot_var SYSTEM_LIB_DIR /app/lib -config /app/releases/0.1.0/sys.config -args_file /app/releases/0.1.0/vm.args -- foreground
 Root: /app
 /app
-=ESOCK WARNING MSG==== 30-Aug-2026::19:45:25.459797 ===
+=ESOCK WARNING MSG==== 30-Aug-2026::21:13:42.435909 ===
 [UNIX-ESSIO] Failed open sctp dynamic library: libsctp.so.1
-=NOTICE REPORT==== 30-Aug-2026::19:45:38.673205 ===
+=NOTICE REPORT==== 30-Aug-2026::21:13:48.356379 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:38.673300 ===
+=NOTICE REPORT==== 30-Aug-2026::21:13:48.356429 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:38.674551 ===
+=NOTICE REPORT==== 30-Aug-2026::21:13:48.357738 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:46.002428 ===
+=NOTICE REPORT==== 30-Aug-2026::21:13:48.359191 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:46.002390 ===
+=NOTICE REPORT==== 30-Aug-2026::21:13:48.359778 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:46.004690 ===
+=NOTICE REPORT==== 30-Aug-2026::21:13:48.360062 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:46.004814 ===
+=NOTICE REPORT==== 30-Aug-2026::21:14:02.992706 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:46.006573 ===
+=NOTICE REPORT==== 30-Aug-2026::21:14:02.996009 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
-=NOTICE REPORT==== 30-Aug-2026::19:45:46.083200 ===
+=NOTICE REPORT==== 30-Aug-2026::21:14:02.998288 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.000444 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.001253 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.001789 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.005745 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.007970 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.008461 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.008795 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.008963 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.009944 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.010768 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.010891 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.011090 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.011154 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.011546 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.011908 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.011909 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.012102 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.012895 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.013022 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.013100 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.013486 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.013558 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.013853 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.017261 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.017611 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.017784 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.021026 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.021362 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.021497 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.021882 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.022669 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.026213 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.026385 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.029035 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.029310 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.029516 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.029752 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.037847 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.037844 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.037854 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.037945 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.037955 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.037980 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.110205 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.110262 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.110592 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.110664 ===
+    reason: closed
+    msg: roadrunner response send failed
+    phase: buffered_response
+=NOTICE REPORT==== 30-Aug-2026::21:14:03.110975 ===
     reason: closed
     msg: roadrunner response send failed
     phase: buffered_response
