@@ -14,9 +14,10 @@ fn cgroup_cpus() -> usize {
 }
 
 use actix_files::Files;
+use actix_web::http::header;
 use actix_web::http::header::{ContentType, HeaderValue, SERVER};
 use actix_web::middleware::Compress;
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
 use dashmap::DashMap;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as PgPool, RecyclingMethod};
 use futures_util::StreamExt;
@@ -206,17 +207,53 @@ async fn echo_body(mut payload: web::Payload) -> HttpResponse {
         .body(body.freeze())
 }
 
-// JSON endpoint. Serialize fresh per request with serde_json; the Compress
-// middleware on the App handles Accept-Encoding negotiation and response
-// encoding so the handler body stays encoding-agnostic.
+// JSON endpoint. Serialized fresh per request with serde_json.
+//
+// gzip is driven directly here rather than left to the Compress middleware.
+// actix-web's encoder compresses in place only below
+// MAX_CHUNK_SIZE_ENCODE_IN_PLACE (1 KiB) and hands everything larger to
+// `spawn_blocking`; every response on this profile is 2-6 KB, so each one paid
+// a blocking-pool round trip. That showed up as a server sitting at 66% CPU
+// while serving 12k req/s - not compute-bound, waiting on thread handoff - and
+// as throughput that climbed with connection count instead of flattening.
+// Level 1 is what the profile asks for and what actix-web's own gzip path uses
+// (`flate2::Compression::fast()`), so the bytes on the wire are unchanged; only
+// the thread they are produced on is.
+//
+// The Compress middleware stays wrapped on the App and skips this response,
+// because it already carries a Content-Encoding.
 async fn json_endpoint(
     state: web::Data<AppState>,
+    req: HttpRequest,
     path: web::Path<usize>,
     query: web::Query<JsonQuery>,
 ) -> HttpResponse {
+    use std::io::Write as _;
+
     let count = path.into_inner().min(state.dataset.len());
     let m = query.m.unwrap_or(1);
     let body = build_json_body(&state.dataset, count, m);
+
+    let accepts_gzip = req
+        .headers()
+        .get(header::ACCEPT_ENCODING)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.contains("gzip"));
+
+    if accepts_gzip {
+        let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::new(1));
+        if enc.write_all(&body).is_ok() {
+            if let Ok(compressed) = enc.finish() {
+                return HttpResponse::Ok()
+                    .insert_header((SERVER, SERVER_HDR.clone()))
+                    .insert_header((header::CONTENT_ENCODING, "gzip"))
+                    .insert_header((header::VARY, "Accept-Encoding"))
+                    .content_type(ContentType::json())
+                    .body(compressed);
+            }
+        }
+    }
+
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
         .content_type(ContentType::json())
