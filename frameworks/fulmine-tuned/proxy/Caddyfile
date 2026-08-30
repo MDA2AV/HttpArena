@@ -1,11 +1,11 @@
-# fulmine gateway edge.
+# fulmine gateway-h3 edge.
 #
-# Stock Caddy terminates TLS and h1/h2/h3 on 8443, serves /static/* from disk,
+# Stock Caddy terminates TLS and h3 on 8443, serves /static/* from disk,
 # and forwards the dynamic endpoints to the fulmine server. Both services run
 # with network_mode: host, so the server is reachable on loopback.
 #
-# The same file covers gateway-64 and gateway-h3: Caddy binds 8443 on tcp and
-# udp both, and only the load generator differs between the two profiles.
+# Only compose.gateway-h3.yml uses this; gateway-64 moved to the nginx edge
+# in ../proxy-nginx, which does not speak QUIC in the stock image.
 {
 	admin off
 	auto_https off
