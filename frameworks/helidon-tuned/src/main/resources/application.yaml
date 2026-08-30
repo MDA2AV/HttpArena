@@ -17,6 +17,10 @@ server:
       validate-path: false
       recv-log: false
       send-log: false
+    http_2:
+      validate-request-headers: false
+      validate-response-headers: false
+      validate-path: false
   sockets:
     - name: "h2-tls" # HTTP/2, grpc
       host: "0.0.0.0"
@@ -34,6 +38,10 @@ server:
           validate-path: false
           recv-log: false
           send-log: false
+        http_2:
+          validate-request-headers: false
+          validate-response-headers: false
+          validate-path: false
       tls:
         private-key:
           pem:
@@ -80,4 +88,7 @@ server:
       # benchmark requires prior-knowledge HTTP/2 only on this port
       protocols-discover-services: false
       protocols:
-        http_2: {}
+        http_2:
+          validate-request-headers: false
+          validate-response-headers: false
+          validate-path: false
