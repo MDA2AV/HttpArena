@@ -8,7 +8,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 Same workload as baseline, but each connection is closed and re-established after 10 requests. This forces frequent TCP handshakes.
 
-**Connections:** 512, 4,096
+**Connections:** 4,096
 
 ## Expected request/response
 

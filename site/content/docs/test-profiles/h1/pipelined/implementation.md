@@ -10,7 +10,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 **This test is reference-only - it does not contribute to the composite score.** HTTP/1.1 pipelining is disabled in modern browsers and unsupported by mainstream proxies, so the profile is kept as a raw I/O and middleware-efficiency indicator (issue #1058). Results still appear on the board as a faded column.
 
-**Connections:** 512, 4,096
+**Connections:** 4,096
 
 ## Expected request/response
 

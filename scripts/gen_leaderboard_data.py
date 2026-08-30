@@ -48,9 +48,9 @@ OUT = ROOT / "site" / "leaderboard" / "data.js"
 # behind `s`. scoredForType() in index.html is the one place that decides.
 CATALOG = [
     ("Connection", [
-        ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [512,4096,16384],[512,4096], True,True,True),
-        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [512,4096,16384],[512,4096], False,False,True),
-        ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [512,4096],      [512,4096], True,True,True),
+        ("baseline",     "Baseline",    "Mixed GET/POST with query parsing.",       [4096,16384],    [4096],     True,True,True),
+        ("pipelined",    "Pipelined",   "16x batched HTTP/1.1 pipelining (reference).", [4096,16384],    [4096],     False,False,True),
+        ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [4096],          [4096],     True,True,True),
     ]),
     ("Concurrency", [
         # Unscored while the delay range and connection counts are still being
@@ -81,7 +81,7 @@ CATALOG = [
                                                     [1024],              [1024],          True,True,False),
     ]),
     ("Workload", [
-        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
+        ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [4096,16384],        [4096,16384],    True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
         # Paced like the latency profiles, and scored the same way: the rate is
         # pinned, so every entry that holds it delivers the same rps and the
@@ -92,7 +92,7 @@ CATALOG = [
         # measured on this profile.
         ("8gbit",  "8Gbit", "Score out of 100: CPU and both latency tails at a pinned 50K req/s, 10 KB echoed both ways.",
                                                     [512],               [512],           True,True,False),
-        ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
+        ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024],              [1024],          False,False,True),
     ]),
     ("Database", [
         # Reference-only. The database and its driver dominate these two far

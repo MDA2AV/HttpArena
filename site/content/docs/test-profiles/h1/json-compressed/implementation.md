@@ -66,7 +66,7 @@ Decompressed body:
 |-----------|-------|
 | Endpoint | `GET /json/{count}?m={multiplier}` |
 | Counts × multipliers | (25,4), (40,8), (50,6) (round-robin) |
-| Connections | 512, 4096, 16384 |
+| Connections | 4096, 16384 |
 | Pipeline | 1 |
 | Duration | 5s |
 | Runs | 3 (best taken) |
@@ -95,7 +95,7 @@ The quadratic exponent is deliberate: **doubling the response size quarters the 
 
 ### Per-conn-count table (per-profile leaderboard)
 
-On the JSON Compressed tab of the main leaderboard, the Score column is computed **independently per connection count**. Each conn panel (512, 4096, 16384) runs its own `minBpr` normalization so the top framework in that panel scores 100. The **Best** panel picks each framework's highest score across the three conn counts.
+On the JSON Compressed tab of the main leaderboard, the Score column is computed **independently per connection count**. Each conn panel (4096, 16384) runs its own `minBpr` normalization so the top framework in that panel scores 100. The **Best** panel picks each framework's higher score across the two conn counts.
 
 ### Composite score column
 

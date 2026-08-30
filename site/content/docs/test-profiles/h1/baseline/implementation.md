@@ -8,7 +8,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 The primary throughput benchmark. Each connection sends one request at a time over persistent keep-alive connections.
 
-**Connections:** 512, 4,096
+**Connections:** 4,096
 **CPU limit:** 64 threads (container pinned to cores 0-31, 64-95 via `--cpuset-cpus`)
 
 ## Workload
@@ -58,4 +58,4 @@ Content-Type: text/plain
 - Raw request throughput under ideal conditions
 - Full HTTP parsing pipeline performance
 - Keep-alive connection handling efficiency
-- How frameworks scale with increasing connection counts
+- Behaviour at a high connection count (4,096 concurrent keep-alive connections)

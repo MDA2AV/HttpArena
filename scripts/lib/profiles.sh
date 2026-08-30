@@ -10,9 +10,9 @@
 # Adding a profile: add a line to PROFILES and append to PROFILE_ORDER.
 
 declare -A PROFILES=(
-    [baseline]="1|0|0-31,64-95|512,4096|"
-    [pipelined]="16|0|0-31,64-95|512,4096|pipeline"
-    [limited-conn]="1|10|0-31,64-95|512,4096|"
+    [baseline]="1|0|0-31,64-95|4096|"
+    [pipelined]="16|0|0-31,64-95|4096|pipeline"
+    [limited-conn]="1|10|0-31,64-95|4096|"
     # Async: GET /delay/15, a flat 15ms wait. Held connections (req_per_conn=0)
     # so every one of them is a pending timer the server has to carry.
     #
@@ -64,7 +64,7 @@ declare -A PROFILES=(
     # poll loops, timers, background GC, wakeups. A busy box amortises those
     # away; this one does not.
     [latency-10k]="1|0|0-31,64-95|1024|latency-10k"
-    [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
+    [json-comp]="1|0|0-31,64-95|4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     # 8Gbit: 100 KB up and the same 100 KB back, over TLS. The only profile
     # that loads both directions at once, which is why it exists - upload
@@ -81,7 +81,7 @@ declare -A PROFILES=(
     # that cannot hold the rate says so in rate_ratio rather than quietly
     # reporting a lower number that reads like a like-for-like result.
     [8gbit]="1|0|0-31,64-95|512|8gbit"
-    [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
+    [static-tls]="1|200|0-31,64-95|1024|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [fortunes]="1|0|0-31,64-95|1024|fortunes"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"

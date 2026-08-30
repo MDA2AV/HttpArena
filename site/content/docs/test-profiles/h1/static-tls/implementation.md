@@ -7,7 +7,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 The Static Files over TLS profile is the [Static Files](../static/implementation/) workload transported over HTTP/1.1 + TLS on a dedicated port. It measures how much of a framework's plaintext static-serving throughput survives encryption.
 
-**Connections:** 1,024, 4,096, 6,800
+**Connections:** 1,024
 
 ## How it works
 
@@ -41,7 +41,7 @@ Identical to the plain [`static` profile](../static/implementation/#compression)
 ## What it measures
 
 - Everything [Static Files](../static/implementation/#what-it-measures) measures
-- **TLS handshake cost amortized over keep-alive** - connections are long-lived at 1,024–6,800 concurrent
+- **TLS handshake cost amortized over keep-alive** - connections are long-lived at 1,024 concurrent
 - **Record framing overhead on large payloads** - multi-hundred-KB responses span many TLS records, unlike the small JSON bodies of `json-tls`
 - **Symmetric cipher throughput** - AES-GCM / ChaCha20-Poly1305 on the hot path, dominated by bulk encryption of file bodies
 
@@ -78,7 +78,7 @@ Content-Type: text/css
 | Transport | HTTP/1.1 over TLS |
 | Port | 8081 |
 | ALPN | `http/1.1` |
-| Connections | 1,024, 4,096, 6,800 |
+| Connections | 1,024 |
 | Pipeline | 1 |
 | Duration | 5s |
 | Runs | 3 (best taken) |
