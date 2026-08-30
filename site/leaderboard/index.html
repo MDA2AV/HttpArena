@@ -1671,7 +1671,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // Offered rate that earns the whole rate factor, per profile. 95% of target:
   // the generator never quite reaches its own number, so the threshold has to
   // sit below it. Mirrors FULL_RATE in scripts/latency_score.py.
-  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500};
+  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, 'echo-10k':47500};
   var LAT_W_CPU=0.60, LAT_W_P99=0.25, LAT_W_P999=0.15, LAT_DEC=3;
   var _latScores={};
   function isLatProfile(pid){ return Object.prototype.hasOwnProperty.call(LAT_FULL,pid); }

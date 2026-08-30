@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scoring for the fixed-rate latency profiles: `latency-1m` and `latency-10k`.
+"""Scoring for the fixed-rate profiles: `latency-1m`, `latency-10k` and `echo-10k`.
 
 Every other profile here ranks on one number, requests per second. This one
 cannot: the rate is pinned, so every entry that finishes serves the same load
@@ -51,6 +51,10 @@ from pathlib import Path
 FULL_RATE = {
     "latency-1m":  950_000.0,
     "latency-10k":   9_500.0,
+    # echo-10k is paced too, so it scores the same way: 95% of its 50K target.
+    # Keep in step with LAT_FULL in site/leaderboard/index.html - check_badge_parity.js
+    # compares the two and fails the deploy when they disagree.
+    "echo-10k":     47_500.0,
 }
 DEFAULT_PROFILE = "latency-1m"
 W_CPU, W_P99, W_P999 = 0.60, 0.25, 0.15

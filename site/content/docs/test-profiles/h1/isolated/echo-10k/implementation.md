@@ -92,4 +92,16 @@ wrk reports only the bytes it *read*, so its `Transfer/sec` is the download half
 
 ### Composite
 
-**Reference-only for now**: measured, published and shown, but not contributing to the composite score. The profile this replaces was unscored too, and this one should be run board-wide before it decides anything.
+**Scored**, on the same basis as the two fixed-rate latency profiles rather than on requests per second - because the rate is pinned, every entry that holds it delivers the same rps, so throughput cannot separate them. What separates them is what holding it cost:
+
+```
+rateFactor = min(1, achieved_rps / 47,500)
+quality    = 0.60 x cpuScore + 0.25 x p99Score + 0.15 x p999Score
+score      = 100 x rateFactor x quality
+```
+
+Full credit at 47,500 req/s, which is 95% of the 50,000 offered - the generator never quite reaches its own target, so the threshold sits below it. `cpuScore` is a plain ratio of the best CPU-per-request to this entry's; the two tails use a decade scale, which keeps the field separable where a ratio would collapse to zero for everyone but the leader.
+
+An entry that does not hold the rate is cut proportionally by `rateFactor`, so a run that was never offered the load it claims cannot score as though it were.
+
+Scored by [`scripts/latency_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/latency_score.py); run `python3 scripts/latency_score.py --table --profile echo-10k` to score the published results.

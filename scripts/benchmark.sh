@@ -270,7 +270,7 @@ run_one() {
     # three runs, which is not known until all three have happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
-    case "$endpoint" in latency-1m|latency-10k) _mdir=$(mktemp -d) ;; esac
+    case "$endpoint" in latency-1m|latency-10k|echo-10k) _mdir=$(mktemp -d) ;; esac
 
     BEST_M=()
     local run
@@ -388,7 +388,7 @@ run_one() {
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
     # The fixed-rate profiles' headline number, and the check that it counts.
-    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ]; then
+    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ] || [ "$endpoint" = "echo-10k" ]; then
         # Two different failures that used to print the same line. "No CPU
         # reading" is a cgroup problem; "no requests" is a generator or server
         # problem, and saying the former when it is the latter sent the first
@@ -504,7 +504,7 @@ save_result() {
     # not the load, so the reason ships with the row rather than being inferred
     # from an rps that looks merely slow.
     local eff_extra=""
-    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ]; then
+    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ] || [ "$profile" = "echo-10k" ]; then
         local _eff_reqs=${BEST_M[status_2xx]:-0}
         local _eff_per_req="null"
         if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then

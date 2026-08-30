@@ -79,7 +79,15 @@ CATALOG = [
     ("Workload", [
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [512,4096,16384],    [512,4096,16384],True,False,False),
         ("json-tls",  "JSON TLS",        "JSON over HTTP/1.1 + TLS.",                [4096],              [4096],          True,True,True),
-        ("echo-10k",    "Echo-10K",          "10 KB echoed over TLS at a fixed rate: both directions loaded at once (reference).", [512],      [512],           False,False,False),
+        # Paced like the latency profiles, and scored the same way: the rate is
+        # pinned, so every entry that holds it delivers the same rps and the
+        # composite cannot rank it on throughput. It contributes its own 0-100
+        # score instead (CPU 0.60, p99 0.25, p99.9 0.15, all times the fraction
+        # of the offered rate actually held). infraScored stays False - that flag
+        # is read *ahead* of `scored`, and no infrastructure entry has been
+        # measured on this profile.
+        ("echo-10k",  "Echo-10K", "Score out of 100: CPU and both latency tails at a pinned 50K req/s, 10 KB echoed both ways.",
+                                                    [512],               [512],           True,True,False),
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024,4096,6800],    [1024,4096,6800],False,False,True),
     ]),
     ("Database", [
