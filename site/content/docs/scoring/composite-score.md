@@ -32,9 +32,9 @@ Framework types remain separate: engine entries are scored on their own subset o
 
 The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself, for example ranking the Ruby entries against each other rather than against the field.
 
-**Exception: Latency-1M.** That profile pins its request rate, so every entry that holds the rate delivers the same one and normalizing it on rps would score all of them 1,000. It contributes [its own score](/docs/test-profiles/h1/isolated/latency-1m/implementation/#scoring) instead, a 0–100 figure built from CPU and both latency tails, multiplied by 10 onto this scale.
+**Exception: the fixed-rate profiles.** [Latency-1M](/docs/test-profiles/h1/isolated/latency-1m/implementation/#scoring) and [Latency-10K](/docs/test-profiles/h1/isolated/latency-10k/implementation/#scoring) pin their request rate, so every entry that holds the rate delivers the same one and normalizing on rps would score all of them 1,000. Each contributes its own score instead, a 0–100 figure built from CPU and both latency tails, multiplied by 10 onto this scale. The two differ only in the rate offered - a saturating 1M req/s against a near-idle 10K - so they are scored separately and read separately.
 
-One consequence is worth naming: because that score is not rebased on the field leader, the best entry on Latency-1M contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
+One consequence is worth naming: because that score is not rebased on the field leader, the best entry on either profile contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
 
 ### Step 3: Sum across scored profiles
 

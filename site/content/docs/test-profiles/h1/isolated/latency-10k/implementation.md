@@ -81,4 +81,6 @@ Both profiles are scored by [`scripts/latency_score.py`](https://github.com/MDA2
 
 ### Composite
 
-**Reference-only for now**: measured, published and shown, but not contributing to the composite score until the rate has been shown board-wide to be the right one. Every profile here has started that way.
+**Scored**, on the same terms as Latency-1M: because the rate is pinned, the profile contributes its own 0-100 score multiplied onto the shared 0-1000 basis rather than an rps ranking. It counts for framework entries (flagship, emerging, experimental) and for engines.
+
+It does not count for infrastructure entries, matching Latency-1M - no proxy is measured on either profile yet.
