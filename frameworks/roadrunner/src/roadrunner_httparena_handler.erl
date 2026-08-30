@@ -11,6 +11,7 @@ routes() ->
         {~"/baseline11", ?MODULE, undefined},
         {~"/baseline2", ?MODULE, undefined},
         {~"/pipeline", ?MODULE, undefined},
+        {~"/delay/:ms", ?MODULE, undefined},
         #{path => ~"/json/:count", handler => ?MODULE, middlewares => [roadrunner_compress]},
         {~"/echo", ?MODULE, undefined},
         {~"/async-db", ?MODULE, undefined},
@@ -42,6 +43,8 @@ handle_route(~"/baseline2", Req) ->
     baseline(Req);
 handle_route(~"/pipeline", Req) ->
     {roadrunner_resp:text(200, ~"ok"), Req};
+handle_route(<<"/delay/", _/binary>>, Req) ->
+    delay_endpoint(Req);
 handle_route(<<"/json/", _/binary>>, Req) ->
     json_endpoint(Req);
 handle_route(~"/echo", Req) ->
@@ -158,6 +161,15 @@ baseline(Req) ->
                 {0, Req}
         end,
     {roadrunner_resp:text(200, integer_to_binary(A + B + BodyN)), Req2}.
+
+%% Async-delay endpoint: read the per-request delay from the path, wait
+%% idiomatically (each pending request is its own lightweight process,
+%% so the wait suspends only this connection), and answer the parsed
+%% number as the body.
+delay_endpoint(Req) ->
+    #{~"ms" := MsBin} = roadrunner_req:bindings(Req),
+    ok = timer:sleep(binary_to_integer(MsBin)),
+    {roadrunner_resp:text(200, MsBin), Req}.
 
 json_endpoint(Req) ->
     Count = binding_int(~"count", Req, 0),

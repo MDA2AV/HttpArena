@@ -20,6 +20,7 @@
     "json-comp",
     "json-tls",
     "8gbit",
+    "async",
     "async-db",
     "static-tls",
     "fortunes",
@@ -30,7 +31,8 @@
     "baseline-h3",
     "static-h3",
     "echo-ws",
-    "echo-ws-pipeline"
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": ["williamthome"]
 }

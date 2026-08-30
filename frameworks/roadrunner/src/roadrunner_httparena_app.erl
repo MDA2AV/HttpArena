@@ -21,6 +21,10 @@ start(_StartType, _StartArgs) ->
         %% connection-churn profiles.
         max_clients => 65536,
         num_acceptors => 100,
+        %% The async profile opens 32K connections at once; deepen the
+        %% kernel accept queue past the storm size (the kernel clamps
+        %% this to `net.core.somaxconn`), like the h2c listener below.
+        socket_backlog => 32768,
         %% WebSocket sessions inherit the listener's 64 KB socket buffer,
         %% held live per socket; the echo profiles exchange small text
         %% frames, so shrink it per roadrunner's ws.recv_buffer production
