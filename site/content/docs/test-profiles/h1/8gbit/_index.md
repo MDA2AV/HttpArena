@@ -1,6 +1,6 @@
 ---
-title: Echo-10K
-seo_title: "Echo-10K: 10 KB Echoed Over TLS, Both Directions at Once"
+title: 8Gbit
+seo_title: "8Gbit: 10 KB Echoed Over TLS, Both Directions at Once"
 description: "Posts a 10 KB body over TLS at a fixed rate and requires it back verbatim, loading ingest and egress together rather than one at a time."
 ---
 

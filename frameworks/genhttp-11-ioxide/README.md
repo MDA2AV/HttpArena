@@ -25,7 +25,7 @@ Responses are produced by GenHTTP's own pipeline (routing + serialization), not 
 - `json` / `json-comp` — `/json/{count}?m=N` serialized items; json-comp adds Brotli (`Accept-Encoding`)
 - `json-tls` — `json` over TLS on `:8081` (`ioxide.tls`, kTLS TX offload)
 - `static` — `/static/...` files with encoding negotiation (Modules.IO / Files)
-- `echo-10k` — `POST /echo`, returns the request body back unchanged
+- `8gbit` — `POST /echo`, returns the request body back unchanged
 - `async-db` — `/async-db?min=&max=&limit=`, Postgres via `ioxide.pg` (per-reactor pool)
 - `crud` — list / get / create / update on `/crud/items`, cache-aside (`X-Cache`, in-process)
 

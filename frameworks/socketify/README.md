@@ -8,7 +8,7 @@ socketify.py 0.0.31 on its uWebSockets bindings.
 > of parsing it. Splitting at every byte offset, the failures are exactly the
 > request line through its CRLF, while every split in the headers or body
 > succeeds. `validate.sh`: 30 passed, 10 failed, all of them fragmentation —
-> json, json-comp, echo-10k and json-tls all pass.
+> json, json-comp, 8gbit and json-tls all pass.
 >
 > **This is specific to socketify, not to uWebSockets.** The uWebSockets.js
 > entries here handle it correctly: `hyper-express` was checked against the same

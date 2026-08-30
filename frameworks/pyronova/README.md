@@ -13,7 +13,7 @@ no special harness-only glue.
 | json / json-comp | Rust-side `serde_json` via `pythonize`; `app.enable_compression()` handles `Accept-Encoding` |
 | json-tls | rustls 0.23 (ring), ALPN `h2,http/1.1` |
 | baseline-h2 / static-h2 | same TLS listener on :8443; hyper's `AutoBuilder` picks HTTP/2 on negotiated ALPN |
-| echo-10k | `@app.post(stream=True)` — chunked body ingest via tokio feeder → mpsc channel, collected and echoed |
+| 8gbit | `@app.post(stream=True)` — chunked body ingest via tokio feeder → mpsc channel, collected and echoed |
 | async-db | `PgPool` backed by sqlx on a dedicated tokio runtime, shared across workers via Rust-side `OnceLock` |
 | static | Tokio async-fs with `O_NOFOLLOW` + mime-from-extension |
 

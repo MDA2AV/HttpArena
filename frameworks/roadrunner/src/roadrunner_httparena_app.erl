@@ -14,7 +14,7 @@ start(_StartType, _StartArgs) ->
         port => HttpPort,
         routes => Routes,
         middlewares => [roadrunner_compress],
-        %% 25 MB headroom for the echo-10k profile (validator goes up to 20 MB).
+        %% 25 MB headroom for the 8gbit profile (validator goes up to 20 MB).
         max_content_length => 26214400,
         %% Manual body buffering: handlers read the body themselves via
         %% `roadrunner_req:read_body[_chunked]/1`. Lets the echo handler

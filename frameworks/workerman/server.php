@@ -106,7 +106,7 @@ $https->name = 'bench';
 
 $https->onMessage = static function ($connection, $request) {
 
-    // echo-10k drives :8081, which has its own onMessage -- the '/echo' case
+    // 8gbit drives :8081, which has its own onMessage -- the '/echo' case
     // in the plaintext worker above is not reachable from here.
     if ($request->path() === '/echo') {
         $connection->headers = ['Content-Type' => 'application/octet-stream'];

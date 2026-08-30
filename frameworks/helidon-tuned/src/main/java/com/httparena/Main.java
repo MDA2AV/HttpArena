@@ -58,7 +58,7 @@ public final class Main {
                     .addRouting(GrpcRouting.builder().service(grpcService)));
         }
 
-        // h1-tls routing - json-tls and echo-10k, both of which drive :8081.
+        // h1-tls routing - json-tls and 8gbit, both of which drive :8081.
         // The default listener's routing does not apply to a named socket, so
         // /echo has to be registered here as well or it 404s on 8081.
         var h1TlsListener = builder.sockets().get("h1-tls");

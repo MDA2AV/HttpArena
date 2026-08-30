@@ -22,7 +22,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "echo-10k",
+    "8gbit",
     "static-h2",
     "baseline-h2",
     "baseline-h2c",

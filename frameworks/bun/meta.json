@@ -21,7 +21,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
-    "echo-10k",
+    "8gbit",
     "static-tls",
     "async-db",
     "fortunes"

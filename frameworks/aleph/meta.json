@@ -19,7 +19,7 @@
     "baseline-h2c", "json-h2c",
     "limited-conn",
     "json-comp",
-    "echo-10k",
+    "8gbit",
     "json-tls",
     "async-db",
     "static-tls",

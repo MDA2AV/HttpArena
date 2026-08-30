@@ -75,7 +75,7 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 | `pipelined` | 16 | ∞ | 512 | gcannon | `/pipeline` |
 | `limited-conn` | 1 | 10 | 512 | gcannon | `/baseline11` |
 | `json-comp` | 1 | ∞ | 512 | gcannon | `/json/{count}` + compression |
-| `echo-10k` | 1 | ∞ | 128 | wrk | `POST /echo` (TLS) |
+| `8gbit` | 1 | ∞ | 128 | wrk | `POST /echo` (TLS) |
 | `static` | 1 | 10 | 512 | wrk | `/static/*` |
 | `async-db` | 1 | ∞ | 512 | gcannon | `/async-db?limit=N` |
 | `baseline-h2` | 1 | ∞ | 512 | h2load | `/baseline2` (TLS) |

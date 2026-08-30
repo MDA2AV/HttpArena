@@ -33,6 +33,6 @@ Infrastructure is scored on the eleven profiles a server can answer without an a
 | HTTP/2 | Baseline, Static |
 | HTTP/3 | Baseline, Static |
 
-Everything else - echo-10k, the database profiles, gRPC, WebSocket and the gateway stacks - is displayed as reference data where an entry has it, but does not count toward the infrastructure composite.
+Everything else - 8gbit, the database profiles, gRPC, WebSocket and the gateway stacks - is displayed as reference data where an entry has it, but does not count toward the infrastructure composite.
 
 Pipelined is the one profile scored here and nowhere else. It stopped counting for frameworks in [#1058](https://github.com/MDA2AV/HttpArena/pull/1058) because it measures batching behaviour more than framework throughput; for a proxy that behaviour *is* the thing being compared, so it stays in.

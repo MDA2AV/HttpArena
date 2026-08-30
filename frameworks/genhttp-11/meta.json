@@ -20,7 +20,7 @@
     "json-comp",
     "json-tls",
     "static-tls",
-    "echo-10k",
+    "8gbit",
     "async-db",
     "echo-ws",
     "echo-ws-pipeline",

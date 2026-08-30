@@ -1,6 +1,6 @@
 -- wrk Lua script: POST /echo with a rotating 10 KB body.
 --
--- NOT the echo-10k profile's generator any more - that profile is driven by
+-- NOT the 8gbit profile's generator any more - that profile is driven by
 -- zrk, paced, with a single body (see scripts/lib/tools/zrk.sh). This is kept
 -- for open-loop testing by hand, where rotating bodies are still useful: with
 -- one constant body a server could return a canned buffer of the right size
@@ -19,7 +19,7 @@ local bodies = {}
 for i = 1, N do
   -- A distinct repeating unit per body, so the bytes differ throughout rather
   -- than only in a header. Truncated to exactly SIZE.
-  local unit = string.format("echo-10k-body-%d:", i)
+  local unit = string.format("8gbit-body-%d:", i)
   local reps = math.ceil(SIZE / #unit)
   bodies[i] = string.sub(string.rep(unit, reps), 1, SIZE)
 end

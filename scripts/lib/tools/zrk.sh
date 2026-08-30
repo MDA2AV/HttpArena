@@ -46,7 +46,7 @@ _zrk_cmd() {
 # visible edit rather than a digit inside a pipe-delimited string.
 ZRK_RATE_LATENCY_1M="${ZRK_RATE_LATENCY_1M:-1000000}"
 ZRK_RATE_LATENCY_10K="${ZRK_RATE_LATENCY_10K:-10000}"
-ZRK_RATE_ECHO_10K="${ZRK_RATE_ECHO_10K:-50000}"
+ZRK_RATE_8GBIT="${ZRK_RATE_8GBIT:-50000}"
 
 # The body zrk posts to /echo. zrk takes a single body (-b @FILE), so unlike the
 # wrk script this profile used to run there is no eight-way rotation making a
@@ -100,13 +100,13 @@ zrk_build_args() {
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")
             ;;
-        echo-10k)
+        8gbit)
             # POST the body over TLS and take the same bytes back, so one
             # request loads both directions. -k because the bench certs are
             # self-signed. Paced rather than open-loop: what varies between
             # entries is the cost of serving the rate, not the rate itself.
             _zrk_echo_body
-            cmd+=(-t "$THREADS" -c "$conns" -d "$duration" -R "$ZRK_RATE_ECHO_10K"
+            cmd+=(-t "$THREADS" -c "$conns" -d "$duration" -R "$ZRK_RATE_8GBIT"
                   -m POST -b "@$ZRK_ECHO_BODY_FILE"
                   -H "Content-Type: application/octet-stream"
                   -k --format json --plain

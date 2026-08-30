@@ -156,7 +156,7 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "echo-10k-512": {
+    "8gbit-512": {
       "framework": "mq-bridge-py",
       "language": "Python",
       "rps": 49369,

@@ -29,7 +29,7 @@ Five load generators are dispatched per profile - each one is built for a specif
 
 | Parameter | Value |
 |-----------|-------|
-| Load generators | `gcannon` (HTTP/1.1, WebSocket), `wrk` (static, json-tls and echo-10k rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `zrk` (fixed-rate) |
+| Load generators | `gcannon` (HTTP/1.1, WebSocket), `wrk` (static, json-tls and 8gbit rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `zrk` (fixed-rate) |
 | Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`) |
 | Duration | 5s default; `async-db` 10s (hardcoded in the profile dispatcher) |
 | Runs | 3 per (profile, connection count) - best RPS wins |

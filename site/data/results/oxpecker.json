@@ -175,7 +175,7 @@
       "status_4xx": 0,
       "status_5xx": 0
     },
-    "echo-10k-512": {
+    "8gbit-512": {
       "framework": "oxpecker",
       "language": "F#",
       "rps": 49351,

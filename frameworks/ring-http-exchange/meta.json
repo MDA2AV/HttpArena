@@ -17,7 +17,7 @@
     "baseline", "latency-1m", "latency-10k",
     "limited-conn",
     "json-comp",
-    "echo-10k",
+    "8gbit",
     "json-tls",
     "async-db",
     "static-tls",

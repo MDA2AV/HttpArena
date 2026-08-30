@@ -1,6 +1,6 @@
 ---
 title: Implementation Guidelines
-seo_title: "Echo-10K Benchmark: Implementation Guide"
+seo_title: "8Gbit Benchmark: Implementation Guide"
 description: "How the 10 KB TLS echo profile is run, what it measures, and the type-specific rules that apply to it."
 ---
 {{< type-rules standard="Must read the request body through the framework's standard body API and write it back through the standard response API. Streaming is allowed and encouraged. What is not allowed is answering without reading: a response assembled from Content-Length, or a canned buffer of the right size, is not an echo." tuned="May stream, use vectored writes, reuse buffers, or hand the bytes back with zero copies. The body must still be the bytes that arrived - the profile is defined by what comes back, not by how it is moved." engine="Same as above. An engine is free to splice or reuse the receive buffer directly for the response; that is the point of the profile." infrastructure="A proxy may stream the body through to an origin and back, or echo it itself. Either way the bytes returned must be the bytes sent." >}}
@@ -82,7 +82,7 @@ That is a real trade for the paced measurement below, and worth stating plainly:
 | Body | 10 KB (10,240 bytes), `application/octet-stream` |
 | Framing | `Content-Length` both ways |
 | Connections | 512 |
-| Offered rate | 50,000 req/s (`ZRK_RATE_ECHO_10K`) |
+| Offered rate | 50,000 req/s (`ZRK_RATE_8GBIT`) |
 | Duration | 5s |
 | Runs | 3, best kept |
 | Load generator | [zrk](/docs/load-generators/h1/zrk/) — paced, `-m POST -b @<body>` |
@@ -104,4 +104,4 @@ Full credit at 47,500 req/s, which is 95% of the 50,000 offered - the generator 
 
 An entry that does not hold the rate is cut proportionally by `rateFactor`, so a run that was never offered the load it claims cannot score as though it were.
 
-Scored by [`scripts/latency_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/latency_score.py); run `python3 scripts/latency_score.py --table --profile echo-10k` to score the published results.
+Scored by [`scripts/latency_score.py`](https://github.com/MDA2AV/HttpArena/blob/main/scripts/latency_score.py); run `python3 scripts/latency_score.py --table --profile 8gbit` to score the published results.

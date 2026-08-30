@@ -17,7 +17,7 @@ Create a `meta.json` file in your framework directory:
   "description": "Short description of the framework and its key features.",
   "repo": "https://github.com/org/repo",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json-comp", "echo-10k", "baseline-h2"],
+  "tests": ["baseline", "pipelined", "limited-conn", "json-comp", "8gbit", "baseline-h2"],
   "maintainers": ["your-github-username"]
 }
 ```
@@ -47,7 +47,7 @@ Create a `meta.json` file in your framework directory:
 | `limited-conn` | HTTP/1.1 | `/baseline11` |
 | `json-comp` | HTTP/1.1 | `/json/{count}?m=N` (must honor `Accept-Encoding: gzip, br`) |
 | `json-tls` | HTTP/1.1 + TLS | `/json/{count}?m=N` (port 8081, ALPN `http/1.1`) |
-| `echo-10k` | HTTP/1.1 + TLS | `POST /echo` on port 8081 (10 KB echoed verbatim) |
+| `8gbit` | HTTP/1.1 + TLS | `POST /echo` on port 8081 (10 KB echoed verbatim) |
 | `api-4` | HTTP/1.1 | `/baseline11`, `/json/{count}`, `/async-db` (4 CPU, 16 GB) |
 | `api-16` | HTTP/1.1 | `/baseline11`, `/json/{count}`, `/async-db` (16 CPU, 32 GB) |
 | `async-db` | HTTP/1.1 | `/async-db?min=X&max=Y&limit=N` (requires `DATABASE_URL`) |

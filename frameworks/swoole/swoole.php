@@ -186,7 +186,7 @@ $port2->on('request', function (Request $request, Response $response) use ($data
         return;
     }
 
-    // echo-10k drives :8081, which has its own callback -- the /echo branch in
+    // 8gbit drives :8081, which has its own callback -- the /echo branch in
     // the plaintext handler above is not reachable from here.
     if ($path === '/echo') {
         $response->header['Content-Type'] = 'application/octet-stream';

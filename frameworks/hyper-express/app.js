@@ -321,7 +321,7 @@ if (cluster.isPrimary) {
         return server;
     }
 
-    // max_body_length defaults to 250 KB and answers 413 above it, so the echo-10k profile,
+    // max_body_length defaults to 250 KB and answers 413 above it, so the 8gbit profile,
     // which posts up to 20 MB, needs the cap raised. Every worker binds :8080 on its own:
     // uWebSockets.js shares the port between processes unless exclusive_port is asked for.
     const OPTIONS = { max_body_length: 32 * 1024 * 1024 };

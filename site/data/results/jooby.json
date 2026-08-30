@@ -1,7 +1,7 @@
 {
   "framework": "jooby",
   "results": {
-    "echo-10k-512": {
+    "8gbit-512": {
       "framework": "jooby",
       "language": "Java",
       "rps": 47453,

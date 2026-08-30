@@ -66,7 +66,7 @@ declare -A PROFILES=(
     [latency-10k]="1|0|0-31,64-95|1024|latency-10k"
     [json-comp]="1|0|0-31,64-95|512,4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
-    # Echo-10K: 100 KB up and the same 100 KB back, over TLS. The only profile
+    # 8Gbit: 100 KB up and the same 100 KB back, over TLS. The only profile
     # that loads both directions at once, which is why it exists - upload
     # measured ingest alone with 8 MB bodies and stopped discriminating (a 7%
     # spread across 99 entries, because it was measuring memcpy).
@@ -75,12 +75,12 @@ declare -A PROFILES=(
     # bandwidth ceiling still leaves per-request framework overhead visible.
     # It is also ~7 TLS records and more than one socket buffer, so partial
     # reads, multi-record handling and partial writes all get exercised.
-    # Paced, not open-loop: zrk holds a fixed offered rate (ZRK_RATE_ECHO_10K)
+    # Paced, not open-loop: zrk holds a fixed offered rate (ZRK_RATE_8GBIT)
     # over 512 held connections, so the question stops being "how fast can this
     # go" and becomes "what did it cost to serve exactly this much". An entry
     # that cannot hold the rate says so in rate_ratio rather than quietly
     # reporting a lower number that reads like a like-for-like result.
-    [echo-10k]="1|0|0-31,64-95|512|echo-10k"
+    [8gbit]="1|0|0-31,64-95|512|8gbit"
     [static-tls]="1|200|0-31,64-95|1024,4096,6800|static-tls"
     [async-db]="1|0|0-31,64-95|1024|async-db"
     [fortunes]="1|0|0-31,64-95|1024|fortunes"
@@ -103,7 +103,7 @@ declare -A PROFILES=(
 PROFILE_ORDER=(
     baseline pipelined limited-conn
     json-comp json-tls
-    echo-10k
+    8gbit
     static-tls async-db
     fortunes
     baseline-h2 static-h2
@@ -141,7 +141,7 @@ endpoint_tool() {
         # wrk (lua script rotation)
         static-tls|json-tls)                 echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
-        latency-1m|latency-10k|echo-10k)             echo "zrk" ;;
+        latency-1m|latency-10k|8gbit)             echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3

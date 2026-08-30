@@ -1,6 +1,6 @@
 ---
 title: Validation
-seo_title: "Echo-10K Benchmark: Validation Checks"
+seo_title: "8Gbit Benchmark: Validation Checks"
 description: "The byte-exact echo checks validate.sh runs against POST /echo, including the chunked probe, before a framework's results are accepted."
 ---
 

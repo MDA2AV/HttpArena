@@ -191,7 +191,7 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls" || has_test "static-tls" || has_test "echo-10k"; then
+if has_test "json-tls" || has_test "static-tls" || has_test "8gbit"; then
     needs_h1tls=true
 fi
 
@@ -1234,7 +1234,7 @@ wait_h2() {
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
 if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k"; then
-    BASELINE_DOCS="$DOCS_BASE/h1/isolated/baseline/validation"
+    BASELINE_DOCS="$DOCS_BASE/h1/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
         "http://localhost:$PORT/baseline11?a=13&b=42"
@@ -1337,7 +1337,7 @@ fi
 # ───── Pipelined (GET /pipeline) ─────
 
 if has_test "pipelined"; then
-    PIPELINED_DOCS="$DOCS_BASE/h1/isolated/pipelined/validation"
+    PIPELINED_DOCS="$DOCS_BASE/h1/pipelined/validation"
     echo "[test] pipelined endpoint"
     check "GET /pipeline" "ok" "$PIPELINED_DOCS" \
         "http://localhost:$PORT/pipeline"
@@ -1443,7 +1443,7 @@ async_concurrent_probe() {
 }
 
 if has_test "async"; then
-    ASYNC_DOCS="$DOCS_BASE/h1/isolated/async/validation"
+    ASYNC_DOCS="$DOCS_BASE/h1/async/validation"
     echo "[test] async delay endpoint"
 
     # The benchmark asks for a flat 15ms, so on-the-wire variation is not
@@ -1513,7 +1513,7 @@ fi
 # in its own.
 
 if has_test "json-comp"; then
-    JSON_DOCS="$DOCS_BASE/h1/isolated/json-compressed/validation"
+    JSON_DOCS="$DOCS_BASE/h1/json-compressed/validation"
     echo "[test] json endpoint"
     json_fail=false
     # counts and multipliers drawn per run, and every field checked against
@@ -1578,7 +1578,7 @@ fi
 # ───── JSON Compressed (GET /json/{count}?m=X with Accept-Encoding) ─────
 
 if has_test "json-comp"; then
-    JSONCOMP_DOCS="$DOCS_BASE/h1/isolated/json-compressed/validation"
+    JSONCOMP_DOCS="$DOCS_BASE/h1/json-compressed/validation"
     echo "[test] json-comp endpoint"
 
     # Must return Content-Encoding: gzip or br when Accept-Encoding is sent
@@ -1653,7 +1653,7 @@ fi
 # ───── JSON TLS (GET /json/{count}?m=X over HTTP/1.1 + TLS on :8081) ─────
 
 if has_test "json-tls"; then
-    JSONTLS_DOCS="$DOCS_BASE/h1/isolated/json-tls/validation"
+    JSONTLS_DOCS="$DOCS_BASE/h1/json-tls/validation"
     tls_posture_probe "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS" "http/1.1"
     tls_quality_probe "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS"
     echo "[test] json-tls endpoint"
@@ -1731,7 +1731,7 @@ print(f'{count} {valid} {faithful}')
     fi
 fi
 
-# ───── Echo-10K (POST /echo over TLS) ─────
+# ───── 8Gbit (POST /echo over TLS) ─────
 #
 # The profile loads both directions at once, so what has to be established is
 # that the bytes come back UNCHANGED - not that a count matches. Every check
@@ -1745,10 +1745,10 @@ fi
 # HTTP/1.1, so validating over h2 would green-light a profile that benchmarks
 # torn responses.
 
-if has_test "echo-10k"; then
-    ECHO_DOCS="$DOCS_BASE/h1/isolated/echo-10k/validation"
-    tls_posture_probe "echo-10k" "$H1TLS_PORT" "$ECHO_DOCS" "http/1.1"
-    echo "[test] echo-10k endpoint"
+if has_test "8gbit"; then
+    ECHO_DOCS="$DOCS_BASE/h1/8gbit/validation"
+    tls_posture_probe "8gbit" "$H1TLS_PORT" "$ECHO_DOCS" "http/1.1"
+    echo "[test] 8gbit endpoint"
     echo_fail=false
 
     # Random bodies, and the echo compared byte for byte. Random because a
@@ -1810,7 +1810,7 @@ if has_test "echo-10k"; then
     fi
 
     if [ "$echo_fail" = "false" ]; then
-        echo "  PASS [echo-10k] (all echoes byte-exact, Content-Length and chunked)"
+        echo "  PASS [8gbit] (all echoes byte-exact, Content-Length and chunked)"
         PASS=$((PASS + 1))
     fi
 fi
@@ -1977,7 +1977,7 @@ fi
 # ───── TLS hardening (opt-in; validation only, nothing is measured) ─────
 
 if [ "$TLS_CHECK_OPTIN" = "yes" ]; then
-    TLS_CHECK_DOCS="$DOCS_BASE/h1/isolated/tls/validation"
+    TLS_CHECK_DOCS="$DOCS_BASE/h1/tls/validation"
     echo "[test] tls_check — TLS hardening (opt-in)"
     # The badge answers for this section, so it counts this section's failures.
     # An unrelated check failing elsewhere says nothing about whether the entry
@@ -2015,7 +2015,7 @@ fi
 # ───── Static Files TLS (GET /static/* over HTTP/1.1 + TLS on :8081) ─────
 
 if has_test "static-tls"; then
-    STATICTLS_DOCS="$DOCS_BASE/h1/isolated/static-tls/validation"
+    STATICTLS_DOCS="$DOCS_BASE/h1/static-tls/validation"
     tls_posture_probe "static-tls" "$H1TLS_PORT" "$STATICTLS_DOCS" "http/1.1"
     echo "[test] static-tls endpoint"
 
@@ -2180,7 +2180,7 @@ fi
 # ───── Async Database (GET /async-db) ─────
 
 if has_test "async-db"; then
-    ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
+    ASYNCDB_DOCS="$DOCS_BASE/h1/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false
     # ranges and limits drawn per run
@@ -2242,7 +2242,7 @@ fi
 # content, and is sized like a real page (not stripped to win the bench).
 
 if has_test "fortunes"; then
-    FORTUNES_DOCS="$DOCS_BASE/h1/isolated/fortunes/validation"
+    FORTUNES_DOCS="$DOCS_BASE/h1/fortunes/validation"
     echo "[test] fortunes endpoint"
 
     body=$(curl -s --max-time 30 "http://localhost:$PORT/fortunes" || true)
