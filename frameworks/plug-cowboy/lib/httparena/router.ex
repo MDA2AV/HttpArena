@@ -47,20 +47,27 @@ defmodule HttpArena.Router do
     |> send_resp(200, Jason.encode!(%{items: items, count: count}))
   end
 
-  post "/upload" do
-    {size, conn} = body_size(conn, 0)
-    send_text(conn, Integer.to_string(size))
+  post "/echo" do
+    {body, conn} = read_body_all(conn, [])
+
+    conn
+    |> put_resp_content_type("application/octet-stream", nil)
+    |> send_resp(200, body)
   end
 
   match _ do
     send_resp(conn, 404, "")
   end
 
-  defp body_size(conn, acc) do
+  # Collects the body a chunk at a time and hands back the accumulated iodata.
+  # read_body/2 decodes chunked framing itself, so nothing here reads
+  # content-length - a chunked request has none - and send_resp/3 takes iodata
+  # and derives content-length from it, zero included for an empty body.
+  defp read_body_all(conn, acc) do
     case read_body(conn, length: 1_000_000, read_length: 1_000_000) do
-      {:ok, chunk, conn} -> {acc + byte_size(chunk), conn}
-      {:more, chunk, conn} -> body_size(conn, acc + byte_size(chunk))
-      {:error, _reason} -> {acc, conn}
+      {:ok, chunk, conn} -> {Enum.reverse([chunk | acc]), conn}
+      {:more, chunk, conn} -> read_body_all(conn, [chunk | acc])
+      {:error, _reason} -> {Enum.reverse(acc), conn}
     end
   end
 

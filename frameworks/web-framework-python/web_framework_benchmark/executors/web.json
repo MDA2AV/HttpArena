@@ -14,10 +14,10 @@
     "loadType": "initialization",
     "route": "pipeline"
   },
-  "Upload": {
+  "Echo": {
     "api": "python",
     "loadType": "dynamic",
-    "route": "upload"
+    "route": "echo"
   },
   "Ws": {
     "api": "python",

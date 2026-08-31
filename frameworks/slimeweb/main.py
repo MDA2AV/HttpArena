@@ -47,10 +47,18 @@ def pipeline_test(req, resp):
 
 # body_size by default it will read 10MB
 # setting read_size as 25MB
-@app.route("/upload", method="POST", body_size=1024 * 1024 * 25)
-def upload_test(req, resp):
-    result = len(req.body)
-    return resp.plain(str(result))
+# Not subscribed to 8gbit: slimeweb 0.2.6 cannot serve it. Its response
+# object exposes only plain/html/json plus set_header, and plain() rejects bytes
+# outright -- "argument 'resp_obj': 'bytes' object cannot be cast as 'str'" - so
+# a binary body cannot be returned unchanged. Kept as a text echo so the route
+# exists if a later release adds a bytes responder.
+@app.route("/echo", method="POST", body_size=1024 * 1024 * 25)
+def echo_test(req, resp):
+    body = req.body
+    if isinstance(body, bytes):
+        body = body.decode("latin-1")
+    resp.set_header("Content-Type", "application/octet-stream")
+    return resp.plain(body)
 
 
 @app.route(

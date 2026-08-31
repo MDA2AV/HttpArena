@@ -14,12 +14,11 @@
   "repo": "https://github.com/luau-lang/lute",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-tls",
-    "upload",
+    "8gbit",
     "echo-ws",
     "echo-ws-pipeline"
   ],

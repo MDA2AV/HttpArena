@@ -140,28 +140,37 @@ fn handleEchoGet(_: *router.HandlerContext) response_mod.Response {
     };
 }
 
+// Linearization buffer for a body that did not arrive contiguous: past the
+// first read the server accumulates it across pooled buffers, and
+// ctx.response_buf is 8 KB — far short of the 100 KB /echo is posted. Sized
+// with room above that; anything larger is refused rather than truncated.
+// Process-global, which is per-worker safe under the fork model (each forked
+// process has its own copy), and the bytes are copied into the write queue
+// before the handler is entered again.
+var echo_buf: [256 * 1024]u8 = undefined;
+
+/// POST /echo — the request body back, byte for byte. The server has already
+/// undone the framing, chunked included, so what is echoed is what arrived and
+/// the response length comes from those bytes, never from a request header
+/// (a chunked POST carries no Content-Length at all). An empty body is a 200
+/// with an empty body.
 fn handleEchoPost(ctx: *router.HandlerContext) response_mod.Response {
-    if (ctx.request.body.len() == 0) return handleEchoGet(ctx);
-    const body_slice = ctx.request.body.sliceOrNull() orelse {
-        const buf = ctx.request.body.copyTo(ctx.response_buf) orelse return .{
-            .status = 413,
-            .headers = &[_]response_mod.Header{},
-            .body = .{ .bytes = "Body too large to echo" },
-        };
-        return .{
-            .status = 200,
-            .headers = &[_]response_mod.Header{
-                .{ .name = "Content-Type", .value = "application/json" },
-            },
-            .body = .{ .bytes = buf },
-        };
+    if (ctx.request.body.sliceOrNull()) |body| return echoResponse(body);
+    const copied = ctx.request.body.copyTo(echo_buf[0..]) orelse return .{
+        .status = 413,
+        .headers = &[_]response_mod.Header{},
+        .body = .{ .bytes = "Body too large to echo" },
     };
+    return echoResponse(copied);
+}
+
+fn echoResponse(body: []const u8) response_mod.Response {
     return .{
         .status = 200,
         .headers = &[_]response_mod.Header{
-            .{ .name = "Content-Type", .value = "application/json" },
+            .{ .name = "Content-Type", .value = "application/octet-stream" },
         },
-        .body = .{ .bytes = body_slice },
+        .body = .{ .bytes = body },
     };
 }
 
@@ -202,17 +211,6 @@ fn handleBaseline(ctx: *router.HandlerContext) response_mod.Response {
         sum += std.fmt.parseInt(i64, trimmed, 10) catch 0;
     }
     const body = std.fmt.bufPrint(ctx.response_buf, "{d}", .{sum}) catch "0";
-    return .{
-        .status = 200,
-        .headers = &[_]response_mod.Header{
-            .{ .name = "Content-Type", .value = "text/plain" },
-        },
-        .body = .{ .bytes = body },
-    };
-}
-
-fn handleUpload(ctx: *router.HandlerContext) response_mod.Response {
-    const body = std.fmt.bufPrint(ctx.response_buf, "{d}", .{ctx.request.body.len()}) catch "0";
     return .{
         .status = 200,
         .headers = &[_]response_mod.Header{
@@ -423,7 +421,6 @@ pub fn main(init: std.process.Init) !void {
     try app_router.get("/baseline2", handleBaseline);
     try app_router.post("/baseline2", handleBaseline);
     try app_router.get("/json/:count", handleJson);
-    try app_router.postDiscard("/upload", handleUpload);
     try app_router.post("/benchmark.BenchmarkService/GetSum", handleGrpcSum);
     try db_routes.register(&app_router);
 

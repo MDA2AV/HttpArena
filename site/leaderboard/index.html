@@ -360,6 +360,23 @@
   .stattip span{display:flex; justify-content:space-between; gap:.7rem}
   .stattip b{color:var(--text); font-weight:600}
   .statwrap:hover .stattip{display:flex}
+  /* The whole result row behind one composite cell. Separate from #tip, which
+     is plain text by design (textContent + pre-line); this one is a table. */
+  #dtip{position:fixed; z-index:101; display:none; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
+    padding:.55rem .7rem; font-size:.72rem; line-height:1.4; pointer-events:none;
+    max-width:340px}
+  #dtip .dh{font-weight:700; font-size:.76rem}
+  #dtip .dsub{color:var(--muted); font-size:.68rem; margin-bottom:.35rem}
+  #dtip .dc{color:var(--text-2); font-weight:650; font-size:.67rem; text-transform:uppercase;
+    letter-spacing:.03em; margin:.45rem 0 .16rem; padding-top:.34rem; border-top:1px solid var(--line-soft)}
+  #dtip .dc .dtag{float:right; text-transform:none; letter-spacing:0; font-weight:500; color:var(--muted)}
+  #dtip table{border-collapse:collapse; width:100%}
+  #dtip td{padding:.05rem 0; vertical-align:baseline}
+  #dtip td.k{color:var(--muted); padding-right:.8rem; white-space:nowrap}
+  #dtip td.v{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+  #dtip .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft);
+    color:var(--muted); font-size:.67rem}
   #tip{position:fixed; z-index:100; display:none; white-space:pre-line; max-width:280px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.5rem .65rem; font-size:.74rem; line-height:1.45; font-weight:500; pointer-events:none}
 
   /* row-click info modal */
@@ -421,6 +438,50 @@
   .cm td.pc{color:var(--text-2); line-height:1.1; vertical-align:middle; position:relative}
   /* slim per-cell quality cue: bar length = this result's normalized score in its profile */
   .cm td.pc .cbar{position:absolute; left:0; bottom:0; height:2px; background:var(--muted); opacity:.45}
+  /* Heat map: the cell becomes the reading. The number and the memory figure go
+     away, the quality bar fills the cell instead of sitting 2px along the
+     bottom, and the score is carried by colour rather than by width - so a
+     column can be scanned vertically for shape instead of read value by value.
+     The hover popup still has every figure for the cell under the cursor. */
+  /* Geometry must not move when the toggle flips: the same table, recoloured.
+     So the cell keeps its padding, the value keeps its box and only loses its
+     ink (visibility, not display - display:none collapses the row height), and
+     the bar is stretched over the whole cell by its four offsets rather than by
+     a width. Nothing here sets a padding, a height or a row height. */
+  /* Deliberately not a .toggle. The two switches above the table change how the
+     numbers are computed - memory in the score, what the scale is relative to -
+     and belong with the heading that describes them. This changes how the table
+     is drawn, so it sits with the other thing that acts on the table, and looks
+     like a button you press rather than a setting you leave set. */
+  .heat-btn{cursor:pointer; font-family:inherit; font-size:.78rem; padding:.4rem .66rem}
+  .heat-btn svg{width:14px; height:14px; flex:none; fill:currentColor}
+  .heat-btn:hover{background:var(--accent); color:var(--bg)}
+  .heat-btn[aria-pressed="true"]{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+  .heatkey{display:flex; align-items:center; flex-wrap:wrap; gap:.1rem .55rem;
+    font-size:.66rem; color:var(--muted)}
+  .heatkey .hk-l{margin-right:.1rem}
+  .heatkey .hk{display:inline-flex; align-items:center; gap:.28rem; white-space:nowrap}
+  .heatkey .hk i{width:11px; height:11px; border-radius:2px; display:inline-block}
+  /* The column leader. In heat mode it is otherwise just another cell in the top
+     band - everything above 75% of the leader is the same green, the leader
+     included - so the one cell that won the column carried no mark at all. Sits
+     over the band rather than replacing it, so the band still reads. */
+  .cm td.pc .hcrown{display:none}
+  .cm.heat td.pc .hcrown{display:flex; position:absolute; inset:0; z-index:1;
+    align-items:center; justify-content:center; pointer-events:none}
+  .cm.heat td.pc .hcrown svg{width:17px; height:17px; display:block;
+    fill:var(--gold); filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.55))}
+  .heatkey .hk i.hk-crown{width:auto; height:auto; display:inline-flex; align-items:center}
+  .heatkey .hk i.hk-crown svg{width:13px; height:13px; display:block; fill:var(--gold)}
+  .cm.heat td.pc .pcv{visibility:hidden}
+  .cm.heat td.pc .cbar{left:0; right:0; top:0; bottom:0; width:auto; height:auto; opacity:1}
+  /* .cm td.pc.lead .cbar sets opacity:.7 for the non-heat bar and sits later in
+     this sheet at equal specificity, so it was still dimming the leader here -
+     rendering its band at 70% as a darker green that is in no legend. The crown
+     is the mark now, so the cell keeps its band exactly. Before the .nc rule, so
+     a leader in a column that does not count still reads as not counting. */
+  .cm.heat td.pc.lead .cbar{opacity:1}
+  .cm.heat td.pc.nc .cbar{opacity:.55}
   .cm td.pc.lead .cbar{background:var(--accent); opacity:.7}
   .cm td.pc .pcv{display:flex; align-items:baseline; justify-content:space-between; gap:.45rem}
   .cm td.pc .crps{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--text)}
@@ -429,6 +490,24 @@
   .cm td.pc.lead .crps{font-weight:700}
   .cm td.pc.nc{opacity:.4}
   .cm th.pcol.refcol{opacity:.45}
+  /* Two affordances per profile column: open that profile's detail view, and
+     open its implementation guide. They sit on their own line under the label,
+     so the column (width:1px, shrink-to-fit) does not get any wider. */
+  /* One segmented control spanning the column: left half opens the profile's
+     detail view, right half its implementation guide. Full width rather than a
+     pair of 12px squares - these are the only way into a profile from here, and
+     a target that small is hard to hit and easy to miss entirely. The 1px gap
+     over a --line background is the divider, so no inner borders are needed.
+     min-width:0 on the halves keeps min-content at zero, so a narrow column is
+     never widened by the control. */
+  .cm th.pcol .pnav{display:flex; gap:1px; margin:.4rem -.45rem -.24rem;
+    background:var(--line-soft); border-top:1px solid var(--line-soft)}
+  .cm th.pcol .pico{flex:1 1 0; min-width:0; display:inline-flex; align-items:center;
+    justify-content:center; height:21px; background:var(--panel); color:var(--text-2);
+    font:600 .74rem/1 var(--sans); text-transform:none; letter-spacing:0;
+    cursor:pointer; text-decoration:none; transition:background .12s ease, color .12s ease}
+  .cm th.pcol .pico:hover{background:var(--accent); color:var(--bg)}
+  .cm th.pcol .pico:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
   /* flexible trailing column absorbs leftover width (keeps the box filled) */
   .cm .spacer{width:auto; min-width:0; border-right:0; padding:0; cursor:default; background:var(--bg)}
   .cm .sticky{position:sticky}
@@ -598,6 +677,9 @@
           <input id="q" type="search" placeholder="Search name, language, engine - comma to combine, ! to exclude (e.g. rust, !go)" autocomplete="off">
         </div>
         <a class="fw-btn cmp-btn" href="/compare/all/" data-tip="Put any two entries side by side - every profile they both run, requests per second, p99 and the delta. Any two, in any language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/></svg><span>Head to Head Comparison</span></a>
+        <button class="fw-btn heat-btn" id="heatBtn" type="button" aria-pressed="false"
+                data-tip="Colour every profile cell by its score as a share of that column\u2019s leader, instead of printing the number. For reading a column\u2019s shape at a glance; the figures stay in the hover popup."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.6" height="7.6" rx="1.2"/><rect x="13.4" y="3" width="7.6" height="7.6" rx="1.2" opacity=".5"/><rect x="3" y="13.4" width="7.6" height="7.6" rx="1.2" opacity=".5"/><rect x="13.4" y="13.4" width="7.6" height="7.6" rx="1.2"/></svg><span>Heat map</span></button>
+        <div class="heatkey" id="heatKey" style="display:none"></div>
         <span class="count" id="count"></span>
       </div>
 
@@ -657,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -753,16 +835,127 @@ document.addEventListener('DOMContentLoaded', function(){
     p99:'99th-percentile latency - 99% of requests were faster than this.',
     cpu:'CPU usage across all cores (100% = one full core).',
     mem:'Peak container memory (RSS) during the run.',
-    score:'Composite - sum of normalized per-profile scores (each profile leader = 100), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
-    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 100). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
-    scoreHelp:'How the composite is built: every scored profile is worth 100 to the entry leading it, those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
-    scoreHelpWs:'How the composite is built: every scored profile is worth 100 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
+    score:'Composite - sum of normalized per-profile scores (each profile leader = 1000), less 2.5% for each of routing, middleware, request and response the entry does not do for you. The (-n) beside a score is what that cost it.',
+    scoreWs:'Composite - sum of normalized per-profile scores (each profile leader = 1000). The completeness factor does not apply here: routing, middleware, request and response are the HTTP path, and this board is not measuring it.',
+    scoreHelp:'How the composite is built: every scored profile is worth 1000 to the entry leading it - including the fixed-rate profiles, which are normalized on their own CPU-and-tails score rather than on requests per second. Those scores are summed, and the total is cut by 2.5% for each of routing, middleware, request and response the entry leaves to you — its completeness factor, ×1.00 down to ×0.90. Opens the scoring docs.',
+    scoreHelpWs:'How the composite is built: every scored profile is worth 1000 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.',
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
     fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.'
   };
+  // Every field the published row carries for one framework on one profile,
+  // across each connection count the profile ran. A column can only show one
+  // number; this is the rest of it, so a cell can be interrogated rather than
+  // only read.
+  var DT_ROWS=[
+    ['rps','Requests/sec',1],['cpu','CPU'],['cpu_per_req_us','CPU / req','us'],
+    ['memory','Memory'],['avg_latency','Avg latency'],['p99_latency','p99'],
+    ['p99_9_latency','p99.9'],['rate_ratio','Rate held'],['target_rate','Target rate',1],
+    ['bandwidth','Bandwidth'],['input_bw','Ingress BW'],
+    ['status_2xx','2xx',1],['status_3xx','3xx',1],['status_4xx','4xx',1],
+    ['status_5xx','5xx',1],['reconnects','Reconnects',1]
+  ];
+  // 3xx/4xx/5xx are zero on almost every row, and three zero lines per
+  // connection count is most of the popup's height on a profile that ran four
+  // of them. Collapsed to one line unless something actually happened.
+  function dtipStatus(r){
+    var n=['status_3xx','status_4xx','status_5xx'], any=false;
+    n.forEach(function(k){ if(+(r[k]||0)>0) any=true; });
+    return any?null:'<tr><td class="k">non-2xx</td><td class="v">0</td></tr>';
+  }
+  function dtipHtml(pid,fw,nc){
+    var p=PROF[pid]; if(!p) return '';
+    var scored={}; (p.scoredConns||[]).forEach(function(c){scored[c]=1;});
+    var blocks='', foot='';
+    (p.conns||[]).forEach(function(c){
+      var list=(D.results&&D.results[pid+'-'+c])||[];
+      var r=null; for(var i=0;i<list.length;i++){ if(list[i].fw===fw){r=list[i];break;} }
+      if(!r) return;
+      var tr='';
+      var collapsed=dtipStatus(r);
+      DT_ROWS.forEach(function(f){
+        if(collapsed && (f[0]==='status_3xx'||f[0]==='status_4xx'||f[0]==='status_5xx')) return;
+        var v=r[f[0]];
+        if(v===undefined||v===null||v==='') return;
+        if(f[2]===1) v=(+v).toLocaleString(); else if(f[2]) v=v+f[2];
+        tr+='<tr><td class="k">'+esc(f[1])+'</td><td class="v">'+esc(String(v))+'</td></tr>';
+        if(collapsed && f[0]==='status_2xx') tr+=collapsed;
+      });
+      if(!tr) return;
+      blocks+='<div class="dc">'+(+c).toLocaleString()+' conn'
+            + '<span class="dtag">'+(scored[c]?'counts':'not counted')+'</span></div>'
+            + '<table>'+tr+'</table>';
+      var rm=(D.runmeta||{})[pid+'-'+c];
+      if(rm&&!foot){
+        var bits=[];
+        if(rm.threads) bits.push(rm.threads+' gen threads');
+        if(rm.duration) bits.push(rm.duration);
+        if(rm.pipeline&&+rm.pipeline>1) bits.push('pipeline '+rm.pipeline);
+        foot=bits.join(' \u00b7 ');
+      }
+    });
+    if(!blocks) return '';
+    var why=nc?(p.scored===false
+        ? ' \u00b7 reference profile, not part of the composite'
+        : ' \u00b7 ran, but not counted toward this type\u2019s composite'):'';
+    return '<div class="dh">'+esc(fw)+'</div><div class="dsub">'+esc(p.label)
+         + (p.category?' \u00b7 '+esc(p.category):'')+esc(why)+'</div>'+blocks
+         + (foot?'<div class="dfoot">'+esc(foot)+'</div>':'');
+  }
+
+  // The heat-map control lives in the tools row beside Head to Head Comparison
+  // rather than with the two switches over the heading, and is wired once here
+  // instead of being rebuilt by renderHead: the button's own handler calls
+  // render(), which redraws the table and not the control strip, so anything
+  // rebuilt there would not react to the click that changed it.
+  function initHeat(){
+    var btn=document.getElementById('heatBtn'), key=document.getElementById('heatKey');
+    if(!btn||!key) return;
+    key.innerHTML='<span class="hk-l">share of column leader</span>'
+      + HEAT_BANDS.map(function(b){
+          return '<span class="hk"><i style="background:'+b[1]+'"></i>'+esc(b[2])+'</span>';
+        }).join('')
+      + '<span class="hk"><i class="hk-crown">'+CROWN_SVG+'</i>best in column</span>';
+    key.setAttribute('data-tip','Each cell is coloured by its score as a share of the best score in that column.');
+    function paint(){
+      btn.setAttribute('aria-pressed', state.heat?'true':'false');
+      key.style.display = state.heat ? '' : 'none';
+    }
+    btn.onclick=function(){ state.heat=!state.heat; paint(); render(); };
+    paint();
+  }
+  // Only the composite view has profile columns to colour.
+  function syncHeatCtl(){
+    var btn=document.getElementById('heatBtn'), key=document.getElementById('heatKey');
+    var on = state.view==='composite';
+    if(btn) btn.style.display = on ? '' : 'none';
+    if(key) key.style.display = (on && state.heat) ? '' : 'none';
+  }
+
   function initTips(){
     var tip=document.createElement('div'); tip.id='tip'; document.body.appendChild(tip);
+    var dtip=document.createElement('div'); dtip.id='dtip'; document.body.appendChild(dtip);
+    function dpos(el){
+      var r=el.getBoundingClientRect(); dtip.style.display='block';
+      var w=dtip.offsetWidth, h=dtip.offsetHeight;
+      var l=r.left+r.width/2-w/2, t=r.top-h-8;
+      if(t<6) t=r.bottom+8;
+      if(t+h>window.innerHeight-6) t=Math.max(6, window.innerHeight-h-6);
+      l=Math.max(6,Math.min(l,window.innerWidth-w-6));
+      dtip.style.left=l+'px'; dtip.style.top=t+'px';
+    }
+    document.addEventListener('mouseover', function(e){
+      var td=e.target.closest?e.target.closest('td.pc[data-pid]'):null;
+      if(!td) return;
+      var h=dtipHtml(td.dataset.pid, td.dataset.fw, td.dataset.nc==='1');
+      if(!h){ dtip.style.display='none'; return; }
+      dtip.innerHTML=h; dpos(td);
+    });
+    document.addEventListener('mouseout', function(e){
+      var td=e.target.closest?e.target.closest('td.pc[data-pid]'):null;
+      if(td && !td.contains(e.relatedTarget)) dtip.style.display='none';
+    });
+    document.addEventListener('scroll', function(){ dtip.style.display='none'; }, true);
     function pos(el){ var r=el.getBoundingClientRect(); tip.style.display='block'; var tw=tip.offsetWidth, th=tip.offsetHeight; var l=r.left+r.width/2-tw/2, t=r.top-th-8; if(t<6)t=r.bottom+8; l=Math.max(6,Math.min(l,window.innerWidth-tw-6)); tip.style.left=l+'px'; tip.style.top=t+'px'; }
     document.addEventListener('mouseover', function(e){ var el=e.target.closest?e.target.closest('[data-tip]'):null; if(!el)return; tip.textContent=el.getAttribute('data-tip'); pos(el); });
     document.addEventListener('mouseout', function(e){ var el=e.target.closest?e.target.closest('[data-tip]'):null; if(el && !el.contains(e.relatedTarget)) tip.style.display='none'; });
@@ -1402,8 +1595,8 @@ document.addEventListener('DOMContentLoaded', function(){
       if(pid==='json-comp'&&minBpr!=null){ var b=A.bw[pid][fw]||0; if(b>0) return rps*Math.pow(minBpr/(b/rps),2); }
       return rps;
     }
-    var maxR={},maxME={};
-    pids.forEach(function(pid){ maxR[pid]=0; maxME[pid]=0; Object.keys(A.avg[pid]||{}).forEach(function(fw){ if(exclFromScale(fw))return; var e=eff(pid,fw); if(e>maxR[pid])maxR[pid]=e; var rps=A.avg[pid][fw]||0,m=A.mem[pid][fw]||0; if(m>0&&rps>0){var me=Math.sqrt(rps)/m; if(me>maxME[pid])maxME[pid]=me;} }); });
+    var maxR={},maxME={},maxLat={};
+    pids.forEach(function(pid){ maxR[pid]=0; maxME[pid]=0; maxLat[pid]=0; Object.keys(A.avg[pid]||{}).forEach(function(fw){ if(exclFromScale(fw))return; var e=eff(pid,fw); if(e>maxR[pid])maxR[pid]=e; var rps=A.avg[pid][fw]||0,m=A.mem[pid][fw]||0; if(m>0&&rps>0){var me=Math.sqrt(rps)/m; if(me>maxME[pid])maxME[pid]=me;} if(isLatProfile(pid)){ var ls=latScore(pid,fw); if(ls>maxLat[pid])maxLat[pid]=ls; } }); });
     var fwset={}; pids.forEach(function(pid){ Object.keys(A.avg[pid]||{}).forEach(function(fw){fwset[fw]=1;}); });
     var rows=[];
     Object.keys(fwset).forEach(function(fw){
@@ -1413,16 +1606,21 @@ document.addEventListener('DOMContentLoaded', function(){
         var rps=(A.avg[pid]&&A.avg[pid][fw])||0;
         if(rps>0 && maxR[pid]>0){ any=true;
           var sc;
-          if(pid==='latency-1m'){
+          if(isLatProfile(pid)){
             // The rate is pinned on this profile, so normalising it on rps puts
-            // every entry that held the rate at 100 and the column says nothing.
-            // Its own score is already a 0-100 quantity built from cost and both
-            // latency tails, which is what the cell should show. No memory bonus:
-            // the value is not a throughput for the bonus to scale.
-            l1mEnsure();
-            // x10 to land on the composite's 0-1000 basis. The profile's own
-            // score is defined 0-100 and the detail view shows it that way.
-            sc=(_l1mScores[fw]||0)*10;
+            // every entry that held the rate at 1000 and the column says nothing.
+            // Its own 0-100 score, built from cost and both latency tails, is
+            // what the cell ranks on instead. No memory bonus: the value is not
+            // a throughput for the bonus to scale.
+            //
+            // Normalised against the leading score in the field, exactly as the
+            // rps profiles are normalised against the leading rps, so the column
+            // leader is worth 1000 here too. A flat x10 was the old behaviour and
+            // it quietly capped this column below every other one: nobody is
+            // simultaneously cheapest on CPU and best on both tails, so the best
+            // entry scored in the low 90s and the column could never contribute
+            // its full 1000 the way an rps column does.
+            sc=maxLat[pid]>0?(latScore(pid,fw)/maxLat[pid])*1000:0;
           } else {
             // 0-1000 per profile, not 0-100. At 24 scored profiles a 0-100
             // basis put whole clusters of entries on the same rounded total,
@@ -1435,7 +1633,7 @@ document.addEventListener('DOMContentLoaded', function(){
           // `score` is set only where the cell must not print rps. Everywhere
           // else it stays null and the renderer keeps showing throughput.
           cells[pid]={v:sc, c:counts, rps:rps, mem:(A.mem[pid][fw]||0),
-                      score:(pid==='latency-1m'?sc:null)};
+                      score:(isLatProfile(pid)?sc:null)};
           if(counts) sum+=sc;
         }
       });
@@ -1458,6 +1656,35 @@ document.addEventListener('DOMContentLoaded', function(){
   // says nothing about completeness rather than reporting a clean sheet it was
   // never given.
   function cmpGraded(fw){ return cmpInScope() && CMP_TYPES.indexOf(typeOf(fw))>=0; }
+  // Four bands rather than a continuous ramp.
+  //
+  // A gradient asks the eye to read a value off a hue, which it cannot do: with
+  // five stops interpolated, 62% and 74% are two barely different yellow-greens
+  // and the column stops being scannable. It also spent most of its hues on a
+  // range almost nothing occupies - measured over all 1,650 published cells the
+  // distribution is bimodal, 24% of them under 10% of their column leader and
+  // 22% over 90%, median 27%.
+  //
+  // Four steps, one hue each, so a cell has a band rather than a shade and the
+  // legend beside the toggle says what each one means.
+  var HEAT_BANDS=[
+    [0.25, 'rgb(198,60,48)',  'under 25%'],
+    [0.50, 'rgb(228,126,30)', '25-50%'],
+    [0.75, 'rgb(226,192,44)', '50-75%'],
+    [1.01, 'rgb(45,172,94)',  'over 75%']
+  ];
+  // Six points and a base, filled rather than stroked: a stroked outline closes
+  // up at this size and reads as a smudge. Gold is the token the board already
+  // uses for a first place in the rank column.
+  var CROWN_SVG='<svg viewBox="0 0 24 24" aria-hidden="true">'
+    + '<path d="M3.2 17.6 1.7 6.4 7.6 11 12 3.8 16.4 11 22.3 6.4 20.8 17.6Z"/>'
+    + '<rect x="3.2" y="18.6" width="17.6" height="2.2"/></svg>';
+  function heatColor(t){
+    t=(!isFinite(t)||t<0)?0:(t>1?1:t);
+    for(var i=0;i<HEAT_BANDS.length;i++) if(t<HEAT_BANDS[i][0]) return HEAT_BANDS[i][1];
+    return HEAT_BANDS[HEAT_BANDS.length-1][1];
+  }
+
   function cmpTip(r){
     if(!cmpGraded(r.fw)) return 'composite '+r.score.toFixed(1);
     if(!r.dec) return 'composite '+r.score.toFixed(1)+' - completeness not assessed yet, so nothing is deducted (x1.00)';
@@ -1502,6 +1729,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     if(dv)dv.style.display='none';
     if(grid)grid.style.display=''; if(tools)tools.style.display=''; if(phead)phead.style.display='';
+    syncHeatCtl();
     if(seo)seo.style.display='';
     if(state.view==='composite'){ th.style.display='none'; if(mn)mn.classList.add('cmfull'); renderComposite(); }
     else { th.style.display=''; if(mn)mn.classList.remove('cmfull'); renderProfile(); }
@@ -1521,7 +1749,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     var p=[];
     if(state.view==='profile'){ p.push('p='+state.profile); p.push('conns='+state.conns); }
-    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); }
+    else { if(state.scope!=='h1') p.push('scope='+state.scope); if(state.useMem) p.push('mem=1'); if(state.rescale) p.push('rescale=1'); if(state.heat) p.push('heat=1'); }
     var _dps=defProfileSort(state.profile);
     var defSort = state.view==='profile' ? (state.sortKey===_dps.k&&state.sortDir===_dps.d) : (state.sortKey==='score'&&state.sortDir===-1);
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
@@ -1618,7 +1846,18 @@ document.addEventListener('DOMContentLoaded', function(){
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
       +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
-    pids.forEach(function(pid){ var p=PROF[pid]; var ref=!scoredForType(pid, leagueType()); th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+'</th>'; });
+    pids.forEach(function(pid){
+      var p=PROF[pid]; var ref=!scoredForType(pid, leagueType());
+      var nav='<span class="pnav">'
+        + '<a class="pico pgo" data-pid="'+esc(pid)+'" role="button" tabindex="0"'
+        +   ' data-tip="'+esc('Open the '+p.label+' detail view — every entry\u2019s result on this profile, with the columns that profile reports.')+'"'
+        +   ' aria-label="Open the '+esc(p.label)+' detail view">▤</a>'
+        + (p.doc?('<a class="pico" href="/docs/'+esc(p.doc)+'/"'
+        +   ' data-tip="'+esc('Implementation guide for '+p.label+' — what the profile runs, and the rules an entry has to follow.')+'"'
+        +   ' aria-label="'+esc(p.label)+' implementation guide">?</a>'):'')
+        + '</span>';
+      th+='<th class="num pcol'+(ref?' refcol':'')+'" data-k="'+pid+'" data-tip="'+esc(p.category+' · '+p.label+' - '+(p.blurb||'')+(ref?' Not part of the composite score.':''))+'">'+esc(p.label)+ar(pid)+nav+'</th>';
+    });
     th+='<th class="spacer"></th>';
     var body=rows.map(function(r){
       var c=lc(r.lang), rank=rankMap[r.fw], t=typeOf(r.fw), repo=repoOf(r.fw);
@@ -1642,53 +1881,83 @@ document.addEventListener('DOMContentLoaded', function(){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
         var head=(cell.score!=null)?cell.score.toFixed(1):fmtK(cell.rps);
-        var inner='<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span><span class="cbar" style="width:'+Math.max(0,Math.min(100,cell.bar)).toFixed(0)+'%"></span>';
-        if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'">'+inner+'</td>'; }
-        else { tr+='<td class="num pc nc" title="'+(PROF[pid].scored===false?'reference profile, not part of the composite score':'ran but not counted toward this type’s composite')+'">'+inner+'</td>'; }
+        var barPct=Math.max(0,Math.min(100,cell.bar));
+        // The value markup is emitted in both modes and only hidden by CSS in
+        // heat mode. The profile columns are width:1px shrink-to-fit, so their
+        // width comes from this content - drop it from the DOM and every column
+        // narrows (measured: -41px each, -573px of table). visibility:hidden
+        // keeps the box, so toggling recolours the table without moving it.
+        var inner = '<span class="pcv"><span class="crps">'+head+'</span><span class="cmem">'+fmtMem(cell.mem)+'</span></span>'
+          + (state.heat
+              ? '<span class="cbar" style="background:'+heatColor(barPct/100)+'"></span>'
+                + (cell.best?'<span class="hcrown" aria-label="best in this column">'+CROWN_SVG+'</span>':'')
+              : '<span class="cbar" style="width:'+barPct.toFixed(0)+'%"></span>');
+        var dat=' data-pid="'+esc(pid)+'" data-fw="'+esc(r.fw)+'"'+(cell.c?'':' data-nc="1"');
+        if(cell.c){ tr+='<td class="num pc'+(cell.best?' lead':'')+'"'+dat+'>'+inner+'</td>'; }
+        else { tr+='<td class="num pc nc"'+dat+'>'+inner+'</td>'; }
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
     var colspan=pids.length+4;
-    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
+    document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the
     // navigation.
-    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&(ev.target.closest('.hq')||ev.target.closest('.fwtog'))) return; sortBy(h.dataset.k); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th[data-k]'), function(h){ h.onclick=function(ev){ if(ev.target.closest&&(ev.target.closest('.hq')||ev.target.closest('.fwtog')||ev.target.closest('.pico'))) return; sortBy(h.dataset.k); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('.cm thead th .pico.pgo'), function(a){
+      a.onclick=function(ev){ ev.preventDefault(); ev.stopPropagation(); pickProfile(a.dataset.pid); };
+      a.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); pickProfile(a.dataset.pid); } };
+    });
     var _ft=document.getElementById('fwTog');
     if(_ft){ _ft.onclick=function(ev){ ev.stopPropagation(); toggleCompactFw(); };
              _ft.onkeydown=function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); ev.stopPropagation(); toggleCompactFw(); } }; }
     setupTopScroll();
   }
 
-  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return _l1mScores[r.fw]||0; if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
+  function val(r,k){ if(k==='rps')return r.rps||0; if(k==='bw')return bw(r.bandwidth); if(k==='bwreq'){var b=bw(r.bandwidth),q=r.rps||0;return q>0?b/q:0;} if(k==='inbw')return bw(r.input_bw); if(k==='avg')return lat(r.avg_latency); if(k==='p99')return lat(r.p99_latency); if(k==='l1mscore')return latScore(state.profile,r.fw); if(k==='p999')return lat(r.p99_9_latency); if(k==='cpureq')return (r.cpu_per_req_us!=null)?+r.cpu_per_req_us:Infinity; if(k==='cputot'){var t=cpuTotPct(r); return t==null?Infinity:t;} if(k==='cpu')return cpu(r.cpu); if(k==='mem')return mem(r.memory); if(k==='fw')return (r.fw||'').toLowerCase(); return 0; }
   function fmtBytes(n){ if(n>=1048576)return (n/1048576).toFixed(2)+' MB'; if(n>=1024)return (n/1024).toFixed(1)+' KB'; return Math.round(n)+' B'; }
   // Explorer columns - profile-specific (json-comp adds BW/req, upload adds In BW);
   // low-priority columns drop out below width breakpoints so the grid never overflows.
-  // Latency-1M scores on cost, not throughput. The rate is pinned, so every
+  // The fixed-rate profiles score on cost, not throughput. The rate is pinned, so every
   // entry that finishes serves the same load and rps cannot separate them; what
   // can is the bill and the tail. Kept byte-for-byte equivalent to
   // scripts/latency_1m_score.py, which is the reference implementation and
   // carries the reasoning for the two different curve shapes.
-  var L1M_FULL=950000, L1M_W_CPU=0.60, L1M_W_P99=0.25, L1M_W_P999=0.15, L1M_DEC=3;
-  var _l1mScores={}, _l1mBuilt=false;
+  // Offered rate that earns the whole rate factor, per profile. 95% of target:
+  // the generator never quite reaches its own number, so the threshold has to
+  // sit below it. Mirrors FULL_RATE in scripts/latency_score.py.
+  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, '8gbit':47500};
+  // Logical CPUs the fixed-rate profiles are pinned to - cpuset 0-31,64-95 in
+  // scripts/lib/profiles.sh, i.e. 32 cores with both threads, so 64. Used to turn
+  // CPU-per-request into "how much of the machine it was allowed did this take".
+  var LAT_CPUS=64;
+  // CPU microseconds per second / 1e6 = cores in use; over the allowance = 0-100%.
+  function cpuTotPct(r){
+    if(r==null||r.cpu_per_req_us==null) return null;
+    var q=r.rps||0; if(!(q>0)) return null;
+    return (+r.cpu_per_req_us)*q/1e6/LAT_CPUS*100;
+  }
+  var LAT_W_CPU=0.60, LAT_W_P99=0.25, LAT_W_P999=0.15, LAT_DEC=3;
+  var _latScores={};
+  function isLatProfile(pid){ return Object.prototype.hasOwnProperty.call(LAT_FULL,pid); }
   function clamp01(v){ return v<0?0:v>1?1:v; }
   // CPU spans ~3.3x across rate-holders, so a plain ratio behaves over it.
-  function l1mLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
+  function latLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
   // The tails span five orders of magnitude, where a ratio would collapse to
   // zero for everyone but the leader. A decade scale keeps the field separable
   // and still charges a third of the term for every 10x.
-  function l1mDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/L1M_DEC); }
+  function latDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/LAT_DEC); }
   // Build from the canonical result set when the caller has no rows of its own,
   // so the composite and the detail view agree on the same normalisation.
-  function l1mEnsure(){
-    if(_l1mBuilt) return;
-    var p=PROF['latency-1m'];
-    var rows=[]; if(p) p.conns.forEach(function(c){ rows=rows.concat(D.results['latency-1m-'+c]||[]); });
-    l1mBuild(rows);
+  function latEnsure(pid){
+    if(_latScores[pid]) return;
+    var p=PROF[pid], rows=[];
+    if(p) p.conns.forEach(function(c){ rows=rows.concat(D.results[pid+'-'+c]||[]); });
+    latBuild(pid, rows);
   }
-  function l1mBuild(rows){
-    _l1mScores={}; _l1mBuilt=true;
-    var bc=Infinity,bp=Infinity,b9=Infinity;
+  function latBuild(pid, rows){
+    var out={}; _latScores[pid]=out;
+    var bc=Infinity,bp=Infinity,b9=Infinity, full=LAT_FULL[pid]||1;
     rows.forEach(function(r){
       var c=+r.cpu_per_req_us, p=lat(r.p99_latency), q=lat(r.p99_9_latency);
       if(c>0) bc=Math.min(bc,c);
@@ -1696,19 +1965,20 @@ document.addEventListener('DOMContentLoaded', function(){
       if(q>0&&isFinite(q)) b9=Math.min(b9,q);
     });
     rows.forEach(function(r){
-      var rf=clamp01((r.rps||0)/L1M_FULL);
-      _l1mScores[r.fw]=100*rf*(L1M_W_CPU*l1mLinear(+r.cpu_per_req_us,bc)
-                              +L1M_W_P99*l1mDecade(lat(r.p99_latency),bp)
-                              +L1M_W_P999*l1mDecade(lat(r.p99_9_latency),b9));
+      var rf=clamp01((r.rps||0)/full);
+      out[r.fw]=100*rf*(LAT_W_CPU*latLinear(+r.cpu_per_req_us,bc)
+                       +LAT_W_P99*latDecade(lat(r.p99_latency),bp)
+                       +LAT_W_P999*latDecade(lat(r.p99_9_latency),b9));
     });
   }
+  function latScore(pid,fw){ latEnsure(pid); return (_latScores[pid]||{})[fw]||0; }
 
   // What a profile's detail view ranks on. Everything here is "most requests
   // per second wins" except the latency-1m profile, which pins the rate: every
   // entry delivers the same rps by construction, so ordering on it sorts by
   // measurement noise. Its metric is the CPU each one spent to do it, and less
   // of that is better.
-  function defProfileSort(id){ return id==='latency-1m' ? {k:'l1mscore',d:-1} : {k:'rps',d:-1}; }
+  function defProfileSort(id){ return isLatProfile(id) ? {k:'l1mscore',d:-1} : {k:'rps',d:-1}; }
   function profileCols(){
     var W=window.innerWidth;
     var c=[
@@ -1726,10 +1996,11 @@ document.addEventListener('DOMContentLoaded', function(){
     // exact one. Avg latency is dominated by the same coordinated-omission
     // inflation that p99 and p99.9 already show, only less legibly. Dropping them
     // buys the name back ~300px and loses no information.
-    if(state.profile==='latency-1m'){
+    if(isLatProfile(state.profile)){
       c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
       c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
       c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
+      c.push({k:'cputot', label:'CPU used', num:true, w:'100px', min:520, tip:'The same CPU cost read as a share of the machine this profile allows: CPU-per-request \u00d7 the rate delivered, over the 64 logical CPUs the profile pins (cpuset 0-31,64-95). 100% would mean the entry saturated everything it was given.'});
       c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
       c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:640, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
       c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
@@ -1752,9 +2023,10 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
     if(k==='inbw') return '<div class="c num sub">'+esc(r.input_bw||'-')+'</div>';
-    if(k==='l1mscore'){ var v=_l1mScores[r.fw]; return '<div class="c num"><b>'+(v==null?'-':v.toFixed(1))+'</b></div>'; }
+    if(k==='l1mscore'){ var v=latScore(state.profile,r.fw); return '<div class="c num"><b>'+(v?v.toFixed(1):'-')+'</b></div>'; }
     if(k==='p999') return '<div class="c num sub">'+esc(r.p99_9_latency||'-')+'</div>';
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
+    if(k==='cputot'){ var t=cpuTotPct(r); return '<div class="c num sub">'+(t==null?'-':esc(t.toFixed(1))+'%')+'</div>'; }
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
     if(k==='cpu') return '<div class="c num sub">'+esc(r.cpu||'-')+'</div>';
@@ -1763,7 +2035,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function renderProfile(){
     var all=(D.results[state.profile+'-'+state.conns]||[]).slice();
-    if(state.profile==='latency-1m') l1mBuild(all);
+    if(isLatProfile(state.profile)) latBuild(state.profile, all);
     // Rank on whatever this profile is actually about. Ranking the fixed-rate
     // profile by rps would number entries 1..N by noise around 500,000.
     var _rk=defProfileSort(state.profile);
@@ -1828,7 +2100,7 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
-  initTips(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  initTips(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });

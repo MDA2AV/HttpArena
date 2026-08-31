@@ -14,17 +14,16 @@
   "repo": "https://github.com/oven-sh/bun",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline",
+    "async",
+    "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
-    "upload",
-    "static",
+    "8gbit",
     "static-tls",
     "async-db",
-    "crud",
     "fortunes"
   ],
   "maintainers": []

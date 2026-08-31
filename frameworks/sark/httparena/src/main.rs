@@ -29,7 +29,6 @@ use sark::ServerCfg;
 use sark::date::{DateHost, Updater};
 use sark::fs::ServeDir;
 use sark::json::{Encode, Json, JsonDecode, JsonEncode, Writer};
-use sark::request::BodyLen;
 use sark::timer::{DEFAULT_HEAD_TIMEOUT, SARK_TIMER_ID, TimerHost};
 use sark_core::http::compress::{Brotli, Gzip};
 use sark_core::http::{LocalFrameBytes, Response};
@@ -686,24 +685,30 @@ async fn crud_update(req: CrudUpdateRequest, state: &AppState<'_>) -> Response {
 }
 
 #[sark_gen::response(raw)]
-#[header("content-type", "text/plain")]
-struct UploadResponse {
+#[header("content-type", "application/octet-stream")]
+struct EchoResponse {
     status: StatusCode,
     body: Owned,
 }
 
+// #[raw_body] rather than #[stream_body]: the echo needs the bytes, not a
+// length, and the response cannot be framed until they are all in - which is
+// also what makes a chunked request work.
 #[sark_gen::request(ordered)]
-struct UploadRequest {
-    #[stream_body]
-    payload: BodyLen,
+struct EchoRequest {
+    #[raw_body]
+    payload: LocalFrameBytes,
 }
 
 #[sark_gen::handler]
 #[max_body(32 * 1024 * 1024)]
-fn upload_endpoint(req: UploadRequest, _state: &AppState<'_>) -> UploadResponse {
-    UploadResponse {
+fn echo_endpoint(req: EchoRequest, _state: &AppState<'_>) -> EchoResponse {
+    let bytes = req.payload.as_bytes();
+    let mut body = Owned::with_capacity(bytes.len());
+    body.extend_from_slice(bytes);
+    EchoResponse {
         status: StatusCode::OK,
-        body: u64_owned(req.payload.len() as u64),
+        body,
     }
 }
 
@@ -786,7 +791,7 @@ sark_gen::define_route! {
         GET "/crud/items/:id" => async crud_get,
         POST "/crud/items" => async crud_create,
         PUT "/crud/items/:id" => async crud_update,
-        POST "/upload" => upload_endpoint,
+        POST "/echo" => echo_endpoint,
         GET "/static/:file" => async static_endpoint,
         GET "/public/baseline" => baseline_get,
         GET "/public/json/:count" => json_endpoint,

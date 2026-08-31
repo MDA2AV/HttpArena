@@ -176,7 +176,7 @@ fi
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 # Docker --ulimit nofile rejects "unlimited"; fall back to a large numeric cap
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
-if has_test "async-db" || has_test "crud" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
+if has_test "async-db" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
@@ -191,7 +191,7 @@ if has_test "baseline-h2" || has_test "static-h2" || has_test "baseline-h3" || h
 fi
 
 needs_h1tls=false
-if has_test "json-tls" || has_test "static-tls"; then
+if has_test "json-tls" || has_test "static-tls" || has_test "8gbit"; then
     needs_h1tls=true
 fi
 
@@ -268,7 +268,7 @@ docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 # mirrors benchmark.sh, which always runs framework containers unconfined.
 
 # Start Postgres sidecar if async-db is needed
-if has_test "async-db" || has_test "crud" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
+if has_test "async-db" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack" || has_test "fortunes"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker run -d --name "$PG_CONTAINER" --network host \
@@ -326,19 +326,6 @@ redis_sidecar_start() {
     return 1
 }
 
-# Start Redis sidecar if needed
-if has_test "crud"; then
-
-    REDIS_CONTAINER="httparena-redis"
-    REDIS_URL="redis://localhost:6379"
-    # Validation is correctness-only, so the Redis sidecar is not pinned to specific
-    # cores by default (benchmarking pins it via scripts/lib/redis.sh). Set REDIS_CPUSET
-    # explicitly to restore pinning; left unset it runs unpinned and works on any host.
-    REDIS_CPUSET="${REDIS_CPUSET:-}"
-
-    redis_sidecar_start || { echo "FAIL: Redis sidecar not ready"; exit 1; }
-    docker_args+=(-e "REDIS_URL=$REDIS_URL")
-fi
 
 # Start container (skip for gateway-only — compose handles it later)
 if [ "$GATEWAY_ONLY" = "false" ]; then
@@ -348,8 +335,8 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
     # and the suite happily reports the previous framework's behaviour under the
     # new framework's name.
     # The sidecars this run just started share the prefix, so they are excluded
-    # by name - sweeping them would take Postgres out from under the async-db and
-    # crud checks.
+    # by name - sweeping them would take Postgres out from under the async-db
+    # checks.
     _stale=""
     for _c in $(docker ps --filter "name=httparena-validate-" --format '{{.Names}}' 2>/dev/null); do
         case "$_c" in
@@ -1243,11 +1230,11 @@ wait_h2() {
 
 # ───── Baseline (GET/POST /baseline11) ─────
 
-# latency-1m drives GET /baseline11 at a pinned rate, so it needs the same
+# The fixed-rate profiles drive GET /baseline11, so they need the same
 # handler to be correct and gets its coverage from this section rather than
 # one of its own -- there is nothing about it a request-shaped check can see.
-if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m"; then
-    BASELINE_DOCS="$DOCS_BASE/h1/isolated/baseline/validation"
+if has_test "baseline" || has_test "limited-conn" || has_test "latency-1m" || has_test "latency-10k"; then
+    BASELINE_DOCS="$DOCS_BASE/h1/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
         "http://localhost:$PORT/baseline11?a=13&b=42"
@@ -1350,7 +1337,7 @@ fi
 # ───── Pipelined (GET /pipeline) ─────
 
 if has_test "pipelined"; then
-    PIPELINED_DOCS="$DOCS_BASE/h1/isolated/pipelined/validation"
+    PIPELINED_DOCS="$DOCS_BASE/h1/pipelined/validation"
     echo "[test] pipelined endpoint"
     check "GET /pipeline" "ok" "$PIPELINED_DOCS" \
         "http://localhost:$PORT/pipeline"
@@ -1456,7 +1443,7 @@ async_concurrent_probe() {
 }
 
 if has_test "async"; then
-    ASYNC_DOCS="$DOCS_BASE/h1/isolated/async/validation"
+    ASYNC_DOCS="$DOCS_BASE/h1/async/validation"
     echo "[test] async delay endpoint"
 
     # The benchmark asks for a flat 15ms, so on-the-wire variation is not
@@ -1512,9 +1499,21 @@ if has_test "async"; then
 fi
 
 # ───── JSON Processing (GET /json) ─────
+#
+# The `json` profile was removed, but this check was not: /json/{count} is still
+# the endpoint json-comp compresses, and this is the strict form of the body
+# check - every field diffed against data/dataset.json rather than only against
+# the response's own arithmetic.
+#
+# Gated on json-comp ALONE, and deliberately not on json-h2c. This block probes
+# plaintext :8080, and an h2c-only entry has no HTTP/1.1 listener there at all -
+# actix-h2c, quarkus-jvm-h2c, vanilla-h2c, wtx-http2, zix-http2 and nginx would
+# every one of them fail a check for a port they never open. json-h2c validates
+# the same endpoint over :8082 in its own block below, and json-tls over :8081
+# in its own.
 
-if has_test "json"; then
-    JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
+if has_test "json-comp"; then
+    JSON_DOCS="$DOCS_BASE/h1/json-compressed/validation"
     echo "[test] json endpoint"
     json_fail=false
     # counts and multipliers drawn per run, and every field checked against
@@ -1579,7 +1578,7 @@ fi
 # ───── JSON Compressed (GET /json/{count}?m=X with Accept-Encoding) ─────
 
 if has_test "json-comp"; then
-    JSONCOMP_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
+    JSONCOMP_DOCS="$DOCS_BASE/h1/json-compressed/validation"
     echo "[test] json-comp endpoint"
 
     # Must return Content-Encoding: gzip or br when Accept-Encoding is sent
@@ -1654,7 +1653,7 @@ fi
 # ───── JSON TLS (GET /json/{count}?m=X over HTTP/1.1 + TLS on :8081) ─────
 
 if has_test "json-tls"; then
-    JSONTLS_DOCS="$DOCS_BASE/h1/isolated/json-tls/validation"
+    JSONTLS_DOCS="$DOCS_BASE/h1/json-tls/validation"
     tls_posture_probe "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS" "http/1.1"
     tls_quality_probe "json-tls" "$H1TLS_PORT" "$JSONTLS_DOCS"
     echo "[test] json-tls endpoint"
@@ -1671,16 +1670,17 @@ if has_test "json-tls"; then
     # Response body correctness across 3 (count, m) pairs (different from json-comp so a caller can't share state)
     jt_fail=false
     jt_params=""
-    for _ in 1 2 3; do
-        jt_params="$jt_params $(rand_between 5 50):$(rand_between 2 89)"
+    for _ in 1 2 3 4; do
+        jt_params="$jt_params $(rand_between 1 50):$(rand_between 2 89)"
     done
     for jtp in $jt_params; do
         jtcount="${jtp%%:*}"
         jtm="${jtp##*:}"
         jt_response=$(curl -sk --max-time 30 "https://localhost:$H1TLS_PORT/json/$jtcount?m=$jtm" || true)
-        jt_result=$(echo "$jt_response" | python3 -c "
-import sys, json
-m = $jtm
+        jt_result=$(echo "$jt_response" | JM="$jtm" JCOUNT="$jtcount" DATASET="$DATA_DIR/dataset.json" python3 -c "
+import sys, json, os
+m = int(os.environ['JM']); want = int(os.environ['JCOUNT'])
+source = json.load(open(os.environ['DATASET']))
 d = json.load(sys.stdin)
 count = d.get('count', 0)
 items = d.get('items', [])
@@ -1690,14 +1690,20 @@ def valid_item(it):
             and 'quantity' in it and 'total' in it
             and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
             and isinstance(r, dict) and 'score' in r and 'count' in r)
-valid = all(valid_item(it) for it in items) if items else False
-correct_totals = True
-for item in items:
-    expected = item.get('price', 0) * item.get('quantity', 0) * m
-    if item.get('total', 0) != expected:
-        correct_totals = False
-        break
-print(f'{count} {valid} {correct_totals}')
+valid = bool(items) and all(valid_item(it) for it in items)
+# Every field checked against data/dataset.json, not just the response's own
+# arithmetic: a made-up item with a self-consistent total used to pass this.
+faithful = len(items) == want
+if faithful:
+    for got, src in zip(items, source[:want]):
+        if (got.get('id') != src['id'] or got.get('name') != src['name']
+                or got.get('category') != src['category'] or got.get('price') != src['price']
+                or got.get('quantity') != src['quantity'] or got.get('active') != src['active']
+                or got.get('tags') != src['tags']
+                or got.get('total') != src['price'] * src['quantity'] * m):
+            faithful = False
+            break
+print(f'{count} {valid} {faithful}')
 " 2>/dev/null || echo "0 False False")
         jt_count=$(echo "$jt_result" | cut -d' ' -f1)
         jt_valid=$(echo "$jt_result" | cut -d' ' -f2)
@@ -1706,12 +1712,12 @@ print(f'{count} {valid} {correct_totals}')
         if [ "$jt_count" = "$jtcount" ] && [ "$jt_valid" = "True" ] && [ "$jt_correct" = "True" ]; then
             :
         else
-            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, schema=$jt_valid, correct=$jt_correct" "$JSONTLS_DOCS"
+            fail_with_link "[json-tls /json/$jtcount?m=$jtm]: count=$jt_count, schema=$jt_valid, matches dataset=$jt_correct" "$JSONTLS_DOCS"
             jt_fail=true
         fi
     done
     if [ "$jt_fail" = "false" ]; then
-        echo "  PASS [json-tls response] (3 (count, m) pairs over TLS, full item schema)"
+        echo "  PASS [json-tls response] (4 random counts x multipliers over TLS, items matched against data/dataset.json)"
         PASS=$((PASS + 1))
     fi
 
@@ -1725,75 +1731,86 @@ print(f'{count} {valid} {correct_totals}')
     fi
 fi
 
-# ───── Upload (POST /upload) ─────
+# ───── 8Gbit (POST /echo over TLS) ─────
+#
+# The profile loads both directions at once, so what has to be established is
+# that the bytes come back UNCHANGED - not that a count matches. Every check
+# here is byte-exact against what was sent.
+#
+# --http1.1 on every probe, and it is load-bearing. :8081 advertises ALPN h2,
+# so curl would negotiate HTTP/2 - and an echo that is broken under HTTP/1.1
+# can pass under h2. Go is the case in point: net/http drains and closes the
+# request body when response headers flush with unread body left, truncating a
+# streamed echo, while its h2 server does no such thing. wrk speaks only
+# HTTP/1.1, so validating over h2 would green-light a profile that benchmarks
+# torn responses.
 
-if has_test "upload"; then
-    UPLOAD_DOCS="$DOCS_BASE/h1/isolated/upload/validation"
-    echo "[test] upload endpoint"
-    # Small upload: returns byte count
-    UPLOAD_BODY="Hello, HttpArena!"
-    EXPECTED_LEN=${#UPLOAD_BODY}
-    check "POST /upload small body" "$EXPECTED_LEN" "$UPLOAD_DOCS" \
-        -X POST -H "Content-Type: application/octet-stream" --data-binary "$UPLOAD_BODY" \
-        "http://localhost:$PORT/upload"
+if has_test "8gbit"; then
+    ECHO_DOCS="$DOCS_BASE/h1/8gbit/validation"
+    tls_posture_probe "8gbit" "$H1TLS_PORT" "$ECHO_DOCS" "http/1.1"
+    echo "[test] 8gbit endpoint"
+    echo_fail=false
 
-    # Anti-cheat: random body to detect hardcoded responses
-    RANDOM_BODY=$(head -c 64 /dev/urandom | base64 | head -c 48)
-    EXPECTED_RANDOM_LEN=${#RANDOM_BODY}
-    ACTUAL_LEN=$(curl -s --max-time 30 -X POST -H "Content-Type: application/octet-stream" --data-binary "$RANDOM_BODY" "http://localhost:$PORT/upload" || true)
-    if [ "$ACTUAL_LEN" = "$EXPECTED_RANDOM_LEN" ]; then
-        echo "  PASS [POST /upload random body] (bytes: $ACTUAL_LEN)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[POST /upload random body]: expected '$EXPECTED_RANDOM_LEN', got '$ACTUAL_LEN'" "$UPLOAD_DOCS"
-    fi
-
-    # Varying upload sizes
-    upload_fail=false
-    for upload_spec in "500K:512000" "2M:2097152" "10M:10485760" "20M:20971520"; do
-        upload_label="${upload_spec%%:*}"
-        upload_size="${upload_spec##*:}"
-        upload_bs=$((upload_size / 1024))
-        ACTUAL_LARGE=$( { dd if=/dev/urandom bs=1024 count=$upload_bs 2>/dev/null | curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" --data-binary @- "http://localhost:$PORT/upload"; } || true )
-        if [ "$ACTUAL_LARGE" = "$upload_size" ]; then
-            :
+    # Random bodies, and the echo compared byte for byte. Random because a
+    # fixed one can be answered from a canned response, and the paced generator
+    # sends a single constant body -- so this is the ONLY check that makes
+    # answering without reading impossible rather than merely unlikely.
+    # 10240 is the benchmark's own size; 102400 is deliberately larger, so a
+    # handler that only works at the size it was tuned for is caught here.
+    for _sz in 1 1024 10240 102400; do
+        _src=$(mktemp); _got=$(mktemp)
+        head -c "$_sz" /dev/urandom > "$_src"
+        curl -sk --http1.1 --max-time 30 -X POST --data-binary "@$_src" \
+             -H "Content-Type: application/octet-stream" \
+             "https://localhost:$H1TLS_PORT/echo" -o "$_got" 2>/dev/null || true
+        if cmp -s "$_src" "$_got"; then
+            echo "  PASS [POST /echo ${_sz}B] (echoed byte-for-byte)"
+            PASS=$((PASS + 1))
         else
-            fail_with_link "[POST /upload $upload_label]: expected '$upload_size', got '$ACTUAL_LARGE'" "$UPLOAD_DOCS"
-            upload_fail=true
+            _gotsz=$(wc -c < "$_got" 2>/dev/null || echo 0)
+            fail_with_link "[POST /echo ${_sz}B]: expected ${_sz} bytes echoed verbatim, got ${_gotsz} bytes that differ" "$ECHO_DOCS"
+            echo_fail=true
         fi
+        rm -f "$_src" "$_got"
     done
-    if [ "$upload_fail" = "false" ]; then
-        echo "  PASS [POST /upload] (4 sizes verified: 500K, 2M, 10M, 20M)"
-        PASS=$((PASS + 1))
-    fi
 
-    # Chunked, so there is no Content-Length to echo. Every check above hands the
-    # handler a request that already states its own length in a header, which a
-    # handler that never reads the body can copy out and answer with. This one
-    # cannot be answered without counting what arrived.
-    upload_chunk_bytes=$(rand_between 100000 900000)
-    upload_chunked=$( { head -c "$upload_chunk_bytes" /dev/urandom | \
-        curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" \
-             -H "Transfer-Encoding: chunked" --data-binary @- \
-             "http://localhost:$PORT/upload"; } || true )
-    if [ "$upload_chunked" = "$upload_chunk_bytes" ]; then
-        echo "  PASS [POST /upload chunked] ($upload_chunk_bytes bytes counted with no Content-Length)"
+    # Chunked. curl sends Transfer-Encoding: chunked when the body length is
+    # not known up front, so the server has to decode the framing rather than
+    # trust a Content-Length. This is the check the old upload profile never
+    # had: every one of its probes sent an accurate Content-Length, so a
+    # handler that echoed that header without reading a byte passed all of them.
+    for _csz in 10240 102400; do
+        _src=$(mktemp); _got=$(mktemp)
+        head -c "$_csz" /dev/urandom > "$_src"
+        cat "$_src" | curl -sk --http1.1 --max-time 30 -X POST --data-binary @- \
+             -H "Content-Type: application/octet-stream" \
+             -H "Transfer-Encoding: chunked" \
+             "https://localhost:$H1TLS_PORT/echo" -o "$_got" 2>/dev/null || true
+        if cmp -s "$_src" "$_got"; then
+            echo "  PASS [POST /echo chunked ${_csz}B] (decoded and echoed byte-for-byte)"
+            PASS=$((PASS + 1))
+        else
+            _gotsz=$(wc -c < "$_got" 2>/dev/null || echo 0)
+            fail_with_link "[POST /echo chunked ${_csz}B]: expected ${_csz} bytes echoed verbatim, got ${_gotsz} bytes that differ - the body must be read from the chunked framing, not from Content-Length" "$ECHO_DOCS"
+            echo_fail=true
+        fi
+        rm -f "$_src" "$_got"
+    done
+
+    # An empty body is still a body: the response must be a 200 with nothing in
+    # it, not a 411 or a hang.
+    _code=$(curl -sk --http1.1 --max-time 30 -o /dev/null -w '%{http_code}' -X POST --data-binary "" \
+            "https://localhost:$H1TLS_PORT/echo" 2>/dev/null || echo 000)
+    if [ "$_code" = "200" ]; then
+        echo "  PASS [POST /echo empty body] (200)"
         PASS=$((PASS + 1))
     else
-        fail_with_link "[POST /upload chunked]: sent $upload_chunk_bytes bytes with Transfer-Encoding: chunked, got '$upload_chunked' - a handler that echoes Content-Length instead of counting the body fails here" "$UPLOAD_DOCS"
+        fail_with_link "[POST /echo empty body]: expected 200, got $_code" "$ECHO_DOCS"
+        echo_fail=true
     fi
 
-    # A body shorter than the Content-Length it declares. Answering with the
-    # header's number rather than what arrived is the same shortcut seen from the
-    # other side; a server that reads the body either counts fewer bytes or
-    # refuses the request, and both are fine - echoing 4096 is not.
-    upload_short=$(printf 'short-body' | curl -s --max-time 15 -X POST \
-        -H "Content-Type: application/octet-stream" -H "Content-Length: 4096" \
-        --data-binary @- "http://localhost:$PORT/upload" 2>/dev/null || true)
-    if [ "$upload_short" = "4096" ]; then
-        fail_with_link "[POST /upload truncated body]: declared Content-Length: 4096, sent 10 bytes, and the server answered '4096' - it is reporting the header, not the body" "$UPLOAD_DOCS"
-    else
-        echo "  PASS [POST /upload truncated body] (did not echo the declared length; answered '${upload_short:-<nothing>}')"
+    if [ "$echo_fail" = "false" ]; then
+        echo "  PASS [8gbit] (all echoes byte-exact, Content-Length and chunked)"
         PASS=$((PASS + 1))
     fi
 fi
@@ -1909,9 +1926,10 @@ if has_test "json-h2c"; then
         jm="${jp##*:}"
         resp=$(curl -s --max-time 30 --http2-prior-knowledge \
             "http://localhost:$H2C_PORT/json/$jcount?m=$jm" 2>/dev/null || true)
-        parsed=$(echo "$resp" | python3 -c "
-import sys, json
-m = $jm
+        parsed=$(echo "$resp" | JM="$jm" JCOUNT="$jcount" DATASET="$DATA_DIR/dataset.json" python3 -c "
+import sys, json, os
+m = int(os.environ['JM']); want = int(os.environ['JCOUNT'])
+source = json.load(open(os.environ['DATASET']))
 d = json.load(sys.stdin)
 count = d.get('count', -1)
 items = d.get('items', [])
@@ -1923,13 +1941,19 @@ def valid_item(it):
             and isinstance(it.get('tags'), list) and isinstance(it.get('active'), bool)
             and isinstance(r, dict) and 'score' in r and 'count' in r)
 valid = all(valid_item(it) for it in items) if items else False
-correct_totals = True
-for item in items:
-    expected = item.get('price', 0) * item.get('quantity', 0) * m
-    if item.get('total', 0) != expected:
-        correct_totals = False
-        break
-print(f'{count} {items_n} {valid} {correct_totals}')
+# Against data/dataset.json, not the response's own arithmetic: a made-up item
+# with a self-consistent total would otherwise pass.
+faithful = items_n == want
+if faithful:
+    for got, src in zip(items, source[:want]):
+        if (got.get('id') != src['id'] or got.get('name') != src['name']
+                or got.get('category') != src['category'] or got.get('price') != src['price']
+                or got.get('quantity') != src['quantity'] or got.get('active') != src['active']
+                or got.get('tags') != src['tags']
+                or got.get('total') != src['price'] * src['quantity'] * m):
+            faithful = False
+            break
+print(f'{count} {items_n} {valid} {faithful}')
 " 2>/dev/null || echo "-1 -1 False False")
         pc=$(echo "$parsed" | cut -d' ' -f1)
         pn=$(echo "$parsed" | cut -d' ' -f2)
@@ -1948,88 +1972,12 @@ print(f'{count} {items_n} {valid} {correct_totals}')
     fi
 fi
 
-# ───── Static Files H1 (GET /static/* over HTTP/1.1) ─────
-
-if has_test "static"; then
-    STATIC_DOCS="$DOCS_BASE/h1/isolated/static/validation"
-    echo "[test] static endpoint"
-    check_header "GET /static/reset.css Content-Type" "Content-Type" "text/css" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/reset.css"
-
-    check_header "GET /static/app.js Content-Type" "Content-Type" "application/javascript" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/app.js"
-
-    check_header "GET /static/manifest.json Content-Type" "Content-Type" "application/json" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/manifest.json"
-
-    # Verify file sizes match actual files on disk
-    static_fail=false
-    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
-        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        actual_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/$sf" || echo "0")
-        if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
-            true
-        else
-            fail_with_link "[static/$sf size]: expected $expected_size bytes, got $actual_size" "$STATIC_DOCS"
-            static_fail=true
-        fi
-    done
-    if [ "$static_fail" = "false" ]; then
-        echo "  PASS [static file sizes] (20 files verified)"
-        PASS=$((PASS + 1))
-    fi
-
-    # Verify compression works when Accept-Encoding is sent — for each file, if server compresses, decompressed size must match original
-    static_comp_fail=false
-    static_comp_count=0
-    static_comp_skip=0
-    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
-        expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        _hdr_tmp=$(mktemp)
-        _body_tmp=$(mktemp)
-        curl -s --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "http://localhost:$PORT/static/$sf" || true
-        comp_enc=$(grep -i "^content-encoding:" "$_hdr_tmp" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
-        decompressed=$(wc -c < "$_body_tmp")
-        rm -f "$_hdr_tmp" "$_body_tmp"
-        if [ -n "$comp_enc" ]; then
-            if [ "$decompressed" -eq "$expected_size" ] 2>/dev/null; then
-                static_comp_count=$((static_comp_count + 1))
-            else
-                fail_with_link "[static/$sf compression]: Content-Encoding: $comp_enc but decompressed size $decompressed != expected $expected_size" "$STATIC_DOCS"
-                static_comp_fail=true
-            fi
-        else
-            static_comp_skip=$((static_comp_skip + 1))
-        fi
-    done
-    if [ "$static_comp_fail" = "false" ]; then
-        if [ "$static_comp_count" -gt 0 ]; then
-            echo "  PASS [static compression] ($static_comp_count files compressed, $static_comp_skip skipped)"
-            PASS=$((PASS + 1))
-        else
-            echo "  SKIP [static compression] (server does not compress static files)"
-        fi
-    fi
-
-    check_status "GET /static/nonexistent.txt" "404" "$STATIC_DOCS" \
-        -s "http://localhost:$PORT/static/nonexistent.txt"
-
-    # hero.webp has no pre-compressed twin, so this is the plain identity path.
-    static_staleness_probe "static file follows the disk" "http://localhost:$PORT" "$STATIC_DOCS" \
-        "hero.webp" "identity"
-    # app.js does, and after the pre-compressed rule change that is the path most
-    # of the payload takes: 15 of the 20 files are served encoded. q-values on
-    # purpose -- that is what the load generator sends, and an exact-token match
-    # against it silently serves the original instead.
-    static_staleness_probe "static variant follows the disk" "http://localhost:$PORT" "$STATIC_DOCS" \
-        "app.js" "br;q=1, gzip;q=0.8"
-fi
 
 
 # ───── TLS hardening (opt-in; validation only, nothing is measured) ─────
 
 if [ "$TLS_CHECK_OPTIN" = "yes" ]; then
-    TLS_CHECK_DOCS="$DOCS_BASE/h1/isolated/tls/validation"
+    TLS_CHECK_DOCS="$DOCS_BASE/h1/tls/validation"
     echo "[test] tls_check — TLS hardening (opt-in)"
     # The badge answers for this section, so it counts this section's failures.
     # An unrelated check failing elsewhere says nothing about whether the entry
@@ -2067,7 +2015,7 @@ fi
 # ───── Static Files TLS (GET /static/* over HTTP/1.1 + TLS on :8081) ─────
 
 if has_test "static-tls"; then
-    STATICTLS_DOCS="$DOCS_BASE/h1/isolated/static-tls/validation"
+    STATICTLS_DOCS="$DOCS_BASE/h1/static-tls/validation"
     tls_posture_probe "static-tls" "$H1TLS_PORT" "$STATICTLS_DOCS" "http/1.1"
     echo "[test] static-tls endpoint"
 
@@ -2231,8 +2179,8 @@ fi
 
 # ───── Async Database (GET /async-db) ─────
 
-if has_test "async-db" || has_test "crud"; then
-    ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
+if has_test "async-db"; then
+    ASYNCDB_DOCS="$DOCS_BASE/h1/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false
     # ranges and limits drawn per run
@@ -2294,7 +2242,7 @@ fi
 # content, and is sized like a real page (not stripped to win the bench).
 
 if has_test "fortunes"; then
-    FORTUNES_DOCS="$DOCS_BASE/h1/isolated/fortunes/validation"
+    FORTUNES_DOCS="$DOCS_BASE/h1/fortunes/validation"
     echo "[test] fortunes endpoint"
 
     body=$(curl -s --max-time 30 "http://localhost:$PORT/fortunes" || true)
@@ -2353,94 +2301,6 @@ if has_test "fortunes"; then
     fi
 fi
 
-# ───── CRUD (list + read + create + update /crud/items) ─────
-
-if has_test "crud"; then
-    CRUD_DOCS="$DOCS_BASE/h1/isolated/crud/validation"
-    echo "[test] crud endpoints"
-
-    # 1. GET list — paginated with category filter
-    crud_list=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items?category=electronics&page=1&limit=5" || true)
-    crud_list_result=$(echo "$crud_list" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-items = d.get('items', [])
-total = d.get('total', 0)
-page = d.get('page', 0)
-has_rating = all('rating' in i for i in items) if items else False
-print(f'{len(items)} {total} {page} {has_rating}')
-" 2>/dev/null || echo "0 0 0 False")
-    crud_list_count=$(echo "$crud_list_result" | cut -d' ' -f1)
-    crud_list_total=$(echo "$crud_list_result" | cut -d' ' -f2)
-    crud_list_page=$(echo "$crud_list_result" | cut -d' ' -f3)
-    crud_list_rating=$(echo "$crud_list_result" | cut -d' ' -f4)
-    if [ "$crud_list_count" = "5" ] && [ "$crud_list_total" -gt 0 ] 2>/dev/null && [ "$crud_list_page" = "1" ] && [ "$crud_list_rating" = "True" ]; then
-        echo "  PASS [GET /crud/items?category=electronics] ($crud_list_count items, total=$crud_list_total, page=$crud_list_page)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /crud/items list]: count=$crud_list_count, total=$crud_list_total, page=$crud_list_page, rating=$crud_list_rating" "$CRUD_DOCS"
-    fi
-
-    # 2. GET single item — with cache check
-    crud_get=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items/1" || true)
-    crud_get_id=$(echo "$crud_get" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id','-1'))" 2>/dev/null || echo "-1")
-    if [ "$crud_get_id" = "1" ]; then
-        echo "  PASS [GET /crud/items/1] (returned id=1)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /crud/items/1]: expected id=1, got $crud_get_id" "$CRUD_DOCS"
-    fi
-
-    # 3. Cache-aside check — first call MISS, second call HIT
-    crud_cache1=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/42" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
-    crud_cache2=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/42" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
-    if [ "$crud_cache1" = "MISS" ] && [ "$crud_cache2" = "HIT" ]; then
-        echo "  PASS [crud cache-aside] (first=MISS, second=HIT)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[crud cache-aside]: expected MISS then HIT, got '$crud_cache1' then '$crud_cache2'" "$CRUD_DOCS"
-    fi
-
-    # 4. GET non-existent item — 404
-    check_status "GET /crud/items/999999 (not found)" "404" "$CRUD_DOCS" \
-        -s --max-time 30 "http://localhost:$PORT/crud/items/999999"
-
-    # 5. POST — create a new item
-    crud_post_status=$(curl -s --max-time 30 -o /tmp/crud-post.json -w '%{http_code}' \
-        -X POST -H "Content-Type: application/json" \
-        -d '{"id":200001,"name":"ValidateItem","category":"test","price":42,"quantity":7}' \
-        "http://localhost:$PORT/crud/items" || echo "0")
-    if [ "$crud_post_status" = "201" ]; then
-        echo "  PASS [POST /crud/items] (201 Created)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[POST /crud/items]: expected 201, got $crud_post_status" "$CRUD_DOCS"
-    fi
-
-    # 6. GET back the created item
-    crud_verify=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items/200001" || true)
-    crud_verify_id=$(echo "$crud_verify" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id','-1'))" 2>/dev/null || echo "-1")
-    if [ "$crud_verify_id" = "200001" ]; then
-        echo "  PASS [GET /crud/items/200001] (read back created item)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[GET /crud/items/200001]: expected id=200001, got $crud_verify_id" "$CRUD_DOCS"
-    fi
-
-    # 7. PUT — update, then verify cache was invalidated
-    curl -s --max-time 30 -o /dev/null "http://localhost:$PORT/crud/items/200001"  # warm cache
-    crud_put_status=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' \
-        -X PUT -H "Content-Type: application/json" \
-        -d '{"name":"UpdatedItem","category":"test","price":99,"quantity":1}' \
-        "http://localhost:$PORT/crud/items/200001" || echo "0")
-    crud_after_put=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/200001" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
-    if [ "$crud_put_status" = "200" ] && [ "$crud_after_put" = "MISS" ]; then
-        echo "  PASS [PUT /crud/items/200001] (200 OK, cache invalidated)"
-        PASS=$((PASS + 1))
-    else
-        fail_with_link "[PUT /crud/items/200001]: status=$crud_put_status, cache_after=$crud_after_put" "$CRUD_DOCS"
-    fi
-fi
 
 # ───── gRPC unary (benchmark.BenchmarkService/GetSum) ─────
 #
@@ -2801,14 +2661,17 @@ fi
 # api returns 401 without a cookie) and the authenticated path (api
 # returns 200 with a pre-seeded session cookie).
 
-# The stack ships its own Redis on the host's 6379, and the validate sidecar
-# above already holds it whenever the entry subscribes to crud — fulmine is
-# subscribed to both. The benchmark driver handles this in gateway.sh
-# (_gateway_yield_redis); validate.sh has its own compose handling and needs the
-# same. It used to go unnoticed because the server depended on the cache with
-# the short list form and started anyway; now that the compose files wait for a
-# healthy cache, an unavailable port fails the stack instead of quietly
-# validating against the wrong Redis.
+# The stack ships its own Redis on the host's 6379, which used to collide with
+# the validate sidecar started for crud - fulmine was subscribed to both. It
+# went unnoticed because the server depended on the cache with the short list
+# form and started anyway; once the compose files began waiting for a healthy
+# cache, an unavailable port failed the stack instead of quietly validating
+# against the wrong Redis.
+#
+# With crud gone nothing here starts a sidecar, so REDIS_CONTAINER is never set
+# and both helpers below return early - they are inert, not load-bearing. Kept
+# rather than deleted because the collision returns the moment anything starts
+# a Redis on 6379 again, and this is the guard that handles it.
 PRODSTACK_STOPPED_REDIS=false
 
 _prodstack_yield_redis() {

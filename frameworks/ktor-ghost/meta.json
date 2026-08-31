@@ -14,14 +14,12 @@
   "repo": "https://github.com/ktorio/ktor",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "limited-conn",
     "pipelined",
-    "json",
     "json-comp",
     "json-tls",
-    "upload",
-    "static",
+    "8gbit",
     "static-tls",
     "async-db",
     "baseline-h2",
@@ -29,10 +27,7 @@
     "baseline-h2c",
     "json-h2c",
     "echo-ws",
-    "echo-ws-pipeline",
-    "crud",
-    "fortunes"
-  ],
+    "echo-ws-pipeline"],
   "maintainers": [
     "bjhham",
     "juanchurtado1991"

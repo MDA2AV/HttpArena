@@ -9,5 +9,5 @@ FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=build /app/target/helidon-httparena-tuned.jar app.jar
 COPY --from=build /app/target/libs ./libs
-EXPOSE 8080 8081 8443
+EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["java", "-jar", "app.jar"]

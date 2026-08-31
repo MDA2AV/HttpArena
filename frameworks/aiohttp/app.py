@@ -85,11 +85,13 @@ async def json_items(request):
     return response
 
 
-async def upload(request):
-    size = 0
+async def echo_body(request):
+    # Collected, not streamed through: the response needs a Content-Length and
+    # a chunked request has none to forward until the body is in.
+    chunks = []
     async for chunk in request.content.iter_any():
-        size += len(chunk)
-    return web.Response(body=str(size).encode(), content_type="text/plain")
+        chunks.append(chunk)
+    return web.Response(body=b"".join(chunks), content_type="application/octet-stream")
 
 
 
@@ -325,7 +327,7 @@ def build_app():
     app.router.add_get("/baseline11", baseline11)
     app.router.add_post("/baseline11", baseline11)
     app.router.add_get("/json/{count}", json_items)
-    app.router.add_post("/upload", upload)
+    app.router.add_post("/echo", echo_body)
     app.router.add_get("/baseline2", baseline11)
     app.router.add_get("/async-db", async_db)
     app.router.add_get("/crud/items", crud_list)

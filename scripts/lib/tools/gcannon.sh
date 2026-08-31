@@ -30,32 +30,34 @@ gcannon_build_args() {
             args=("http://localhost:$PORT/pipeline"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
             ;;
-        upload)
-            args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/upload-500k.raw,$REQUESTS_DIR/upload-2m.raw,$REQUESTS_DIR/upload-10m.raw,$REQUESTS_DIR/upload-20m.raw"
-                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 5)
-            ;;
         async-db)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
                   -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
             ;;
         async)
-            # One template, a flat 15ms wait. The value still travels in the
-            # path, so the handler has to parse it out of the route -- what a
-            # constant delay gives up is the on-the-wire variation, which is why
+            # One template, a flat wait. The value still travels in the path, so
+            # the handler has to parse it out of the route -- what a constant
+            # delay gives up is the on-the-wire variation, which is why
             # validate.sh draws its own values and asserts the differential.
             #
             # No -r: connections are held for the whole run. That is the point.
             # Every held connection is one request the server is currently
-            # sleeping on, so 64K connections means 64K live timers.
+            # sleeping on, so 32K connections means 32K live timers.
             #
-            # 10s rather than the 5s default: long enough that establishing
-            # 64000 connections is a small share of the window, short enough to
-            # keep three runs plus their cool-downs reasonable.
+            # 10s rather than the 5s default: long enough that establishing the
+            # connections is a small share of the window, short enough to keep
+            # three runs plus their cool-downs reasonable.
+            #
+            # ASYNC_THREADS overrides the generator's thread count for this
+            # profile alone. It exists because the result moves with it: on a
+            # 32-core box, holding the server fixed and changing only this took
+            # throughput from 1.42M at 8 threads to 2.16M at 16, so some of what
+            # the profile reports is the generator rather than the server. The
+            # default stays at THREADS so nothing changes unless it is set.
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/async-delay.raw"
-                  -c "$conns" -t "$THREADS" -d 10s -p "$pipeline")
+                  -c "$conns" -t "${ASYNC_THREADS:-$THREADS}" -d 10s -p "$pipeline")
             ;;
         fortunes)
             # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
@@ -63,11 +65,6 @@ gcannon_build_args() {
             # variance lives inside the handler (sort + render).
             args=("http://localhost:$PORT/fortunes"
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
-            ;;
-        json)
-            args=("http://localhost:$PORT"
-                  --raw "$REQUESTS_DIR/json-1.raw,$REQUESTS_DIR/json-5.raw,$REQUESTS_DIR/json-10.raw,$REQUESTS_DIR/json-15.raw,$REQUESTS_DIR/json-25.raw,$REQUESTS_DIR/json-40.raw,$REQUESTS_DIR/json-50.raw"
-                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 25)
             ;;
         json-compressed)
             args=("http://localhost:$PORT"
@@ -81,28 +78,6 @@ gcannon_build_args() {
             # above its ws/http branch, so -r caps frames per connection and
             # retires the socket once drained. Each replacement connection
             # redoes the HTTP/1.1 upgrade, which is what that profile measures.
-            [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
-            ;;
-        crud)
-            # CRUD mix: 75% single-item read + 15% update + 5% list + 5% create.
-            # Template counts (20 total): 15 gets, 3 updates, 1 list, 1 create.
-            # Create path uses {SEQ:100001} monotonic IDs; iteration 1 is pure
-            # INSERT, iterations 2+ become upserts via ON CONFLICT DO UPDATE
-            # because gcannon's SEQ counter resets per invocation.
-            # List queries always hit DB (two queries: data + count). Single-item
-            # reads are cached in-process with 1s TTL. Uses {RAND} and {SEQ}
-            # placeholders for realistic ID distribution. -r req_per_conn forces
-            # reconnection every N requests so gcannon rotates through the
-            # template list — without it, fast templates dominate because each
-            # keep-alive connection sticks to one template.
-            local _crud_files=""
-            for f in $(ls "$REQUESTS_DIR"/crud-list-*.raw "$REQUESTS_DIR"/crud-get-*.raw \
-                         "$REQUESTS_DIR"/crud-create-*.raw "$REQUESTS_DIR"/crud-update-*.raw 2>/dev/null | sort); do
-                _crud_files="${_crud_files:+$_crud_files,}$f"
-            done
-            args=("http://localhost:$PORT"
-                  --raw "$_crud_files"
-                  -c "$conns" -t "$THREADS" -d 15s -p "$pipeline")
             [ "$req_per_conn" -gt 0 ] 2>/dev/null && args+=(-r "$req_per_conn")
             ;;
         *)

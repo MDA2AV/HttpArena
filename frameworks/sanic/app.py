@@ -85,15 +85,15 @@ async def json_items(request, count):
     return json_response({"items": items, "count": count})
 
 
-@app.post("/upload", stream=True)
-async def upload(request):
-    size = 0
+@app.post("/echo", stream=True)
+async def echo_body(request):
+    chunks = []
     while True:
         chunk = await request.stream.read()
         if chunk is None:
             break
-        size += len(chunk)
-    return text(str(size))
+        chunks.append(chunk)
+    return raw(b"".join(chunks), content_type="application/octet-stream")
 
 
 

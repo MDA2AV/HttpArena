@@ -276,14 +276,12 @@ if (cluster.isPrimary) {
             }
         });
 
-        // The request is a lazy Readable: counting bytes never needs the 20 MB body in memory,
-        // which is what request.buffer() would cost
-        server.post('/upload', (request, response) => {
-            let size = 0;
-            request.on('data', chunk => size += chunk.length);
-            request.on('end', () => {
-                response.header('server', SERVER_HDR).type('text/plain').send(String(size));
-            });
+        // request.buffer() rather than the data/end events: with an EMPTY body
+        // uWebSockets emits neither, so an event-driven handler never replies
+        // and the connection just hangs.
+        server.post('/echo', async (request, response) => {
+            const body = await request.buffer();
+            response.header('server', SERVER_HDR).type('application/octet-stream').send(body);
         });
 
         server.get('/baseline2', (request, response) => {
@@ -323,7 +321,7 @@ if (cluster.isPrimary) {
         return server;
     }
 
-    // max_body_length defaults to 250 KB and answers 413 above it, so the upload profile,
+    // max_body_length defaults to 250 KB and answers 413 above it, so the 8gbit profile,
     // which posts up to 20 MB, needs the cap raised. Every worker binds :8080 on its own:
     // uWebSockets.js shares the port between processes unless exclusive_port is asked for.
     const OPTIONS = { max_body_length: 32 * 1024 * 1024 };

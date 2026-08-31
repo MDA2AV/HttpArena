@@ -1,10 +1,11 @@
-﻿using System.IO.Compression;
-using GenHTTP.Api.Content;
-using GenHTTP.Modules.Compression;
+﻿using GenHTTP.Api.Content;
+
+using GenHTTP.Modules.Compression.Algorithms;
 using GenHTTP.Modules.IO;
+using GenHTTP.Modules.Files;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
-using GenHTTP.Modules.ServerCaching;
+using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
@@ -14,6 +15,7 @@ namespace genhttp;
 
 public static class Project
 {
+
     public static IHandlerBuilder Create()
     {
         var crud = Layout.Create()
@@ -23,7 +25,7 @@ public static class Project
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
                         .AddService<Baseline>("baseline2")
-                        .AddService<Upload>("upload")
+                        .AddService<Echo>("echo")
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
                         .Add("crud", crud)
@@ -37,18 +39,9 @@ public static class Project
     {
         if (Directory.Exists("/data/static"))
         {
-            var tree = ResourceTree.FromDirectory("/data/static");
-            
-            var compression = CompressedContent.Default()
-                                               .Level(CompressionLevel.Optimal);
+            var handler = Assets.From("/data/static")
+                                .AllowPrecompressed(new BrotliAlgorithm());
 
-            var cache = ServerCache.TemporaryFiles()
-                                   .Invalidate(false);
-
-            var handler = Resources.From(tree) // serve static resources
-                                   .Add(compression) // compress them on-the-fly
-                                   .Add(cache); // cache the compressed results
-            
             app.Add("static", handler);
         }
 

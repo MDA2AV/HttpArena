@@ -15,7 +15,6 @@ cd "$(dirname "$0")/.."
 ./scripts/benchmark.sh flask json-comp --save
 ./scripts/benchmark.sh fletch json-comp --save
 ./scripts/benchmark.sh frankenphp-trueasync json-comp --save
-./scripts/benchmark.sh genhttp-kestrel json-comp --save
 ./scripts/benchmark.sh go-fasthttp json-comp --save
 ./scripts/benchmark.sh h2o-mruby json-comp --save
 ./scripts/benchmark.sh helidon-production json-comp --save

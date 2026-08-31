@@ -177,15 +177,24 @@ func jsonItems(w http.ResponseWriter, r *http.Request) {
 	bufPool.Put(buf)
 }
 
-func upload(w http.ResponseWriter, r *http.Request) {
-	size, err := io.Copy(io.Discard, r.Body)
-	w.Header().Set("Content-Type", "text/plain")
+func echoBody(w http.ResponseWriter, r *http.Request) {
+	// Always read the body BEFORE writing a byte of the response.
+	//
+	// Streaming it back with the request's Content-Length looks tempting and is
+	// wrong here: net/http drains and closes the request body as soon as the
+	// response headers flush while unread body remains (chunkWriter.writeHeader,
+	// maxPostHandlerReadBytes = 256 KB). io.Copy then fails mid-way and the
+	// response is short under a Content-Length already promised, which kills the
+	// connection. The old 20 MB upload was over that threshold so the body was
+	// left open; 100 KB is not.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("0"))
 		return
 	}
-	w.Write([]byte(strconv.FormatInt(size, 10)))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+	w.Write(body)
 }
 
 // One goroutine per request over every core the cgroup allows: read the cpu
@@ -565,7 +574,7 @@ func main() {
 	mux.HandleFunc("GET /baseline11", baseline11)
 	mux.HandleFunc("POST /baseline11", baseline11)
 	mux.HandleFunc("GET /json/{count}", jsonItems)
-	mux.HandleFunc("POST /upload", upload)
+	mux.HandleFunc("POST /echo", echoBody)
 	mux.HandleFunc("GET /baseline2", baseline11)
 	mux.HandleFunc("GET /static/{filename}", staticFile)
 	mux.HandleFunc("GET /async-db", asyncDb)

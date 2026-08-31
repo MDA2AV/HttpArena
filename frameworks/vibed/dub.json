@@ -9,6 +9,6 @@
 		"vibe-stream:tls": "1.4.1"
 	},
 	"subConfigurations": {
-		"vibe-stream:tls": "notls"
+		"vibe-stream:tls": "openssl"
 	}
 }

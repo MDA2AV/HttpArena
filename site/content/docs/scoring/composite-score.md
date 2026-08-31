@@ -24,7 +24,7 @@ This produces a 0–1,000 value where the top framework scores 1,000.
 
 The scale is 1,000 rather than 100 for resolution, not for meaning. Nothing about the ranking depends on it: every score moves by the same factor. But summing two dozen profiles that each round to a whole number out of 100 put clusters of entries on identical totals, and the extra digit separates them at no cost.
 
-**Exception: JSON Compressed.** The `json-comp` profile applies a compression-ratio gain before normalization so frameworks that ship smaller response bodies are rewarded directly. Instead of averaging raw rps, `avgRps` is first scaled by `(minBpr / myBpr)²` where `myBpr = avgBw / avgRps` and `minBpr` is the smallest bytes-per-response across the field. Doubling the response size quarters the score. See the [JSON Compressed implementation](/docs/test-profiles/h1/isolated/json-compressed/implementation/#scoring) for the full formula and rationale.
+**Exception: JSON Compressed.** The `json-comp` profile applies a compression-ratio gain before normalization so frameworks that ship smaller response bodies are rewarded directly. Instead of averaging raw rps, `avgRps` is first scaled by `(minBpr / myBpr)²` where `myBpr = avgBw / avgRps` and `minBpr` is the smallest bytes-per-response across the field. Doubling the response size quarters the score. See the [JSON Compressed implementation](/docs/test-profiles/h1/json-compressed/implementation/#scoring) for the full formula and rationale.
 
 **Normalized against the whole field, not the current view.** The 1,000-point reference for each profile is the best result in the full field, regardless of what the leaderboard is currently filtering to. Filtering by language, hiding tuned entries or searching for a name changes which rows are *displayed*; it does not change any score. Without this, filtering to a single language re-based every profile on the best entry of that language, and because each profile's leader moved by a different factor, the summed ranking could reorder, showing one framework above another only while the filter was applied.
 
@@ -32,9 +32,9 @@ Framework types remain separate: engine entries are scored on their own subset o
 
 The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself, for example ranking the Ruby entries against each other rather than against the field.
 
-**Exception: Latency-1M.** That profile pins its request rate, so every entry that holds the rate delivers the same one and normalizing it on rps would score all of them 1,000. It contributes [its own score](/docs/test-profiles/h1/isolated/latency-1m/implementation/#scoring) instead, a 0–100 figure built from CPU and both latency tails, multiplied by 10 onto this scale.
+**Exception: the fixed-rate profiles.** [Latency-1M](/docs/test-profiles/h1/latency-1m/implementation/#scoring), [Latency-10K](/docs/test-profiles/h1/latency-10k/implementation/#scoring) and [8Gbit](/docs/test-profiles/h1/8gbit/implementation/#scoring) pin their request rate, so every entry that holds the rate delivers the same one and normalizing on rps would score all of them 1,000. Each contributes its own 0–100 score instead, built from CPU and both latency tails, and that score is normalized against the leading score in the field - so the leader of one of these columns is worth 1,000, exactly like the leader of an rps column. The two differ only in the rate offered - a saturating 1M req/s against a near-idle 10K - so they are scored separately and read separately.
 
-One consequence is worth naming: because that score is not rebased on the field leader, the best entry on Latency-1M contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
+One consequence is worth naming: because that score is not rebased on the field leader, the best entry on either profile contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
 
 ### Step 3: Sum across scored profiles
 
@@ -61,13 +61,10 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Baseline | Yes | Mixed GET/POST with query parsing |
 | Pipelined | No (*) | 16 requests batched per connection. Reference-only - a raw I/O and middleware-efficiency indicator; HTTP/1.1 pipelining is disabled in modern browsers and proxies, so it no longer counts toward the composite ranking |
 | Short-lived | Yes | Connections closed after 10 requests |
-| JSON | Yes | Dataset processing and serialization |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
-| Upload | Yes | 20 MB body ingestion, return byte count |
-| Static | Yes | 20 static files served over HTTP/1.1 |
-| Async DB | Yes | Async Postgres query with connection pooling |
-| CRUD | Yes | Realistic REST API against Postgres: cached reads (75%), updates (15%), list (5%), upsert create (5%). Cache-aside with 200ms TTL (in-process or Redis sidecar) |
+| Upload | No (*) | 20 MB body ingestion, return byte count. Reference-only - the validation cannot yet tell an honest handler from one that echoes `Content-Length`, so the profile is published but does not rank |
+| Async DB | No (*) | Async Postgres query with connection pooling. Reference-only since #1331 - the driver dominates the result more than the framework does |
 | Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
 
 ### H/1.1 Workload
@@ -118,7 +115,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static, Static TLS, Async Delay, Async DB and CRUD are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined, Static TLS, Async Delay, Async DB and Upload are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 
@@ -175,8 +172,8 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
 - **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (JSON, upload, CRUD, the API mixes).
-- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the eleven profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON, JSON TLS, Static, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, the API mixes, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
+- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (compression negotiation, the TLS echo).
+- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
 
 Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there.
 

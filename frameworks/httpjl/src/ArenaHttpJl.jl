@@ -1,6 +1,10 @@
 module ArenaHttpJl
 
 using HTTP, JSON3, StructTypes, CodecZlib, TranscodingStreams
+# Reseau is HTTP.jl's own transport, so its TLS is the standard stack here rather
+# than a second one bolted on. Imported as modules, not `using`, to keep names
+# like `listen`/`accept`/`Conn` out of this namespace.
+import Reseau: TCP, TLS
 using PrecompileTools: @setup_workload, @compile_workload
 
 # ── dataset ─────────────────────────────────────────────────────────────────
@@ -150,16 +154,13 @@ function body_int(stream::HTTP.Stream)
     return v === nothing ? 0 : v
 end
 
-const UPLOAD_CHUNK = 64 * 1024
-
-# Count the body without keeping it: a 20 MB upload goes through one 64 KB buffer.
-function upload_size(stream::HTTP.Stream)
-    buf = Vector{UInt8}(undef, UPLOAD_CHUNK)
-    total = 0
-    while !eof(stream)
-        total += readbytes!(stream, buf)
-    end
-    return total
+# The body back, byte for byte. `read(stream)` returns the decoded body whatever
+# the framing was -- HTTP.jl dechunks a Transfer-Encoding: chunked request -- so
+# the length that frames the response is the length that actually arrived, never
+# a Content-Length a chunked POST does not carry.
+function echo_body(stream::HTTP.Stream)
+    bytes = read(stream)
+    respond(stream, "application/octet-stream", bytes)
 end
 
 function accepts_gzip(req::HTTP.Request)
@@ -268,8 +269,8 @@ function (app::App)(stream::HTTP.Stream)
         else
             respond(stream, "application/json", body)
         end
-    elseif path == "/upload" && req.method == "POST"
-        respond(stream, "text/plain", string(upload_size(stream)))
+    elseif path == "/echo" && req.method == "POST"
+        echo_body(stream)
     else
         respond_404(stream)
     end
@@ -278,13 +279,48 @@ end
 
 # ── server ──────────────────────────────────────────────────────────────────
 
+# json-tls listens here; 8080 stays plaintext and 8443 belongs to h2/h3.
+const TLS_PORT = 8081
+const TLS_CERT = "/certs/server.crt"
+const TLS_KEY = "/certs/server.key"
+
+"""
+Start the json-tls listener, or return `nothing` when /certs was not mounted.
+
+Missing certificates are not fatal on purpose: `validate.sh` mounts the
+directory only for entries subscribed to a TLS test, so the plaintext profiles
+have to come up without it.
+
+`listen!` rather than `listen`, so this returns and the plaintext listener can
+take the main task. Both accept loops feed the same `:interactive` pool, so the
+TLS port is served by every thread and not by whichever one bound it.
+"""
+function listen_tls!(app::App, port::Int = TLS_PORT)
+    (isfile(TLS_CERT) && isfile(TLS_KEY)) || return nothing
+    config = TLS.Config(
+        cert_file = TLS_CERT,
+        key_file = TLS_KEY,
+        verify_peer = false,
+        # HTTP/1.1 only. The profile is h1-over-TLS and 8443 is where h2 lives,
+        # so an h2-capable client must never be offered the upgrade here.
+        alpn_protocols = ["http/1.1"],
+    )
+    listener = TLS.Listener(
+        TCP.listen("tcp", "0.0.0.0:$port"; backlog = 4096, reuseaddr = true),
+        config,
+    )
+    return HTTP.listen!(app, listener)
+end
+
 """
 HTTP.jl 2 runs every connection as a task on Julia's `:interactive` thread pool,
 so one process uses every core it is given. start.sh sizes that pool.
 """
 function main(port::Int = 8080)
     load_dataset!(get(ENV, "DATASET_PATH", "/data/dataset.json"))
-    return HTTP.listen(make_app(), "0.0.0.0", port; backlog = 4096)
+    app = make_app()
+    listen_tls!(app)
+    return HTTP.listen(app, "0.0.0.0", port; backlog = 4096)
 end
 
 # ── precompilation ──────────────────────────────────────────────────────────
@@ -315,7 +351,7 @@ end
                 HTTP.post("$base/baseline11?a=13&b=42", [], "20")
                 HTTP.get("$base/json/1?m=3")
                 HTTP.get("$base/json/1?m=3", ["Accept-Encoding" => "gzip"]; decompress = false)
-                HTTP.post("$base/upload", [], rand(UInt8, 128 * 1024))
+                HTTP.post("$base/echo", [], rand(UInt8, 128 * 1024))
                 HTTP.get("$base/nope"; status_exception = false)
             end
         finally

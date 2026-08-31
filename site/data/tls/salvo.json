@@ -1,0 +1,5 @@
+{
+  "framework": "salvo",
+  "tls": "pass",
+  "check": "none"
+}

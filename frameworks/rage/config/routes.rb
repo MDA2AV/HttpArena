@@ -9,7 +9,7 @@ Rage.routes.draw do
   get  '/baseline2',      to: 'benchmark#baseline_two'
   get  '/json/:count',    to: 'benchmark#json_endpoint'
   get  '/async-db',       to: 'benchmark#async_db'
-  post '/upload',         to: 'benchmark#upload'
+  post '/echo',           to: 'benchmark#echo_body'
   get  '/crud/items',     to: 'items#index'
   get  '/crud/items/:id', to: "items#show"
   post '/crud/items',     to: 'items#create'

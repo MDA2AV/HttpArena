@@ -35,7 +35,7 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
    - `ip link set lo mtu 1500` - realistic Ethernet MTU, not the kernel's default 65536.
    - `systemctl restart docker` - guarantees every subsequent container starts from a fresh daemon state.
    - `echo 3 > /proc/sys/vm/drop_caches`.
-5. **Postgres sidecar** - started if the framework subscribes to any of `async-db`, `api-4`, `api-16`, `crud`, `gateway-64`, `gateway-h3`, `production-stack`. Uses `postgres:18` (Debian, glibc), tmpfs-backed, seeded from `data/pgdb-seed.sql`, `max_connections=256`, host network.
+5. **Postgres sidecar** - started if the framework subscribes to any of `async-db`, `fortunes`, `gateway-64`, `gateway-h3`, `production-stack`. Uses `postgres:18` (Debian, glibc), tmpfs-backed, seeded from `data/pgdb-seed.sql`, `max_connections=256`, host network.
 6. **Profile loop** - for each subscribed profile × each connection count:
    - Starts the framework container (or `docker compose up` for gateway profiles).
    - Waits up to 30s for the right endpoint to respond.
@@ -96,7 +96,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 
 | Variable | Default | Used for |
 |---|---|---|
-| `GCANNON` | `gcannon` | Native binary - baseline, pipelined, limited-conn, json, json-comp, upload, api-4/16, async-db, crud, echo-ws. |
+| `GCANNON` | `gcannon` | Native binary - baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws. |
 | `GCANNON_IMAGE` | `gcannon:latest` | Docker image when `LOADGEN_DOCKER=true`. |
 | `H2LOAD` | `h2load` | Native binary - baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack. |
 | `H2LOAD_IMAGE` | `h2load:latest` | Docker image (Ubuntu 24.04 + glibc build; do **not** use the alpine/musl image - it's 20–40% slower). |
@@ -110,7 +110,7 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 | Variable | Default | Description |
 |---|---|---|
 | `PG_CONTAINER` | `httparena-postgres` | Name of the sidecar container. |
-| `DATABASE_URL` | `postgres://bench:bench@localhost:5432/benchmark` | Passed to framework containers for `async-db`, `crud`, `api-4`, `api-16`, `gateway-64`, `gateway-h3`, `production-stack`. |
+| `DATABASE_URL` | `postgres://bench:bench@localhost:5432/benchmark` | Passed to framework containers for `async-db`, `fortunes`, `gateway-64`, `gateway-h3`, `production-stack`. |
 
 ## Profiles
 
@@ -122,13 +122,12 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 
 | Profile | Pipeline | Req/conn | CPU pinning | Connections | Tool | Endpoint |
 |---|---|---|---|---|---|---|
-| `baseline` | 1 | ∞ | `0-31,64-95` | 512, 4096 | gcannon | `/baseline11` |
-| `pipelined` | 16 | ∞ | `0-31,64-95` | 512, 4096 | gcannon | `/pipeline` |
-| `limited-conn` | 1 | 10 | `0-31,64-95` | 512, 4096 | gcannon | `/baseline11` (reconnect every 10 req) |
-| `json` | 1 | ∞ | `0-31,64-95` | 4096 | gcannon | `/json/{1..50}` - 7 body sizes |
-| `json-comp` | 1 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
+| `baseline` | 1 | ∞ | `0-31,64-95` | 4096 | gcannon | `/baseline11` |
+| `pipelined` | 16 | ∞ | `0-31,64-95` | 4096 | gcannon | `/pipeline` |
+| `limited-conn` | 1 | 10 | `0-31,64-95` | 4096 | gcannon | `/baseline11` (reconnect every 10 req) |
+| `json-comp` | 1 | ∞ | `0-31,64-95` | 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
-| `upload` | 1 | ∞ | `0-31,64-95` | 32, 256 | gcannon | `/upload` - 500K / 2M / 10M / 20M bodies, `-r 5` |
+| `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |
 | `api-4` | 1 | 5 | `0-3` | 256 | gcannon | 8-template mix (baseline / json / async-db) |
 | `api-16` | 1 | 5 | `0-7,64-71` | 1024 | gcannon | 8-template mix |
 | `static` | 1 | 200 | `0-31,64-95` | 1024, 4096, 6800 | wrk | 20 files via `static-rotate.lua` |

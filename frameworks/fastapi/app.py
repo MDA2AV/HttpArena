@@ -179,12 +179,14 @@ async def async_db_endpoint(request: Request, min_val: float = Query(..., alias=
         return JSONResponse( { "items": [ ], "count": 0 } )
 
 
-@app.post("/upload")
-async def upload_endpoint(request: Request):
-    size = 0
+@app.post("/echo")
+async def echo_endpoint(request: Request):
+    # Collected: the response needs a Content-Length, and a chunked request has
+    # none to forward until the body is in.
+    chunks = []
     async for chunk in request.stream():
-        size += len(chunk)
-    return PlainTextResponse(str(size))
+        chunks.append(chunk)
+    return Response(content=b"".join(chunks), media_type="application/octet-stream")
 
 
 

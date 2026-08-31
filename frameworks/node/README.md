@@ -17,7 +17,7 @@ Node's own HTTP server, `node:http`, with no framework on top and no dependencie
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/:file` | GET | Serves one of the 20 files from `/data/static`, read off disk per request |
 | `/async-db` | GET | Postgres range query over `items`, `min`/`max`/`limit` |
 | `/crud/items` | GET/POST | Paginated list by category; POST upserts |
@@ -43,7 +43,7 @@ The same `/json/:count` and `/static/:file` routes are also served over TLS on p
   with no framework there is no router and no parser to measure.
 - `node:http` negotiates nothing, so `/json` gzips its own body with `zlib` when `Accept-Encoding`
   asks for it, at the default level, and sends it uncompressed otherwise.
-- `/upload` counts the body chunk by chunk instead of buffering it, which keeps 20 MB requests on
+- `/echo` counts the body chunk by chunk instead of buffering it, which keeps 20 MB requests on
   hundreds of connections out of memory.
 - The dataset is read once per worker at startup. A missing file leaves an empty list, since the
   profiles other than json run without the mount.

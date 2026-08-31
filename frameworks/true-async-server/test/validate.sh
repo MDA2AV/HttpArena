@@ -199,14 +199,14 @@ for jp in "12:3" "22:7" "31:2" "50:5"; do
 done
 check_header "json Content-Type" "Content-Type" "application/json" "$H1/json/50?m=1"
 
-echo "=== upload ==="
+echo "=== echo ==="
 
-check "POST /upload 10 bytes" "10" \
-    -X POST -H "Content-Type: application/octet-stream" -d "0123456789" "$H1/upload"
-check "POST /upload 0 bytes"  "0" \
-    -X POST -H "Content-Type: application/octet-stream" -d "" "$H1/upload"
-check_header "upload Content-Type" "Content-Type" "text/plain" \
-    -X POST -d "x" "$H1/upload"
+check "POST /echo 10 bytes" "0123456789" \
+    -X POST -H "Content-Type: application/octet-stream" -d "0123456789" "$H1/echo"
+check "POST /echo 0 bytes"  "" \
+    -X POST -H "Content-Type: application/octet-stream" -d "" "$H1/echo"
+check_header "echo Content-Type" "Content-Type" "application/octet-stream" \
+    -X POST -d "x" "$H1/echo"
 
 echo "=== static files ==="
 

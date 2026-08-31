@@ -94,15 +94,9 @@ framework_start() {
 
     # Profiles that exercise the database get DATABASE_URL + per-profile conn cap.
     case "$endpoint" in
-        async-db|crud|fortunes)
+        async-db|fortunes)
             args+=(-e "DATABASE_URL=$DATABASE_URL" -e "DATABASE_MAX_CONN=256")
             ;;
-    esac
-
-    # crud also gets REDIS_URL so multi-process frameworks can use Redis as
-    # their shared cross-process cache. Single-heap frameworks ignore it.
-    case "$endpoint" in
-        crud) args+=(-e "REDIS_URL=$REDIS_URL") ;;
     esac
 
     # Profile-declared CPU limit.
@@ -120,6 +114,11 @@ framework_start() {
             else
                 args+=(--cpuset-cpus="$cpu_limit")
             fi
+        elif [ "$cpu_limit" = "0" ]; then
+            # --cpus=0 means *unlimited*, so a profile asking for CPU 0 by index
+            # would silently get the whole machine. Range syntax ("0-0") is the
+            # way to pin one CPU; refuse rather than measure the wrong thing.
+            fail "profile cpu limit \"0\" is ambiguous: use \"0-0\" for cpuset CPU 0"
         else
             local avail
             avail=$(nproc 2>/dev/null || echo 64)
@@ -199,14 +198,8 @@ framework_wait_ready() {
             probe_url="http://localhost:$H2C_PORT/baseline2?a=1&b=1"
             probe_extra+=(--http2-prior-knowledge)
             ;;
-        static)
-            probe_url="http://localhost:$PORT/static/reset.css"
-            ;;
         static-tls)
             probe_url="https://localhost:$H1TLS_PORT/static/reset.css"
-            ;;
-        json)
-            probe_url="http://localhost:$PORT/json/1"
             ;;
         async)
             # Shortest delay the profile ever asks for, so readiness costs 10ms
@@ -215,6 +208,13 @@ framework_wait_ready() {
             ;;
         json-tls)
             probe_url="https://localhost:$H1TLS_PORT/json/1?m=1"
+            ;;
+        8gbit)
+            # POST, so the probe has to carry a body: a GET /echo may well 404
+            # or 405 on an entry whose echo route is POST-only, which would read
+            # as "never came up".
+            probe_url="https://localhost:$H1TLS_PORT/echo"
+            probe_extra+=(-X POST --data-binary "probe")
             ;;
         ws-echo)
             probe_url="http://localhost:$PORT/ws"

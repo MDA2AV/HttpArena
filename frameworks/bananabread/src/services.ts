@@ -96,12 +96,24 @@ export class Baseline {
   }
 }
 
-export class Upload {
+export class Echo {
+  // Collected rather than streamed through: the response needs a length, and a
+  // chunked request has none to forward until the body is in.
   @ResourceMethod("POST")
-  async compute(@FromStream() body: RequestBody): Promise<number> {
+  async compute(@FromStream() body: RequestBody): Promise<Uint8Array> {
+    const chunks: Uint8Array[] = [];
     let total = 0;
-    for await (const chunk of body.chunks()) total += chunk.length;
-    return total;
+    for await (const chunk of body.chunks()) {
+      chunks.push(chunk);
+      total += chunk.length;
+    }
+    const out = new Uint8Array(total);
+    let at = 0;
+    for (const c of chunks) {
+      out.set(c, at);
+      at += c.length;
+    }
+    return out;
   }
 }
 

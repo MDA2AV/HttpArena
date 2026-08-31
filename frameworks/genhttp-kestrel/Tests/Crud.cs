@@ -1,11 +1,15 @@
 ﻿using System.Text.Json;
+
 using GenHTTP.Api.Content;
 using GenHTTP.Api.Protocol;
+
 using genhttp.Infrastructure;
-using GenHTTP.Modules.IO;
+
 using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
+
 using Microsoft.Extensions.Caching.Memory;
+using StringContent = GenHTTP.Modules.IO.Strings.StringContent;
 
 namespace genhttp.Tests;
 
@@ -72,8 +76,7 @@ public class Crud
         if (ItemCache.TryGetValue(id, out string cached))
         {
             return request.Respond()
-                          .Content(cached)
-                          .Type(ContentType.ApplicationJson)
+                          .Content(new StringContent(cached, ContentType.ApplicationJson))
                           .Header("X-Cache", "HIT")
                           .Build();
         }
@@ -88,15 +91,14 @@ public class Crud
         var json = JsonSerializer.Serialize(item, JsonOptions);
 
         ItemCache.Set(id, json, ItemCacheOptions);
-        
+
         return request.Respond()
-                      .Content(json)
-                      .Type(ContentType.ApplicationJson)
+                      .Content(new StringContent(json, ContentType.ApplicationJson))
                       .Header("X-Cache", "MISS")
                       .Build();
     }
 
-    [ResourceMethod(RequestMethod.Post)]
+    [ResourceMethod(Method.Post)]
     public async Task<Result<CrudItem>> Create(CrudItem item)
     {
         await using var cmd = Postgres.Pool.CreateCommand(
@@ -117,7 +119,7 @@ public class Crud
         return new Result<CrudItem>(item).Status(ResponseStatus.Created);
     }
 
-    [ResourceMethod(RequestMethod.Put, ":id")]
+    [ResourceMethod(Method.Put, ":id")]
     public async Task<CrudItem> Update(int id, CrudItem item)
     {
         await using var cmd = Postgres.Pool.CreateCommand(

@@ -3,37 +3,44 @@ Helidon Production
 
 # Project
 
-This framework runs Helidon SE 4.4.1 on Níma WebServer as a `production`
+This framework runs Helidon SE 4.5.4 on Níma WebServer as a `production`
 benchmark entry.
 
 The current subscribed benchmark profiles are:
 
 - `baseline`
+- `latency-1m`
+- `latency-10k`
 - `pipelined`
 - `limited-conn`
-- `json`
 - `json-comp`
 - `json-tls`
-- `upload`
-- `static`
+- `static-tls`
+- `8gbit`
 - `async-db`
 - `baseline-h2`
 - `static-h2`
+- `baseline-h2c`
+- `json-h2c`
 - `unary-grpc`
 - `unary-grpc-tls`
 - `echo-ws`
+- `echo-ws-pipeline`
+- `echo-ws-limited`
 
 Profiles not currently supported here:
 
+- application profiles: `async`, `fortunes`
 - HTTP/3: `baseline-h3`, `static-h3`
-- `gateway-64`
+- composed deployments: `gateway-64`, `gateway-h3`, `production-stack`
 
 # Listener layout
 
 The benchmark wiring is split by listener:
 
 - `8080` (`default`): HTTP/1.1 endpoints, cleartext gRPC for `unary-grpc`, and WebSocket
-- `8081` (`h1-tls`): HTTP/1.1 + TLS for `json-tls`
+- `8081` (`h1-tls`): HTTP/1.1 + TLS for `json-tls`, `static-tls`, and `8gbit`
+- `8082` (`h2c`): cleartext prior-knowledge HTTP/2 for `baseline-h2c` and `json-h2c`
 - `8443` (`h2-tls`): HTTP/2 + TLS for `baseline-h2`, `static-h2`, and `unary-grpc-tls`
 
 Static content and TLS are configured from `application.yaml`, not

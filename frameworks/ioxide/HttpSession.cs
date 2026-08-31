@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using ioxide.file;
 using ioxide.pg;
+using ioxide.timer;
 
 namespace IoxideArena;
 
@@ -61,43 +62,38 @@ internal sealed unsafe partial class HttpSession
     private bool _dbFirstRow;
     private int _dbRows;
 
-    // /upload streams its body: bytes are counted as they arrive, never buffered whole.
-    public long PendingUploadRemaining;
-    private long _uploadTotal;
-    private bool _uploadClose;
+    // /delay/{ms} parks the parser the way /async-db does: the wait happens in
+    // the handler, on this reactor, and the carry resumes behind it so pipelined
+    // requests are still answered in order.
+    public bool PendingDelay;
+    public int PendingDelayMs;
+    private bool _delayClose;
+    // One per connection, reused for every delay it ever asks for. Built on first
+    // use rather than at construction, so a connection that never waits never makes
+    // one - which is every connection on every profile but this one.
+    public RingTimer? Timer;
+
+    // /echo has to hand the bytes back, so a chunked body is de-chunked into
+    // this rather than counted and dropped. Content-Length bodies are answered
+    // straight out of the carry buffer and never touch it.
+    private byte[] _chunkBuf = [];
+    private int _chunkLen;
 
     public void ResumeFeed() => Pump();
 
     public void Feed(ReadOnlySpan<byte> data)
     {
-        // While draining a large upload, count the bytes and drop them - the body is never buffered.
-        if (PendingUploadRemaining > 0)
-        {
-            int take = (int)Math.Min(PendingUploadRemaining, (long)data.Length);
-            PendingUploadRemaining -= take;
-            if (PendingUploadRemaining > 0)
-            {
-                return; // more body still to come; nothing buffered
-            }
-            FinishUpload();                           // last byte counted - write the byte-count response
-            data = data[take..];                      // any remainder is the start of the next request
-            if (data.IsEmpty)
-            {
-                return;
-            }
-        }
         AppendCarry(data);
         Pump();
     }
 
-    // The streamed upload's body is fully counted; emit the 200 with the total byte count.
-    private void FinishUpload()
+    /// <summary>The wait is over: answer with the number of milliseconds asked for.</summary>
+    public void CompleteDelay()
     {
-        Span<byte> num = stackalloc byte[20];
-        Utf8Formatter.TryFormat(_uploadTotal, num, out int n);
-        WriteResp(num[..n], _uploadClose);
-        
-        if (_uploadClose)
+        Span<byte> num = stackalloc byte[16];
+        Utf8Formatter.TryFormat(PendingDelayMs, num, out int n);
+        WriteResp(num[..n], _delayClose);
+        if (_delayClose)
         {
             WantClose = true;
         }
@@ -106,7 +102,7 @@ internal sealed unsafe partial class HttpSession
     private void Pump()
     {
         int pos = 0;
-        while (!PendingDb && PendingUploadRemaining == 0
+        while (!PendingDb && !PendingDelay
                && TryOne(_carry.AsSpan(pos, _carryLen - pos), out int consumed, out bool close))
         {
             pos += consumed;
@@ -154,11 +150,6 @@ internal sealed unsafe partial class HttpSession
             target = sp2 >= 0 ? rest[..sp2] : rest;
         }
 
-        // A POST /upload body is streamed (counted), not buffered - detect it before reading the body.
-        int qix = target.IndexOf((byte)'?');
-        bool isUpload = method.SequenceEqual("POST"u8)
-            && (qix >= 0 ? target[..qix] : target).SequenceEqual("/upload"u8);
-
         int contentLength = -1;
         bool chunked = false;
         ReadOnlySpan<byte> hdrs = head[Math.Min(rlEnd + 2, head.Length)..];
@@ -203,21 +194,10 @@ internal sealed unsafe partial class HttpSession
             if (!DecodeChunked(buf[bodyStart..], out bodyInt, out int used, out long decoded)) return false;
             total = bodyStart + used;
             bodyLen = (int)Math.Min(decoded, int.MaxValue);
+            body = _chunkBuf.AsSpan(0, _chunkLen);
         }
         else if (contentLength > 0)
         {
-            if (isUpload && buf.Length < bodyStart + contentLength)
-            {
-                // Stream it: count the body bytes already here, then drain the rest across reads so
-                // memory stays bounded regardless of upload size (genhttp does the same). Defer the
-                // close and the response until the body is fully counted.
-                _uploadTotal = contentLength;
-                PendingUploadRemaining = contentLength - (buf.Length - bodyStart);
-                _uploadClose = close;
-                close = false;
-                consumed = buf.Length;
-                return true;
-            }
             if (buf.Length < bodyStart + contentLength) return false;
             body = buf.Slice(bodyStart, contentLength);
             bodyLen = contentLength;
@@ -302,15 +282,25 @@ internal sealed unsafe partial class HttpSession
             PendingDb = true;
             PendingDbClose = close;
         }
-        else if (path.SequenceEqual("/upload"u8))
+        else if (path.StartsWith("/delay/"u8))
         {
-            Span<byte> num = stackalloc byte[16];
-            Utf8Formatter.TryFormat(bodyLen, num, out int n);
-            WriteResp(num[..n], close);
+            // The value is echoed back, so it has to be the number that was
+            // parsed rather than the text: "007" answers 7.
+            ReadOnlySpan<byte> tail = path[7..];
+            if (Utf8Parser.TryParse(tail, out int ms, out int used) && used == tail.Length && ms >= 0)
+            {
+                PendingDelayMs = ms;
+                _delayClose = close;
+                PendingDelay = true;
+            }
+            else
+            {
+                Write404(close);
+            }
         }
-        else if (path.StartsWith("/crud/items"u8))
+        else if (path.SequenceEqual("/echo"u8))
         {
-            RouteCrud(method, path, query, body, close);
+            WriteOctets(body, close);
         }
         else
         {
@@ -336,6 +326,19 @@ internal sealed unsafe partial class HttpSession
         ".txt"  => "text/plain"u8,
         _       => "application/octet-stream"u8,
     };
+
+    /// The /echo response: the request's own bytes, framed with their length.
+    /// Same shape as WriteResp with a binary content type -- kept separate so
+    /// the text path stays a single AppendOut of a constant header prefix.
+    private void WriteOctets(ReadOnlySpan<byte> body, bool close)
+    {
+        AppendOut("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "u8);
+        Span<byte> num = stackalloc byte[16];
+        Utf8Formatter.TryFormat(body.Length, num, out int n);
+        AppendOut(num[..n]);
+        AppendOut(close ? "\r\nConnection: close\r\n\r\n"u8 : "\r\n\r\n"u8);
+        AppendOut(body);
+    }
 
     private void WriteResp(ReadOnlySpan<byte> body, bool close)
     {
@@ -483,17 +486,20 @@ internal sealed unsafe partial class HttpSession
         return a + b;
     }
 
-    /// Decode a chunked body into an integer. Returns false if the terminating
-    /// 0-chunk isn't fully buffered. Bodies in these profiles are tiny.
-    // `decoded` is the body length after de-chunking, which /upload answers with.
-    // It counts every chunk, while `body` below keeps only the first 256 bytes -
-    // that peek exists to parse an integer body for /baseline11 and is not a
-    // length. Reporting blen as the size is what made /upload answer 0.
-    private static bool DecodeChunked(ReadOnlySpan<byte> buf, out long bodyInt, out int used, out long decoded)
+    /// Decode a chunked body. Returns false if the terminating 0-chunk isn't
+    /// fully buffered.
+    ///
+    /// Two outputs, because two callers want different things. `bodyInt` is the
+    /// first 256 bytes parsed as an integer, which /baseline11 adds to its sum;
+    /// `_chunkBuf` is every byte, which /echo hands back. `decoded` is the full
+    /// length - reporting the 256-byte peek's length instead is what once made
+    /// the old /upload answer 0.
+    private bool DecodeChunked(ReadOnlySpan<byte> buf, out long bodyInt, out int used, out long decoded)
     {
         bodyInt = 0;
         used = 0;
         decoded = 0;
+        _chunkLen = 0;
         Span<byte> body = stackalloc byte[256];
         int blen = 0;
         int pos = 0;
@@ -517,6 +523,12 @@ internal sealed unsafe partial class HttpSession
                 buf.Slice(pos, size).CopyTo(body[blen..]);
                 blen += size;
             }
+            if (_chunkBuf.Length < _chunkLen + size)
+            {
+                Array.Resize(ref _chunkBuf, Math.Max(_chunkLen + size, Math.Max(4096, _chunkBuf.Length * 2)));
+            }
+            buf.Slice(pos, size).CopyTo(_chunkBuf.AsSpan(_chunkLen));
+            _chunkLen += size;
             decoded += size;
             pos += size;
             if (!buf.Slice(pos, 2).SequenceEqual("\r\n"u8)) return false;

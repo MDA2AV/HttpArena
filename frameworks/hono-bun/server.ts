@@ -243,17 +243,13 @@ app.get("/async-db", async (c) => {
   }
 });
 
-// --- /upload ---
-app.post("/upload", async (c) => {
-  let size = 0;
-  const body = c.req.raw.body;
-  if (body) {
-    for await (const chunk of body) {
-      size += chunk.byteLength;
-    }
-  }
-  return new Response(String(size), {
-    headers: { "content-type": "text/plain", server: SERVER_NAME },
+// --- /echo ---
+app.post("/echo", async (c) => {
+  // arrayBuffer() reads to end regardless of framing, so a chunked request
+  // works and the Response gets a Content-Length from the buffer.
+  const buf = await c.req.raw.arrayBuffer();
+  return new Response(buf, {
+    headers: { "content-type": "application/octet-stream", server: SERVER_NAME },
   });
 });
 

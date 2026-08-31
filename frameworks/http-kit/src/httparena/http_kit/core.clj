@@ -65,9 +65,14 @@
                0)]
     (+ a b body)))
 
-(defn count-stream-bytes [^InputStream in]
-  (with-open [^InputStream stream in]
-    (.transferTo stream (OutputStream/nullOutputStream))))
+(defn echo-response
+  "The bytes that arrived, unchanged. Collected because the response needs a
+  Content-Length, and a chunked request carries none to forward."
+  [request]
+  (let [^InputStream in (:body request)]
+    {:status  200
+     :headers {"content-type" "application/octet-stream"}
+     :body    (if in (with-open [^InputStream stream in] (.readAllBytes stream)) (byte-array 0))}))
 
 (defn text-response [status body]
   {:status status
@@ -195,7 +200,7 @@
   (case (:uri request)
     "/baseline11" (text-response 200 (str (request-sum request)))
     "/async-db" (async-db-response request)
-    "/upload" (text-response 200 (str (count-stream-bytes (:body request))))
+    "/echo" (echo-response request)
     "/pipeline" (text-response 200 "ok")
     (if (re-matches #"/json/[0-9]+" (:uri request))
       (json-items-response request)

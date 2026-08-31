@@ -1,0 +1,212 @@
+[2026-08-28 17:29:16.15869] [1] [info] Listening at "http://*:8080"
+[2026-08-28 17:29:16.15934] [1] [info] Listening at "https://*:8081?cert=%2Fcerts%2Fserver.crt&key=%2Fcerts%2Fserver.key"
+[2026-08-28 17:29:16.15942] [1] [info] Manager 1 started
+Web application available at http://127.0.0.1:8080
+Web application available at https://127.0.0.1:8081
+[2026-08-28 17:29:16.16209] [7] [info] Worker 7 started
+[2026-08-28 17:29:16.16313] [8] [info] Worker 8 started
+[2026-08-28 17:29:16.16416] [9] [info] Worker 9 started
+[2026-08-28 17:29:16.16512] [10] [info] Worker 10 started
+[2026-08-28 17:29:16.16629] [11] [info] Worker 11 started
+[2026-08-28 17:29:16.16681] [12] [info] Worker 12 started
+[2026-08-28 17:29:16.16780] [13] [info] Worker 13 started
+[2026-08-28 17:29:16.16866] [14] [info] Worker 14 started
+[2026-08-28 17:29:16.16969] [15] [info] Worker 15 started
+[2026-08-28 17:29:16.17095] [16] [info] Worker 16 started
+[2026-08-28 17:29:16.17173] [17] [info] Worker 17 started
+[2026-08-28 17:29:16.17280] [18] [info] Worker 18 started
+[2026-08-28 17:29:16.17386] [19] [info] Worker 19 started
+[2026-08-28 17:29:16.17459] [20] [info] Worker 20 started
+[2026-08-28 17:29:16.17548] [21] [info] Worker 21 started
+[2026-08-28 17:29:16.17677] [22] [info] Worker 22 started
+[2026-08-28 17:29:16.17775] [23] [info] Worker 23 started
+[2026-08-28 17:29:16.17875] [24] [info] Worker 24 started
+[2026-08-28 17:29:16.17975] [25] [info] Worker 25 started
+[2026-08-28 17:29:16.18077] [26] [info] Worker 26 started
+[2026-08-28 17:29:16.18179] [27] [info] Worker 27 started
+[2026-08-28 17:29:16.18280] [28] [info] Worker 28 started
+[2026-08-28 17:29:16.18387] [29] [info] Worker 29 started
+[2026-08-28 17:29:16.18481] [30] [info] Worker 30 started
+[2026-08-28 17:29:16.18558] [31] [info] Worker 31 started
+[2026-08-28 17:29:16.18685] [32] [info] Worker 32 started
+[2026-08-28 17:29:16.18788] [33] [info] Worker 33 started
+[2026-08-28 17:29:16.18888] [34] [info] Worker 34 started
+[2026-08-28 17:29:16.18989] [35] [info] Worker 35 started
+[2026-08-28 17:29:16.19090] [36] [info] Worker 36 started
+[2026-08-28 17:29:16.19202] [37] [info] Worker 37 started
+[2026-08-28 17:29:16.19289] [38] [info] Worker 38 started
+[2026-08-28 17:29:16.19395] [39] [info] Worker 39 started
+[2026-08-28 17:29:16.19483] [40] [info] Worker 40 started
+[2026-08-28 17:29:16.19590] [41] [info] Worker 41 started
+[2026-08-28 17:29:16.19685] [42] [info] Worker 42 started
+[2026-08-28 17:29:16.19792] [43] [info] Worker 43 started
+[2026-08-28 17:29:16.19878] [44] [info] Worker 44 started
+[2026-08-28 17:29:16.19995] [45] [info] Worker 45 started
+[2026-08-28 17:29:16.20075] [46] [info] Worker 46 started
+[2026-08-28 17:29:16.20193] [47] [info] Worker 47 started
+[2026-08-28 17:29:16.20300] [48] [info] Worker 48 started
+[2026-08-28 17:29:16.20394] [49] [info] Worker 49 started
+[2026-08-28 17:29:16.20495] [50] [info] Worker 50 started
+[2026-08-28 17:29:16.20600] [51] [info] Worker 51 started
+[2026-08-28 17:29:16.20722] [52] [info] Worker 52 started
+[2026-08-28 17:29:16.20793] [53] [info] Worker 53 started
+[2026-08-28 17:29:16.20909] [54] [info] Worker 54 started
+[2026-08-28 17:29:16.20992] [55] [info] Worker 55 started
+[2026-08-28 17:29:16.21130] [56] [info] Worker 56 started
+[2026-08-28 17:29:16.21210] [57] [info] Worker 57 started
+[2026-08-28 17:29:16.21303] [58] [info] Worker 58 started
+[2026-08-28 17:29:16.21402] [59] [info] Worker 59 started
+[2026-08-28 17:29:16.21506] [60] [info] Worker 60 started
+[2026-08-28 17:29:16.21602] [61] [info] Worker 61 started
+[2026-08-28 17:29:16.21684] [62] [info] Worker 62 started
+[2026-08-28 17:29:16.21827] [63] [info] Worker 63 started
+[2026-08-28 17:29:16.21903] [64] [info] Worker 64 started
+[2026-08-28 17:29:16.22000] [65] [info] Worker 65 started
+[2026-08-28 17:29:16.22101] [66] [info] Worker 66 started
+[2026-08-28 17:29:16.22181] [67] [info] Worker 67 started
+[2026-08-28 17:29:16.22301] [68] [info] Worker 68 started
+[2026-08-28 17:29:16.22406] [69] [info] Worker 69 started
+[2026-08-28 17:29:16.22481] [70] [info] Worker 70 started
+[2026-08-28 17:29:16.22773] [1] [info] Creating process id file "/tmp/prefork.pid"
+[2026-08-28 17:29:22.60925] [15] [error] Broken pipe
+[2026-08-28 17:29:22.61579] [11] [error] Broken pipe
+[2026-08-28 17:29:22.61685] [57] [error] Broken pipe
+[2026-08-28 17:29:22.61785] [11] [error] Broken pipe
+[2026-08-28 17:29:22.61793] [30] [error] Broken pipe
+[2026-08-28 17:29:22.61886] [57] [error] Broken pipe
+[2026-08-28 17:29:22.61971] [11] [error] Broken pipe
+[2026-08-28 17:29:22.62004] [30] [error] Broken pipe
+[2026-08-28 17:29:22.62071] [57] [error] Broken pipe
+[2026-08-28 17:29:22.62151] [11] [error] Broken pipe
+[2026-08-28 17:29:22.62190] [30] [error] Broken pipe
+[2026-08-28 17:29:22.62239] [57] [error] Broken pipe
+[2026-08-28 17:29:22.62331] [11] [error] Broken pipe
+[2026-08-28 17:29:22.62393] [30] [error] Broken pipe
+[2026-08-28 17:29:22.62409] [57] [error] Broken pipe
+[2026-08-28 17:29:22.62499] [11] [error] Broken pipe
+[2026-08-28 17:29:22.62579] [57] [error] Broken pipe
+[2026-08-28 17:29:22.62580] [30] [error] Broken pipe
+[2026-08-28 17:29:22.62673] [11] [error] Broken pipe
+[2026-08-28 17:29:22.62753] [57] [error] Broken pipe
+[2026-08-28 17:29:22.62750] [30] [error] Broken pipe
+[2026-08-28 17:29:22.62874] [69] [error] Broken pipe
+[2026-08-28 17:29:22.62941] [30] [error] Broken pipe
+[2026-08-28 17:29:22.63115] [30] [error] Broken pipe
+[2026-08-28 17:29:22.63262] [55] [error] Broken pipe
+[2026-08-28 17:29:22.63292] [30] [error] Broken pipe
+[2026-08-28 17:29:22.63457] [55] [error] Broken pipe
+[2026-08-28 17:29:22.63484] [30] [error] Broken pipe
+[2026-08-28 17:29:22.63620] [55] [error] Broken pipe
+[2026-08-28 17:29:22.63670] [30] [error] Broken pipe
+[2026-08-28 17:29:22.63793] [55] [error] Broken pipe
+[2026-08-28 17:29:22.63886] [37] [error] Broken pipe
+[2026-08-28 17:29:22.63885] [69] [error] Broken pipe
+[2026-08-28 17:29:22.63959] [55] [error] Broken pipe
+[2026-08-28 17:29:22.64074] [69] [error] Broken pipe
+[2026-08-28 17:29:22.64086] [37] [error] Broken pipe
+[2026-08-28 17:29:22.64126] [55] [error] Broken pipe
+[2026-08-28 17:29:22.64270] [69] [error] Broken pipe
+[2026-08-28 17:29:22.64279] [37] [error] Broken pipe
+[2026-08-28 17:29:22.64292] [55] [error] Broken pipe
+[2026-08-28 17:29:22.64456] [69] [error] Broken pipe
+[2026-08-28 17:29:22.64457] [37] [error] Broken pipe
+[2026-08-28 17:29:22.64463] [55] [error] Broken pipe
+[2026-08-28 17:29:22.64627] [37] [error] Broken pipe
+[2026-08-28 17:29:22.64633] [69] [error] Broken pipe
+[2026-08-28 17:29:22.64644] [55] [error] Broken pipe
+[2026-08-28 17:29:22.64802] [37] [error] Broken pipe
+[2026-08-28 17:29:22.64812] [69] [error] Broken pipe
+[2026-08-28 17:29:22.64834] [55] [error] Broken pipe
+[2026-08-28 17:29:22.64988] [37] [error] Broken pipe
+[2026-08-28 17:29:22.64988] [69] [error] Broken pipe
+[2026-08-28 17:29:22.65020] [55] [error] Broken pipe
+[2026-08-28 17:29:22.65095] [70] [error] Broken pipe
+[2026-08-28 17:29:22.65167] [69] [error] Broken pipe
+[2026-08-28 17:29:22.65166] [37] [error] Broken pipe
+[2026-08-28 17:29:22.65210] [55] [error] Broken pipe
+[2026-08-28 17:29:22.65346] [37] [error] Broken pipe
+[2026-08-28 17:29:22.65349] [69] [error] Broken pipe
+[2026-08-28 17:29:22.65392] [55] [error] Broken pipe
+[2026-08-28 17:29:22.65529] [37] [error] Broken pipe
+[2026-08-28 17:29:22.65532] [69] [error] Broken pipe
+[2026-08-28 17:29:22.65581] [55] [error] Broken pipe
+[2026-08-28 17:29:22.65713] [69] [error] Broken pipe
+[2026-08-28 17:29:22.65716] [37] [error] Broken pipe
+[2026-08-28 17:29:22.65769] [55] [error] Broken pipe
+[2026-08-28 17:29:22.65802] [70] [error] Broken pipe
+[2026-08-28 17:29:22.65892] [69] [error] Broken pipe
+[2026-08-28 17:29:22.65895] [37] [error] Broken pipe
+[2026-08-28 17:29:22.65956] [55] [error] Broken pipe
+[2026-08-28 17:29:22.66015] [70] [error] Broken pipe
+[2026-08-28 17:29:22.66073] [37] [error] Broken pipe
+[2026-08-28 17:29:22.66083] [69] [error] Broken pipe
+[2026-08-28 17:29:22.66135] [55] [error] Broken pipe
+[2026-08-28 17:29:22.66204] [70] [error] Broken pipe
+[2026-08-28 17:29:22.66262] [69] [error] Broken pipe
+[2026-08-28 17:29:22.66266] [37] [error] Broken pipe
+[2026-08-28 17:29:22.66326] [55] [error] Broken pipe
+[2026-08-28 17:29:22.66395] [70] [error] Broken pipe
+[2026-08-28 17:29:22.66434] [69] [error] Broken pipe
+[2026-08-28 17:29:22.66434] [37] [error] Broken pipe
+[2026-08-28 17:29:22.66511] [55] [error] Broken pipe
+[2026-08-28 17:29:22.66586] [70] [error] Broken pipe
+[2026-08-28 17:29:22.66613] [37] [error] Broken pipe
+[2026-08-28 17:29:22.66614] [69] [error] Broken pipe
+[2026-08-28 17:29:22.66695] [55] [error] Broken pipe
+[2026-08-28 17:29:22.66768] [70] [error] Broken pipe
+[2026-08-28 17:29:22.66805] [37] [error] Broken pipe
+[2026-08-28 17:29:22.66880] [55] [error] Broken pipe
+[2026-08-28 17:29:22.66955] [70] [error] Broken pipe
+[2026-08-28 17:29:22.66992] [37] [error] Broken pipe
+[2026-08-28 17:29:22.67059] [55] [error] Broken pipe
+[2026-08-28 17:29:22.67139] [70] [error] Broken pipe
+[2026-08-28 17:29:22.67181] [37] [error] Broken pipe
+[2026-08-28 17:29:22.67231] [55] [error] Broken pipe
+[2026-08-28 17:29:22.67327] [70] [error] Broken pipe
+[2026-08-28 17:29:22.67369] [37] [error] Broken pipe
+[2026-08-28 17:29:22.67511] [70] [error] Broken pipe
+[2026-08-28 17:29:22.67556] [37] [error] Broken pipe
+[2026-08-28 17:29:22.67691] [70] [error] Broken pipe
+[2026-08-28 17:29:22.67733] [37] [error] Broken pipe
+[2026-08-28 17:29:22.67868] [70] [error] Broken pipe
+[2026-08-28 17:29:22.67924] [37] [error] Broken pipe
+[2026-08-28 17:29:22.68056] [70] [error] Broken pipe
+[2026-08-28 17:29:22.68109] [37] [error] Broken pipe
+[2026-08-28 17:29:22.68245] [70] [error] Broken pipe
+[2026-08-28 17:29:22.68292] [37] [error] Broken pipe
+[2026-08-28 17:29:22.68438] [70] [error] Broken pipe
+[2026-08-28 17:29:22.68477] [37] [error] Broken pipe
+[2026-08-28 17:29:22.68619] [70] [error] Broken pipe
+[2026-08-28 17:29:22.68660] [37] [error] Broken pipe
+[2026-08-28 17:29:22.68804] [70] [error] Broken pipe
+[2026-08-28 17:29:22.68838] [37] [error] Broken pipe
+[2026-08-28 17:29:22.68987] [70] [error] Broken pipe
+[2026-08-28 17:29:22.69022] [37] [error] Broken pipe
+[2026-08-28 17:29:22.69173] [70] [error] Broken pipe
+[2026-08-28 17:29:22.69207] [37] [error] Broken pipe
+[2026-08-28 17:29:22.69339] [70] [error] Broken pipe
+[2026-08-28 17:29:22.69517] [70] [error] Broken pipe
+[2026-08-28 17:29:22.69699] [70] [error] Broken pipe
+[2026-08-28 17:29:22.69875] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70050] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70230] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70375] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70494] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70655] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70773] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70881] [70] [error] Broken pipe
+[2026-08-28 17:29:22.70982] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71077] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71170] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71264] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71356] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71446] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71541] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71630] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71718] [70] [error] Broken pipe
+[2026-08-28 17:29:22.71805] [70] [error] Broken pipe
+[2026-08-28 17:29:30.06127] [57] [error] Broken pipe
+[2026-08-28 17:29:30.06319] [57] [error] Broken pipe
+[2026-08-28 17:29:30.06503] [57] [error] Broken pipe
+[2026-08-28 17:29:30.06675] [57] [error] Broken pipe
+[2026-08-28 17:29:30.06845] [57] [error] Broken pipe

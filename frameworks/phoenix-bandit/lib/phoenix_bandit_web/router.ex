@@ -13,7 +13,7 @@ defmodule PhoenixBanditWeb.Router do
 
     get "/async-db", BenchmarkController, :async_db
 
-    post "/upload", BenchmarkController, :upload
+    post "/echo", BenchmarkController, :echo
 
     get "/ws", BenchmarkController, :ws
   end

@@ -20,6 +20,7 @@
   :source-paths ["src"]
   :test-paths ["test"]
   :aot :all
+  :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
   :resource-paths ["resources"]
 
   )

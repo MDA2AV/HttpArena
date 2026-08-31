@@ -255,7 +255,14 @@
     "type": "infrastructure",
     "engine": "caddy"
   },
-  "Cardigan": {
+  "cadente": {
+    "dir": "cadente",
+    "description": "Cadente is a standalone managed HTTP/1.1 server for .NET, running directly on sockets without the Sisk framework layer.",
+    "repo": "https://github.com/sisk-http/core",
+    "type": "engine",
+    "engine": "managed sockets"
+  },
+  "cardigan": {
     "dir": "cardigan",
     "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
     "repo": "https://github.com/phjeltman/cardigan",
@@ -298,6 +305,20 @@
         "engine": "io_uring"
       }
     ]
+  },
+  "carter": {
+    "dir": "carter",
+    "description": "Carter 10 on ASP.NET Core and Kestrel, default configuration. Routes declared in a Carter module and mapped onto the endpoint router, JSON through System.Text.Json, gzip and brotli through ResponseCompression at level 1, json-tls on 8081.",
+    "repo": "https://github.com/CarterCommunity/Carter",
+    "type": "flagship",
+    "engine": "kestrel",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "chi": {
     "dir": "chi",
@@ -511,20 +532,6 @@
       "response": true
     }
   },
-  "fishcake": {
-    "dir": "fishcake",
-    "description": "CodeGreen, a 1:1 Kotlin port of GenHTTP, on its internal Netty-based engine with kotlinx.serialization and JDBC (HikariCP).",
-    "repo": "https://github.com/dotnet-web-stack/CodeGreen",
-    "type": "emerging",
-    "engine": "codegreen",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
   "flask": {
     "dir": "flask",
     "description": "Flask web framework on Gunicorn with sync workers",
@@ -603,40 +610,12 @@
       "response": true
     }
   },
-  "genhttp-11-ioxide": {
-    "dir": "genhttp-11-ioxide",
+  "genhttp-ioxide": {
+    "dir": "genhttp-ioxide",
     "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Uses GenHTTP's published ioxide engine packages (GenHTTP.Engine.Ioxide / GenHTTP.Modules.IoxideFiles, PR #860, merged). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
-  "genhttp-11-kestrel": {
-    "dir": "genhttp-11-kestrel",
-    "description": "Lightweight, embeddable and modular C# web server.",
-    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "emerging",
-    "engine": "kestrel",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
-  "genhttp-11": {
-    "dir": "genhttp-11",
-    "description": "Lightweight, embeddable and modular C# web server.",
-    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "emerging",
-    "engine": "genhttp",
     "mode": "tuned",
     "completeness": {
       "routing": true,
@@ -651,7 +630,21 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "kestrel",
-    "mode": "standard",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "genhttp": {
+    "dir": "genhttp",
+    "description": "Lightweight, embeddable and modular C# web server.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+    "type": "emerging",
+    "engine": "genhttp",
+    "mode": "tuned",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -754,7 +747,7 @@
   },
   "helidon-production": {
     "dir": "helidon-production",
-    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.5.4 on N\u00edma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
@@ -768,7 +761,7 @@
   },
   "helidon-tuned": {
     "dir": "helidon-tuned",
-    "description": "Helidon SE 4.4.1 on N\u00edma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.5.4 on N\u00edma WebServer with Java 25, tuned socket and protocol-validation settings, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
     "type": "flagship",
     "engine": "n\u00edma",
@@ -859,7 +852,7 @@
   },
   "http.jl": {
     "dir": "httpjl",
-    "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware.",
+    "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with CodecZlib because HTTP.jl ships no compression middleware. json-tls on 8081 through Reseau's TLS listener, the transport HTTP.jl already ships.",
     "repo": "https://github.com/JuliaWeb/HTTP.jl",
     "type": "emerging",
     "engine": "http.jl",
@@ -922,7 +915,7 @@
   },
   "ioxide": {
     "dir": "ioxide",
-    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.file, ioxide.http2, ioxide.ngtcp2, ioxide.nghttp3). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; TLS terminates ring-natively (kTLS transmit offload, OpenSSL receive) on :8081, h2 over TLS (pure-C# ioxide.http2) on :8443, and HTTP/3 over QUIC (ngtcp2 + nghttp3) on udp:8443; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static on h1 reads the file descriptor straight into the connection's write slab (ioxide.file hands out descriptors, not bytes), so header and body leave in one flush with no intermediate buffer; h2/h3 serve the same assets from memory.",
+    "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.timer, ioxide.file, ioxide.http2, ioxide.ngtcp2, ioxide.nghttp3). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; TLS terminates ring-natively (kTLS transmit offload, OpenSSL receive) on :8081, h2 over TLS (pure-C# ioxide.http2) on :8443, and HTTP/3 over QUIC (ngtcp2 + nghttp3) on udp:8443; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static on h1 reads the file descriptor straight into the connection's write slab (ioxide.file hands out descriptors, not bytes), so header and body leave in one flush with no intermediate buffer; h2/h3 serve the same assets from memory.",
     "repo": "https://github.com/MDA2AV/ioxide",
     "type": "engine",
     "engine": "io_uring"
@@ -933,6 +926,20 @@
     "repo": "https://github.com/Cobra007-star-source/IRIS",
     "type": "engine",
     "engine": "epoll"
+  },
+  "jooby": {
+    "dir": "jooby",
+    "description": "Jooby 3.9 on Jetty in the script API. Routing and path/query values through Jooby's Context, JSON through the Jackson module, gzip through the built-in compression at level 1, json-tls on 8081.",
+    "repo": "https://github.com/jooby-project/jooby",
+    "type": "flagship",
+    "engine": "jetty",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "koa": {
     "dir": "koa",
@@ -1025,6 +1032,20 @@
       "response": true
     }
   },
+  "lithium": {
+    "dir": "lithium",
+    "description": "Lithium's header-only HTTP server on its epoll/fiber backend. Disabled: lithium's own JSON serializer writes booleans as 1/0 rather than true/false, which the json profile rejects, and its decoder cannot read a JSON boolean at all.",
+    "repo": "https://github.com/matt-42/lithium",
+    "type": "flagship",
+    "engine": "lithium",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
   "lute": {
     "dir": "lute",
     "description": "Lute standalone Luau runtime",
@@ -1097,7 +1118,7 @@
   },
   "mq-bridge-py": {
     "dir": "mq-bridge-py",
-    "description": "mq-bridge Python bindings (mq_bridge_py). A single http->response route dispatches on request metadata while HTTP framing stays in Rust; cleartext HTTP/1.1 + h2c run on 8080/8082, optional TLS listeners serve HTTP/2 on 8443 and HTTP/1.1 on 8081, and the inline-response fast path keeps responses off the GIL so the Python handler runs only the per-request dispatch.",
+    "description": "mq-bridge Python bindings (mq_bridge_py). A single http->response route dispatches on request metadata while HTTP framing stays in Rust; cleartext HTTP/1.1 + h2c run on 8080/8082, optional TLS listeners serve HTTP/2 on 8443 and HTTP/1.1 on 8081, and the inline-response fast path keeps responses off the GIL so the Python handler runs only the per-request dispatch. Postgres via psycopg for async-db, crud (Redis cache-aside) and fortunes, which renders per request with the Jinja2 template engine; static assets are read from /data/static per request, serving the on-disk .gz variant when the client accepts it; /delay waits with a blocking sleep, so async concurrency is the worker-process count.",
     "repo": "https://github.com/marcomq/mq-bridge",
     "type": "emerging",
     "engine": "mq-bridge",
@@ -1111,14 +1132,14 @@
   },
   "mq-bridge": {
     "dir": "mq-bridge",
-    "description": "mq-bridge async message-bridging library run as an HTTP server. A single catch-all http->response route dispatches on request metadata and replies through mq-bridge's inline-response fast path; hyper-util's auto connection builder serves HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the cleartext port (8080) and HTTP/2-over-TLS (ALPN h2) on 8443. Postgres via sqlx for async-db, dataset read from /data/dataset.json, static assets from /data/static, gzip negotiated by the library's Accept-Encoding-gated response compression.",
+    "description": "mq-bridge async message-bridging library run as an HTTP server. A single catch-all http->response route dispatches on request metadata and replies through mq-bridge's inline-response fast path; hyper-util's auto connection builder serves HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the cleartext port (8080) and HTTP/2-over-TLS (ALPN h2) on 8443. Postgres via the library's re-exported sqlx for async-db and crud (in-process cache-aside, one-second TTL), fortunes rendered per request with the Askama template engine, dataset read from /data/dataset.json, static assets from /data/static, response compression negotiated per request by the library from Accept-Encoding (zstd > gzip > lz4).",
     "repo": "https://github.com/marcomq/mq-bridge",
     "type": "emerging",
     "engine": "mq-bridge",
     "mode": "standard",
     "completeness": {
       "routing": false,
-      "middleware": false,
+      "middleware": true,
       "request": true,
       "response": true
     },
@@ -1196,6 +1217,20 @@
     "repo": "https://github.com/nodejs/node",
     "type": "engine",
     "engine": "node:http"
+  },
+  "ntex": {
+    "dir": "ntex",
+    "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+    "repo": "https://github.com/ntex-rs/ntex",
+    "type": "flagship",
+    "engine": "ntex",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "oxpecker": {
     "dir": "oxpecker",
@@ -1368,6 +1403,20 @@
       "response": true
     }
   },
+  "reitit": {
+    "dir": "reitit",
+    "description": "Reitit 0.9 routing on Ring and the Jetty adapter, default configuration. Routes and path parameters through reitit.ring, query parsing through ring's wrap-params on the router, JSON through clojure.data.json, gzip through Jetty's GzipHandler, json-tls on 8081.",
+    "repo": "https://github.com/metosin/reitit",
+    "type": "flagship",
+    "engine": "jetty",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "ring-http-exchange": {
     "dir": "ring-http-exchange",
     "description": "",
@@ -1382,10 +1431,10 @@
       "response": true
     }
   },
-  "ring-jetty9-adapter": {
-    "dir": "ring-jetty9-adapter",
-    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
-    "repo": "https://github.com/sunng87/ring-jetty9-adapter",
+  "ring-jetty-adapter": {
+    "dir": "ring-jetty-adapter",
+    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "repo": "https://github.com/ring-clojure/ring",
     "type": "emerging",
     "engine": "Jetty",
     "mode": "standard",
@@ -1396,10 +1445,10 @@
       "response": true
     }
   },
-  "ring": {
-    "dir": "ring",
-    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
-    "repo": "https://github.com/ring-clojure/ring",
+  "ring-jetty9-adapter": {
+    "dir": "ring-jetty9-adapter",
+    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+    "repo": "https://github.com/sunng87/ring-jetty9-adapter",
     "type": "emerging",
     "engine": "Jetty",
     "mode": "standard",
@@ -1486,6 +1535,20 @@
     "repo": "",
     "type": "engine",
     "engine": "epoll"
+  },
+  "salvo": {
+    "dir": "salvo",
+    "description": "Salvo 0.96 on tokio and hyper, default configuration. Routing through the Router tree, JSON through salvo's Json responder, gzip and brotli through the built-in Compression hoop at level 1, json-tls on 8081 through rustls.",
+    "repo": "https://github.com/salvo-rs/salvo",
+    "type": "flagship",
+    "engine": "salvo",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "sanic": {
     "dir": "sanic",
@@ -1629,6 +1692,20 @@
       "response": true
     }
   },
+  "socketify": {
+    "dir": "socketify",
+    "description": "socketify.py 0.0.31 on its uWebSockets bindings, one process per core per port sharing the port through SO_REUSEPORT. Disabled: socketify's bundled libsocketify rejects a request whose request line is split across TCP segments, which fails the fragmentation suite. The uWebSockets.js entries here are unaffected.",
+    "repo": "https://github.com/cirospaciari/socketify.py",
+    "type": "flagship",
+    "engine": "uwebsockets",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
   "spring-boot": {
     "dir": "spring-boot",
     "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
@@ -1744,6 +1821,13 @@
     "repo": "https://github.com/tokio-rs/tokio-uring",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "tokio-websockets": {
+    "dir": "tokio-websockets",
+    "description": "High performance, strict, tokio-util based WebSockets implementation.",
+    "repo": "https://github.com/Gelbpunkt/tokio-websockets",
+    "type": "engine",
+    "engine": "tokio"
   },
   "tokio-ws": {
     "dir": "tokio-ws",
@@ -1909,7 +1993,7 @@
   },
   "vibe.d": {
     "dir": "vibed",
-    "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation.",
+    "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation. json-tls on 8081 through vibe-stream:tls on OpenSSL, one listener per worker like the plaintext port.",
     "repo": "https://github.com/vibe-d/vibe.d",
     "type": "emerging",
     "engine": "vibe.d",

@@ -38,12 +38,12 @@ public class BenchmarkServices : Service
         return "ok";
     }
 
-    // ── /upload ───────────────────────────────────────────────────────────────
-    public async Task<HttpResult> Post(UploadPost _)
+    // ── /echo ─────────────────────────────────────────────────────────────────
+    public async Task<HttpResult> Post(EchoPost _)
     {
         using var ms = new MemoryStream();
         await Request!.InputStream.CopyToAsync(ms);
-        return ToResult(ms.Length.ToString());
+        return new HttpResult(ms.ToArray(), "application/octet-stream");
     }
 
     // ── /json ─────────────────────────────────────────────────────────────────

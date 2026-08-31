@@ -19,7 +19,7 @@ The Express 4 API reimplemented on uWebSockets.js, with the cluster module for m
 | `/json/:count` | GET | Serializes a slice of the dataset, gzip or brotli when the client accepts one |
 | `/db` | GET | Reads from SQLite, read-only, memory mapped |
 | `/async-db` | GET | Reads from PostgreSQL through a pool of four |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/:filename` | GET | Serves a file from disk, the brotli or gzip variant when the client accepts one |
 | `/crud/items` | GET/POST | Lists items by category with paging, or inserts one |
 | `/crud/items/:id` | GET/PUT | Reads one item through a Redis cache-aside, or updates it and drops the cached copy |
@@ -42,4 +42,4 @@ through a separate `https` server, so the port is a second app carrying the same
 worker in the cluster binds it, exactly as they all bind `8080`.
 
 `express.json()` is mounted on the two crud routes that carry a body rather than globally, so
-`/upload` keeps counting its 20MB body as it streams instead of having it buffered and parsed.
+`/echo` returns its 100 KB body verbatim instead of having it buffered and parsed as JSON.

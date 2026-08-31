@@ -81,7 +81,7 @@ app.MapGet("/baseline11", Handlers.Sum);
 app.MapPost("/baseline11", Handlers.SumBody);
 app.MapGet("/baseline2", Handlers.Sum);
 
-app.MapPost("/upload", Handlers.Upload);
+app.MapPost("/echo", Handlers.EchoBody);
 app.MapGet("/json/{count}", Handlers.Json);
 app.MapGet("/async-db", Handlers.AsyncDatabase);
 

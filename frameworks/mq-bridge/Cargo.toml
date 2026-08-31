@@ -6,11 +6,10 @@
 # in via a pinned git reference. hyper-util's auto connection builder serves both
 # HTTP/1.1 and HTTP/2 prior-knowledge (h2c) on the plaintext port; the same
 # builder runs behind the TLS listener, where the library now advertises ALPN
-# `h2`. Tracks the `dev` branch to benchmark unreleased code; pin to a `tag` or
-# exact `rev` for reproducible benchmarks.
+# `h2`. Pinned to a released `tag` so benchmarks are reproducible.
 [package]
 name = "httparena-mqbridge"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 publish = false
 
@@ -19,23 +18,26 @@ name = "httparena-mqbridge"
 path = "src/main.rs"
 
 [dependencies]
-# `rustls-ring` selects the ring crypto provider for the TLS (8443) listener.
-mq-bridge = { git = "https://github.com/marcomq/mq-bridge", tag = "v0.2.21", default-features = false, features = ["http", "rustls-ring"] }
+# `rustls-ring` selects the ring crypto provider for the TLS (8443) listener;
+# `sqlx` pulls in the library's re-exported sqlx (`mq_bridge::sqlx`) for the
+# async-db and crud profiles, keeping one sqlx version in the graph.
+mq-bridge = { git = "https://github.com/marcomq/mq-bridge", tag = "v0.4.8", default-features = false, features = ["http", "rustls-ring", "sqlx"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
-# Zero-copy bodies + pre-gzip for the in-memory static/json caches.
+# Zero-copy response bodies.
 bytes = "1"
-flate2 = "1"
+# Sharded concurrent map behind the crud profile's cache-aside read path.
+dashmap = "6"
+# Template engine for the fortunes profile: compile-time, auto-escaping, and
+# the template lives in its own file, as the profile's standard-mode rules require.
+askama = "0.16"
 # Install the process-default rustls crypto provider before the TLS endpoint.
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
-# Async-db profile: own a Postgres pool in the handler (HttpArena seeds an
-# `items` table and passes DATABASE_URL).
-sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "postgres", "json"] }
 
 [profile.release]
 opt-level = 3
-lto = "thin"
+lto = "fat"
 codegen-units = 1
 panic = "abort"

@@ -34,6 +34,14 @@ HttpResponsePtr plainText(const std::string &body)
     return resp;
 }
 
+HttpResponsePtr octetStream(std::string body)
+{
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+    resp->setBody(std::move(body));
+    return resp;
+}
+
 long long toLong(const std::string &value)
 {
     try
@@ -104,9 +112,13 @@ int main()
         {Get});
 
     app().registerHandler(
-        "/upload",
+        "/echo",
         [](const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
-            callback(plainText(std::to_string(req->body().length())));
+            // req->body() is the decoded body, chunked framing already
+            // removed, so the echo never reads Content-Length -- a chunked
+            // request does not carry one. setBody() frames the response with
+            // its own Content-Length, zero included for an empty body.
+            callback(octetStream(std::string(req->body())));
         },
         {Post});
 

@@ -32,6 +32,7 @@
                  [org.clojars.jj/vertx-pg-client-async-boa-adapter "1.0.1"]
                  [metosin/jsonista "1.0.0"]
 
+                 [ring/ring-core "1.15.3"]
                  [org.clojure/core.cache "1.2.263"]]
 
   :main ^:skip-aot aleph-bench.core

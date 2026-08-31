@@ -5,16 +5,20 @@
 # without compiling from source. Pin MQB_VERSION to a released version.
 FROM python:3.12-slim
 
-ARG MQB_VERSION=0.2.21
+ARG MQB_VERSION=0.4.8
 
 RUN groupadd --system appuser \
     && useradd --system --gid appuser --create-home --home-dir /home/appuser --shell /usr/sbin/nologin appuser \
     && mkdir -p /app \
     && chown -R appuser:appuser /app
-# psycopg[binary] powers the optional /async-db profile; absent DATABASE_URL it is unused.
-RUN pip install --no-cache-dir "mq-bridge-py==${MQB_VERSION}" "psycopg[binary]>=3.1" "psycopg_pool>=3.2" "redis>=5.2"
+# psycopg[binary] powers the DB-backed profiles (/async-db, /fortunes, /crud); absent
+# DATABASE_URL they are unused. Jinja2 renders /fortunes — the fortunes profile
+# requires a real template engine, not string concatenation in the handler.
+RUN pip install --no-cache-dir "mq-bridge-py==${MQB_VERSION}" "psycopg[binary]>=3.1" "psycopg_pool>=3.2" "redis>=5.2" "jinja2>=3.1"
 WORKDIR /app
 COPY --chown=appuser:appuser server.py /app/server.py
+# The fortunes template is a separate artifact, as the profile requires.
+COPY --chown=appuser:appuser templates /app/templates
 EXPOSE 8080
 # Take CPython's cyclic GC off the request hot path: the JSON handlers allocate
 # many short-lived dicts/lists per request (no reference cycles), so disabling

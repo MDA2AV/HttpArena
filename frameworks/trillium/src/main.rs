@@ -8,12 +8,13 @@ mod state;
 use env_logger::Env;
 use grpc::{Benchmark, BenchmarkServiceServer};
 use handlers::{
-    async_db, baseline_any, baseline_get, crud_create, crud_list, crud_read, crud_update, fortunes,
-    json_handler, pipeline, upload, ws_echo,
+    api_item_read, api_item_write, api_me, async_db, baseline_any, baseline_get, crud_create,
+    crud_list, crud_read, crud_update, delay, echo_body, fortunes, json_handler, pipeline, ws_echo,
 };
 use state::AppState;
 use std::{env, error::Error, fs};
-use trillium::{Handler, HttpConfig, Method};
+use trillium::{Conn, Handler, HttpConfig, KnownHeaderName, Method};
+use trillium_cache::{Cache, InMemoryStorage};
 use trillium_compression::Compression;
 use trillium_quinn::QuicConfig;
 use trillium_router::Router;
@@ -32,10 +33,20 @@ fn build_handler() -> impl Handler {
             .any(&[Method::Get, Method::Post], "/baseline11", baseline_any)
             .get("/baseline2", baseline_get)
             .get("/json/:count", json_handler)
-            .post("/upload", upload)
+            .post("/echo", echo_body)
+            .get("/delay/:ms", delay)
             .get(
                 "/static/*",
-                StaticFileHandler::new(static_dir).with_precompressed(),
+                (
+                    // rfc 9111 cache over the filesystem handler. max-age=1 keeps hits in
+                    // memory while bounding staleness under the arena's follow-the-disk
+                    // window; past it the cache revalidates against the handler below.
+                    Cache::new(InMemoryStorage::new()).shared(),
+                    |conn: Conn| async move {
+                        conn.with_response_header(KnownHeaderName::CacheControl, "max-age=1")
+                    },
+                    StaticFileHandler::new(static_dir).with_precompressed(),
+                ),
             )
             .get("/async-db", async_db)
             .get("/fortunes", fortunes)
@@ -43,6 +54,14 @@ fn build_handler() -> impl Handler {
             .post("/crud/items", crud_create)
             .get("/crud/items/:id", crud_read)
             .put("/crud/items/:id", crud_update)
+            // production-stack. `/public/*` is the same work as the isolated profiles under a
+            // path the edge forwards without auth; `/api/*` arrives already authenticated, with
+            // the user id in a header the edge set.
+            .get("/public/baseline", baseline_get)
+            .get("/public/json/:count", json_handler)
+            .get("/api/items/:id", api_item_read)
+            .post("/api/items/:id", api_item_write)
+            .get("/api/me", api_me)
             .get("/ws", websocket(ws_echo)),
     )
 }
@@ -67,7 +86,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_http_config(http_config)
         .with_shared_state(state)
         .listeners()
-        .bind_tcp(8080)?;
+        .bind_tcp(8080)?
+        .bind_tcp(8082)?;
 
     if let Ok(uds) = env::var("LISTEN_UDS") {
         let _ = std::fs::remove_file(&uds);

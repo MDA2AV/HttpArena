@@ -14,13 +14,12 @@
   "repo": "https://github.com/elixir-plug/plug_cowboy",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-tls",
     "json-comp",
-    "upload"
+    "8gbit"
   ],
   "maintainers": []
 }

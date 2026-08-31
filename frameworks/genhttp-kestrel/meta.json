@@ -2,7 +2,7 @@
   "display_name": "genhttp-kestrel",
   "language": "C#",
   "type": "emerging",
-  "mode": "standard",
+  "mode": "tuned",
   "completeness": {
     "routing": true,
     "middleware": true,
@@ -14,19 +14,20 @@
   "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "baseline-h2",
     "baseline-h3",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
-    "upload",
+    "8gbit",
     "async-db",
     "static-h2",
     "static-h3",
-    "crud"
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": [
     "Kaliumhexacyanoferrat"

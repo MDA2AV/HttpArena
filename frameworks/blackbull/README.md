@@ -30,7 +30,7 @@ profiles BlackBull's runtime supports today:
 | limited-conn    | GET/POST `/baseline11` | ✓ |
 | json            | GET `/json/{count}`    | ✓ |
 | json-tls        | GET `/json/{count}` on :8081 | ✓ |
-| upload          | POST `/upload`         | ✓ |
+| `/echo` | POST | Returns the request body back verbatim |
 | baseline-h2     | GET/POST `/baseline11` on :8443 (TLS, ALPN h2) | ✓ (claimed in `meta.json`) |
 | baseline-h2c    | GET `/baseline11`  on :8082 (h2 prior-knowledge) | runtime-capable; not claimed in `meta.json` yet |
 | json-h2c        | GET `/json/{count}` on :8082 (h2 prior-knowledge) | runtime-capable; not claimed in `meta.json` yet |

@@ -2,7 +2,7 @@
 #
 # zrk is the only generator here that paces. gcannon, wrk and h2load all answer
 # "how fast can this go"; zrk answers "hold exactly this rate", which is what
-# the latency-1m profile needs — with the rate pinned, the only thing left to
+# the fixed-rate profiles need — with the rate pinned, the only thing left to
 # vary between entries is what it cost them.
 #
 # It is also the only one that emits a machine-readable summary, so this
@@ -31,19 +31,47 @@ _zrk_cmd() {
     if docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
         printf '%s\n' docker run --rm --network host \
             --cpuset-cpus="$GCANNON_CPUS" --security-opt seccomp=unconfined \
-            --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 "$ZRK_IMAGE"
+            --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 \
+            -v "$REQUESTS_DIR:$REQUESTS_DIR:ro" "$ZRK_IMAGE"
         return 0
     fi
     fail "zrk not found: '$ZRK' is not on PATH and image '$ZRK_IMAGE' does not exist.
       Build it with: docker build -t $ZRK_IMAGE -f docker/zrk.Dockerfile docker/"
 }
 
-# The rate the latency-1m profile holds, in requests/second. It lives here
+# The rate each fixed-rate profile holds, in requests/second. They live here
 # rather than in the profile spec because the spec's five fields are shaped for
 # closed-loop tools and have no slot for an offered rate — and because changing
 # it re-baselines every published number on the profile, so it should be a
 # visible edit rather than a digit inside a pipe-delimited string.
-ZRK_FIXED_RATE="${ZRK_FIXED_RATE:-1000000}"
+ZRK_RATE_LATENCY_1M="${ZRK_RATE_LATENCY_1M:-1000000}"
+ZRK_RATE_LATENCY_10K="${ZRK_RATE_LATENCY_10K:-10000}"
+ZRK_RATE_8GBIT="${ZRK_RATE_8GBIT:-50000}"
+
+# The body zrk posts to /echo. zrk takes a single body (-b @FILE), so unlike the
+# wrk script this profile used to run there is no eight-way rotation making a
+# canned response wrong seven times out of eight. The anti-cheat therefore rests
+# entirely on validation, which posts RANDOM bodies and compares byte for byte:
+# a server answering from a cache, or sizing a reply from Content-Length without
+# reading, fails there. Keep the size in step with benchmark.sh's input_bw.
+ZRK_ECHO_BODY_BYTES="${ZRK_ECHO_BODY_BYTES:-10240}"
+ZRK_ECHO_BODY_FILE="${ZRK_ECHO_BODY_FILE:-$REQUESTS_DIR/.echo-body.bin}"
+
+# Written on the host before the container starts (REQUESTS_DIR is mounted into
+# it read-only). Deterministic, so a run is reproducible and no two entries are
+# ever measured against different bytes.
+_zrk_echo_body() {
+    local have=0
+    [ -s "$ZRK_ECHO_BODY_FILE" ] && have=$(stat -c%s "$ZRK_ECHO_BODY_FILE" 2>/dev/null || echo 0)
+    if [ "$have" != "$ZRK_ECHO_BODY_BYTES" ]; then
+        python3 -c "
+import sys
+n = $ZRK_ECHO_BODY_BYTES
+unit = b'echo-body:'
+sys.stdout.buffer.write((unit * (n // len(unit) + 1))[:n])
+" > "$ZRK_ECHO_BODY_FILE" || fail "could not write the zrk echo body fixture"
+    fi
+}
 
 # ── Build arguments ─────────────────────────────────────────────────────────
 
@@ -53,7 +81,7 @@ zrk_build_args() {
     mapfile -t cmd < <(_zrk_cmd)
 
     case "$endpoint" in
-        latency-1m)
+        latency-1m|latency-10k)
             # Same GET the baseline profile is validated on, so nothing new has
             # to be implemented to subscribe and the handler is as thin as the
             # framework allows -- what is left in the CPU number is the
@@ -66,9 +94,23 @@ zrk_build_args() {
             # generator shows up in nobody's number. What thread count does buy
             # is schedule fidelity: at 1M req/s, -t 16 held rate_ratio 0.9934
             # with 93ms of peak schedule lag against -t 24's 0.9955 and 46ms.
-            cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$ZRK_FIXED_RATE"
+            local _rate="$ZRK_RATE_LATENCY_1M"
+            [ "$endpoint" = "latency-10k" ] && _rate="$ZRK_RATE_LATENCY_10K"
+            cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$_rate"
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")
+            ;;
+        8gbit)
+            # POST the body over TLS and take the same bytes back, so one
+            # request loads both directions. -k because the bench certs are
+            # self-signed. Paced rather than open-loop: what varies between
+            # entries is the cost of serving the rate, not the rate itself.
+            _zrk_echo_body
+            cmd+=(-t "$THREADS" -c "$conns" -d "$duration" -R "$ZRK_RATE_8GBIT"
+                  -m POST -b "@$ZRK_ECHO_BODY_FILE"
+                  -H "Content-Type: application/octet-stream"
+                  -k --format json --plain
+                  "https://localhost:$H1TLS_PORT/echo")
             ;;
         *)
             fail "zrk_build_args: unknown endpoint '$endpoint'"
@@ -124,7 +166,7 @@ print("rps=%d" % round(d.get("achieved_rate") or 0))
 # lat() on the board reads us/ms/s, so hand it microseconds unconverted.
 print("avg_lat=%.1fus" % (lat.get("mean") or 0))
 print("p99_lat=%.1fus" % (lat.get("p99") or 0))
-# p99.9 is not a field any other adapter produces, and the latency-1m
+# p99.9 is not a field any other adapter produces, and the fixed-rate
 # score weights it, so it has to survive into the result row rather than
 # only existing in this summary.
 print("p999_lat=%.1fus" % (lat.get("p99_9") or 0))

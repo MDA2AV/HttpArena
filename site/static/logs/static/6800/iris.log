@@ -1,2 +1,0 @@
-[iris-ha-gw] listen :8080 tls:8081 dataset=/data/dataset.json(50) static=/data/static(ok) db=off
-[iris-gw] reuseport CBPF: cpu-affine steering (128)

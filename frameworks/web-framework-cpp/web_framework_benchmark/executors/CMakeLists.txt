@@ -5,9 +5,9 @@ project(executors)
 add_library(
 	${PROJECT_NAME} SHARED
 	src/Baseline11.cpp
+	src/Echo.cpp
 	src/JsonExecutor.cpp
 	src/Pipeline.cpp
-	src/Upload.cpp
 	src/Ws.cpp
 )
 

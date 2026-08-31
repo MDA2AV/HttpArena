@@ -26,7 +26,7 @@ let endpoints = [
     ]
     POST [
         route "/baseline11" Handlers.baselineWithBody
-        route "/upload" Handlers.upload
+        route "/echo" Handlers.echo
     ]
     subRoute "/crud/items" [
         GET [

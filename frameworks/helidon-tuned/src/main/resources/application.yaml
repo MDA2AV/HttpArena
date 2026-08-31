@@ -17,6 +17,10 @@ server:
       validate-path: false
       recv-log: false
       send-log: false
+    http_2:
+      validate-request-headers: false
+      validate-response-headers: false
+      validate-path: false
   sockets:
     - name: "h2-tls" # HTTP/2, grpc
       host: "0.0.0.0"
@@ -34,6 +38,10 @@ server:
           validate-path: false
           recv-log: false
           send-log: false
+        http_2:
+          validate-request-headers: false
+          validate-response-headers: false
+          validate-path: false
       tls:
         private-key:
           pem:
@@ -43,7 +51,7 @@ server:
             cert-chain:
               resource:
                 path: "${cert.dir}/server.crt"
-    - name: "h1-tls"  # json-tls
+    - name: "h1-tls"  # json-tls, static-tls, 8gbit
       host: "0.0.0.0"
       port: 8081
       backlog: 8192
@@ -70,3 +78,17 @@ server:
             cert-chain:
               resource:
                 path: "${cert.dir}/server.crt"
+    - name: "h2c"  # baseline-h2c, json-h2c
+      host: "0.0.0.0"
+      port: 8082
+      backlog: 8192
+      connection-options:
+        read-timeout: PT0S
+        connect-timeout: PT0S
+      # benchmark requires prior-knowledge HTTP/2 only on this port
+      protocols-discover-services: false
+      protocols:
+        http_2:
+          validate-request-headers: false
+          validate-response-headers: false
+          validate-path: false

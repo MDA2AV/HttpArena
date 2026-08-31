@@ -89,7 +89,10 @@ void ConfigureRoutes(SimpleWServer server)
 
     server.MapGet("/pipeline", (HttpSession s) => s.Response.Text("ok"));
 
-    server.MapPost("/upload", (HttpSession s) => Text(s, s.Request.Body.Length));
+    // Request.Body is a ReadOnlySequence<byte>, so the echo is those bytes
+    // handed to Response.Body() -- no text conversion, which would corrupt a
+    // binary payload.
+    server.MapPost("/echo", (HttpSession s) => s.Response.Body(s.Request.Body.ToArray(), "application/octet-stream"));
 
     server.MapGet("/json/:count", (HttpSession s) =>
         JsonResponse(s, GetRouteInt(s, "count", 50), GetQueryInt(s, "m", 1)));

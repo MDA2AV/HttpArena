@@ -5,9 +5,9 @@ project(executors)
 add_library(
 	${PROJECT_NAME} SHARED
 	src/baseline11.c
+	src/echo.c
 	src/json_executor.c
 	src/pipeline.c
-	src/upload.c
 	src/ws.c
 )
 

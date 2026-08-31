@@ -6,7 +6,7 @@ built on HCS and Eio.
 This entry builds the same benchmark server as `frameworks/araara`, but runs it
 with `HCS_ARENA_MODE=standard`. In that mode the server keeps
 `Hcs.Server.default_config` values except for harness-required listener fields
-such as protocol, port, TLS, and the upload profile's accepted body size.
+such as protocol, port, TLS, and the in-out profile's accepted body size.
 
 It still uses all detected physical cores, matching the tuned entry and the
 HttpArena benchmark machine.

@@ -10,7 +10,7 @@ $path = $_SERVER['PATH_INFO'];
 return match ($path) {
     '/baseline11' => baseline(),
     '/baseline2'  => baseline(),
-    '/upload'     => upload(),
+    '/echo'       => echo_body(),
     '/pipeline'   => pipeline(),
     '/async-db'   => asyncDb(),
     '/fortunes'   => Fortunes::render(),
@@ -63,10 +63,12 @@ function json($path)
     echo json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
-function upload()
+function echo_body()
 {
-    header('Content-Type: text/plain');
-    echo $_SERVER['CONTENT_LENGTH'];
+    // php://input is the raw request body, read to end regardless of framing,
+    // so a chunked request works without a Content-Length to size it from.
+    header('Content-Type: application/octet-stream');
+    echo file_get_contents('php://input');
 }
 
 function pipeline()

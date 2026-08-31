@@ -2,15 +2,18 @@ module app;
 
 import vibe.core.core : runApplication, runWorkerTaskDist, setupWorkerThreads;
 import vibe.core.log : logInfo, logWarn;
-import vibe.core.stream : nullSink, pipe;
 import vibe.data.json : deserializeJson, parseJsonString;
 import vibe.data.serialization : optional;
 import vibe.http.router : URLRouter;
 import vibe.http.server;
-import vibe.stream.operations : readAllUTF8;
+import vibe.stream.operations : readAll, readAllUTF8;
+import vibe.stream.tls : createTLSContext, TLSContext, TLSContextKind;
 
 import std.algorithm.comparison : min;
 import std.conv : to;
+
+// json-tls listens here; 8080 stays plaintext and 8443 belongs to h2/h3.
+enum H1TLS_PORT = 8081;
 
 struct Rating {
     long score;
@@ -108,10 +111,48 @@ void handleJson(scope HTTPServerRequest req, scope HTTPServerResponse res)
     res.writeJsonBody(ItemList(items, count));
 }
 
-void handleUpload(scope HTTPServerRequest req, scope HTTPServerResponse res)
+/// POST /echo, the body handed back byte for byte. It is read through vibe.d's
+/// own body reader, which has already undone chunked framing, so the response
+/// is sized from what actually arrived rather than from a Content-Length the
+/// request need not carry. writeBody sets that length and the content type.
+void handleEcho(scope HTTPServerRequest req, scope HTTPServerResponse res)
 @safe {
-    auto received = req.bodyReader.pipe(nullSink);
-    res.writeBody(received.to!string, "text/plain");
+    auto payload = req.bodyReader.readAll();
+    res.writeBody(payload, "application/octet-stream");
+}
+
+/// Server TLS context for the json-tls listener, or null when the harness did
+/// not mount /certs. Returning null rather than throwing keeps the plaintext
+/// profiles startable on their own: validate.sh only mounts the directory for
+/// entries that subscribe to a TLS test.
+TLSContext serverTLSContext()
+@safe nothrow {
+    import std.file : exists;
+
+    enum certPath = "/certs/server.crt";
+    enum keyPath = "/certs/server.key";
+
+    try {
+        if (!exists(certPath) || !exists(keyPath)) {
+            logWarn("No certificate at %s, the TLS listener stays down", certPath);
+            return null;
+        }
+        auto ctx = createTLSContext(TLSContextKind.server);
+        ctx.useCertificateChainFile(certPath);
+        ctx.usePrivateKeyFile(keyPath);
+        // json-tls is HTTP/1.1 only. Without this the extension is absent and a
+        // client falls back to 1.1 anyway, but saying so explicitly keeps an h2
+        // capable client from ever being offered the upgrade.
+        ctx.alpnCallback = (string[] offered) {
+            foreach (proto; offered)
+                if (proto == "http/1.1") return proto;
+            return null;  // no overlap: let the client fall back
+        };
+        return ctx;
+    } catch (Exception e) {
+        logWarn("TLS setup failed (%s), the TLS listener stays down", e.msg);
+        return null;
+    }
 }
 
 /// Cores this container may actually use: the cgroup v2 quota first, then the
@@ -178,14 +219,15 @@ int main(string[] args)
             router.get("/baseline11", &handleBaseline11);
             router.post("/baseline11", &handleBaseline11);
             router.get("/json/:count", &handleJson);
-            router.post("/upload", &handleUpload);
+            router.post("/echo", &handleEcho);
             router.rebuild();
 
             auto settings = new HTTPServerSettings;
             settings.port = 8080;
             settings.bindAddresses = ["0.0.0.0"];
             settings.options = HTTPServerOption.reusePort | HTTPServerOption.reuseAddress;
-            // The upload profile posts bodies of up to 20 MB; the default cap is 2 MB.
+            // /echo takes a 100 KB body; the default cap is 2 MB, and this
+            // leaves room for anything a later profile posts.
             settings.maxRequestSize = 64 * 1024 * 1024;
             // standard mode: gzip is vibe.d's own Accept-Encoding negotiation,
             // nothing hand-rolled and nothing compressed unasked.
@@ -193,6 +235,21 @@ int main(string[] args)
             settings.serverString = "vibe.d";
 
             listenHTTP(settings, router);
+
+            // json-tls: the same router behind TLS on 8081, one listener per
+            // worker exactly like the plaintext one, so the profile is served
+            // by every core instead of whichever thread happened to bind it.
+            if (auto tlsCtx = serverTLSContext()) {
+                auto tlsSettings = new HTTPServerSettings;
+                tlsSettings.port = H1TLS_PORT;
+                tlsSettings.bindAddresses = ["0.0.0.0"];
+                tlsSettings.options = HTTPServerOption.reusePort | HTTPServerOption.reuseAddress;
+                tlsSettings.maxRequestSize = 64 * 1024 * 1024;
+                tlsSettings.useCompressionIfPossible = true;
+                tlsSettings.serverString = "vibe.d";
+                tlsSettings.tlsContext = tlsCtx;
+                listenHTTP(tlsSettings, router);
+            }
         } catch (Exception e) assert(false, e.msg);
     });
 

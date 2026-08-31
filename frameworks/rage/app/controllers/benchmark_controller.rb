@@ -79,14 +79,15 @@ class BenchmarkController < ApplicationController
     render json: { items: items, count: items.length }
   end
 
-  def upload
+  def echo_body
     rack_input = request.send(:rack_request).env[Rack::RACK_INPUT]
     rack_input.rewind
-    size = 0
+    chunks = []
     while (chunk = rack_input.read(65536))
-      size += chunk.bytesize
+      chunks << chunk
     end
-    render plain: size.to_s
+    headers["content-type"] = "application/octet-stream"
+    render plain: chunks.join
   end
 
   def not_found

@@ -15,7 +15,7 @@ $http_worker->count = (int) shell_exec('nproc');
 $http_worker->name = 'bench';
 
 
-// Increase max package size to 30MB for file upload test
+// Increase max package size to 30MB so an oversized body is answered, not dropped
 TcpConnection::$defaultMaxPackageSize = 30 * 1024 * 1024;
 
 // benchmark data
@@ -43,9 +43,9 @@ $http_worker->onMessage = static function ($connection, $request) {
             $connection->headers = ['Content-Type' => 'text/plain'];
             return $connection->send($sum);
         
-        case '/upload':
-            $connection->headers = ['Content-Type' => 'text/plain'];
-            return $connection->send(strlen($request->rawBody()));
+        case '/echo':
+            $connection->headers = ['Content-Type' => 'application/octet-stream'];
+            return $connection->send($request->rawBody());
 
         case '/async-db':
             $connection->headers = ['Content-Type' => 'application/json'];
@@ -105,6 +105,13 @@ $https->name = 'bench';
 
 
 $https->onMessage = static function ($connection, $request) {
+
+    // 8gbit drives :8081, which has its own onMessage -- the '/echo' case
+    // in the plaintext worker above is not reachable from here.
+    if ($request->path() === '/echo') {
+        $connection->headers = ['Content-Type' => 'application/octet-stream'];
+        return $connection->send($request->rawBody());
+    }
 
     if(str_starts_with($request->path(), '/json/')) {
         $count = explode('/', $request->path())[2];

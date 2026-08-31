@@ -22,7 +22,7 @@ An Express-like API on uWebSockets.js, with the cluster module for multi-core sc
 | `/crud/items/:id` | GET/PUT | Reads one item through a Redis cache-aside, or updates it and drops the cached copy |
 | `/fortunes` | GET | Reads 200 rows from PostgreSQL, appends the runtime row, sorts and renders the HTML table |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzip or brotli when the client accepts one |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
@@ -32,8 +32,8 @@ than where it looks the same:
 - It is its own `Server` class, not an `express()` factory, and handlers take `(request, response)`.
   The body is read with `await request.text()` instead of a body parser, and the query and the route
   parameter come from `request.query_parameters` and `request.path_parameters`.
-- `max_body_length` defaults to 250 KB and answers 413 above it, so the upload profile needs it
-  raised. `/upload` still reads the request as a stream and counts the chunks, so a 20 MB body is
+- `max_body_length` defaults to 250 KB and answers 413 above it, so the in-out profile needs it
+  raised. `/echo` collects the request chunks and returns them, so a 100 KB body is
   never held in memory.
 - Tuned mode, for the same reason as ultimate-express and fulmine: the framework ships no response
   compression, so `/json/:count` negotiates by hand per request (gzip level 1, brotli quality 3,

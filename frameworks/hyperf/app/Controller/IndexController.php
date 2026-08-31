@@ -60,9 +60,10 @@ class IndexController
         ]);
     }
 
-    public function handleUpload(RequestInterface $request, ResponseInterface $response): PsrResponseInterface
+    public function handleEcho(RequestInterface $request, ResponseInterface $response): PsrResponseInterface
     {
-        return $response->raw($request->getBody()->getSize());
+        return $response->raw((string) $request->getBody())
+                        ->withHeader('Content-Type', 'application/octet-stream');
     }
 
     public function handleAsyncDb(RequestInterface $request, ResponseInterface $response): PsrResponseInterface

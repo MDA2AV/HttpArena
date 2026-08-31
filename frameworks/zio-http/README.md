@@ -16,7 +16,7 @@ ZIO HTTP on the Netty backend with ZIO 2.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Folds over the body stream and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/baseline2` | GET | Sums query parameter values |
 | `/async-db` | GET | Reads from PostgreSQL over JDBC on ZIO's blocking pool |
 | `/static/:filename` | GET | Serves a file from disk, the brotli or gzip variant when the client accepts one |

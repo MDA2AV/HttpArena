@@ -10,16 +10,16 @@
     "response": true
   },
   "engine": "vibe.d",
-  "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation.",
+  "description": "vibe.d 0.10 on its own fiber based event loop, default configuration, one listener task per core sharing the port with SO_REUSEPORT. Routing through URLRouter, JSON through vibe.data.json, gzip through the built-in Accept-Encoding negotiation. json-tls on 8081 through vibe-stream:tls on OpenSSL, one listener per worker like the plaintext port.",
   "repo": "https://github.com/vibe-d/vibe.d",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
-    "upload"
+    "json-tls",
+    "8gbit"
   ],
   "maintainers": []
 }

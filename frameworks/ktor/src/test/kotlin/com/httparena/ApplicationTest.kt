@@ -6,6 +6,7 @@ import io.ktor.http.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class ApplicationTest {
@@ -119,14 +120,14 @@ class ApplicationTest {
     }
 
     @Test
-    fun uploadTest() = testApplication {
+    fun echoTest() = testApplication {
         setup()
         val payload = ByteArray(1024) { it.toByte() }
-        val response = client.post("/upload") {
+        val response = client.post("/echo") {
             setBody(payload)
         }
         assertEquals(200, response.status.value)
-        assertEquals(payload.size.toLong(), response.bodyAsText().toLong())
+        assertContentEquals(payload, response.readRawBytes())
     }
 
     @Test

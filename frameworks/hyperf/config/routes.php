@@ -20,7 +20,7 @@ $httpRoutes = function () {
     Router::addRoute(['GET', 'POST'], '/baseline11', [IndexController::class, 'handleBaseline11']);
     Router::get('/pipeline', [IndexController::class, 'handlePipeline']);
     Router::get('/json/{count}', [IndexController::class, 'handleJson']);
-    Router::post('/upload', [IndexController::class, 'handleUpload']);
+    Router::post('/echo', [IndexController::class, 'handleEcho']);
     Router::get('/async-db', [IndexController::class, 'handleAsyncDb']);
 };
 

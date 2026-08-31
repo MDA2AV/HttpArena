@@ -1,0 +1,4 @@
+
+thread '<unnamed>' (56) panicked at src/main.rs:64:39:
+called `Result::unwrap()` on an `Err` value: Io(Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

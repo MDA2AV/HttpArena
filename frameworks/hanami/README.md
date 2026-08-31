@@ -16,7 +16,7 @@ Hanami actions and router on Puma.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Reads the body in chunks and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 

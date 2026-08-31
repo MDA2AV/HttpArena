@@ -107,15 +107,13 @@ function json(count_: string, query: string, req: Request): Response {
     return new Response(body, { headers: JSON_PLAIN });
 }
 
-async function upload(req: Request): Promise<Response> {
-    let size = 0;
-    const body = req.body;
-    if (body !== null) {
-        // Counted chunk by chunk. The profile posts up to 20 MB per request over
-        // hundreds of connections, and buffering the bodies would only cost memory.
-        for await (const chunk of body) size += chunk.byteLength;
-    }
-    return new Response(String(size), { headers: TEXT });
+async function echoBody(req: Request): Promise<Response> {
+    // arrayBuffer() reads to end regardless of framing, so a chunked request
+    // works and the Response gets a Content-Length from the buffer.
+    const buf = await req.arrayBuffer();
+    return new Response(buf, {
+        headers: { "content-type": "application/octet-stream" },
+    });
 }
 
 // ── static ──────────────────────────────────────────────────────────────────
@@ -339,10 +337,24 @@ const routes = {
 
     "/json/:count": (req: any) => json(req.params.count, qs(req), req),
 
-    "/upload": { POST: (req: Request) => upload(req) },
+    "/echo": { POST: (req: Request) => echoBody(req) },
 
     // one segment, so a path with a slash in it never reaches the handler
     "/static/:name": (req: any) => serveStatic(req.params.name, req),
+
+    // GET /delay/{ms} - answered once ms milliseconds have gone by. Bun.sleep returns a
+    // promise the scheduler resolves on a timer, so awaiting it parks this request and
+    // hands the thread back: a wait costs a timer entry rather than a blocked worker,
+    // which is what lets one process hold tens of thousands of them at once.
+    //
+    // The value is parsed per request, out of the path Bun.serve matched. Keeping it in
+    // this scope rather than anywhere shared is what makes overlapping requests with
+    // different delays each get their own, which validation checks with 32 at a time.
+    "/delay/:ms": async (req: any) => {
+        const ms = parseInt(req.params.ms, 10) || 0;
+        if (ms > 0) await Bun.sleep(ms);
+        return new Response(String(ms), { headers: TEXT });
+    },
 
     "/async-db": (req: Request) => asyncDb(qs(req)),
 
@@ -369,7 +381,7 @@ const listener = {
     // which is how this entry uses more than one core.
     reusePort: true,
     development: false,
-    // A 20 MB upload on a saturated server takes longer than the 10s default.
+    // A saturated server can take longer than the 10s default.
     idleTimeout: 120,
     routes,
     fetch: handle,

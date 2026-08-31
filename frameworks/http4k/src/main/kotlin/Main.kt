@@ -94,17 +94,13 @@ fun jsonItems(request: Request): Response {
         .body(Jackson.asFormatString(ProcessResponse(items, items.size)))
 }
 
-fun upload(request: Request): Response {
-    var size = 0L
-    val buffer = ByteArray(64 * 1024)
-    request.body.stream.use { stream ->
-        while (true) {
-            val read = stream.read(buffer)
-            if (read < 0) break
-            size += read
-        }
-    }
-    return text(size.toString())
+fun echoBody(request: Request): Response {
+    // Collected: the response needs a Content-Length, and a chunked request
+    // carries none to forward until the body is in.
+    val body = request.body.stream.use { it.readBytes() }
+    return Response(OK)
+        .header("Content-Type", "application/octet-stream")
+        .body(java.io.ByteArrayInputStream(body), body.size.toLong())
 }
 
 val app = routes(
@@ -112,7 +108,7 @@ val app = routes(
     "/baseline11" bind Method.GET to ::baseline11,
     "/baseline11" bind Method.POST to ::baseline11,
     "/json/{count}" bind Method.GET to ::jsonItems,
-    "/upload" bind Method.POST to ::upload
+    "/echo" bind Method.POST to ::echoBody
 )
 
 // json-tls needs HTTP/1.1 over TLS on 8081. Undertow takes an SSLContext, and

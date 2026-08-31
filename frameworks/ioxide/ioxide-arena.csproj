@@ -6,7 +6,20 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <!--<Features>runtime-async=on</Features>-->
+        <!-- Runtime async: the runtime suspends and resumes async methods
+             itself instead of the compiler emitting a state machine. A net11.0
+             project needs nothing but this flag. EnablePreviewFeatures is not
+             required, and the DOTNET_RuntimeAsync and UNSUPPORTED_RuntimeAsync
+             env vars have been removed (opt out with UseRuntimeAsync=false).
+             $(Features) is prepended so this appends rather than replacing
+             whatever the SDK already set.
+
+             Nothing extra is needed for the IValueTaskSource this entry awaits
+             on the reactor. Runtime async consumes an IVTS-backed ValueTask as
+             is, which is what Socket itself does. The one documented opt-out is
+             methods using a pooled async method builder, which skip runtime
+             async; this entry uses none. -->
+        <Features>$(Features);runtime-async=on</Features>
         <RootNamespace>IoxideArena</RootNamespace>
         <AssemblyName>ioxide-arena</AssemblyName>
         <ServerGarbageCollection>true</ServerGarbageCollection>
@@ -14,15 +27,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ioxide" Version="0.7.210" />
-        <PackageReference Include="ioxide.pg" Version="0.7.210" />
-        <PackageReference Include="ioxide.file" Version="0.7.210" />
-        <PackageReference Include="ioxide.redis" Version="0.7.210" />
-        <PackageReference Include="ioxide.http2" Version="0.7.210" />
-        <PackageReference Include="ioxide.ngtcp2" Version="0.7.210" />
-        <PackageReference Include="ioxide.nghttp3" Version="0.7.210" />
-        <PackageReference Include="StackExchange.Redis" Version="2.8.16" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
+        <PackageReference Include="ioxide" Version="0.7.211" />
+        <PackageReference Include="ioxide.pg" Version="0.7.211" />
+        <PackageReference Include="ioxide.timer" Version="0.7.211" />
+        <PackageReference Include="ioxide.file" Version="0.7.211" />
+        <PackageReference Include="ioxide.http2" Version="0.7.211" />
+        <PackageReference Include="ioxide.ngtcp2" Version="0.7.211" />
+        <PackageReference Include="ioxide.nghttp3" Version="0.7.211" />
     </ItemGroup>
 
 </Project>

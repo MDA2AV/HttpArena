@@ -16,14 +16,14 @@ Fiber web framework on fasthttp, default configuration.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Reads the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
 - Routing and path/query access through the Fiber API
 - JSON through `c.JSON`, serialized per request
 - Compression through the Fiber `compress` middleware
-- Body limit raised to 25 MB so the upload profile is not rejected
+- Body limit raised to 25 MB so the in-out profile is not rejected
 
 ## Added profiles
 

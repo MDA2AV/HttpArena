@@ -110,15 +110,24 @@ func jsonItems(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ProcessResponse{Items: items, Count: count})
 }
 
-func upload(w http.ResponseWriter, r *http.Request) {
-	size, err := io.Copy(io.Discard, r.Body)
-	w.Header().Set("Content-Type", "text/plain")
+func echoBody(w http.ResponseWriter, r *http.Request) {
+	// Always read the body BEFORE writing a byte of the response.
+	//
+	// Streaming it back with the request's Content-Length looks tempting and is
+	// wrong here: net/http drains and closes the request body as soon as the
+	// response headers flush while unread body remains (chunkWriter.writeHeader,
+	// maxPostHandlerReadBytes = 256 KB). io.Copy then fails mid-way and the
+	// response is short under a Content-Length already promised, which kills the
+	// connection. The old 20 MB upload was over that threshold so the body was
+	// left open; 100 KB is not.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("0"))
 		return
 	}
-	w.Write([]byte(strconv.FormatInt(size, 10)))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
+	w.Write(body)
 }
 
 var pgPool *pgxpool.Pool
@@ -441,7 +450,7 @@ func main() {
 	r.Get("/baseline11", baseline11)
 	r.Post("/baseline11", baseline11)
 	r.Get("/json/{count}", jsonItems)
-	r.Post("/upload", upload)
+	r.Post("/echo", echoBody)
 	r.Get("/baseline2", baseline11)
 	r.Get("/static/{filename}", staticFile)
 	r.Get("/async-db", asyncDb)

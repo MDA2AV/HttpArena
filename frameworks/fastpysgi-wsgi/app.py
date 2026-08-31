@@ -217,9 +217,9 @@ def static_file_endpoint(env):
     return make_resp(200, [ ('Content-Type', entry['type']) ], entry['data'], contenc = entry['enc'])
 
 
-def upload_endpoint(env):
-    size = env["wsgi.input"].getbuffer().nbytes
-    return text_resp(str(size))
+def echo_endpoint(env):
+    body = env["wsgi.input"].getbuffer().tobytes()
+    return make_resp(200, [ ( 'Content-Type', 'application/octet-stream' ) ], body)
 
 
 
@@ -409,7 +409,7 @@ ROUTES = {
     '/baseline11': baseline11,
     '/json/': json_endpoint,
     '/json-comp/': json_endpoint,
-    '/upload': upload_endpoint,
+    '/echo': echo_endpoint,
     '/static/': static_file_endpoint,
     '/async-db': async_db_endpoint,
     '/crud/': crud_collection_endpoint,

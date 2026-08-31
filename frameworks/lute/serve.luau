@@ -4,6 +4,7 @@ local json = require("@std/json")
 
 local TEXT_HEADERS = { ["Content-Type"] = "text/plain" }
 local JSON_HEADERS = { ["Content-Type"] = "application/json" }
+local OCTET_HEADERS = { ["Content-Type"] = "application/octet-stream" }
 local NOT_FOUND = { status = 404, body = "", headers = TEXT_HEADERS }
 local UPGRADE_FAILED = { status = 400, body = "Upgrade failed", headers = TEXT_HEADERS }
 local PIPELINE_OK = { body = "ok", headers = TEXT_HEADERS }
@@ -55,8 +56,12 @@ local function handle(req, srv)
 		return PIPELINE_OK
 	end
 
-	if path == "/upload" and method == "POST" then
-		return { body = tostring(#req.body), headers = TEXT_HEADERS }
+	if path == "/echo" and method == "POST" then
+		-- The body back byte for byte: req.body is what the server read off the
+		-- wire (framing already resolved), Luau strings are 8-bit clean, and the
+		-- response is framed from its length rather than from a request header.
+		-- `or ""` covers a bodyless POST, which still answers 200 with nothing.
+		return { body = req.body or "", headers = OCTET_HEADERS }
 	end
 
 	if string.sub(path, 1, 6) == "/json/" then

@@ -230,16 +230,14 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
         }
 
         /**
-         * Upload 20MB
-         * https://www.http-arena.com/docs/test-profiles/h1/isolated/upload/
+         * Echo the request body back verbatim
+         * https://www.http-arena.com/docs/test-profiles/h1/isolated/in-out/
          */
-        post("/upload") {
-            val channel = call.request.receiveChannel()
-            val totalBytes = channel.readTo(DevNull)
-            call.respondText(
-                totalBytes.toString(),
-                ContentType.Text.Plain
-            )
+        post("/echo") {
+            // Collected: the response needs a Content-Length, and a chunked
+            // request carries none to forward until the body is in.
+            val body = call.receive<ByteArray>()
+            call.respondBytes(body, ContentType.Application.OctetStream)
         }
 
         /**

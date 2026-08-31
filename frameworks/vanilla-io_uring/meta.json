@@ -7,16 +7,12 @@
   "repo": "https://github.com/enghitalo/vanilla",
   "enabled": false,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
-    "upload",
-    "static",
     "async-db",
-    "crud",
     "fortunes"
   ],
   "maintainers": [

@@ -53,7 +53,7 @@ production-stack included.
 | `/json/:count` | GET | Serializes a slice of the dataset, compressed when the client asks |
 | `/delay/:ms` | GET | Waits the milliseconds named in the path, then echoes them back |
 | `/async-db` | GET | Reads from PostgreSQL, prepared statement, pool sized under max_connections |
-| `/upload` | POST | Counts the bytes of the request body |
+| `/echo` | POST | Returns the request body back verbatim |
 | `/static/*` | GET | `express.static()` with `preCompressed`, served from the in-memory cache |
 
 ## Notes

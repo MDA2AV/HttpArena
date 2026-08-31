@@ -96,9 +96,14 @@ pub fn (mut app App) baseline_post(mut ctx Context) veb.Result {
 	return ctx.text(sum.str())
 }
 
-@['/upload'; post]
-pub fn (mut app App) upload(mut ctx Context) veb.Result {
-	return ctx.text(ctx.req.data.len.str())
+@['/echo'; post]
+pub fn (mut app App) echo(mut ctx Context) veb.Result {
+	// The body back, byte for byte. ctx.req.data is the fully-received body —
+	// veb's fasthttp backend reassembles TCP-fragmented requests and decodes
+	// chunked framing before the route runs, so these are the bytes that
+	// arrived whatever the framing was, and send_response_to_client frames the
+	// answer with their length rather than anything read off a header.
+	return ctx.send_response_to_client('application/octet-stream', ctx.req.data)
 }
 
 // ── /json (+ json-comp) ──────────────────────────────────────────────────────

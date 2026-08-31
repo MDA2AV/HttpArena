@@ -103,12 +103,15 @@ func jsonItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, ProcessResponse{Items: items, Count: count})
 }
 
-func upload(c echo.Context) error {
-	size, err := io.Copy(io.Discard, c.Request().Body)
+func echoBody(c echo.Context) error {
+	// Read the whole body first: c.Stream is io.Copy underneath, and net/http
+	// closes the request body once response headers flush with unread body
+	// left (maxPostHandlerReadBytes = 256 KB), which truncates a 100 KB echo.
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return c.String(http.StatusBadRequest, "0")
+		return c.NoContent(http.StatusBadRequest)
 	}
-	return c.String(http.StatusOK, strconv.FormatInt(size, 10))
+	return c.Blob(http.StatusOK, "application/octet-stream", body)
 }
 
 var pgPool *pgxpool.Pool
@@ -384,7 +387,7 @@ func main() {
 	e.GET("/baseline11", baseline11)
 	e.POST("/baseline11", baseline11)
 	e.GET("/json/:count", jsonItems)
-	e.POST("/upload", upload)
+	e.POST("/echo", echoBody)
 	e.GET("/baseline2", baseline11)
 	e.GET("/static/:filename", staticFile)
 	e.GET("/async-db", asyncDb)

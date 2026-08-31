@@ -17,20 +17,18 @@
     "EdmondDantes"
   ],
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-comp",
     "json-tls",
-    "upload",
+    "8gbit",
     "static-h2",
     "baseline-h2",
     "baseline-h2c",
     "json-h2c",
     "baseline-h3",
     "static-h3",
-    "async-db",
-    "crud"
+    "async-db"
   ]
 }

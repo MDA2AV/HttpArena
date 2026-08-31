@@ -14,15 +14,13 @@
   "repo": "https://github.com/fastify/fastify",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m",
+    "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
-    "json",
     "json-tls",
     "json-comp",
-    "upload",
-    "async-db",
-    "static"
+    "8gbit",
+    "async-db"
   ],
   "maintainers": []
 }

@@ -1,0 +1,5 @@
+{
+  "framework": "axum",
+  "tls": "pass",
+  "check": "none"
+}

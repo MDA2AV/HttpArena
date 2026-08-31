@@ -1,6 +1,30 @@
 {
   "framework": "WebFramework C++",
   "results": {
+    "latency-10k-1024": {
+      "framework": "WebFramework C++",
+      "language": "C++",
+      "rps": 9981,
+      "avg_latency": "863.3us",
+      "p99_latency": "761.0us",
+      "cpu": "99.7%",
+      "memory": "34MiB",
+      "connections": 1024,
+      "threads": 64,
+      "duration": "20s",
+      "pipeline": 1,
+      "bandwidth": "1.24MB/s",
+      "reconnects": 0,
+      "status_2xx": 199675,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0,
+      "cpu_usec": 22337423,
+      "cpu_per_req_us": 111.8689,
+      "target_rate": 10000,
+      "rate_ratio": 0.9981,
+      "p99_9_latency": "155072.0us"
+    },
     "latency-1m-1024": {
       "framework": "WebFramework C++",
       "language": "C++",

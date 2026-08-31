@@ -1,5 +1,5 @@
-import { Controller, Get, Header, Param, Post, Query, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Header, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { readFileSync } from 'node:fs';
 
 interface Rating {
@@ -45,16 +45,6 @@ function readBody(req: Request): Promise<Buffer> {
   });
 }
 
-function countBody(req: Request): Promise<number> {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    req.on('data', (chunk: Buffer) => {
-      size += chunk.length;
-    });
-    req.on('end', () => resolve(size));
-    req.on('error', reject);
-  });
-}
 
 @Controller()
 export class AppController {
@@ -96,9 +86,14 @@ export class AppController {
     return { items, count };
   }
 
-  @Post('upload')
-  @Header('Content-Type', 'text/plain')
-  async upload(@Req() req: Request): Promise<string> {
-    return String(await countBody(req));
+  // Written through @Res rather than returned: Nest's express adapter does
+  // `isObject(body) ? res.json(body) : res.send(String(body))`, and a Buffer is
+  // an object - so a returned Buffer comes back as {"type":"Buffer","data":[...]}.
+  @Post('echo')
+  async echoBody(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(Buffer.from(chunk));
+    const body = Buffer.concat(chunks);
+    res.type('application/octet-stream').send(body);
   }
 }

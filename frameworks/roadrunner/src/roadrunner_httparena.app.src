@@ -9,7 +9,7 @@
         sasl,
         ssl,
         epgsql,
-        pooler,
+        ecpool,
         roadrunner
     ]},
     {env, []},

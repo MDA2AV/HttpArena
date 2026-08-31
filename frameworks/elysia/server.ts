@@ -140,6 +140,16 @@ if (cluster.isPrimary) {
 
 	// json-tls and static-tls want these two on the TLS listener as well, so the
 	// handler and the plugin mount are named rather than inlined into one chain.
+	// Shared by the plaintext and TLS instances: arrayBuffer() reads to end
+	// regardless of framing, so a chunked request works and the Response gets its
+	// Content-Length from the buffer.
+	const echoHandler = async ({ request }: any) => {
+		const buf = await request.arrayBuffer();
+		return new Response(buf, {
+			headers: { "content-type": "application/octet-stream" },
+		});
+	};
+
 	const jsonHandler = ({ params, query }: any) => {
 		const count = Math.max(
 			0,
@@ -282,17 +292,7 @@ if (cluster.isPrimary) {
 				return { items: [], count: 0 };
 			}
 		})
-		.post("/upload", async ({ request }) => {
-			let size = 0;
-			if (request.body) {
-				for await (const chunk of request.body as any) {
-					size += (chunk as Uint8Array).byteLength;
-				}
-			}
-			return new Response(String(size), {
-				headers: { "content-type": "text/plain" },
-			});
-		})
+		.post("/echo", echoHandler)
 		// ── crud ────────────────────────────────────────────────────────
 		.get("/crud/items", async ({ query }) => {
 			if (!pg) return status(500, { error: "DB not available" });
@@ -444,6 +444,7 @@ if (cluster.isPrimary) {
 			.onRequest(precompressedStatic)
 			.use(staticMount())
 			.get("/json/:count", jsonHandler)
+			.post("/echo", echoHandler)
 			.onError(({ code }) => {
 				if (code === "NOT_FOUND") return status(404);
 			})

@@ -16,11 +16,11 @@ http4s on the Ember server with cats-effect.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Folds over the body stream and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
 - Routing and query matchers through the http4s DSL
 - JSON through circe, encoded per request
 - Compression through the http4s `GZip` middleware
-- `/upload` consumes the fs2 body stream, so the 20 MB body is never buffered
+- `/echo` consumes the fs2 body stream, so the 20 MB body is never buffered

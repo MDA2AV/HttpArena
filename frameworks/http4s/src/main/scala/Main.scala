@@ -61,12 +61,13 @@ object Main extends IOApp.Simple:
     case GET -> Root / "json" / IntVar(count) :? Multiplier(m) =>
       Ok(payload(count, m.getOrElse(1L)))
 
-    case request @ POST -> Root / "upload" =>
-      request.body.chunks
-        .fold(0L)((size, chunk) => size + chunk.size)
-        .compile
-        .lastOrError
-        .flatMap(size => Ok(size.toString))
+    case request @ POST -> Root / "echo" =>
+      // Collected: the response needs a Content-Length, and a chunked request
+      // carries none to forward until the body is in.
+      request.body.compile.to(Array).flatMap { bytes =>
+        Ok(bytes).map(_.putHeaders(
+          org.http4s.headers.`Content-Type`(org.http4s.MediaType.application.`octet-stream`)))
+      }
   }
 
   // json-tls needs HTTP/1.1 over TLS on 8081. The harness mounts PEMs and Ember

@@ -17,7 +17,7 @@ Sanic on its own worker manager, default configuration.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Streams the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
@@ -26,7 +26,7 @@ Sanic on its own worker manager, default configuration.
 - Sanic has no compression middleware, so gzip is done by hand in an
   `on_response` middleware: only when the client sends `Accept-Encoding: gzip`,
   and only above 1 KB. That is why the entry is declared `tuned`
-- The upload route is `stream=True`, so a 20 MB body is counted chunk by chunk
+- The echo route is `stream=True`, so the body is collected chunk by chunk
   and never buffered
 - One worker process per available core, started by Sanic's own worker manager,
   not gunicorn. The core count reads the cgroup `cpu.max` quota first, like

@@ -14,10 +14,10 @@
     "loadType": "initialization",
     "route": "pipeline"
   },
-  "Executors.Upload": {
+  "Executors.Echo": {
     "api": "csharp",
     "loadType": "dynamic",
-    "route": "upload"
+    "route": "echo"
   },
   "Executors.Ws": {
     "api": "csharp",

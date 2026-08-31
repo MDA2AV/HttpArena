@@ -9,8 +9,9 @@ trillium-tokio = "0.6"
 trillium-router = "0.5"
 trillium-rustls = "0.11"
 trillium-quinn = "0.1"
-trillium-websockets = "0.8"
+trillium-websockets = "0.9"
 trillium-static = { version = "0.6", features = ["tokio"] }
+trillium-cache = "0.2"
 trillium-compression = "0.3"
 trillium-grpc = "0.3"
 trillium-askama = "0.5"
@@ -26,11 +27,16 @@ querystrong = "0.4"
 deadpool-postgres = "0.14"
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 serde_json = "1"
+deadpool-redis = "0.23"
+moka = { version = "0.12", features = ["future"] }
 
 dashmap = "6"
 log = "0.4"
 env_logger = "0.11"
 mimalloc = { version = "0.1", default-features = false }
+
+[dev-dependencies]
+trillium-testing = { version = "0.10", features = ["tokio"] }
 
 [profile.release]
 opt-level = 3

@@ -97,11 +97,11 @@ public class BenchmarkResource {
     }
 
     @POST
-    @Path("/upload")
-    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
-    @Produces(MediaType.TEXT_PLAIN)
-    public long upload(InputStream body) throws IOException {
-        return body.transferTo(OutputStream.nullOutputStream());
+    @Path("/echo")
+    @Consumes(MediaType.WILDCARD)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public byte[] echo(InputStream body) throws IOException {
+        return body.readAllBytes();
     }
 
     @GET

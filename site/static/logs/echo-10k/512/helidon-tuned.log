@@ -1,0 +1,24 @@
+Aug 30, 2026 1:33:06 AM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil$MemoryAccessor (file:/app/libs/protobuf-java-4.31.1.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.protobuf.UnsafeUtil$MemoryAccessor
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+Aug 30, 2026 1:33:07 AM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 4.5.4 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Aug 30, 2026 1:33:07 AM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Aug 30, 2026 1:33:07 AM io.helidon.common.features.HelidonFeatures lambda$features$11
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Aug 30, 2026 1:33:07 AM io.helidon.webserver.ServerListener startIt
+INFO: [0x2a1f19b5] http://0.0.0.0:8080 bound for socket '@default'
+Aug 30, 2026 1:33:07 AM io.helidon.webserver.ServerListener startIt
+INFO: [0x3b2708ae] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Aug 30, 2026 1:33:07 AM io.helidon.webserver.ServerListener startIt
+INFO: [0x26c62e9d] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Aug 30, 2026 1:33:07 AM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 58 milliseconds. 1181 milliseconds since JVM startup. Java 25.0.4+7-LTS
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)

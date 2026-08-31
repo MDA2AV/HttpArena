@@ -17,7 +17,7 @@ server:
             cert-chain:
               resource:
                 path: "${cert.dir}/server.crt"
-    - name: "h1-tls"  # json-tls
+    - name: "h1-tls"  # json-tls, static-tls, 8gbit
       host: "0.0.0.0"
       port: 8081
       # benchmark requires http/1.1 only on this port
@@ -33,9 +33,16 @@ server:
             cert-chain:
               resource:
                 path: "${cert.dir}/server.crt"
+    - name: "h2c"  # baseline-h2c, json-h2c
+      host: "0.0.0.0"
+      port: 8082
+      # benchmark requires prior-knowledge HTTP/2 only on this port
+      protocols-discover-services: false
+      protocols:
+        http_2: {}
   features:
     static-content:
-      sockets: ["@default", "h2-tls"]
+      sockets: ["@default", "h1-tls", "h2-tls"]
       path:
         - context: "/static"
           location: "${data.dir}/static"

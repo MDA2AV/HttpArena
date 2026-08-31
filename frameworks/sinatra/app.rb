@@ -100,13 +100,9 @@ class App < Sinatra::Base
     render_json JSON.generate(items: items, count: items.length)
   end
 
-  post '/upload' do
-    size = 0
-    buf = request.body
-    while (chunk = buf.read(65536))
-      size += chunk.bytesize
-    end
-    render_plain size.to_s
+  post '/echo' do
+    headers 'content-type' => 'application/octet-stream'
+    request.body.read || ''
   end
 
   get '/async-db' do

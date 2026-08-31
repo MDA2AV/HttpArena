@@ -14,7 +14,7 @@
         <maven.compiler.release>26</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.deploy.skip>true</maven.deploy.skip>
-        <cardigan.version>0.1.0-alpha1</cardigan.version>
+        <cardigan.version>0.1.0-alpha.3</cardigan.version>
         <junit.jupiter.version>5.11.0</junit.jupiter.version>
     </properties>
 

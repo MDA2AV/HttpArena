@@ -23,7 +23,7 @@ public final class HttpArenaJsonController {
                 400, "text/plain", Response.CT_TEXT,
                 "count must be between 1 and " + dataset.size());
         }
-        return Response.stream(
+        return Response.encoded(
             "application/json", dataset.render(count, multiplier));
     }
 }

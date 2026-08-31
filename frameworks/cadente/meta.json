@@ -1,0 +1,18 @@
+{
+  "display_name": "cadente",
+  "language": "C#",
+  "type": "engine",
+  "engine": "managed sockets",
+  "description": "Cadente is a standalone managed HTTP/1.1 server for .NET, running directly on sockets without the Sisk framework layer.",
+  "repo": "https://github.com/sisk-http/core",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "latency-1m", "latency-10k",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": [
+    "CypherPotato"
+  ]
+}

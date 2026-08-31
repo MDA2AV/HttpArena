@@ -1,0 +1,128 @@
+[2026-08-30 01:53:19.65430] [1] [info] Listening at "http://*:8080"
+[2026-08-30 01:53:19.65477] [1] [info] Listening at "https://*:8081?cert=%2Fcerts%2Fserver.crt&key=%2Fcerts%2Fserver.key"
+[2026-08-30 01:53:19.65484] [1] [info] Manager 1 started
+Web application available at http://127.0.0.1:8080
+Web application available at https://127.0.0.1:8081
+[2026-08-30 01:53:19.65784] [7] [info] Worker 7 started
+[2026-08-30 01:53:19.65883] [8] [info] Worker 8 started
+[2026-08-30 01:53:19.65978] [9] [info] Worker 9 started
+[2026-08-30 01:53:19.66095] [10] [info] Worker 10 started
+[2026-08-30 01:53:19.66194] [11] [info] Worker 11 started
+[2026-08-30 01:53:19.66294] [12] [info] Worker 12 started
+[2026-08-30 01:53:19.66387] [13] [info] Worker 13 started
+[2026-08-30 01:53:19.66496] [14] [info] Worker 14 started
+[2026-08-30 01:53:19.66601] [15] [info] Worker 15 started
+[2026-08-30 01:53:19.66700] [16] [info] Worker 16 started
+[2026-08-30 01:53:19.66794] [17] [info] Worker 17 started
+[2026-08-30 01:53:19.66874] [18] [info] Worker 18 started
+[2026-08-30 01:53:19.66979] [19] [info] Worker 19 started
+[2026-08-30 01:53:19.67083] [20] [info] Worker 20 started
+[2026-08-30 01:53:19.67182] [21] [info] Worker 21 started
+[2026-08-30 01:53:19.67284] [22] [info] Worker 22 started
+[2026-08-30 01:53:19.67382] [23] [info] Worker 23 started
+[2026-08-30 01:53:19.67483] [24] [info] Worker 24 started
+[2026-08-30 01:53:19.67580] [25] [info] Worker 25 started
+[2026-08-30 01:53:19.67701] [26] [info] Worker 26 started
+[2026-08-30 01:53:19.67804] [27] [info] Worker 27 started
+[2026-08-30 01:53:19.67883] [28] [info] Worker 28 started
+[2026-08-30 01:53:19.68008] [29] [info] Worker 29 started
+[2026-08-30 01:53:19.68101] [30] [info] Worker 30 started
+[2026-08-30 01:53:19.68207] [31] [info] Worker 31 started
+[2026-08-30 01:53:19.68304] [32] [info] Worker 32 started
+[2026-08-30 01:53:19.68399] [33] [info] Worker 33 started
+[2026-08-30 01:53:19.68500] [34] [info] Worker 34 started
+[2026-08-30 01:53:19.68608] [35] [info] Worker 35 started
+[2026-08-30 01:53:19.68694] [36] [info] Worker 36 started
+[2026-08-30 01:53:19.68812] [37] [info] Worker 37 started
+[2026-08-30 01:53:19.68918] [38] [info] Worker 38 started
+[2026-08-30 01:53:19.69038] [39] [info] Worker 39 started
+[2026-08-30 01:53:19.69112] [40] [info] Worker 40 started
+[2026-08-30 01:53:19.69218] [41] [info] Worker 41 started
+[2026-08-30 01:53:19.69308] [42] [info] Worker 42 started
+[2026-08-30 01:53:19.69408] [43] [info] Worker 43 started
+[2026-08-30 01:53:19.69520] [44] [info] Worker 44 started
+[2026-08-30 01:53:19.69611] [45] [info] Worker 45 started
+[2026-08-30 01:53:19.69769] [46] [info] Worker 46 started
+[2026-08-30 01:53:19.69893] [47] [info] Worker 47 started
+[2026-08-30 01:53:19.70016] [48] [info] Worker 48 started
+[2026-08-30 01:53:19.70117] [49] [info] Worker 49 started
+[2026-08-30 01:53:19.70207] [50] [info] Worker 50 started
+[2026-08-30 01:53:19.70312] [51] [info] Worker 51 started
+[2026-08-30 01:53:19.70427] [52] [info] Worker 52 started
+[2026-08-30 01:53:19.70550] [53] [info] Worker 53 started
+[2026-08-30 01:53:19.70629] [54] [info] Worker 54 started
+[2026-08-30 01:53:19.70723] [55] [info] Worker 55 started
+[2026-08-30 01:53:19.70864] [56] [info] Worker 56 started
+[2026-08-30 01:53:19.71006] [57] [info] Worker 57 started
+[2026-08-30 01:53:19.71118] [58] [info] Worker 58 started
+[2026-08-30 01:53:19.71221] [59] [info] Worker 59 started
+[2026-08-30 01:53:19.71323] [60] [info] Worker 60 started
+[2026-08-30 01:53:19.71430] [61] [info] Worker 61 started
+[2026-08-30 01:53:19.71520] [62] [info] Worker 62 started
+[2026-08-30 01:53:19.71632] [63] [info] Worker 63 started
+[2026-08-30 01:53:19.71716] [64] [info] Worker 64 started
+[2026-08-30 01:53:19.71843] [65] [info] Worker 65 started
+[2026-08-30 01:53:19.71947] [66] [info] Worker 66 started
+[2026-08-30 01:53:19.72054] [67] [info] Worker 67 started
+[2026-08-30 01:53:19.72132] [68] [info] Worker 68 started
+[2026-08-30 01:53:19.72224] [69] [info] Worker 69 started
+[2026-08-30 01:53:19.72329] [70] [info] Worker 70 started
+[2026-08-30 01:53:19.72696] [1] [info] Creating process id file "/tmp/prefork.pid"
+[2026-08-30 01:53:25.83881] [43] [error] Broken pipe
+[2026-08-30 01:53:25.84026] [27] [error] Broken pipe
+[2026-08-30 01:53:25.84032] [43] [error] Broken pipe
+[2026-08-30 01:53:25.84046] [39] [error] Broken pipe
+[2026-08-30 01:53:25.84112] [7] [error] Broken pipe
+[2026-08-30 01:53:25.84138] [26] [error] Broken pipe
+[2026-08-30 01:53:25.84142] [8] [error] Broken pipe
+[2026-08-30 01:53:25.84185] [51] [error] Broken pipe
+[2026-08-30 01:53:25.84199] [27] [error] Broken pipe
+[2026-08-30 01:53:25.84206] [47] [error] Broken pipe
+[2026-08-30 01:53:25.84250] [7] [error] Broken pipe
+[2026-08-30 01:53:25.84253] [52] [error] Broken pipe
+[2026-08-30 01:53:25.84284] [9] [error] Broken pipe
+[2026-08-30 01:53:25.84415] [49] [error] Broken pipe
+[2026-08-30 01:53:25.84415] [69] [error] Broken pipe
+[2026-08-30 01:53:25.84527] [10] [error] Broken pipe
+[2026-08-30 01:53:25.84642] [28] [error] Broken pipe
+[2026-08-30 01:53:33.64058] [37] [error] Broken pipe
+[2026-08-30 01:53:33.64213] [24] [error] Broken pipe
+[2026-08-30 01:53:33.64248] [50] [error] Broken pipe
+[2026-08-30 01:53:33.64309] [22] [error] Broken pipe
+[2026-08-30 01:53:33.64325] [59] [error] Broken pipe
+[2026-08-30 01:53:33.64335] [67] [error] Broken pipe
+[2026-08-30 01:53:33.64400] [50] [error] Broken pipe
+[2026-08-30 01:53:33.64458] [52] [error] Broken pipe
+[2026-08-30 01:53:33.64470] [53] [error] Broken pipe
+[2026-08-30 01:53:33.64485] [43] [error] Broken pipe
+[2026-08-30 01:53:33.64509] [30] [error] Broken pipe
+[2026-08-30 01:53:33.64560] [40] [error] Broken pipe
+[2026-08-30 01:53:33.64591] [54] [error] Broken pipe
+[2026-08-30 01:53:33.64613] [49] [error] Broken pipe
+[2026-08-30 01:53:33.64663] [17] [error] Broken pipe
+[2026-08-30 01:53:33.64749] [68] [error] Broken pipe
+[2026-08-30 01:53:33.64758] [63] [error] Broken pipe
+[2026-08-30 01:53:33.64847] [68] [error] Broken pipe
+[2026-08-30 01:53:33.64849] [63] [error] Broken pipe
+[2026-08-30 01:53:33.64933] [68] [error] Broken pipe
+[2026-08-30 01:53:41.42825] [70] [error] Broken pipe
+[2026-08-30 01:53:41.42860] [50] [error] Broken pipe
+[2026-08-30 01:53:41.43010] [63] [error] Broken pipe
+[2026-08-30 01:53:41.43019] [40] [error] Broken pipe
+[2026-08-30 01:53:41.43026] [49] [error] Broken pipe
+[2026-08-30 01:53:41.43056] [32] [error] Broken pipe
+[2026-08-30 01:53:41.43059] [26] [error] Broken pipe
+[2026-08-30 01:53:41.43103] [45] [error] Broken pipe
+[2026-08-30 01:53:41.43127] [18] [error] Broken pipe
+[2026-08-30 01:53:41.43157] [10] [error] Broken pipe
+[2026-08-30 01:53:41.43159] [28] [error] Broken pipe
+[2026-08-30 01:53:41.43169] [44] [error] Broken pipe
+[2026-08-30 01:53:41.43168] [34] [error] Broken pipe
+[2026-08-30 01:53:41.43172] [63] [error] Broken pipe
+[2026-08-30 01:53:41.43174] [60] [error] Broken pipe
+[2026-08-30 01:53:41.43174] [15] [error] Broken pipe
+[2026-08-30 01:53:41.43197] [31] [error] Broken pipe
+[2026-08-30 01:53:41.43246] [41] [error] Broken pipe
+[2026-08-30 01:53:41.43263] [43] [error] Broken pipe
+[2026-08-30 01:53:41.43276] [45] [error] Broken pipe
+[2026-08-30 01:53:41.43377] [7] [error] Broken pipe

@@ -340,12 +340,13 @@ async function handle(req: Request): Promise<Response> {
       return new Response(body, { headers: JSON_HEADERS });
     }
 
-    if (path === "/upload" && req.method === "POST") {
-      let size = 0;
-      if (req.body) {
-        for await (const chunk of req.body) size += chunk.byteLength;
-      }
-      return new Response(String(size), { headers: TEXT_HEADERS });
+    if (path === "/echo" && req.method === "POST") {
+      // arrayBuffer() reads to end regardless of framing, so a chunked request
+      // works and the Response gets a Content-Length from the buffer.
+      const buf = await req.arrayBuffer();
+      return new Response(buf, {
+        headers: { "content-type": "application/octet-stream" },
+      });
     }
 
     if (path.startsWith("/static/")) return await serveStatic(path);

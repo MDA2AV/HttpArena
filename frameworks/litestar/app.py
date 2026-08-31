@@ -55,12 +55,14 @@ def json_items(count: int, m: int = 1) -> dict:
     return {"items": items, "count": len(items)}
 
 
-@post("/upload", media_type=MediaType.TEXT, status_code=200)
-async def upload(request: Request) -> str:
-    size = 0
+@post("/echo", media_type="application/octet-stream", status_code=200)
+async def echo_body(request: Request) -> bytes:
+    # Collected: the response needs a Content-Length, and a chunked request has
+    # none to forward until the body is in.
+    chunks = []
     async for chunk in request.stream():
-        size += len(chunk)
-    return str(size)
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 
@@ -261,7 +263,7 @@ app = Litestar(
         pipeline,
         baseline11,
         json_items,
-        upload,
+        echo_body,
         async_db,
         crud_list,
         crud_create,

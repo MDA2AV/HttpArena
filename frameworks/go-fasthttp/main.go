@@ -240,11 +240,12 @@ func asyncDbHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody(body)
 }
 
-func uploadHandler(ctx *fasthttp.RequestCtx) {
-	body := ctx.PostBody()
+func echoHandler(ctx *fasthttp.RequestCtx) {
+	// fasthttp has already read the body, chunked or not; SetBody frames the
+	// response with its length.
 	ctx.Response.Header.Set("Server", "go-fasthttp")
-	ctx.SetContentType("text/plain")
-	ctx.SetBodyString(strconv.Itoa(len(body)))
+	ctx.SetContentType("application/octet-stream")
+	ctx.SetBody(ctx.PostBody())
 }
 
 func dbHandler(ctx *fasthttp.RequestCtx) {
@@ -574,8 +575,8 @@ func main() {
 		case strings.HasPrefix(path, "/json/"):
 			count, _ := strconv.Atoi(path[len("/json/"):])
 			processHandler(ctx, count)
-		case path == "/upload":
-			uploadHandler(ctx)
+		case path == "/echo":
+			echoHandler(ctx)
 		case path == "/db":
 			dbHandler(ctx)
 		case path == "/async-db":

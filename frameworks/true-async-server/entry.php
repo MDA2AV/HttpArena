@@ -56,9 +56,9 @@ $config = (new HttpServerConfig())
     ->addHttp2Listener('0.0.0.0', $h2cPort, false)
     ->setBacklog(2048)
     ->setMaxBodySize(32 * 1024 * 1024)
-    // Stream request bodies into per-request queue instead of buffering
-    // the whole Content-Length into req->body. Required for /upload to
-    // stay within RSS limits under concurrent 20 MiB POSTs (issue #26).
+    // Stream request bodies into a per-request queue instead of buffering
+    // the whole Content-Length into req->body. /echo collects the chunks it
+    // needs, so RSS stays bounded by the body rather than by the queue.
     ->setBodyStreamingEnabled(true)
     // Transparent gzip/brotli middleware — needed for the json-comp profile.
     // Drop both levels to 1 to match Swoole's http_compression_level=1 default
@@ -183,17 +183,18 @@ $server->addHttpHandler(
             }
         }
 
-        if ($path === '/upload') {
-            // Streaming-body fast path (issue #26): never materialise the
-            // 20 MiB body into a single zend_string. Count chunks as they
-            // arrive, peak memory bounded by socket buffer + one chunk.
-            $bytes = 0;
+        if ($path === '/echo') {
+            // The echo needs the bytes, not a count, so the streaming chunks
+            // are collected rather than discarded. Collected rather than
+            // written through because the response needs a Content-Length,
+            // and a chunked request carries none to forward.
+            $chunks = [];
             while (($c = $request->readBody()) !== null) {
-                $bytes += strlen($c);
+                $chunks[] = $c;
             }
             $response->setStatusCode(200)
-                ->setHeader('Content-Type', 'text/plain')
-                ->setBody((string)$bytes);
+                ->setHeader('Content-Type', 'application/octet-stream')
+                ->setBody(implode('', $chunks));
             return;
         }
 

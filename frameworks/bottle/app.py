@@ -355,20 +355,21 @@ def async_db_endpoint():
         return { "items": [ ], "count": 0 }
 
 
-@app.post('/upload')
-def upload_endpoint():
-    size = 0
-    try:
-        body = request.body
-        while True:
-            chunk = body.read(256*1024)
-            if not chunk:
-                break
-            size += len(chunk)
-    except Exception:
-        pass
-    response.content_type = 'text/plain; charset=utf-8'
-    return str(size)
+@app.post('/echo')
+def echo_endpoint():
+    # wsgi.input directly, not request.body: gunicorn de-chunks already but
+    # leaves HTTP_TRANSFER_ENCODING in the environ with no CONTENT_LENGTH, so
+    # bottle's request.body would try to parse chunk framing a second time and
+    # raise a 400. No bare except either - a read failure should surface.
+    stream = request.environ['wsgi.input']
+    chunks = []
+    while True:
+        chunk = stream.read(256*1024)
+        if not chunk:
+            break
+        chunks.append(chunk)
+    response.content_type = 'application/octet-stream'
+    return b"".join(chunks)
 
 
 mimetypes.add_type('.woff2', 'font/woff2')

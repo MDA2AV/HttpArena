@@ -5,14 +5,14 @@ require 'action_controller/railtie'
 
 Bundler.require(*Rails.groups)
 
-# Mark /upload as binary so Rack skips form parameter parsing
-class MarkUploadAsBinary
+# Mark /echo as binary so Rack skips form parameter parsing
+class MarkEchoAsBinary
   def initialize(app)
     @app = app
   end
 
   def call(env)
-    if env['PATH_INFO'] == '/upload'
+    if env['PATH_INFO'] == '/echo'
       env['CONTENT_TYPE'] = 'application/octet-stream'
     end
     @app.call(env)
@@ -57,7 +57,7 @@ class BenchmarkApp < Rails::Application
 
   # Add gzip support
   config.middleware.insert 0, Rack::Deflater
-  config.middleware.insert 0, MarkUploadAsBinary
+  config.middleware.insert 0, MarkEchoAsBinary
   config.middleware.insert 0, MarkAsIOBoundThreads
 
   # Silence logging

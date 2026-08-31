@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
+import java.io.ByteArrayOutputStream;
 
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -69,19 +69,20 @@ public class BenchmarkController {
     }
 
     /**
-     * The body is bound as a stream of chunks, so a 20 MB upload is counted as it
-     * arrives instead of being held in memory.
+     * The body is bound as a stream of chunks and collected: the echo needs the
+     * bytes, and the response cannot be framed until its length is known - which
+     * is also what makes a chunked request work.
      */
-    @Post(value = "/upload", consumes = MediaType.ALL, produces = MediaType.TEXT_PLAIN)
-    public CompletableFuture<String> upload(@Body @Nullable Publisher<byte[]> body) {
-        CompletableFuture<String> received = new CompletableFuture<>();
+    @Post(value = "/echo", consumes = MediaType.ALL, produces = MediaType.APPLICATION_OCTET_STREAM)
+    public CompletableFuture<byte[]> echoBody(@Body @Nullable Publisher<byte[]> body) {
+        CompletableFuture<byte[]> received = new CompletableFuture<>();
         if (body == null) {
-            received.complete("0");
+            received.complete(new byte[0]);
             return received;
         }
         body.subscribe(new Subscriber<byte[]>() {
 
-            private final AtomicLong size = new AtomicLong();
+            private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
             @Override
             public void onSubscribe(Subscription subscription) {
@@ -90,7 +91,7 @@ public class BenchmarkController {
 
             @Override
             public void onNext(byte[] chunk) {
-                size.addAndGet(chunk.length);
+                buffer.writeBytes(chunk);
             }
 
             @Override
@@ -100,7 +101,7 @@ public class BenchmarkController {
 
             @Override
             public void onComplete() {
-                received.complete(Long.toString(size.get()));
+                received.complete(buffer.toByteArray());
             }
         });
         return received;

@@ -16,7 +16,7 @@ Micronaut on the Netty HTTP server, default configuration, on the JVM.
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
-| `/upload` | POST | Streams the body and returns the byte count |
+| `/echo` | POST | Returns the request body back verbatim |
 
 ## Notes
 
@@ -28,7 +28,7 @@ Micronaut on the Netty HTTP server, default configuration, on the JVM.
   over its default 1 KB threshold
 - No cluster of processes: the JVM is one process and Netty sizes its event loop
   group from the cores the container is given
-- `/upload` binds the body as a `Publisher`, so the 20 MB body is counted while
+- `/echo` binds the body as a `Publisher`, so the 20 MB body is counted while
   it arrives and never buffered
 - The dataset is read once at startup from `DATASET_PATH`, `/data/dataset.json`
   by default, and a missing file leaves an empty list instead of failing

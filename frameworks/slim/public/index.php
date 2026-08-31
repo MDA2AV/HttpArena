@@ -55,14 +55,9 @@ $app->get('/json/{count}', function (Request $request, Response $response, array
     return $response->withHeader('Content-Type', 'application/json');
 });
 
-$app->post('/upload', function (Request $request, Response $response) {
-    $size = 0;
-    $body = $request->getBody();
-    while (!$body->eof()) {
-        $size += strlen($body->read(65536));
-    }
-    $response->getBody()->write((string) $size);
-    return $response->withHeader('Content-Type', 'text/plain');
+$app->post('/echo', function (Request $request, Response $response) {
+    $response->getBody()->write((string) $request->getBody());
+    return $response->withHeader('Content-Type', 'application/octet-stream');
 });
 
 $app->run();

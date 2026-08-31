@@ -125,10 +125,11 @@ mut:
 	// Reused /fortunes row buffer: messages are BORROWED views into the Result frames
 	// (stable during the synchronous render), not bytestr().clone()'d.
 	fortunes_buf []Fortune
-	// Reused dechunk scratch: a chunked POST body is reassembled here (len reset
-	// per use, grows to high-water) instead of allocating a strings.Builder +
-	// .str() per request — under -gc none that was the /baseline11 chunked-POST
-	// leak (~6 GiB at 3.8M req/s in the arena baseline mix).
+	// Reused dechunk scratch: a chunked POST body (/baseline11, /echo) is
+	// reassembled here (len reset per use, grows to high-water) instead of
+	// allocating a strings.Builder + .str() per request — under -gc none that
+	// was the /baseline11 chunked-POST leak (~6 GiB at 3.8M req/s in the arena
+	// baseline mix).
 	dechunk_buf []u8
 }
 
@@ -338,10 +339,8 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		}
 		w.emit_int(mut out, 'text/plain', sum)
 		return .done
-	} else if route == '/upload' {
-		cl := req.content_length()
-		n := if cl >= 0 { i64(cl) } else { i64(req.body.len) }
-		w.emit_int(mut out, 'text/plain', n)
+	} else if route == '/echo' {
+		w.echo(mut out, req)
 		return .done
 	} else if route.starts_with('/json/') {
 		count := clamp_count(parse_u_at(route, 6), w.ro.dataset.len)
@@ -941,6 +940,28 @@ fn (w &WorkerCtx) json_body(count int, m i64) string {
 	return sb.str()
 }
 
+// ── /echo ────────────────────────────────────────────────────────────────────
+
+// echo hands the request body back byte for byte. The parser exposes the RAW
+// body region, so a chunked request still carries its framing here: it is
+// decoded into the reused per-worker scratch (never a per-request allocation —
+// this binary is -gc none) and echoed from there. The response is framed from
+// the bytes that actually arrived, never from Content-Length, which a chunked
+// POST does not carry at all.
+fn (mut w WorkerCtx) echo(mut out []u8, req request_parser.HttpRequest) {
+	if te := req.get_header_value_slice('Transfer-Encoding') {
+		val := unsafe { tos(&req.buffer[te.start], te.len) }
+		if val.contains('chunked') {
+			unsafe { w.dechunk_buf.len = 0 }
+			dechunk_into(mut w.dechunk_buf, req.buffer, req.body.start, req.body.len)
+			emit(mut out, 'application/octet-stream', w.dechunk_buf)
+			return
+		}
+	}
+	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
+	emit(mut out, 'application/octet-stream', body)
+}
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 // escape_html_into HTML-escapes s directly into out — no intermediate string/Builder
@@ -1365,7 +1386,7 @@ fn main() {
 	// The lib's io_uring backend has no TLS, so the json-tls listener runs on the
 	// epoll backend (a SECOND server anyway, because tls_config is server-wide). It serves ONLY /json
 	// (404 for everything else) so the TLS port exposes the minimal surface the
-	// profile needs — no /static, /upload, /crud or DB routes. The handler is a
+	// profile needs — no /static, /echo, /crud or DB routes. The handler is a
 	// STATELESS request_handler (no make_state, sidestepping the TLS worker's
 	// stateful path) capturing the read-only `ro`; it reuses write_json_into
 	// verbatim, so the bytes are identical to the plaintext /json. Mbed TLS 1.3,
@@ -1403,7 +1424,7 @@ fn main() {
 		io_multiplexing: .epoll
 		limits:          http_server.Limits{
 			// json-tls requests are tiny GETs; a small ceiling bounds per-conn
-			// memory and shrinks the DoS surface (the TLS port has no upload path).
+			// memory and shrinks the DoS surface (the TLS port takes no bodies).
 			max_request_bytes: 64 * 1024
 		}
 		request_handler: tls_handler
