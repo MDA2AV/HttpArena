@@ -1,7 +1,7 @@
 # bananabread
 
 A HttpArena entry for **Seagreen** — a TypeScript port of [GenHTTP](https://github.com/Kaliumhexacyanoferrat/GenHTTP)
-on the [Bun](https://bun.sh) runtime (the TypeScript sibling of the Kotlin port, `fishcake`/CodeGreen).
+on the [Bun](https://bun.sh) runtime (the TypeScript sibling of the Kotlin port, CodeGreen).
 It runs GenHTTP's own internal HTTP/1.1 engine, built on `Bun.listen` raw TCP (not `Bun.serve`).
 
 ## Stack
