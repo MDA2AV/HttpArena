@@ -666,20 +666,6 @@
       "response": true
     }
   },
-  "genhttp-kestrel": {
-    "dir": "genhttp-kestrel",
-    "description": "Lightweight, embeddable and modular C# web server.",
-    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
-    "type": "emerging",
-    "engine": "kestrel",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
   "gin": {
     "dir": "gin",
     "description": "Gin web framework on the Go net/http server, default configuration. Routing and path/query binding through the Gin API, encoding/json via c.JSON, gzip through the gin-contrib/gzip middleware.",
