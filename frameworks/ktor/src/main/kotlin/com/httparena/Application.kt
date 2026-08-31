@@ -38,9 +38,8 @@ fun main() {
     val environment = applicationEnvironment {}
 
     val server = embeddedServer(Netty, environment, {
-        runHandlersOnEventLoop = true
         shareWorkGroup = true
-        workerGroupSize = parallelism * 4
+        workerGroupSize = parallelism + 1
         enableHttp2 = true
         enableH2c = true
         @OptIn(ExperimentalKtorApi::class)
