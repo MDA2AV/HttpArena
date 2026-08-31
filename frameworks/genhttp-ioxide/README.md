@@ -1,4 +1,4 @@
-# genhttp-11-ioxide
+# genhttp-ioxide
 
 [GenHTTP 11](https://github.com/Kaliumhexacyanoferrat/GenHTTP) running on a custom
 **io_uring** server engine (the [ioxide](https://github.com/MDA2AV/ioxide) runtime) instead of GenHTTP's default socket engine.

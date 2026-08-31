@@ -19,7 +19,7 @@ import org.codegreen.modules.reflection.Result
 import org.codegreen.modules.webservices.ResourceMethod
 
 /**
- * `/crud/items` REST service, mirroring the `genhttp-11` / `ktor` entries:
+ * `/crud/items` REST service, mirroring the `genhttp` / `ktor` entries:
  *
  *  - `GET  /crud/items?category=&page=&limit=` — paged listing ordered by id
  *  - `GET  /crud/items/:id`                    — cached read reporting `X-Cache: HIT|MISS`

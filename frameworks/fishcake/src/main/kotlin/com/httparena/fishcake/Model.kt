@@ -3,7 +3,7 @@ package com.httparena.fishcake
 import kotlinx.serialization.Serializable
 
 /**
- * Data model for the HttpArena workloads, matching the shapes used by the C# `genhttp-11`
+ * Data model for the HttpArena workloads, matching the shapes used by the C# `genhttp`
  * entry and the `ktor` reference entry (camelCase JSON; `rating` is a nested object).
  */
 

@@ -624,8 +624,8 @@
       "response": true
     }
   },
-  "genhttp-11-ioxide": {
-    "dir": "genhttp-11-ioxide",
+  "genhttp-ioxide": {
+    "dir": "genhttp-ioxide",
     "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Uses GenHTTP's published ioxide engine packages (GenHTTP.Engine.Ioxide / GenHTTP.Modules.IoxideFiles, PR #860, merged). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
@@ -638,8 +638,8 @@
       "response": true
     }
   },
-  "genhttp-11-kestrel": {
-    "dir": "genhttp-11-kestrel",
+  "genhttp-kestrel": {
+    "dir": "genhttp-kestrel",
     "description": "Lightweight, embeddable and modular C# web server.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
@@ -652,8 +652,8 @@
       "response": true
     }
   },
-  "genhttp-11": {
-    "dir": "genhttp-11",
+  "genhttp": {
+    "dir": "genhttp",
     "description": "Lightweight, embeddable and modular C# web server.",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",

@@ -25,7 +25,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 
-    // Postgres for the async-db / crud profiles, queried directly (as genhttp-11 uses Npgsql).
+    // Postgres for the async-db / crud profiles, queried directly (as genhttp uses Npgsql).
     implementation("org.postgresql:postgresql:42.7.4")
     implementation("com.zaxxer:HikariCP:6.2.1")
 }

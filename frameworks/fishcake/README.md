@@ -2,7 +2,7 @@
 
 A HttpArena entry for **CodeGreen** — a 1:1 Kotlin port of the C# [GenHTTP](https://github.com/Kaliumhexacyanoferrat/GenHTTP)
 web server — running on its internal Netty-based engine. It is configured like the
-sibling [`genhttp-11`](../genhttp-11) entry, rebuilt on the port's webservice stack
+sibling [`genhttp`](../genhttp) entry, rebuilt on the port's webservice stack
 (Conversion + Reflection + Webservices + Layouting).
 
 ## Stack
@@ -11,7 +11,7 @@ sibling [`genhttp-11`](../genhttp-11) entry, rebuilt on the port's webservice st
 - **Framework:** CodeGreen (Kotlin port of GenHTTP)
 - **Engine:** CodeGreen internal engine (non-blocking, Netty)
 - **Serialization:** kotlinx.serialization
-- **Database:** PostgreSQL via JDBC + HikariCP (queried directly, as `genhttp-11` uses Npgsql)
+- **Database:** PostgreSQL via JDBC + HikariCP (queried directly, as `genhttp` uses Npgsql)
 - **Build:** Gradle composite build — the app pulls CodeGreen in via `includeBuild`
 
 ## Endpoints

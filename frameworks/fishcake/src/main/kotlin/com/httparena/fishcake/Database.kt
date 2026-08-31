@@ -11,7 +11,7 @@ import java.sql.Types
 
 /**
  * PostgreSQL access for the `/async-db` and `/crud` workloads, mirroring the raw-SQL approach
- * of the C# `genhttp-11` entry (which uses Npgsql). Connections come from a HikariCP pool
+ * of the C# `genhttp` entry (which uses Npgsql). Connections come from a HikariCP pool
  * configured from `DATABASE_URL`; blocking JDBC calls run on [Dispatchers.IO] so the engine's
  * event loop is never blocked. When `DATABASE_URL` is absent the pool is null and the
  * database-backed services degrade gracefully.

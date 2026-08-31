@@ -1,5 +1,5 @@
 {
-  "display_name": "genhttp-11-ioxide",
+  "display_name": "genhttp",
   "language": "C#",
   "type": "emerging",
   "mode": "tuned",
@@ -9,8 +9,8 @@
     "request": true,
     "response": true
   },
-  "engine": "ioxide",
-  "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Uses GenHTTP's published ioxide engine packages (GenHTTP.Engine.Ioxide / GenHTTP.Modules.IoxideFiles, PR #860, merged). Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool) and json-tls rides ioxide.tls (kTLS TX) on :8081.",
+  "engine": "genhttp",
+  "description": "Lightweight, embeddable and modular C# web server.",
   "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
   "enabled": true,
   "tests": [
@@ -19,6 +19,7 @@
     "limited-conn",
     "json-comp",
     "json-tls",
+    "static-tls",
     "8gbit",
     "async-db",
     "echo-ws",
@@ -26,6 +27,6 @@
     "echo-ws-limited"
   ],
   "maintainers": [
-    "MDA2AV"
+    "Kaliumhexacyanoferrat"
   ]
 }

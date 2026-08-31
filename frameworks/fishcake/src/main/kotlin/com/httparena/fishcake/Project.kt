@@ -12,7 +12,7 @@ import org.codegreen.modules.layouting.provider.LayoutBuilder
 import org.codegreen.modules.webservices.addService
 
 /**
- * Builds the routing tree, mirroring the C# `genhttp-11` entry's `Project.Create()`.
+ * Builds the routing tree, mirroring the C# `genhttp` entry's `Project.Create()`.
  *
  * `static` serves /data/static with pre-compressed variant selection (see [StaticFiles]).
  * Websockets and HTTP-2/3 from the original entry rely on modules the CodeGreen port does not

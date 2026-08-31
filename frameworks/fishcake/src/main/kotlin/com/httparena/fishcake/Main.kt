@@ -9,7 +9,7 @@ import kotlin.system.exitProcess
 
 /**
  * HttpArena entry "fishcake": the CodeGreen Kotlin port of GenHTTP, configured like the C#
- * `genhttp-11` entry. Serves on `0.0.0.0:8080` (HTTP/1.1).
+ * `genhttp` entry. Serves on `0.0.0.0:8080` (HTTP/1.1).
  */
 fun main() {
     // Touch the singletons up front so the dataset is parsed and the DB pool is opened
