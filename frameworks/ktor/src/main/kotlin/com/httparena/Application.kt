@@ -42,6 +42,9 @@ fun main() {
         workerGroupSize = parallelism + 1
         enableHttp2 = true
         enableH2c = true
+        maxConnections = 128
+        connectionBacklog = 128
+
         @OptIn(ExperimentalKtorApi::class)
         enableHttp3()
 
