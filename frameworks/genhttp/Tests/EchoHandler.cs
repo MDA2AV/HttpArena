@@ -1,41 +1,35 @@
-using GenHTTP.Modules.Websockets;
-using GenHTTP.Modules.Websockets.Protocol;
+using GenHTTP.Api.Content;
+using GenHTTP.Api.Infrastructure;
+using GenHTTP.Api.Protocol;
 
 namespace genhttp.Tests;
 
-public sealed class EchoHandler : IImperativeHandler
+public sealed class EchoHandler : IHandler
 {
-    
-    public async ValueTask HandleAsync(IImperativeConnection connection)
+
+    public ValueTask PrepareAsync(IServer server) => ValueTask.CompletedTask;
+
+    public ValueTask<IResponse?> HandleAsync(IRequest request)
     {
-        while (connection.Request.Server.Running)
+        if (request.Header.Method != RequestMethod.Post)
         {
-            var frame = await connection.ReadFrameAsync();
-
-            if (!await HandleAsync(frame, connection)) return;
-
-            while (connection.TryReadFrame(out frame))
-            {
-                if (!await HandleAsync(frame, connection)) return;
-            }
-
-            await connection.FlushAsync();
+            return new(request.Respond()
+                              .Status(ResponseStatus.MethodNotAllowed)
+                              .Build());
         }
+
+        var body = request.GetBody(HeaderAccess.Release);
+
+        if (body == null)
+        {
+            return new(request.Respond()
+                              .Status(ResponseStatus.NoContent)
+                              .Build());
+        }
+
+        return new(request.Respond()
+                          .Content(new EchoContent(body))
+                          .Build());
     }
 
-    private async ValueTask<bool> HandleAsync(IWebsocketFrame frame, IImperativeConnection connection)
-    {
-        if (frame.Type == FrameType.Close)
-        {
-            return false;
-        }
-
-        if (frame.Type == FrameType.Text || frame.Type == FrameType.Binary)
-        {
-            await connection.WriteAsync(frame.Data, frame.Type, flush: false);
-        }
-
-        return true;
-    }
-    
 }

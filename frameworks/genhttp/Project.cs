@@ -5,7 +5,6 @@ using GenHTTP.Modules.IO;
 using GenHTTP.Modules.Files;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
-using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
@@ -25,7 +24,7 @@ public static class Project
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
                         .AddService<Baseline>("baseline2")
-                        .AddService<Echo>("echo")
+                        .Add("echo", new EchoHandler())
                         .AddService<Json>("json")
                         .AddService<AsyncDatabase>("async-db")
                         .Add("crud", crud)
@@ -54,7 +53,7 @@ public static class Project
     {
         var websocket = Websocket.Imperative()
                                  .DoNotAllocateFrameData()
-                                 .Handler(new EchoHandler());
+                                 .Handler(new EchoWsHandler());
 
         return app.Add("ws", websocket);
     }
