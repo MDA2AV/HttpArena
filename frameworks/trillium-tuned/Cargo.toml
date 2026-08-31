@@ -27,6 +27,8 @@ querystrong = "0.4"
 deadpool-postgres = "0.14"
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 serde_json = "1"
+deadpool-redis = "0.23"
+moka = { version = "0.12", features = ["future"] }
 
 dashmap = "6"
 log = "0.4"
@@ -35,6 +37,9 @@ mimalloc = { version = "0.1", default-features = false }
 socket2 = { version = "0.6", features = ["all"] }
 num_cpus = "1"
 signal-hook = "0.4"
+
+[dev-dependencies]
+trillium-testing = { version = "0.10", features = ["tokio"] }
 
 [profile.release]
 opt-level = 3

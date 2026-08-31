@@ -1,12 +1,13 @@
 # GenHTTP
 
-Lightweight embeddable C# web server using the GenHTTP library on the Kestrel engine.
+Lightweight embeddable C# web server using the GenHTTP library on the internal engine.
 
 ## Stack
 
-- **Language:** C# / .NET 10 (Alpine)
+- **Language:** C# / .NET 10
 - **Framework:** GenHTTP
 - **Engine:** GenHTTP
+- **Build:** Self-contained musl publish
 
 ## Endpoints
 

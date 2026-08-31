@@ -2,7 +2,7 @@
   "display_name": "genhttp-kestrel",
   "language": "C#",
   "type": "emerging",
-  "mode": "standard",
+  "mode": "tuned",
   "completeness": {
     "routing": true,
     "middleware": true,
@@ -24,7 +24,10 @@
     "8gbit",
     "async-db",
     "static-h2",
-    "static-h3"
+    "static-h3",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": [
     "Kaliumhexacyanoferrat"
