@@ -14,8 +14,6 @@ import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import static com.httparena.Main.SERVER_HEADER;
-
 class StaticHandler implements Handler {
     private static final Header VARY_ACCEPT_ENCODING =
             HeaderValues.createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
@@ -51,12 +49,10 @@ class StaticHandler implements Handler {
         Path rawPath = resolveStaticPath(filename);
         if (rawPath == null || !Files.isRegularFile(rawPath)) {
             res.status(Status.NOT_FOUND_404)
-                    .header(SERVER_HEADER)
                     .send();
             return;
         }
 
-        res.header(SERVER_HEADER);
         res.header(VARY_ACCEPT_ENCODING);
         res.header(contentType(filename));
 
@@ -84,7 +80,6 @@ class StaticHandler implements Handler {
             res.send(Files.readAllBytes(rawPath));
         } catch (IOException e) {
             res.status(Status.INTERNAL_SERVER_ERROR_500)
-                    .header(SERVER_HEADER)
                     .send();
         }
     }

@@ -1,17 +1,12 @@
 package com.httparena;
 
 import io.helidon.config.Config;
-import io.helidon.http.Header;
-import io.helidon.http.HeaderNames;
-import io.helidon.http.HeaderValues;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.websocket.WsRouting;
 
 public final class Main {
-    static final Header SERVER_HEADER = HeaderValues.createCached(HeaderNames.SERVER, "helidon");
-
     static {
         LogConfig.initClass();
     }
@@ -37,6 +32,7 @@ public final class Main {
         builder.routing(httpRouting -> httpRouting
                         .get("/pipeline", new PipelineHandler())
                         .get("/baseline11", baselineHandler)
+                        .get("/delay/{ms}", new DelayHandler())
                         .get("/json/{count}", jsonHandler)
                         .get("/json", jsonHandler)
                         .post("/baseline11", new BaselinePostHandler())

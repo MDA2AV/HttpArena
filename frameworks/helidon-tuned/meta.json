@@ -17,6 +17,7 @@
     "baseline", "latency-1m", "latency-10k",
     "pipelined",
     "limited-conn",
+    "async",
     "json-comp",
     "json-tls",
     "static-tls",

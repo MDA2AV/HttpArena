@@ -13,6 +13,7 @@ The current subscribed benchmark profiles are:
 - `latency-10k`
 - `pipelined`
 - `limited-conn`
+- `async`
 - `json-comp`
 - `json-tls`
 - `static-tls`
@@ -30,7 +31,7 @@ The current subscribed benchmark profiles are:
 
 Profiles not currently supported here:
 
-- application profiles: `async`, `fortunes`
+- application profiles: `fortunes`
 - HTTP/3: `baseline-h3`, `static-h3`
 - composed deployments: `gateway-64`, `gateway-h3`, `production-stack`
 
@@ -58,4 +59,10 @@ That means the implementation is benchmark-contract correct, but it does not
 follow the async-driver recommendation literally. This is an intentional
 tradeoff for the current Helidon/Níma production entry.
 
+## `async` uses virtual threads
+
 Helidon WebServer is designed for Java Virtual Threads and optimized for blocking operations.
+
+The `async` delay handler uses `Thread.sleep` on Helidon's request virtual
+thread. The virtual thread is suspended for the requested delay without
+occupying its carrier thread.

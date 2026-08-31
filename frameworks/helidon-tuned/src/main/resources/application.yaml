@@ -58,6 +58,7 @@ server:
       connection-options:
         read-timeout: PT0S
         connect-timeout: PT0S
+        tcp-no-delay: true
       # benchmark requires http/1.1 only on this port
       protocols-discover-services: false
       protocols:

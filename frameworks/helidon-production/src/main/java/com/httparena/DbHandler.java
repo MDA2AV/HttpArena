@@ -18,7 +18,6 @@ import io.helidon.webserver.http.ServerResponse;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import static com.httparena.Main.SERVER_HEADER;
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 class DbHandler implements Handler {
@@ -47,8 +46,6 @@ class DbHandler implements Handler {
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        res.header(SERVER_HEADER);
-
         if (!databaseConfigured) {
             // if not configured, fail (maybe local invocation, or manual command line invocation)
             res.status(Status.INTERNAL_SERVER_ERROR_500)
@@ -56,7 +53,6 @@ class DbHandler implements Handler {
             return;
         }
 
-        res.header(SERVER_HEADER);
         res.header(CONTENT_TYPE_JSON);
 
         HikariDataSource dataSource = database();

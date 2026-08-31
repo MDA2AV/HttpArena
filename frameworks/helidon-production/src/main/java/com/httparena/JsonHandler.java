@@ -12,7 +12,6 @@ import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import static com.httparena.Main.SERVER_HEADER;
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 class JsonHandler implements Handler {
@@ -24,7 +23,6 @@ class JsonHandler implements Handler {
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        res.header(SERVER_HEADER);
         res.header(CONTENT_TYPE_JSON);
 
         int requestedCount = req.path().pathParameters().first("count")
