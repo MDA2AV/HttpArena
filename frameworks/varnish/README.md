@@ -30,7 +30,19 @@ backend process at all.
 | `/baseline11` | GET | Sums query parameter values, computed by `httparena.baseline_sum()` |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/baseline2` | GET | Same sum logic, over HTTP/2 + TLS (port 8443) |
+| `/baseline2` (h2c) | GET | Same sum logic, over cleartext HTTP/2 prior-knowledge (port 8082) |
 | `/static/{filename}` | GET | Served by `vmod-fileserver` from `/data/static`, cached by Varnish |
+| `/static/{filename}` (TLS) | GET | Same fileserver route, over HTTP/1.1 + TLS (port 8081) |
+| `/upload` | POST | Reads and discards the body, computed by `httparena.upload_count()`; responds with the byte count |
+
+## Listeners
+
+| Port | Protocol | Used by |
+|------|----------|---------|
+| 8080 | HTTP/1.1 (cleartext) | `baseline`, `pipelined`, `limited-conn`, `upload`, `static` |
+| 8081 | HTTP/1.1 + TLS | `static-tls` |
+| 8082 | HTTP/2 (cleartext, prior-knowledge) | `baseline-h2c` |
+| 8443 | HTTP/2 + TLS | `baseline-h2`, `static-h2` |
 
 ## Notes
 
@@ -45,6 +57,10 @@ backend process at all.
 - POST bodies are read directly by the vmod via `Ctx::req_body` — no
   `std.cache_req_body()` needed, since nothing downstream (there's no real
   backend) needs to read the same body a second time.
+- `/upload` reads the body through a counting `Write` sink that never buffers
+  it, so a 20 MB upload costs no allocation — `httparena.upload_count()`
+  ignores `req_body`'s own `Result` so a short/truncated body still reports
+  the bytes actually seen instead of echoing the declared `Content-Length`.
 - The vmod is built from source in a throwaway Docker build stage (Rust
   toolchain + `varnish-dev` headers matching the base image's exact version);
   only the compiled `.so` (and `/etc/mime.types`) is copied into the final

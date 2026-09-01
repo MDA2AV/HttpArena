@@ -24,6 +24,8 @@ sub vcl_synth {
         synthetic("ok");
     } else if (req.url ~ "^/baseline(11|2)(\?|$)") {
         synthetic(httparena.baseline_sum());
+    } else if (req.url == "/upload") {
+        synthetic(httparena.upload_count());
     } else {
         set resp.status = 404;
     }

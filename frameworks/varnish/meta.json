@@ -10,8 +10,11 @@
     "baseline",
     "pipelined",
     "limited-conn",
+    "upload",
+    "static-tls",
     "baseline-h2",
-    "static-h2"
+    "static-h2",
+    "baseline-h2c"
   ],
   "maintainers": [
     "guillaume.quintard@varnish-software.com"
