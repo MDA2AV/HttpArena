@@ -29,24 +29,6 @@ impl Write for FixedBuf {
     }
 }
 
-/// Counts bytes written without storing them, for the upload benchmark:
-/// the body must be read off the wire (so a truncated body or a chunked
-/// transfer without Content-Length can't be shortcut), but never kept.
-struct CountingWriter {
-    count: u64,
-}
-
-impl Write for CountingWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.count += buf.len() as u64;
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
 fn parse_query_sum(url: &str) -> i64 {
     let qs = match url.split_once('?') {
         Some((_, q)) => q,
@@ -64,7 +46,7 @@ fn parse_query_sum(url: &str) -> i64 {
 mod httparena {
     use varnish::vcl::{Ctx, VclError};
 
-    use super::{as_str, parse_query_sum, CountingWriter};
+    use super::{as_str, parse_query_sum};
 
     /// Sum the integer values of all query-string parameters, plus the
     /// request body for POST requests.
@@ -100,15 +82,5 @@ mod httparena {
         }
 
         Ok(sum.to_string())
-    }
-
-    /// Read the request body and report how many bytes arrived, discarding
-    /// them as they're read. Ignores req_body's own Result: a short/aborted
-    /// body must still be reported as whatever byte count was actually
-    /// seen, not as an error or as the declared Content-Length.
-    pub fn upload_count(ctx: &mut Ctx) -> Result<String, VclError> {
-        let mut writer = CountingWriter { count: 0 };
-        let _ = ctx.req_body(&mut writer);
-        Ok(writer.count.to_string())
     }
 }
