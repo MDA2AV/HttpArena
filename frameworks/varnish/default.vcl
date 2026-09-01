@@ -17,6 +17,14 @@ sub vcl_recv {
     }
 }
 
+sub vcl_backend_response {
+    if (bereq.url ~ "^/static/") {
+        # Real caching, just revalidated often enough to notice a file that
+        # changed on disk within the staleness probe's window.
+        set beresp.ttl = 5s;
+    }
+}
+
 sub vcl_synth {
     set resp.http.Content-Type = "text/plain";
 
