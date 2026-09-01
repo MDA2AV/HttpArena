@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "uvicorn",
-  "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression.",
+  "description": "Django 6.1 as an ASGI application on Uvicorn. URLconf routing and path converters through the Django API, JsonResponse for the JSON payload, GZipMiddleware for compression. Postgres through asyncpg for async-db and fortunes, the latter rendered per request by the Django Template Language from a template file, with the cached loader in front of it.",
   "repo": "https://github.com/django/django",
   "enabled": true,
   "tests": [
@@ -20,7 +20,8 @@
     "json-comp",
     "json-tls",
     "8gbit",
-    "async-db"
+    "async-db",
+    "fortunes"
   ],
   "maintainers": []
 }

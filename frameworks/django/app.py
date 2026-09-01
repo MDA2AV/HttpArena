@@ -6,18 +6,38 @@ import django
 import redis.asyncio as aioredis
 from django.conf import settings
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 settings.configure(
     DEBUG=False,
     ALLOWED_HOSTS=["*"],
     SECRET_KEY="httparena",
     ROOT_URLCONF=__name__,
     MIDDLEWARE=["django.middleware.gzip.GZipMiddleware"],
+    # The Django Template Language renders /fortunes. The cached loader parses
+    # the template once per worker instead of on every render, which is the
+    # production configuration for a filesystem template directory.
+    TEMPLATES=[
+        {
+            "BACKEND": "django.template.backends.django.DjangoTemplates",
+            "DIRS": [os.path.join(BASE_DIR, "templates")],
+            "OPTIONS": {
+                "loaders": [
+                    (
+                        "django.template.loaders.cached.Loader",
+                        ["django.template.loaders.filesystem.Loader"],
+                    )
+                ]
+            },
+        }
+    ],
     LOGGING_CONFIG=None,
 )
 django.setup()
 
 from django.core.asgi import get_asgi_application  # noqa: E402
 from django.http import FileResponse, HttpResponse, JsonResponse  # noqa: E402
+from django.template.loader import get_template  # noqa: E402
 from django.urls import path  # noqa: E402
 
 DATASET_PATH = os.environ.get("DATASET_PATH", "/data/dataset.json")
@@ -298,6 +318,34 @@ async def static_file(request, filename):
     )
 
 
+# -- Fortunes ----------------------------------------------------------------
+# Rendered per request by the Django Template Language, from a template that
+# lives in its own file under templates/. DTL autoescapes every {{ }} it
+# interpolates, so the <script> row in the seed comes out encoded without the
+# handler touching it.
+
+FORTUNES_TEMPLATE = get_template("fortunes.html")
+RUNTIME_FORTUNE = {"id": 0, "message": "Additional fortune added at request time."}
+
+
+async def fortunes(request):
+    pool = await _pool()
+    if pool is None:
+        return HttpResponse(status=500)
+    try:
+        rows = await pool.fetch("SELECT id, message FROM fortune")
+    except Exception:
+        return HttpResponse(status=500)
+    items = [{"id": r["id"], "message": r["message"]} for r in rows]
+    items.append(RUNTIME_FORTUNE)
+    # Python orders str by code point, which is the byte order of their UTF-8
+    # encoding - the ordinal sort the profile asks for. A locale-aware collation
+    # would order the rows differently from one runtime to the next.
+    items.sort(key=lambda fortune: fortune["message"])
+    # No content_type: HttpResponse already defaults to text/html; charset=utf-8.
+    return HttpResponse(FORTUNES_TEMPLATE.render({"fortunes": items}))
+
+
 urlpatterns = [
     path("pipeline", pipeline),
     path("baseline11", baseline11),
@@ -307,6 +355,7 @@ urlpatterns = [
     path("async-db", async_db),
     path("crud/items", crud_items),
     path("crud/items/<int:item_id>", crud_item),
+    path("fortunes", fortunes),
     path("static/<str:filename>", static_file),
 ]
 
