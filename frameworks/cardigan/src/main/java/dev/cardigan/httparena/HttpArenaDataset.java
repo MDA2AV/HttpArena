@@ -48,7 +48,7 @@ final class HttpArenaDataset {
                 throw new IllegalArgumentException(
                     "Dataset item is not a JSON object");
             }
-            prefixes[index] = Arrays.copyOfRange(
+            prefixes[index] = compactJson(
                 source, range[0], close);
             Value item = Serdes.parseOnDemand(
                 MemorySegment.ofArray(source),
@@ -157,6 +157,36 @@ final class HttpArenaDataset {
             throw new IllegalArgumentException("Malformed JSON dataset");
         }
         return ranges;
+    }
+
+    private static byte[] compactJson(byte[] source, int start, int end) {
+        byte[] compacted = new byte[end - start];
+        int output = 0;
+        boolean string = false;
+        boolean escaped = false;
+        for (int index = start; index < end; index++) {
+            byte current = source[index];
+            if (string) {
+                compacted[output++] = current;
+                if (escaped) {
+                    escaped = false;
+                } else if (current == '\\') {
+                    escaped = true;
+                } else if (current == '"') {
+                    string = false;
+                }
+            } else if (current == '"') {
+                string = true;
+                compacted[output++] = current;
+            } else if (!isWhitespace(current)) {
+                compacted[output++] = current;
+            }
+        }
+        if (string) {
+            throw new IllegalArgumentException("Malformed JSON dataset");
+        }
+        return output == compacted.length
+            ? compacted : Arrays.copyOf(compacted, output);
     }
 
     private static int copy(byte[] source, long target, int offset) {
