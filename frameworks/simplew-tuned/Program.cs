@@ -44,7 +44,9 @@ SimpleWServer CreateServer(int port, string certPath = null, string keyPath = nu
 				config.Tls = new TlsOptions {
 					CertificatePath = certPath,
 					KeyPath = keyPath,
-					Alpn = [ "http/1.1" ]
+					Alpn = [ "http/1.1" ],
+					KernelTx = false,
+                    KernelRx = false
 				};		        
 		    }
 
