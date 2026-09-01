@@ -38,12 +38,10 @@ fun main() {
     val environment = applicationEnvironment {}
 
     val server = embeddedServer(Netty, environment, {
-        shareWorkGroup = true
-        workerGroupSize = parallelism + 1
         enableHttp2 = true
         enableH2c = true
-        maxConnections = 128
-        connectionBacklog = 128
+        workerGroupSize = parallelism + 1
+        callGroupSize = parallelism + 1
 
         @OptIn(ExperimentalKtorApi::class)
         enableHttp3()
