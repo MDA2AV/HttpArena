@@ -1,4 +1,4 @@
-# fulmine
+# fulmine.js
 
 A drop-in replacement for Express 5 running on uWebSockets.js, with its own `cluster` option for multi-core scaling.
 

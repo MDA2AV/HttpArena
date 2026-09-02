@@ -1,6 +1,6 @@
-# fulmine-tuned
+# fulmine.js-tuned
 
-The same entry as [`fulmine`](../fulmine/), differing in three settings and nothing else. Diff the
+The same entry as [`fulmine.js`](../fulmine/), differing in three settings and nothing else. Diff the
 two `app.js` and that is all there is to see: same routes, same middleware, same compression, same
 `express.static()`. What the tuning buys is measured by the arena, not claimed here.
 

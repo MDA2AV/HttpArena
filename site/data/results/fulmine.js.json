@@ -1,8 +1,8 @@
 {
-  "framework": "fulmine",
+  "framework": "fulmine.js",
   "results": {
     "8gbit-512": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 49324,
       "avg_latency": "119.1us",
@@ -27,7 +27,7 @@
       "p99_9_latency": "6838.0us"
     },
     "async-32000": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 2088704,
       "avg_latency": "15.20ms",
@@ -47,7 +47,7 @@
       "status_5xx": 0
     },
     "async-db-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 229169,
       "avg_latency": "3.92ms",
@@ -67,7 +67,7 @@
       "status_5xx": 0
     },
     "baseline-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 1471446,
       "avg_latency": "2.78ms",
@@ -87,7 +87,7 @@
       "status_5xx": 0
     },
     "echo-ws-16384": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 3543325,
       "avg_latency": "4.59ms",
@@ -106,7 +106,7 @@
       "status_5xx": 0
     },
     "echo-ws-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 3801934,
       "avg_latency": "1.07ms",
@@ -125,7 +125,7 @@
       "status_5xx": 0
     },
     "echo-ws-512": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 3722180,
       "avg_latency": "137us",
@@ -144,7 +144,7 @@
       "status_5xx": 0
     },
     "echo-ws-limited-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 2562181,
       "avg_latency": "1.06ms",
@@ -163,7 +163,7 @@
       "status_5xx": 0
     },
     "echo-ws-limited-512": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 2080584,
       "avg_latency": "146us",
@@ -182,7 +182,7 @@
       "status_5xx": 0
     },
     "echo-ws-pipeline-16384": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 23152857,
       "avg_latency": "11.16ms",
@@ -201,7 +201,7 @@
       "status_5xx": 0
     },
     "echo-ws-pipeline-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 24221628,
       "avg_latency": "2.70ms",
@@ -220,7 +220,7 @@
       "status_5xx": 0
     },
     "echo-ws-pipeline-512": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 24290310,
       "avg_latency": "336us",
@@ -239,7 +239,7 @@
       "status_5xx": 0
     },
     "fortunes-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 68217,
       "avg_latency": "13.74ms",
@@ -258,7 +258,7 @@
       "status_5xx": 0
     },
     "gateway-64-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 233476,
       "avg_latency": "121.30ms",
@@ -282,7 +282,7 @@
       "cpu_breakdown": "proxy: 2601% 1.7GiB | server: 1948% 4.0GiB"
     },
     "gateway-64-512": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 235583,
       "avg_latency": "65.75ms",
@@ -306,7 +306,7 @@
       "cpu_breakdown": "proxy: 2353% 1.4GiB | server: 1908% 3.6GiB"
     },
     "gateway-h3-256": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 61204,
       "avg_latency": "130.20ms",
@@ -330,7 +330,7 @@
       "cpu_breakdown": "server: 547% 2.7GiB | proxy: 1822% 1.8GiB"
     },
     "gateway-h3-64": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 91180,
       "avg_latency": "22.33ms",
@@ -354,7 +354,7 @@
       "cpu_breakdown": "server: 758% 3.0GiB | proxy: 2548% 474MiB"
     },
     "json-comp-16384": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 490829,
       "avg_latency": "33.00ms",
@@ -374,7 +374,7 @@
       "status_5xx": 0
     },
     "json-comp-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 474915,
       "avg_latency": "8.59ms",
@@ -394,7 +394,7 @@
       "status_5xx": 0
     },
     "json-tls-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 1020515,
       "avg_latency": "4.00ms",
@@ -413,7 +413,7 @@
       "status_5xx": 0
     },
     "latency-10k-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 9982,
       "avg_latency": "85.5us",
@@ -437,7 +437,7 @@
       "p99_9_latency": "228.0us"
     },
     "latency-1m-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 997733,
       "avg_latency": "133.9us",
@@ -461,7 +461,7 @@
       "p99_9_latency": "3761.0us"
     },
     "limited-conn-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 1318721,
       "avg_latency": "3.09ms",
@@ -481,7 +481,7 @@
       "status_5xx": 0
     },
     "pipelined-4096": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 31873744,
       "avg_latency": "2.06ms",
@@ -500,7 +500,7 @@
       "status_5xx": 0
     },
     "production-stack-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 109702,
       "avg_latency": "132.23ms",
@@ -524,7 +524,7 @@
       "cpu_breakdown": "edge: 1358% 1.4GiB | authsvc: 728% 497MiB | server: 472% 2.4GiB | cache: 215% 10MiB"
     },
     "production-stack-256": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 133228,
       "avg_latency": "31.51ms",
@@ -548,7 +548,7 @@
       "cpu_breakdown": "edge: 1268% 1.1GiB | authsvc: 733% 122MiB | server: 618% 2.3GiB | cache: 212% 20MiB"
     },
     "static-tls-1024": {
-      "framework": "fulmine",
+      "framework": "fulmine.js",
       "language": "JS",
       "rps": 606172,
       "avg_latency": "1.68ms",
