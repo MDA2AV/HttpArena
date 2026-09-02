@@ -405,14 +405,15 @@ app.get('/api/me', async (req, res) => {
     }
 });
 
+// express.raw() is the framework's parser for a body that is bytes: it takes the whole body off
+// uWS in one piece, content-length or chunked alike, where a handler on 'data' pays a stream per
+// request. The type function reads the body whatever the content type says, as an echo must.
+const readRaw = express.raw({ type: () => true, limit: '1mb' });
+
 function registerEchoRoute(target) {
-    target.post('/echo', (req, res) => {
-        const chunks = [];
-        req.on('data', chunk => chunks.push(chunk));
-        req.on('end', () => {
-            // one chunk is the whole body at this size, and concat of one still copies
-            res.type('application/octet-stream').send(chunks.length === 1 ? chunks[0] : Buffer.concat(chunks));
-        });
+    target.post('/echo', readRaw, (req, res) => {
+        // an empty body leaves req.body unset, and the echo of nothing is nothing
+        res.type('application/octet-stream').send(Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0));
     });
 }
 
@@ -430,16 +431,16 @@ app.get('/baseline11', (req, res) => {
     res.type('text/plain').send(String(sumQuery(req.query)));
 });
 
-app.post('/baseline11', (req, res) => {
-    const querySum = sumQuery(req.query);
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-        let total = querySum;
-        const n = parseInt(body.trim(), 10);
-        if (n === n) total += n;
-        res.type('text/plain').send(String(total));
-    });
+// express.text() is the framework's parser for a text body, and it is cheaper than assembling
+// the chunks by hand for the same reason as the echo above. The type function is there because
+// the load generator sends no Content-Type, and without one the parser would step over the body.
+const readText = express.text({ type: () => true });
+
+app.post('/baseline11', readText, (req, res) => {
+    let total = sumQuery(req.query);
+    const n = parseInt(typeof req.body === 'string' ? req.body.trim() : '', 10);
+    if (n === n) total += n;
+    res.type('text/plain').send(String(total));
 });
 
 // shared by the plaintext listener and the TLS one on 8081, as the JSON route is: static-tls
