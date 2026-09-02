@@ -267,44 +267,7 @@
     "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
     "repo": "https://github.com/phjeltman/cardigan",
     "type": "engine",
-    "engine": "io_uring",
-    "variants": [
-      {
-        "dir": "cardigan-grpc",
-        "description": "Cardigan gRPC over cleartext HTTP/2 prior knowledge.",
-        "repo": "https://github.com/phjeltman/cardigan",
-        "type": "engine",
-        "engine": "io_uring"
-      },
-      {
-        "dir": "cardigan-grpc-tls",
-        "description": "Cardigan gRPC over HTTP/2 and TLS.",
-        "repo": "https://github.com/phjeltman/cardigan",
-        "type": "engine",
-        "engine": "io_uring"
-      },
-      {
-        "dir": "cardigan-h2",
-        "description": "Cardigan HTTP/2 over TLS.",
-        "repo": "https://github.com/phjeltman/cardigan",
-        "type": "engine",
-        "engine": "io_uring"
-      },
-      {
-        "dir": "cardigan-h2c",
-        "description": "Cardigan HTTP/2 over cleartext prior knowledge.",
-        "repo": "https://github.com/phjeltman/cardigan",
-        "type": "engine",
-        "engine": "io_uring"
-      },
-      {
-        "dir": "cardigan-json-tls",
-        "description": "Cardigan HTTP/1.1 over TLS.",
-        "repo": "https://github.com/phjeltman/cardigan",
-        "type": "engine",
-        "engine": "io_uring"
-      }
-    ]
+    "engine": "io_uring"
   },
   "carter": {
     "dir": "carter",
