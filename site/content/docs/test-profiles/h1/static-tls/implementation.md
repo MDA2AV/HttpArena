@@ -24,7 +24,7 @@ The Static Files over TLS profile is the [Static Files](../static/implementation
 - **Images** (3 files, 6–45 KB): `hero.webp`, `thumb1.webp`, `thumb2.webp`
 - **JSON** (1 file, 3 KB): `manifest.json`
 
-Total payload: ~842 KB across 20 files (~743 KB compressible text + ~99 KB binary). Brotli-compressed total: ~219 KB.
+Total payload: ~1242 KB across 20 files (~1143 KB compressible text + ~99 KB binary). Brotli-compressed total: ~219 KB for the text; ~318 KB across all 20 files, since the five binary ones ship no pre-compressed twin.
 
 Pre-compressed versions of all text files (`.gz` at level 9, `.br` at level 11) are available in the `data/static/` directory alongside the originals.
 

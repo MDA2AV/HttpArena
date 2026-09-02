@@ -1,8 +1,8 @@
 {
-  "display_name": "fiber",
+  "display_name": "fiber-tuned",
   "language": "Go",
   "type": "flagship",
-  "mode": "standard",
+  "mode": "tuned",
   "completeness": {
     "routing": true,
     "middleware": true,
@@ -10,11 +10,13 @@
     "response": true
   },
   "engine": "fasthttp",
-  "description": "Fiber 3 on fasthttp, default configuration, one prefork child per logical CPU sharing the port. Routing and typed path/query binding through the Fiber API, JSON via c.JSON, gzip and brotli through the compress middleware, static files from the pre-compressed .br/.gz siblings on disk.",
+  "description": "Fiber 3 on fasthttp, the fiber entry with what it leaves at default: sonic behind c.JSON, the compress middleware at best speed (brotli 0, gzip 1), the Postgres pool filled at startup, and fasthttp at master for its go-brrr brotli. Same routes, prefork, static and TLS paths as fiber.",
   "repo": "https://github.com/gofiber/fiber",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k",
+    "baseline",
+    "latency-1m",
+    "latency-10k",
     "pipelined",
     "limited-conn",
     "async",
