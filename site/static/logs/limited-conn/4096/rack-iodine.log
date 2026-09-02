@@ -2,14 +2,14 @@
 INFO: Listening on port 8080
 INFO: Starting up Iodine:
  * Iodine 0.7.58
- * Ruby 4.0.5
+ * Ruby 4.0.6
  * facil.io 0.7.4 (epoll)
  * 127 Workers X 1 Threads per worker.
  * Maximum 131056 open files / sockets per worker.
  * Master (root) process: 1.
 
 INFO: Server is running 127 workers X 1 thread with facil.io 0.7.4 (epoll)
-* Linked to OpenSSL 3.5.6 7 Apr 2026
+* Linked to OpenSSL 3.5.7 9 Jun 2026
 * Detected capacity: 131056 open file limit
 * Root pid: 1
 * Press ^C to stop
@@ -21,42 +21,42 @@ INFO: 22 is running.
 INFO: 26 is running.
 INFO: 30 is running.
 INFO: 34 is running.
-INFO: 39 is running.
+INFO: 38 is running.
 INFO: 44 is running.
-INFO: 48 is running.
+INFO: 49 is running.
 INFO: 54 is running.
 INFO: 59 is running.
-INFO: 64 is running.
-INFO: 69 is running.
-INFO: 74 is running.
+INFO: 65 is running.
+INFO: 70 is running.
+INFO: 75 is running.
 INFO: 79 is running.
-INFO: 84 is running.
-INFO: 90 is running.
+INFO: 85 is running.
+INFO: 89 is running.
 INFO: 95 is running.
 INFO: 100 is running.
 INFO: 105 is running.
-INFO: 110 is running.
-INFO: 115 is running.
-INFO: 120 is running.
+INFO: 111 is running.
+INFO: 116 is running.
+INFO: 121 is running.
 INFO: 126 is running.
 INFO: 131 is running.
 INFO: 136 is running.
-INFO: 140 is running.
-INFO: 145 is running.
-INFO: 150 is running.
-INFO: 155 is running.
-INFO: 161 is running.
-INFO: 166 is running.
+INFO: 141 is running.
+INFO: 146 is running.
+INFO: 151 is running.
+INFO: 157 is running.
+INFO: 162 is running.
+INFO: 167 is running.
 INFO: 171 is running.
-INFO: 177 is running.
+INFO: 176 is running.
 INFO: 181 is running.
-INFO: 186 is running.
-INFO: 191 is running.
+INFO: 187 is running.
+INFO: 192 is running.
 INFO: 196 is running.
 INFO: 201 is running.
 INFO: 206 is running.
-INFO: 212 is running.
-INFO: 217 is running.
+INFO: 211 is running.
+INFO: 216 is running.
 INFO: 222 is running.
 INFO: 227 is running.
 INFO: 232 is running.
@@ -71,26 +71,26 @@ INFO: 272 is running.
 INFO: 277 is running.
 INFO: 282 is running.
 INFO: 287 is running.
-INFO: 292 is running.
-INFO: 300 is running.
-INFO: 304 is running.
-INFO: 308 is running.
-INFO: 313 is running.
-INFO: 318 is running.
-INFO: 323 is running.
-INFO: 327 is running.
+INFO: 295 is running.
+INFO: 299 is running.
+INFO: 303 is running.
+INFO: 307 is running.
+INFO: 312 is running.
+INFO: 317 is running.
+INFO: 322 is running.
+INFO: 328 is running.
 INFO: 332 is running.
-INFO: 337 is running.
-INFO: 342 is running.
-INFO: 347 is running.
-INFO: 352 is running.
-INFO: 357 is running.
-INFO: 362 is running.
-INFO: 367 is running.
+INFO: 338 is running.
+INFO: 343 is running.
+INFO: 348 is running.
+INFO: 353 is running.
+INFO: 358 is running.
+INFO: 363 is running.
+INFO: 368 is running.
 INFO: 372 is running.
-INFO: 377 is running.
+INFO: 378 is running.
 INFO: 382 is running.
-INFO: 388 is running.
+INFO: 387 is running.
 INFO: 393 is running.
 INFO: 398 is running.
 INFO: 403 is running.
@@ -136,8 +136,8 @@ INFO: 598 is running.
 INFO: 603 is running.
 INFO: 610 is running.
 INFO: 614 is running.
-INFO: 620 is running.
+INFO: 619 is running.
 INFO: 624 is running.
-INFO: 633 is running.
-INFO: 638 is running.
 INFO: 629 is running.
+INFO: 639 is running.
+INFO: 634 is running.
