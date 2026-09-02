@@ -18,7 +18,7 @@ public final class HttpArenaController {
     public Response baseline11(
             @QueryParam("a") int a,
             @QueryParam("b") int b) {
-        return Response.text(Long.toString((long) a + b));
+        return Response.text((long) a + b);
     }
 
     @Post("/baseline11")
@@ -31,7 +31,7 @@ public final class HttpArenaController {
             MemorySegment scratch = arena.allocate(64);
             sum += readLong(body, scratch);
         }
-        return Response.text(Long.toString(sum));
+        return Response.text(sum);
     }
 
     @Get("/pipeline")
@@ -43,7 +43,7 @@ public final class HttpArenaController {
     public Response baseline2(
             @QueryParam("a") int a,
             @QueryParam("b") int b) {
-        return Response.text(Long.toString((long) a + b));
+        return Response.text((long) a + b);
     }
 
     private static long readLong(RequestBody body, MemorySegment scratch) {
