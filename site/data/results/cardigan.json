@@ -1,6 +1,31 @@
 {
   "framework": "cardigan",
   "results": {
+    "8gbit-512": {
+      "framework": "cardigan",
+      "language": "Java",
+      "rps": 49382,
+      "avg_latency": "115.1us",
+      "p99_latency": "622.0us",
+      "cpu": "289.3%",
+      "memory": "1.0GiB",
+      "connections": 512,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "509.72MB/s",
+      "input_bw": "482.25MB/s",
+      "reconnects": 0,
+      "status_2xx": 246990,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0,
+      "cpu_usec": 14999296,
+      "cpu_per_req_us": 60.7284,
+      "target_rate": 50000,
+      "rate_ratio": 0.9876,
+      "p99_9_latency": "4658.0us"
+    },
     "baseline-4096": {
       "framework": "cardigan",
       "language": "Java",
