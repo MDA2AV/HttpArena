@@ -51,6 +51,11 @@ app.set('etag', false);
 // that a cache be the framework's own and follow the disk, and this one is given the stat the
 // request already paid for: a file whose mtime or size moved is read again.
 app.set('file cache', true);
+// documented under Performance tips as the setting for an API behind a proxy or serving HTTP/1.1
+// clients, which is every profile here: the connection stays open without being told, so
+// `Connection: keep-alive` and `Keep-Alive` are advertisement. A client that asked to close is
+// still answered `Connection: close` and the connection is still closed.
+app.set('connection headers', false);
 
 // built once and not per response: the crud read path is the busiest route this entry has
 const CACHE_HIT_HDR = { 'x-cache': 'HIT' };
@@ -494,6 +499,7 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     tlsApp.disable('x-powered-by');
     tlsApp.set('etag', false);
     tlsApp.set('file cache', true);
+    tlsApp.set('connection headers', false);
     registerJsonRoute(tlsApp);
     registerStaticRoute(tlsApp);
     registerEchoRoute(tlsApp);
@@ -532,6 +538,7 @@ if (fs.existsSync('/certs-tls/server.key') && fs.existsSync('/certs-tls/server.c
         tlsCheckApp.disable('x-powered-by');
         tlsCheckApp.set('etag', false);
         tlsCheckApp.set('file cache', true);
+        tlsCheckApp.set('connection headers', false);
         registerJsonRoute(tlsCheckApp);
         registerStaticRoute(tlsCheckApp);
         tlsCheckApp.use(answerError);

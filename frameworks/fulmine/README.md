@@ -37,8 +37,14 @@ because they are where the framework differs from Express rather than where it i
 - `express.compression()` is the framework's own, taking the compression module's options: it is
   mounted on the json route, which is the only one the profiles ask to compress.
 - `express.static(dir, { preCompressed: true })` is the framework's documented way of serving the
-  `.br` and `.gz` files the harness leaves on disk. `app.set("file cache", false)` turns off the
-  small-file cache, so every request reads the file it answers with.
+  `.br` and `.gz` files the harness leaves on disk. The small-file cache in front of it is the
+  framework's own and is validated against the `stat` the request already paid for, so a file
+  replaced on disk is read again on the next request.
+- `app.set("connection headers", false)` stops `Connection: keep-alive` and `Keep-Alive` going out
+  on every response. Express sends both and so does the framework by default; turning them off for
+  an API behind a proxy or serving HTTP/1.1 clients is what its Performance tips recommend, on the
+  same footing as the `etag` setting above. A request that asked for `Connection: close` is still
+  answered `Connection: close`.
 - `tls_check` is opted into in `meta.json`, and the listener it asks for on :9000 is the 8081 one
   again, reading `/certs-tls` rather than `/certs`. What it adds is the rotation, and that is a new
   listener rather than a new certificate on the old one: µWS reads the pair when it builds the SSL
