@@ -1307,16 +1307,16 @@
       "response": true
     }
   },
-  "proxygen": {
-    "dir": "proxygen",
-    "description": "Meta's Proxygen HTTP engine: HTTPServer for HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, and RFC 6455 WebSockets, plus the mvfst-backed HQ server for HTTP/3 over QUIC.",
+  "proxygen-coro": {
+    "dir": "proxygen-coro",
+    "description": "Meta's Proxygen native coroutine HTTPServer and HTTPSource APIs across HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, HTTP/3 QUIC, and RFC 6455 WebSockets.",
     "repo": "https://github.com/facebook/proxygen",
     "type": "engine",
     "engine": "proxygen"
   },
-  "proxygen-coro": {
-    "dir": "proxygen-coro",
-    "description": "Meta's Proxygen native coroutine HTTPServer and HTTPSource APIs across HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, HTTP/3 QUIC, and RFC 6455 WebSockets.",
+  "proxygen": {
+    "dir": "proxygen",
+    "description": "Meta's Proxygen HTTP engine: HTTPServer for HTTP/1.1, HTTP/1.1 TLS, h2c, HTTP/2 TLS, and RFC 6455 WebSockets, plus the mvfst-backed HQ server for HTTP/3 over QUIC.",
     "repo": "https://github.com/facebook/proxygen",
     "type": "engine",
     "engine": "proxygen"

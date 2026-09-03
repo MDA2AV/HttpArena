@@ -11,6 +11,11 @@ namespace {
 quic::samples::HQServerParams makeHQParams(size_t ioThreads) {
   quic::samples::HQServerParams params;
   params.serverThreads = ioThreads;
+  // HQServerParams leaves these at 0, i.e. the system default (typically
+  // 208 KB), which is small for a loopback benchmark writing 48-packet GSO
+  // batches per connection.
+  params.udpSendBufferSize = 4 * 1024 * 1024;
+  params.udpRecvBufferSize = 4 * 1024 * 1024;
   params.transportSettings.maxNumPTOs = 1000;
   params.transportSettings.maxCwndInMss = quic::kLargeMaxCwndInMss;
   params.transportSettings.batchingMode =

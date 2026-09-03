@@ -1,12 +1,12 @@
 #include "ArenaCommon.h"
 #include "ArenaHQServer.h"
+#include "ArenaWebSocket.h"
 
 #include <algorithm>
 #include <chrono>
 #include <csignal>
 #include <cstdint>
 #include <exception>
-#include <fstream>
 #include <iostream>
 #include <limits>
 #include <list>
@@ -47,31 +47,35 @@ DEFINE_int32(h3_port, 8443, "HTTP/3 over QUIC port");
 DEFINE_string(ip, "::", "Address on which to listen");
 DEFINE_string(cert, "/certs/server.crt", "TLS certificate path");
 DEFINE_string(key, "/certs/server.key", "TLS private-key path");
-DEFINE_int32(threads, 0, "I/O threads; 0 uses the available CPU count");
+DEFINE_int32(threads, 0, "TCP I/O threads; 0 uses the available CPU count");
+DEFINE_int32(h3_threads, 0, "QUIC I/O threads; 0 uses the available CPU count");
 
 namespace {
 
-constexpr size_t kMaxRequestBody = 1024;
 using httparena::checkedAdd;
 using httparena::checkedMultiply;
 using httparena::contentType;
 using httparena::kJsonPrefix;
-using httparena::kMaxWebSocketMessage;
+using httparena::kMaxRequestBody;
 using httparena::kStaticPrefix;
-using httparena::kStaticRoot;
 using httparena::loadDataset;
 using httparena::parseInteger;
-using httparena::validUtf8;
-using httparena::validWebSocketCloseCode;
+using httparena::queryValue;
+using httparena::ContentEncoding;
+using httparena::StaticAssets;
 using httparena::validWebSocketKey;
 
 class ArenaHandler final : public RequestHandler {
 public:
-  explicit ArenaHandler(std::shared_ptr<const folly::dynamic> dataset)
-      : dataset_(std::move(dataset)) {}
+  // The dataset is owned by the handler factory, which outlives every handler
+  // it creates. Taking a reference rather than a shared_ptr copy keeps two
+  // atomic refcount updates on a globally shared cache line off the per-request
+  // path — one handler is allocated per request.
+  ArenaHandler(const folly::dynamic &dataset, const StaticAssets &assets)
+      : dataset_(dataset), assets_(assets) {}
 
   void onRequest(std::unique_ptr<HTTPMessage> request) noexcept override {
-    const auto path = request->getPath();
+    const auto path = request->getPathAsStringPiece();
     const auto method = request->getMethod();
 
     if (path == "/ws") {
@@ -102,27 +106,25 @@ public:
     }
 
     method_ = method.value_or(HTTPMethod::GET);
-    if (path == "/baseline11") {
-      route_ = Route::Baseline;
-      queryValid_ = parseInteger(request->getQueryParam("a"), a_) &&
-                    parseInteger(request->getQueryParam("b"), b_);
+    const std::string_view query(request->getQueryStringAsStringPiece().data(),
+                                 request->getQueryStringAsStringPiece().size());
+
+    if (path == "/baseline11" || path == "/baseline2") {
+      route_ = path == "/baseline11" ? Route::Baseline : Route::BaselineH2;
+      const auto a = queryValue(query, "a");
+      const auto b = queryValue(query, "b");
+      queryValid_ = a && b && parseInteger(*a, a_) && parseInteger(*b, b_);
       return;
     }
-    if (path == "/baseline2") {
-      route_ = Route::BaselineH2;
-      queryValid_ = parseInteger(request->getQueryParam("a"), a_) &&
-                    parseInteger(request->getQueryParam("b"), b_);
-      return;
-    }
-    if (path.starts_with(kJsonPrefix)) {
+    if (path.startsWith(kJsonPrefix)) {
       route_ = Route::Json;
       const std::string_view countText(path.data() + kJsonPrefix.size(),
                                        path.size() - kJsonPrefix.size());
       int64_t count = 0;
-      const auto multiplierText = request->getQueryParam("m");
+      const auto multiplierText = queryValue(query, "m");
       const bool multiplierValid =
-          multiplierText.empty() ? (multiplier_ = 1, true)
-                                 : parseInteger(multiplierText, multiplier_);
+          !multiplierText ? (multiplier_ = 1, true)
+                          : parseInteger(*multiplierText, multiplier_);
       jsonValid_ = parseInteger(countText, count) && count >= 1 &&
                    count <= 50 && multiplierValid;
       if (jsonValid_) {
@@ -134,10 +136,14 @@ public:
       route_ = Route::Upload;
       return;
     }
-    if (path.starts_with(kStaticPrefix)) {
+    if (path.startsWith(kStaticPrefix)) {
       route_ = Route::Static;
       staticName_.assign(path.data() + kStaticPrefix.size(),
                          path.size() - kStaticPrefix.size());
+      const auto &encoding =
+          request->getHeaders().getSingleOrEmpty(
+              proxygen::HTTP_HEADER_ACCEPT_ENCODING);
+      acceptEncoding_.assign(encoding.data(), encoding.size());
       return;
     }
     if (path == "/pipeline") {
@@ -161,9 +167,8 @@ public:
       return;
     }
     if (route_ == Route::WebSocket && websocketActive_) {
-      auto bytes = body->coalesce();
-      websocketBytes_.insert(websocketBytes_.end(), bytes.begin(), bytes.end());
-      processWebSocketFrames();
+      websocket_.onIngress(std::move(body));
+      flushWebSocket();
       return;
     }
     if (route_ != Route::Baseline) {
@@ -220,7 +225,13 @@ public:
       } else if (!uploadValid_) {
         sendText(400, "Bad Request", "upload too large");
       } else {
-        sendText(200, "OK", std::to_string(uploadBytes_));
+        std::array<char, 24> digits;
+        const auto end = std::to_chars(
+            digits.data(), digits.data() + digits.size(), uploadBytes_);
+        sendText(200, "OK",
+                 std::string_view(
+                     digits.data(),
+                     static_cast<size_t>(end.ptr - digits.data())));
       }
       return;
     case Route::Static:
@@ -269,7 +280,12 @@ private:
         return;
       }
     }
-    sendText(200, "OK", std::to_string(sum));
+    std::array<char, 24> digits;
+    const auto end = std::to_chars(digits.data(), digits.data() + digits.size(),
+                                   sum);
+    sendText(200, "OK",
+             std::string_view(digits.data(),
+                              static_cast<size_t>(end.ptr - digits.data())));
   }
 
   void handleJson() {
@@ -277,15 +293,16 @@ private:
       sendText(405, "Method Not Allowed", "method not allowed");
       return;
     }
-    if (!jsonValid_ || jsonCount_ > dataset_->size()) {
+    if (!jsonValid_ || jsonCount_ > dataset_.size()) {
       sendText(400, "Bad Request", "invalid JSON parameters");
       return;
     }
 
     try {
       folly::dynamic items = folly::dynamic::array;
+      items.reserve(jsonCount_);
       for (size_t index = 0; index < jsonCount_; ++index) {
-        folly::dynamic item = (*dataset_)[index];
+        folly::dynamic item = dataset_[index];
         int64_t subtotal = 0;
         int64_t total = 0;
         if (!checkedMultiply(item["price"].asInt(), item["quantity"].asInt(),
@@ -300,7 +317,10 @@ private:
       folly::dynamic response = folly::dynamic::object;
       response["items"] = std::move(items);
       response["count"] = static_cast<int64_t>(jsonCount_);
-      sendResponse(200, "OK", "application/json", folly::toJson(response));
+      // fromString takes ownership of the serialized buffer; copyBuffer would
+      // memcpy up to ~30 KB per response and shows up directly in json-comp.
+      sendResponse(200, "OK", "application/json",
+                   folly::IOBuf::fromString(folly::toJson(response)));
     } catch (const std::exception &) {
       sendText(500, "Internal Server Error", "JSON serialization failed");
     }
@@ -311,266 +331,62 @@ private:
       sendText(405, "Method Not Allowed", "method not allowed");
       return;
     }
-    if (staticName_.empty() || staticName_.find('/') != std::string::npos ||
-        staticName_.find('\\') != std::string::npos ||
-        staticName_.find("..") != std::string::npos) {
+    const auto *asset = assets_.find(staticName_);
+    if (asset == nullptr) {
       sendText(404, "Not Found", "not found");
       return;
     }
+    const auto [body, encoding] = asset->select(acceptEncoding_);
 
-    std::ifstream input(std::string(kStaticRoot) + staticName_,
-                        std::ios::binary);
-    if (!input) {
-      sendText(404, "Not Found", "not found");
-      return;
+    responseFinished_ = true;
+    ResponseBuilder builder(downstream_);
+    builder.status(200, "OK")
+        .header(proxygen::HTTP_HEADER_CONTENT_TYPE, asset->contentType);
+    if (encoding != ContentEncoding::Identity) {
+      builder.header(proxygen::HTTP_HEADER_CONTENT_ENCODING,
+                     httparena::encodingToken(encoding));
+      // The same URL yields different bytes per Accept-Encoding.
+      builder.header(proxygen::HTTP_HEADER_VARY, "Accept-Encoding");
     }
-    std::string body((std::istreambuf_iterator<char>(input)),
-                     std::istreambuf_iterator<char>());
-    if (!input.good() && !input.eof()) {
-      sendText(500, "Internal Server Error", "read error");
-      return;
-    }
-    sendResponse(200, "OK", contentType(staticName_), std::move(body));
+    // Non-owning view of the preloaded table, which outlives every request.
+    builder.body(folly::IOBuf::wrapBuffer(body->data(), body->size()))
+        .sendWithEOM();
   }
 
-  void sendResponse(uint16_t status, const std::string &reason,
-                    const std::string &type, std::string body) {
+  void sendResponse(uint16_t status, const char *reason, std::string_view type,
+                    std::unique_ptr<folly::IOBuf> body) {
     responseFinished_ = true;
     ResponseBuilder(downstream_)
         .status(status, reason)
-        .header("Content-Type", type)
+        .header(proxygen::HTTP_HEADER_CONTENT_TYPE, type)
         .body(std::move(body))
         .sendWithEOM();
   }
 
-  void sendText(uint16_t status, const std::string &reason,
-                const std::string &body) {
+  void sendResponse(uint16_t status, const char *reason, std::string_view type,
+                    std::string_view body) {
+    sendResponse(status, reason, type, folly::IOBuf::copyBuffer(body));
+  }
+
+  void sendText(uint16_t status, const char *reason, std::string_view body) {
     sendResponse(status, reason, "text/plain", body);
   }
 
-  void sendWebSocketFrame(uint8_t opcode, const uint8_t *payload,
-                          size_t payloadLength) {
-    std::vector<uint8_t> frame;
-    frame.reserve(payloadLength + 10);
-    frame.push_back(static_cast<uint8_t>(0x80U | opcode));
-    if (payloadLength <= 125) {
-      frame.push_back(static_cast<uint8_t>(payloadLength));
-    } else if (payloadLength <= std::numeric_limits<uint16_t>::max()) {
-      frame.push_back(126);
-      frame.push_back(static_cast<uint8_t>((payloadLength >> 8) & 0xff));
-      frame.push_back(static_cast<uint8_t>(payloadLength & 0xff));
-    } else {
-      frame.push_back(127);
-      const auto length = static_cast<uint64_t>(payloadLength);
-      for (int shift = 56; shift >= 0; shift -= 8) {
-        frame.push_back(static_cast<uint8_t>((length >> shift) & 0xff));
-      }
+  // Drains whatever the shared RFC 6455 codec produced for this read as a
+  // single egress write, then closes the stream if the codec is done.
+  void flushWebSocket() {
+    if (auto egress = websocket_.takeEgress()) {
+      downstream_->sendBody(std::move(egress));
     }
-    if (payloadLength > 0) {
-      frame.insert(frame.end(), payload, payload + payloadLength);
-    }
-    downstream_->sendBody(folly::IOBuf::copyBuffer(frame.data(), frame.size()));
-  }
-
-  void sendWebSocketFrame(uint8_t opcode, const std::vector<uint8_t> &payload) {
-    sendWebSocketFrame(opcode, payload.data(), payload.size());
-  }
-
-  void closeWebSocket(uint16_t status) {
-    if (responseFinished_ || closeSent_) {
-      return;
-    }
-    const std::array<uint8_t, 2> payload = {
-        static_cast<uint8_t>((status >> 8) & 0xff),
-        static_cast<uint8_t>(status & 0xff)};
-    sendWebSocketFrame(0x8, payload.data(), payload.size());
-    closeSent_ = true;
-  }
-
-  void webSocketProtocolError() { closeWebSocket(1002); }
-
-  void webSocketInvalidPayload() { closeWebSocket(1007); }
-
-  void handleWebSocketFrame(bool fin, uint8_t opcode,
-                            std::vector<uint8_t> payload) {
-    if (closeSent_ && opcode != 0x08) {
-      return;
-    }
-    if ((opcode & 0x08U) != 0) {
-      if (!fin || payload.size() > 125) {
-        webSocketProtocolError();
-        return;
-      }
-      if (opcode == 0x08) {
-        if (payload.size() == 1) {
-          webSocketProtocolError();
-          return;
-        }
-        if (payload.size() >= 2) {
-          const uint16_t status =
-              (static_cast<uint16_t>(payload[0]) << 8) | payload[1];
-          if (!validWebSocketCloseCode(status)) {
-            webSocketProtocolError();
-            return;
-          }
-          if (!validUtf8(payload.data() + 2, payload.size() - 2)) {
-            webSocketInvalidPayload();
-            return;
-          }
-        }
-        if (closeSent_) {
-          responseFinished_ = true;
-          downstream_->sendEOM();
-          return;
-        }
-        sendWebSocketFrame(0x08, payload);
-        responseFinished_ = true;
-        downstream_->sendEOM();
-      } else if (opcode == 0x09) {
-        sendWebSocketFrame(0x0a, payload);
-      } else if (opcode != 0x0a) {
-        webSocketProtocolError();
-      }
-      return;
-    }
-
-    if (opcode == 0x00) {
-      if (fragmentOpcode_ == 0) {
-        webSocketProtocolError();
-        return;
-      }
-      if (fragmentPayload_.size() + payload.size() > kMaxWebSocketMessage) {
-        webSocketProtocolError();
-        return;
-      }
-      fragmentPayload_.insert(fragmentPayload_.end(), payload.begin(),
-                              payload.end());
-      if (fin) {
-        if (fragmentOpcode_ == 0x01 && !validUtf8(fragmentPayload_)) {
-          webSocketInvalidPayload();
-          return;
-        }
-        sendWebSocketFrame(fragmentOpcode_, fragmentPayload_);
-        fragmentOpcode_ = 0;
-        fragmentPayload_.clear();
-      }
-      return;
-    }
-
-    if (opcode != 0x01 && opcode != 0x02) {
-      webSocketProtocolError();
-      return;
-    }
-    if (fragmentOpcode_ != 0) {
-      webSocketProtocolError();
-      return;
-    }
-    if (fin) {
-      if (opcode == 0x01 && !validUtf8(payload)) {
-        webSocketInvalidPayload();
-        return;
-      }
-      sendWebSocketFrame(opcode, payload);
-      return;
-    }
-    fragmentOpcode_ = opcode;
-    fragmentPayload_ = std::move(payload);
-  }
-
-  void processWebSocketFrames() {
-    size_t cursor = 0;
-    while (!responseFinished_) {
-      if (websocketBytes_.size() - cursor < 2) {
-        break;
-      }
-      const uint8_t first = websocketBytes_[cursor];
-      const uint8_t second = websocketBytes_[cursor + 1];
-      const bool fin = (first & 0x80U) != 0;
-      const uint8_t opcode = first & 0x0fU;
-      const uint8_t encodedPayloadLength = second & 0x7fU;
-      if ((first & 0x70U) != 0 || (second & 0x80U) == 0) {
-        webSocketProtocolError();
-        break;
-      }
-      // RFC 6455 control frames cannot use either extended-length encoding,
-      // even when that encoding ultimately describes 125 bytes or fewer.
-      if ((opcode & 0x08U) != 0 && encodedPayloadLength > 125) {
-        webSocketProtocolError();
-        break;
-      }
-
-      uint64_t payloadLength = encodedPayloadLength;
-      size_t headerLength = 2;
-      if (payloadLength == 126) {
-        if (websocketBytes_.size() - cursor < 4) {
-          break;
-        }
-        payloadLength =
-            (static_cast<uint64_t>(websocketBytes_[cursor + 2]) << 8) |
-            websocketBytes_[cursor + 3];
-        if (payloadLength < 126) {
-          webSocketProtocolError();
-          break;
-        }
-        headerLength = 4;
-      } else if (payloadLength == 127) {
-        if (websocketBytes_.size() - cursor < 10) {
-          break;
-        }
-        if ((websocketBytes_[cursor + 2] & 0x80U) != 0) {
-          webSocketProtocolError();
-          break;
-        }
-        payloadLength = 0;
-        for (size_t index = 0; index < 8; ++index) {
-          payloadLength =
-              (payloadLength << 8) | websocketBytes_[cursor + 2 + index];
-        }
-        if (payloadLength <= std::numeric_limits<uint16_t>::max()) {
-          webSocketProtocolError();
-          break;
-        }
-        headerLength = 10;
-      }
-      if (payloadLength > kMaxWebSocketMessage) {
-        webSocketProtocolError();
-        break;
-      }
-
-      constexpr size_t kMaskLength = 4;
-      if (payloadLength >
-          std::numeric_limits<size_t>::max() - headerLength - kMaskLength) {
-        webSocketProtocolError();
-        break;
-      }
-      const size_t frameLength =
-          headerLength + kMaskLength + static_cast<size_t>(payloadLength);
-      if (websocketBytes_.size() - cursor < frameLength) {
-        break;
-      }
-
-      const size_t maskOffset = cursor + headerLength;
-      const size_t payloadOffset = maskOffset + kMaskLength;
-      std::vector<uint8_t> payload(static_cast<size_t>(payloadLength));
-      for (size_t index = 0; index < payload.size(); ++index) {
-        payload[index] = websocketBytes_[payloadOffset + index] ^
-                         websocketBytes_[maskOffset + (index % kMaskLength)];
-      }
-      cursor += frameLength;
-      handleWebSocketFrame(fin, opcode, std::move(payload));
-    }
-
-    if (cursor > 0) {
-      websocketBytes_.erase(websocketBytes_.begin(),
-                            websocketBytes_.begin() + cursor);
-    }
-    if (responseFinished_) {
-      websocketBytes_.clear();
+    if (websocket_.finished() && !responseFinished_) {
+      responseFinished_ = true;
+      downstream_->sendEOM();
     }
   }
 
   Route route_{Route::NotFound};
-  std::shared_ptr<const folly::dynamic> dataset_;
+  const folly::dynamic &dataset_;
+  const StaticAssets &assets_;
   HTTPMethod method_{HTTPMethod::GET};
   int64_t a_{0};
   int64_t b_{0};
@@ -583,30 +399,30 @@ private:
   bool bodyValid_{true};
   bool websocketAccepted_{false};
   bool websocketActive_{false};
-  bool closeSent_{false};
   bool responseFinished_{false};
-  uint8_t fragmentOpcode_{0};
   std::string requestBody_;
   std::string staticName_;
-  std::vector<uint8_t> websocketBytes_;
-  std::vector<uint8_t> fragmentPayload_;
+  std::string acceptEncoding_;
+  httparena::WebSocketEcho websocket_;
 };
 
 class ArenaHandlerFactory final : public RequestHandlerFactory {
 public:
-  explicit ArenaHandlerFactory(std::shared_ptr<const folly::dynamic> dataset)
-      : dataset_(std::move(dataset)) {}
+  ArenaHandlerFactory(std::shared_ptr<const folly::dynamic> dataset,
+                      const StaticAssets &assets)
+      : dataset_(std::move(dataset)), assets_(assets) {}
 
   void onServerStart(folly::EventBase * /*eventBase*/) noexcept override {}
 
   void onServerStop() noexcept override {}
 
   RequestHandler *onRequest(RequestHandler *, HTTPMessage *) noexcept override {
-    return new ArenaHandler(dataset_);
+    return new ArenaHandler(*dataset_, assets_);
   }
 
 private:
   std::shared_ptr<const folly::dynamic> dataset_;
+  const StaticAssets &assets_;
 };
 
 wangle::SSLContextConfig h1TlsConfig() {
@@ -657,28 +473,48 @@ int main(int argc, char *argv[]) {
   if (FLAGS_threads <= 0) {
     FLAGS_threads = static_cast<int32_t>(folly::available_concurrency());
   }
+  if (FLAGS_h3_threads <= 0) {
+    FLAGS_h3_threads = static_cast<int32_t>(folly::available_concurrency());
+  }
   CHECK_GT(FLAGS_threads, 0);
+  CHECK_GT(FLAGS_h3_threads, 0);
+
+  static httparena::StaticAssets assets;
 
   try {
     auto dataset = loadDataset();
+    assets.load();
 
     proxygen::HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_threads);
     options.idleTimeout = std::chrono::milliseconds(60000);
     options.shutdownOn = {SIGINT, SIGTERM};
+    // Nothing here speaks CONNECT; saying we do only stops HTTPServer from
+    // prepending RejectConnectFilterFactory to the per-request filter chain.
     options.supportsConnect = true;
     options.enableContentCompression = true;
+    // Only `json-comp` asks for a compressed response, and it is the one
+    // profile scored on compression ratio rather than raw rps. `static` sends
+    // `Accept-Encoding: br;q=1, gzip;q=0.8` too, and proxygen's default
+    // compressible set covers text/css, text/html and application/javascript —
+    // so every CSS/JS/HTML request was gzipping 8-200 KB on the event base for
+    // no scoring benefit (compression is explicitly optional for `static`).
+    // Restrict the set to the content type json-comp actually measures.
+    options.contentCompressionTypes = {"application/json"};
     options.initialReceiveWindow = 1U << 20;
     options.receiveStreamWindowSize = 1U << 20;
     options.receiveSessionWindowSize = 10U << 20;
     options.maxConcurrentIncomingStreams = 1024;
     options.handlerFactories =
-        RequestHandlerChain().addThen<ArenaHandlerFactory>(dataset).build();
+        RequestHandlerChain()
+            .addThen<ArenaHandlerFactory>(dataset, assets)
+            .build();
 
     httparena::ArenaHQServer h3Server(
-        FLAGS_cert, FLAGS_key, static_cast<size_t>(FLAGS_threads),
+        FLAGS_cert, FLAGS_key, static_cast<size_t>(FLAGS_h3_threads),
         [dataset](HTTPMessage *) -> proxygen::HTTPTransactionHandler * {
-          return new proxygen::RequestHandlerAdaptor(new ArenaHandler(dataset));
+          return new proxygen::RequestHandlerAdaptor(
+              new ArenaHandler(*dataset, assets));
         });
     HTTPServer server(std::move(options));
     server.bind(listenerConfigs());
