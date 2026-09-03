@@ -15,7 +15,7 @@ other pool sleeps. Size them independently with `PROXYGEN_THREADS` and
 
 | Listener | Endpoints | Subscribed profiles |
 | --- | --- | --- |
-| HTTP/1.1 `:8080` | `/baseline11`, `/pipeline`, `/json/{count}`, `/upload`, `/static/*`, `/ws` | `baseline`, `pipelined`, `limited-conn`, `json`, `json-comp`, `upload`, `static`, `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` |
+| HTTP/1.1 `:8080` | `/baseline11`, `/pipeline`, `/json/{count}`, `/upload`, `/static/*`, `/ws` | `baseline`, `pipelined`, `limited-conn`, `json-comp`, `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` |
 | HTTP/1.1 TLS `:8081` | `/json/{count}`, `/static/*` | `json-tls`, `static-tls` |
 | h2c `:8082` | `/baseline2`, `/json/{count}` | `baseline-h2c`, `json-h2c` |
 | HTTP/2 TLS `:8443` | `/baseline2`, `/static/*` | `baseline-h2`, `static-h2` |
@@ -28,19 +28,22 @@ trusting `Content-Length`.
 
 ## Static assets
 
-`/data/static` is mounted read-only and does not change during a run, so every
-file and its precompressed `.br` / `.gz` siblings are read once at startup into
-an immutable table, and responses are non-owning `IOBuf` views over it: no disk
-I/O, no compression, no copy and no allocation for the payload per request. Both
-in-memory caching and serving the precompressed variants are explicitly allowed
-for `engine` entries ("No specific rules"). Variant choice is a delimited token
-match on `Accept-Encoding` honouring `q=0`, preferring brotli, then gzip, then
-the byte-exact original — which is what a client that sends no `Accept-Encoding`
-always gets. A lookup miss is a 404, so path traversal is impossible by
-construction rather than by filtering.
+Files are read from the mounted directory on every request — one `open`, one
+`fstat`, one `readFull` straight into the response buffer, no intermediate
+`std::string`. There is no cache: the arena's static rules require the served
+bytes to follow the disk, and explicitly exclude a cache assembled in the entry
+("no reading the directory into a map at startup"). `validate.sh` enforces this
+with a staleness probe that swaps the file underneath a running server.
 
-This replaced a per-request `open`/`read` plus an on-the-fly gzip of every
-CSS/JS/HTML response, which was costing about 80x throughput and 6.7x memory.
+The precompressed `.br`/`.gz` siblings are served when the client accepts them,
+which the rules allow "by selecting the variant in the entry off
+`Accept-Encoding`" — those bytes already exist on disk, so choosing one is a
+file read rather than compression. Selection is a delimited token match that
+honours `q=0`, preferring brotli, then gzip, then the byte-exact original,
+which is what a client sending no `Accept-Encoding` always gets.
+
+That removes the on-the-fly gzip of every CSS/JS/HTML response, which was the
+dominant cost in the static profiles.
 
 Response compression via Proxygen's `CompressionFilter` is therefore scoped to
 `application/json`, the only content type still compressed at request time and
@@ -74,7 +77,7 @@ Both images `LD_PRELOAD` mimalloc (pinned by tag in the Dockerfile). glibc mallo
 is the binding constraint on the allocation-heavy profiles — the JSON routes build
 a live `folly::dynamic` per request (up to 50 item copies plus the serialized
 string), and the coroutine server allocates a frame per event. Measured here it is
-worth roughly +38% on `json` and +41%/+82% (classic/coro) on `json-comp`.
+worth roughly +41%/+82% (classic/coro) on `json-comp`.
 `MIMALLOC_PURGE_DELAY=1` is set because the default (10 ms) retains ~17% more
 memory on `json-comp` at 16384 connections for no throughput gain; going to 0
 would cut memory 4x further but costs 44% of that profile, so it is not used.

@@ -136,16 +136,17 @@ inline std::string_view contentType(std::string_view name) {
 
 // ── Static assets ───────────────────────────────────────────────────────────
 //
-// `/data/static` is mounted read-only and never changes during a run, so every
-// file and its precompressed `.br` / `.gz` siblings are read once at startup
-// and served straight out of memory. Both are explicitly allowed for `engine`
-// entries ("No specific rules"), and the alternative — re-reading and, worse,
-// re-gzipping 8-200 KB per request on the event base — was costing better than
-// an order of magnitude.
+// Read from the mounted directory on every request. The arena's static rules
+// require the served bytes to follow the disk — replace a file and the next
+// response must carry the new bytes — and explicitly exclude a cache assembled
+// in the entry ("no reading the directory into a map at startup"). validate.sh
+// enforces this with a staleness probe that swaps the file underneath a running
+// server, so a preloaded table fails outright.
 //
-// Bodies are handed out as non-owning IOBufs over this table, which lives for
-// the life of the process: no copy, no allocation for the payload, and no
-// atomic refcount on the shared buffer.
+// Serving the precompressed .br/.gz siblings IS allowed, "by selecting the
+// variant in the entry off Accept-Encoding" — those bytes already exist on
+// disk, so choosing one is a file read rather than compression. That is where
+// the remaining win lives: no gzip on the event-base thread per request.
 
 enum class ContentEncoding : uint8_t { Identity, Gzip, Brotli };
 
@@ -161,127 +162,99 @@ inline std::string_view encodingToken(ContentEncoding encoding) {
   return {};
 }
 
-struct StaticAsset {
-  std::string identity;
-  std::string brotli; // empty when there is no .br sibling
-  std::string gzip;   // empty when there is no .gz sibling
-  std::string_view contentType;
-
-  // Picks the best variant this client accepts. Falls back to identity, which
-  // is always present, so an absent or unrecognised Accept-Encoding still
-  // yields the byte-exact original.
-  std::pair<const std::string *, ContentEncoding>
-  select(std::string_view acceptEncoding) const {
-    if (!brotli.empty() && acceptsToken(acceptEncoding, "br")) {
-      return {&brotli, ContentEncoding::Brotli};
-    }
-    if (!gzip.empty() && acceptsToken(acceptEncoding, "gzip")) {
-      return {&gzip, ContentEncoding::Gzip};
-    }
-    return {&identity, ContentEncoding::Identity};
-  }
-
-  // Token search rather than a full RFC 7231 qvalue parse: the token must be
-  // delimited so "br" does not match inside another coding, and an explicit
-  // `q=0` disqualifies it.
-  static bool acceptsToken(std::string_view header, std::string_view token) {
-    size_t pos = 0;
-    while ((pos = header.find(token, pos)) != std::string_view::npos) {
-      const bool leftOk =
-          pos == 0 || header[pos - 1] == ' ' || header[pos - 1] == ',';
-      const size_t after = pos + token.size();
-      const bool rightOk = after == header.size() || header[after] == ',' ||
-                           header[after] == ';' || header[after] == ' ';
-      if (leftOk && rightOk) {
-        // Reject `;q=0` (but not `;q=0.8`).
-        const auto end = header.find(',', after);
-        const auto params = header.substr(
-            after, end == std::string_view::npos ? end : end - after);
-        const auto q = params.find("q=");
-        if (q == std::string_view::npos ||
-            params.compare(q, 4, "q=0,") == 0 || params.substr(q) == "q=0" ||
-            params.substr(q) == "q=0.0") {
-          return q == std::string_view::npos;
-        }
+// Token search rather than a full RFC 7231 qvalue parse: the token must be
+// delimited so "br" does not match inside another coding, and an explicit
+// `q=0` disqualifies it.
+inline bool acceptsToken(std::string_view header, std::string_view token) {
+  size_t pos = 0;
+  while ((pos = header.find(token, pos)) != std::string_view::npos) {
+    const bool leftOk =
+        pos == 0 || header[pos - 1] == ' ' || header[pos - 1] == ',';
+    const size_t after = pos + token.size();
+    const bool rightOk = after == header.size() || header[after] == ',' ||
+                         header[after] == ';' || header[after] == ' ';
+    if (leftOk && rightOk) {
+      const auto end = header.find(',', after);
+      const auto params =
+          header.substr(after, end == std::string_view::npos ? end : end - after);
+      const auto q = params.find("q=");
+      if (q == std::string_view::npos) {
         return true;
       }
-      pos = after;
+      const auto qv = params.substr(q);
+      return !(qv == "q=0" || qv == "q=0.0" || qv.rfind("q=0,", 0) == 0);
     }
-    return false;
+    pos = after;
   }
+  return false;
+}
+
+// Reads `root/name` into a fresh IOBuf: one open, one fstat, one readFull, no
+// intermediate std::string. Returns nullptr when the file is absent.
+inline std::unique_ptr<folly::IOBuf> readFileToIOBuf(const std::string &path) {
+  int fd = folly::openNoInt(path.c_str(), O_RDONLY | O_CLOEXEC);
+  if (fd < 0) {
+    return nullptr;
+  }
+  folly::File file(fd, /*ownsFd=*/true);
+  struct stat info {};
+  if (::fstat(fd, &info) != 0 || !S_ISREG(info.st_mode)) {
+    return nullptr;
+  }
+  const auto size = static_cast<size_t>(info.st_size);
+  auto buffer = folly::IOBuf::create(size);
+  if (size > 0) {
+    const ssize_t got = folly::readFull(fd, buffer->writableTail(), size);
+    if (got < 0 || static_cast<size_t>(got) != size) {
+      return nullptr;
+    }
+  }
+  buffer->append(size);
+  return buffer;
+}
+
+struct StaticResponse {
+  std::unique_ptr<folly::IOBuf> body;
+  std::string_view contentType;
+  ContentEncoding encoding{ContentEncoding::Identity};
 };
 
-class StaticAssets {
-public:
-  // Throws if the mount is missing; the arena always provides it.
-  void load() {
-    namespace fs = std::filesystem;
-    std::error_code ec;
-    fs::directory_iterator it(kStaticRoot, ec);
-    if (ec) {
-      throw std::runtime_error(std::string("cannot scan ") +
-                               std::string(kStaticRoot) + ": " + ec.message());
-    }
-    // Pass 1: the originals. Pass 2 attaches variants, so ordering within the
-    // directory listing does not matter.
-    std::vector<fs::path> variants;
-    for (const auto &entry : it) {
-      if (!entry.is_regular_file()) {
-        continue;
-      }
-      const auto name = entry.path().filename().string();
-      if (name.ends_with(".br") || name.ends_with(".gz")) {
-        variants.push_back(entry.path());
-        continue;
-      }
-      StaticAsset asset;
-      if (!folly::readFile(entry.path().c_str(), asset.identity)) {
-        continue;
-      }
-      asset.contentType = contentType(name);
-      assets_.emplace(name, std::move(asset));
-    }
-    for (const auto &path : variants) {
-      const auto name = path.filename().string();
-      const auto base = name.substr(0, name.size() - 3);
-      auto found = assets_.find(base);
-      if (found == assets_.end()) {
-        continue; // orphan variant with no original; ignore it
-      }
-      std::string &slot =
-          name.ends_with(".br") ? found->second.brotli : found->second.gzip;
-      if (!folly::readFile(path.c_str(), slot)) {
-        slot.clear();
-      }
-    }
-    if (assets_.empty()) {
-      throw std::runtime_error("no static assets found under /data/static");
-    }
-  }
+// `name` must already be rejected if it contains a separator or "..".
+// Prefers the precompressed sibling this client accepts, falling back to the
+// original — which is what a client sending no Accept-Encoding always gets.
+inline StaticResponse serveStatic(std::string_view name,
+                                  std::string_view acceptEncoding) {
+  StaticResponse out;
+  std::string path;
+  path.reserve(kStaticRoot.size() + name.size() + 3);
+  path.append(kStaticRoot).append(name);
+  const size_t baseLen = path.size();
 
-  // A miss is simply a 404; because this is an exact lookup in a fixed table,
-  // path traversal is impossible by construction.
-  const StaticAsset *find(std::string_view name) const {
-    const auto found = assets_.find(name);
-    return found == assets_.end() ? nullptr : &found->second;
+  if (acceptsToken(acceptEncoding, "br")) {
+    path.append(".br");
+    out.body = readFileToIOBuf(path);
+    if (out.body) {
+      out.encoding = ContentEncoding::Brotli;
+    }
+    path.resize(baseLen);
   }
-
-private:
-  // Transparent hashing so lookups take a string_view without allocating.
-  struct Hash {
-    using is_transparent = void;
-    size_t operator()(std::string_view s) const noexcept {
-      return std::hash<std::string_view>{}(s);
+  if (!out.body && acceptsToken(acceptEncoding, "gzip")) {
+    path.append(".gz");
+    out.body = readFileToIOBuf(path);
+    if (out.body) {
+      out.encoding = ContentEncoding::Gzip;
     }
-  };
-  struct Equal {
-    using is_transparent = void;
-    bool operator()(std::string_view a, std::string_view b) const noexcept {
-      return a == b;
-    }
-  };
-  std::unordered_map<std::string, StaticAsset, Hash, Equal> assets_;
-};
+    path.resize(baseLen);
+  }
+  if (!out.body) {
+    out.body = readFileToIOBuf(path);
+    out.encoding = ContentEncoding::Identity;
+  }
+  if (out.body) {
+    out.contentType = contentType(name);
+  }
+  return out;
+}
 
 inline std::shared_ptr<const folly::dynamic> loadDataset() {
   std::string contents;

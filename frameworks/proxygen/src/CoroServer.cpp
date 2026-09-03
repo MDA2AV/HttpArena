@@ -74,7 +74,7 @@ using httparena::loadDataset;
 using httparena::parseInteger;
 using httparena::queryValue;
 using httparena::ContentEncoding;
-using httparena::StaticAssets;
+using httparena::serveStatic;
 using httparena::validWebSocketKey;
 
 HTTPFixedSource *makeResponse(uint16_t status,
@@ -268,9 +268,7 @@ proxygen::CompressionFilterUtils::FactoryOptions compressionOptions() {
 class ArenaCoroHandler final : public HTTPHandler {
 public:
   explicit ArenaCoroHandler(std::shared_ptr<const folly::dynamic> dataset)
-      : dataset_(std::move(dataset)), items_(*dataset_) {
-    assets_.load();
-  }
+      : dataset_(std::move(dataset)), items_(*dataset_) {}
 
   folly::coro::Task<HTTPSourceHolder>
   handleRequest(folly::EventBase * /*eventBase*/,
@@ -400,24 +398,25 @@ public:
       if (method != HTTPMethod::GET) {
         co_return makeTextResponse(405, "method not allowed");
       }
-      // Exact lookup in the preloaded table, so traversal is impossible and a
-      // miss is just a 404.
-      const auto *asset = assets_.find(path.substr(kStaticPrefix.size()));
-      if (asset == nullptr) {
+      const std::string_view name = path.substr(kStaticPrefix.size());
+      if (name.empty() || name.find('/') != std::string_view::npos ||
+          name.find('\\') != std::string_view::npos ||
+          name.find("..") != std::string_view::npos) {
         co_return makeTextResponse(404, "not found");
       }
       const auto &accept = request->getHeaders().getSingleOrEmpty(
           proxygen::HTTP_HEADER_ACCEPT_ENCODING);
-      const auto [body, encoding] =
-          asset->select(std::string_view(accept.data(), accept.size()));
-      // Non-owning view of the table, which outlives every request.
+      auto asset =
+          serveStatic(name, std::string_view(accept.data(), accept.size()));
+      if (!asset.body) {
+        co_return makeTextResponse(404, "not found");
+      }
       auto *response =
-          makeResponse(200, asset->contentType,
-                       folly::IOBuf::wrapBuffer(body->data(), body->size()));
-      if (encoding != ContentEncoding::Identity) {
+          makeResponse(200, asset.contentType, std::move(asset.body));
+      if (asset.encoding != ContentEncoding::Identity) {
         auto &headers = response->msg_->getHeaders();
         headers.set(proxygen::HTTP_HEADER_CONTENT_ENCODING,
-                    httparena::encodingToken(encoding));
+                    httparena::encodingToken(asset.encoding));
         headers.set(proxygen::HTTP_HEADER_VARY, "Accept-Encoding");
       }
       co_return response;
@@ -462,7 +461,6 @@ private:
   const folly::dynamic &items_;
   const proxygen::CompressionFilterUtils::FactoryOptions compression_{
       compressionOptions()};
-  StaticAssets assets_;
 };
 
 constexpr uint32_t kH2StreamWindow = 1U << 20;

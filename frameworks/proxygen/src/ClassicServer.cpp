@@ -62,7 +62,7 @@ using httparena::loadDataset;
 using httparena::parseInteger;
 using httparena::queryValue;
 using httparena::ContentEncoding;
-using httparena::StaticAssets;
+using httparena::serveStatic;
 using httparena::validWebSocketKey;
 
 class ArenaHandler final : public RequestHandler {
@@ -71,8 +71,7 @@ public:
   // it creates. Taking a reference rather than a shared_ptr copy keeps two
   // atomic refcount updates on a globally shared cache line off the per-request
   // path — one handler is allocated per request.
-  ArenaHandler(const folly::dynamic &dataset, const StaticAssets &assets)
-      : dataset_(dataset), assets_(assets) {}
+  explicit ArenaHandler(const folly::dynamic &dataset) : dataset_(dataset) {}
 
   void onRequest(std::unique_ptr<HTTPMessage> request) noexcept override {
     const auto path = request->getPathAsStringPiece();
@@ -331,26 +330,29 @@ private:
       sendText(405, "Method Not Allowed", "method not allowed");
       return;
     }
-    const auto *asset = assets_.find(staticName_);
-    if (asset == nullptr) {
+    if (staticName_.empty() || staticName_.find('/') != std::string::npos ||
+        staticName_.find('\\') != std::string::npos ||
+        staticName_.find("..") != std::string::npos) {
       sendText(404, "Not Found", "not found");
       return;
     }
-    const auto [body, encoding] = asset->select(acceptEncoding_);
+    auto asset = serveStatic(staticName_, acceptEncoding_);
+    if (!asset.body) {
+      sendText(404, "Not Found", "not found");
+      return;
+    }
 
     responseFinished_ = true;
     ResponseBuilder builder(downstream_);
     builder.status(200, "OK")
-        .header(proxygen::HTTP_HEADER_CONTENT_TYPE, asset->contentType);
-    if (encoding != ContentEncoding::Identity) {
+        .header(proxygen::HTTP_HEADER_CONTENT_TYPE, asset.contentType);
+    if (asset.encoding != ContentEncoding::Identity) {
       builder.header(proxygen::HTTP_HEADER_CONTENT_ENCODING,
-                     httparena::encodingToken(encoding));
+                     httparena::encodingToken(asset.encoding));
       // The same URL yields different bytes per Accept-Encoding.
       builder.header(proxygen::HTTP_HEADER_VARY, "Accept-Encoding");
     }
-    // Non-owning view of the preloaded table, which outlives every request.
-    builder.body(folly::IOBuf::wrapBuffer(body->data(), body->size()))
-        .sendWithEOM();
+    builder.body(std::move(asset.body)).sendWithEOM();
   }
 
   void sendResponse(uint16_t status, const char *reason, std::string_view type,
@@ -386,7 +388,6 @@ private:
 
   Route route_{Route::NotFound};
   const folly::dynamic &dataset_;
-  const StaticAssets &assets_;
   HTTPMethod method_{HTTPMethod::GET};
   int64_t a_{0};
   int64_t b_{0};
@@ -408,21 +409,19 @@ private:
 
 class ArenaHandlerFactory final : public RequestHandlerFactory {
 public:
-  ArenaHandlerFactory(std::shared_ptr<const folly::dynamic> dataset,
-                      const StaticAssets &assets)
-      : dataset_(std::move(dataset)), assets_(assets) {}
+  explicit ArenaHandlerFactory(std::shared_ptr<const folly::dynamic> dataset)
+      : dataset_(std::move(dataset)) {}
 
   void onServerStart(folly::EventBase * /*eventBase*/) noexcept override {}
 
   void onServerStop() noexcept override {}
 
   RequestHandler *onRequest(RequestHandler *, HTTPMessage *) noexcept override {
-    return new ArenaHandler(*dataset_, assets_);
+    return new ArenaHandler(*dataset_);
   }
 
 private:
   std::shared_ptr<const folly::dynamic> dataset_;
-  const StaticAssets &assets_;
 };
 
 wangle::SSLContextConfig h1TlsConfig() {
@@ -479,11 +478,8 @@ int main(int argc, char *argv[]) {
   CHECK_GT(FLAGS_threads, 0);
   CHECK_GT(FLAGS_h3_threads, 0);
 
-  static httparena::StaticAssets assets;
-
   try {
     auto dataset = loadDataset();
-    assets.load();
 
     proxygen::HTTPServerOptions options;
     options.threads = static_cast<size_t>(FLAGS_threads);
@@ -506,15 +502,13 @@ int main(int argc, char *argv[]) {
     options.receiveSessionWindowSize = 10U << 20;
     options.maxConcurrentIncomingStreams = 1024;
     options.handlerFactories =
-        RequestHandlerChain()
-            .addThen<ArenaHandlerFactory>(dataset, assets)
-            .build();
+        RequestHandlerChain().addThen<ArenaHandlerFactory>(dataset).build();
 
     httparena::ArenaHQServer h3Server(
         FLAGS_cert, FLAGS_key, static_cast<size_t>(FLAGS_h3_threads),
         [dataset](HTTPMessage *) -> proxygen::HTTPTransactionHandler * {
           return new proxygen::RequestHandlerAdaptor(
-              new ArenaHandler(*dataset, assets));
+              new ArenaHandler(*dataset));
         });
     HTTPServer server(std::move(options));
     server.bind(listenerConfigs());
