@@ -11,6 +11,7 @@ import dev.cardigan.http.Response;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.Arrays;
 
 /** The small arithmetic endpoints shared by the HttpArena transports. */
 public final class HttpArenaController {
@@ -44,6 +45,48 @@ public final class HttpArenaController {
             @QueryParam("a") int a,
             @QueryParam("b") int b) {
         return Response.text((long) a + b);
+    }
+
+    @Post("/echo")
+    public Response echo(RequestBody body) {
+        return Response.bytes(
+            "application/octet-stream",
+            readBody(body));
+    }
+
+    private static byte[] readBody(RequestBody body) {
+        long declaredLength = body.length();
+        if (declaredLength > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("echo body is too large");
+        }
+
+        int initialCapacity = declaredLength >= 0
+            ? (int) declaredLength
+            : 16 * 1024;
+        byte[] bytes = new byte[initialCapacity];
+        int length = 0;
+        while (declaredLength < 0 || length < initialCapacity) {
+            if (length == bytes.length) {
+                int nextCapacity = Math.max(1, bytes.length << 1);
+                if (nextCapacity <= bytes.length) {
+                    throw new IllegalArgumentException("echo body is too large");
+                }
+                bytes = Arrays.copyOf(bytes, nextCapacity);
+            }
+            int read = body.read(
+                MemorySegment.ofArray(bytes).asSlice(
+                    length, bytes.length - length));
+            if (read < 0) {
+                break;
+            }
+            length += read;
+        }
+
+        if (declaredLength >= 0 && length != initialCapacity) {
+            throw new IllegalArgumentException(
+                "echo body ended before its declared length");
+        }
+        return length == bytes.length ? bytes : Arrays.copyOf(bytes, length);
     }
 
     private static long readLong(RequestBody body, MemorySegment scratch) {
