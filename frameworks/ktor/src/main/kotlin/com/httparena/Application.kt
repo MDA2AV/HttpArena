@@ -37,13 +37,12 @@ fun main() {
     val deps = ArenaApplicationDepsFactory.load()
     val environment = applicationEnvironment {}
 
+    @OptIn(ExperimentalKtorApi::class)
     val server = embeddedServer(Netty, environment, {
+        dispatchCallStartOnIoExecutor = true
+        shareWorkGroup = true
         enableHttp2 = true
         enableH2c = true
-        workerGroupSize = parallelism + 1
-        callGroupSize = parallelism + 1
-
-        @OptIn(ExperimentalKtorApi::class)
         enableHttp3()
 
         // HTTP/1.1
