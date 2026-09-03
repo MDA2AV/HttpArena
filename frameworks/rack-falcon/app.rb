@@ -4,6 +4,7 @@ Symbol.alias_method(:to_s, :name)
 # Our Rack application to be executed by rackup
 
 require 'rack'
+require 'uri'
 
 class App
   CONTENT_TYPE = 'Content-Type'
