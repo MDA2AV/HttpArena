@@ -72,13 +72,28 @@ internal static class Program
             },
         };
 
-        // The mounted certificate as it is, and the library's TLS defaults otherwise: ALPN is
-        // already ["http/1.1"], which is what both TLS profiles require. Minting a certificate of
-        // our own here would quietly buy a faster signature than the harness handed everyone else.
-        var tlsOptions = new TlsOptions { CertificatePath = certPath, KeyPath = keyPath };
+        // The mounted certificate as it is: ALPN is already ["http/1.1"], which is what both TLS
+        // profiles require, and minting one of our own would quietly buy a faster signature than
+        // the harness handed everyone else.
+        //
+        // KernelTx is the one TLS knob moved off its default. The handler's plaintext goes into
+        // the write slab and the kernel makes the records, which is one pass over the bytes
+        // instead of OpenSSL's encrypt-then-copy.
+        //
+        // Only when the kernel actually offers the ULP: ioxide throws on the handoff when the tls
+        // module is missing, and a TLS port that refuses every connection is a far worse trade
+        // than an encrypt. Receive stays in userspace - kernel RX is experimental and its handoff
+        // fails on about one first connection in twelve.
+        var tlsOptions = new TlsOptions
+        {
+            CertificatePath = certPath,
+            KeyPath = keyPath,
+            KernelTx = KernelTlsAvailable(),
+        };
 
         Console.WriteLine($"[edixoi] {reactors} reactors on :{port}"
-                        + (tls ? $" + :{_tlsPort} tls" : " (no tls: certificate not mounted)")
+                        + (tls ? $" + :{_tlsPort} tls ({(tlsOptions.KernelTx ? "kernel tx" : "openssl tx")})"
+                               : " (no tls: certificate not mounted)")
                         + $", dataset={_dataset.Count} items (ProcessorCount={Environment.ProcessorCount})");
 
         var threads = new Thread[reactors];
@@ -117,6 +132,23 @@ internal static class Program
 
     private static ushort Port(string name, ushort fallback)
         => ushort.TryParse(Environment.GetEnvironmentVariable(name), out ushort value) ? value : fallback;
+
+    /// <summary>Whether this kernel will take the TLS handoff at all - asked once, at startup.</summary>
+    private static bool KernelTlsAvailable()
+    {
+        const string path = "/proc/sys/net/ipv4/tcp_available_ulp";
+
+        try
+        {
+            return File.Exists(path) &&
+                   File.ReadAllText(path).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                       .Contains("tls");
+        }
+        catch (IOException)
+        {
+            return false;   // cannot ask, so do not assume
+        }
+    }
 
     /// <summary>
     /// One connection, start to finish, on the reactor thread that accepted it. Every await
