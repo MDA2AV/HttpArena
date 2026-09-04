@@ -1,0 +1,45 @@
+{
+  "framework": "edixoi",
+  "results": {
+    "baseline-4096": {
+      "framework": "edixoi",
+      "language": "C#",
+      "rps": 4112572,
+      "avg_latency": "995us",
+      "p99_latency": "1.40ms",
+      "cpu": "6417.8%",
+      "memory": "1.3GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "258.76MB/s",
+      "input_bw": "317.69MB/s",
+      "reconnects": 0,
+      "status_2xx": 20562861,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
+    "limited-conn-4096": {
+      "framework": "edixoi",
+      "language": "C#",
+      "rps": 2699677,
+      "avg_latency": "1.39ms",
+      "p99_latency": "2.28ms",
+      "cpu": "5525.8%",
+      "memory": "1.4GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "169.87MB/s",
+      "input_bw": "208.54MB/s",
+      "reconnects": 1349130,
+      "status_2xx": 13498389,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    }
+  }
+}
