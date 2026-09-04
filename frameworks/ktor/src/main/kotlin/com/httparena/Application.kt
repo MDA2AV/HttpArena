@@ -41,9 +41,7 @@ fun main() {
     val server = embeddedServer(Netty, environment, {
         dispatchCallStartOnIoExecutor = true
         shareWorkGroup = true
-        enableHttp2 = true
         enableH2c = true
-        enableHttp3()
 
         // HTTP/1.1
         connector {
@@ -56,6 +54,9 @@ fun main() {
             host = "0.0.0.0"
         }
         deps.keyStore?.let { keyStore ->
+            enableHttp2 = true
+            enableHttp3()
+
             // JSON + TLS
             sslConnector(
                 keyStore = keyStore,
