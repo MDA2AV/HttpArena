@@ -87,12 +87,21 @@ internal static class Program
         {
             var reactor = new Reactor(i, config);
 
-            if (tls)
+            reactor.OnStart = r =>
             {
-                // From OnStart, so the service is built on the reactor thread that will use it -
-                // one OpenSSL context per reactor, shared with nobody.
-                reactor.OnStart = r => TlsService.Start(r, tlsOptions);
-            }
+                // Per reactor, not per connection. Serve() never awaits, and a reactor runs one
+                // thread, so no connection can be inside it while another is - which makes the
+                // parser's buffers shareable and a connection free to open. It matters: the
+                // limited-conn profile closes every connection after ten requests, so anything
+                // allocated per connection is allocated a quarter of a million times a second.
+                r.AddService(new Http1(_dataset));
+
+                if (tls)
+                {
+                    // Built here too, so the OpenSSL context belongs to the thread that uses it.
+                    TlsService.Start(r, tlsOptions);
+                }
+            };
 
             reactor.TcpHandle = ServeAsync;
 
@@ -115,7 +124,7 @@ internal static class Program
     /// </summary>
     private static async Task ServeAsync(Reactor reactor, TcpConnection conn)
     {
-        var session = new Session(reactor, conn, _dataset);
+        var session = new Session(reactor, conn, reactor.GetService<Http1>());
 
         try
         {
@@ -164,9 +173,8 @@ internal static class Program
     /// the delay endpoint waits on. It exists so the read loop above stays a read loop - the
     /// awaiting is here, where the state it resumes into lives.
     /// </summary>
-    private sealed class Session(Reactor reactor, TcpConnection conn, Dataset dataset)
+    private sealed class Session(Reactor reactor, TcpConnection conn, Http1 http)
     {
-        private readonly Http1 _http = new(dataset);
         private readonly Carry _carry = new();
         private RingTimer? _timer;
 
@@ -227,7 +235,7 @@ internal static class Program
         private int ServeHeld(out int delayMs)
         {
             bool close = Close;
-            int consumed = _http.Serve(Sink, _carry.Span, ref close, out delayMs);
+            int consumed = http.Serve(Sink, _carry.Span, ref close, out delayMs);
             Close = close;
             _carry.Consume(consumed);
             return consumed;
@@ -248,7 +256,10 @@ internal static class Program
     /// </summary>
     private sealed class Carry
     {
-        private byte[] _buffer = new byte[8 * 1024];
+        // Per connection it has to be - it holds a request split across reads - so it is the one
+        // buffer paid for on every accept. It starts empty and grows to whatever this connection
+        // actually sees; a baseline request is about a hundred bytes.
+        private byte[] _buffer = [];
         private int _length;
 
         public ReadOnlySpan<byte> Span => _buffer.AsSpan(0, _length);
