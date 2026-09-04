@@ -3,12 +3,17 @@
   "language": "C#",
   "type": "engine",
   "engine": "io_uring",
-  "description": "edixoi — the ioxide io_uring runtime on the raw recv/send API, and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listener; multishot accept and recv into provided buffer rings, with continuations resuming inline on the reactor thread that took the request. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is hand-written in ~250 lines against that API, in two files: no framework, no router, and nothing allocated per request — a chunked body's digits are accumulated as they arrive rather than reassembled, and a partial request is the only thing ever copied out of the ring.",
+  "description": "edixoi \u2014 the ioxide io_uring runtime on the raw recv/send API, and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, with continuations resuming inline on the reactor thread that took the request. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is hand-written against that API \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 terminated ring-natively by OpenSSL for json-tls and the 8gbit echo. The async profile's wait is an IORING_OP_TIMEOUT through ioxide.timer, so a held connection costs a kernel deadline rather than a thread. Companion to the ioxide-pipes entry, which serves the same profiles over System.IO.Pipelines.",
   "repo": "https://github.com/MDA2AV/ioxide",
   "enabled": true,
   "tests": [
     "baseline",
-    "limited-conn"
+    "limited-conn",
+    "latency-1m",
+    "latency-10k",
+    "async",
+    "json-tls",
+    "8gbit"
   ],
   "maintainers": [
     "MDA2AV"

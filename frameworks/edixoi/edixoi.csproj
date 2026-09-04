@@ -25,6 +25,7 @@
 
     <ItemGroup>
         <PackageReference Include="ioxide" Version="0.7.211" />
+        <PackageReference Include="ioxide.timer" Version="0.7.211" />
     </ItemGroup>
 
 </Project>

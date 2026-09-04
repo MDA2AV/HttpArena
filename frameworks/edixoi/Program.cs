@@ -1,22 +1,26 @@
 using System.Runtime.InteropServices;
 
 using ioxide;
+using ioxide.timer;
+using ioxide.tls;
 using ioxide.utils;
 
 namespace Edixoi;
 
 /// <summary>
-/// edixoi - the ioxide runtime on the arena's HTTP/1.1 connection profiles, and nothing else.
-/// One reactor per core, each owning its ring and its share of the SO_REUSEPORT listener; the
-/// HTTP is hand-written on the raw recv/send API, so no framework sits between the socket and
-/// the answer.
+/// edixoi - the ioxide runtime on the arena's HTTP/1.1 profiles, hand-written on the raw
+/// recv/send API. One reactor per core, each owning its ring and its share of the SO_REUSEPORT
+/// listeners; no framework sits between the socket and the answer.
 ///
-/// Two profiles, one endpoint:
-///     baseline      4,096 held keep-alive connections, GET/POST/chunked rotated
-///     limited-conn  the same, each connection closed after 10 requests
+///     :8080  baseline, limited-conn, latency-1m, latency-10k   GET|POST /baseline11?a=&amp;b=
+///            async                                            GET      /delay/{ms}
+///     :8081  json-tls                                          GET      /json/{count}?m=N
+///            8gbit                                             POST     /echo
 ///
-/// See <see cref="Http1"/> for the parsing. This file is the transport: read, hand the bytes over,
-/// send what came back.
+/// One handler serves both doors: a connection carries the port it arrived on, and the only
+/// difference is whether a <see cref="TlsSession"/> sits in front of the bytes.
+///
+/// See <see cref="Http1"/> for the parsing and the routing. This file is the transport.
 /// </summary>
 internal static class Program
 {
@@ -34,30 +38,62 @@ internal static class Program
     [DllImport("libc", EntryPoint = "shutdown", SetLastError = true)]
     private static extern int Shutdown(int fd, int how);
 
+    private static ushort _tlsPort;
+    private static Dataset _dataset = Dataset.Empty;
+
     private static void Main()
     {
-        // The only two knobs. Everything else is left at ioxide's own defaults, which is the
-        // honest configuration for an entry whose point is what the runtime does unassisted.
-        ushort port = ushort.TryParse(Environment.GetEnvironmentVariable("EDIXOI_PORT"), out ushort p) ? p : (ushort)8080;
+        ushort port = Port("EDIXOI_PORT", 8080);
+        _tlsPort = Port("EDIXOI_TLS_PORT", 8081);
         int reactors = int.TryParse(Environment.GetEnvironmentVariable("EDIXOI_REACTORS"), out int r)
             ? r
             // ProcessorCount counts logical CPUs, so a hyperthreaded box would otherwise start
             // twice the rings it has cores to run them on.
             : Math.Min(Environment.ProcessorCount, 64);
 
+        // The harness mounts both. Without them the TLS door does not open and the plaintext
+        // profiles still run, which is what makes this runnable outside the harness.
+        string certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
+        string keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
+        bool tls = File.Exists(certPath) && File.Exists(keyPath);
+
+        _dataset = Dataset.Load(Environment.GetEnvironmentVariable("EDIXOI_DATASET") ?? "/data/dataset.json");
+
         var config = new ServerConfig
         {
             ReactorCount = reactors,
-            Tcp = new TcpOptions { Port = port },
+            Tcp = new TcpOptions
+            {
+                Port = port,
+                // One handler, two doors. Everything else is left at ioxide's own defaults, which
+                // is the honest configuration for an entry whose point is what the runtime does
+                // unassisted.
+                ExtraPorts = tls ? [_tlsPort] : [],
+            },
         };
 
-        Console.WriteLine($"[edixoi] {reactors} reactors on :{port} (ProcessorCount={Environment.ProcessorCount})");
+        // The mounted certificate as it is, and the library's TLS defaults otherwise: ALPN is
+        // already ["http/1.1"], which is what both TLS profiles require. Minting a certificate of
+        // our own here would quietly buy a faster signature than the harness handed everyone else.
+        var tlsOptions = new TlsOptions { CertificatePath = certPath, KeyPath = keyPath };
+
+        Console.WriteLine($"[edixoi] {reactors} reactors on :{port}"
+                        + (tls ? $" + :{_tlsPort} tls" : " (no tls: certificate not mounted)")
+                        + $", dataset={_dataset.Count} items (ProcessorCount={Environment.ProcessorCount})");
 
         var threads = new Thread[reactors];
 
         for (int i = 0; i < threads.Length; i++)
         {
             var reactor = new Reactor(i, config);
+
+            if (tls)
+            {
+                // From OnStart, so the service is built on the reactor thread that will use it -
+                // one OpenSSL context per reactor, shared with nobody.
+                reactor.OnStart = r => TlsService.Start(r, tlsOptions);
+            }
+
             reactor.TcpHandle = ServeAsync;
 
             threads[i] = new Thread(reactor.Run) { Name = $"reactor-{i}" };
@@ -70,51 +106,40 @@ internal static class Program
         }
     }
 
+    private static ushort Port(string name, ushort fallback)
+        => ushort.TryParse(Environment.GetEnvironmentVariable(name), out ushort value) ? value : fallback;
+
     /// <summary>
     /// One connection, start to finish, on the reactor thread that accepted it. Every await
     /// resumes right back on it, so nothing here is shared and nothing is locked.
     /// </summary>
-    private static async Task ServeAsync(Reactor _, TcpConnection conn)
+    private static async Task ServeAsync(Reactor reactor, TcpConnection conn)
     {
-        var carry = new Carry();
-        bool close = false;
+        var session = new Session(reactor, conn, _dataset);
 
         try
         {
-            while (true)
+            if (conn.ListenerPort == _tlsPort)
+            {
+                session.Tls = await reactor.GetService<TlsService>().AcceptAsync(conn);
+
+                // A request can ride in with the handshake's last flight, so it is fed and served
+                // before the loop parks on a read that would otherwise never come.
+                session.FeedHandshakeRemainder();
+                if (await session.PumpAsync())
+                {
+                    await conn.FlushAsync();
+                }
+            }
+
+            while (!session.Close)
             {
                 RecvSnapshot snapshot = await conn.ReadAsync();
-                bool answered = false;
+                session.Feed(conn, snapshot);
 
-                while (conn.TryGetItem(snapshot, out SpscRecvRing.Item item))
+                if (await session.PumpAsync())
                 {
-                    if (!item.HasBuffer)
-                    {
-                        continue;
-                    }
-
-                    // Nothing held over means the ring's own bytes are the whole request, so they
-                    // are parsed where they lie; otherwise last read's tail has to lead.
-                    ReadOnlySpan<byte> pending = carry.Length == 0 ? item.AsSpan() : carry.Join(item.AsSpan());
-                    int consumed = Http1.Serve(conn, pending, ref close);
-
-                    carry.Keep(pending[consumed..]);
-                    answered |= consumed > 0;
-
-                    conn.ReturnBuffer(in item);
-                }
-
-                // close without a consumed request is the oversized-head 400, which still owes
-                // the peer its bytes.
-                if (answered || close)
-                {
-                    await conn.FlushAsync();   // one send per read, however many requests it held
-                }
-
-                if (close)
-                {
-                    Shutdown(conn.ClientFd, ShutWr);
-                    return;
+                    await conn.FlushAsync();
                 }
 
                 if (snapshot.IsClosed)
@@ -124,56 +149,137 @@ internal static class Program
 
                 conn.ResetRead();
             }
+
+            Shutdown(conn.ClientFd, ShutWr);
         }
         finally
         {
-            // Hands the connection object back to the reactor's pool and closes the socket, which
-            // is what a peer that asked for Connection: close is waiting to see.
+            session.Tls?.Dispose();
             conn.DecRef();
         }
     }
 
     /// <summary>
-    /// The tail of a request that arrived split across reads. Empty on the common path - a read
-    /// that carries whole requests leaves nothing behind - so it costs a length check per read.
+    /// One connection's state: the bytes not yet answered, the parser over them, and the timer
+    /// the delay endpoint waits on. It exists so the read loop above stays a read loop - the
+    /// awaiting is here, where the state it resumes into lives.
+    /// </summary>
+    private sealed class Session(Reactor reactor, TcpConnection conn, Dataset dataset)
+    {
+        private readonly Http1 _http = new(dataset);
+        private readonly Carry _carry = new();
+        private RingTimer? _timer;
+
+        public TlsSession? Tls;
+        public bool Close;
+
+        private Sink Sink => new(conn, Tls);
+
+        /// <summary>Plaintext the handshake's final flight carried in ahead of the first read.</summary>
+        public void FeedHandshakeRemainder() => _carry.Append(Tls!.DrainPlaintext());
+
+        /// <summary>Everything the ring delivered, decrypted when this is a TLS connection.</summary>
+        public void Feed(TcpConnection connection, in RecvSnapshot snapshot)
+        {
+            while (connection.TryGetItem(snapshot, out SpscRecvRing.Item item))
+            {
+                if (item.HasBuffer)
+                {
+                    _carry.Append(Plain(Tls, in item));
+                    connection.ReturnBuffer(in item);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Answer everything held, waiting on the ring for any request that asked to be delayed.
+        /// True when something was written and the caller owes a flush.
+        /// </summary>
+        public async Task<bool> PumpAsync()
+        {
+            bool answered = false;
+
+            while (true)
+            {
+                answered |= ServeHeld(out int delayMs) > 0;
+
+                if (delayMs == Http1.NoDelay)
+                {
+                    return answered || Close;
+                }
+
+                // The wait rides this reactor's ring: the deadline goes to the kernel with the
+                // submission and the completion arrives back on this thread, so a held connection
+                // costs a deadline rather than a thread. One timer per connection, re-armed - a
+                // connection only ever waits on one request at a time.
+                _timer ??= new RingTimer(reactor);
+                await _timer.DelayAsync(delayMs);
+
+                Http1.WriteDelayed(Sink, delayMs, Close);
+                answered = true;
+            }
+        }
+
+        /// <summary>
+        /// The synchronous half, kept out of the async method above: spans and the parser live
+        /// here, and nothing they touch has to survive an await.
+        /// </summary>
+        private int ServeHeld(out int delayMs)
+        {
+            bool close = Close;
+            int consumed = _http.Serve(Sink, _carry.Span, ref close, out delayMs);
+            Close = close;
+            _carry.Consume(consumed);
+            return consumed;
+        }
+    }
+
+    /// <summary>
+    /// Bytes in, decrypted when the connection is a TLS one. The pointer work lives here because
+    /// an async method cannot contain it; the plaintext stays valid until the next decrypt, which
+    /// is why it is copied into the carry straight away.
+    /// </summary>
+    private static unsafe ReadOnlySpan<byte> Plain(TlsSession? tls, in SpscRecvRing.Item item)
+        => tls is null ? item.AsSpan() : tls.Decrypt(item.Ptr, item.Len);
+
+    /// <summary>
+    /// What has arrived and not yet been answered. A read that carries whole requests leaves it
+    /// empty again; a request split across reads is held here until the rest of it lands.
     /// </summary>
     private sealed class Carry
     {
-        private byte[] _buffer = [];
+        private byte[] _buffer = new byte[8 * 1024];
+        private int _length;
 
-        public int Length { get; private set; }
+        public ReadOnlySpan<byte> Span => _buffer.AsSpan(0, _length);
 
-        /// <summary>What was held, followed by what just arrived.</summary>
-        public ReadOnlySpan<byte> Join(ReadOnlySpan<byte> arrived)
+        public void Append(ReadOnlySpan<byte> arrived)
         {
-            Grow(Length + arrived.Length);
-            arrived.CopyTo(_buffer.AsSpan(Length));
-            Length += arrived.Length;
-            return _buffer.AsSpan(0, Length);
-        }
-
-        /// <summary>Hold what the parser could not use. Copies nothing when it used everything.</summary>
-        public void Keep(ReadOnlySpan<byte> rest)
-        {
-            if (rest.IsEmpty)
+            if (arrived.IsEmpty)
             {
-                Length = 0;
                 return;
             }
 
-            // rest is usually a slice of this same buffer, which is legal: Span.CopyTo moves
-            // overlapping regions rather than forbidding them.
-            Grow(rest.Length);
-            rest.CopyTo(_buffer);
-            Length = rest.Length;
+            if (_buffer.Length < _length + arrived.Length)
+            {
+                Array.Resize(ref _buffer, Math.Max(_length + arrived.Length, _buffer.Length * 2));
+            }
+
+            arrived.CopyTo(_buffer.AsSpan(_length));
+            _length += arrived.Length;
         }
 
-        private void Grow(int needed)
+        public void Consume(int count)
         {
-            if (_buffer.Length < needed)
+            if (count >= _length)
             {
-                Array.Resize(ref _buffer, Math.Max(needed, Math.Max(_buffer.Length * 2, 2048)));
+                _length = 0;
+                return;
             }
+
+            // Overlapping move, which Span.CopyTo does rather than forbids.
+            _buffer.AsSpan(count, _length - count).CopyTo(_buffer);
+            _length -= count;
         }
     }
 }
