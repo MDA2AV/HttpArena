@@ -10,16 +10,26 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 
+  <!-- GenHTTP comes from source rather than nuget.org: the engine this entry exercises - native TLS
+       termination, HTTP/2 and HTTP/3 - is on the ioxide-0.4.161 branch (PR #887) and is not in a
+       published preview yet. The Dockerfile clones it to /src/genhttp; GENHTTP_SRC points here.
+       Swap these back to PackageReferences once the branch ships. -->
+  <PropertyGroup>
+    <GenHttpSrc Condition="'$(GenHttpSrc)' == ''">/src/genhttp</GenHttpSrc>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0-preview.23" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.23" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.23" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.23" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.23" />
-    <PackageReference Include="GenHTTP.Modules.IoxideFiles" Version="11.0.0-preview.23" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.23" />
+    <ProjectReference Include="$(GenHttpSrc)/Engine/Ioxide/GenHTTP.Engine.Ioxide.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/IO/GenHTTP.Modules.IO.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/Layouting/GenHTTP.Modules.Layouting.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/Webservices/GenHTTP.Modules.Webservices.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/Compression/GenHTTP.Modules.Compression.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/IoxideFiles/GenHTTP.Modules.IoxideFiles.csproj" />
+    <ProjectReference Include="$(GenHttpSrc)/Modules/Websockets/GenHTTP.Modules.Websockets.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ioxide.pg" Version="0.0.17" />
-    <PackageReference Include="ioxide.tls" Version="0.1.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 
