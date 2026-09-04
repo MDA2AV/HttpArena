@@ -88,8 +88,15 @@ internal static class Program
         //
         // Only when the kernel actually offers the ULP: ioxide throws on the handoff when the tls
         // module is missing, and a TLS port that refuses every connection is a far worse trade
-        // than an encrypt. Receive stays in userspace - kernel RX is experimental and its handoff
-        // fails on about one first connection in twelve.
+        // than an encrypt.
+        //
+        // Receive stays in userspace, and that is measured rather than assumed - kernel RX cost
+        // about 3% on json-tls here (792,642 / 796,898 and 797,053 / 802,664 against 772,330 /
+        // 776,448 and 772,363 / 770,476) and did nothing for the echo. It would also buy a
+        // failure mode: under kTLS RX a TLS 1.3 KeyUpdate or alert is only readable through
+        // recvmsg with a control message, and the reactor's hot path is IORING_OP_RECV, which
+        // carries none - so the kernel refuses the read and that connection is lost. Paying 3%
+        // for that is the wrong way round.
         var tlsOptions = new TlsOptions
         {
             CertificatePath = certPath,
