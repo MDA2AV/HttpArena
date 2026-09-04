@@ -236,7 +236,7 @@
   },
   "bun": {
     "dir": "bun",
-    "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the port.",
+    "description": "Bun.serve, Bun's own HTTP server, with no framework on top and one process per core sharing the ports. The same routes serve every protocol: HTTP/1.1 on 8080 and over TLS on 8081, h2c on 8082 and h2 plus HTTP/3 on 8443 through Bun's experimental `http2: true` and `http3: true` flags (QUIC is Bun's own lsquic, no proxy in front).",
     "repo": "https://github.com/oven-sh/bun",
     "type": "flagship",
     "engine": "bun",

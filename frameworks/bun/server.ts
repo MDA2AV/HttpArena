@@ -387,16 +387,41 @@ const listener = {
     fetch: handle,
 };
 
+// The HTTP/1.1 profiles. Not wrapped: without :8080 the entry has nothing to be
+// ready on, so a failure here should take the process down.
 Bun.serve({ ...listener, port: 8080 });
 
-// json-tls and static-tls: the same routes over TLS on 8081. Bun negotiates
-// http/1.1 by default here - there is no h2 to fall into, which is what those
-// two profiles require of the ALPN. The harness only mounts /certs for the TLS
-// profiles, so without them this listener is simply not opened.
+// http2/http3 are experimental and absent from the published @types/bun, so they
+// are named here rather than cast away at each call - the rest stays checked.
+type ServeOpts = Bun.Serve.Options<undefined> & { http2?: boolean; http3?: boolean };
+
+// A bind failure past :8080 stays local: it costs that listener's profiles rather
+// than throwing to the top level and taking the twelve h1 ones down with it.
+const serveOrLog = (label: string, opts: ServeOpts) => {
+    try {
+        Bun.serve(opts);
+    } catch (e) {
+        console.error(`${label} listener not started:`, e);
+    }
+};
+
+// Without TLS, `http2: true` takes the h2 preface and answers HTTP/1.1 otherwise;
+// baseline-h2c permits that dual-serving, and its drivers only send the preface.
+serveOrLog("h2c :8082", { ...listener, port: 8082, http2: true });
+
+// The harness only mounts /certs for the TLS profiles, so without them neither
+// TLS listener is opened and the entry still serves the plaintext profiles.
 const tlsKey = Bun.file("/certs/server.key");
 const tlsCert = Bun.file("/certs/server.crt");
 if (await tlsKey.exists() && await tlsCert.exists()) {
-    Bun.serve({ ...listener, port: 8081, tls: { key: tlsKey, cert: tlsCert } });
+    const tls = { key: tlsKey, cert: tlsCert };
+
+    // No http2 flag on purpose: json-tls, static-tls and 8gbit are measured over
+    // HTTP/1.1, and with it Bun would hand h2 to any client whose ALPN offers it.
+    serveOrLog("h1+TLS :8081", { ...listener, port: 8081, tls });
+
+    // The same routes over h2 (ALPN on tcp/8443) and h3 (QUIC on udp/8443).
+    serveOrLog("h2+h3 :8443", { ...listener, port: 8443, tls, http2: true, http3: true });
 }
 
 console.log("Application started.");
