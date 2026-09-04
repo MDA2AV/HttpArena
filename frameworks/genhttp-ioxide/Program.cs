@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Authentication;
 
 using genhttp;
 using genhttp.Infrastructure;
@@ -36,6 +37,10 @@ if (Directory.Exists(staticRoot))
 }
 
 // The harness mounts a certificate pair; without it only the plaintext listeners come up.
+// kTLS derives its keys from one TLS 1.3 ciphersuite, so it pins the floor to 1.3 as well.
+var kernelTls = Environment.GetEnvironmentVariable("IOXIDE_KTLS") != "0";
+var tlsFloor = kernelTls ? SslProtocols.Tls13 : SslProtocols.Tls12 | SslProtocols.Tls13;
+
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
 var hasCert = File.Exists(certPath) && File.Exists(keyPath);
@@ -50,6 +55,14 @@ var options = new EngineOptions
     Tcp = new TcpTransportOptions
     {
         WriteSlabSize = writeSlab ?? new TcpTransportOptions().WriteSlabSize,
+
+        // Kernel TLS on the way out, which is what this entry measured before the engine made it
+        // opt-in: ioxide.tls used to default it on, so json-tls has always been kTLS TX with
+        // OpenSSL still decrypting inbound. It needs the Linux tls module - without it every
+        // handshake on a secure port fails - so IOXIDE_KTLS=0 turns it off.
+        //
+        //     cat /proc/sys/net/ipv4/tcp_available_ulp   # wanted: tls
+        TxKernelTls = kernelTls,
     },
 };
 
@@ -73,8 +86,8 @@ if (hasCert)
     //   :8443  HTTP/1.1 + HTTP/2 over TCP,       baseline-h2, static-h2 (ALPN picks h2)
     //          and HTTP/3 over QUIC on the       baseline-h3, static-h3
     //          same port number
-    host.Bind(IPAddress.Any, 8081, certificate, httpProtocols: HttpProtocols.Http1);
-    host.Bind(IPAddress.Any, 8443, certificate, httpProtocols: HttpProtocols.All);
+    host.Bind(IPAddress.Any, 8081, certificate, sslProtocols: tlsFloor, httpProtocols: HttpProtocols.Http1);
+    host.Bind(IPAddress.Any, 8443, certificate, sslProtocols: tlsFloor, httpProtocols: HttpProtocols.All);
 }
 
 await host.RunAsync();

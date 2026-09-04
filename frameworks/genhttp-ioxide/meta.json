@@ -27,7 +27,6 @@
     "baseline-h2",
     "baseline-h3",
     "8gbit",
-    "async-db",
     "echo-ws",
     "echo-ws-pipeline",
     "echo-ws-limited"
