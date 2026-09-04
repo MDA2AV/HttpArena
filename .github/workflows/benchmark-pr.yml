@@ -146,13 +146,14 @@ jobs:
 
       - name: Fetch main branch data for comparison
         run: |
-          # Save PR's site/data aside, get main's for comparison
-          cp -r site/data /tmp/pr_site_data
+          # main's site/data, read into /tmp and never checked out. The checkout this
+          # replaces staged main's copy of every file under site/data, and copying the
+          # PR's files back over does not delete, so a file the PR removed stayed in the
+          # index and rode along in the results commit.
           git fetch origin main --depth=1
-          git checkout origin/main -- site/data/ 2>/dev/null || true
-          # Keep main's site/data for comparison, restore PR code
-          cp -r site/data /tmp/main_site_data
-          cp -r /tmp/pr_site_data/* site/data/
+          rm -rf /tmp/main_site_data
+          mkdir -p /tmp/main_site_data
+          git archive origin/main:site/data | tar -x -C /tmp/main_site_data
 
       # Frameworks run sequentially — each needs the whole machine. A failure
       # doesn't stop the loop: the remaining frameworks still run, whatever was
