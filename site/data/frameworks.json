@@ -876,6 +876,13 @@
       "response": true
     }
   },
+  "ioxide-pipes": {
+    "dir": "ioxide-pipes",
+    "description": "ioxide-pipes \u2014 the ioxide io_uring runtime served through System.IO.Pipelines instead of its raw recv/send API, with Glyph11 parsing what comes off it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listener. The pipe carries the design: its reader owns the carry, so a request split across several recvs is handed over as one ReadOnlySequence with no copy and no buffer of the entry's own, and AdvanceTo(consumed, examined) is the whole of the partial-request handling. Glyph11 takes that sequence as-is \u2014 query string already split, chunked bodies streamed a chunk at a time without linearizing \u2014 so the entry is a transport loop and a routing decision rather than a parser. Companion to the edixoi entry, which is the same two profiles hand-written on the raw API.",
+    "repo": "https://github.com/MDA2AV/ioxide",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "ioxide": {
     "dir": "ioxide",
     "description": "ioxide \u2014 a shared-nothing io_uring runtime for .NET, consumed as its published NuGet packages (ioxide, ioxide.pg, ioxide.timer, ioxide.file, ioxide.http2, ioxide.ngtcp2, ioxide.nghttp3). One ring per reactor thread: multishot accept/recv into provided buffer rings, inline IValueTaskSource continuations, raw-syscall io_uring (no liburing). The HTTP/1.1 handler (request line, headers, Content-Length + chunked bodies, keep-alive, pipelining, fragmented reads) is hand-written on the raw recv/send API; TLS terminates ring-natively (kTLS transmit offload, OpenSSL receive) on :8081, h2 over TLS (pure-C# ioxide.http2) on :8443, and HTTP/3 over QUIC (ngtcp2 + nghttp3) on udp:8443; async-db rides ioxide.pg's ring-native pooled Postgres driver (SCRAM-SHA-256), static on h1 reads the file descriptor straight into the connection's write slab (ioxide.file hands out descriptors, not bytes), so header and body leave in one flush with no intermediate buffer; h2/h3 serve the same assets from memory.",

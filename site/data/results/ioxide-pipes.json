@@ -1,0 +1,45 @@
+{
+  "framework": "ioxide-pipes",
+  "results": {
+    "baseline-4096": {
+      "framework": "ioxide-pipes",
+      "language": "C#",
+      "rps": 3653796,
+      "avg_latency": "1.12ms",
+      "p99_latency": "4.36ms",
+      "cpu": "5892.2%",
+      "memory": "1.3GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "229.91MB/s",
+      "input_bw": "282.25MB/s",
+      "reconnects": 0,
+      "status_2xx": 18268982,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
+    "limited-conn-4096": {
+      "framework": "ioxide-pipes",
+      "language": "C#",
+      "rps": 2691138,
+      "avg_latency": "1.40ms",
+      "p99_latency": "3.75ms",
+      "cpu": "5667.6%",
+      "memory": "1.4GiB",
+      "connections": 4096,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "169.32MB/s",
+      "input_bw": "207.88MB/s",
+      "reconnects": 1344864,
+      "status_2xx": 13455693,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    }
+  }
+}
