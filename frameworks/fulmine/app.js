@@ -467,14 +467,19 @@ const registerStaticRoute = (target) =>
     );
 registerStaticRoute(app);
 
-// What express.json() raises on a body that will not parse, and what express.static raises for
-// a file that is not there: both carry the status the profile expects, and neither wants the
-// framework's error page in the body
-const answerError = (err, req, res, next) => {
-    if (res.headersSent) return next(err);
-    res.status(err.status || err.statusCode || 500).end();
-};
-app.use(answerError);
+// No error middleware here, and that is on purpose: do not add one back.
+//
+// The framework reads the source of every callback in a route's chain and grants the route its
+// fast paths only when it can prove what that code does. A four argument handler is code it
+// cannot follow, and one registered anywhere in the app takes the grant off every route: the GET
+// routes above lose the header copy skip the comment on /baseline11 describes, /crud/items/:id
+// loses the query fetch skip as well, and both fall back to the walking dispatcher.
+//
+// Nothing is given up by leaving it out. What express.json() raises on a body that will not
+// parse, what express.static raises for a file that is not there and what the body parsers raise
+// over their limit all carry a status, and the framework's own final handler answers with it:
+// 400, 404 and 413 as the profiles expect. Only the body differs, an error page instead of an
+// empty one, and no profile sends a request that fails.
 
 // WebSocket echo profiles, on µWS's own WebSocket server through the app's uwsApp handle.
 // Every connection performs µWS's real upgrade handshake; the echo hands the incoming
@@ -503,7 +508,6 @@ if (fs.existsSync('/certs/server.key') && fs.existsSync('/certs/server.crt')) {
     registerJsonRoute(tlsApp);
     registerStaticRoute(tlsApp);
     registerEchoRoute(tlsApp);
-    tlsApp.use(answerError);
     tlsApp.listen(8081);
 }
 
@@ -541,7 +545,6 @@ if (fs.existsSync('/certs-tls/server.key') && fs.existsSync('/certs-tls/server.c
         tlsCheckApp.set('connection headers', false);
         registerJsonRoute(tlsCheckApp);
         registerStaticRoute(tlsCheckApp);
-        tlsCheckApp.use(answerError);
         return tlsCheckApp;
     };
 
