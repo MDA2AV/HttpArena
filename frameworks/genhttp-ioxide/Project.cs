@@ -1,7 +1,9 @@
 using GenHTTP.Api.Content;
 
 using GenHTTP.Modules.IO;
-using GenHTTP.Modules.IoxideFiles;
+using GenHTTP.Modules.Compression;
+using GenHTTP.Modules.Compression.Algorithms;
+using GenHTTP.Modules.Files;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
 using GenHTTP.Modules.Webservices;
@@ -46,9 +48,13 @@ public static class Project
 
         if (Directory.Exists(staticDir))
         {
-            // Serve static files through ioxide.file (baked native responses + statx revalidation)
-            // rather than GenHTTP's Modules.Files, whose FileResource overflows the ioxide write slab.
-            app.Add("static", IoxideFiles.From(staticDir));
+            // GenHTTP's own file handler rather than IoxideFiles. IoxideFiles serves correctly over
+            // HTTP/1.1 and HTTP/3 but returns an empty body over HTTP/2, and it does not follow a
+            // file replaced underneath it - both of which the static profiles check. Assets is
+            // ordinary response content, so every protocol handles it the same way. The write slab
+            // is sized above the largest asset in Program.cs, which is what made this viable.
+            app.Add("static", Assets.From(ResourceTree.FromDirectory(staticDir))
+                              .AllowPrecompressed(new BrotliAlgorithm()));
         }
 
         return app;
