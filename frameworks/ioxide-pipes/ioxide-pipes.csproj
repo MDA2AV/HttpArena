@@ -25,6 +25,7 @@
 
     <ItemGroup>
         <PackageReference Include="ioxide" Version="0.7.211" />
+        <PackageReference Include="ioxide.timer" Version="0.7.211" />
         <PackageReference Include="Glyph11" Version="0.3.7" />
     </ItemGroup>
 
