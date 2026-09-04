@@ -1,0 +1,16 @@
+{
+  "display_name": "edixoi",
+  "language": "C#",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "edixoi — the ioxide io_uring runtime on the raw recv/send API, and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listener; multishot accept and recv into provided buffer rings, with continuations resuming inline on the reactor thread that took the request. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is hand-written in ~250 lines against that API, in two files: no framework, no router, and nothing allocated per request — a chunked body's digits are accumulated as they arrive rather than reassembled, and a partial request is the only thing ever copied out of the ring.",
+  "repo": "https://github.com/MDA2AV/ioxide",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}
