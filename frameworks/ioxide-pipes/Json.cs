@@ -133,13 +133,13 @@ internal sealed class Dataset
 }
 
 /// <summary>
-/// A grow-once scratch buffer, one per connection: the JSON body has to exist before its
-/// Content-Length can be written, and an echo of a chunked upload has to be decoded before its
-/// length is known. Both settle at a size within a few requests and stop allocating.
+/// A grow-once scratch buffer: the JSON body has to exist before its Content-Length can be
+/// written. It starts empty and settles at a size within a few requests, so a server that is
+/// never asked for JSON never allocates one.
 /// </summary>
 internal sealed class Growable
 {
-    private byte[] _buffer = new byte[16 * 1024];
+    private byte[] _buffer = [];
 
     public int Length { get; private set; }
 

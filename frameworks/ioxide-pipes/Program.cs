@@ -91,12 +91,21 @@ internal static class Program
         {
             var reactor = new Reactor(i, config);
 
-            if (tls)
+            reactor.OnStart = r =>
             {
-                // From OnStart, so the service is built on the reactor thread that will use it -
-                // one OpenSSL context per reactor, shared with nobody.
-                reactor.OnStart = r => TlsService.Start(r, tlsOptions);
-            }
+                // Per reactor, not per connection. Serve() never awaits, and a reactor runs one
+                // thread, so no connection can be inside it while another is - which makes the
+                // parser's buffers shareable and a connection free to open. It matters: the
+                // limited-conn profile closes every connection after ten requests, so anything
+                // allocated per connection is allocated a quarter of a million times a second.
+                r.AddService(new Http1(_dataset));
+
+                if (tls)
+                {
+                    // Built here too, so the OpenSSL context belongs to the thread that uses it.
+                    TlsService.Start(r, tlsOptions);
+                }
+            };
 
             reactor.TcpHandle = ServeAsync;
 
@@ -141,7 +150,7 @@ internal static class Program
                 pipe = new TcpConnectionDualPipe(conn);
             }
 
-            using var http = new Http1(_dataset);
+            Http1 http = reactor.GetService<Http1>();
             RingTimer? timer = null;
             bool close = false;
 
