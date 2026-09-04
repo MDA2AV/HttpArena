@@ -80,17 +80,20 @@ class App < Sinatra::Base
   end
 
   get('/baseline11') do
+    params = request.GET
     total = params['a'].to_i + params['b'].to_i
     render_plain total.to_s
   end
 
   post('/baseline11') do
+    params = request.GET
     total = params['a'].to_i + params['b'].to_i
     total += request.body.read.to_i
     render_plain total.to_s
   end
 
   get '/baseline2' do
+    params = request.GET
     total = params['a'].to_i + params['b'].to_i
     render_plain total.to_s
   end
@@ -114,6 +117,7 @@ class App < Sinatra::Base
   end
 
   get '/async-db' do
+    params = request.GET
     min_val = (params['min'] || 10).to_i
     max_val = (params['max'] || 50).to_i
     limit = (params['limit'] || 50).to_i.clamp(1, 50)
@@ -129,9 +133,10 @@ class App < Sinatra::Base
   end
 
   get '/crud/items' do
-    category = request.params['category'] || 'electronics'
-    page = (request.params['page'] || 1).to_i
-    limit = (request.params['limit'] || 10).to_i
+    params = request.GET
+    category = params['category'] || 'electronics'
+    page = (params['page'] || 1).to_i
+    limit = (params['limit'] || 10).to_i
     offset = (page - 1) * limit
 
     rows = self.class.get_async_db&.with do |connection|
