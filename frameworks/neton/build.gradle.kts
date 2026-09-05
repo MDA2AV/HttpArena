@@ -10,7 +10,7 @@ repositories {
 // One published coordinate. `neton` brings core + logging + http + routing and
 // the hyper4k engine, so the arena entry builds from Maven exactly like any
 // other application would — no source checkout, no composite build.
-val netonVersion = "1.0.0-beta5"
+val netonVersion = "1.0.0-beta6"
 
 kotlin {
     // The arena builds linuxX64; macosArm64 is here so the endpoints can be
