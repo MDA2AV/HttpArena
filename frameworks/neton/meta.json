@@ -1,0 +1,29 @@
+{
+  "display_name": "neton",
+  "language": "Kotlin",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "Neton, a Kotlin Multiplatform framework compiled to a native executable. Routing, middleware, request parsing and the response pipeline are the framework's; the hyper4k engine (Tokio + Hyper 1.x, linked in as a Rust static library) only does protocol and transport. Serves HTTP/1.1 on 8080 and HTTP/2 cleartext on 8082 from one route table.",
+  "repo": "https://github.com/netonframework/neton",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "pipelined",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": [
+    "zoujiaqing"
+  ]
+}
