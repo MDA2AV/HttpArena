@@ -918,6 +918,13 @@
       "response": true
     }
   },
+  "kestrel": {
+    "dir": "kestrel",
+    "description": "Kestrel with nothing above it: one RequestDelegate reads the path and answers, with no routing middleware, no MVC, no endpoint mapping and no model binding. aspnet-minimal measures ASP.NET Core as people write it, so the distance between the two rows is what the framework layer costs rather than what the server costs. :8080 is HTTP/1.1, :8082 cleartext HTTP/2 by prior knowledge, :8081 HTTP/1.1 over TLS, and :8443 serves HTTP/1.1 and HTTP/2 over TCP plus HTTP/3 over QUIC on the same port. Static files are read off the mounted directory per request, with the precompressed sibling served when Accept-Encoding allows.",
+    "repo": "https://github.com/dotnet/aspnetcore",
+    "type": "engine",
+    "engine": "kestrel"
+  },
   "koa": {
     "dir": "koa",
     "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",

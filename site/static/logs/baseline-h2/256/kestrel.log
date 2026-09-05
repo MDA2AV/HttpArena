@@ -1,0 +1,2 @@
+warn: Microsoft.AspNetCore.Server.Kestrel[0]
+      Overriding address(es) 'http://*:8080'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
