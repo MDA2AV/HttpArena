@@ -153,6 +153,20 @@ fn load_dataset() -> Vec<DatasetItem> {
     }
 }
 
+// actix-web re-exports its runtime, so the sleep comes from there rather than from a direct
+// tokio dependency the entry does not have. It parks the task rather than the thread, so the
+// waits in flight are bounded by memory rather than by the worker count.
+async fn delay(path: web::Path<u64>) -> HttpResponse {
+    let ms = path.into_inner();
+    if ms > 0 {
+        actix_web::rt::time::sleep(std::time::Duration::from_millis(ms)).await;
+    }
+    HttpResponse::Ok()
+        .insert_header((SERVER, SERVER_HDR.clone()))
+        .content_type(ContentType::plaintext())
+        .body(ms.to_string())
+}
+
 async fn pipeline() -> HttpResponse {
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
@@ -576,6 +590,7 @@ async fn main() -> io::Result<()> {
                 .app_data(web::Data::new(pg_pool.clone()))
                 .app_data(crud_cache.clone())
                 .route("/pipeline", web::get().to(pipeline))
+                .route("/delay/{ms}", web::get().to(delay))
                 .route("/baseline11", web::get().to(baseline11_get))
                 .route("/baseline11", web::post().to(baseline11_post))
                 .route("/baseline2", web::get().to(baseline2))

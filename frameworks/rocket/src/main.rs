@@ -76,6 +76,16 @@ fn pipeline() -> &'static str {
     "ok"
 }
 
+// tokio's sleep parks the task rather than the thread, so the waits in flight are bounded
+// by memory rather than by the runtime's worker count.
+#[get("/delay/<ms>")]
+async fn delay(ms: u64) -> String {
+    if ms > 0 {
+        rocket::tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+    }
+    ms.to_string()
+}
+
 #[get("/baseline11?<params..>")]
 fn baseline11_get(params: HashMap<String, String>) -> String {
     sum_params(&params).to_string()
@@ -147,7 +157,7 @@ fn build(dataset: &'static [DatasetItem]) -> rocket::Rocket<rocket::Build> {
         .manage(dataset)
         .mount(
             "/",
-            routes![pipeline, baseline11_get, baseline11_post, json_items, echo_body],
+            routes![pipeline, delay, baseline11_get, baseline11_post, json_items, echo_body],
         )
 }
 
