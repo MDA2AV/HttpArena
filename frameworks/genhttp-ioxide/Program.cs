@@ -50,7 +50,17 @@ var options = new EngineOptions
     Reactor = new ReactorOptions
     {
         ReactorCount = reactors,
-        RecvSlots = 256,
+
+        // RecvSlots and RecvBufferSize are left at the engine's defaults on purpose. A parked
+        // request keeps its recv buffer - the engine parses headers zero-copy out of it - so the
+        // slot count is really a ceiling on requests in flight, not just a buffer count. This entry
+        // used to pin it at 256, carried over from the old BufferRingEntries setting, and the async
+        // profile paid for it: holding 32000 connections on a 10ms wait, the server flat-lined at
+        // slots x reactors in flight however many connections were offered, stretching the wait
+        // rather than serving more. Measured at 12000 connections, 16 reactors:
+        //
+        //     256 slots    385,584 rps   wait stretched to 30.8ms
+        //    4096 slots    934,065 rps   wait held at 10.1ms
     },
     Tcp = new TcpTransportOptions
     {
