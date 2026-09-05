@@ -1,0 +1,28 @@
+{
+  "display_name": "watson",
+  "language": "C#",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "watson",
+  "description": "Watson Webserver, a small async C# web server for REST endpoints, written the way a caller writes it: routes declared through Watson's own routing - static routes for the fixed paths, parameter routes for the two that carry a value - rather than a hand-rolled dispatch. HTTP/1.1 cleartext on :8080. /json is serialized from the parsed model on every request and compressed only when the client asked for it, so nothing is answered from a precomputed body.",
+  "repo": "https://github.com/jchristn/WatsonWebserver",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "json-comp"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}
