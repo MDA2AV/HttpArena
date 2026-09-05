@@ -7,6 +7,7 @@
 //! | Endpoint | Reply | Profiles |
 //! |---|---|---|
 //! | `GET  /pipeline`                | `ok`                  | baseline, pipelined, limited-conn |
+//! | `GET  /delay/{ms}`              | `ms`, after `ms` ms   | async |
 //! | `GET  /baseline11?a=&b=`        | `a+b`                 | baseline |
 //! | `POST /baseline11?a=&b=` + body | `a+b+body`            | baseline |
 //! | `GET  /baseline2?a=&b=`         | `a+b`                 | baseline-h2, baseline-h2c |
@@ -572,6 +573,15 @@ async fn handle(state: Arc<AppState>, msg: CanonicalMessage) -> Result<Handled, 
             Some(id) => crud_update(&state, id, &msg.payload).await,
             None => not_found(),
         },
+        ("GET", p) if p.starts_with("/delay/") => {
+            let ms: u64 = p["/delay/".len()..].parse().unwrap_or(0);
+            // A runtime timer rather than a blocked task, so the bridge keeps draining the queue
+            // while this reply waits.
+            if ms > 0 {
+                tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+            }
+            text(ms.to_string())
+        }
         ("GET", p) if p.starts_with("/json/") => {
             let count = p["/json/".len()..].parse().unwrap_or(0);
             serve_json(&state, count, msg.query_int("m").unwrap_or(1))
