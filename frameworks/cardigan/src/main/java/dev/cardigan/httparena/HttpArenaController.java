@@ -40,20 +40,6 @@ public final class HttpArenaController {
         return Response.text("ok");
     }
 
-    @Get("/delay/{ms}")
-    public Response delay(int ms) {
-        // Handlers run on virtual threads, so this parks the virtual thread rather than a
-        // carrier and the waits in flight are bounded by memory.
-        if (ms > 0) {
-            try {
-                Thread.sleep(ms);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        return Response.text((long) ms);
-    }
-
     @Get("/baseline2")
     public Response baseline2(
             @QueryParam("a") int a,

@@ -27,19 +27,6 @@ sealed class BenchmarkHandler : HttpHostHandler {
             return;
         }
 
-        if (request.Method == "GET" && route.StartsWith ( "/delay/" )) {
-            var ms = int.TryParse ( route [ 7.. ], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value ) ? value : 0;
-
-            // Task.Delay hands the thread back to the pool instead of holding it, so the waits
-            // in flight are bounded by memory.
-            if (ms > 0) {
-                await Task.Delay ( ms );
-            }
-
-            await WriteTextAsync ( context, Encoding.ASCII.GetBytes ( ms.ToString ( CultureInfo.InvariantCulture ) ) );
-            return;
-        }
-
         if ((request.Method == "GET" || request.Method == "POST") && route == "/baseline11") {
             var query = queryIndex >= 0 ? path [ (queryIndex + 1) .. ] : string.Empty;
             var a = 0;

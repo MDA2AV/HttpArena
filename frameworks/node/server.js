@@ -346,14 +346,6 @@ if (cluster.isPrimary) {
 
         if (path === '/pipeline') return sendText(res, 'ok');
 
-        if (path.startsWith('/delay/')) {
-            const ms = parseInt(path.slice(7), 10) || 0;
-            // setTimeout hands the loop back rather than holding it, so the waits in flight are
-            // bounded by memory.
-            if (ms > 0) return setTimeout(() => sendText(res, String(ms)), ms);
-            return sendText(res, String(ms));
-        }
-
         if (path === '/baseline11') {
             const querySum = sumQuery(query);
             if (req.method !== 'POST') return sendText(res, String(querySum));

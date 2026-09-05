@@ -155,17 +155,6 @@ def json_resp(body: dict, status: int = 200, contenc: str | None = None):
 async def pipeline(scope, receive, send):
     return 200, [[ b'Content-Type', b'text/plain; charset=utf-8']], b'ok'
 
-async def delay_endpoint(scope, receive, send):
-    try:
-        ms = int(scope['path'].rsplit('/', 1)[-1])
-    except ValueError:
-        ms = 0
-    # asyncio.sleep yields to the event loop rather than holding it, so the waits in flight are
-    # bounded by memory.
-    if ms > 0:
-        await asyncio.sleep(ms / 1000)
-    return 200, [[ b'Content-Type', b'text/plain; charset=utf-8' ]], str(ms).encode()
-
 async def baseline11(scope, receive, send):
     req_method = scope.get('method', '')
     query_params = parse_qs(scope.get('query_string', b'').decode())
@@ -453,7 +442,6 @@ async def crud_item_endpoint(scope, receive, send):
 
 ROUTES = {
     '/pipeline': pipeline,
-    '/delay/': delay_endpoint,
     '/baseline11': baseline11,
     '/baseline2': baseline2,
     '/json/': json_endpoint,

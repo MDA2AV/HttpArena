@@ -13,7 +13,6 @@ public static unsafe class Native {
     private const long SYS_IO_URING_REGISTER = 427;
 
     public const byte IORING_OP_POLL_ADD = 6;
-    public const byte IORING_OP_TIMEOUT  = 11;
     public const byte IORING_OP_ACCEPT = 13;
     public const byte IORING_OP_SEND   = 26;
     public const byte IORING_OP_RECV   = 27;
@@ -131,14 +130,6 @@ public static unsafe class Native {
         [FieldOffset(44)] public int    splice_fd_in;
         [FieldOffset(48)] public ulong  addr3;
         [FieldOffset(56)] public ulong  __pad2;
-    }
-
-    // Relative timeout for IORING_OP_TIMEOUT. The kernel reads it at completion time, so the
-    // storage has to outlive the submission -- each connection owns one.
-    [StructLayout(LayoutKind.Sequential)]
-    public struct KernelTimespec {
-        public long tv_sec;
-        public long tv_nsec;
     }
 
     [StructLayout(LayoutKind.Sequential)]
