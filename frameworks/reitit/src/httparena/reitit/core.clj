@@ -62,6 +62,14 @@
      :headers {"Content-Type" text-content-type}
      :body    (str total)}))
 
+(defn delay-handler [request]
+  (let [ms (or (parse-long-or-nil (get-in request [:path-params :ms])) 0)]
+    ;; A sync Ring handler on Jetty's pool, so the wait holds the worker serving this request.
+    (when (pos? ms) (Thread/sleep ms))
+    {:status  200
+     :headers {"Content-Type" text-content-type}
+     :body    (str ms)}))
+
 ;; Field order is the wire order: id..rating then the computed total.
 (defn- out-item [item m]
   (array-map
@@ -98,6 +106,7 @@
   (ring/ring-handler
    (ring/router
     [["/baseline11" {:get baseline11 :post baseline11}]
+     ["/delay/:ms" {:get delay-handler}]
      ["/json/:count" {:get json-items}]
      ["/echo" {:post echo}]]
     ;; params middleware on the router, so query parsing is reitit's own

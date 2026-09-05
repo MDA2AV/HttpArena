@@ -8,6 +8,7 @@
    [next.jdbc :as jdbc]
    [next.jdbc.result-set :as rs]
    [org.httpkit.server :as http-kit]
+   [org.httpkit.timer :as timer]
    [ring.middleware.gzip :as gzip]
    [ring.middleware.params :as params]
    [ring.util.response :as response])
@@ -83,6 +84,17 @@
   {:status status
    :headers {"content-type" json-content-type}
    :body (json/write-str body)})
+
+(defn delay-response [request]
+  (let [ms (parse-long-safe (subs (:uri request) 7))]
+    (if (pos? ms)
+      ;; as-channel detaches the response from the worker and schedule-task fires it from
+      ;; http-kit's timer wheel, so no thread is held for the length of the wait.
+      (http-kit/as-channel request
+        {:on-open (fn [ch]
+                    (timer/schedule-task ms
+                      (http-kit/send! ch (text-response 200 (str ms)))))})
+      (text-response 200 (str ms)))))
 
 (defn json-items-response [request]
   (if-let [source @dataset]
@@ -202,9 +214,10 @@
     "/async-db" (async-db-response request)
     "/echo" (echo-response request)
     "/pipeline" (text-response 200 "ok")
-    (if (re-matches #"/json/[0-9]+" (:uri request))
-      (json-items-response request)
-      (text-response 404 "not found"))))
+    (cond
+      (re-matches #"/json/[0-9]+" (:uri request)) (json-items-response request)
+      (re-matches #"/delay/[0-9]+" (:uri request)) (delay-response request)
+      :else (text-response 404 "not found"))))
 
 (def handler
   (let [compressed-handler (-> app

@@ -235,6 +235,13 @@
                           :count (count items)}))
     (text-response 500 "dataset.json not available")))
 
+(defn delay-response [ms-str]
+  (let [ms (parse-long-safe ms-str)]
+    ;; The Jetty pool is backed by virtual threads, so this parks the virtual thread rather than
+    ;; a carrier thread and the waits in flight are bounded by memory.
+    (when (pos? ms) (Thread/sleep ms))
+    (text-response 200 (str ms))))
+
 (defn method-not-allowed-response []
   (text-response 405 "method not allowed"))
 
@@ -246,6 +253,11 @@
       (if (= :get method)
         (or (static-response uri)
             (text-response 404 "not found"))
+        (method-not-allowed-response))
+
+      (re-matches #"/delay/\d+" uri)
+      (if (= :get method)
+        (delay-response (subs uri 7))
         (method-not-allowed-response))
 
       :else

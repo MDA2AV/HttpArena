@@ -10,6 +10,7 @@
             [jj.tassu :refer [GET POST PUT route]]
             [jsonista.core :as json]
             [manifold.deferred :as d]
+            [manifold.time :as mt]
             [manifold.stream :as s]
             [ring.middleware.content-type :as content-type]
             [ring.middleware.file :as file]
@@ -218,6 +219,14 @@
                (let [n (try (Long/parseLong (str/trim (String. bs))) (catch Exception _ 0))]
                  (text-response (+ s n)))))))
 
+(defn- handle-delay [req]
+  (let [ms (try (Long/parseLong (get-in req [:params :ms])) (catch Exception _ 0))]
+    (if (pos? ms)
+      ;; :executor :none runs handlers on the Netty event loop, so the wait has to be a deferred
+      ;; the timer wheel completes -- a sleep here would stall every connection on that loop.
+      (mt/in ms #(text-response ms))
+      (text-response ms))))
+
 (defn- handle-json [dataset req]
   (let [count (try (Long/parseLong (get-in req [:params :count])) (catch Exception _ 50))
         count (min count (long (clojure.core/count dataset)))
@@ -355,6 +364,7 @@
       "/json/:count"      [(GET (fn [req] (handle-json dataset req)))]
       "/json"             [(GET (fn [_] {:status 200 :headers json-headers :body json-body}))]
       "/compression"      [(GET (fn [_] {:status 200 :headers json-headers :body compression-body}))]
+      "/delay/:ms"        [(GET handle-delay)]
       "/echo"             [(POST handle-echo)]
       "/async-db"         [(GET (fn [req] (handle-async-db pg-pool req)))]
       "/crud/items"       [(GET (fn [req] (handle-crud-list pg-pool req)))
