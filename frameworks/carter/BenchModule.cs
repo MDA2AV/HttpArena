@@ -14,6 +14,7 @@ public sealed class BenchModule : ICarterModule
     {
         app.MapMethods("/baseline11", ["GET", "POST"], Handlers.Baseline11);
         app.MapGet("/json/{count:int}", Handlers.JsonItems);
+        app.MapGet("/delay/{ms:int}", Handlers.Delay);
         app.MapPost("/echo", Handlers.EchoBody);
     }
 }
