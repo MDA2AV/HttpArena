@@ -120,6 +120,14 @@ Future<void> _run(dynamic _) async {
     res.text('ok');
   });
 
+  app.get('/delay/:ms', (req, res) async {
+    final ms = int.tryParse(req.params['ms'] ?? '') ?? 0;
+    // Future.delayed returns to the event loop rather than holding it, so the waits in flight
+    // are bounded by memory.
+    if (ms > 0) await Future.delayed(Duration(milliseconds: ms));
+    res.text('$ms');
+  });
+
   app.get('/baseline11', (req, res) {
     var sum = 0;
     for (final v in req.query.values) {

@@ -286,6 +286,21 @@ router.get("pipeline") { _, _ -> Response in
     )
 }
 
+// GET /delay/{ms}
+router.get("delay/{ms}") { _, context -> Response in
+    let ms = context.parameters.get("ms").flatMap(Int.init) ?? 0
+    // Task.sleep suspends the task rather than blocking the NIO event loop, so the waits in
+    // flight are bounded by memory.
+    if ms > 0 {
+        try await Task.sleep(for: .milliseconds(ms))
+    }
+    return Response(
+        status: .ok,
+        headers: [.contentType: "text/plain"],
+        body: .init(byteBuffer: ByteBuffer(string: String(ms)))
+    )
+}
+
 // GET /baseline11
 router.get("baseline11") { request, _ -> Response in
     let sum = request.uri.query.map(parseQuerySum) ?? 0

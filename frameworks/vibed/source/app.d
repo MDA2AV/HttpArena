@@ -1,6 +1,6 @@
 module app;
 
-import vibe.core.core : runApplication, runWorkerTaskDist, setupWorkerThreads;
+import vibe.core.core : runApplication, runWorkerTaskDist, setupWorkerThreads, sleep;
 import vibe.core.log : logInfo, logWarn;
 import vibe.data.json : deserializeJson, parseJsonString;
 import vibe.data.serialization : optional;
@@ -11,6 +11,7 @@ import vibe.stream.tls : createTLSContext, TLSContext, TLSContextKind;
 
 import std.algorithm.comparison : min;
 import std.conv : to;
+import core.time : msecs;
 
 // json-tls listens here; 8080 stays plaintext and 8443 belongs to h2/h3.
 enum H1TLS_PORT = 8081;
@@ -74,6 +75,17 @@ bool tryParseLong(const(char)[] s, out long value)
 void handlePipeline(scope HTTPServerRequest req, scope HTTPServerResponse res)
 @safe {
     res.writeBody("ok", "text/plain");
+}
+
+void handleDelay(scope HTTPServerRequest req, scope HTTPServerResponse res)
+@safe {
+    immutable ms = req.params["ms"].to!long;
+    // sleep() yields the fiber, not the worker thread it runs on, so the waits in flight are
+    // bounded by memory rather than by the worker count.
+    if (ms > 0) {
+        sleep(ms.msecs);
+    }
+    res.writeBody(ms.to!string, "text/plain");
 }
 
 void handleBaseline11(scope HTTPServerRequest req, scope HTTPServerResponse res)
@@ -216,6 +228,7 @@ int main(string[] args)
         try {
             auto router = new URLRouter;
             router.get("/pipeline", &handlePipeline);
+            router.get("/delay/:ms", &handleDelay);
             router.get("/baseline11", &handleBaseline11);
             router.post("/baseline11", &handleBaseline11);
             router.get("/json/:count", &handleJson);

@@ -261,6 +261,13 @@ function (app::App)(stream::HTTP.Stream)
             total += body_int(stream)
         end
         respond(stream, "text/plain", string(total))
+    elseif plen > 7 && startswith(path, "/delay/")
+        parsed = parse_int(cu, 8, plen)
+        ms = parsed === nothing ? 0 : parsed
+        # sleep() yields this task to Julia's scheduler rather than holding the thread it is on,
+        # so the waits in flight are bounded by memory.
+        ms > 0 && sleep(ms / 1000)
+        respond(stream, "text/plain", string(ms))
     elseif plen > 6 && startswith(path, "/json/")
         count = parse_int(cu, 7, plen)
         body = json_body(count === nothing ? 0 : count, query_m(query))
