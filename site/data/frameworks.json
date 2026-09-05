@@ -582,7 +582,7 @@
   },
   "genhttp-ioxide": {
     "dir": "genhttp-ioxide",
-    "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP ioxide-0.4.161 branch (PR #887), which terminates TLS in the engine itself and adds HTTP/2 and HTTP/3: :8080 is HTTP/1.1, :8082 h2c, :8081 HTTP/1.1 over TLS, and :8443 serves HTTP/1.1 and HTTP/2 over TCP plus HTTP/3 over QUIC on the same port. Responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool).",
+    "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP ioxide-0.4.161 branch (PR #887), which terminates TLS in the engine itself and adds HTTP/2 and HTTP/3: :8080 is HTTP/1.1, :8082 h2c, :8081 HTTP/1.1 over TLS, and :8443 serves HTTP/1.1 and HTTP/2 over TCP plus HTTP/3 over QUIC on the same port. Static is served by IoxideFiles, which reads bodies positionally off the io_uring ring through a per-reactor descriptor snapshot; responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool).",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
