@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 using WatsonArena;
@@ -19,26 +20,62 @@ var dataset = new Dataset();
 
 var port = int.TryParse(Environment.GetEnvironmentVariable("PORT"), out var p) ? p : 8080;
 
-var settings = new WebserverSettings("*", port);
+var server = new Webserver(new WebserverSettings("*", port), NotFound);
+Routes(server);
 
-var server = new Webserver(settings, NotFound);
+// The harness mounts a certificate pair; without it only the cleartext listener comes up.
+var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
+var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
 
-server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/pipeline", Pipeline);
+Webserver? secure = null;
 
-server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/baseline11", Baseline);
-server.Routes.PostAuthentication.Static.Add(HttpMethod.POST, "/baseline11", Baseline);
-server.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/baseline2", Baseline);
+if (File.Exists(certPath) && File.Exists(keyPath))
+{
+    var settings = new WebserverSettings("*", 8081);
 
-server.Routes.PostAuthentication.Parameter.Add(HttpMethod.GET, "/delay/{ms}", Delay);
-server.Routes.PostAuthentication.Parameter.Add(HttpMethod.GET, "/json/{count}", Json);
+    settings.Ssl.Enable = true;
 
-Console.WriteLine($"[watson] :{port}, dataset={(dataset.IsAvailable ? dataset.Count + " items" : "absent")}");
+    // CreateFromPemFile leaves the private key ephemeral, which the TLS stack will not accept;
+    // round-tripping through PKCS#12 gives it one it can keep.
+    using var pem = X509Certificate2.CreateFromPemFile(certPath, keyPath);
+    settings.Ssl.SslCertificate = X509CertificateLoader.LoadPkcs12(pem.Export(X509ContentType.Pkcs12), null);
 
-await server.StartAsync();
+    secure = new Webserver(settings, NotFound);
+    Routes(secure);
+}
+
+Console.WriteLine($"[watson] :{port}{(secure is not null ? " + :8081 tls" : "")}, dataset={(dataset.IsAvailable ? dataset.Count + " items" : "absent")}");
+
+// Start rather than StartAsync: StartAsync does not return while the listener is running, so
+// awaiting it would mean the second listener never comes up.
+server.Start();
+secure?.Start();
 await Task.Delay(Timeout.Infinite);
 return;
 
+// Both listeners answer the same routes; only the transport underneath them differs.
+void Routes(Webserver target)
+{
+    target.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/pipeline", Pipeline);
+
+    target.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/baseline11", Baseline);
+    target.Routes.PostAuthentication.Static.Add(HttpMethod.POST, "/baseline11", Baseline);
+    target.Routes.PostAuthentication.Static.Add(HttpMethod.GET, "/baseline2", Baseline);
+
+    target.Routes.PostAuthentication.Static.Add(HttpMethod.POST, "/echo", Echo);
+
+    target.Routes.PostAuthentication.Parameter.Add(HttpMethod.GET, "/delay/{ms}", Delay);
+    target.Routes.PostAuthentication.Parameter.Add(HttpMethod.GET, "/json/{count}", Json);
+}
+
 // ── routes ──────────────────────────────────────────────────────────────────────────────────
+
+// POST /echo - the bytes that arrived go back unchanged.
+async Task Echo(HttpContextBase ctx)
+{
+    ctx.Response.ContentType = "application/octet-stream";
+    await ctx.Response.Send(ctx.Request.DataAsBytes ?? []);
+}
 
 async Task Pipeline(HttpContextBase ctx)
 {
