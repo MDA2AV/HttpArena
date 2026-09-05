@@ -1683,6 +1683,13 @@
       "response": true
     }
   },
+  "sockets": {
+    "dir": "sockets",
+    "description": "HTTP/1.1 written directly on System.Net.Sockets, with no server library above it. One listening socket per core through SO_REUSEPORT, so a connection is accepted, read and answered on the same thread with no handoff. The request line and the three headers the profiles read are parsed off the read buffer with no allocation, and every response a read produced is appended to one write buffer and flushed in a single send, so a pipelined batch costs one syscall rather than one per request. HTTP/1.1 on :8080 and the same over TLS on :8081, terminated with SslStream. HTTP/1.1 only: HTTP/2 would mean HPACK and framing by hand and HTTP/3 a QUIC stack, neither of which says anything more about what the socket layer costs.",
+    "repo": "https://github.com/dotnet/runtime",
+    "type": "engine",
+    "engine": "System.Net.Sockets"
+  },
   "spring-boot": {
     "dir": "spring-boot",
     "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
