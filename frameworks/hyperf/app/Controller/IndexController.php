@@ -42,6 +42,17 @@ class IndexController
         return $response->raw('ok');
     }
 
+    public function handleDelay(ResponseInterface $response, int $ms): PsrResponseInterface
+    {
+        // Coroutine::sleep parks the coroutine and hands the worker back to the scheduler, so
+        // the waits in flight are bounded by memory rather than by the worker count.
+        if ($ms > 0) {
+            \Swoole\Coroutine::sleep($ms / 1000);
+        }
+
+        return $response->raw((string) $ms);
+    }
+
     public function handleJson(RequestInterface $request, ResponseInterface $response): PsrResponseInterface
     {
         $count = (int) $request->route('count');

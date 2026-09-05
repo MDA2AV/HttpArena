@@ -55,6 +55,18 @@ class BenchmarkController
         return new Response('ok', 200, ['Content-Type' => 'text/plain']);
     }
 
+    #[Route('/delay/{ms}', requirements: ['ms' => '\d+'])]
+    public function delay(int $ms): Response
+    {
+        // Async\delay suspends this coroutine on the event loop rather than holding the worker,
+        // so the waits in flight are bounded by memory.
+        if ($ms > 0) {
+            \Async\delay($ms);
+        }
+
+        return new Response((string) $ms, 200, ['Content-Type' => 'text/plain']);
+    }
+
     #[Route('/json/{count}', requirements: ['count' => '\d+'])]
     public function json(int $count, Request $request): Response
     {

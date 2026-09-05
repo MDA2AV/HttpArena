@@ -151,6 +151,19 @@ $server->addHttpHandler(
             return;
         }
 
+        if (\str_starts_with($path, '/delay/')) {
+            $ms = (int) \substr($path, 7);
+            // Async\delay suspends this coroutine on the event loop rather than holding the
+            // worker, so the waits in flight are bounded by memory.
+            if ($ms > 0) {
+                \Async\delay($ms);
+            }
+            $response->setStatusCode(200)
+                ->setHeader('Content-Type', 'text/plain')
+                ->setBody((string) $ms);
+            return;
+        }
+
         if ($path === '/pipeline') {
             $response->setStatusCode(200)
                 ->setHeader('Content-Type', 'text/plain')
