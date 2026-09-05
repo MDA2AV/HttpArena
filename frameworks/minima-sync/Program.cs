@@ -104,11 +104,15 @@ internal sealed unsafe class Conn
     public int WriteLen;
     public int WriteSent;
     public bool CloseAfter;
+    public KernelTimespec* Ts;
+    public int DelayMs;
+    public bool DelayClose;
 
     public Conn()
     {
         Recv = (byte*)NativeMemory.Alloc(Program.RECV_BUF);
         Write = (byte*)NativeMemory.Alloc(Program.WRITE_BUF);
+        Ts = (KernelTimespec*)NativeMemory.Alloc((nuint)sizeof(KernelTimespec));
     }
 
     public void Reset(int fd)
@@ -118,12 +122,15 @@ internal sealed unsafe class Conn
         WriteLen = 0;
         WriteSent = 0;
         CloseAfter = false;
+        DelayMs = 0;
+        DelayClose = false;
     }
 
     public void FreeNative()
     {
         NativeMemory.Free(Recv);
         NativeMemory.Free(Write);
+        NativeMemory.Free(Ts);
     }
 }
 
@@ -131,7 +138,7 @@ internal sealed unsafe class Conn
 
 internal sealed unsafe class Reactor
 {
-    private const uint OP_ACCEPT = 1, OP_RECV = 2, OP_SEND = 3;
+    private const uint OP_ACCEPT = 1, OP_RECV = 2, OP_SEND = 3, OP_TIMEOUT = 4;
 
     private readonly int _id;
     private readonly ushort _port;
@@ -140,6 +147,9 @@ internal sealed unsafe class Reactor
     private int _listenFd;
     private readonly Conn?[] _slots = new Conn?[Program.MAX_FD];
     private readonly Stack<Conn> _pool = new();
+    // Bumped on every arm and on close, and echoed through user_data, so a timeout that lands
+    // after its connection went away cannot be mistaken for the current one on a reused fd.
+    private readonly ushort[] _timeoutSeq = new ushort[Program.MAX_FD];
 
     public Reactor(int id, ushort port, int cpu) { _id = id; _port = port; _cpu = cpu; }
 
@@ -183,6 +193,7 @@ internal sealed unsafe class Reactor
             case OP_ACCEPT: OnAccept(res, flags); break;
             case OP_RECV: OnRecv(fd, res); break;
             case OP_SEND: OnSend(fd, res); break;
+            case OP_TIMEOUT: OnTimeout((int)(ud & 0xffff), (ushort)((ud >> 16) & 0xffff)); break;
         }
     }
 
@@ -253,6 +264,8 @@ internal sealed unsafe class Reactor
             c.RecvLen = rem;
         }
 
+        if (c.DelayMs > 0) { ArmTimeout(c); return; }
+
         if (c.WriteLen > 0) { c.CloseAfter = close; SubmitSend(c); }
         else if (close) Close(c);
         else if (c.RecvLen >= Program.RECV_BUF) Close(c); // request larger than the buffer
@@ -317,6 +330,25 @@ internal sealed unsafe class Reactor
         }
         else { bodyInt = 0; total = bodyStart; }
 
+        // /delay/{ms}: the reply cannot ride a batched send that is already queued, because it
+        // has to come after the wait. Leave the request in the buffer until the queued responses
+        // have flushed, then take it on the next drain. /delay/0 falls through to the arithmetic
+        // path, which answers 0 for an empty query and body.
+        ReadOnlySpan<byte> dpath = target;
+        int dq = dpath.IndexOf((byte)'?');
+        if (dq >= 0) dpath = dpath[..dq];
+        if (dpath.StartsWith("/delay/"u8))
+        {
+            ReadOnlySpan<byte> dtail = dpath[7..];
+            if (Utf8Parser.TryParse(dtail, out int delayMs, out int dused) && dused == dtail.Length && delayMs > 0)
+            {
+                if (c.WriteLen > 0) return 0;
+                c.DelayMs = delayMs;
+                c.DelayClose = reqClose;
+                return total;
+            }
+        }
+
         var w = new Span<byte>(c.Write, Program.WRITE_BUF);
         int pos = c.WriteLen;
         if (!Respond(w, ref pos, target, bodyInt, reqClose)) return -1; // out of write space
@@ -333,6 +365,44 @@ internal sealed unsafe class Reactor
         sqe->ioprio = IORING_ACCEPT_MULTISHOT;
         sqe->fd = _listenFd;
         sqe->user_data = Ud(OP_ACCEPT, _listenFd);
+    }
+
+    /// The wait lives in the ring rather than on the reactor thread: a relative timeout SQE
+    /// completes after the requested delay and the reply is written then, so the single issuer
+    /// keeps serving every other connection meanwhile.
+    private void ArmTimeout(Conn c)
+    {
+        _timeoutSeq[c.Fd] = (ushort)(_timeoutSeq[c.Fd] + 1);
+        ushort seq = _timeoutSeq[c.Fd];
+
+        c.Ts->tv_sec = c.DelayMs / 1000;
+        c.Ts->tv_nsec = (long)(c.DelayMs % 1000) * 1_000_000L;
+
+        IoUringSqe* sqe = Sqe();
+        sqe->opcode = IORING_OP_TIMEOUT;
+        sqe->fd = -1;
+        sqe->addr = (ulong)c.Ts;
+        sqe->len = 1;
+        sqe->off = 0;
+        sqe->user_data = ((ulong)OP_TIMEOUT << 32) | ((uint)seq << 16) | (uint)c.Fd;
+    }
+
+    private void OnTimeout(int fd, ushort seq)
+    {
+        Conn? c = _slots[fd];
+        if (c == null || c.DelayMs <= 0 || _timeoutSeq[fd] != seq) return;
+
+        int ms = c.DelayMs;
+        c.DelayMs = 0;
+
+        var w = new Span<byte>(c.Write, Program.WRITE_BUF);
+        int pos = c.WriteLen;
+        Span<byte> num = stackalloc byte[16];
+        Utf8Formatter.TryFormat(ms, num, out int n);
+        if (!WriteText(w, ref pos, num[..n], c.DelayClose)) { Close(c); return; }
+        c.WriteLen = pos;
+        c.CloseAfter = c.DelayClose;
+        SubmitSend(c);
     }
 
     private void ArmRecv(Conn c)
@@ -359,6 +429,8 @@ internal sealed unsafe class Reactor
     private void Close(Conn c)
     {
         int fd = c.Fd;
+        c.DelayMs = 0;
+        _timeoutSeq[fd] = (ushort)(_timeoutSeq[fd] + 1);
         close(fd);
         _slots[fd] = null;
         if (_pool.Count < Program.POOL_MAX) _pool.Push(c); else c.FreeNative();
