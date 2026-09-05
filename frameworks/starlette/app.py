@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 from contextlib import asynccontextmanager
@@ -29,6 +30,15 @@ except Exception:
 
 async def pipeline(request: Request):
     return PlainTextResponse(b"ok")
+
+
+# asyncio.sleep yields to the loop rather than holding it, so the waits in flight are
+# bounded by memory rather than by anything thread-shaped.
+async def delay(request: Request):
+    ms = request.path_params["ms"]
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return PlainTextResponse(str(ms))
 
 
 async def baseline11(request: Request):
@@ -272,6 +282,7 @@ async def crud_update(request: Request):
 
 routes = [
     Route("/pipeline", pipeline, methods=["GET"]),
+    Route("/delay/{ms:int}", delay, methods=["GET"]),
     Route("/baseline11", baseline11, methods=["GET", "POST"]),
     Route("/baseline2", baseline11, methods=["GET"]),
     Route("/json/{count:int}", json_items, methods=["GET"]),

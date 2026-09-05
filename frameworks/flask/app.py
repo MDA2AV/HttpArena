@@ -1,3 +1,4 @@
+import time
 import os
 import sys
 import multiprocessing
@@ -118,6 +119,17 @@ def compress_response(response):
 
 
 # -- Routes ------------------------------------------------------------------
+
+# This framework serves requests on workers, so the wait is a plain sleep: it holds the
+# worker, which is what the profile is measuring for a synchronous stack.
+@app.route('/delay/<int:ms>')
+def delay(ms):
+    if ms > 0:
+        time.sleep(ms / 1000)
+    response = make_response(str(ms).encode())
+    response.content_type = 'text/plain; charset=utf-8'
+    return response
+
 
 @app.route('/pipeline')
 def pipeline():

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 
@@ -21,6 +22,15 @@ except Exception:
 @get("/pipeline", media_type=MediaType.TEXT, sync_to_thread=False)
 def pipeline() -> str:
     return "ok"
+
+
+# asyncio.sleep yields to the loop rather than holding it, so the waits in flight are
+# bounded by memory rather than by anything thread-shaped.
+@get("/delay/{ms:int}", media_type=MediaType.TEXT)
+async def delay(ms: int) -> str:
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return str(ms)
 
 
 @route(
@@ -261,6 +271,7 @@ async def crud_update(item_id: int, request: Request) -> Response:
 app = Litestar(
     route_handlers=[
         pipeline,
+        delay,
         baseline11,
         json_items,
         echo_body,

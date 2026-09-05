@@ -45,6 +45,15 @@ async def pipeline(request):
     return web.Response(body=b"ok", content_type="text/plain")
 
 
+# asyncio.sleep yields to the loop rather than holding it, so the waits in flight are
+# bounded by memory rather than by anything thread-shaped.
+async def delay(request):
+    ms = int(request.match_info["ms"])
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return web.Response(body=str(ms).encode(), content_type="text/plain")
+
+
 async def baseline11(request):
     total = 0
     for value in request.query.values():
@@ -324,6 +333,7 @@ async def static_file(request):
 def build_app():
     app = web.Application(client_max_size=MAX_BODY)
     app.router.add_get("/pipeline", pipeline)
+    app.router.add_get("/delay/{ms}", delay)
     app.router.add_get("/baseline11", baseline11)
     app.router.add_post("/baseline11", baseline11)
     app.router.add_get("/json/{count}", json_items)
