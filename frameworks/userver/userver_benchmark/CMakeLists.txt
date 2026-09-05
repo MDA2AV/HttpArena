@@ -38,6 +38,8 @@ add_library(
 		src/handlers/json/handler.hpp
 		src/handlers/json/handler.cpp
 		src/handlers/plaintext/handler.hpp
+		src/handlers/delay/handler.cpp
+
 		src/handlers/plaintext/handler.cpp
 		src/handlers/async_db/handler.hpp
 		src/handlers/async_db/handler.cpp

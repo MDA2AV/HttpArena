@@ -14,6 +14,7 @@
 #include "handlers/async_db/handler.hpp"
 #include "handlers/baseline11/handler.hpp"
 #include "handlers/baseline2/handler.hpp"
+#include "handlers/delay/handler.hpp"
 #include "handlers/echo/handler.hpp"
 #include "handlers/json/handler.hpp"
 #include "handlers/plaintext/handler.hpp"
@@ -47,6 +48,7 @@ int main(int argc, char* argv[]) {
                             .Append<userver::components::FsCache>("fs-cache-static")
                             .Append<userver::server::handlers::HttpHandlerStatic>()
                             .Append<userver::components::Postgres>("hello-world-db")
+                            .Append<userver_httparena::delay::Handler>()
                             .Append<userver_httparena::plaintext::Handler>()
                             .Append<userver_httparena::baseline11::Handler>()
                             .Append<userver_httparena::json::Handler>()
