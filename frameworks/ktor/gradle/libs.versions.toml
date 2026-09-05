@@ -5,6 +5,7 @@ kotlin = "2.4.10"
 [libraries]
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.38" }
 netty-native-epoll = { module = "io.netty:netty-transport-native-epoll", version = "4.2.16.Final" }
+netty-native-openssl = { module = "io.netty:netty-tcnative-boringssl-static", version = "2.0.81.Final" }
 
 # Database
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
