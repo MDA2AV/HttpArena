@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class App extends Jooby {
 
@@ -58,6 +60,19 @@ public class App extends Jooby {
 
     get("/baseline11", ctx -> baseline(ctx));
     post("/baseline11", ctx -> baseline(ctx));
+
+    get("/delay/{ms}", ctx -> {
+      int ms = ctx.path("ms").intValue(0);
+      ctx.setResponseType(MediaType.text);
+      if (ms <= 0) {
+        return String.valueOf(ms);
+      }
+      // Returning the Context tells Jooby the response is completed elsewhere, so the loop is
+      // free for the length of the wait rather than parked on it.
+      CompletableFuture.delayedExecutor(ms, TimeUnit.MILLISECONDS)
+          .execute(() -> ctx.send(String.valueOf(ms)));
+      return ctx;
+    });
 
     get("/json/{count}", ctx -> {
       int count = ctx.path("count").intValue(0);
