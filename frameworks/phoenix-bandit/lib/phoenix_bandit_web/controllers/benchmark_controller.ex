@@ -11,6 +11,17 @@ defmodule PhoenixBanditWeb.BenchmarkController do
     |> send_resp(200, "ok")
   end
 
+  def delay(conn, %{"ms" => ms}) do
+    millis = String.to_integer(ms)
+    # Every request is its own BEAM process, so this suspends that process and the schedulers
+    # stay free -- the waits in flight are bounded by memory.
+    if millis > 0, do: Process.sleep(millis)
+
+    conn
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, ms)
+  end
+
   def baseline_get(conn, params) do
     conn
     |> put_resp_content_type("text/plain")

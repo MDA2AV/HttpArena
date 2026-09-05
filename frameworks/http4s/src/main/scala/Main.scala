@@ -17,6 +17,7 @@ import java.security.{KeyFactory, KeyStore}
 import java.util.Base64
 import javax.net.ssl.{KeyManagerFactory, SSLContext}
 
+import scala.concurrent.duration.*
 import scala.io.Source
 import scala.util.Using
 import scala.jdk.CollectionConverters.*
@@ -49,6 +50,12 @@ object Main extends IOApp.Simple:
   private val routes = HttpRoutes.of[IO] {
     case GET -> Root / "pipeline" =>
       Ok("ok")
+
+    case GET -> Root / "delay" / ms =>
+      val millis = ms.toIntOption.getOrElse(0)
+      // IO.sleep suspends the fiber on the runtime's scheduler rather than holding a thread, so
+      // the waits in flight are bounded by memory.
+      (if millis > 0 then IO.sleep(millis.millis) else IO.unit) *> Ok(millis.toString)
 
     case request @ GET -> Root / "baseline11" =>
       Ok(querySum(request).toString)

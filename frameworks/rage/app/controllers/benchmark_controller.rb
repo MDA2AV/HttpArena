@@ -35,6 +35,14 @@ class BenchmarkController < ApplicationController
     render plain: total.to_s
   end
 
+  def delay
+    ms = params[:ms].to_i
+    # Rage runs each request in a fiber under its own scheduler, so sleep yields the fiber
+    # instead of holding the thread.
+    sleep(ms / 1000.0) if ms > 0
+    render plain: ms.to_s
+  end
+
   def baseline_two
     total = params[:a].to_i + params[:b].to_i
     render plain: total.to_s
