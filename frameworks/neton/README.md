@@ -6,7 +6,7 @@ Kotlin Multiplatform compiled to a native executable, on the hyper4k engine
 The framework is consumed from Maven Central as a single coordinate:
 
 ```kotlin
-implementation("com.netonstream:neton:1.0.0-beta6")
+implementation("com.netonstream:neton:1.0.0-beta7")
 ```
 
 That one dependency carries core, logging, HTTP, routing and the hyper4k engine,

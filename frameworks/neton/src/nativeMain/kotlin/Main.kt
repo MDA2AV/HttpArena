@@ -1,3 +1,5 @@
+import kotlin.native.runtime.GC
+import kotlin.native.runtime.NativeRuntimeApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -60,7 +62,26 @@ private val H2C_PORT = getEnv("ARENA_H2C_PORT")?.toIntOrNull() ?: 8082
  */
 private val DATASET_PATH = getEnv("ARENA_DATASET") ?: "/data/dataset.json"
 
+/**
+ * Kotlin/Native starts with a 10 MiB target heap and a 5 MiB floor. Autotune
+ * raises the target under load, but from that floor it collects constantly on a
+ * workload that allocates per request, and the mutators spend their time parked
+ * on the collector's locks rather than serving. Profiles of this entry are
+ * dominated by `safePointActionImpl` and by threads blocked in
+ * `pthread_mutex_lock`, which is what that looks like from the outside.
+ *
+ * Giving the floor real room trades memory the box has (251 GiB) for collections
+ * it does not need to run. Autotune stays on so the target still follows the
+ * live set upward.
+ */
+@OptIn(NativeRuntimeApi::class)
+private fun tuneGc() {
+    GC.minHeapBytes = 1L * 1024 * 1024 * 1024
+    GC.targetHeapBytes = 2L * 1024 * 1024 * 1024
+}
+
 fun main(args: Array<String>) {
+    tuneGc()
     val items = ArenaItems.load(DATASET_PATH)
 
     Neton.run(args) {
