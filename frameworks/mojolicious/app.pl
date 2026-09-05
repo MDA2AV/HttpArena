@@ -1,6 +1,7 @@
 use Mojolicious::Lite -signatures;
 use Mojo::JSON qw(decode_json);
 use Mojo::Server::Prefork;
+use Mojo::IOLoop;
 
 # Workers per core, cgroup aware, in the same order koa's getCPUCount reads them:
 # the cgroup quota first, then the cpuset the container was actually given.
@@ -102,6 +103,16 @@ sub _sum_query ($c) {
 }
 
 get '/pipeline' => sub ($c) { $c->render(text => 'ok', format => 'txt') };
+
+get '/delay/:ms' => sub ($c) {
+    my $ms = int($c->stash('ms') // 0);
+    return $c->render(text => '0', format => 'txt') if $ms <= 0;
+
+    # render_later plus an IOLoop timer, so the event loop keeps serving every other connection
+    # for the length of the wait instead of sitting in a sleep.
+    $c->render_later;
+    Mojo::IOLoop->timer($ms / 1000 => sub { $c->render(text => "$ms", format => 'txt') });
+};
 
 my $baseline11 = sub ($c) {
     my $total = _sum_query($c);
