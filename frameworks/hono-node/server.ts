@@ -40,6 +40,18 @@ if (cluster.isPrimary) {
   // encoder cost.
   app.use("/json/*", compress());
 
+  // --- /delay/:ms ---
+  // A promise around setTimeout yields to the event loop rather than holding it, so the waits
+  // in flight are bounded by memory.
+  app.get("/delay/:ms", async (c) => {
+    const ms = Number.parseInt(c.req.param("ms"), 10);
+    if (!Number.isInteger(ms) || ms < 0) return c.notFound();
+    if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
+    return new Response(String(ms), {
+      headers: { "content-type": "text/plain", server: SERVER_NAME },
+    });
+  });
+
   // --- /pipeline ---
   app.get("/pipeline", (c) => {
     return new Response("ok", {

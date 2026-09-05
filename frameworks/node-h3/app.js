@@ -38,6 +38,16 @@ if (cluster.isPrimary) {
         return sum;
     }
 
+    // A promise around setTimeout yields to the event loop rather than holding it, so the waits
+    // in flight are bounded by memory.
+    app.get('/delay/:ms', async (event) => {
+        const ms = Number.parseInt(event.context.params.ms, 10);
+        if (ms > 0) await new Promise(resolve => setTimeout(resolve, ms));
+        event.res.headers.set('server', SERVER_HDR);
+        event.res.headers.set('content-type', 'text/plain');
+        return String(ms);
+    });
+
     app.get('/pipeline', (event) => {
         event.res.headers.set('server', SERVER_HDR);
         event.res.headers.set('content-type', 'text/plain');
