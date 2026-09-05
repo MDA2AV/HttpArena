@@ -170,11 +170,13 @@ async Task Json(HttpContext ctx, string rest)
 
     var accepted = ctx.Request.Headers.AcceptEncoding;
 
-    var body = dataset.Body(count, multiplier,
-                            Accepts(accepted, "br"), Accepts(accepted, "gzip"),
-                            out var encoding);
+    // Rendered into per-thread scratch and written before anything can await, so the span stays
+    // valid for the write.
+    var body = dataset.Render(count, multiplier,
+                              Accepts(accepted, "br"), Accepts(accepted, "gzip"),
+                              out var encoding);
 
-    if (body is null)
+    if (!dataset.IsAvailable)
     {
         ctx.Response.StatusCode = 503;
         return;
@@ -191,7 +193,10 @@ async Task Json(HttpContext ctx, string rest)
 
     response.ContentLength = body.Length;
 
-    await response.Body.WriteAsync(body);
+    // BodyWriter takes the span as it stands; Body.WriteAsync would need a Memory, and building
+    // one means copying the scratch into a fresh array on every request.
+    response.BodyWriter.Write(body);
+    await response.BodyWriter.FlushAsync();
 }
 
 // GET /delay/{ms} - answer after the wait, echoing the value back.
@@ -266,11 +271,15 @@ static async Task Text(HttpContext ctx, string value)
 {
     var response = ctx.Response;
     response.ContentType = "text/plain";
+    response.ContentLength = Encoding.UTF8.GetByteCount(value);
 
-    var bytes = Encoding.UTF8.GetBytes(value);
-    response.ContentLength = bytes.Length;
+    // Encoded straight into the writer's buffer rather than into an array first.
+    var writer = response.BodyWriter;
+    var span = writer.GetSpan((int)response.ContentLength.Value);
 
-    await response.Body.WriteAsync(bytes);
+    writer.Advance(Encoding.UTF8.GetBytes(value, span));
+
+    await writer.FlushAsync();
 }
 
 // The path segment starting at `start`, with everything after it (minus a leading slash) in `rest`.
