@@ -8,6 +8,19 @@ defmodule HttpArena.Router do
     send_text(conn, "ok")
   end
 
+  # Process.sleep suspends this request's process, not a scheduler thread: the BEAM runs each
+  # request in its own process, so the waits in flight are bounded by memory.
+  get "/delay/:ms" do
+    case Integer.parse(ms) do
+      {value, ""} when value >= 0 ->
+        if value > 0, do: Process.sleep(value)
+        send_text(conn, Integer.to_string(value))
+
+      _ ->
+        send_resp(conn, 404, "")
+    end
+  end
+
   match "/baseline11", via: [:get, :post] do
     conn = fetch_query_params(conn)
 

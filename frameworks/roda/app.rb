@@ -53,6 +53,14 @@ class App < Roda
       render_plain 'ok'
     end
 
+    # Rack serves this on a worker, so the wait holds one - which is what the profile measures
+    # for a synchronous stack.
+    r.is 'delay', String do |ms|
+      ms = ms.to_i
+      sleep(ms / 1000.0) if ms > 0
+      render_plain ms.to_s
+    end
+
     r.is('baseline11') do
       total = request.params['a'].to_i + request.params['b'].to_i
       if request.post?

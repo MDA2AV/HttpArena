@@ -71,6 +71,14 @@ class App < Sinatra::Base
     render_plain 'ok'
   end
 
+  # Rack serves this on a worker, so the wait holds one. That is what the profile is measuring
+  # for a synchronous stack, so it is not worked around.
+  get '/delay/:ms' do
+    ms = params['ms'].to_i
+    sleep(ms / 1000.0) if ms > 0
+    render_plain ms.to_s
+  end
+
   get('/baseline11') do
     total = params['a'].to_i + params['b'].to_i
     render_plain total.to_s
