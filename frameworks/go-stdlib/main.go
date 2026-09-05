@@ -100,6 +100,17 @@ func pipeline(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
+func delay(w http.ResponseWriter, r *http.Request) {
+	ms, _ := strconv.Atoi(r.PathValue("ms"))
+	// time.Sleep parks the goroutine, not the OS thread it happens to be on, so the waits in
+	// flight are bounded by memory rather than by GOMAXPROCS.
+	if ms > 0 {
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(strconv.Itoa(ms)))
+}
+
 // Sum of every integer query parameter, plus the integer in the body on POST.
 func baseline11(w http.ResponseWriter, r *http.Request) {
 	sum := 0
@@ -571,6 +582,7 @@ func main() {
 	// Go 1.22 ServeMux: the method and the {count} wildcard are part of the pattern.
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /pipeline", pipeline)
+	mux.HandleFunc("GET /delay/{ms}", delay)
 	mux.HandleFunc("GET /baseline11", baseline11)
 	mux.HandleFunc("POST /baseline11", baseline11)
 	mux.HandleFunc("GET /json/{count}", jsonItems)

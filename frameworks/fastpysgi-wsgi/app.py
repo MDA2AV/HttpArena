@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import time
 import multiprocessing
 import zlib
 import sqlite3
@@ -139,6 +140,17 @@ def json_resp(body: dict, status: int = 200, contenc: str | None = None):
 
 def pipeline(env):
     return 200, [ ( 'Content-Type', 'text/plain; charset=utf-8' ) ], b'ok'
+
+def delay_endpoint(env):
+    try:
+        ms = int(env['PATH_INFO'].rsplit('/', 1)[-1])
+    except ValueError:
+        ms = 0
+    # WSGI is synchronous, so this holds the worker thread that is serving the request -- the
+    # waits in flight are bounded by the pool rather than by memory.
+    if ms > 0:
+        time.sleep(ms / 1000)
+    return text_resp(str(ms))
 
 def baseline11(env):
     req_method = env.get('REQUEST_METHOD', '')
@@ -406,6 +418,7 @@ def crud_item_endpoint(env):
 
 ROUTES = {
     '/pipeline': pipeline,
+    '/delay/': delay_endpoint,
     '/baseline11': baseline11,
     '/json/': json_endpoint,
     '/json-comp/': json_endpoint,

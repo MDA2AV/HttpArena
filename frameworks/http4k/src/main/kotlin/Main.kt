@@ -64,6 +64,14 @@ val dataset: List<DatasetItem> = try {
 
 fun text(body: String) = Response(OK).header("Content-Type", "text/plain").body(body)
 
+fun delay(request: Request): Response {
+    val ms = request.path("ms")?.toLongOrNull() ?: 0L
+    // http4k's HttpHandler is (Request) -> Response, so the wait parks the Undertow worker that
+    // is serving the request. The worker pool is sized for that above.
+    if (ms > 0) Thread.sleep(ms)
+    return text(ms.toString())
+}
+
 fun baseline11(request: Request): Response {
     var sum = request.uri.queries().sumOf { it.second?.trim()?.toLongOrNull() ?: 0L }
     if (request.method == Method.POST) {
@@ -105,6 +113,7 @@ fun echoBody(request: Request): Response {
 
 val app = routes(
     "/pipeline" bind Method.GET to { _: Request -> text("ok") },
+    "/delay/{ms}" bind Method.GET to ::delay,
     "/baseline11" bind Method.GET to ::baseline11,
     "/baseline11" bind Method.POST to ::baseline11,
     "/json/{count}" bind Method.GET to ::jsonItems,
