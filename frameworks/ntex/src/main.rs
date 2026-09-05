@@ -73,6 +73,19 @@ fn sum_query(query: &str) -> i64 {
     total
 }
 
+// ntex re-exports its runtime, so the sleep comes from there rather than a direct tokio
+// dependency. It parks the task rather than the thread, so the waits in flight are bounded by
+// memory rather than by the worker count.
+async fn delay(path: web::types::Path<u64>) -> HttpResponse {
+    let ms = path.into_inner();
+    if ms > 0 {
+        ntex::time::sleep(std::time::Duration::from_millis(ms)).await;
+    }
+    HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(ms.to_string())
+}
+
 async fn baseline11(req: HttpRequest, body: Bytes) -> HttpResponse {
     let mut total = sum_query(req.query_string());
     if let Ok(text) = std::str::from_utf8(&body) {
@@ -159,6 +172,7 @@ fn routes(cfg: &mut web::ServiceConfig, dataset: &'static [DatasetItem]) {
                 .route(web::get().to(baseline11))
                 .route(web::post().to(baseline11)),
         )
+        .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
         .service(web::resource("/json/{count}").route(web::get().to(json_items)))
         .service(web::resource("/echo").route(web::post().to(echo_body)));
 }
