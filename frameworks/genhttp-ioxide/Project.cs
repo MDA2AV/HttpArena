@@ -24,7 +24,7 @@ public static class Project
                         .AddService<Echo>("echo")
                         .AddService<Json>("json")
                         // The async profile: /delay/{ms} holds the request without holding a thread.
-                        .AddService<Delay>("delay");
+                        .Add("delay", new DelayBuilder());
 
         // async-db and crud require a configured Postgres (DATABASE_URL).
         if (Postgres.Enabled)
