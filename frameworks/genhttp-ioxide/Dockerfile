@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:11.0.100-preview.5 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-preview.7 AS build
 WORKDIR /src/app
 
 # GenHTTP from source, not from nuget.org. The engine this entry exercises - TLS terminated in the
@@ -17,7 +17,7 @@ RUN dotnet restore
 COPY . .
 RUN dotnet publish genhttp.csproj -c Release --no-self-contained -o /app
 
-FROM mcr.microsoft.com/dotnet/runtime:11.0.0-preview.5
+FROM mcr.microsoft.com/dotnet/runtime:11.0.0-preview.7
 WORKDIR /app
 COPY --from=build /app .
 
