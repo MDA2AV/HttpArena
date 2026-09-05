@@ -1,1 +1,1 @@
-[watson] :8080, dataset=50 items
+[watson] :8080 + :8081 tls, dataset=50 items
