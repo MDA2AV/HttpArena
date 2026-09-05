@@ -9,11 +9,11 @@ value in the path — because that is what the library is for and what its numbe
 
 ## Scope
 
-HTTP/1.1 cleartext on `:8080`, plus the async delay.
+HTTP/1.1 cleartext on `:8080`, the same routes over TLS on `:8081`, plus the async delay.
 
 | Profiles |
 |---|
-| baseline, pipelined, limited-conn, async, latency-1m, latency-10k, json-comp |
+| baseline, pipelined, limited-conn, async, latency-1m, latency-10k, json-comp, json-tls, 8gbit |
 
 ## Notes
 
