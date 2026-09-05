@@ -303,6 +303,14 @@ async function handle(req: Request): Promise<Response> {
       return new Response("ok", { headers: TEXT_HEADERS });
     }
 
+    if (path.startsWith("/delay/")) {
+      const ms = parseInt(path.slice(7), 10) || 0;
+      // Awaiting a promise around setTimeout yields to the event loop rather than holding it, so
+      // the waits in flight are bounded by memory.
+      if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
+      return new Response(String(ms), { headers: TEXT_HEADERS });
+    }
+
     if (path === "/baseline11") {
       let total = sumQuery(query);
       if (req.method === "POST") {
