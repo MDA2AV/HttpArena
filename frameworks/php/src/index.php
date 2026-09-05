@@ -22,6 +22,7 @@ function rest($path)
 {
     return match (true) {
         str_starts_with($path, '/json/') => json($path),
+        str_starts_with($path, '/delay/') => delay($path),
 
         // /crud/items and /crud/items/{id}, split by method the way the profile
         // asks: list and cache-aside read on GET, upsert on POST, update on PUT.
@@ -69,6 +70,20 @@ function echo_body()
     // so a chunked request works without a Content-Length to size it from.
     header('Content-Type: application/octet-stream');
     echo file_get_contents('php://input');
+}
+
+// The wait holds the worker: that is what a synchronous PHP stack does, and what the profile
+// is measuring for one.
+function delay($path)
+{
+    $ms = (int) substr($path, 7);
+
+    if ($ms > 0) {
+        usleep($ms * 1000);
+    }
+
+    header('Content-Type: text/plain');
+    echo $ms;
 }
 
 function pipeline()

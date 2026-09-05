@@ -27,6 +27,14 @@ class BenchmarkController < ApplicationController
     render plain: total.to_s
   end
 
+  # Rack serves this on a worker, so the wait holds one - which is what the profile measures
+  # for a synchronous stack.
+  def delay
+    ms = params[:ms].to_i
+    sleep(ms / 1000.0) if ms > 0
+    render plain: ms.to_s
+  end
+
   def json_endpoint
     return head(500) unless dataset
 

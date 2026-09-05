@@ -68,6 +68,20 @@ $http->on('workerStart', function (Server $server, int $workerId) {
 $http->on('request', function (Request $request, Response $response) use ($dataset, $files, $serveStatic) {
     $path = $request->server['request_uri'];
 
+    if (str_starts_with($path, '/delay/')) {
+        $ms = (int) substr($path, 7);
+        // usleep, not Co::sleep: this server runs with enable_coroutine => false, so there is no
+        // coroutine to suspend and Co::sleep takes the worker down with it. The wait therefore
+        // holds a worker, which is what the profile is measuring for a stack configured this way -
+        // turning coroutines on to score better here would change every other profile too.
+        if ($ms > 0) {
+            usleep($ms * 1000);
+        }
+        $response->header['Content-Type'] = 'text/plain';
+        $response->end((string) $ms);
+        return;
+    }
+
     if ($path === '/pipeline') {
         $response->header['Content-Type'] = 'text/plain';
         $response->end('ok');

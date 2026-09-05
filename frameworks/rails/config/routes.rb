@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   get  '/baseline11',  to: 'benchmark#baseline11'
   post '/baseline11',  to: 'benchmark#baseline11'
   get  '/baseline2',   to: 'benchmark#baseline2'
+  get  '/delay/:ms',   to: 'benchmark#delay'
   get  '/json/:count', to: 'benchmark#json_endpoint'
   get  '/async-db',    to: 'benchmark#async_db'
   post '/echo',        to: 'benchmark#echo_body'
