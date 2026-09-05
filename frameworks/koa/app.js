@@ -57,6 +57,21 @@ if (cluster.isPrimary) {
         ctx.body = 'ok';
     });
 
+    // A promise-based sleep yields to the event loop rather than holding it, so the waits in
+    // flight are bounded by memory.
+    router.get('/delay/:ms', async ctx => {
+        const ms = Number.parseInt(ctx.params.ms, 10);
+        if (!Number.isInteger(ms) || ms < 0) {
+            ctx.status = 404;
+            return;
+        }
+        if (ms > 0) {
+            await new Promise(resolve => setTimeout(resolve, ms));
+        }
+        ctx.type = 'text/plain';
+        ctx.body = String(ms);
+    });
+
     async function baseline11(ctx) {
         let total = sumQuery(ctx.query);
         if (ctx.method === 'POST') {

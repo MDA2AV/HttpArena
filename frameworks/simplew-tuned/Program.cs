@@ -92,6 +92,14 @@ void ConfigureRoutes(SimpleWServer server)
 
     server.MapGet("/pipeline", (HttpSession s) => s.Response.Text("ok"));
 
+    // Task.Delay registers a timer and yields, so the thread goes back to the pool rather than
+    // sitting on the request and the waits in flight are bounded by memory.
+    server.MapGet("/delay/:ms", async (HttpSession s) => {
+        var ms = GetRouteInt(s, "ms", 0);
+        if (ms > 0) await Task.Delay(ms);
+        return Text(s, ms);
+    });
+
     // Request.Body is a ReadOnlySequence<byte>, so the echo is those bytes
     // handed to Response.Body() -- no text conversion, which would corrupt a
     // binary payload.

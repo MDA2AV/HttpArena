@@ -39,6 +39,14 @@ Router BuildRouter () {
 
     router.MapGet ( "/pipeline", r => new HttpResponse ( "ok" ) );
 
+    router.MapGet ( "/delay/<ms>", async ( HttpRequest r ) => {
+        int ms = int.Parse ( r.RouteParameters [ "ms" ].GetString () );
+        // Task.Delay registers a timer and yields; the thread goes back to the pool rather than
+        // sitting on the request, so the waits in flight are bounded by memory.
+        if (ms > 0) await Task.Delay ( ms );
+        return new HttpResponse ( ms.ToString () );
+    } );
+
     router.MapPost ( "/echo", r => {
         // sisk has already read the body, chunked or not.
         var body = r.GetBodyContents ();
