@@ -71,6 +71,22 @@ public class ServerVerticle extends VerticleBase {
         router.post("/baseline11")
                 .handler(BodyHandler.create().setBodyLimit(MAX_BODY))
                 .handler(this::baselinePost);
+        // setTimer defers on the event loop rather than sleeping it, so the waits in flight are
+        // bounded by memory rather than by any pool.
+        router.get("/delay/:ms").handler(ctx -> {
+            long ms;
+            try {
+                ms = Long.parseLong(ctx.pathParam("ms"));
+            } catch (NumberFormatException e) {
+                ctx.response().setStatusCode(404).end();
+                return;
+            }
+            if (ms <= 0) {
+                text(ctx, Long.toString(ms));
+            } else {
+                vertx.setTimer(ms, id -> text(ctx, Long.toString(ms)));
+            }
+        });
         router.get("/json/:count").handler(this::jsonItems);
         router.get("/async-db").handler(this::asyncDb);
         router.get("/static/:filename").handler(this::staticFile);
