@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <Nullable>enable</Nullable>
+    <Features>$(Features);runtime-async=on</Features>
   </PropertyGroup>
 
   <ItemGroup>

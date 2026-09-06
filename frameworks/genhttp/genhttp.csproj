@@ -5,7 +5,8 @@
     <TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <ServerGarbageCollection>true</ServerGarbageCollection>
-    <Nullable>enable</Nullable>
+    <Nullable>enable</Nullable>    
+    <Features>$(Features);runtime-async=on</Features>
   </PropertyGroup>
 
   <ItemGroup>
