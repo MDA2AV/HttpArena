@@ -1,0 +1,12 @@
+[ioxide] 4 reactors on :8080 (ProcessorCount=4, dataset=50 items, static=50 files (15 precompressed), pg=off, tls=h1 :8081, h2 :8443, h3 udp:8443)
+[cfg] engine: sqEntries=8192 recvBuf=16384 recvSlots=256 dualStack=False incremental=off
+[cfg] tcp: extraPorts=[8081,8443] backlog=1024 writeSlab=131072 poolMax=1024 overflow=Grow zeroCopy=False recvQueue=64
+[cfg] udp: slots=16 sockBuf=8388608 gro=True
+[cfg] quic: port=8443 cidLen=8 routing=Forward pinMigrated=True idleMs=60000
+[cfg] h3: qpackCapacity=0 qpackBlockedStreams=0
+[cfg] tls: ktlsTx=True (pinned) ktlsRx=True handshakeMs=10000 minVersion=Default suites=openssl ciphers=openssl
+[cfg] h2: maxStreams=1000 window=1048576 maxFrame=16384 maxRequest=8388608 maxHeaderList=65536 streamBodies=False
+[r0] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r1] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r2] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r3] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
