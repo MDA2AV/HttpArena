@@ -6,11 +6,11 @@
 [cfg] h3: qpackCapacity=0 qpackBlockedStreams=0
 [cfg] tls: ktlsTx=True (pinned) ktlsRx=True handshakeMs=10000 minVersion=Default suites=openssl ciphers=openssl
 [cfg] h2: maxStreams=1000 window=1048576 maxFrame=16384 maxRequest=8388608 maxHeaderList=65536 streamBodies=False
-[r5] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
 [r0] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
-[r2] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
-[r3] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
 [r7] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
-[r1] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r3] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
 [r4] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
 [r6] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r1] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r5] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)
+[r2] listening on 0.0.0.0:8080,8081,8443 udp:8443 (incremental=False)

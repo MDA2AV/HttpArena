@@ -1,0 +1,14 @@
+[2026-09-06 16:55:56.30132] [1] [info] Listening at "http://*:8080"
+[2026-09-06 16:55:56.30178] [1] [info] Listening at "https://*:8081?cert=%2Fcerts%2Fserver.crt&key=%2Fcerts%2Fserver.key"
+[2026-09-06 16:55:56.30184] [1] [info] Manager 1 started
+Web application available at http://127.0.0.1:8080
+Web application available at https://127.0.0.1:8081
+[2026-09-06 16:55:56.30413] [7] [info] Worker 7 started
+[2026-09-06 16:55:56.30512] [8] [info] Worker 8 started
+[2026-09-06 16:55:56.30609] [9] [info] Worker 9 started
+[2026-09-06 16:55:56.30698] [10] [info] Worker 10 started
+[2026-09-06 16:55:56.30791] [11] [info] Worker 11 started
+[2026-09-06 16:55:56.30887] [12] [info] Worker 12 started
+[2026-09-06 16:55:56.30979] [13] [info] Worker 13 started
+[2026-09-06 16:55:56.31075] [14] [info] Worker 14 started
+[2026-09-06 16:55:56.31379] [1] [info] Creating process id file "/tmp/prefork.pid"
