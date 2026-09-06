@@ -34,7 +34,8 @@ need `DATABASE_URL`. Both are provided by the harness sidecars.
 
 ## Build note
 
-This entry targets **.NET 11** (`net11.0`), matching the GenHTTP ioxide packages it
-references. Requires the .NET 11 SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator
-references `Microsoft.CodeAnalysis 5.3`); the `mcr.microsoft.com/dotnet/sdk:11.0.100-preview.5`
-image used by the Dockerfile provides both.
+This entry targets **.NET 11** (`net11.0`), matching the GenHTTP `11.0.0-preview.24` packages it
+references - the same preview the `genhttp` entry builds against, and the first one that ships the
+merged ioxide engine branch (PR #887) with TLS, HTTP/2 and HTTP/3 in the engine. Requires the .NET 11
+SDK with Roslyn 5.3+ (GenHTTP's `MemoryView` source generator references `Microsoft.CodeAnalysis 5.3`);
+the `mcr.microsoft.com/dotnet/sdk:11.0.100-preview.7` image used by the Dockerfile provides both.
