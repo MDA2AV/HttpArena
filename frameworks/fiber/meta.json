@@ -14,7 +14,7 @@
   "repo": "https://github.com/gofiber/fiber",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k",
+    "baseline", "latency-1m", "latency-10k", "latency-500k-8cpu",
     "pipelined",
     "limited-conn",
     "async",
