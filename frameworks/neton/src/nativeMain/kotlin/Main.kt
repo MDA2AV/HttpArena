@@ -5,6 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.boolean
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
@@ -142,31 +144,72 @@ private suspend fun HttpContext.writeItems(items: ArenaItems) {
 }
 
 /**
- * The dataset behind /json/{count}?m=M: the first `count` items of
- * /data/dataset.json, field-for-field unchanged, each with
- * total = price * quantity * m added.
+ * The dataset behind `/json/{count}?m=M`: the first `count` items of
+ * /data/dataset.json, field for field, each with total = price * quantity * m.
  *
- * Parsed once at startup and kept as the JSON text that *precedes* each total,
- * so serving a request appends one number per item and re-serializes nothing.
- * Keeping the original literals is also what keeps integers integers: round
- * tripping through a typed model would risk 328 becoming 328.0.
+ * The dataset is parsed into typed items once at startup, because it is static
+ * input, not a response. Every request then builds its own item list and runs it
+ * through kotlinx.serialization. The profile exists to measure that work, and the
+ * rules say so: pre-computed or pre-serialized response bodies are not allowed on
+ * either entry type, because they short-circuit exactly what is being measured.
  */
-private class ArenaItems(
-    val size: Int,
-    private val beforeTotal: List<String>,
-    private val priceTimesQuantity: IntArray,
-) {
+@Serializable
+private class Rating(val score: Int, val count: Int)
+
+@Serializable
+private class RenderedItem(
+    val id: Int,
+    val name: String,
+    val category: String,
+    val price: Int,
+    val quantity: Int,
+    val active: Boolean,
+    val tags: List<String>,
+    val rating: Rating,
+    val total: Long,
+)
+
+@Serializable
+private class ItemsResponse(val count: Int, val items: List<RenderedItem>)
+
+/** One dataset row, parsed once. `total` is per request and lives nowhere here. */
+private class SourceItem(
+    val id: Int,
+    val name: String,
+    val category: String,
+    val price: Int,
+    val quantity: Int,
+    val active: Boolean,
+    val tags: List<String>,
+    val rating: Rating,
+)
+
+private class ArenaItems(private val source: List<SourceItem>) {
+    val size: Int get() = source.size
+
+    private val json = Json { encodeDefaults = true }
+
     fun render(count: String?, multiplier: String?): String {
         val m = multiplier?.toLongOrNull() ?: 1L
-        val wanted = count?.toIntOrNull() ?: 0
-        val n = wanted.coerceIn(0, size)
-        val out = StringBuilder(n * 128 + 32)
-        out.append("{\"count\":").append(n).append(",\"items\":[")
+        val n = (count?.toIntOrNull() ?: 0).coerceIn(0, size)
+        val items = ArrayList<RenderedItem>(n)
         for (i in 0 until n) {
-            if (i > 0) out.append(',')
-            out.append(beforeTotal[i]).append(priceTimesQuantity[i] * m).append('}')
+            val row = source[i]
+            items.add(
+                RenderedItem(
+                    id = row.id,
+                    name = row.name,
+                    category = row.category,
+                    price = row.price,
+                    quantity = row.quantity,
+                    active = row.active,
+                    tags = row.tags,
+                    rating = row.rating,
+                    total = row.price.toLong() * row.quantity.toLong() * m,
+                ),
+            )
         }
-        return out.append("]}").toString()
+        return json.encodeToString(ItemsResponse.serializer(), ItemsResponse(n, items))
     }
 
     companion object {
@@ -176,19 +219,24 @@ private class ArenaItems(
             // own. Missing dataset is fatal on purpose: an empty item list
             // would answer every request with a well-formed wrong response.
             val text = readConfigFile(path) ?: error("dataset not readable at $path")
-            val beforeTotal = mutableListOf<String>()
-            val priceTimesQuantity = mutableListOf<Int>()
-            for (element in Json.parseToJsonElement(text).jsonArray) {
-                val item = element.jsonObject
-                val price = item["price"]?.jsonPrimitive?.int ?: 0
-                val quantity = item["quantity"]?.jsonPrimitive?.int ?: 0
-                // Drop an incoming total so the one appended per request is the
-                // only one, whatever the mounted dataset happens to carry.
-                val withoutTotal = JsonObject(item.filterKeys { it != "total" })
-                beforeTotal.add(withoutTotal.toString().dropLast(1) + ",\"total\":")
-                priceTimesQuantity.add(price * quantity)
+            val rows = Json.parseToJsonElement(text).jsonArray.map { element ->
+                val o = element.jsonObject
+                val rating = o["rating"]?.jsonObject
+                SourceItem(
+                    id = o["id"]?.jsonPrimitive?.int ?: 0,
+                    name = o["name"]?.jsonPrimitive?.content ?: "",
+                    category = o["category"]?.jsonPrimitive?.content ?: "",
+                    price = o["price"]?.jsonPrimitive?.int ?: 0,
+                    quantity = o["quantity"]?.jsonPrimitive?.int ?: 0,
+                    active = o["active"]?.jsonPrimitive?.boolean ?: false,
+                    tags = o["tags"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList(),
+                    rating = Rating(
+                        score = rating?.get("score")?.jsonPrimitive?.int ?: 0,
+                        count = rating?.get("count")?.jsonPrimitive?.int ?: 0,
+                    ),
+                )
             }
-            return ArenaItems(beforeTotal.size, beforeTotal, priceTimesQuantity.toIntArray())
+            return ArenaItems(rows)
         }
     }
 }
