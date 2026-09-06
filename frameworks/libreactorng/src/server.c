@@ -1,17 +1,22 @@
 /* HttpArena minimal bench server on top of libreactorng.
  *
- * Uses libreactor's built-in HTTP parser (session->request.{method,target,body})
+ * Uses libreactor's built-in HTTP parser (session->request.{method,target,body,fields})
  * so this file is just dispatch + integer arithmetic.
  *
  * Multi-process: one libreactor per logical CPU in the container's affinity
  * mask, each listening on its own SO_REUSEPORT socket so the kernel balances
  * accepted connections across workers.
+ *
+ * Connection: close is honored via stream_close_on_drain() - a small graceful-close addition to
+ * libreactor's stream (see connection-close.patch), applied to the pinned build in the Dockerfile.
  */
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
@@ -21,8 +26,7 @@
 
 #include <reactor.h>
 
-/* Parse a leading signed integer. Skips whitespace, stops at the first
- * non-digit. Matches the contract of nginx/h2o reference implementations. */
+/* Parse a leading signed integer. Skips whitespace, stops at the first non-digit. */
 static int64_t parse_int(const char *p, const char *end)
 {
     while (p < end && (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')) p++;
@@ -36,8 +40,7 @@ static int64_t parse_int(const char *p, const char *end)
     return neg ? -n : n;
 }
 
-/* Sum integer values across "k1=v1&k2=v2..." — ignores keys, non-integer
- * values silently skip. */
+/* Sum integer values across "k1=v1&k2=v2..." - ignores keys, non-integer values skip. */
 static int64_t sum_query(const char *p, size_t len)
 {
     const char *end = p + len;
@@ -54,13 +57,31 @@ static int64_t sum_query(const char *p, size_t len)
     return sum;
 }
 
+/* True if the request carried Connection: close (case-insensitive header name and token). */
+static bool wants_close(server_session_t *s)
+{
+    for (size_t i = 0; i < s->request.fields_count; i++) {
+        string_t name = s->request.fields[i].name;
+        if (data_size(name) == 10 && strncasecmp((const char *) data_base(name), "connection", 10) == 0) {
+            string_t val = s->request.fields[i].value;
+            const char *v = (const char *) data_base(val);
+            size_t vl = data_size(val);
+            for (size_t j = 0; j + 5 <= vl; j++)
+                if (strncasecmp(v + j, "close", 5) == 0)
+                    return true;
+            return false;
+        }
+    }
+    return false;
+}
+
 static void on_request(reactor_event_t *event)
 {
     server_session_t *s = (server_session_t *) event->data;
     string_t method = s->request.method;
     string_t target = s->request.target;
 
-    /* Split target at the first '?' to get path + query string. */
+    /* Split target at the first '?' into path + query string. */
     const char *t = (const char *) data_base(target);
     size_t t_len = data_size(target);
     const char *q = memchr(t, '?', t_len);
@@ -68,44 +89,31 @@ static void on_request(reactor_event_t *event)
     const char *qs = q ? q + 1 : NULL;
     size_t qs_len = q ? (t_len - path_len - 1) : 0;
 
-    /* Connection: close is NOT honored — libreactor keeps the session open
-     * after the response, and the only teardown primitive it exposes
-     * (server_disconnect → stream_close) is abortive: it closes before the
-     * queued response bytes reach the socket. That causes the TCP
-     * fragmentation validation checks to time out reading for an EOF that
-     * never comes. Fixing it cleanly would need a write-completion hook in
-     * libreactor's stream, which isn't in the public API. Known limitation. */
-
     if (path_len == 9 && memcmp(t, "/pipeline", 9) == 0) {
         server_plain(s, data_string("ok"), NULL, 0);
-        return;
-    }
-
-    if (path_len == 11 && memcmp(t, "/baseline11", 11) == 0) {
+    } else if (path_len == 11 && memcmp(t, "/baseline11", 11) == 0) {
         int64_t sum = qs ? sum_query(qs, qs_len) : 0;
         if (string_equal(method, string("POST"))) {
             const char *b = (const char *) data_base(s->request.body);
             size_t b_len = data_size(s->request.body);
             if (b_len > 0) sum += parse_int(b, b + b_len);
         }
-        /* Stack buffer is safe: http_write_response copies via stream_allocate
-         * before this handler returns to the event loop. */
         char buf[32];
         int n = snprintf(buf, sizeof(buf), "%lld", (long long) sum);
         server_plain(s, data(buf, n), NULL, 0);
-        return;
-    }
-
-    if (path_len == 10 && memcmp(t, "/baseline2", 10) == 0) {
+    } else if (path_len == 10 && memcmp(t, "/baseline2", 10) == 0) {
         int64_t sum = qs ? sum_query(qs, qs_len) : 0;
         char buf[32];
         int n = snprintf(buf, sizeof(buf), "%lld", (long long) sum);
         server_plain(s, data(buf, n), NULL, 0);
-        return;
+    } else {
+        server_respond(s, string("404 Not Found"), string("text/plain"),
+                       data_string("Not Found"), NULL, 0);
     }
 
-    server_respond(s, string("404 Not Found"), string("text/plain"),
-                   data_string("Not Found"), NULL, 0);
+    /* Close gracefully after the response drains to the socket when the client asked for it. */
+    if (wants_close(s))
+        stream_close_on_drain(&s->stream);
 }
 
 static int make_reuseport_socket(int port)
@@ -132,9 +140,7 @@ int main(void)
 {
     signal(SIGPIPE, SIG_IGN);
 
-    /* Respect Docker --cpuset-cpus via the affinity mask. sysconf() would
-     * report the host CPU count which isn't what we want inside a pinned
-     * container. */
+    /* Respect the container cpuset via the affinity mask (sysconf reports the host count). */
     cpu_set_t cs;
     int workers = 1;
     if (sched_getaffinity(0, sizeof(cs), &cs) == 0) workers = CPU_COUNT(&cs);
