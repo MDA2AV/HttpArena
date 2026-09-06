@@ -14,5 +14,5 @@ RUN dpkg -i /packages-microsoft-prod.deb && rm /packages-microsoft-prod.deb \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /out .
-EXPOSE 8080 8443/tcp 8443/udp
+EXPOSE 8080 8081 8082 9000 8443/tcp 8443/udp
 ENTRYPOINT ["dotnet", "effinitive-arena.dll"]

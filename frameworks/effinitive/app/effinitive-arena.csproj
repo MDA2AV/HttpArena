@@ -11,8 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EffinitiveFramework.Core" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.5" />
+    <PackageReference Include="EffinitiveFramework.Core" Version="2.6.0" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
   </ItemGroup>
 

@@ -1,3 +1,4 @@
+using System.Net.Security;
 using System.Text.Json;
 using EffinitiveFramework.Core;
 using EffinitiveFramework.Core.WebSocket;
@@ -47,7 +48,40 @@ if (hasCert)
             opts.CertificatePath = certPath;
             opts.KeyPath = keyPath;
         });
+
+    builder.AddListener(listener =>
+    {
+        listener.Name = "h1-tls";
+        listener.Port = 8081;
+        listener.UseTls = true;
+        listener.Tls.CertificatePath = certPath;
+        listener.Tls.KeyPath = keyPath;
+        listener.AlpnProtocols = [SslApplicationProtocol.Http11];
+    });
 }
+
+var tlsCheckCert = Environment.GetEnvironmentVariable("TLS_CHECK_CERT") ?? "/certs-tls/server.crt";
+var tlsCheckKey = Environment.GetEnvironmentVariable("TLS_CHECK_KEY") ?? "/certs-tls/server.key";
+if (File.Exists(tlsCheckCert) && File.Exists(tlsCheckKey))
+{
+    builder.AddListener(listener =>
+    {
+        listener.Name = "tls-check";
+        listener.Port = 9000;
+        listener.UseTls = true;
+        listener.Tls.CertificatePath = tlsCheckCert;
+        listener.Tls.KeyPath = tlsCheckKey;
+        listener.Tls.ReloadOnChange = true;
+        listener.AlpnProtocols = [SslApplicationProtocol.Http11];
+    });
+}
+
+builder.AddListener(listener =>
+{
+    listener.Name = "h2c";
+    listener.Port = 8082;
+    listener.UseHttp2Cleartext = true;
+});
 
 var app = builder
     .MapEndpoints()
