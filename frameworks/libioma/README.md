@@ -1,4 +1,4 @@
-# ioma
+# libioma
 
 Minimal HTTP/1.1 framework in C on a thread-per-core `io_uring` runtime. Each connection runs as a
 stackful coroutine: the framework parses, routes and serializes, and the flush suspends the
@@ -17,6 +17,13 @@ state machine.
 - **Response path:** heads built by `memcpy` of precomposed pieces plus a hand-rolled integer
   writer (no `snprintf`); small bodies inlined so a reply is one send.
 
+## Build
+
+The Dockerfile fetches libioma from its repo at a pinned commit (`LIBIOMA_VERSION`), builds the
+static library in-container tuned for the benchmark CPU, and links the handler below against it —
+so this entry holds only the handler, not the library source. To move to a newer libioma, bump
+`LIBIOMA_VERSION` in the Dockerfile.
+
 ## Endpoints
 
 | Endpoint | Method | Description |
@@ -24,11 +31,4 @@ state machine.
 | `/baseline11` | GET | Sums the query parameter values |
 | `/baseline11` | POST | Sums the query parameters plus the request body (Content-Length and chunked) |
 
-## Notes
-
-- No liburing; the ring is set up and driven through the three `io_uring` syscalls directly.
-- Chunked request bodies are decoded in place and are fragmentation-safe (parser state carries
-  across `recv()` calls).
-- Worker count is the first CLI argument (default 64).
-
-Source: https://github.com/MDA2AV/ioma
+Library: https://github.com/MDA2AV/libioma
