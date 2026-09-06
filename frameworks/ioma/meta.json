@@ -1,0 +1,17 @@
+{
+  "display_name": "ioma",
+  "language": "C",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "Minimal HTTP/1.1 framework in C on a thread-per-core io_uring runtime with stackful coroutines. Raw io_uring syscalls, no liburing; multishot accept and recv over provided buffer rings.",
+  "repo": "https://github.com/MDA2AV/ioma",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu"
+  ],
+  "maintainers": []
+}
