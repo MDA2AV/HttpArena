@@ -3,14 +3,14 @@
 ░█░█░█▀▀░░█░░█░█░█░█
 ░▀░▀░▀▀▀░░▀░░▀▀▀░▀░▀░
 
-Neton 1.0.0-beta6
+Neton 1.0.0-beta7
 Kotlin/Native Runtime
 
 Adapter     : Hyper4k
 Environment : dev
 Port        : 8080
 PID         : 1
-Cold Start  : 4 ms
+Cold Start  : 3 ms
 
 Ready → http://localhost:8080
 
