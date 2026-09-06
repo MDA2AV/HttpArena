@@ -1,4 +1,5 @@
 import json
+import asyncio
 import os
 
 import asyncpg
@@ -51,6 +52,14 @@ except OSError:
 
 async def pipeline(request):
     return HttpResponse("ok", content_type="text/plain")
+
+
+async def delay(request, ms):
+    # asyncio.sleep yields to the event loop rather than holding it, so the waits in flight are
+    # bounded by memory rather than by the worker count.
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return HttpResponse(str(ms), content_type="text/plain")
 
 
 async def baseline11(request):
@@ -348,6 +357,7 @@ async def fortunes(request):
 
 urlpatterns = [
     path("pipeline", pipeline),
+    path("delay/<int:ms>", delay),
     path("baseline11", baseline11),
     path("baseline2", baseline11),
     path("json/<int:count>", json_items),

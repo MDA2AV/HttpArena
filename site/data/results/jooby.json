@@ -26,6 +26,26 @@
       "rate_ratio": 0.9367,
       "p99_9_latency": "114272.0us"
     },
+    "async-32000": {
+      "framework": "jooby",
+      "language": "Java",
+      "rps": 396761,
+      "avg_latency": "61.25ms",
+      "p99_latency": "72.10ms",
+      "cpu": "1525.8%",
+      "memory": "16.4GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "57.12MB/s",
+      "input_bw": "18.16MB/s",
+      "reconnects": 0,
+      "status_2xx": 3967613,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "jooby",
       "language": "Java",

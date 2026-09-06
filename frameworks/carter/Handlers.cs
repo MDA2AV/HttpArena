@@ -64,6 +64,19 @@ public static class Handlers
     /// Echo: the bytes that arrived go back unchanged. Collected first because
     /// the response needs a Content-Length, and a chunked request carries none
     /// to forward until the body is in.
+    // Task.Delay registers a timer and yields, so the thread goes back to the pool rather than
+    // sitting on the request and the waits in flight are bounded by memory.
+    public static async Task Delay(HttpContext ctx, int ms)
+    {
+        if (ms > 0)
+        {
+            await Task.Delay(ms);
+        }
+
+        ctx.Response.ContentType = "text/plain";
+        await ctx.Response.WriteAsync(ms.ToString());
+    }
+
     public static async Task EchoBody(HttpContext ctx)
     {
         using var ms = new MemoryStream();

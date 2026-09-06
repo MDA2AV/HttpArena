@@ -25,6 +25,12 @@ public class Baseline2Get : IReturn<HttpResult>
 [Route("/pipeline", "GET")]
 public class PipelineGet : IReturn<string> { }
 
+[Route("/delay/{Ms}", "GET")]
+public class DelayGet : IReturn<string>
+{
+    public int Ms { get; set; }
+}
+
 [Route("/echo", "POST")]
 public class EchoPost : IReturn<HttpResult> { }
 

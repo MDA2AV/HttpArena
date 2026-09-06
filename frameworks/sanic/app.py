@@ -1,3 +1,4 @@
+import asyncio
 import gzip
 import json
 import multiprocessing
@@ -49,6 +50,15 @@ app.config.ACCESS_LOG = False
 @app.get("/pipeline")
 async def pipeline(request):
     return text("ok")
+
+
+# asyncio.sleep yields to the loop rather than holding it, so the waits in flight are
+# bounded by memory rather than by anything thread-shaped.
+@app.get("/delay/<ms:int>")
+async def delay(request, ms: int):
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return text(str(ms))
 
 
 @app.route("/baseline11", methods=["GET", "POST"])

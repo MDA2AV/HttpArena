@@ -229,6 +229,14 @@ if (cluster.isPrimary) {
 				},
 			);
 		})
+		.get("/delay/:ms", async ({ params, set }) => {
+			const ms = Number.parseInt(params.ms, 10);
+			set.headers["content-type"] = "text/plain";
+			// A promise around setTimeout yields to the event loop rather than holding it, so the
+			// waits in flight are bounded by memory.
+			if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
+			return String(ms);
+		})
 		.get("/pipeline", ({ set }) => {
 			set.headers["content-type"] = "text/plain";
 			return "ok";

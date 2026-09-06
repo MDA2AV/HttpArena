@@ -14,7 +14,10 @@
   "repo": "https://github.com/jeremyevans/roda",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k",
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
     "pipelined",
     "limited-conn",
     "json-comp",
@@ -23,5 +26,7 @@
     "async-db",
     "static-tls"
   ],
-  "maintainers": ["p8"]
+  "maintainers": [
+    "p8"
+  ]
 }

@@ -73,6 +73,15 @@ async fn pipeline() -> &'static str {
     "ok"
 }
 
+// tokio's sleep parks the task rather than the thread, so the waits in flight are bounded
+// by memory rather than by the runtime's worker count.
+async fn delay(Path(ms): Path<u64>) -> String {
+    if ms > 0 {
+        tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+    }
+    ms.to_string()
+}
+
 async fn baseline11(Query(params): Query<HashMap<String, String>>, body: String) -> String {
     let mut sum: i64 = params
         .values()
@@ -139,6 +148,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/pipeline", get(pipeline))
+        .route("/delay/{ms}", get(delay))
         .route("/baseline11", get(baseline11).post(baseline11))
         .route("/json/{count}", get(json_items))
         .route("/echo", post(echo_body))

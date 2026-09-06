@@ -1,6 +1,26 @@
 {
   "framework": "slimeweb",
   "results": {
+    "async-32000": {
+      "framework": "slimeweb",
+      "language": "Python",
+      "rps": 50304,
+      "avg_latency": "173.08ms",
+      "p99_latency": "1.79s",
+      "cpu": "946.8%",
+      "memory": "469MiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "5.95MB/s",
+      "input_bw": "2.30MB/s",
+      "reconnects": 0,
+      "status_2xx": 503043,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "slimeweb",
       "language": "Python",

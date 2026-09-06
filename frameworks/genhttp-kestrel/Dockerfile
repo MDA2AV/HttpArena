@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100-preview.7 AS build
 WORKDIR /source
 
 COPY genhttp.csproj ./
@@ -7,7 +7,7 @@ RUN dotnet restore
 COPY . .
 RUN dotnet publish -c Release --no-self-contained -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/aspnet:11.0.0-preview.7
 
 ADD https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb /packages-microsoft-prod.deb
 

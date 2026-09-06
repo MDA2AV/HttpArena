@@ -1,6 +1,26 @@
 {
   "framework": "pedestal",
   "results": {
+    "async-32000": {
+      "framework": "pedestal",
+      "language": "Clojure",
+      "rps": 262159,
+      "avg_latency": "11.73ms",
+      "p99_latency": "21.30ms",
+      "cpu": "4703.7%",
+      "memory": "7.5GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "36.25MB/s",
+      "input_bw": "12.00MB/s",
+      "reconnects": 0,
+      "status_2xx": 2621593,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "pedestal",
       "language": "Clojure",

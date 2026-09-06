@@ -92,6 +92,15 @@ hosts:
             [200, {"content-type" => "text/plain"}, [sum.to_s]]
           end
 
+      "/delay":
+        mruby.handler: |
+          Proc.new do |env|
+            ms = env["PATH_INFO"].split("/").last.to_i
+            ms = 0 if ms < 0
+            sleep(ms / 1000.0) if ms > 0
+            [200, {"content-type" => "text/plain"}, [ms.to_s]]
+          end
+
       "/echo":
         mruby.handler: |
           Proc.new do |env|

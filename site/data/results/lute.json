@@ -26,6 +26,26 @@
       "rate_ratio": 0.9852,
       "p99_9_latency": "603.0us"
     },
+    "async-32000": {
+      "framework": "lute",
+      "language": "Luau",
+      "rps": 284720,
+      "avg_latency": "105.52ms",
+      "p99_latency": "124.50ms",
+      "cpu": "5761.1%",
+      "memory": "864MiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "32.61MB/s",
+      "input_bw": "13.03MB/s",
+      "reconnects": 0,
+      "status_2xx": 2847208,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "lute",
       "language": "Luau",

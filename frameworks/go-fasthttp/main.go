@@ -95,6 +95,18 @@ func pipelineHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBodyString("ok")
 }
 
+func delayHandler(ctx *fasthttp.RequestCtx, raw string) {
+	ms, _ := strconv.Atoi(raw)
+	// time.Sleep parks the goroutine fasthttp is serving this connection on, not the OS thread,
+	// so the waits in flight are bounded by memory.
+	if ms > 0 {
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	}
+	ctx.Response.Header.Set("Server", "go-fasthttp")
+	ctx.SetContentType("text/plain")
+	ctx.SetBodyString(strconv.Itoa(ms))
+}
+
 func processHandler(ctx *fasthttp.RequestCtx, count int) {
 	if count > len(dataset) {
 		count = len(dataset)
@@ -572,6 +584,8 @@ func main() {
 		switch {
 		case path == "/pipeline":
 			pipelineHandler(ctx)
+		case strings.HasPrefix(path, "/delay/"):
+			delayHandler(ctx, path[len("/delay/"):])
 		case strings.HasPrefix(path, "/json/"):
 			count, _ := strconv.Atoi(path[len("/json/"):])
 			processHandler(ctx, count)

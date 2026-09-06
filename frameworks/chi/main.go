@@ -65,6 +65,21 @@ func pipeline(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
+// Sleeping the goroutine is the idiomatic wait here: the runtime parks it and reuses the
+// thread, so the waits in flight are bounded by memory rather than by OS threads.
+func delay(w http.ResponseWriter, r *http.Request) {
+	ms, err := strconv.Atoi(chi.URLParam(r, "ms"))
+	if err != nil || ms < 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if ms > 0 {
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(strconv.Itoa(ms)))
+}
+
 func baseline11(w http.ResponseWriter, r *http.Request) {
 	sum := 0
 	for _, values := range r.URL.Query() {
@@ -447,6 +462,7 @@ func main() {
 	r.Use(middleware.Compress(5))
 
 	r.Get("/pipeline", pipeline)
+	r.Get("/delay/{ms}", delay)
 	r.Get("/baseline11", baseline11)
 	r.Post("/baseline11", baseline11)
 	r.Get("/json/{count}", jsonItems)

@@ -31,6 +31,20 @@ public class BenchmarkServices : Service
 
     public HttpResult Get(Baseline2Get req) => ToResult(req.A + req.B);
 
+    // ── /delay/{ms} ───────────────────────────────────────────────────────────
+    // Task.Delay registers a timer and yields, so the thread goes back to the pool rather
+    // than sitting on the request and the waits in flight are bounded by memory. ToResult is
+    // what the other text endpoints use; returning a bare string would be serialized as JSON.
+    public async Task<HttpResult> Get(DelayGet request)
+    {
+        if (request.Ms > 0)
+        {
+            await Task.Delay(request.Ms);
+        }
+
+        return ToResult(request.Ms);
+    }
+
     // ── /pipeline ─────────────────────────────────────────────────────────────
     public object Get(PipelineGet _)
     {

@@ -213,6 +213,12 @@
                             :count (count items)}))
       (text-response 500 "dataset.json not available"))))
 
+(defn delay-response [ms-str]
+  (let [ms (parse-long-safe ms-str)]
+    ;; A sync Ring handler on Jetty's pool, so the wait holds the worker serving this request.
+    (when (pos? ms) (Thread/sleep ms))
+    (text-response 200 (str ms))))
+
 (defn method-not-allowed-response []
   (text-response 405 "method not allowed"))
 
@@ -229,6 +235,11 @@
       (re-matches #"/json/[0-9]+" uri)
       (if (= :get method)
         (json-data-response request)
+        (method-not-allowed-response))
+
+      (re-matches #"/delay/[0-9]+" uri)
+      (if (= :get method)
+        (delay-response (subs uri 7))
         (method-not-allowed-response))
 
       :else

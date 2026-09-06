@@ -121,6 +121,13 @@
 (defn pipeline-handler [_request]
   (text-response 200 "ok"))
 
+(defn delay-handler [request]
+  (let [ms (parse-long-safe (get-in request [:path-params :ms]))]
+    ;; The connector runs on virtual threads, so this parks the virtual thread rather than a
+    ;; carrier thread and the waits in flight are bounded by memory.
+    (when (pos? ms) (Thread/sleep ms))
+    (text-response 200 (str ms))))
+
 (defn json-handler [request]
   (if-let [source @dataset]
     (let [requested-count (min (parse-long-safe (get-in request [:path-params :count]))
@@ -222,7 +229,8 @@
     ["/async-db" :get async-db-handler :route-name ::async-db]
     ["/echo" :post echo-handler :route-name ::echo]
     ["/static/:filename" :get static-handler :route-name ::static]
-    ["/pipeline" :get pipeline-handler :route-name ::pipeline]})
+    ["/pipeline" :get pipeline-handler :route-name ::pipeline]
+    ["/delay/:ms" :get delay-handler :route-name ::delay]})
 
 (defn virtual-thread-pool []
   (doto (QueuedThreadPool.)

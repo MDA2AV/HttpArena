@@ -47,6 +47,16 @@ app:get("/pipeline", function(self)
   return { layout = false, content_type = "text/plain", "ok" }
 end)
 
+app:get("/delay/:ms", function(self)
+  local ms = tonumber(self.params.ms) or 0
+  -- ngx.sleep yields the light thread rather than blocking the nginx worker, so the waits in
+  -- flight are bounded by memory.
+  if ms > 0 then
+    ngx.sleep(ms / 1000)
+  end
+  return { layout = false, content_type = "text/plain", tostring(ms) }
+end)
+
 local function baseline11(self)
   local total = 0
   for _, value in pairs(self.params) do

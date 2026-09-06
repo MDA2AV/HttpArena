@@ -78,6 +78,19 @@ fn sum_query(query: &str) -> i64 {
     total
 }
 
+// tokio's sleep parks the task rather than the thread, so the waits in flight are bounded by
+// memory rather than by the runtime's worker count.
+#[handler]
+async fn delay(req: &mut Request, res: &mut Response) {
+    let ms: u64 = req.param::<u64>("ms").unwrap_or(0);
+    if ms > 0 {
+        tokio::time::sleep(std::time::Duration::from_millis(ms)).await;
+    }
+    res.headers_mut()
+        .insert("content-type", "text/plain".parse().unwrap());
+    res.render(ms.to_string());
+}
+
 #[handler]
 async fn baseline11(req: &mut Request, res: &mut Response) {
     let mut total = sum_query(req.uri().query().unwrap_or(""));
@@ -155,6 +168,7 @@ fn router() -> Router {
                 )
                 .get(json_items),
         )
+        .push(Router::with_path("delay/{ms}").get(delay))
         .push(Router::with_path("echo").post(echo_body))
 }
 

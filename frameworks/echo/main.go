@@ -62,6 +62,19 @@ func pipeline(c echo.Context) error {
 	return c.String(http.StatusOK, "ok")
 }
 
+// Sleeping the goroutine is the idiomatic wait here: the runtime parks it and reuses the
+// thread, so the waits in flight are bounded by memory rather than by OS threads.
+func delay(c echo.Context) error {
+	ms, err := strconv.Atoi(c.Param("ms"))
+	if err != nil || ms < 0 {
+		return c.NoContent(http.StatusNotFound)
+	}
+	if ms > 0 {
+		time.Sleep(time.Duration(ms) * time.Millisecond)
+	}
+	return c.String(http.StatusOK, strconv.Itoa(ms))
+}
+
 func baseline11(c echo.Context) error {
 	sum := 0
 	for _, values := range c.QueryParams() {
@@ -384,6 +397,7 @@ func main() {
 	e.Use(middleware.Gzip())
 
 	e.GET("/pipeline", pipeline)
+	e.GET("/delay/:ms", delay)
 	e.GET("/baseline11", baseline11)
 	e.POST("/baseline11", baseline11)
 	e.GET("/json/:count", jsonItems)

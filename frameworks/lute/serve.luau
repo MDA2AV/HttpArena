@@ -1,4 +1,5 @@
 local server = require("@lute/net/server")
+local task = require("@lute/task")
 local fs = require("@std/fs")
 local json = require("@std/json")
 
@@ -54,6 +55,16 @@ local function handle(req, srv)
 
 	if path == "/pipeline" then
 		return PIPELINE_OK
+	end
+
+	if string.sub(path, 1, 7) == "/delay/" then
+		local ms = tonumber(string.sub(path, 8)) or 0
+		-- task.wait yields this coroutine to lute's scheduler rather than blocking the thread it
+		-- runs on, so the waits in flight are bounded by memory.
+		if ms > 0 then
+			task.wait(ms / 1000)
+		end
+		return { body = tostring(ms), headers = TEXT_HEADERS }
 	end
 
 	if path == "/echo" and method == "POST" then

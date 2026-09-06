@@ -4,6 +4,7 @@ Rage.routes.draw do
       'content-type' => 'text/plain'
     }, ['ok']]
   end
+  get  '/delay/:ms',      to: 'benchmark#delay'
   get  '/baseline11',     to: 'benchmark#baseline_one'
   post '/baseline11',     to: 'benchmark#baseline_one'
   get  '/baseline2',      to: 'benchmark#baseline_two'

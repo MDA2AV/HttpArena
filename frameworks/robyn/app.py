@@ -2,6 +2,7 @@ import os
 import sys
 import multiprocessing
 import json
+import asyncio
 
 from robyn import Robyn, Headers, Request, Response, jsonify
 from robyn.argument_parser import Config as RobynConfig
@@ -45,6 +46,16 @@ app.serve_directory(route = "/static", directory_path = "/data/static")
 @app.get("/pipeline", const=True)  # Const route (cached in Rust for max performance)
 def pipeline():
     return "ok"
+
+
+@app.get("/delay/:ms")
+async def delay_endpoint(request: Request):
+    ms = int(request.path_params["ms"])
+    # An async handler lets Robyn park the task on its event loop instead of holding a worker,
+    # so the waits in flight are bounded by memory.
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return Response(status_code=200, headers=Headers({"Content-Type": "text/plain"}), description=str(ms))
 
 
 @app.get("/baseline11")

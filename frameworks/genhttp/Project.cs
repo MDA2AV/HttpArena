@@ -27,6 +27,8 @@ public static class Project
                         .AddService<Baseline>("baseline2")
                         .AddService<Echo>("echo")
                         .AddService<Json>("json")
+                        // The async profile: /delay/{ms} holds the request without holding a thread.
+                        .AddService<Delay>("delay")
                         .AddService<AsyncDatabase>("async-db")
                         .Add("crud", crud)
                         .AddStaticFiles()

@@ -20,6 +20,7 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.WriteBufferWaterMark
 import io.netty.handler.flush.FlushConsolidationHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.html.*
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -133,6 +134,18 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
          */
         get("/pipeline") {
             call.respond(pipelineResponse)
+        }
+
+        /**
+         * Async delay
+         * https://www.http-arena.com/docs/test-profiles/h1/isolated/async/
+         */
+        get("/delay/{ms}") {
+            val ms = call.parameters["ms"]!!.toLong()
+            // delay() suspends the coroutine rather than parking the thread it runs on, so the
+            // waits in flight are bounded by memory and not by the size of the event-loop group.
+            if (ms > 0) delay(ms)
+            call.respondNumber(ms)
         }
 
         /**

@@ -19,6 +19,7 @@ use Hyperf\HttpServer\Router\Router;
 $httpRoutes = function () {
     Router::addRoute(['GET', 'POST'], '/baseline11', [IndexController::class, 'handleBaseline11']);
     Router::get('/pipeline', [IndexController::class, 'handlePipeline']);
+Router::get('/delay/{ms}', [IndexController::class, 'handleDelay']);
     Router::get('/json/{count}', [IndexController::class, 'handleJson']);
     Router::post('/echo', [IndexController::class, 'handleEcho']);
     Router::get('/async-db', [IndexController::class, 'handleAsyncDb']);

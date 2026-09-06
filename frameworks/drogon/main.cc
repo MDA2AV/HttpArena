@@ -68,6 +68,25 @@ int main()
         {Get});
 
     app().registerHandler(
+        "/delay/{ms}",
+        [](const HttpRequestPtr &,
+           std::function<void(const HttpResponsePtr &)> &&callback,
+           const std::string &ms) {
+            const long long millis = toLong(ms);
+            if (millis <= 0)
+            {
+                callback(plainText("0"));
+                return;
+            }
+            // The reply is handed back from the event loop's timer rather than from a blocked
+            // handler, so the loop keeps serving every other connection while this one waits.
+            app().getLoop()->runAfter(
+                static_cast<double>(millis) / 1000.0,
+                [callback, body = std::to_string(millis)]() { callback(plainText(body)); });
+        },
+        {Get});
+
+    app().registerHandler(
         "/baseline11",
         [](const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
             long long sum = 0;

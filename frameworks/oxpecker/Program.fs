@@ -23,6 +23,7 @@ let endpoints = [
         route "/async-db" Handlers.asyncDb
         route "/fortunes" Handlers.fortunes
         routef "/json/{%i}" Handlers.json
+        routef "/delay/{%i}" Handlers.delay
     ]
     POST [
         route "/baseline11" Handlers.baselineWithBody

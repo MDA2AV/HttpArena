@@ -4,6 +4,7 @@ Serves the H1 + WebSocket profiles; crud, *-grpc and *-h3 are not subscribed.
 ``launcher.py`` starts one process per listener: cleartext :8080 (h2c by
 prior knowledge), h2c :8082, TLS HTTP/1.1 :8081, TLS HTTP/2 :8443.
 """
+import asyncio
 import argparse
 import json
 import os
@@ -58,6 +59,15 @@ def _qs(conn: Connection):
 @app.route(path='/pipeline', methods=[HTTPMethod.GET])
 async def pipeline():
     return Response(_PIPELINE_BODY, content_type=_PLAIN)
+
+
+@app.route(path='/delay/{ms:int}', methods=[HTTPMethod.GET])
+async def delay(ms: int):
+    # asyncio.sleep yields to the loop rather than holding it, so the waits in flight are
+    # bounded by memory rather than by anything thread-shaped.
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return Response(str(ms).encode(), content_type=_PLAIN)
 
 
 async def _baseline_handler(conn: Connection):

@@ -130,6 +130,14 @@ if (cluster.isPrimary) {
             res.set(SERVER_HDR).type('text/plain').send('ok');
         });
 
+        app.get('/delay/:ms', async (req, res) => {
+            const ms = parseInt(req.params.ms, 10) || 0;
+            // Awaiting a promise around setTimeout yields to the event loop rather than holding
+            // it, so the waits in flight are bounded by memory.
+            if (ms > 0) await new Promise(resolve => setTimeout(resolve, ms));
+            res.set(SERVER_HDR).type('text/plain').send(String(ms));
+        });
+
         app.get('/json/:count', (req, res) => {
             if (datasetItems) {
                 let count = parseInt(req.params.count, 10) || 0;

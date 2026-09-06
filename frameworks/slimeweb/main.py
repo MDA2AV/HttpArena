@@ -1,4 +1,5 @@
 import json
+import asyncio
 import os
 import subprocess
 import sys
@@ -38,6 +39,16 @@ def baseline_test(req, resp):
         except ValueError:
             pass
     return resp.plain(str(result))
+
+
+@app.route("/delay/{ms}", method="GET")
+async def delay_test(req, resp):
+    ms = int(req.params["ms"])
+    # asyncio.sleep yields to the event loop rather than holding it, so the waits in flight are
+    # bounded by memory.
+    if ms > 0:
+        await asyncio.sleep(ms / 1000)
+    return resp.plain(str(ms))
 
 
 @app.route("/pipeline", method="GET")

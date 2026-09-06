@@ -1,5 +1,8 @@
 package com.httparena;
 
+import jakarta.ws.rs.PathParam;
+import java.time.Duration;
+import io.smallrye.mutiny.Uni;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.smallrye.common.annotation.NonBlocking;
@@ -77,6 +80,18 @@ public class BenchmarkResource {
     @NonBlocking
     public String pipeline() {
         return "ok";
+    }
+
+    // A Uni delayed on the event loop rather than a sleep: the request is not holding a worker
+    // while it waits, so the waits in flight are bounded by memory.
+    @GET
+    @Path("/delay/{ms}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Uni<String> delay(@PathParam("ms") int ms) {
+        String body = Integer.toString(ms);
+        return ms > 0
+                ? Uni.createFrom().item(body).onItem().delayIt().by(Duration.ofMillis(ms))
+                : Uni.createFrom().item(body);
     }
 
     @GET

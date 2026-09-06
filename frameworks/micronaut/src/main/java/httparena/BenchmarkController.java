@@ -1,5 +1,6 @@
 package httparena;
 
+import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,21 @@ public class BenchmarkController {
     @Get(value = "/pipeline", produces = MediaType.TEXT_PLAIN)
     public String pipeline() {
         return "ok";
+    }
+
+    // A delayed CompletableFuture rather than a sleep: nothing holds a request thread while the
+    // wait runs, so the waits in flight are bounded by memory rather than by the pool. The JDK's
+    // delayedExecutor keeps this to the standard library - the entry has no reactive dependency.
+    @Get(value = "/delay/{ms}", produces = MediaType.TEXT_PLAIN)
+    public CompletableFuture<String> delay(int ms) {
+        String body = Integer.toString(ms);
+
+        if (ms <= 0) {
+            return CompletableFuture.completedFuture(body);
+        }
+
+        return CompletableFuture.supplyAsync(
+                () -> body, CompletableFuture.delayedExecutor(ms, TimeUnit.MILLISECONDS));
     }
 
     @Get(value = "/baseline11", produces = MediaType.TEXT_PLAIN)

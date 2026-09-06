@@ -26,6 +26,26 @@
       "rate_ratio": 0.9857,
       "p99_9_latency": "14980.0us"
     },
+    "async-32000": {
+      "framework": "hanami",
+      "language": "Ruby",
+      "rps": 23738,
+      "avg_latency": "606.72ms",
+      "p99_latency": "5.00s",
+      "cpu": "642.6%",
+      "memory": "5.9GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "2.01MB/s",
+      "input_bw": "1.09MB/s",
+      "reconnects": 0,
+      "status_2xx": 237388,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "hanami",
       "language": "Ruby",

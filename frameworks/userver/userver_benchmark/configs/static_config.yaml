@@ -73,6 +73,12 @@ components_manager:
             method: GET
             task_processor: main-task-processor
 
+        delay-handler:
+            path: /delay/{ms}
+            method: GET
+            decompress_request: false
+            task_processor: main-task-processor
+
         plaintext-handler:
             path: /pipeline
             method: GET

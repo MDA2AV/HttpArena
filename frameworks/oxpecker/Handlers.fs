@@ -4,6 +4,7 @@ open System
 open System.Globalization
 open System.IO
 open System.Text
+open System.Threading.Tasks
 open HttpArena.Services
 open Microsoft.AspNetCore.Http
 open Oxpecker
@@ -29,6 +30,18 @@ let private queryFloat (ctx: HttpContext) (key: string) (fallback: float) =
 // ── Connection profiles ────────────────────────────────────────────────────
 
 let pipeline: EndpointHandler = text "ok"
+
+/// GET /delay/{ms} — replies with the wait it was asked for, once it has elapsed.
+let delay (ms: int) : EndpointHandler =
+    fun ctx ->
+        task {
+            // Task.Delay hands the thread back to the pool rather than holding it, so the waits
+            // in flight are bounded by memory.
+            if ms > 0 then
+                do! Task.Delay ms
+
+            return! ctx.WriteText(string ms)
+        }
 
 /// GET /baseline11 and GET /baseline2 — sum of the two query parameters.
 let baseline: EndpointHandler =

@@ -4,6 +4,8 @@ defmodule PhoenixBanditWeb.Router do
   scope "/", PhoenixBanditWeb do
     get "/pipeline", BenchmarkController, :pipeline
 
+    get "/delay/:ms", BenchmarkController, :delay
+
     get "/baseline11", BenchmarkController, :baseline_get
     post "/baseline11", BenchmarkController, :baseline_post
 

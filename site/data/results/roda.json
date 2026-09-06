@@ -26,6 +26,26 @@
       "rate_ratio": 0.9858,
       "p99_9_latency": "8868.0us"
     },
+    "async-32000": {
+      "framework": "roda",
+      "language": "Ruby",
+      "rps": 24040,
+      "avg_latency": "315.82ms",
+      "p99_latency": "498.30ms",
+      "cpu": "578.4%",
+      "memory": "5.3GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "2.04MB/s",
+      "input_bw": "1.10MB/s",
+      "reconnects": 0,
+      "status_2xx": 240400,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "roda",
       "language": "Ruby",

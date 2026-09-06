@@ -76,6 +76,15 @@ async function build(serverOpts) {
         return sum;
     }
 
+    // A promise around setTimeout yields to the event loop rather than holding it, so the waits
+    // in flight are bounded by memory.
+    fastify.get('/delay/:ms', async (request, reply) => {
+        const ms = Number.parseInt(request.params.ms, 10);
+        if (!Number.isInteger(ms) || ms < 0) return reply.code(404).send();
+        if (ms > 0) await new Promise(resolve => setTimeout(resolve, ms));
+        reply.header('server', 'fastify').type('text/plain').send(String(ms));
+    });
+
     fastify.get('/pipeline', (request, reply) => {
         reply.header('server', 'fastify').type('text/plain').send('ok');
     });

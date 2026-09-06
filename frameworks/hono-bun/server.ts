@@ -125,6 +125,17 @@ app.get("/pipeline", (c) => {
   });
 });
 
+// --- /delay/:ms ---
+app.get("/delay/:ms", async (c) => {
+  const ms = parseInt(c.req.param("ms"), 10) || 0;
+  // Awaiting a promise around setTimeout yields to the event loop rather than holding it, so the
+  // waits in flight are bounded by memory.
+  if (ms > 0) await new Promise((resolve) => setTimeout(resolve, ms));
+  return new Response(String(ms), {
+    headers: { "content-type": "text/plain", server: SERVER_NAME },
+  });
+});
+
 // --- /baseline11 GET & POST ---
 app.get("/baseline11", (c) => {
   const query = c.req.query();
