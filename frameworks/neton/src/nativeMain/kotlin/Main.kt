@@ -75,17 +75,22 @@ private val DATASET_PATH = getEnv("ARENA_DATASET") ?: "/data/dataset.json"
  * dominated by `safePointActionImpl` and by threads blocked in
  * `pthread_mutex_lock`, which is what that looks like from the outside.
  *
- * What matters is leaving the default behind, not the exact size: measured across
- * floors of 64 MiB, 128 MiB, 256 MiB and 1 GiB the throughput was the same to
- * within run-to-run noise, while resident memory tracked the floor almost
- * exactly (90 MiB, 147 MiB, 264 MiB, 955 MiB). 256 MiB is the balance — a
- * quarter of the memory a 1 GiB floor costs, with headroom for an allocation
- * rate several times the one those runs produced. Autotune stays on so the
- * target can still follow the live set upward.
+ * The floor is 1 GiB because the benchmark said so, and a smaller one was tried
+ * and cost real throughput. At 128 local connections every floor from 64 MiB to
+ * 1 GiB measured the same and resident memory simply tracked the floor, which
+ * made 256 MiB look free; on the arena's 4096 connections it was not. Dropping
+ * to 256 MiB cost 33% on latency-1m, 27% on pipelined and 19% on async — the
+ * three profiles with the largest live set, which are exactly the ones that have
+ * to spend part of a five-second run growing the heap back before they can go
+ * fast. Autotune does climb past the floor here (baseline settles near 468 MiB,
+ * baseline-h2c at 4096 connections near 1.5 GiB); it just cannot climb for free.
+ *
+ * Memory efficiency is a separate, optional dimension on the board. Throughput
+ * is the ranking, so the floor is sized for throughput.
  */
 @OptIn(NativeRuntimeApi::class)
 private fun tuneGc() {
-    GC.minHeapBytes = 256L * 1024 * 1024
+    GC.minHeapBytes = 1L * 1024 * 1024 * 1024
     GC.targetHeapBytes = 2L * 1024 * 1024 * 1024
 }
 
