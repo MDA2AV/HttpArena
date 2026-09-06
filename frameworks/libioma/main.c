@@ -69,8 +69,7 @@ static ioma_response baseline11(ioma_request *req)
 
 int main(int argc, char **argv)
 {
-    int workers = argc > 1 ? atoi(argv[1]) : 64;
-    if (workers < 1) workers = 64;
+    int workers = argc > 1 ? atoi(argv[1]) : 0;   /* 0 = one worker per available core */
 
     ioma_route("GET",  "/baseline11", baseline11);
     ioma_route("POST", "/baseline11", baseline11);
