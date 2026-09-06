@@ -17,7 +17,7 @@
     "baseline",
     "async",
     "latency-1m",
-    "latency-10k",
+    "latency-10k", "latency-500k-4cpu",
     "pipelined",
     "limited-conn",
     "json-comp",

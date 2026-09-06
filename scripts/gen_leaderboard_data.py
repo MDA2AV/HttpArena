@@ -67,7 +67,7 @@ CATALOG = [
         # infraScored stays False for the same reason it does on latency-1m -
         # scoredForType() reads that flag ahead of `scored`, and no
         # infrastructure entry is measured on either profile yet.
-        ("latency-10k", "Latency-10K", "Score out of 100: CPU and both latency tails at a near-idle 10K req/s.",
+        ("latency-10k", "Latency-10K", "Score out of 100: CPU, mean and p99 latency at a near-idle 10K req/s.",
                                                     [1024],              [1024],          True,True,False),
         # Scored. The composite cannot rank this on rps the way it ranks every
         # other profile, because the rate is pinned and every entry that holds it
@@ -77,8 +77,16 @@ CATALOG = [
         # infraScored stays False even though a proxy's CPU efficiency is very
         # much a real thing: scoredForType() reads that flag *ahead* of `scored`,
         # and no infrastructure entry has been measured on this profile yet.
-        ("latency-1m", "Latency-1M", "Score out of 100: CPU and both latency tails at a pinned 1M req/s.",
+        ("latency-1m", "Latency-1M", "Score out of 100: CPU, mean and p99 latency at a pinned 1M req/s.",
                                                     [1024],              [1024],          True,True,False),
+        # Reference-only while the first field is measured. Two cores and their
+        # SMT siblings (cpuset 0-1,64-65) at a pinned 500K req/s: on 64 threads
+        # at 1M every thin server sits on the same per-wakeup floor and only a
+        # server that queues can amortise it, so on four logical CPUs the load
+        # sits near saturation for most entries and the marginal cost and the
+        # queue it builds are what get measured. Same formula as latency-1m.
+        ("latency-500k-4cpu", "Latency-500K/4", "Score out of 100: CPU, mean and p99 latency at a pinned 500K req/s on two cores plus SMT.",
+                                                    [1024],              [1024],          False,False,False),
     ]),
     ("Workload", [
         ("json-comp", "JSON Comp", "gzip/brotli content negotiation.",         [4096,16384],        [4096,16384],    True,False,False),
@@ -86,11 +94,11 @@ CATALOG = [
         # Paced like the latency profiles, and scored the same way: the rate is
         # pinned, so every entry that holds it delivers the same rps and the
         # composite cannot rank it on throughput. It contributes its own 0-100
-        # score instead (CPU 0.60, p99 0.25, p99.9 0.15, all times the fraction
+        # score instead (CPU 0.50, p99 0.25, mean 0.25, all times the fraction
         # of the offered rate actually held). infraScored stays False - that flag
         # is read *ahead* of `scored`, and no infrastructure entry has been
         # measured on this profile.
-        ("8gbit",  "8Gbit", "Score out of 100: CPU and both latency tails at a pinned 50K req/s, 10 KB echoed both ways.",
+        ("8gbit",  "8Gbit", "Score out of 100: CPU, mean and p99 latency at a pinned 50K req/s, 10 KB echoed both ways.",
                                                     [512],               [512],           True,True,False),
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024],              [1024],          False,False,True),
     ]),
@@ -158,6 +166,7 @@ PROFILE_DOC = {
     "async":            "test-profiles/h1/async/implementation",
     "latency-1m":      "test-profiles/h1/latency-1m/implementation",
     "latency-10k":     "test-profiles/h1/latency-10k/implementation",
+    "latency-500k-4cpu": "test-profiles/h1/latency-500k-4cpu/implementation",
     "async-db":         "test-profiles/h1/async-database/implementation",
     "fortunes":         "test-profiles/h1/fortunes/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
@@ -1255,7 +1264,7 @@ def lat_scores(pid):
              "rps": r.get("rps") or 0,
              "cpu": r.get("cpu_per_req_us"),
              "p99": _lat.to_us(r.get("p99_latency")),
-             "p999": _lat.to_us(r.get("p99_9_latency"))}
+             "mean": _lat.to_us(r.get("avg_latency"))}
             for key, rs in RESULTS.items() if key.startswith(pid + "-")
             for r in rs]
     out: dict = {}

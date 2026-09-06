@@ -63,7 +63,7 @@ Scored on cost rather than throughput: the rate is pinned, so every entry that h
 
 ```
 rateFactor = min(1, achieved_rps / 47,500)
-quality    = 0.60 x cpuScore + 0.25 x p99Score + 0.15 x p999Score
+quality    = 0.50 x cpuScore + 0.25 x p99Score + 0.25 x meanScore
 score      = 100 x rateFactor x quality
 ```
 

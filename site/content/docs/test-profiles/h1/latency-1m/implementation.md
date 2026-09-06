@@ -52,7 +52,7 @@ The rate is pinned, so throughput is identical by construction and cannot rank a
 
 ```
 rateFactor = min(1, achieved_rps / 950,000)
-quality    = 0.60 x cpuScore + 0.25 x p99Score + 0.15 x p999Score
+quality    = 0.50 x cpuScore + 0.25 x p99Score + 0.25 x meanScore
 score      = 100 x rateFactor x quality
 ```
 
@@ -62,9 +62,13 @@ each term measured against the best value present in the field, clamped to 0-1:
 |---|---|---|---|---|---|
 | `cpuScore` | `bestCpu / cpu` | 1.00 | 0.10 | 0.01 | 0.00 |
 | `p99Score` | `1 - log10(p99 / bestP99) / 3` | 1.00 | 0.67 | 0.33 | 0.00 |
-| `p999Score` | `1 - log10(p999 / bestP999) / 3` | 1.00 | 0.67 | 0.33 | 0.00 |
+| `meanScore` | `1 - log10(mean / bestMean)` | 1.00 | 0.00 | 0.00 | 0.00 |
 
-The two shapes differ because the quantities do: CPU per request spans about 3.3x across rate-holders, where a plain ratio behaves; the tails span five orders of magnitude, where a ratio would collapse to near zero for everyone but the leader and spend 40% of the weight without separating anybody.
+The three shapes differ because the quantities do. CPU per request spans about 3.3x across rate-holders, where a plain ratio behaves. The p99 tail spans five orders of magnitude, where a ratio would collapse to near zero for everyone but the leader and spend the weight without separating anybody, so it gets three decades.
+
+The mean is the queueing signal. By Little's law it is the number of requests in flight divided by the rate, so a server that lets requests wait in order to amortise its wake-ups shows it here and nowhere else: among entries that answer without queueing it spans about 2x, and a mean ten times the best means a request spends nine tenths of its life waiting. That is worth nothing, hence one decade.
+
+p99.9 is still recorded on every row but no longer scored. One stall in a twenty-second run moves it a hundredfold - a 166 µs p99 next to a 25 ms p99.9 - and at the weight it carried that noise was deciding ranks.
 
 `rateFactor` is the gate: full credit at 950,000 and above, falling proportionally below it, so a server that quietly serves less cannot look cheap. Nothing is rescaled so the leader lands on exactly 100 - no entry is simultaneously best on cost and both tails, and that gap is information.
 

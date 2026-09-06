@@ -7,7 +7,7 @@
   "repo": "https://github.com/MDA2AV/ioxide",
   "enabled": true,
   "tests": [
-    "baseline", "async", "latency-1m", "latency-10k",
+    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-4cpu",
     "pipelined",
     "limited-conn",
     "json-comp",
