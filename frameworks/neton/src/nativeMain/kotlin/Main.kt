@@ -12,7 +12,10 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.io.encodeToSink
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import neton.core.KotlinApplication
 import neton.core.Neton
 import neton.core.component.NetonContext
@@ -140,7 +143,11 @@ private suspend fun HttpContext.writeDelay() {
 
 /** /json/{count}?m=M: the first `count` dataset items, each carrying its total. */
 private suspend fun HttpContext.writeItems(items: ArenaItems) {
-    response.json(items.render(request.pathParam("count"), request.queryParam("m")))
+    // The bytes are what goes on the wire, so build them directly. Going through
+    // `response.json(String)` would serialize into a String and then encode that
+    // String to UTF-8 — a second full pass over the payload for nothing.
+    response.contentType = "application/json; charset=utf-8"
+    response.write(items.render(request.pathParam("count"), request.queryParam("m")))
 }
 
 /**
@@ -189,7 +196,7 @@ private class ArenaItems(private val source: List<SourceItem>) {
 
     private val json = Json { encodeDefaults = true }
 
-    fun render(count: String?, multiplier: String?): String {
+    fun render(count: String?, multiplier: String?): ByteArray {
         val m = multiplier?.toLongOrNull() ?: 1L
         val n = (count?.toIntOrNull() ?: 0).coerceIn(0, size)
         val items = ArrayList<RenderedItem>(n)
@@ -209,7 +216,9 @@ private class ArenaItems(private val source: List<SourceItem>) {
                 ),
             )
         }
-        return json.encodeToString(ItemsResponse.serializer(), ItemsResponse(n, items))
+        val buffer = Buffer()
+        json.encodeToSink(ItemsResponse.serializer(), ItemsResponse(n, items), buffer)
+        return buffer.readByteArray()
     }
 
     companion object {
