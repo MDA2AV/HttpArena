@@ -10,7 +10,7 @@ Adapter     : Hyper4k
 Environment : dev
 Port        : 8080
 PID         : 1
-Cold Start  : 3 ms
+Cold Start  : 4 ms
 
 Ready → http://localhost:8080
 
