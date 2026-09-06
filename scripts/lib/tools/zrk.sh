@@ -82,7 +82,7 @@ zrk_build_args() {
     mapfile -t cmd < <(_zrk_cmd)
 
     case "$endpoint" in
-        latency-1m|latency-10k|latency-500k-4cpu)
+        latency-1m|latency-10k|latency-500k-8cpu)
             # Same GET the baseline profile is validated on, so nothing new has
             # to be implemented to subscribe and the handler is as thin as the
             # framework allows -- what is left in the CPU number is the
@@ -97,7 +97,7 @@ zrk_build_args() {
             # with 93ms of peak schedule lag against -t 24's 0.9955 and 46ms.
             local _rate="$ZRK_RATE_LATENCY_1M"
             [ "$endpoint" = "latency-10k" ] && _rate="$ZRK_RATE_LATENCY_10K"
-            [ "$endpoint" = "latency-500k-4cpu" ] && _rate="$ZRK_RATE_LATENCY_500K"
+            [ "$endpoint" = "latency-500k-8cpu" ] && _rate="$ZRK_RATE_LATENCY_500K"
             cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$_rate"
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")

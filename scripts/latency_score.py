@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Scoring for the fixed-rate profiles: `latency-1m`, `latency-10k`,
-`latency-500k-4cpu` and `8gbit`.
+`latency-500k-8cpu` and `8gbit`.
 
 Every other profile here ranks on one number, requests per second. This one
 cannot: the rate is pinned, so every entry that finishes serves the same load
@@ -62,8 +62,8 @@ from pathlib import Path
 FULL_RATE = {
     "latency-1m":  950_000.0,
     "latency-10k":   9_500.0,
-    # Two cores plus SMT at 500K: 95% of the target, like the others.
-    "latency-500k-4cpu": 475_000.0,
+    # Four cores plus SMT at 500K: 95% of the target, like the others.
+    "latency-500k-8cpu": 475_000.0,
     # 8gbit is paced too, so it scores the same way: 95% of its 50K target.
     # Keep in step with LAT_FULL in site/leaderboard/index.html - check_badge_parity.js
     # compares the two and fails the deploy when they disagree.

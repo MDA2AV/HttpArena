@@ -80,12 +80,12 @@ CATALOG = [
         ("latency-1m", "Latency-1M", "Score out of 100: CPU, mean and p99 latency at a pinned 1M req/s.",
                                                     [1024],              [1024],          True,True,False),
         # Reference-only while the first field is measured. Two cores and their
-        # SMT siblings (cpuset 0-1,64-65) at a pinned 500K req/s: on 64 threads
+        # SMT siblings (cpuset 0-3,64-67) at a pinned 500K req/s: on 64 threads
         # at 1M every thin server sits on the same per-wakeup floor and only a
-        # server that queues can amortise it, so on four logical CPUs the load
+        # server that queues can amortise it, so on eight logical CPUs the load
         # sits near saturation for most entries and the marginal cost and the
         # queue it builds are what get measured. Same formula as latency-1m.
-        ("latency-500k-4cpu", "Latency-500K/4", "Score out of 100: CPU, mean and p99 latency at a pinned 500K req/s on two cores plus SMT.",
+        ("latency-500k-8cpu", "Latency-500K/8", "Score out of 100: CPU, mean and p99 latency at a pinned 500K req/s on four cores plus SMT.",
                                                     [1024],              [1024],          False,False,False),
     ]),
     ("Workload", [
@@ -166,7 +166,7 @@ PROFILE_DOC = {
     "async":            "test-profiles/h1/async/implementation",
     "latency-1m":      "test-profiles/h1/latency-1m/implementation",
     "latency-10k":     "test-profiles/h1/latency-10k/implementation",
-    "latency-500k-4cpu": "test-profiles/h1/latency-500k-4cpu/implementation",
+    "latency-500k-8cpu": "test-profiles/h1/latency-500k-8cpu/implementation",
     "async-db":         "test-profiles/h1/async-database/implementation",
     "fortunes":         "test-profiles/h1/fortunes/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
