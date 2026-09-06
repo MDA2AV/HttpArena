@@ -1,6 +1,26 @@
 {
   "framework": "robyn",
   "results": {
+    "async-32000": {
+      "framework": "robyn",
+      "language": "Python",
+      "rps": 309871,
+      "avg_latency": "95.90ms",
+      "p99_latency": "170.80ms",
+      "cpu": "5680.6%",
+      "memory": "3.0GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "34.86MB/s",
+      "input_bw": "14.18MB/s",
+      "reconnects": 0,
+      "status_2xx": 3098718,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "robyn",
       "language": "Python",

@@ -1,6 +1,26 @@
 {
   "framework": "http-kit",
   "results": {
+    "async-32000": {
+      "framework": "http-kit",
+      "language": "Clojure",
+      "rps": 76161,
+      "avg_latency": "182.71ms",
+      "p99_latency": "212.90ms",
+      "cpu": "267.6%",
+      "memory": "1.1GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "8.79MB/s",
+      "input_bw": "3.49MB/s",
+      "reconnects": 0,
+      "status_2xx": 761619,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "http-kit",
       "language": "Clojure",

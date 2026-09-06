@@ -26,6 +26,26 @@
       "rate_ratio": 0.9855,
       "p99_9_latency": "12604.0us"
     },
+    "async-32000": {
+      "framework": "genhttp-kestrel",
+      "language": "C#",
+      "rps": 824919,
+      "avg_latency": "32.77ms",
+      "p99_latency": "63.60ms",
+      "cpu": "4725.5%",
+      "memory": "1.5GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "107.76MB/s",
+      "input_bw": "37.76MB/s",
+      "reconnects": 0,
+      "status_2xx": 8249195,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "genhttp-kestrel",
       "language": "C#",

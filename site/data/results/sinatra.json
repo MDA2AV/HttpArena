@@ -26,6 +26,26 @@
       "rate_ratio": 0.9886,
       "p99_9_latency": "3979.0us"
     },
+    "async-32000": {
+      "framework": "sinatra",
+      "language": "Ruby",
+      "rps": 17806,
+      "avg_latency": "759.50ms",
+      "p99_latency": "5.00s",
+      "cpu": "620.4%",
+      "memory": "4.5GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "1.51MB/s",
+      "input_bw": "834.66KB/s",
+      "reconnects": 0,
+      "status_2xx": 178065,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "sinatra",
       "language": "Ruby",

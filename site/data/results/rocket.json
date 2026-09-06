@@ -26,6 +26,26 @@
       "rate_ratio": 0.9741,
       "p99_9_latency": "2789.0us"
     },
+    "async-32000": {
+      "framework": "rocket",
+      "language": "Rust",
+      "rps": 393572,
+      "avg_latency": "21.11ms",
+      "p99_latency": "38.40ms",
+      "cpu": "2758.0%",
+      "memory": "682MiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "88.56MB/s",
+      "input_bw": "18.02MB/s",
+      "reconnects": 0,
+      "status_2xx": 3935727,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "rocket",
       "language": "Rust",

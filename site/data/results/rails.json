@@ -26,6 +26,26 @@
       "rate_ratio": 0.9861,
       "p99_9_latency": "20168.0us"
     },
+    "async-32000": {
+      "framework": "rails",
+      "language": "Ruby",
+      "rps": 16625,
+      "avg_latency": "598.97ms",
+      "p99_latency": "3.41s",
+      "cpu": "1107.4%",
+      "memory": "4.3GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "3.50MB/s",
+      "input_bw": "779.30KB/s",
+      "reconnects": 0,
+      "status_2xx": 166259,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "rails",
       "language": "Ruby",

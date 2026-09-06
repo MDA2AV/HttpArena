@@ -26,6 +26,26 @@
       "rate_ratio": 0.9869,
       "p99_9_latency": "5346.0us"
     },
+    "async-32000": {
+      "framework": "genhttp",
+      "language": "C#",
+      "rps": 952876,
+      "avg_latency": "30.20ms",
+      "p99_latency": "60.30ms",
+      "cpu": "3916.0%",
+      "memory": "2.6GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "117.21MB/s",
+      "input_bw": "43.62MB/s",
+      "reconnects": 0,
+      "status_2xx": 9528769,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "genhttp",
       "language": "C#",

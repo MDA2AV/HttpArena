@@ -1,6 +1,26 @@
 {
   "framework": "sanic",
   "results": {
+    "async-32000": {
+      "framework": "sanic",
+      "language": "Python",
+      "rps": 684066,
+      "avg_latency": "21.45ms",
+      "p99_latency": "47.90ms",
+      "cpu": "5674.3%",
+      "memory": "2.1GiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "68.49MB/s",
+      "input_bw": "31.31MB/s",
+      "reconnects": 0,
+      "status_2xx": 6840668,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "sanic",
       "language": "Python",

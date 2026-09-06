@@ -26,6 +26,26 @@
       "rate_ratio": 0.9872,
       "p99_9_latency": "5142.0us"
     },
+    "async-32000": {
+      "framework": "drogon",
+      "language": "C++",
+      "rps": 143001,
+      "avg_latency": "221.25ms",
+      "p99_latency": "235.00ms",
+      "cpu": "812.0%",
+      "memory": "572MiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "19.22MB/s",
+      "input_bw": "6.55MB/s",
+      "reconnects": 0,
+      "status_2xx": 1430010,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "baseline-4096": {
       "framework": "drogon",
       "language": "C++",

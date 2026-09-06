@@ -1,0 +1,4 @@
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+Reflection warning, httparena/ring_jetty_adapter/core.clj:242:21 - call to static method sleep on java.lang.Thread can't be resolved (argument types: unknown).

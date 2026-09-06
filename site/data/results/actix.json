@@ -26,6 +26,26 @@
       "rate_ratio": 0.988,
       "p99_9_latency": "2377.0us"
     },
+    "async-32000": {
+      "framework": "actix",
+      "language": "Rust",
+      "rps": 2112168,
+      "avg_latency": "13.37ms",
+      "p99_latency": "17.40ms",
+      "cpu": "5196.7%",
+      "memory": "1009MiB",
+      "connections": 32000,
+      "threads": 64,
+      "duration": "5s",
+      "pipeline": 1,
+      "bandwidth": "267.83MB/s",
+      "input_bw": "96.69MB/s",
+      "reconnects": 0,
+      "status_2xx": 21121682,
+      "status_3xx": 0,
+      "status_4xx": 0,
+      "status_5xx": 0
+    },
     "async-db-1024": {
       "framework": "actix",
       "language": "Rust",
