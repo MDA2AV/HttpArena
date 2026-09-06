@@ -13,8 +13,10 @@ declare -A PROFILES=(
     [baseline]="1|0|0-31,64-95|4096|"
     [pipelined]="16|0|0-31,64-95|4096|pipeline"
     [limited-conn]="1|10|0-31,64-95|4096|"
-    # Async: GET /delay/15, a flat 15ms wait. Held connections (req_per_conn=0)
-    # so every one of them is a pending timer the server has to carry.
+    # Async: GET /delay/10 (requests/async-delay.raw), a flat 10ms wait over
+    # 32000 held connections (req_per_conn=0), so every one of them is a
+    # pending timer the server has to carry. #1341 settled it there after the
+    # 15ms/64000 round below; the ceiling is conns/delay = 3.2M rps.
     #
     # History, since the delay is the knob everything else hangs off:
     #   10-30ms draw, 32768/49152c  ceiling 1.64M/2.46M, tokio at 93%/83%
@@ -64,6 +66,14 @@ declare -A PROFILES=(
     # poll loops, timers, background GC, wakeups. A busy box amortises those
     # away; this one does not.
     [latency-10k]="1|0|0-31,64-95|1024|latency-10k"
+    # Latency-500K/8: the same GET at a pinned 500K req/s, but the server gets
+    # four cores and their SMT siblings (0-3 and 64-67 on the bench host) instead
+    # of thirty-two. At 64 threads and 1M req/s every thin server sits on the
+    # same per-wakeup floor and only a server that queues can amortise it; on
+    # eight logical CPUs the load is near saturation for most entries, so the
+    # marginal cost per request and the queue it builds are what get measured.
+    # The rate lives in tools/zrk.sh (ZRK_RATE_LATENCY_500K) like the others.
+    [latency-500k-8cpu]="1|0|0-3,64-67|1024|latency-500k-8cpu"
     [json-comp]="1|0|0-31,64-95|4096,16384|json-compressed"
     [json-tls]="1|0|0-31,64-95|4096|json-tls"
     # 8Gbit: 100 KB up and the same 100 KB back, over TLS. The only profile
@@ -113,7 +123,7 @@ PROFILE_ORDER=(
     production-stack
     unary-grpc unary-grpc-tls
     echo-ws echo-ws-pipeline echo-ws-limited
-    latency-1m latency-10k
+    latency-1m latency-10k latency-500k-8cpu
     # Last on purpose. It closes ~49K sockets at exit and every one sits in
     # TIME_WAIT for the kernel's fixed ~60s, so anything scheduled after it
     # starts against a nearly full port table.
@@ -141,7 +151,7 @@ endpoint_tool() {
         # wrk (lua script rotation)
         static-tls|json-tls)                 echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
-        latency-1m|latency-10k|8gbit)             echo "zrk" ;;
+        latency-1m|latency-10k|latency-500k-8cpu|8gbit)  echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)
         h2|static-h2|h2c|json-h2c|gateway-64|grpc|grpc-tls|production-stack)  echo "h2load" ;;
         # h2load built with ngtcp2 for HTTP/3

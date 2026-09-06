@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Scoring for the fixed-rate profiles: `latency-1m`, `latency-10k` and `8gbit`.
+"""Scoring for the fixed-rate profiles: `latency-1m`, `latency-10k`,
+`latency-500k-8cpu` and `8gbit`.
 
 Every other profile here ranks on one number, requests per second. This one
 cannot: the rate is pinned, so every entry that finishes serves the same load
@@ -8,24 +9,34 @@ and the interesting differences are in what it cost and how the tail behaved.
 The score is
 
     rateFactor = min(1, achieved_rps / 950_000)
-    quality    = 0.60*cpuScore + 0.25*p99Score + 0.15*p999Score
+    quality    = 0.50*cpuScore + 0.25*p99Score + 0.25*meanScore
     score      = 100 * rateFactor * quality
 
 with, against the best value present in the field:
 
     cpuScore   = bestCpu / cpu                       (linear)
     p99Score   = 1 - log10(p99  / bestP99 ) / 3      (clamped to 0..1)
-    p999Score  = 1 - log10(p999 / bestP999) / 3      (clamped to 0..1)
+    meanScore  = 1 - log10(mean / bestMean)          (clamped to 0..1)
 
-Why the two shapes differ. CPU per request spans about 3.3x across the entries
-that hold the rate, so a plain ratio behaves well over it. The latency tails
-span five orders of magnitude - 151us to 7.6s at p99 among rate-holders - and a
-plain ratio there collapses to near zero for everything but the leader, spending
-40% of the weight without separating anybody. A decade scale keeps the whole
-field distinguishable while still charging heavily for a bad tail: ten times the
-best costs a third of the term, a thousand times costs all of it.
+Why the three shapes differ. CPU per request spans about 3.3x across the
+entries that hold the rate, so a plain ratio behaves well over it. The p99 tail
+spans five orders of magnitude - 151us to 7.6s among rate-holders - and a plain
+ratio there collapses to near zero for everything but the leader, spending the
+weight without separating anybody; a three-decade scale keeps the field
+distinguishable while still charging for a bad tail: ten times the best costs a
+third of the term, a thousand times costs all of it.
 
-The 3-decade span is fixed rather than derived from the worst entry on purpose,
+The mean is the queueing signal. By Little's law it is the number of requests
+in flight divided by the rate, so a server that lets requests wait to amortise
+its wake-ups shows it here and nowhere else: among entries that answer without
+queueing it spans about 2x, and a mean ten times the best means a request spends
+nine tenths of its life waiting. That is worth nothing, hence one decade.
+
+p99.9 used to hold the third slot and is still recorded, but no longer scored:
+one stall in a twenty-second run moves it a hundredfold (a 166us p99 next to a
+25ms p99.9), which at the weight it carried was noise deciding ranks.
+
+The decade spans are fixed rather than derived from the worst entry on purpose,
 so one pathological entry joining the board cannot move everybody else's score.
 For the same reason nothing is rescaled to make the leader exactly 100: the top
 entry scores in the low-to-mid 90s because no single entry is simultaneously
@@ -51,14 +62,17 @@ from pathlib import Path
 FULL_RATE = {
     "latency-1m":  950_000.0,
     "latency-10k":   9_500.0,
+    # Four cores plus SMT at 500K: 95% of the target, like the others.
+    "latency-500k-8cpu": 475_000.0,
     # 8gbit is paced too, so it scores the same way: 95% of its 50K target.
     # Keep in step with LAT_FULL in site/leaderboard/index.html - check_badge_parity.js
     # compares the two and fails the deploy when they disagree.
     "8gbit":     47_500.0,
 }
 DEFAULT_PROFILE = "latency-1m"
-W_CPU, W_P99, W_P999 = 0.60, 0.25, 0.15
-DECADES = 3.0
+W_CPU, W_P99, W_MEAN = 0.50, 0.25, 0.25
+DECADES = 3.0        # p99: a third of the term per decade above the best
+MEAN_DECADES = 1.0   # mean: ten times the best is zero
 
 
 def to_us(value) -> float | None:
@@ -82,11 +96,12 @@ def rate_factor(rps: float, full: float) -> float:
     return _clamp(rps / full)
 
 
-def decade_score(value: float | None, best: float | None) -> float:
-    """1.0 at the best value, falling a third per decade above it."""
+def decade_score(value: float | None, best: float | None,
+                 decades: float = DECADES) -> float:
+    """1.0 at the best value, falling to 0 over `decades` decades above it."""
     if not value or not best or value <= 0 or best <= 0:
         return 0.0
-    return _clamp(1.0 - math.log10(max(value, best) / best) / DECADES)
+    return _clamp(1.0 - math.log10(max(value, best) / best) / decades)
 
 
 def linear_score(value: float | None, best: float | None) -> float:
@@ -96,7 +111,7 @@ def linear_score(value: float | None, best: float | None) -> float:
 
 
 def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
-    """Annotate rows with their score. Each row needs rps, cpu, p99, p999.
+    """Annotate rows with their score. Each row needs rps, cpu, p99, mean.
 
     Bests are taken over the rows given, so a caller scoring one framework's
     three runs gets them normalised against each other, and a caller scoring the
@@ -106,15 +121,15 @@ def score_rows(rows: list[dict], profile: str = DEFAULT_PROFILE) -> list[dict]:
         vals = [r[key] for r in rows if r.get(key)]
         return min(vals) if vals else None
 
-    b_cpu, b_p99, b_p999 = best_of("cpu"), best_of("p99"), best_of("p999")
+    b_cpu, b_p99, b_mean = best_of("cpu"), best_of("p99"), best_of("mean")
     for r in rows:
         rf = rate_factor(r.get("rps") or 0, FULL_RATE[profile])
         cpu_s = linear_score(r.get("cpu"), b_cpu)
         p99_s = decade_score(r.get("p99"), b_p99)
-        p999_s = decade_score(r.get("p999"), b_p999)
+        mean_s = decade_score(r.get("mean"), b_mean, MEAN_DECADES)
         r["rateFactor"] = rf
-        r["cpuScore"], r["p99Score"], r["p999Score"] = cpu_s, p99_s, p999_s
-        r["score"] = 100.0 * rf * (W_CPU * cpu_s + W_P99 * p99_s + W_P999 * p999_s)
+        r["cpuScore"], r["p99Score"], r["meanScore"] = cpu_s, p99_s, mean_s
+        r["score"] = 100.0 * rf * (W_CPU * cpu_s + W_P99 * p99_s + W_MEAN * mean_s)
     return rows
 
 
@@ -150,7 +165,7 @@ def pick(dirpath: str, profile: str = DEFAULT_PROFILE) -> int | None:
             # as zero rather than as free.
             "cpu": (cpu_usec / reqs) if (reqs > 0 and cpu_usec > 0) else None,
             "p99": to_us(kv.get("p99_lat")),
-            "p999": to_us(kv.get("p999_lat")),
+            "mean": to_us(kv.get("avg_lat")),
         })
     if not rows:
         return None
@@ -173,21 +188,21 @@ def table(results_dir: Path, profile: str = DEFAULT_PROFILE) -> None:
                 "rps": r.get("rps") or 0,
                 "cpu": r.get("cpu_per_req_us"),
                 "p99": to_us(r.get("p99_latency")),
-                "p999": to_us(r.get("p99_9_latency")),
+                "mean": to_us(r.get("avg_latency")),
             })
     if not rows:
         print(f"no {profile} results found", file=sys.stderr)
         return
     score_rows(rows, profile)
     rows.sort(key=lambda r: -r["score"])
-    print("%-24s %7s %7s %9s %11s %12s" %
-          ("framework", "score", "rate", "us/req", "p99", "p99.9"))
+    print("%-24s %7s %7s %9s %11s %11s" %
+          ("framework", "score", "rate", "us/req", "mean", "p99"))
     for r in rows:
-        print("%-24s %7.1f %7.3f %9s %11s %12s" % (
+        print("%-24s %7.1f %7.3f %9s %11s %11s" % (
             r["fw"], r["score"], r["rateFactor"],
             "-" if r["cpu"] is None else f"{r['cpu']:.1f}",
-            "-" if r["p99"] is None else f"{r['p99']:.0f}",
-            "-" if r["p999"] is None else f"{r['p999']:.0f}"))
+            "-" if r["mean"] is None else f"{r['mean']:.0f}",
+            "-" if r["p99"] is None else f"{r['p99']:.0f}"))
 
 
 def main() -> int:

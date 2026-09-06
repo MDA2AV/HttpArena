@@ -144,7 +144,7 @@ FRAMEWORK="$FRAMEWORK_ARG"
 # and any combination thereof.
 _has_isolated_test=false
 for t in baseline pipelined limited-conn json-comp json-tls upload \
-         static-tls async-db async latency-1m latency-10k \
+         static-tls async-db async latency-1m latency-10k latency-500k-8cpu \
          baseline-h2 static-h2 baseline-h2c json-h2c \
          baseline-h3 static-h3 \
          unary-grpc unary-grpc-tls \
@@ -166,7 +166,7 @@ $_has_isolated_test && framework_build
 # for the reason the framework build above is: this Dockerfile needs DNS to
 # reach github.com, and the daemon restart in system_tune() breaks resolution
 # inside build containers for several seconds afterwards.
-if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10k" || framework_subscribes_to "8gbit"; } && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
+if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10k" || framework_subscribes_to "latency-500k-8cpu" || framework_subscribes_to "8gbit"; } && [ -z "${ZRK_CMD:-}" ]    && ! command -v "$ZRK" >/dev/null 2>&1; then
     if ! docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
         docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — the fixed-rate profiles cannot run without it"
@@ -270,7 +270,7 @@ run_one() {
     # three runs, which is not known until all three have happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
-    case "$endpoint" in latency-1m|latency-10k|8gbit) _mdir=$(mktemp -d) ;; esac
+    case "$endpoint" in latency-1m|latency-10k|latency-500k-8cpu|8gbit) _mdir=$(mktemp -d) ;; esac
 
     BEST_M=()
     local run
@@ -357,7 +357,7 @@ run_one() {
 
     # ── Latency-1M: pick the run by score, not by any single metric ─────
     #
-    # The published score weights rate, CPU and both latency tails together, so
+    # The published score weights rate, CPU, mean and p99 latency together, so
     # choosing the run on CPU alone could keep a cheap run with a wrecked tail.
     # Each metric is normalised against the best of this framework's own three
     # runs -- self-contained, because the rest of the field does not exist yet
@@ -388,7 +388,7 @@ run_one() {
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
     # The fixed-rate profiles' headline number, and the check that it counts.
-    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ] || [ "$endpoint" = "8gbit" ]; then
+    if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ] || [ "$endpoint" = "latency-500k-8cpu" ] || [ "$endpoint" = "8gbit" ]; then
         # Two different failures that used to print the same line. "No CPU
         # reading" is a cgroup problem; "no requests" is a generator or server
         # problem, and saying the former when it is the latter sent the first
@@ -515,7 +515,7 @@ save_result() {
     # not the load, so the reason ships with the row rather than being inferred
     # from an rps that looks merely slow.
     local eff_extra=""
-    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ] || [ "$profile" = "8gbit" ]; then
+    if [ "$profile" = "latency-1m" ] || [ "$profile" = "latency-10k" ] || [ "$profile" = "latency-500k-8cpu" ] || [ "$profile" = "8gbit" ]; then
         local _eff_reqs=${BEST_M[status_2xx]:-0}
         local _eff_per_req="null"
         if [ -n "$best_cpu_usec" ] && [ "$_eff_reqs" -gt 0 ] 2>/dev/null; then

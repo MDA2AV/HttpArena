@@ -1926,27 +1926,31 @@ document.addEventListener('DOMContentLoaded', function(){
   // Offered rate that earns the whole rate factor, per profile. 95% of target:
   // the generator never quite reaches its own number, so the threshold has to
   // sit below it. Mirrors FULL_RATE in scripts/latency_score.py.
-  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, '8gbit':47500};
-  // Logical CPUs the fixed-rate profiles are pinned to - cpuset 0-31,64-95 in
-  // scripts/lib/profiles.sh, i.e. 32 cores with both threads, so 64. Used to turn
-  // CPU-per-request into "how much of the machine it was allowed did this take".
-  var LAT_CPUS=64;
+  var LAT_FULL={'latency-1m':950000, 'latency-10k':9500, 'latency-500k-8cpu':475000, '8gbit':47500};
+  // Logical CPUs each fixed-rate profile is pinned to, per scripts/lib/profiles.sh:
+  // cpuset 0-31,64-95 is 32 cores with both threads, so 64; latency-500k-8cpu
+  // gets 0-3,64-67, four cores with both threads. Used to turn CPU-per-request
+  // into "how much of the machine it was allowed did this take".
+  var LAT_CPUS={'latency-1m':64, 'latency-10k':64, '8gbit':64, 'latency-500k-8cpu':8};
   // CPU microseconds per second / 1e6 = cores in use; over the allowance = 0-100%.
-  function cpuTotPct(r){
+  function cpuTotPct(r,pid){
     if(r==null||r.cpu_per_req_us==null) return null;
     var q=r.rps||0; if(!(q>0)) return null;
-    return (+r.cpu_per_req_us)*q/1e6/LAT_CPUS*100;
+    return (+r.cpu_per_req_us)*q/1e6/(LAT_CPUS[pid]||64)*100;
   }
-  var LAT_W_CPU=0.60, LAT_W_P99=0.25, LAT_W_P999=0.15, LAT_DEC=3;
+  var LAT_W_CPU=0.50, LAT_W_P99=0.25, LAT_W_MEAN=0.25, LAT_DEC=3, LAT_MEAN_DEC=1;
   var _latScores={};
   function isLatProfile(pid){ return Object.prototype.hasOwnProperty.call(LAT_FULL,pid); }
   function clamp01(v){ return v<0?0:v>1?1:v; }
   // CPU spans ~3.3x across rate-holders, so a plain ratio behaves over it.
   function latLinear(v,b){ return (!v||!b||v<=0||b<=0)?0:clamp01(b/v); }
-  // The tails span five orders of magnitude, where a ratio would collapse to
-  // zero for everyone but the leader. A decade scale keeps the field separable
-  // and still charges a third of the term for every 10x.
-  function latDecade(v,b){ return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/LAT_DEC); }
+  // The p99 tail spans five orders of magnitude, where a ratio would collapse
+  // to zero for everyone but the leader. A three-decade scale keeps the field
+  // separable and still charges a third of the term for every 10x. The mean is
+  // the queueing signal (in-flight requests over the rate) and spans ~2x among
+  // entries that answer without queueing, so it gets one decade: ten times the
+  // best mean is a request spending nine tenths of its life waiting, worth 0.
+  function latDecade(v,b,d){ d=d||LAT_DEC; return (!v||!b||v<=0||b<=0||!isFinite(v))?0:clamp01(1-Math.log(Math.max(v,b)/b)/Math.LN10/d); }
   // Build from the canonical result set when the caller has no rows of its own,
   // so the composite and the detail view agree on the same normalisation.
   function latEnsure(pid){
@@ -1957,18 +1961,18 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   function latBuild(pid, rows){
     var out={}; _latScores[pid]=out;
-    var bc=Infinity,bp=Infinity,b9=Infinity, full=LAT_FULL[pid]||1;
+    var bc=Infinity,bp=Infinity,bm=Infinity, full=LAT_FULL[pid]||1;
     rows.forEach(function(r){
-      var c=+r.cpu_per_req_us, p=lat(r.p99_latency), q=lat(r.p99_9_latency);
+      var c=+r.cpu_per_req_us, p=lat(r.p99_latency), m=lat(r.avg_latency);
       if(c>0) bc=Math.min(bc,c);
       if(p>0&&isFinite(p)) bp=Math.min(bp,p);
-      if(q>0&&isFinite(q)) b9=Math.min(b9,q);
+      if(m>0&&isFinite(m)) bm=Math.min(bm,m);
     });
     rows.forEach(function(r){
       var rf=clamp01((r.rps||0)/full);
       out[r.fw]=100*rf*(LAT_W_CPU*latLinear(+r.cpu_per_req_us,bc)
                        +LAT_W_P99*latDecade(lat(r.p99_latency),bp)
-                       +LAT_W_P999*latDecade(lat(r.p99_9_latency),b9));
+                       +LAT_W_MEAN*latDecade(lat(r.avg_latency),bm,LAT_MEAN_DEC));
     });
   }
   function latScore(pid,fw){ latEnsure(pid); return (_latScores[pid]||{})[fw]||0; }
@@ -1993,16 +1997,16 @@ document.addEventListener('DOMContentLoaded', function(){
     // Three of the shared columns carry nothing here anyway. Bandwidth is a fixed
     // function of a rate every entry is held to, so it reads the same for all of
     // them. CPU % is the sampled figure this profile exists to replace with an
-    // exact one. Avg latency is dominated by the same coordinated-omission
-    // inflation that p99 and p99.9 already show, only less legibly. Dropping them
-    // buys the name back ~300px and loses no information.
+    // exact one. Avg latency stays: it replaced p99.9 in the score and is the
+    // queueing signal this view has to show. Dropping the other two buys the
+    // name back ~200px and loses no information.
     if(isLatProfile(state.profile)){
-      c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.60\u00d7CPU + 0.25\u00d7p99 + 0.15\u00d7p99.9), each measured against the best in the field. rateFactor is 1 at 950K req/s and falls proportionally below it. Higher is better.'});
+      c.push({k:'l1mscore', label:'Score', num:true, w:'92px', min:0, tip:'0-100. rateFactor \u00d7 (0.50\u00d7CPU + 0.25\u00d7p99 + 0.25\u00d7mean), each measured against the best in the field. rateFactor is 1 at 95% of the offered rate and falls proportionally below it. Higher is better.'});
       c.push({k:'rps', label:'Requests / sec', num:true, w:'minmax(150px,1fr)', min:0, tip:TIP.rps});
       c.push({k:'cpureq', label:'CPU / req', num:true, w:'110px', min:0, tip:'CPU microseconds the server spent per request, read exactly out of its cgroup rather than sampled. This is the profile\u2019s metric - lower is better.'});
-      c.push({k:'cputot', label:'CPU used', num:true, w:'100px', min:520, tip:'The same CPU cost read as a share of the machine this profile allows: CPU-per-request \u00d7 the rate delivered, over the 64 logical CPUs the profile pins (cpuset 0-31,64-95). 100% would mean the entry saturated everything it was given.'});
+      c.push({k:'cputot', label:'CPU used', num:true, w:'100px', min:520, tip:'The same CPU cost read as a share of the machine this profile allows: CPU-per-request \u00d7 the rate delivered, over the logical CPUs the profile pins (64 for Latency-1M, Latency-10K and 8Gbit, 8 for Latency-500K/8). 100% would mean the entry saturated everything it was given.'});
       c.push({k:'p99', label:'p99', num:true, w:'92px', min:0, tip:TIP.p99});
-      c.push({k:'p999', label:'p99.9', num:true, w:'96px', min:640, tip:'99.9th percentile latency, coordinated-omission corrected. Weighted at 0.15 in this profile\u2019s score.'});
+      c.push({k:'avg', label:'Avg', num:true, w:'92px', min:640, tip:'Mean latency, coordinated-omission corrected - the queueing signal, in-flight requests over the rate. Weighted at 0.25 in this profile\u2019s score; ten times the best mean scores zero on that term.'});
       c.push({k:'mem', label:'Mem', num:true, w:'86px', min:820, tip:TIP.mem});
       return c.filter(function(x){ return W>=x.min; });
     }
@@ -2026,7 +2030,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(k==='l1mscore'){ var v=latScore(state.profile,r.fw); return '<div class="c num"><b>'+(v?v.toFixed(1):'-')+'</b></div>'; }
     if(k==='p999') return '<div class="c num sub">'+esc(r.p99_9_latency||'-')+'</div>';
     if(k==='cpureq') return '<div class="c num sub">'+(r.cpu_per_req_us!=null?esc((+r.cpu_per_req_us).toFixed(2))+' \u00b5s':'-')+'</div>';
-    if(k==='cputot'){ var t=cpuTotPct(r); return '<div class="c num sub">'+(t==null?'-':esc(t.toFixed(1))+'%')+'</div>'; }
+    if(k==='cputot'){ var t=cpuTotPct(r,state.profile); return '<div class="c num sub">'+(t==null?'-':esc(t.toFixed(1))+'%')+'</div>'; }
     if(k==='avg') return '<div class="c num sub">'+esc(r.avg_latency||'-')+'</div>';
     if(k==='p99') return '<div class="c num sub">'+esc(r.p99_latency||'-')+'</div>';
     if(k==='cpu') return '<div class="c num sub">'+esc(r.cpu||'-')+'</div>';

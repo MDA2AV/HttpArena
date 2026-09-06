@@ -32,7 +32,7 @@ Framework types remain separate: engine entries are scored on their own subset o
 
 The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself, for example ranking the Ruby entries against each other rather than against the field.
 
-**Exception: the fixed-rate profiles.** [Latency-1M](/docs/test-profiles/h1/latency-1m/implementation/#scoring), [Latency-10K](/docs/test-profiles/h1/latency-10k/implementation/#scoring) and [8Gbit](/docs/test-profiles/h1/8gbit/implementation/#scoring) pin their request rate, so every entry that holds the rate delivers the same one and normalizing on rps would score all of them 1,000. Each contributes its own 0–100 score instead, built from CPU and both latency tails, and that score is normalized against the leading score in the field - so the leader of one of these columns is worth 1,000, exactly like the leader of an rps column. The two differ only in the rate offered - a saturating 1M req/s against a near-idle 10K - so they are scored separately and read separately.
+**Exception: the fixed-rate profiles.** [Latency-1M](/docs/test-profiles/h1/latency-1m/implementation/#scoring), [Latency-10K](/docs/test-profiles/h1/latency-10k/implementation/#scoring) and [8Gbit](/docs/test-profiles/h1/8gbit/implementation/#scoring) pin their request rate, so every entry that holds the rate delivers the same one and normalizing on rps would score all of them 1,000. Each contributes its own 0–100 score instead, built from CPU, mean latency and the p99 tail, and that score is normalized against the leading score in the field - so the leader of one of these columns is worth 1,000, exactly like the leader of an rps column. The two differ only in the rate offered - a saturating 1M req/s against a near-idle 10K - so they are scored separately and read separately.
 
 One consequence is worth naming: because that score is not rebased on the field leader, the best entry on either profile contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
 
@@ -63,7 +63,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Short-lived | Yes | Connections closed after 10 requests |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
-| Upload | No (*) | 20 MB body ingestion, return byte count. Reference-only - the validation cannot yet tell an honest handler from one that echoes `Content-Length`, so the profile is published but does not rank |
+| Async Delay | Yes | `GET /delay/10` over 32,000 held connections - what the framework does while a request waits. Scored for frameworks and engines, not for infrastructure |
 | Async DB | No (*) | Async Postgres query with connection pooling. Reference-only since #1331 - the driver dominates the result more than the framework does |
 | Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
 
@@ -115,7 +115,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static TLS, Async Delay, Async DB and Upload are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined, Static TLS and Async DB are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 

@@ -16,7 +16,7 @@ The same endpoint the [baseline profile](../baseline/implementation) already spe
 
 ## What is measured
 
-The CPU the container consumed, from cgroup v2 `cpu.stat` `usage_usec` either side of the load window - reported as `cpu_usec` and `cpu_per_req_us` - plus p99 and p99.9 latency. Nothing is sampled.
+The CPU the container consumed, from cgroup v2 `cpu.stat` `usage_usec` either side of the load window - reported as `cpu_usec` and `cpu_per_req_us` - plus mean and p99 latency. Nothing is sampled.
 
 At 10,000 req/s spread over 64 hardware threads the request work is close to nothing, so what the figure reports is the **standing cost** of being a running server. That is what to look at when optimising for this profile:
 
@@ -51,7 +51,7 @@ Identical in form to [Latency-1M's](../latency-1m/implementation/#scoring), with
 
 ```
 rateFactor = min(1, achieved_rps / 9,500)
-quality    = 0.60 x cpuScore + 0.25 x p99Score + 0.15 x p999Score
+quality    = 0.50 x cpuScore + 0.25 x p99Score + 0.25 x meanScore
 score      = 100 x rateFactor x quality
 ```
 
