@@ -75,13 +75,17 @@ private val DATASET_PATH = getEnv("ARENA_DATASET") ?: "/data/dataset.json"
  * dominated by `safePointActionImpl` and by threads blocked in
  * `pthread_mutex_lock`, which is what that looks like from the outside.
  *
- * Giving the floor real room trades memory the box has (251 GiB) for collections
- * it does not need to run. Autotune stays on so the target still follows the
- * live set upward.
+ * What matters is leaving the default behind, not the exact size: measured across
+ * floors of 64 MiB, 128 MiB, 256 MiB and 1 GiB the throughput was the same to
+ * within run-to-run noise, while resident memory tracked the floor almost
+ * exactly (90 MiB, 147 MiB, 264 MiB, 955 MiB). 256 MiB is the balance — a
+ * quarter of the memory a 1 GiB floor costs, with headroom for an allocation
+ * rate several times the one those runs produced. Autotune stays on so the
+ * target can still follow the live set upward.
  */
 @OptIn(NativeRuntimeApi::class)
 private fun tuneGc() {
-    GC.minHeapBytes = 1L * 1024 * 1024 * 1024
+    GC.minHeapBytes = 256L * 1024 * 1024
     GC.targetHeapBytes = 2L * 1024 * 1024 * 1024
 }
 
