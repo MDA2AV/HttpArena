@@ -7,7 +7,7 @@ WORKDIR /app
 # Build libioma from its own repo, pinned to a commit for reproducibility (the h2o pattern: fetch
 # upstream at a fixed SHA and build it here, tuned for this CPU). No liburing — libioma issues the
 # io_uring syscalls directly. Only the baseline handler lives in this entry.
-ARG LIBIOMA_VERSION=2f7715b0ecaffb316504abf577807ba22b1baaaa
+ARG LIBIOMA_VERSION=8712df91b5bf8ad50a53c6ff1c484624fc02b430
 RUN mkdir -p /tmp/libioma && \
     curl -LSs "https://github.com/MDA2AV/libioma/archive/${LIBIOMA_VERSION}.tar.gz" \
       | tar --strip-components=1 -xz -C /tmp/libioma && \
