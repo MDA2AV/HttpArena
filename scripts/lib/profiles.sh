@@ -13,8 +13,10 @@ declare -A PROFILES=(
     [baseline]="1|0|0-31,64-95|4096|"
     [pipelined]="16|0|0-31,64-95|4096|pipeline"
     [limited-conn]="1|10|0-31,64-95|4096|"
-    # Async: GET /delay/15, a flat 15ms wait. Held connections (req_per_conn=0)
-    # so every one of them is a pending timer the server has to carry.
+    # Async: GET /delay/10 (requests/async-delay.raw), a flat 10ms wait over
+    # 32000 held connections (req_per_conn=0), so every one of them is a
+    # pending timer the server has to carry. #1341 settled it there after the
+    # 15ms/64000 round below; the ceiling is conns/delay = 3.2M rps.
     #
     # History, since the delay is the knob everything else hangs off:
     #   10-30ms draw, 32768/49152c  ceiling 1.64M/2.46M, tokio at 93%/83%

@@ -53,12 +53,12 @@ CATALOG = [
         ("limited-conn", "Short-lived", "Connections close after 10 requests.",     [4096],          [4096],     True,True,True),
     ]),
     ("Concurrency", [
-        # Unscored while the delay range and connection counts are still being
-        # tuned (#1310). The other two flags are set for the day it flips:
-        # engines are measured on it, infrastructure is not — a reverse proxy
-        # has no application handler to await in.
+        # Scored for frameworks and engines since the spec settled at a flat
+        # 10ms wait over 32K connections (#1341); every published row was
+        # measured under it. Infrastructure stays out — a reverse proxy has no
+        # application handler to await in.
         ("async", "Async Delay", "A 10ms wait named in the route, at 32K held connections.",
-                                                    [32000],             [32000],         False,True,False),
+                                                    [32000],             [32000],         True,True,False),
     ]),
     ("Efficiency", [
         # Scored, on the same terms as latency-1m below: the rate is pinned, so

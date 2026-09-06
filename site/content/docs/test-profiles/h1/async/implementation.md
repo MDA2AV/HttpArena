@@ -97,6 +97,6 @@ Note which way the delay moves that gap. Shortening it frees a blocked thread so
 
 ## Scoring
 
-This profile is currently **reference-only**: it is measured, published and shown on the board, but it does not contribute to the composite score while its delay range and connection counts are still being tuned ([#1310](https://github.com/MDA2AV/HttpArena/issues/1310)).
+This profile is **scored** on requests per second like the other throughput profiles: the leader is worth 1,000 on the composite and everyone else is proportional. It counts for framework entries (flagship, emerging, experimental) and for engines. Infrastructure entries are excluded - a reverse proxy has no application handler to wait in, so the thing being measured does not exist for that tier.
 
-When it is scored, it will count for framework entries (flagship, emerging, experimental) and for engines. Infrastructure entries are excluded - a reverse proxy has no application handler to wait in, so the thing being measured does not exist for that tier.
+It was reference-only while the delay and connection count were being settled ([#1310](https://github.com/MDA2AV/HttpArena/issues/1310)); the spec has been a flat 10 ms over 32,000 connections since [#1341](https://github.com/MDA2AV/HttpArena/pull/1341), and every published row was measured under it.
