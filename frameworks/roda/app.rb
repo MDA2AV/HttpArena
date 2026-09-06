@@ -62,7 +62,8 @@ class App < Roda
     end
 
     r.is('baseline11') do
-      total = request.params['a'].to_i + request.params['b'].to_i
+      params = request.GET
+      total = params['a'].to_i + params['b'].to_i
       if request.post?
         total += request.body.read.to_i
       end
@@ -70,14 +71,16 @@ class App < Roda
     end
 
     r.is 'baseline2' do
-      total = request.params['a'].to_i + request.params['b'].to_i
+      params = request.GET
+      total = params['a'].to_i + params['b'].to_i
       render_plain total.to_s
     end
 
     r.is 'json', Integer do |count|
+      params = request.GET
       dataset = opts[:dataset_items]
       r.halt 500, 'No dataset' unless dataset
-      m = (request.params['m'] || 1).to_i
+      m = (params['m'] || 1).to_i
       items = dataset.slice(0, count).map do |d|
         d.merge(total: (d[:price] * d[:quantity] * m))
       end
@@ -92,9 +95,10 @@ class App < Roda
     end
 
     r.is 'async-db' do
-      min_val = (request.params['min'] || 10).to_i
-      max_val = (request.params['max'] || 50).to_i
-      limit = (request.params['limit'] || 50).to_i.clamp(1, 50)
+      params = request.GET
+      min_val = (params['min'] || 10).to_i
+      max_val = (params['max'] || 50).to_i
+      limit = (params['limit'] || 50).to_i.clamp(1, 50)
 
       rows = self.class.get_async_db&.with do |connection|
         connection.exec_prepared('select', [min_val, max_val, limit])
@@ -108,9 +112,10 @@ class App < Roda
 
     r.is 'crud/items' do
       r.get do
-        category = request.params['category'] || 'electronics'
-        page = (request.params['page'] || 1).to_i
-        limit = (request.params['limit'] || 10).to_i
+        params = request.GET
+        category = params['category'] || 'electronics'
+        page = (params['page'] || 1).to_i
+        limit = (params['limit'] || 10).to_i
         offset = (page - 1) * limit
 
         rows = self.class.get_async_db&.with do |connection|
