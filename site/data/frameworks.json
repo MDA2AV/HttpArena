@@ -995,6 +995,13 @@
       "response": true
     }
   },
+  "libioma": {
+    "dir": "libioma",
+    "description": "Minimal HTTP/1.1 framework in C on a thread-per-core io_uring runtime with stackful coroutines. Raw io_uring syscalls, no liburing; multishot accept and recv over provided buffer rings.",
+    "repo": "https://github.com/MDA2AV/libioma",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "libreactorng": {
     "dir": "libreactorng",
     "description": "libreactorng \u2014 Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
