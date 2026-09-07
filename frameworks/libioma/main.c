@@ -2,8 +2,9 @@
  * HttpArena baseline handler for libioma.
  *
  * baseline profile: GET/POST /baseline11?a=..&b=.. - sum the query parameter values, and on POST
- * add the request body value too. libioma hands the query already split into key/value slices and
- * the body as a slice (Content-Length or chunked, decoded); the digits go straight into the reply.
+ * add the request body value too. libioma hands the query already split into key/value slices;
+ * the body is read on demand (Content-Length or chunked, decoded). The digits are written straight
+ * into the reply slab.
  */
 #include <ioma.h>
 
@@ -14,11 +15,12 @@ static void baseline11(ioma_ctx *c)
     long sum = 0;
     for (size_t i = 0; i < c->req.n_params; i++)
         sum += ioma_slice_int(c->req.params[i].value);
-    if (c->req.body.len)
-        sum += ioma_slice_int(c->req.body);
+    if (c->req.content_length || c->req.chunked)
+        sum += ioma_slice_int(ioma_body(c));
 
-    /* itoa, then one write into the reply buffer - no snprintf on the hot path */
-    char          tmp[24], digits[24];
+    /* itoa straight into the reply slab - no snprintf, no copy */
+    char         *out = c->res.buf + c->res.len;
+    char          tmp[24];
     int           t = 0;
     unsigned long u = (unsigned long)(sum < 0 ? 0 : sum);
     do {
@@ -26,8 +28,8 @@ static void baseline11(ioma_ctx *c)
         u /= 10;
     } while (u);
     for (int i = 0; i < t; i++)
-        digits[i] = tmp[t - 1 - i];
-    ioma_write(c, digits, (size_t)t);
+        out[i] = tmp[t - 1 - i];
+    c->res.len += (size_t)t;
 }
 
 int main(int argc, char **argv)
