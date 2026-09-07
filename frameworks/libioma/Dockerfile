@@ -7,14 +7,14 @@ WORKDIR /app
 # Build libioma from its own repo, pinned to a commit for reproducibility (the h2o pattern: fetch
 # upstream at a fixed SHA and build it here, tuned for this CPU). No liburing — libioma issues the
 # io_uring syscalls directly. Only the baseline handler lives in this entry.
-ARG LIBIOMA_VERSION=2bd12edac4c95ff719ce96a4b72fcb0aaf0181e2
+ARG LIBIOMA_VERSION=52c3e280fb028dc53724a85dac15d48057470189
 RUN mkdir -p /tmp/libioma && \
     curl -LSs "https://github.com/MDA2AV/libioma/archive/${LIBIOMA_VERSION}.tar.gz" \
       | tar --strip-components=1 -xz -C /tmp/libioma && \
-    make -C /tmp/libioma libioma.a CFLAGS="-O3 -march=native"
+    make -C /tmp/libioma libioma.a CFLAGS="-O3 -march=native -flto -ffat-lto-objects"
 
 COPY main.c .
-RUN gcc -O3 -march=native -Wall -std=gnu11 -pthread \
+RUN gcc -O3 -march=native -flto -Wall -std=gnu11 -pthread \
         -I/tmp/libioma/include \
         main.c /tmp/libioma/libioma.a -o server -pthread
 
