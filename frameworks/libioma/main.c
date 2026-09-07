@@ -12,11 +12,12 @@
 
 static void baseline11(ioma_ctx *c)
 {
-    long sum = 0;
+    int64_t sum = 0, v;
     for (size_t i = 0; i < c->req.n_params; i++)
-        sum += ioma_slice_int(c->req.params[i].value);
-    if (c->req.content_length || c->req.chunked)
-        sum += ioma_slice_int(ioma_body(c));
+        if (ioma_to_i64(c->req.params[i].value, &v))
+            sum += v;
+    if ((c->req.content_length || c->req.chunked) && ioma_to_i64(ioma_slice_trim(ioma_body(c)), &v))
+        sum += v;
 
     /* itoa straight into the reply slab - no snprintf, no copy */
     char         *out = c->res.buf + c->res.len;
