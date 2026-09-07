@@ -1,0 +1,35 @@
+{
+  "display_name": "aspnet-minimal-11",
+  "language": "C#",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "kestrel",
+  "description": "aspnet-minimal on .NET 11 preview 7 with runtime async on: the same minimal API source and Kestrel, built with runtime-async=on so the runtime suspends and resumes async methods itself instead of compiler state machines. Exists to measure that one switch against aspnet-minimal.",
+  "repo": "https://github.com/dotnet/aspnetcore",
+  "enabled": true,
+  "tls_check": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

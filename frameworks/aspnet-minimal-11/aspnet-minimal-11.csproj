@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <!-- Runtime async: the runtime suspends and resumes async methods itself instead of the
+         compiler emitting a state machine. On net11.0 this flag is all that is needed - no
+         EnablePreviewFeatures, and the DOTNET_RuntimeAsync env var is gone (opt out is
+         UseRuntimeAsync=false). $(Features) is prepended so this appends to what the SDK set.
+         This is the one thing that separates this entry from aspnet-minimal besides the
+         runtime version. -->
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="StackExchange.Redis" Version="3.0.17" />
+  </ItemGroup>
+</Project>

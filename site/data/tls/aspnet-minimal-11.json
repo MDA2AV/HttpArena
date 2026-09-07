@@ -1,0 +1,5 @@
+{
+  "framework": "aspnet-minimal-11",
+  "tls": "pass",
+  "check": "pass"
+}
