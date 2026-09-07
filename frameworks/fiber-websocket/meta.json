@@ -1,0 +1,22 @@
+{
+  "display_name": "fiber",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "fasthttp",
+  "description": "Fiber 3 WebSocket echo through the gofiber/contrib websocket middleware on fasthttp, one prefork child per CPU the container is given, sharing the port. The echo loop drains NextReader into a per-connection buffer and answers with WriteMessage, so a message costs one buffered read, one write and a single 8-byte allocation.",
+  "repo": "https://github.com/gofiber/fiber",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": [
+    "ReneWerner87",
+    "gaby",
+    "sixcolors",
+    "efectn",
+    "Fenny"
+  ]
+}
