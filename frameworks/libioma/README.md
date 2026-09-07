@@ -7,7 +7,7 @@ state machine.
 
 ## Stack
 
-- **Language:** C (GCC, `-O2 -march=native`)
+- **Language:** C23 (gcc 14, `-O3 -march=native -flto`)
 - **Engine:** raw `io_uring` syscalls — no liburing. Multishot accept and multishot recv over
   per-worker provided buffer rings; `SINGLE_ISSUER | DEFER_TASKRUN | NO_SQARRAY`.
 - **Architecture:** thread-per-core, shared-nothing. One ring, one `SO_REUSEPORT` listener and one
