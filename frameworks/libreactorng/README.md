@@ -25,6 +25,11 @@
 - Requires `--security-opt seccomp=unconfined` (default Docker seccomp blocks several io_uring ops). The harness adds this automatically for frameworks declaring `"engine": "io_uring"` in `meta.json`.
 - Response bodies computed on the stack are safe — `http_write_response` copies through `stream_allocate` before returning control to the event loop.
 
-## Known limitation
+## Connection: close
 
-libreactor's HTTP server keeps connections open unconditionally — it ignores the `Connection` request header and the only teardown API (`server_disconnect` → `stream_close`) is abortive. That makes the TCP-fragmentation validation checks in `scripts/validate.sh` (which send `Connection: close` and then `recv` until EOF) time out waiting for a close that never comes. Plain `curl`-driven checks are fine because curl uses `Content-Length`. Fixing this cleanly needs a write-completion hook in libreactor's `stream_t`, which isn't exposed in the public API.
+libreactor's HTTP server keeps connections open unconditionally and its only teardown primitive
+(`stream_close`) is abortive - it closes before queued response bytes reach the socket. This entry
+applies a small patch (`connection-close.patch`) adding `stream_close_on_drain()`, which defers the
+close until the output buffer has fully drained. The server calls it when a request carries
+`Connection: close`, so the TCP-fragmentation validation (which sends `Connection: close` and reads
+to EOF) sees a clean close after the full response.
