@@ -8,7 +8,7 @@ WORKDIR /app
 # SHA and build it here, tuned for this CPU). No liburing: libioma issues the io_uring syscalls
 # directly. Only the baseline handler lives in this entry. Fat LTO objects for the library and
 # -flto on the handler link, so the handler inlines into the engine.
-ARG LIBIOMA_VERSION=b027f05360b8ae5192bd73133437663cd645bac1
+ARG LIBIOMA_VERSION=17f577290451a86213ec5d06496a670618cc0392
 RUN mkdir -p /tmp/libioma && \
     curl -LSs "https://github.com/MDA2AV/libioma/archive/${LIBIOMA_VERSION}.tar.gz" \
       | tar --strip-components=1 -xz -C /tmp/libioma && \

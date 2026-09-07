@@ -10,17 +10,17 @@
 
 #include <stdlib.h>
 
-static void baseline11(ioma_ctx *c)
+static void baseline11(ioma_ctx *ctx)
 {
     int64_t sum = 0, v;
-    for (size_t i = 0; i < c->req.n_params; i++)
-        if (ioma_to_i64(c->req.params[i].value, &v))
+    for (size_t i = 0; i < ctx->req.n_params; i++)
+        if (ioma_to_i64(ctx->req.params[i].value, &v))
             sum += v;
-    if ((c->req.content_length || c->req.chunked) && ioma_to_i64(ioma_slice_trim(ioma_body(c)), &v))
+    if ((ctx->req.content_length || ctx->req.chunked) && ioma_to_i64(ioma_slice_trim(ioma_body_all(ctx)), &v))
         sum += v;
 
     /* itoa straight into the reply slab - no snprintf, no copy */
-    char         *out = c->res.buf + c->res.len;
+    char         *out = ctx->res.buf + ctx->res.len;
     char          tmp[24];
     int           t = 0;
     unsigned long u = (unsigned long)(sum < 0 ? 0 : sum);
@@ -30,7 +30,7 @@ static void baseline11(ioma_ctx *c)
     } while (u);
     for (int i = 0; i < t; i++)
         out[i] = tmp[t - 1 - i];
-    c->res.len += (size_t)t;
+    ctx->res.len += (size_t)t;
 }
 
 int main(int argc, char **argv)
