@@ -1,0 +1,17 @@
+{
+  "display_name": "libxev",
+  "language": "Zig",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "HTTP/1.1 baseline server on libxev (mitchellh/libxev) - a Zig event loop with an io_uring backend. Callback-driven accept/read/write with picohttpparser for request parsing; one forked worker per CPU with SO_REUSEPORT.",
+  "repo": "https://github.com/mitchellh/libxev",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu"
+  ],
+  "maintainers": []
+}

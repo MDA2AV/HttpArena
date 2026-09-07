@@ -1,0 +1,13 @@
+.{
+    .name = .xev_bench,
+    .version = "0.0.0",
+    .fingerprint = 0xe7e390b79f4073b4,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .libxev = .{
+            .url = "https://github.com/mitchellh/libxev/archive/9ce8e8e6ff89e583258a7f8e7adeeeaeae8611bf.tar.gz",
+            .hash = "libxev-0.0.0-86vtcwIRFADbH4hk-EjROXxlrKIRPQdA41XiTSytYO-F",
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "src", "third_party" },
+}
