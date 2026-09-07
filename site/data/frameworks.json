@@ -113,6 +113,20 @@
       }
     ]
   },
+  "aspnet-minimal-11": {
+    "dir": "aspnet-minimal-11",
+    "description": "aspnet-minimal on .NET 11 preview 7 with runtime async on: the same minimal API source and Kestrel, built with runtime-async=on so the runtime suspends and resumes async methods itself instead of compiler state machines. Exists to measure that one switch against aspnet-minimal.",
+    "repo": "https://github.com/dotnet/aspnetcore",
+    "type": "flagship",
+    "engine": "kestrel",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aspnet-minimal-ioxide": {
     "dir": "aspnet-minimal-ioxide",
     "description": "Minimal ASP.NET Core (.NET 11) on the ioxide io_uring transport (ioxide.Kestrel via UseIoxide(), default reactor count). Same app as aspnet-minimal \u2014 only the Kestrel transport differs. HTTP/1.1 only: plaintext plus HTTP/1.1-over-TLS (json-tls) terminated in the transport via kTLS (ioxide.tls). HTTP/2 and HTTP/3 are not enabled.",
