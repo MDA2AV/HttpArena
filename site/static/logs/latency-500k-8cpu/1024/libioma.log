@@ -1,9 +1,9 @@
-[w1] listening on 0.0.0.0:8080 (cpu 1, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
-[w5] listening on 0.0.0.0:8080 (cpu 5, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
 [w3] listening on 0.0.0.0:8080 (cpu 3, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
+[w1] listening on 0.0.0.0:8080 (cpu 1, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
 [w4] listening on 0.0.0.0:8080 (cpu 4, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
-[w2] listening on 0.0.0.0:8080 (cpu 2, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
 [w0] listening on 0.0.0.0:8080 (cpu 0, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
 ioma: 8 workers on :8080
-[w6] listening on 0.0.0.0:8080 (cpu 6, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
+[w2] listening on 0.0.0.0:8080 (cpu 2, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
 [w7] listening on 0.0.0.0:8080 (cpu 7, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
+[w5] listening on 0.0.0.0:8080 (cpu 5, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
+[w6] listening on 0.0.0.0:8080 (cpu 6, 4096 x 4096 B recv buffers, ring 4096, no sqarray)
