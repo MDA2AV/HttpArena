@@ -37,8 +37,8 @@ int main(int argc, char **argv)
 {
     int workers = argc > 1 ? atoi(argv[1]) : 0;   /* 0 = one worker per available core */
 
-    ioma_route("GET",  "/baseline11", baseline11);
-    ioma_route("POST", "/baseline11", baseline11);
+    ioma_get (NULL, "/baseline11", baseline11);     /* NULL: the root group */
+    ioma_post(NULL, "/baseline11", baseline11);
 
     return ioma_run(workers, 8080);
 }
