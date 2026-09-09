@@ -39,9 +39,7 @@ public static class Project
     {
         if (Directory.Exists("/data/static"))
         {
-            var tree = ResourceTree.FromDirectory("/data/static");
-            
-            var handler = Assets.From(tree)
+            var handler = Assets.From("/data/static")
                                 .AllowPrecompressed(new BrotliAlgorithm());
 
             app.Add("static", handler);
