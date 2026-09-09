@@ -8,6 +8,7 @@ using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
 using genhttp.Infrastructure;
+using GenHTTP.Modules.Compression.Algorithms;
 using genhttp.Tests;
 
 namespace genhttp;
@@ -44,7 +45,7 @@ public static class Project
 
         if (Directory.Exists(staticDir))
         {
-            app.Add("static", Assets.From(staticDir));
+            app.Add("static", Assets.From(staticDir).AllowPrecompressed(new BrotliAlgorithm()));
         }
 
         return app;
