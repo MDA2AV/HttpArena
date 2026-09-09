@@ -1,8 +1,8 @@
 {
-  "framework": "libioma",
+  "framework": "libioxd",
   "results": {
     "baseline-4096": {
-      "framework": "libioma",
+      "framework": "libioxd",
       "language": "C",
       "rps": 4255834,
       "avg_latency": "962us",
@@ -22,7 +22,7 @@
       "status_5xx": 0
     },
     "latency-10k-1024": {
-      "framework": "libioma",
+      "framework": "libioxd",
       "language": "C",
       "rps": 9983,
       "avg_latency": "72.9us",
@@ -46,7 +46,7 @@
       "p99_9_latency": "352.0us"
     },
     "latency-1m-1024": {
-      "framework": "libioma",
+      "framework": "libioxd",
       "language": "C",
       "rps": 997808,
       "avg_latency": "87.3us",
@@ -70,7 +70,7 @@
       "p99_9_latency": "1147.0us"
     },
     "latency-500k-8cpu-1024": {
-      "framework": "libioma",
+      "framework": "libioxd",
       "language": "C",
       "rps": 498941,
       "avg_latency": "292.6us",
@@ -94,7 +94,7 @@
       "p99_9_latency": "20008.0us"
     },
     "limited-conn-4096": {
-      "framework": "libioma",
+      "framework": "libioxd",
       "language": "C",
       "rps": 2707029,
       "avg_latency": "1.37ms",
