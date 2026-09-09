@@ -610,7 +610,7 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
-    "mode": "tuned",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -624,7 +624,7 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "kestrel",
-    "mode": "tuned",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -638,7 +638,7 @@
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "genhttp",
-    "mode": "tuned",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": true,
