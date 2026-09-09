@@ -2,6 +2,7 @@ using System.Buffers.Text;
 
 using GenHTTP.Api.Content;
 using GenHTTP.Api.Infrastructure;
+using GenHTTP.Api.Ioxide;
 using GenHTTP.Api.Protocol;
 
 using GenHTTP.Engine.Ioxide;

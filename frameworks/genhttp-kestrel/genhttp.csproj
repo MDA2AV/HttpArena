@@ -11,13 +11,13 @@
 
   <ItemGroup>
 
-    <PackageReference Include="GenHTTP.Core.Kestrel" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.24" />
+    <PackageReference Include="GenHTTP.Core.Kestrel" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0" />
 
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.12" />
 
     <PackageReference Include="Npgsql" Version="10.0.3" />
 

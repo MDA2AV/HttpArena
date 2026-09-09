@@ -1,16 +1,13 @@
-FROM mcr.microsoft.com/dotnet/sdk:11.0.100-preview.7 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src/app
 
-# GenHTTP 11.0.0-preview.24 from nuget.org, the same preview the genhttp entry builds against. The
-# ioxide engine branch (PR #887) that this entry used to clone is merged and ships in that preview.
-# The preview.7 SDK provides .NET 11 plus the Roslyn GenHTTP's MemoryView source generator needs.
 COPY genhttp.csproj ./
 RUN dotnet restore
 
 COPY . .
 RUN dotnet publish genhttp.csproj -c Release --no-self-contained -o /app
 
-FROM mcr.microsoft.com/dotnet/runtime:11.0.0-preview.7
+FROM mcr.microsoft.com/dotnet/runtime:11.0
 WORKDIR /app
 COPY --from=build /app .
 

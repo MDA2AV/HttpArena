@@ -14,19 +14,19 @@
        the same preview the genhttp entry builds against. Engine.Ioxide pins ioxide 0.13.218, which
        is what ioxide.timer below is built for. -->
   <ItemGroup>
-    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.IoxideFiles" Version="11.0.0-preview.24" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0-preview.24" />
+    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ioxide.pg" Version="0.0.17" />
+    <PackageReference Include="ioxide.pg" Version="0.13.225" />
     <!-- Ring-native timeouts for /delay: the wait completes on the reactor, not the thread pool. -->
-    <PackageReference Include="ioxide.timer" Version="0.13.218" />
+    <PackageReference Include="ioxide.timer" Version="0.13.225" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 

@@ -5,7 +5,6 @@ using GenHTTP.Modules.IO;
 using GenHTTP.Modules.Files;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
-using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
@@ -27,7 +26,6 @@ public static class Project
                         .AddService<Baseline>("baseline2")
                         .AddService<Echo>("echo")
                         .AddService<Json>("json")
-                        // The async profile: /delay/{ms} holds the request without holding a thread.
                         .AddService<Delay>("delay")
                         .AddService<AsyncDatabase>("async-db")
                         .Add("crud", crud)

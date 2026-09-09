@@ -2,7 +2,7 @@
   "display_name": "genhttp-ioxide",
   "language": "C#",
   "type": "emerging",
-  "mode": "tuned",
+  "mode": "standard",
   "completeness": {
     "routing": true,
     "middleware": true,
@@ -17,7 +17,8 @@
     "baseline",
     "async",
     "latency-1m",
-    "latency-10k", "latency-500k-8cpu",
+    "latency-10k", 
+    "latency-500k-8cpu",
     "pipelined",
     "limited-conn",
     "json-comp",

@@ -1,8 +1,7 @@
 using GenHTTP.Api.Content;
 
 using GenHTTP.Modules.IO;
-using GenHTTP.Modules.IoxideFiles;
-using GenHTTP.Modules.Compression;
+using GenHTTP.Modules.Files;
 using GenHTTP.Modules.Layouting;
 using GenHTTP.Modules.Layouting.Provider;
 using GenHTTP.Modules.Webservices;
@@ -23,7 +22,6 @@ public static class Project
                         .AddService<Baseline>("baseline2")
                         .AddService<Echo>("echo")
                         .AddService<Json>("json")
-                        // The async profile: /delay/{ms} holds the request without holding a thread.
                         .Add("delay", new DelayBuilder());
 
         // async-db and crud require a configured Postgres (DATABASE_URL).
@@ -36,9 +34,8 @@ public static class Project
                      .Add("crud", crud);
         }
 
-        return app
-            .AddStaticFiles()
-            .AddWebsocket();
+        return app.AddStaticFiles()
+                  .AddWebsocket();
     }
 
     private static LayoutBuilder AddStaticFiles(this LayoutBuilder app)
@@ -47,19 +44,17 @@ public static class Project
 
         if (Directory.Exists(staticDir))
         {
-            // Bodies read positionally off the ring, with the descriptors kept in a per-reactor
-            // snapshot - the point of the engine, and the reason this entry exists.
-            app.Add("static", IoxideFiles.From(staticDir));
+            app.Add("static", Assets.From(staticDir));
         }
 
         return app;
     }
-    
+
     private static LayoutBuilder AddWebsocket(this LayoutBuilder app)
     {
         var websocket = Websocket.Imperative()
-            .DoNotAllocateFrameData()
-            .Handler(new EchoHandler());
+                                 .DoNotAllocateFrameData()
+                                 .Handler(new EchoHandler());
 
         return app.Add("ws", websocket);
     }
