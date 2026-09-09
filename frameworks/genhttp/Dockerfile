@@ -7,7 +7,7 @@ RUN dotnet restore
 COPY . .
 RUN dotnet publish -c Release --no-self-contained -o /app
 
-FROM mcr.microsoft.com/dotnet/runtime:11.0.0-preview.7
+FROM mcr.microsoft.com/dotnet/runtime:11.0
 WORKDIR /app
 COPY --from=build /app .
 
