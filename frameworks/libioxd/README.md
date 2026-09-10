@@ -21,9 +21,11 @@ linear code with no state machine. Manual: https://mda2av.github.io/libioxd/
 - **JSON:** the dataset is parsed once at startup with [cJSON](https://github.com/DaveGamble/cJSON);
   each reply is serialized by the library's forward-only JSON writer straight into the reply slab.
 - **Timer:** `/delay` waits on the ring's own timeout (`IORING_OP_TIMEOUT`), one entry per request.
-- **Static files:** opened, sized and read from disk on every request - nothing is cached, so a
-  file replaced on disk is served at once. A `.br` or `.gz` twin beside the file is served when
-  `Accept-Encoding` takes the coding, with the base type and the matching `Content-Encoding`.
+- **Static files:** the library's static module (`ioxd_static`): what a worker served it keeps in
+  memory and checks against the disk - inode, size, modification time - on every request, so a
+  file replaced on disk is served new at once. A `.br` or `.gz` twin beside the file is served
+  when `Accept-Encoding` takes the coding, with the base type and the matching `Content-Encoding`.
+  A body larger than the reply slab goes out from memory in one message behind the head.
 
 ## Build
 
