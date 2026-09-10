@@ -3,7 +3,8 @@
  *
  *   GET/POST /baseline11?a=&b=      text/plain: the sum of the query values, plus the body on POST
  *   GET      /delay/{ms}            text/plain "{ms}", after that many milliseconds on the ring
- *   GET      /json/{count}?m={m}    application/json: the first count dataset items, total = price x quantity x m
+ *   GET      /json/{count}?m={m}    application/json: the first count dataset items, total = price x quantity x m;
+ *                                   brotli or gzip when Accept-Encoding takes it (json-comp)
  *   POST     /echo                  the request body back as it came, Content-Length or chunked
  *   GET      /static/{file}         the file from /data/static; its .br or .gz twin when Accept-Encoding takes it
  *
@@ -193,7 +194,10 @@ static bool load_dataset(const char *path)
 
 /* GET /json/:count?m= - {"items":[...],"count":n}: the first count items, each with
  * total = price x quantity x m computed for this request, serialized straight into the reply
- * slab and streamed as it fills. */
+ * slab and streamed as it fills. The compression middleware on the route codes the reply with
+ * brotli or gzip when the request's Accept-Encoding takes one - at the first flush, from the
+ * slab, one call and one message for a body that fit it - and leaves a request without the
+ * header alone. */
 static void json(ioxd_ctx *ctx)
 {
     int64_t    count, m = 1;
@@ -303,6 +307,7 @@ int main(int argc, char **argv)
     const char *dataset = getenv("DATASET_PATH");
     const char *root    = getenv("STATIC_ROOT");
     load_dataset(dataset && *dataset ? dataset : "/data/dataset.json");
+    ioxd_compress_configure(&(ioxd_compress_config){ .brotli_quality = 0 });   /* the one-pass brotli: 4% more replies a second than quality 1, bodies 4% larger */
     g_files = ioxd_static_open(&(ioxd_static_config){
         .dir           = root && *root ? root : "/data/static",
         .mount         = "/static",
@@ -314,7 +319,7 @@ int main(int argc, char **argv)
     IOXD_GET ("/baseline11",   baseline11);
     IOXD_POST("/baseline11",   baseline11);
     IOXD_GET ("/delay/:ms",    delay);
-    IOXD_GET ("/json/:count",  json);
+    IOXD_GET ("/json/:count",  json, ioxd_compress);   /* coded when the client takes br or gzip: json-comp */
     IOXD_POST("/echo",         echo);
     IOXD_GET ("/static/:name", static_file);
 
