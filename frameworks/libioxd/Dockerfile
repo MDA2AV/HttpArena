@@ -9,7 +9,7 @@ WORKDIR /app
 # directly; OpenSSL does the TLS handshake and the kernel the records (kTLS). Only the handlers
 # live in this entry. Fat LTO objects for the library and -flto on the handler link, so the
 # handlers inline into the engine. cJSON parses the dataset once at startup.
-ARG LIBIOXD_VERSION=85b61bd6ccd4e3c6638a882d3d663012af23eddf
+ARG LIBIOXD_VERSION=bf7e7d68cee64e5c5338d8e0ece66ab0612abb27
 RUN mkdir -p /tmp/libioxd && \
     curl -LSs "https://github.com/MDA2AV/libioxd/archive/${LIBIOXD_VERSION}.tar.gz" \
       | tar --strip-components=1 -xz -C /tmp/libioxd && \
