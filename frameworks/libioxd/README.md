@@ -20,6 +20,9 @@ linear code with no state machine. Manual: https://mda2av.github.io/libioxd/
   kernel's (kTLS, transmit and receive), so a handler writes plaintext and the ring sends it.
 - **JSON:** the dataset is parsed once at startup with [cJSON](https://github.com/DaveGamble/cJSON);
   each reply is serialized by the library's forward-only JSON writer straight into the reply slab.
+- **Compression:** the library's `ioxd_compress` middleware on the `/json` route: brotli (quality 1)
+  or gzip by the request's `Accept-Encoding`, applied at the reply's first flush - a body that fit
+  the slab is one encoder call and one message with the exact coded length. No header, no coding.
 - **Timer:** `/delay` waits on the ring's own timeout (`IORING_OP_TIMEOUT`), one entry per request.
 - **Static files:** the library's static module (`ioxd_static`): what a worker served it keeps in
   memory and checks against the disk - inode, size, modification time - on every request, so a
@@ -46,7 +49,7 @@ The dataset is `/data/dataset.json` (`DATASET_PATH`), the static root `/data/sta
 | `/baseline11` | GET | Sums the query parameter values |
 | `/baseline11` | POST | Sums the query parameters plus the request body (Content-Length and chunked) |
 | `/delay/{ms}` | GET | Waits `ms` milliseconds on the ring, answers `ms` as `text/plain` |
-| `/json/{count}?m=N` | GET | The first `count` dataset items with `total = price × quantity × N`, as `{items, count}` |
+| `/json/{count}?m=N` | GET | The first `count` dataset items with `total = price × quantity × N`, as `{items, count}`; brotli or gzip when `Accept-Encoding` takes it |
 | `/echo` | POST | The request body back, byte for byte (`:8081`) |
 | `/static/{file}` | GET | A file from `/data/static`, or its pre-compressed twin (`:8081`) |
 
