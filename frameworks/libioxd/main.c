@@ -9,8 +9,9 @@
  *
  * Plain HTTP/1.1 on :8080; TLS 1.3 on :8081 with the pair the harness mounts (/certs/server.crt
  * and server.key, or TLS_CERT and TLS_KEY). The dataset (/data/dataset.json, or DATASET_PATH) is
- * parsed once at startup. Static files are opened, sized and read on every request: nothing is
- * cached, so a file replaced on disk is served at once.
+ * parsed once at startup. Static files are served by the library's static module: what a worker
+ * served it keeps in memory and checks against the disk (inode, size, modification time) on
+ * every request, so a file replaced on disk is served new at once.
  *
  * Every handler is linear code on a stackful coroutine: a body read, a delay or a send that has
  * to wait parks the connection on the ring, and the worker serves its other connections meanwhile.
@@ -19,16 +20,14 @@
 
 #include <cjson/cJSON.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-#define PIECE 8192                              /* the reply slab: what one ioxd_reserve may claim */
+#define PIECE 16384                             /* the reply slab: what one ioxd_reserve may claim */
 
 /* ── helpers ───────────────────────────────────────────────────────────────────────────── */
 
@@ -50,26 +49,6 @@ static void put_i64(ioxd_ctx *ctx, int64_t v)
     for (int i = 0; i < t; i++)
         out[i] = tmp[t - 1 - i];
     ioxd_advance(ctx, (size_t)t);
-}
-
-/* A query parameter's value, if the request has it. */
-static bool param(const ioxd_ctx *ctx, const char *key, ioxd_slice *out)
-{
-    for (size_t i = 0; i < ctx->req.n_params; i++)
-        if (ioxd_slice_eq(ctx->req.params[i].key, key)) {
-            *out = ctx->req.params[i].value;
-            return true;
-        }
-    return false;
-}
-
-/* A request header's value, or an empty slice. Names arrive lower-cased. */
-static ioxd_slice header(const ioxd_ctx *ctx, const char *name)
-{
-    for (size_t i = 0; i < ctx->req.n_headers; i++)
-        if (ioxd_slice_eq(ctx->req.headers[i].key, name))
-            return ctx->req.headers[i].value;
-    return (ioxd_slice){ 0 };
 }
 
 /* ── baseline, async ───────────────────────────────────────────────────────────────────── */
@@ -218,8 +197,8 @@ static bool load_dataset(const char *path)
 static void json(ioxd_ctx *ctx)
 {
     int64_t    count, m = 1;
-    ioxd_slice s;
-    if (!ioxd_to_i64(ctx->req.route_params[0].value, &count) || count < 0 || (param(ctx, "m", &s) && !ioxd_to_i64(s, &m))) {
+    ioxd_slice mult = ioxd_req_param(ctx, "m");
+    if (!ioxd_to_i64(ctx->req.route_params[0].value, &count) || count < 0 || (mult.p && !ioxd_to_i64(mult, &m))) {
         ctx->res.status = 400;
         return;
     }
@@ -269,125 +248,16 @@ static void echo(ioxd_ctx *ctx)
 
 /* ── static-tls ────────────────────────────────────────────────────────────────────────── */
 
-static const char *g_static = "/data/static";
+static ioxd_static *g_files;
 
-/* The content type from the extension, and whether a .br/.gz twin is worth looking for. */
-static const struct { const char *ext, *type; bool twins; } types[] = {
-    { ".css",   "text/css",               true  },
-    { ".js",    "application/javascript", true  },
-    { ".html",  "text/html",              true  },
-    { ".json",  "application/json",       true  },
-    { ".svg",   "image/svg+xml",          true  },
-    { ".woff2", "font/woff2",             false },
-    { ".webp",  "image/webp",             false },
-};
-
-/* Does Accept-Encoding take this coding? A list of coding[;q=...], "*" standing for any of
- * them; q=0 refuses one. */
-static bool accepts(ioxd_slice ae, const char *coding)
-{
-    size_t      clen = strlen(coding);
-    const char *p = ae.p, *end = ae.p + ae.len;
-    while (p < end) {
-        const char *tok = p;
-        while (p < end && *p != ',')
-            p++;
-        const char *tend = p;
-        if (p < end)
-            p++;
-        while (tok < tend && (*tok == ' ' || *tok == '\t'))
-            tok++;
-        const char *name_end = tok;
-        while (name_end < tend && *name_end != ';' && *name_end != ' ' && *name_end != '\t')
-            name_end++;
-        size_t nlen = (size_t)(name_end - tok);
-        if (!((nlen == clen && strncasecmp(tok, coding, clen) == 0) || (nlen == 1 && *tok == '*')))
-            continue;
-        bool refused = false;
-        for (const char *q = name_end; q + 1 < tend; q++)
-            if ((*q == 'q' || *q == 'Q') && q[1] == '=') {
-                const char *v = q + 2;
-                refused = true;
-                while (v < tend && (*v == '0' || *v == '.'))
-                    v++;
-                if (v < tend && *v >= '1' && *v <= '9')
-                    refused = false;
-                break;
-            }
-        return !refused;
-    }
-    return false;
-}
-
-/* GET /static/:name - the file, or a 404. A compressible file whose .br or .gz twin sits beside
- * it on disk goes out as that twin when the client takes the coding, with the base file's type
- * and the matching Content-Encoding. Opened, sized and read on every request: nothing is
- * cached, so a file replaced on disk is served at once. One path segment names the file, so it
- * cannot leave the directory; a hidden name is refused all the same. */
+/* GET /static/:name - the file, its .br or .gz twin when Accept-Encoding takes the coding, with
+ * the base type and the matching Content-Encoding; 404 when there is no such file. The library
+ * keeps what it served in memory and checks the file on disk before serving it again, so a
+ * replaced file is served new at once. A body larger than the reply slab goes out from where
+ * it is, in one message behind the head. */
 static void static_file(ioxd_ctx *ctx)
 {
-    char name[NAME_MAX + 1];
-    if (!ioxd_cstr(ctx->req.route_params[0].value, name, sizeof name) || name[0] == '\0' || name[0] == '.' || strchr(name, '/')) {
-        ctx->res.status = 404;
-        return;
-    }
-    const char *type  = "application/octet-stream";
-    bool        twins = false;
-    const char *dot   = strrchr(name, '.');
-    if (dot)
-        for (size_t i = 0; i < sizeof types / sizeof *types; i++)
-            if (strcmp(dot, types[i].ext) == 0) {
-                type  = types[i].type;
-                twins = types[i].twins;
-                break;
-            }
-
-    char        path[PATH_MAX];
-    int         fd       = -1;
-    const char *encoding = NULL;
-    if (twins) {
-        ioxd_slice ae = header(ctx, "accept-encoding");
-        if (accepts(ae, "br")) {
-            snprintf(path, sizeof path, "%s/%s.br", g_static, name);
-            if ((fd = open(path, O_RDONLY | O_CLOEXEC)) >= 0)
-                encoding = "br";
-        }
-        if (fd < 0 && accepts(ae, "gzip")) {
-            snprintf(path, sizeof path, "%s/%s.gz", g_static, name);
-            if ((fd = open(path, O_RDONLY | O_CLOEXEC)) >= 0)
-                encoding = "gzip";
-        }
-    }
-    if (fd < 0) {
-        snprintf(path, sizeof path, "%s/%s", g_static, name);
-        fd = open(path, O_RDONLY | O_CLOEXEC);
-    }
-    struct stat st;
-    if (fd < 0 || fstat(fd, &st) != 0 || !S_ISREG(st.st_mode)) {
-        if (fd >= 0)
-            close(fd);
-        ctx->res.status = 404;
-        return;
-    }
-
-    ctx->res.content_type = (ioxd_slice){ type, strlen(type) };
-    if (encoding)
-        ioxd_header(ctx, "content-encoding", encoding);
-    if (twins)
-        ioxd_header(ctx, "vary", "accept-encoding");
-    ioxd_content_length(ctx, (size_t)st.st_size);   /* Content-Length framing, whatever the size */
-    for (off_t left = st.st_size; left > 0;) {
-        size_t piece = left < PIECE ? (size_t)left : PIECE;
-        char  *at    = ioxd_reserve(ctx, piece);     /* room in the slab, flushed first when full */
-        if (!at)
-            break;                                   /* the peer is gone */
-        ssize_t n = read(fd, at, piece);
-        if (n <= 0)
-            break;                                   /* short of the declared length: the engine closes */
-        ioxd_advance(ctx, (size_t)n);
-        left -= n;
-    }
-    close(fd);
+    ioxd_static_serve(ctx, g_files);
 }
 
 /* ── TLS ───────────────────────────────────────────────────────────────────────────────── */
@@ -432,9 +302,14 @@ int main(int argc, char **argv)
     int         workers = argc > 1 ? atoi(argv[1]) : 0;   /* 0: one worker per CPU in the affinity mask */
     const char *dataset = getenv("DATASET_PATH");
     const char *root    = getenv("STATIC_ROOT");
-    if (root && *root)
-        g_static = root;
     load_dataset(dataset && *dataset ? dataset : "/data/dataset.json");
+    g_files = ioxd_static_open(&(ioxd_static_config){
+        .dir           = root && *root ? root : "/data/static",
+        .mount         = "/static",
+        .precompressed = true,                       /* the .br and .gz twins on disk, by Accept-Encoding */
+    });
+    if (!g_files)
+        return 1;                                    /* the reason is on stderr */
 
     IOXD_GET ("/baseline11",   baseline11);
     IOXD_POST("/baseline11",   baseline11);
