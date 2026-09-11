@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::net::SocketAddr;
 
 use socket2::{Domain, Protocol, Socket, Type};
@@ -61,6 +60,12 @@ struct JsonParams {
     m: Option<i64>,
 }
 
+#[derive(Deserialize)]
+struct BaselineQuery {
+    a: Option<i64>,
+    b: Option<i64>,
+}
+
 fn load_dataset() -> Vec<DatasetItem> {
     let path = std::env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".to_string());
     match std::fs::read_to_string(path) {
@@ -82,12 +87,14 @@ async fn delay(Path(ms): Path<u64>) -> String {
     ms.to_string()
 }
 
-async fn baseline11(Query(params): Query<HashMap<String, String>>, body: String) -> String {
-    let mut sum: i64 = params
-        .values()
-        .filter_map(|value| value.parse::<i64>().ok())
-        .sum();
-    if let Ok(n) = body.trim().parse::<i64>() {
+async fn baseline11_get(Query(q): Query<BaselineQuery>) -> String {
+    let sum = q.a.unwrap_or(0) + q.b.unwrap_or(0);
+    sum.to_string()
+}
+
+async fn baseline11_post(Query(q): Query<BaselineQuery>, body: Bytes) -> String {
+    let mut sum = q.a.unwrap_or(0) + q.b.unwrap_or(0);
+    if let Ok(n) = serde_json::from_slice::<i64>(&body) {
         sum += n;
     }
     sum.to_string()
@@ -149,7 +156,7 @@ async fn main() {
     let app = Router::new()
         .route("/pipeline", get(pipeline))
         .route("/delay/{ms}", get(delay))
-        .route("/baseline11", get(baseline11).post(baseline11))
+        .route("/baseline11", get(baseline11_get).post(baseline11_post))
         .route("/json/{count}", get(json_items))
         .route("/echo", post(echo_body))
         .layer(CompressionLayer::new())
