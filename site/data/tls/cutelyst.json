@@ -1,0 +1,5 @@
+{
+  "framework": "cutelyst",
+  "tls": "pass",
+  "check": "none"
+}

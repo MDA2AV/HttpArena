@@ -1,0 +1,28 @@
+{
+  "display_name": "cutelyst",
+  "language": "C++",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "Cutelyst::Server",
+  "description": "Cutelyst on Cutelyst::Server with one thread per core. Catalyst-style controllers and routing, QJsonDocument serialization, async delays via ASync and QTimer.",
+  "repo": "https://github.com/cutelyst/cutelyst",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-tls",
+    "8gbit"
+  ],
+  "maintainers": ["dantti"]
+}
