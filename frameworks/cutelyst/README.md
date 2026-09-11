@@ -5,7 +5,7 @@ Cutelyst on Cutelyst::Server, one worker thread per core.
 ## Stack
 
 - **Language:** C++23
-- **Framework:** Cutelyst 5.1 (Qt 6), built from `v5.1.0` plus `cutelyst-http-chunked.patch`
+- **Framework:** Cutelyst (Qt 6), built from upstream commit `5ec5ce95` (chunked request body support on top of 5.1)
 - **Build:** CMake on Ubuntu 26.04
 
 ## Endpoints
@@ -24,5 +24,4 @@ Cutelyst on Cutelyst::Server, one worker thread per core.
 - Routing through Cutelyst controllers (`:Local` / `:AutoArgs`)
 - JSON through `Response::setJsonObjectBody` (`QJsonDocument`)
 - TLS on `:8081` when `/certs/server.crt` and `/certs/server.key` are mounted
-- The entry patches Cutelyst's HTTP/1.1 parser for chunked request bodies and TCP-fragmented CRLF (needed for `baseline` / `8gbit` validation); intended upstream for Cutelyst
 - `json-comp` is not subscribed yet: Cutelyst has no built-in dynamic response gzip/brotli middleware under standard rules

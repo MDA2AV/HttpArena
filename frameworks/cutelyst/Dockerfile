@@ -2,6 +2,9 @@ FROM ubuntu:26.04 AS cutelyst-build
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Chunked request bodies + TCP-fragmented CRLF (HttpArena baseline / 8gbit).
+ARG CUTELYST_REF=5ec5ce95d80a87b38ea45a326945bb22e515a23a
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         cmake \
@@ -15,9 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN git clone --depth 1 --branch v5.1.0 https://github.com/cutelyst/cutelyst.git
-COPY cutelyst-http-chunked.patch /tmp/cutelyst-http-chunked.patch
-RUN cd cutelyst && git apply /tmp/cutelyst-http-chunked.patch \
+RUN git init cutelyst \
+    && cd cutelyst \
+    && git remote add origin https://github.com/cutelyst/cutelyst.git \
+    && git fetch --depth 1 origin "${CUTELYST_REF}" \
+    && git checkout FETCH_HEAD \
     && cmake -GNinja -B build -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
         -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF \
@@ -48,7 +53,7 @@ FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install the released package for shared runtime deps, then overlay patched libs.
+# Install the released package for shared runtime deps, then overlay libs from CUTELYST_REF.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         wget \
