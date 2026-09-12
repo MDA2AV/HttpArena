@@ -311,6 +311,20 @@
       "response": true
     }
   },
+  "cutelyst": {
+    "dir": "cutelyst",
+    "description": "Cutelyst on Cutelyst::Server with one thread per core. Catalyst-style controllers and routing, QJsonDocument serialization, async delays via ASync and QTimer.",
+    "repo": "https://github.com/cutelyst/cutelyst",
+    "type": "flagship",
+    "engine": "Cutelyst::Server",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "dart-io": {
     "dir": "dart-io",
     "description": "Stock Dart HttpServer baseline in the same SDK lineage as dart-zig, with optional JIT/AOT runtime mode via DART_IO_MODE for direct PR comparisons.",
