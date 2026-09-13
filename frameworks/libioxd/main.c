@@ -307,6 +307,7 @@ int main(int argc, char **argv)
     const char *dataset = getenv("DATASET_PATH");
     const char *root    = getenv("STATIC_ROOT");
     load_dataset(dataset && *dataset ? dataset : "/data/dataset.json");
+    ioxd_configure(&(ioxd_config){ .recv_buffers = 512 });   /* 8 MB of receive buffers a worker instead of 16: a body of 10 KB still arrives in one delivery, and 512 still covers a worker's share of the 16384-connection profiles (256) without parking a recv on -ENOBUFS */
     ioxd_compress_configure(&(ioxd_compress_config){ .brotli_quality = 0 });   /* the one-pass brotli: 4% more replies a second than quality 1, bodies 4% larger */
     g_files = ioxd_static_open(&(ioxd_static_config){
         .dir           = root && *root ? root : "/data/static",
