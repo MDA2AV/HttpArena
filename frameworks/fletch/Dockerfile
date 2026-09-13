@@ -1,5 +1,5 @@
 # Stage 1 — AOT compile the Dart server + build SO_REUSEPORT shim
-FROM dart:stable AS build
+FROM dart:3.12 AS build
 
 WORKDIR /app
 COPY pubspec.yaml ./

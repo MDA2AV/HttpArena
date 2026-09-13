@@ -14,6 +14,24 @@ frameworks/
     ... (source files)
 ```
 
+## Pin your base images
+
+A benchmark is only meaningful if it can be re-run, so every `FROM` must name a version. `latest`, `stable`, `nightly` or no tag at all mean two runs months apart measure different software, and the numbers stop being comparable.
+
+```dockerfile
+FROM node:22                  # good - major
+FROM python:3.13-slim         # good - major.minor
+FROM debian:trixie-slim       # good - a Debian release is a version
+FROM rust:1.83 AS build       # good
+FROM gcr.io/distroless/base-debian12@sha256:…   # good - digest, for images with no version tags
+
+FROM node:latest              # rejected
+FROM python                   # rejected (same as :latest)
+FROM debian:stable-slim       # rejected - "stable" moves with each Debian release
+```
+
+`scripts/validate.sh` enforces this, so a floating tag fails the PR check before a build is spent on it. Patch versions are not required - `3.13` is fine, `3.13.1` is also fine.
+
 ## Dockerfile
 
 The Dockerfile should build and run your server. Containers are started with `--network host`, so bind to:

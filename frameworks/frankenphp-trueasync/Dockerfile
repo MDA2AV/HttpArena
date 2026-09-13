@@ -1,4 +1,4 @@
-FROM trueasync/php-true-async:latest-frankenphp
+FROM trueasync/php-true-async:0.8.4-php8.6-frankenphp
 
 # The frankenphp binary in this image links libwebp, but the image does not
 # carry it -- it exits at startup with "error while loading shared libraries:

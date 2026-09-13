@@ -1,4 +1,4 @@
-FROM debian:stable-slim AS build
+FROM debian:trixie-slim AS build
 
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends \
@@ -28,7 +28,7 @@ COPY . .
 # per-request allocation. Boehm keeps memory bounded; c0624b2's codegen wins still apply.
 RUN v -prod . -o server
 
-FROM debian:stable-slim
+FROM debian:trixie-slim
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends libpq5 && \
     rm -rf /var/lib/apt/lists/*
