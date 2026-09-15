@@ -1,0 +1,11 @@
+ioxd_certs: /tmp/libioxd-certs/default/key.pem: mode 644, readable past its owner
+ioxd_certs: 1 host from /tmp/libioxd-certs
+ioxd: 8 workers on :8080 :8081/tls
+[w4] listening on :8080 :8081/tls (cpu 4, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w2] listening on :8080 :8081/tls (cpu 2, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w0] listening on :8080 :8081/tls (cpu 0, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w1] listening on :8080 :8081/tls (cpu 1, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w6] listening on :8080 :8081/tls (cpu 6, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w7] listening on :8080 :8081/tls (cpu 7, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w5] listening on :8080 :8081/tls (cpu 5, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
+[w3] listening on :8080 :8081/tls (cpu 3, 1024 x 16384 B recv buffers, ring 8192, no sqarray, registered ring, fixed files)
