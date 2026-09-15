@@ -1,0 +1,17 @@
+{
+  "display_name": "agoo",
+  "language": "Ruby",
+  "type": "engine",
+  "engine": "agoo",
+  "description": "A High Performance HTTP Server for Ruby",
+  "repo": "https://github.com/ohler55/agoo",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "latency-1m",
+    "latency-10k",
+    "pipelined",
+    "limited-conn"
+  ],
+  "maintainers": ["p8"]
+}
