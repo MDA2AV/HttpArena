@@ -1,5 +1,5 @@
 {
-  "display_name": "ktor-ghost",
+  "display_name": "ktor-tuned",
   "language": "Kotlin",
   "type": "flagship",
   "mode": "tuned",
@@ -10,12 +10,13 @@
     "response": true
   },
   "engine": "netty",
-  "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, Ghost Serializer, JDK 21.",
+  "description": "JetBrains Ktor 3.x on Netty with Ghost Serializer, JDK 25.",
   "repo": "https://github.com/ktorio/ktor",
   "enabled": true,
   "tests": [
     "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
     "limited-conn",
+    "async",
     "pipelined",
     "json-comp",
     "json-tls",
@@ -26,6 +27,8 @@
     "static-h2",
     "baseline-h2c",
     "json-h2c",
+    "baseline-h3",
+    "static-h3",
     "echo-ws",
     "echo-ws-pipeline"],
   "maintainers": [

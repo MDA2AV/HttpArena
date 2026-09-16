@@ -35,21 +35,34 @@ import org.jetbrains.exposed.v1.jdbc.upsert
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 fun main() {
     Ghost.prewarm()
-    println("Ktor HttpArena server starting on :8080 (HTTP/1.1) and :8443 (HTTPS/HTTP+2)")
+    println("Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (H2C), :8443 (HTTPS/HTTP2/HTTP3)")
     val deps = ArenaApplicationDepsFactory.load()
     val environment = applicationEnvironment {}
 
+    @OptIn(ExperimentalKtorApi::class)
     val server = embeddedServer(Netty, environment, {
-        enableHttp2 = true
+        shareWorkGroup = true
+        enableH2c = true
 
+        // HTTP/1.1
         connector {
             port = 8080
             host = "0.0.0.0"
         }
+        // h2c
+        connector {
+            port = 8082
+            host = "0.0.0.0"
+        }
         deps.keyStore?.let { keyStore ->
+            enableHttp2 = true
+            enableHttp3()
+
+            // JSON + TLS
             sslConnector(
                 keyStore = keyStore,
                 keyAlias = KEY_ALIAS,
@@ -59,6 +72,7 @@ fun main() {
                 port = 8081
                 host = "0.0.0.0"
             }
+            // HTTP/2 HTTP/3
             sslConnector(
                 keyStore = keyStore,
                 keyAlias = KEY_ALIAS,
@@ -72,31 +86,6 @@ fun main() {
     }) {
         mainModule(deps)
     }
-
-    // Spin up a second server for H2C
-    embeddedServer(Netty, environment, {
-        enableH2c = true
-
-        connector {
-            port = 8082
-            host = "0.0.0.0"
-        }
-    }) {
-        // Reject any non-HTTP/2 request hitting the H2C connector
-        intercept(ApplicationCallPipeline.Plugins) {
-            val version = call.request.httpVersion
-            if (!version.startsWith("HTTP/2")) {
-                call.response.headers.append(HttpHeaders.Upgrade, "h2c")
-                call.response.headers.append(HttpHeaders.Connection, "Upgrade")
-                call.respond(HttpStatusCode.UpgradeRequired, "HTTP/2 (h2c) required")
-                finish()
-                return@intercept
-            }
-        }
-        // Import the same endpoints for this server
-        mainModule(deps)
-
-    }.start(wait = false)
 
     server.start(wait = true)
 }
@@ -137,6 +126,18 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
          */
         get("/pipeline") {
             call.respond(pipelineResponse)
+        }
+
+        /**
+         * Async delay
+         * https://www.http-arena.com/docs/test-profiles/h1/isolated/async/
+         */
+        get("/delay/{ms}") {
+            val ms = call.parameters["ms"]!!.toLong()
+            // delay() suspends the coroutine rather than parking the thread it runs on, so the
+            // waits in flight are bounded by memory and not by the size of the event-loop group.
+            if (ms > 0) delay(ms)
+            call.respondNumber(ms)
         }
 
         /**
@@ -199,13 +200,15 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                 if (count < 0) count = 0
                 if (count > appData.dataset.size) count = appData.dataset.size
                 val m = call.request.queryParameters["m"]?.toIntOrNull() ?: 1
-                val processed = appData.dataset.take(count).map { d ->
-                    ProcessedItem(
-                        id = d.id, name = d.name, category = d.category,
-                        price = d.price, quantity = d.quantity, active = d.active,
-                        tags = d.tags, rating = d.rating,
-                        total = d.price.toLong() * d.quantity * m
-                    )
+                val processed = buildList(count) {
+                    for (i in 0..<count) {
+                        add(appData.dataset[i].let { d -> ProcessedItem(
+                            id = d.id, name = d.name, category = d.category,
+                            price = d.price, quantity = d.quantity, active = d.active,
+                            tags = d.tags, rating = d.rating,
+                            total = d.price.toLong() * d.quantity * m
+                        )})
+                    }
                 }
                 call.respondGhost(JsonResponse(items = processed, count = count))
             }
@@ -254,7 +257,7 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
          * Static files
          * https://www.http-arena.com/docs/test-profiles/h1/isolated/static/
          */
-        staticFiles("/static", File("/data/static")) {
+        staticFiles("/static", dir = File("/data/static"), index = null) {
             preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP)
         }
 
@@ -312,6 +315,16 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
                     }
                 }
             }
+        }
+
+        /**
+         * Async Delay benchmark.  Measures what a framework does with a request it cannot answer yet.
+         * https://www.http-arena.com/docs/test-profiles/h1/isolated/async/implementation/
+         */
+        get("/delay/{ms}") {
+            val delayParam = call.parameters["ms"] ?: "0"
+            delay(delayParam.toLong().milliseconds)
+            call.respond(TextContent(delayParam, ContentType.Text.Plain))
         }
 
     }

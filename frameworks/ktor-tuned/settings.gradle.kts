@@ -10,8 +10,8 @@ dependencyResolutionManagement {
         mavenCentral()
     }
     versionCatalogs {
-        create("ktorLibs").from("io.ktor:ktor-version-catalog:3.5.0")
+        create("ktorLibs").from("io.ktor:ktor-version-catalog:3.6.0")
     }
 }
 
-rootProject.name = "ktor-ghost-httparena"
+rootProject.name = "ktor-tuned-httparena"

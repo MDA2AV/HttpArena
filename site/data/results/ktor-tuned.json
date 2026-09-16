@@ -1,8 +1,8 @@
 {
-  "framework": "ktor-ghost",
+  "framework": "ktor-tuned",
   "results": {
     "8gbit-512": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 49249,
       "avg_latency": "195.9us",
@@ -27,7 +27,7 @@
       "p99_9_latency": "17000.0us"
     },
     "async-32000": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 224114,
       "avg_latency": "141.02ms",
@@ -47,7 +47,7 @@
       "status_5xx": 0
     },
     "async-db-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 113590,
       "avg_latency": "8.61ms",
@@ -67,7 +67,7 @@
       "status_5xx": 0
     },
     "baseline-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 838039,
       "avg_latency": "4.90ms",
@@ -87,7 +87,7 @@
       "status_5xx": 0
     },
     "baseline-h2-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 495732,
       "avg_latency": "193.95ms",
@@ -106,7 +106,7 @@
       "status_5xx": 0
     },
     "baseline-h2-256": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 515664,
       "avg_latency": "46.06ms",
@@ -125,7 +125,7 @@
       "status_5xx": 0
     },
     "baseline-h2c-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 362388,
       "avg_latency": "291.47ms",
@@ -144,7 +144,7 @@
       "status_5xx": 0
     },
     "baseline-h2c-256": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 391103,
       "avg_latency": "54.35ms",
@@ -163,7 +163,7 @@
       "status_5xx": 0
     },
     "baseline-h2c-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 392445,
       "avg_latency": "868.48ms",
@@ -182,7 +182,7 @@
       "status_5xx": 0
     },
     "echo-ws-16384": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 676216,
       "avg_latency": "23.65ms",
@@ -201,7 +201,7 @@
       "status_5xx": 0
     },
     "echo-ws-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 973072,
       "avg_latency": "4.16ms",
@@ -220,7 +220,7 @@
       "status_5xx": 0
     },
     "echo-ws-512": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 1021563,
       "avg_latency": "500us",
@@ -239,7 +239,7 @@
       "status_5xx": 0
     },
     "echo-ws-pipeline-16384": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 8286836,
       "avg_latency": "30.72ms",
@@ -258,7 +258,7 @@
       "status_5xx": 0
     },
     "echo-ws-pipeline-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 11090871,
       "avg_latency": "5.89ms",
@@ -277,7 +277,7 @@
       "status_5xx": 0
     },
     "echo-ws-pipeline-512": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 11253401,
       "avg_latency": "727us",
@@ -296,7 +296,7 @@
       "status_5xx": 0
     },
     "fortunes-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 49991,
       "avg_latency": "19.90ms",
@@ -315,7 +315,7 @@
       "status_5xx": 0
     },
     "json-comp-16384": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 218199,
       "avg_latency": "74.08ms",
@@ -335,7 +335,7 @@
       "status_5xx": 0
     },
     "json-comp-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 217405,
       "avg_latency": "18.85ms",
@@ -355,7 +355,7 @@
       "status_5xx": 0
     },
     "json-h2c-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 424461,
       "avg_latency": "71.66ms",
@@ -374,7 +374,7 @@
       "status_5xx": 0
     },
     "json-h2c-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 389919,
       "avg_latency": "304.94ms",
@@ -393,7 +393,7 @@
       "status_5xx": 0
     },
     "json-tls-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 607943,
       "avg_latency": "8.03ms",
@@ -412,7 +412,7 @@
       "status_5xx": 0
     },
     "latency-10k-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 9981,
       "avg_latency": "138.8us",
@@ -436,7 +436,7 @@
       "p99_9_latency": "4642.0us"
     },
     "latency-1m-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 866759,
       "avg_latency": "1709795.5us",
@@ -460,7 +460,7 @@
       "p99_9_latency": "3212288.0us"
     },
     "latency-500k-8cpu-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 205267,
       "avg_latency": "5921873.3us",
@@ -484,7 +484,7 @@
       "p99_9_latency": "11743232.0us"
     },
     "limited-conn-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 655894,
       "avg_latency": "6.20ms",
@@ -504,7 +504,7 @@
       "status_5xx": 0
     },
     "pipelined-4096": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 654297,
       "avg_latency": "99.47ms",
@@ -523,7 +523,7 @@
       "status_5xx": 0
     },
     "static-h2-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 184792,
       "avg_latency": "170.18ms",
@@ -542,7 +542,7 @@
       "status_5xx": 0
     },
     "static-h2-256": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 196780,
       "avg_latency": "40.90ms",
@@ -561,7 +561,7 @@
       "status_5xx": 0
     },
     "static-tls-1024": {
-      "framework": "ktor-ghost",
+      "framework": "ktor-tuned",
       "language": "Kotlin",
       "rps": 191799,
       "avg_latency": "8.84ms",
