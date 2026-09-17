@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    alias(ktorLibs.plugins.ktor)
+    alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.ksp)
 }
 
@@ -45,5 +45,5 @@ ktor {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
