@@ -977,9 +977,9 @@
       "response": true
     }
   },
-  "ktor-ghost": {
-    "dir": "ktor-ghost",
-    "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, Ghost Serializer, JDK 21.",
+  "ktor-tuned": {
+    "dir": "ktor-tuned",
+    "description": "JetBrains Ktor 3.x on Netty with Ghost Serializer, JDK 25.",
     "repo": "https://github.com/ktorio/ktor",
     "type": "flagship",
     "engine": "netty",
@@ -993,7 +993,7 @@
   },
   "ktor": {
     "dir": "ktor",
-    "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
+    "description": "JetBrains Ktor 3.x on Netty with kotlinx.serialization, JDK 25.",
     "repo": "https://github.com/ktorio/ktor",
     "type": "flagship",
     "engine": "netty",
