@@ -93,3 +93,10 @@ server:
           validate-request-headers: false
           validate-response-headers: false
           validate-path: false
+  features:
+    static-content:
+      sockets: ["@default", "h1-tls", "h2-tls"]
+      pre-compressed-enabled: true
+      path:
+        - context: "/static"
+          location: "${data.dir}/static"
