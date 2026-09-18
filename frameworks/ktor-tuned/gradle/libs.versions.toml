@@ -1,14 +1,16 @@
 [versions]
-exposed = "1.2.0"
-kotlin = "2.3.21"
+exposed = "1.5.0"
+kotlin = "2.4.20"
+ghost = "1.3.1"
 
 [libraries]
-logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.15" }
-netty-native-epoll = { module = "io.netty:netty-transport-native-epoll", version = "4.2.14.Final" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.38" }
+netty-native-epoll = { module = "io.netty:netty-transport-native-epoll", version = "4.2.16.Final" }
+netty-native-openssl = { module = "io.netty:netty-tcnative-boringssl-static", version = "2.0.81.Final" }
 
 # Ghost Serializer
-ghost-serialization = { module = "com.ghostserializer:ghost-serialization", version = "1.2.2" }
-ghost-compiler = { module = "com.ghostserializer:ghost-compiler", version = "1.2.2" }
+ghost-serialization = { module = "com.ghostserializer:ghost-serialization", version.ref = "ghost" }
+ghost-compiler = { module = "com.ghostserializer:ghost-compiler", version.ref = "ghost" }
 
 # Database
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
@@ -18,6 +20,7 @@ postgresql = { module = "org.postgresql:postgresql", version = "42.7.4" }
 hikaricp = { module = "com.zaxxer:HikariCP", version = "6.2.1" }
 
 [plugins]
+ktor = { id = "io.ktor.plugin", version = "3.5.2" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version = "2.3.9" }

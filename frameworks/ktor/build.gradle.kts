@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
-    alias(ktorLibs.plugins.ktor)
+    alias(libs.plugins.ktor)
 }
 
 group = "com.httparena"
@@ -27,7 +27,8 @@ dependencies {
     implementation(libs.logback.classic)
     implementation(libs.postgresql)
     implementation(libs.hikaricp)
-    runtimeOnly(libs.netty.native.epoll)
+    runtimeOnly(variantOf(libs.netty.native.epoll) { classifier("linux-aarch_64") })
+    runtimeOnly(variantOf(libs.netty.native.openssl) { classifier("linux-aarch_64") })
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
@@ -40,5 +41,5 @@ ktor {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
