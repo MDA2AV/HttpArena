@@ -1,7 +1,6 @@
 # HttpArena
 
 [![Discord](https://discordapp.com/api/guilds/1177529388229734410/widget.png?style=shield)](https://discord.com/invite/H84B5ZqDXR)
-<a href="https://www.anthropic.com"><img src="https://img.shields.io/badge/Sponsored%20by-Anthropic-D97757?logo=anthropic&logoColor=white" alt="Sponsored by Anthropic" /></a>
 
 ## Hardware Upgrade
 Hi, thank you for visiting or contributing to our project, we are always looking to improve this benchmark platform, if you wish to help us by sponsoring or donating, all the money is invested into infrastructure costs, we are currently aiming for hardware upgrades that would substantially improve our benchmarks.
