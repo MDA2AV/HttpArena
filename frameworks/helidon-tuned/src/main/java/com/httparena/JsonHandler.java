@@ -1,8 +1,8 @@
 package com.httparena;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,7 +49,7 @@ class JsonHandler implements Handler {
         List<TotalItem> totalItems = jsonDataset.subList(0, count).stream()
                 .map(item -> TotalItem.create(item, multiplier))
                 .toList();
-        byte[] responseBody = JSON_BINDING.serializeToBytes(new TotalItems(totalItems, totalItems.size()));
+        TotalItems responseBody = new TotalItems(totalItems, totalItems.size());
         String acceptEncoding = req.headers()
                 .first(HeaderNames.ACCEPT_ENCODING)
                 .orElse("")
@@ -60,7 +60,7 @@ class JsonHandler implements Handler {
             res.send(gzip(responseBody));
             return;
         }
-        res.send(responseBody);
+        res.send(JSON_BINDING.serializeToBytes(responseBody));
     }
 
     private static List<Item> loadJsonDataset(String dataLocation) throws IOException {
@@ -77,11 +77,11 @@ class JsonHandler implements Handler {
         return JSON_BINDING.deserialize(Files.readAllBytes(datasetPath), new GenericType<List<Item>>() { });
     }
 
-    private static byte[] gzip(byte[] bytes) {
+    private static byte[] gzip(TotalItems responseBody) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(bytes.length);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
-                gzip.write(bytes);
+                JSON_BINDING.serialize(gzip, responseBody);
             }
             return baos.toByteArray();
         } catch (IOException e) {
