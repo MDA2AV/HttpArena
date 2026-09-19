@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "níma",
-  "description": "Helidon SE 4.5.4 on Níma WebServer with Java 25, tuned socket and protocol-validation settings, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
+  "description": "Helidon SE 27.0.0 on Níma WebServer with Java 27, tuned socket and protocol-validation settings, config-based static content with precompressed sidecars, HTTP/2, gRPC, and WebSocket support.",
   "repo": "https://github.com/helidon-io/helidon",
   "enabled": true,
   "tests": [
