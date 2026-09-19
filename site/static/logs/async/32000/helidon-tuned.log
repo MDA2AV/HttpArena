@@ -1,0 +1,23 @@
+Sep 19, 2026 12:35:49 AM io.helidon.logging.jul.JulProvider doConfigureLogging
+INFO: Logging at runtime configured using defaults
+Sep 19, 2026 12:35:50 AM io.helidon.common.features.HelidonFeatures features
+INFO: Helidon SE 27.0.0 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
+Sep 19, 2026 12:35:50 AM io.helidon.common.features.HelidonFeatures features
+INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
+Sep 19, 2026 12:35:50 AM io.helidon.common.features.HelidonFeatures lambda$features$6
+INFO: 	Preview feature: GRPC (WebServer/GRPC)
+Sep 19, 2026 12:35:50 AM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x3b14d0a7] http://0.0.0.0:8080 bound for socket '@default'
+Sep 19, 2026 12:35:50 AM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x7cceb459] http://0.0.0.0:8082 bound for socket 'h2c'
+Sep 19, 2026 12:35:50 AM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x411d0add] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Sep 19, 2026 12:35:50 AM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x589ba67f] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Sep 19, 2026 12:35:50 AM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 35 milliseconds. 1091 milliseconds since JVM startup. Java 27+35-2325
+Helidon HttpArena server started on ports: 
+plain (8080)
+https (8443)
+h1tls (8081)
+h2c (8082)
