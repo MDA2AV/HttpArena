@@ -27,6 +27,7 @@ public final class Main {
 
         JsonHandler jsonHandler = new JsonHandler(dataLocation);
         BaselineHandler baselineHandler = new BaselineHandler();
+        StaticHandler staticHandler = new StaticHandler(dataLocation);
 
         // default listener routing
         builder.routing(httpRouting -> httpRouting
@@ -35,6 +36,7 @@ public final class Main {
                         .get("/delay/{ms}", new DelayHandler())
                         .get("/json/{count}", jsonHandler)
                         .get("/json", jsonHandler)
+                        .get("/static/{filename}", staticHandler)
                         .post("/baseline11", new BaselinePostHandler())
                         .post("/echo", new EchoHandler())
                         .get("/async-db", new DbHandler()))
@@ -47,11 +49,12 @@ public final class Main {
             builder.putSocket("h2-tls", socket -> socket
                     .from(h2TlsListener)
                     .routing(routing -> routing
-                            .get("/baseline2", baselineHandler))
+                            .get("/baseline2", baselineHandler)
+                            .get("/static/{filename}", staticHandler))
                     .addRouting(GrpcRouting.builder().service(grpcService)));
         }
 
-        // h1-tls routing - json-tls and 8gbit; static-tls is provided by the static-content feature.
+        // h1-tls routing - json-tls, static-tls, and 8gbit.
         // The default listener's routing does not apply to a named socket, so
         // /echo has to be registered here as well or it 404s on 8081.
         var h1TlsListener = builder.sockets().get("h1-tls");
@@ -61,6 +64,7 @@ public final class Main {
                     .routing(routing -> routing
                             .get("/json/{count}", jsonHandler)
                             .get("/json", jsonHandler)
+                            .get("/static/{filename}", staticHandler)
                             .post("/echo", new EchoHandler())));
         }
 
