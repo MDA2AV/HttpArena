@@ -12,7 +12,7 @@ import io.helidon.webserver.http.ServerResponse;
 import static io.helidon.http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN;
 
 class PipelineHandler implements Handler {
-    private static final byte[] RESPONSE = "ok".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] RESPONSE = "ok".getBytes(StandardCharsets.ISO_8859_1);
     private static final Header CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, "2");
 
     @Override
