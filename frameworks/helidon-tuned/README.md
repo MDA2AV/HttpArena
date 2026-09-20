@@ -44,9 +44,10 @@ The benchmark wiring is split by listener:
 - `8082` (`h2c`): cleartext prior-knowledge HTTP/2 for `baseline-h2c` and `json-h2c`
 - `8443` (`h2-tls`): HTTP/2 + TLS for `baseline-h2`, `static-h2`, and `unary-grpc-tls`
 
-Static content and TLS are configured from `application.yaml`. Helidon's
-static-content feature serves `/data/static` with precompressed `.br` and `.gz`
-sidecars, negotiates `Accept-Encoding`, and sets `Vary: Accept-Encoding`.
+TLS is configured from `application.yaml`. Static content is served
+programmatically from `/data/static`, reading from disk on each request while
+preferring precompressed `.br` / `.gz` variants and setting
+`Vary: Accept-Encoding`.
 
 # Tuned protocol configuration
 
