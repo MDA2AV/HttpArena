@@ -2,10 +2,12 @@ const std = @import("std");
 const zio = @import("zio");
 const http = @import("dusty");
 const json = @import("json");
+const pg = @import("pg");
 
 const flate = std.compress.flate;
 
 var dataset: ?[]const DatasetItem = null;
+var pool: ?*pg.Pool = null;
 
 const Rating = struct { score: i64, count: i64 };
 
@@ -136,6 +138,76 @@ fn jsonItems(req: *http.Request, res: *http.Response) !void {
     }
 }
 
+const DbItem = struct {
+    id: i32,
+    name: []const u8,
+    category: []const u8,
+    price: i32,
+    quantity: i32,
+    active: bool,
+    tags: []const []const u8,
+    rating: Rating,
+};
+
+const DbResponse = struct {
+    items: []const DbItem,
+    count: usize,
+};
+
+const empty_db_response = DbResponse{ .items = &.{}, .count = 0 };
+
+fn asyncDb(req: *http.Request, res: *http.Response) !void {
+    const p = pool orelse {
+        try res.header("Content-Type", "application/json");
+        var w = res.writer();
+        try json.encode(empty_db_response, &w.interface);
+        try w.end();
+        return;
+    };
+
+    const min = req.query.getInt(i32, "min") orelse 10;
+    const max = req.query.getInt(i32, "max") orelse 50;
+    const limit = std.math.clamp(req.query.getInt(i32, "limit") orelse 50, 1, 50);
+
+    var result = p.query(
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
+        .{ min, max, limit },
+    ) catch {
+        try res.header("Content-Type", "application/json");
+        var w = res.writer();
+        try json.encode(empty_db_response, &w.interface);
+        try w.end();
+        return;
+    };
+    defer result.deinit();
+
+    var items: std.ArrayListUnmanaged(DbItem) = .empty;
+    while (try result.next()) |row| {
+        const tags_json = try row.get([]const u8, 6);
+        const tags = json.decodeFromSliceLeaky([]const []const u8, req.arena, tags_json, .{}) catch &.{};
+
+        try items.append(req.arena, DbItem{
+            .id = try row.get(i32, 0),
+            .name = try row.get([]const u8, 1),
+            .category = try row.get([]const u8, 2),
+            .price = try row.get(i32, 3),
+            .quantity = try row.get(i32, 4),
+            .active = try row.get(bool, 5),
+            .tags = tags,
+            .rating = .{
+                .score = try row.get(i32, 7),
+                .count = try row.get(i32, 8),
+            },
+        });
+    }
+
+    const payload = DbResponse{ .items = items.items, .count = items.items.len };
+    try res.header("Content-Type", "application/json");
+    var w = res.writer();
+    try json.encode(payload, &w.interface);
+    try w.end();
+}
+
 fn wsEcho(req: *http.Request, res: *http.Response) !void {
     var ws = try res.upgradeWebSocket(req) orelse {
         res.status = .not_found;
@@ -164,6 +236,18 @@ pub fn main(init: std.process.Init) !void {
 
     loadDataset(init.arena.allocator(), rt.io());
 
+    if (init.environ_map.get("DATABASE_URL")) |url| {
+        const uri = std.Uri.parse(url) catch @panic("invalid DATABASE_URL");
+        const max_conn = if (init.environ_map.get("DATABASE_MAX_CONN")) |v|
+            std.fmt.parseInt(u16, v, 10) catch 256
+        else
+            256;
+        pool = pg.Pool.initUri(rt.io(), init.gpa, uri, .{
+            .size = max_conn,
+            .connect_on_init_count = 1,
+        }) catch null;
+    }
+
     var server = http.Server(void).init(init.gpa, rt.io(), .{
         .max_connections = 65_536,
     }, {});
@@ -178,6 +262,7 @@ pub fn main(init: std.process.Init) !void {
     server.router.get("/json/:count", jsonItems);
     server.router.post("/echo", echoBody);
     server.router.get("/ws", wsEcho);
+    server.router.get("/async-db", asyncDb);
 
     const addr: http.Address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8080) };
     try server.listen(addr);

@@ -19,6 +19,7 @@
     "limited-conn",
     "async",
     "json-comp",
+    "async-db",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
   "maintainers": [

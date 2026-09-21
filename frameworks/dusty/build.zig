@@ -24,6 +24,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const pg_dep = b.dependency("pg", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     const exe = b.addExecutable(.{
         .name = "dusty-arena",
         .root_module = b.createModule(.{
@@ -36,6 +41,7 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("dusty", dusty_mod);
     exe.root_module.addImport("zio", zio_mod);
     exe.root_module.addImport("json", json_dep.module("json"));
+    exe.root_module.addImport("pg", pg_dep.module("pg"));
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run the server");
