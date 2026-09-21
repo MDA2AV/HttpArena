@@ -14,7 +14,7 @@
     "pipelined",
     "async",
     "async-db",
-    "echo-ws"
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
   "maintainers": ["nevindra"]
 }
