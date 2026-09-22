@@ -1,12 +1,18 @@
 #include <aegon/http/Server.h>
 #include <aegon/http/middleware/Compress.h>
+#include <aegon/core/Task.h>
+#include <aegon/core/EventLoop.h>
 #include <glaze/glaze.hpp>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <string_view>
+#include <span>
+#include <array>
 #include <vector>
 #include <charconv>
+#include <cctype>
 #include <thread>
 #include <chrono>
 #include <filesystem>
@@ -29,61 +35,122 @@ struct DatasetItem {
     std::string category;
     int64_t price{0};
     int64_t quantity{0};
-    int64_t total{0};
     bool active{false};
     std::vector<std::string> tags;
     Rating rating;
 };
 
-struct JsonPayload {
-    int count{0};
-    std::vector<DatasetItem> items;
+// Zero-copy view into dataset item with per-request total calculation
+struct ProcessedItem {
+    int64_t id{0};
+    std::string_view name;
+    std::string_view category;
+    int64_t price{0};
+    int64_t quantity{0};
+    int64_t total{0};
+    bool active{false};
+    std::span<const std::string> tags;
+    Rating rating;
 };
 
-std::vector<DatasetItem> g_dataset;
+struct JsonPayload {
+    int count{0};
+    std::span<const ProcessedItem> items;
+};
 
-void load_dataset() {
-    const char* env = std::getenv("DATASET_PATH");
-    std::string path = env ? env : "/data/dataset.json";
-    std::ifstream file(path);
-    if (!file) {
-        std::cerr << "Warning: Could not open dataset at " << path << "\n";
+static std::vector<DatasetItem> g_dataset;
+inline thread_local std::array<ProcessedItem, 128> tls_processed_items;
+
+static void load_dataset() {
+    std::vector<std::string> paths = {
+        "/data/dataset.json",
+        "data/dataset.json",
+        "../data/dataset.json"
+    };
+
+    std::string content;
+    for (const auto& p : paths) {
+        std::ifstream f(p);
+        if (f.is_open()) {
+            std::ostringstream ss;
+            ss << f.rdbuf();
+            content = ss.str();
+            break;
+        }
+    }
+
+    if (content.empty()) {
+        std::cerr << "Warning: Could not open dataset.json" << std::endl;
         return;
     }
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    auto err = glz::read<glz::opts{.error_on_unknown_keys = false}>(g_dataset, content);
-    if (err) {
-        std::cerr << "Warning: Failed to parse dataset: " << glz::format_error(err, content) << "\n";
-    } else {
-        std::cout << "Loaded dataset with " << g_dataset.size() << " items\n";
+
+    auto ec = glz::read_json(g_dataset, content);
+    if (ec) {
+        std::cerr << "Failed to parse dataset.json: " << glz::format_error(ec, content) << std::endl;
     }
 }
 
-long long parse_long(std::string_view sv) noexcept {
-    long long val = 0;
-    if (sv.empty()) return 0;
-    std::from_chars(sv.data(), sv.data() + sv.size(), val);
-    return val;
-}
-
-long long compute_baseline_sum(const Request& req) {
-    long long sum = 0;
-    std::string_view q = req.query();
+void handle_baseline_get(Context& ctx) {
+    int64_t sum = 0;
+    std::string_view q = ctx.req().query();
     while (!q.empty()) {
         size_t amp = q.find('&');
         std::string_view pair = (amp != std::string_view::npos) ? q.substr(0, amp) : q;
         size_t eq = pair.find('=');
         if (eq != std::string_view::npos) {
-            std::string_view v = pair.substr(eq + 1);
-            sum += parse_long(v);
+            int64_t val = 0;
+            std::from_chars(pair.data() + eq + 1, pair.data() + pair.size(), val);
+            sum += val;
         }
         if (amp == std::string_view::npos) break;
         q.remove_prefix(amp + 1);
     }
-    if (req.method() == Method::POST && !req.body().empty()) {
-        sum += parse_long(req.body());
+    char buf[32];
+    auto [p, _] = std::to_chars(buf, buf + sizeof(buf), sum);
+    ctx.res().text(std::string_view(buf, p - buf));
+}
+
+void handle_baseline_post(Context& ctx) {
+    int64_t sum = 0;
+    std::string_view q = ctx.req().query();
+    while (!q.empty()) {
+        size_t amp = q.find('&');
+        std::string_view pair = (amp != std::string_view::npos) ? q.substr(0, amp) : q;
+        size_t eq = pair.find('=');
+        if (eq != std::string_view::npos) {
+            int64_t val = 0;
+            std::from_chars(pair.data() + eq + 1, pair.data() + pair.size(), val);
+            sum += val;
+        }
+        if (amp == std::string_view::npos) break;
+        q.remove_prefix(amp + 1);
     }
-    return sum;
+    std::string_view body = ctx.req().body();
+    while (!body.empty() && std::isspace(static_cast<unsigned char>(body.front()))) body.remove_prefix(1);
+    while (!body.empty() && std::isspace(static_cast<unsigned char>(body.back()))) body.remove_suffix(1);
+    if (!body.empty()) {
+        int64_t body_val = 0;
+        auto [ptr, ec] = std::from_chars(body.data(), body.data() + body.size(), body_val);
+        if (ec == std::errc()) {
+            sum += body_val;
+        }
+    }
+    char buf[32];
+    auto [p, _] = std::to_chars(buf, buf + sizeof(buf), sum);
+    ctx.res().text(std::string_view(buf, p - buf));
+}
+
+aegon::core::Task<void> handle_delay(Context& ctx) {
+    uint64_t ms = 0;
+    if (auto ms_str = ctx.req().param("ms")) {
+        std::from_chars(ms_str->data(), ms_str->data() + ms_str->size(), ms);
+    }
+    if (ms > 0) {
+        co_await aegon::core::EventLoop::current()->ring().timeout(ms * 1'000'000ULL);
+    }
+    char buf[32];
+    auto [p, _] = std::to_chars(buf, buf + sizeof(buf), ms);
+    ctx.res().text(std::string_view(buf, p - buf));
 }
 
 void register_routes(Router& router) {
@@ -93,55 +160,52 @@ void register_routes(Router& router) {
     });
 
     // 2. Baseline endpoints (HTTP/1.1)
-    router.get("/baseline11", [](Context& ctx) {
-        ctx.res().text(std::to_string(compute_baseline_sum(ctx.req())));
-    });
-    router.post("/baseline11", [](Context& ctx) {
-        ctx.res().text(std::to_string(compute_baseline_sum(ctx.req())));
-    });
+    router.get("/baseline11", handle_baseline_get);
+    router.post("/baseline11", handle_baseline_post);
 
     // 3. Baseline endpoints (HTTP/2)
-    router.get("/baseline2", [](Context& ctx) {
-        ctx.res().text(std::to_string(compute_baseline_sum(ctx.req())));
-    });
-    router.post("/baseline2", [](Context& ctx) {
-        ctx.res().text(std::to_string(compute_baseline_sum(ctx.req())));
-    });
+    router.get("/baseline2", handle_baseline_get);
+    router.post("/baseline2", handle_baseline_post);
 
-    // 4. Delay endpoint (async wait)
-    router.get("/delay/:ms", [](Context& ctx) {
-        auto ms_param = ctx.req().param("ms").value_or("0");
-        long long ms = parse_long(ms_param);
-        if (ms <= 0) {
-            ctx.res().text("0");
-            return;
+    // 4. Async delay endpoint (non-blocking io_uring timeout coroutine)
+    router.get("/delay/:ms", handle_delay);
+
+    // 5. JSON serialization & compression endpoint (zero-copy view)
+    router.get("/json/:count", {aegon::http::middleware::Compress({
+        .min_size = 64,
+        .gzip = true,
+        .deflate = true,
+        .prefer_deflate = false
+    })}, [](Context& ctx) {
+        size_t count = 0;
+        if (auto count_str = ctx.req().param("count")) {
+            std::from_chars(count_str->data(), count_str->data() + count_str->size(), count);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-        ctx.res().text(std::to_string(ms));
-    });
-
-    // 5. JSON serialization & compression endpoint
-    router.get("/json/:count", [](Context& ctx) {
-        auto count_str = ctx.req().param("count").value_or("0");
-        int count = static_cast<int>(parse_long(count_str));
-        if (count < 0) count = 0;
-        if (count > static_cast<int>(g_dataset.size())) count = static_cast<int>(g_dataset.size());
-
-        long long m = 1;
+        int64_t m = 1;
         if (auto m_str = ctx.req().query_param("m")) {
-            m = parse_long(*m_str);
+            std::from_chars(m_str->data(), m_str->data() + m_str->size(), m);
         }
 
-        JsonPayload payload;
-        payload.count = count;
-        payload.items.reserve(static_cast<size_t>(count));
-
-        for (int i = 0; i < count; ++i) {
-            DatasetItem item = g_dataset[static_cast<size_t>(i)];
-            item.total = item.price * item.quantity * m;
-            payload.items.push_back(std::move(item));
+        size_t n = std::min(count, std::min(g_dataset.size(), tls_processed_items.size()));
+        for (size_t i = 0; i < n; ++i) {
+            const auto& d = g_dataset[i];
+            tls_processed_items[i] = ProcessedItem{
+                .id = d.id,
+                .name = d.name,
+                .category = d.category,
+                .price = d.price,
+                .quantity = d.quantity,
+                .total = d.price * d.quantity * m,
+                .active = d.active,
+                .tags = std::span<const std::string>(d.tags.data(), d.tags.size()),
+                .rating = d.rating
+            };
         }
 
+        JsonPayload payload{
+            .count = static_cast<int>(n),
+            .items = std::span<const ProcessedItem>(tls_processed_items.data(), n)
+        };
         ctx.res().json(payload);
     });
 
@@ -151,7 +215,6 @@ void register_routes(Router& router) {
         ctx.res().body(std::string(ctx.req().body()));
     });
 }
-
 
 unsigned int cgroup_cpus() {
     unsigned int quota_limit = 0;
@@ -227,6 +290,8 @@ int main() {
     if (has_certs) {
         // Port 8081: TLS HTTP/1.1 (for json-tls, 8gbit)
         server8081 = std::make_unique<Server>();
+        server8081->ring_entries(8192);
+        server8081->buffer_pool_entries(16384);
         register_routes(server8081->router());
         server8081->enable_tls(certFile, keyFile);
         server8081->listen(8081);
@@ -236,6 +301,8 @@ int main() {
 
         // Port 8443: TLS HTTP/2 (for baseline-h2)
         server8443 = std::make_unique<Server>();
+        server8443->ring_entries(8192);
+        server8443->buffer_pool_entries(16384);
         register_routes(server8443->router());
         server8443->enable_tls(certFile, keyFile);
         server8443->listen(8443);
@@ -246,12 +313,8 @@ int main() {
 
     // Port 8080: HTTP/1.1 (main server)
     Server server8080;
-    server8080.use(middleware::Compress(middleware::CompressOptions{
-        .min_size = 64,
-        .gzip = true,
-        .deflate = true,
-        .prefer_deflate = false
-    }));
+    server8080.ring_entries(8192);
+    server8080.buffer_pool_entries(16384);
     register_routes(server8080.router());
     server8080.listen(8080);
     server8080.run(threads);
