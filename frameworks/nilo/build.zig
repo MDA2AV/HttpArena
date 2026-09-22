@@ -9,7 +9,11 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const nilo = b.dependency("nilo", .{ .target = target, .optimize = optimize, .sql = true });
+    // `.tls = true` is what makes the TLS listener on 8081 exist at all: the
+    // library behind it is fetched and linked only for a dependent that asks
+    // (ADR 0288), and a build without it refuses `.tls` at `listen()` rather
+    // than serving cleartext on a port the entry believed was encrypted.
+    const nilo = b.dependency("nilo", .{ .target = target, .optimize = optimize, .sql = true, .tls = true });
 
     const exe = b.addExecutable(.{
         .name = "nilo-arena",

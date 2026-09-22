@@ -4,17 +4,32 @@
   "engine": "nilo_http on zio",
   "type": "emerging",
   "mode": "standard",
-  "completeness": { "routing": true, "middleware": true, "request": true, "response": true },
-  "description": "A toolkit for Zig 0.16 whose largest module is an HTTP/1.1 server on zio fibers (io_uring, epoll, kqueue). A plain function is a route: its argument list is the routing, the typed input, the 400 for anything that does not fit, and the OpenAPI document. One allocation per request, 4,669 bytes per idle connection, and a wait parks the fiber rather than the thread. Refuses TLS, HTTP/2, templates and response compression on the record, which is why it sits out those profiles.",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "A toolkit for Zig 0.16 whose largest module is an HTTP/1.1 server on zio fibers (io_uring, epoll, kqueue). A plain function is a route: its argument list is the routing, the typed input, the 400 for anything that does not fit, and the OpenAPI document. One allocation per request, 4,669 bytes per idle connection, and a wait parks the fiber rather than the thread. Serves cleartext on 8080 and TLS 1.3 on 8081 from one process. Refuses HTTP/2, HTTP/3, gRPC and templates on the record, which is why it sits out those profiles.",
   "repo": "https://github.com/nevindra/nilo",
   "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "baseline",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
     "limited-conn",
     "pipelined",
     "async",
     "async-db",
-    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
-  "maintainers": ["nevindra"]
+  "maintainers": [
+    "nevindra"
+  ]
 }

@@ -29,12 +29,22 @@ COPY src ./src
 # Static against musl, so the runtime image needs nothing.
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
-        amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3 ;; \
-        arm64) ZIG_TARGET=aarch64-linux-musl; ZIG_CPU=baseline ;; \
+        # `+aes+pclmul` is not decoration. Zig's `x86_64_v3` level carries
+        # neither, and std.crypto's AES-256-GCM — which is what an OpenSSL
+        # client negotiates — runs at 71 MB/s a core without them against
+        # 5,133 with. Without this the TLS profiles collapse: `8gbit`
+        # delivers 39% of its offered rate at a six-second p99. Both
+        # instructions have been on every x86_64 server CPU since about
+        # 2011, unlike the AVX-512 that `x86_64_v4` would also demand.
+        amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3+aes+pclmul ;; \
+        # Same trap on the other arch: ARMv8's crypto extensions are
+        # optional, so `baseline` has no AES either. Every server-class
+        # aarch64 has them.
+        arm64) ZIG_TARGET=aarch64-linux-musl; ZIG_CPU=baseline+aes+sha2 ;; \
     esac; \
     zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}" --release=fast --summary failures
 
 FROM alpine:3.20
 COPY --from=build /server/zig-out/bin/nilo-arena /nilo-arena
-EXPOSE 8080
+EXPOSE 8080 8081
 ENTRYPOINT ["/nilo-arena"]
