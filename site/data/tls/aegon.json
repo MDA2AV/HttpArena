@@ -1,0 +1,5 @@
+{
+  "framework": "aegon",
+  "tls": "pass",
+  "check": "none"
+}
