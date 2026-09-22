@@ -10,3 +10,10 @@
 - `GET /delay/:ms`: Asynchronous non-blocking delayed response
 - `GET /json/:count`: Glaze JSON serialization with libdeflate gzip compression
 - `POST /echo`: 8Gbit verbatim binary echo over TLS
+
+## Concurrency & CPU Sizing
+
+Worker thread allocation respects container CPU constraints:
+- Evaluates cgroup v2 (`/sys/fs/cgroup/cpu.max`) and cgroup v1 CFS bandwidth quotas.
+- Evaluates CPU affinity masks (`sched_getaffinity`).
+- Falls back to hardware concurrency, guaranteeing at least one worker and avoiding thread over-subscription under restricted CPU quotas (e.g. `latency-500k-8cpu`).

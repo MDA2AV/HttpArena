@@ -11,6 +11,8 @@
 #include <chrono>
 #include <filesystem>
 #include <memory>
+#include <algorithm>
+#include <sched.h>
 
 using namespace aegon::http;
 
@@ -150,13 +152,69 @@ void register_routes(Router& router) {
     });
 }
 
+
+unsigned int cgroup_cpus() {
+    unsigned int quota_limit = 0;
+
+    // 1. cgroup v2: /sys/fs/cgroup/cpu.max contains "<quota> <period>" or "max <period>"
+    {
+        std::ifstream f("/sys/fs/cgroup/cpu.max");
+        if (f.is_open()) {
+            std::string quota, period;
+            if (f >> quota >> period && quota != "max" && !period.empty()) {
+                long long q = std::strtoll(quota.c_str(), nullptr, 10);
+                long long p = std::strtoll(period.c_str(), nullptr, 10);
+                if (p > 0 && q > 0) {
+                    quota_limit = static_cast<unsigned int>(q / p);
+                }
+            }
+        }
+    }
+
+    // 2. cgroup v1: /sys/fs/cgroup/cpu/cpu.cfs_quota_us and cpu.cfs_period_us
+    if (quota_limit == 0) {
+        std::ifstream qf("/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
+        std::ifstream pf("/sys/fs/cgroup/cpu/cpu.cfs_period_us");
+        if (qf.is_open() && pf.is_open()) {
+            long long q = -1, p = -1;
+            if (qf >> q && pf >> p && q > 0 && p > 0) {
+                quota_limit = static_cast<unsigned int>(q / p);
+            }
+        }
+    }
+
+    // 3. CPU affinity mask (e.g. taskset or container cpuset)
+    unsigned int affinity_limit = 0;
+    cpu_set_t cs;
+    CPU_ZERO(&cs);
+    if (sched_getaffinity(0, sizeof(cs), &cs) == 0) {
+        int count = CPU_COUNT(&cs);
+        if (count > 0) {
+            affinity_limit = static_cast<unsigned int>(count);
+        }
+    }
+
+    // 4. Fallback to hardware concurrency
+    unsigned int hw = std::thread::hardware_concurrency();
+    if (hw == 0) hw = 1;
+
+    unsigned int effective = hw;
+    if (affinity_limit > 0 && affinity_limit < effective) {
+        effective = affinity_limit;
+    }
+    if (quota_limit > 0 && quota_limit < effective) {
+        effective = quota_limit;
+    }
+
+    return std::max(1u, effective);
+}
+
 } // namespace
 
 int main() {
     load_dataset();
 
-    unsigned int threads = std::thread::hardware_concurrency();
-    if (threads == 0) threads = 4;
+    unsigned int threads = cgroup_cpus();
 
     const std::string certFile = "/certs/server.crt";
     const std::string keyFile = "/certs/server.key";
