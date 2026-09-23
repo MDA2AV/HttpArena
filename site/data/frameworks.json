@@ -262,6 +262,13 @@
       "response": true
     }
   },
+  "busker": {
+    "dir": "busker",
+    "description": "Busker pinned to its upstream documented source/native-shim pair: HTTP/1.1, TLS, HTTP/2, H2c, and native HTTP/3 with dynamic data.json encoding and static files. The selected public API has no WebSocket listener or upgrade surface.",
+    "repo": "https://github.com/outskirtslabs/busker",
+    "type": "engine",
+    "engine": "busker"
+  },
   "caddy": {
     "dir": "caddy",
     "description": "Caddy with custom Go handler modules compiled in via xcaddy: httparena for /baseline11 and /baseline2, httparena_json for /json/{count}, serializing the JSON body per request from the dataset read at provision time. Native file_server for /static. HTTP/1.1 on :8080, h1 over TLS on :8081, h2 and h3 on :8443.",
