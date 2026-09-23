@@ -802,6 +802,13 @@
     "type": "engine",
     "engine": "hical"
   },
+  "hirundo": {
+    "dir": "hirundo",
+    "description": "Hirundo's Helidon/Nima Ring adapter, pinned to immutable upstream source, with HTTP/1.1, TLS, HTTP/2, H2c, and WebSocket listeners. HTTP/3 is not exposed by the selected Hirundo API.",
+    "repo": "https://github.com/mpenet/hirundo",
+    "type": "engine",
+    "engine": "helidon-nima"
+  },
   "hono-bun": {
     "dir": "hono-bun",
     "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
