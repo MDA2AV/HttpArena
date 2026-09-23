@@ -390,6 +390,20 @@
       "response": true
     }
   },
+  "dusty": {
+    "dir": "dusty",
+    "description": "Dusty HTTP framework on the zio async runtime (io_uring where available, epoll fallback). Router with params/wildcards, JSON, gzip, WebSocket. Standard configuration, no tuning.",
+    "repo": "https://github.com/lalinsky/dusty",
+    "type": "emerging",
+    "engine": "zio",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "echo": {
     "dir": "echo",
     "description": "Echo v4 on the Go net/http server, default configuration. Routing and path/query binding through the Echo API, encoding/json via c.JSON, gzip through the Echo Gzip middleware.",
