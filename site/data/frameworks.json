@@ -832,17 +832,10 @@
   },
   "http-kit": {
     "dir": "http-kit",
-    "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+    "description": "Minimal http-kit engine benchmark with HTTP/1.1 and native WebSocket echo support.",
     "repo": "https://github.com/http-kit/http-kit",
-    "type": "emerging",
-    "engine": "http-kit",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "type": "engine",
+    "engine": "http-kit"
   },
   "http4k": {
     "dir": "http4k",
