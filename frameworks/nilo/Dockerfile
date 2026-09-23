@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-#
 # nilo — a toolkit for Zig 0.16 whose largest module is an HTTP server on
 # zio fibers. One static binary, built from the commit `build.zig.zon` pins.
 
