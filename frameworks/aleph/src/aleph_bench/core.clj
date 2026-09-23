@@ -1,427 +1,170 @@
 (ns aleph-bench.core
   (:require [aleph.http :as http]
             [aleph.netty :as netty]
-            [clojure.core.cache :as cache]
+            [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [hiccup2.core :as h]
             [clojure.string :as str]
-            [jj.sql.async-boa :as async-boa]
-            [jj.sql.boa.query.vertx-pg :as vertx-adapter]
-            [jj.tassu :refer [GET POST PUT route]]
-            [jsonista.core :as json]
             [manifold.deferred :as d]
-            [manifold.time :as mt]
-            [manifold.stream :as s]
-            [ring.middleware.content-type :as content-type]
-            [ring.middleware.file :as file]
-            [ring.middleware.not-modified :as not-modified])
-  (:import (io.netty.buffer ByteBuf PooledByteBufAllocator)
-           (io.netty.channel ChannelOption)
-           (io.netty.handler.codec.http HttpContentCompressor)
-           (io.vertx.core Vertx)
-           (io.vertx.pgclient PgBuilder PgConnectOptions)
-           (io.vertx.sqlclient PoolOptions)
+            [manifold.stream :as stream]
+            [manifold.time :as time])
+  (:import (io.netty.buffer ByteBuf)
            (java.io ByteArrayOutputStream)
-           (java.net InetSocketAddress URI))
+           (java.net URLDecoder)
+           (java.nio.charset StandardCharsets)
+           (java.nio.file Files LinkOption Path))
   (:gen-class))
 
-(def ^:private ^:const ct-json "application/json")
-(def ^:private ^:const ct-text "text/plain")
-(def ^:private ^:const ct-html "text/html; charset=utf-8")
-(def ^:private ^:const hdr-ct "Content-Type")
-(def ^:private ^:const hdr-server "Server")
-(def ^:private ^:const server-name "aleph")
-(def ^:private ^:const not-found-body "Not found")
-(def ^:private ^:const empty-db-body "{\"items\":[],\"count\":0}")
-(def ^:private ^:const fortunes-error-body
-  "<!DOCTYPE html><html><body>db error</body></html>")
-(def ^:private ^:const dataset-path "/data/dataset.json")
-(def ^:private ^:const dataset-large-path "/data/dataset-large.json")
-(def ^:private ^:const param-min "min")
-(def ^:private ^:const param-max "max")
-(def ^:private ^:const param-limit "limit")
-(def ^:private ^:const param-m "m")
-(def ^:private ^:const pg-prefix "postgres://")
-(def ^:private ^:const pg-replace "postgresql://")
-(def ^:private ^:const plain-port 8080)
-(def ^:private ^:const tls-port 8081)
-(def ^:private ^:const h2c-port 8082)
-(def ^:private ^:const h2-port 8443)
-(def ^:private ^:const tls-cert-default "/certs/server.crt")
-(def ^:private ^:const tls-key-default "/certs/server.key")
-
-(def ^:private json-headers {hdr-ct ct-json hdr-server server-name})
-(def ^:private text-headers {hdr-ct ct-text hdr-server server-name})
-(def ^:private html-headers {hdr-ct ct-html hdr-server server-name})
-(def ^:private crud-hit-headers {hdr-ct ct-json hdr-server server-name "X-Cache" "HIT"})
-(def ^:private crud-miss-headers {hdr-ct ct-json hdr-server server-name "X-Cache" "MISS"})
-(def ^:private empty-db-response {:status 200 :headers json-headers :body empty-db-body})
-
-(def ^:private runtime-fortune
-  {:id 0 :message "Additional fortune added at request time."})
-
-(defn render-fortunes
-  ^String [fortunes] (str
-                       (h/html {:mode :html}
-                               (h/raw "<!DOCTYPE html>")
-                               [:html
-                                [:head [:title "Fortunes"]]
-                                [:body
-                                 [:table
-                                  [:tr [:th "id"] [:th "message"]]
-                                  (for [f fortunes]
-                                    [:tr
-                                     [:td (:id f)]
-                                     [:td (:message f)]])]]])))
+(def ^:private json-headers {"Content-Type" "application/json"
+                             "Server"       "aleph"})
+(def ^:private text-headers {"Content-Type" "text/plain"
+                             "Server"       "aleph"})
+(def ^:private dataset-path "/data/dataset.json")
+(def ^:private static-root (.toPath (io/file "/data/static")))
 
 (defn- load-json [path]
-  (when (.exists (io/file path))
-    (json/read-value (slurp path) json/keyword-keys-object-mapper)))
+  (json/read-str (slurp path) :key-fn keyword))
 
-(defn- parse-qs [^String qs]
-  (when qs
-    (loop [i 0 m (transient {})]
-      (if (>= i (.length qs))
-        (persistent! m)
-        (let [amp (.indexOf qs (int \&) i)
-              end (if (neg? amp) (.length qs) amp)
-              eq (.indexOf qs (int \=) i)]
-          (if (and (>= eq 0) (< eq end))
-            (recur (inc end) (assoc! m (subs qs i eq) (subs qs (inc eq) end)))
-            (recur (inc end) m)))))))
+(defn- parse-long-value [value default]
+  (try
+    (Long/parseLong value)
+    (catch Exception _
+      default)))
 
-(defn- sum-params [^String qs]
-  (if (nil? qs) 0
-                (loop [i 0 sum 0]
-                  (if (>= i (.length qs))
-                    sum
-                    (let [amp (.indexOf qs (int \&) i)
-                          end (if (neg? amp) (.length qs) amp)
-                          eq (.indexOf qs (int \=) i)]
-                      (if (and (>= eq 0) (< eq end))
-                        (recur (inc end) (+ sum (long (try (Long/parseLong (subs qs (inc eq) end)) (catch Exception _ 0)))))
-                        (recur (inc end) sum)))))))
+(defn- sum-params [query-string]
+  (let [params (if (str/blank? query-string)
+                 {}
+                 (into {}
+                       (keep (fn [part]
+                               (let [[key value] (str/split part #"=" 2)]
+                                 (when value [key value]))))
+                       (str/split query-string #"&")))]
+    (+ (parse-long-value (get params "a") 0)
+       (parse-long-value (get params "b") 0))))
 
-(defn- parse-long-param [params k default]
-  (try (Long/parseLong (get params k)) (catch Exception _ default)))
-
-(defn- parse-double-param [params k default]
-  (try (Double/parseDouble (get params k)) (catch Exception _ default)))
-
-(defn- process-item [item ^long m]
-  (assoc item :total (* (:price item) (:quantity item) m)))
-
-(defn- json-response [data]
-  {:status 200 :headers json-headers :body (json/write-value-as-string data)})
-
-(defn- text-response [s]
-  {:status 200 :headers text-headers :body (str s)})
+(defn- text-response [value]
+  {:status  200
+   :headers text-headers
+   :body    (str value)})
 
 (defn- read-body-bytes [body]
   (if (nil? body)
     (d/success-deferred (byte-array 0))
     (d/chain
-      (s/reduce
-        (fn [^ByteArrayOutputStream baos ^ByteBuf buf]
-          (try
-            (let [n (.readableBytes buf)
-                  arr (byte-array n)]
-              (.readBytes buf arr)
-              (.write baos arr 0 n)
-              baos)
-            (finally (.release buf))))
-        (ByteArrayOutputStream.)
-        body)
-      (fn [^ByteArrayOutputStream baos] (.toByteArray baos)))))
+     (stream/reduce
+      (fn [^ByteArrayOutputStream output ^ByteBuf buffer]
+        (try
+          (let [bytes (byte-array (.readableBytes buffer))]
+            (.readBytes buffer bytes)
+            (.write output bytes)
+            output)
+          (finally
+            (.release buffer))))
+      (ByteArrayOutputStream.)
+      body)
+     #(.toByteArray ^ByteArrayOutputStream %))))
 
-(defn- transform-pg-row [row]
-  {:id     (:id row) :name (:name row) :category (:category row)
-   :price  (:price row) :quantity (:quantity row) :active (:active row)
-   :tags   (json/read-value (str (:tags row)))
-   :rating {:score (:rating_score row) :count (:rating_count row)}})
+(defn- item-with-total [item multiplier]
+  (assoc item :total (* (:price item) (:quantity item) multiplier)))
 
-(defn- transform-crud-row [row]
-  {:id     (:id row) :name (:name row) :category (:category row)
-   :price  (long (:price row)) :quantity (long (:quantity row)) :active (:active row)
-   :tags   (json/read-value (str (:tags row)))
-   :rating {:score (long (:rating_score row)) :count (long (:rating_count row))}})
+(defn- json-response [dataset requested-count multiplier]
+  (let [items (mapv #(item-with-total % multiplier)
+                    (take requested-count dataset))]
+    {:status  200
+     :headers json-headers
+     :body    (json/write-str {:items items :count (count items)})}))
 
-(def crud-cache (atom (cache/ttl-cache-factory {} :ttl 200)))
+(defn- content-type [^Path path]
+  (or (Files/probeContentType path) "application/octet-stream"))
 
-(defn- crud-cache-get [id]
-  (let [c @crud-cache]
-    (when (cache/has? c id)
-      (swap! crud-cache cache/hit id)
-      (cache/lookup @crud-cache id))))
+(defn- static-response [uri]
+  (let [^Path root static-root
+        relative   (URLDecoder/decode (subs uri (count "/static/")) StandardCharsets/UTF_8)
+        ^Path path (.normalize (.resolve root relative))]
+    (if (and (.startsWith path root)
+             (Files/isRegularFile path (make-array LinkOption 0)))
+      {:status  200
+       :headers {"Content-Type" (content-type path)}
+       :body    (io/input-stream (.toFile path))}
+      {:status  404
+       :headers text-headers
+       :body    "Not found"})))
 
-(defn- crud-cache-set [id v]
-  (swap! crud-cache #(cache/miss % id v)))
+(defn- websocket-echo [request]
+  (-> (http/websocket-connection request)
+      (d/chain (fn [socket]
+                 (stream/connect socket socket)))
+      (d/catch (fn [_]
+                 {:status  426
+                  :headers text-headers
+                  :body    "Upgrade Required"}))))
 
-(defn- crud-cache-evict [id]
-  (swap! crud-cache cache/evict id))
+(defn- handler [dataset]
+  (fn [request]
+    (let [uri          (:uri request)
+          query-string (:query-string request)
+          method       (:request-method request)]
+      (cond
+        (and (= method :get) (= uri "/pipeline"))
+        (text-response "ok")
 
-(def ^:private adapter (vertx-adapter/->VertxPgAdapter))
-(def ^:private pg-query-fn (async-boa/build-async-query adapter "sql/pg-query"))
-(def ^:private crud-list-q (async-boa/build-async-query adapter "sql/crud-list"))
-(def ^:private crud-read-q (async-boa/build-async-query adapter "sql/crud-read"))
-(def ^:private crud-create-q (async-boa/build-async-query adapter "sql/crud-create"))
-(def ^:private crud-update-q (async-boa/build-async-query adapter "sql/crud-update"))
-(def ^:private fortunes-q (async-boa/build-async-query adapter "sql/fortunes"))
+        (and (= method :get) (#{"/baseline11" "/baseline2"} uri))
+        (text-response (sum-params query-string))
 
-(defn- build-ssl-context [http-versions]
-  (let [cert-path (or (System/getenv "TLS_CERT") tls-cert-default)
-        key-path (or (System/getenv "TLS_KEY") tls-key-default)
-        cert-file (io/file cert-path)
-        key-file (io/file key-path)]
-    (when (and (.exists cert-file) (.exists key-file))
-      (try
-        (netty/ssl-server-context
-         (cond-> {:private-key       key-file
-                  :certificate-chain cert-file}
-           http-versions
-           (assoc :application-protocol-config
-                  (netty/application-protocol-config http-versions))))
-        (catch Exception e
-          (println "TLS init failed:" (.getMessage e))
-          nil)))))
+        (and (= method :post) (= uri "/baseline11"))
+        (d/chain (read-body-bytes (:body request))
+                 #(text-response (+ (sum-params query-string)
+                                    (parse-long-value (String. ^bytes % StandardCharsets/UTF_8) 0))))
 
-(defn- init-pg-pool []
-  (when-let [url (System/getenv "DATABASE_URL")]
-    (try
-      (let [uri (URI. (str/replace url pg-prefix pg-replace))
-            host (.getHost uri)
-            port (if (pos? (.getPort uri)) (.getPort uri) 5432)
-            db (subs (.getPath uri) 1)
-            [user pass] (str/split (.getUserInfo uri) #":" 2)
-            max-conn (try (Integer/parseInt (System/getenv "DATABASE_MAX_CONN"))
-                          (catch Exception _ 256))
-            connect-opts (-> (PgConnectOptions.)
-                             (.setHost host) (.setPort port) (.setDatabase db)
-                             (.setUser user) (.setPassword (or pass "")))
-            pool-opts (-> (PoolOptions.) (.setMaxSize max-conn))
-            vertx (Vertx/vertx)]
-        (-> (PgBuilder/pool)
-            (.with pool-opts)
-            (.connectingTo connect-opts)
-            (.using vertx)
-            (.build)))
-      (catch Throwable t
-        (println "PG init failed:" (.getMessage t))
-        nil))))
+        (and (= method :get) (re-matches #"/json/\d+" uri))
+        (json-response dataset
+                       (parse-long-value (subs uri (count "/json/")) 50)
+                       (parse-long-value (second (re-find #"(?:^|&)m=(\d+)" (or query-string ""))) 1))
 
-(defn- handle-baseline-get [req]
-  (text-response (sum-params (:query-string req))))
+        (and (= method :get) (= uri "/json"))
+        (json-response dataset (count dataset) 1)
 
-(defn- handle-baseline-post [req]
-  (let [s (sum-params (:query-string req))]
-    (d/chain (read-body-bytes (:body req))
-             (fn [^bytes bs]
-               (let [n (try (Long/parseLong (str/trim (String. bs))) (catch Exception _ 0))]
-                 (text-response (+ s n)))))))
+        (and (= method :get) (re-matches #"/delay/\d+" uri))
+        (let [milliseconds (parse-long-value (subs uri (count "/delay/")) 0)]
+          (if (pos? milliseconds)
+            (time/in milliseconds #(text-response milliseconds))
+            (text-response milliseconds)))
 
-(defn- handle-delay [req]
-  (let [ms (try (Long/parseLong (get-in req [:params :ms])) (catch Exception _ 0))]
-    (if (pos? ms)
-      ;; :executor :none runs handlers on the Netty event loop, so the wait has to be a deferred
-      ;; the timer wheel completes -- a sleep here would stall every connection on that loop.
-      (mt/in ms #(text-response ms))
-      (text-response ms))))
+        (and (= method :post) (= uri "/echo"))
+        (d/chain (read-body-bytes (:body request))
+                 #(hash-map :status 200
+                            :headers {"Content-Type" "application/octet-stream"}
+                            :body %))
 
-(defn- handle-json [dataset req]
-  (let [count (try (Long/parseLong (get-in req [:params :count])) (catch Exception _ 50))
-        count (min count (long (clojure.core/count dataset)))
-        params (parse-qs (:query-string req))
-        m (parse-long-param params param-m 1)
-        items (mapv #(process-item % m) (subvec dataset 0 count))]
-    {:status 200 :headers json-headers
-     :body   (json/write-value-as-string {:items items :count (clojure.core/count items)})}))
+        (and (= method :get) (str/starts-with? uri "/static/"))
+        (static-response uri)
 
-(defn- handle-echo [req]
-  ;; The bytes that arrived go back unchanged.
-  (d/chain (read-body-bytes (:body req))
-           (fn [^bytes bs]
-             {:status  200
-              :headers {"content-type" "application/octet-stream"}
-              :body    bs})))
+        (and (= method :get) (= uri "/ws"))
+        (websocket-echo request)
 
-(defn- handle-async-db [pg-pool req]
-  (let [params (parse-qs (:query-string req))
-        min-p (parse-double-param params param-min 10.0)
-        max-p (parse-double-param params param-max 50.0)
-        limit (parse-long-param params param-limit 50)
-        dfd (d/deferred)]
-    (pg-query-fn pg-pool {:min min-p :max max-p :limit limit}
-                 (fn [rows]
-                   (let [items (mapv transform-pg-row rows)]
-                     (d/success! dfd (json-response {:items items :count (clojure.core/count items)}))))
-                 (fn [_] (d/success! dfd empty-db-response)))
-    dfd))
+        :else
+        {:status  404
+         :headers text-headers
+         :body    "Not found"}))))
 
-(defn- handle-crud-list [pg-pool req]
-  (let [params (parse-qs (:query-string req))
-        category (or (get params "category") "electronics")
-        page (max 1 (parse-long-param params "page" 1))
-        limit (max 1 (min 50 (parse-long-param params "limit" 10)))
-        offset (* (dec page) limit)
-        dfd (d/deferred)]
-    (crud-list-q pg-pool {:category category :limit limit :offset offset}
-                 (fn [rows]
-                   (let [items (mapv transform-crud-row rows)]
-                     (d/success! dfd (json-response {:items items :total (clojure.core/count items) :page page :limit limit}))))
-                 (fn [_] (d/success! dfd (json-response {:items [] :total 0 :page page :limit limit}))))
-    dfd))
+(defn- start-server! [handler options]
+  (http/start-server handler (assoc options :raw-stream? true)))
 
-(defn- handle-crud-read [pg-pool req]
-  (let [id (try (Long/parseLong (get-in req [:params :id])) (catch Exception _ nil))]
-    (if (nil? id)
-      {:status 404 :headers json-headers :body not-found-body}
-      (if-let [cached (crud-cache-get id)]
-        {:status 200 :headers crud-hit-headers :body cached}
-        (let [dfd (d/deferred)]
-          (crud-read-q pg-pool {:id id}
-                       (fn [rows]
-                         (if-let [row (first rows)]
-                           (let [json-str (json/write-value-as-string (transform-crud-row row))]
-                             (crud-cache-set id json-str)
-                             (d/success! dfd {:status 200 :headers crud-miss-headers :body json-str}))
-                           (d/success! dfd {:status 404 :headers json-headers :body not-found-body})))
-                       (fn [_] (d/success! dfd {:status 404 :headers json-headers :body not-found-body})))
-          dfd)))))
-
-(defn- handle-crud-create [pg-pool req]
-  (d/chain (read-body-bytes (:body req))
-           (fn [^bytes bs]
-             (let [body (json/read-value (String. bs) json/keyword-keys-object-mapper)
-                   id (:id body)
-                   nm (or (:name body) "New Product")
-                   category (or (:category body) "test")
-                   price (or (:price body) 0)
-                   quantity (or (:quantity body) 0)
-                   dfd (d/deferred)]
-               (crud-create-q pg-pool {:id id :name nm :category category :price price :quantity quantity}
-                              (fn [rows]
-                                (d/success! dfd {:status 201 :headers json-headers
-                                                 :body   (json/write-value-as-string
-                                                           {:id (:id (first rows)) :name nm :category category :price price :quantity quantity})}))
-                              (fn [_] (d/success! dfd {:status 500 :headers json-headers :body "{\"error\":\"insert failed\"}"})))
-               dfd))))
-
-(defn- handle-crud-update [pg-pool req]
-  (let [id (try (Long/parseLong (get-in req [:params :id])) (catch Exception _ nil))]
-    (if (nil? id)
-      {:status 404 :headers json-headers :body not-found-body}
-      (d/chain (read-body-bytes (:body req))
-               (fn [^bytes bs]
-                 (let [body (json/read-value (String. bs) json/keyword-keys-object-mapper)
-                       nm (or (:name body) "Updated")
-                       price (or (:price body) 0)
-                       quantity (or (:quantity body) 0)
-                       dfd (d/deferred)]
-                   (crud-update-q pg-pool {:name nm :price price :quantity quantity :id id}
-                                  (fn [rows]
-                                    (if (seq rows)
-                                      (do (crud-cache-evict id)
-                                          (d/success! dfd {:status 200 :headers json-headers
-                                                           :body   (json/write-value-as-string {:id id :name nm :price price :quantity quantity})}))
-                                      (d/success! dfd {:status 404 :headers json-headers :body not-found-body})))
-                                  (fn [_] (d/success! dfd {:status 404 :headers json-headers :body not-found-body})))
-                   dfd))))))
-
-(defn- handle-fortunes [pg-pool _req]
-  (let [dfd (d/deferred)]
-    (fortunes-q
-      pg-pool {}
-      (fn [rows]
-        (let [base (mapv (fn [r] {:id (:id r) :message (:message r)}) rows)
-              all (conj base runtime-fortune)
-              sorted (sort-by :message all)
-              body (render-fortunes sorted)]
-          (d/success! dfd {:status  200
-                           :headers html-headers
-                           :body    body})))
-      (fn [_]
-        (d/success! dfd {:status  500
-                         :headers html-headers
-                         :body    fortunes-error-body})))
-    dfd))
-
-(defn- handle-static [static-handler req]
-  (let [response (static-handler
-                  (assoc req :path-info (str "/" (get-in req [:params :filename]))))]
-    (cond-> response
-      (instance? java.io.File (:body response))
-      (update :body io/input-stream))))
-
-(defn- build-handler [{:keys [dataset json-body compression-body pg-pool]}]
-  (let [static-handler (-> (constantly {:status 404 :body not-found-body})
-                           (file/wrap-file "/data/static" {:index-files? false})
-                           content-type/wrap-content-type
-                           not-modified/wrap-not-modified)]
-    (route
-     {"/baseline11"       [(GET handle-baseline-get)
-                           (POST handle-baseline-post)]
-      "/baseline2"        [(GET handle-baseline-get)]
-      "/json/:count"      [(GET (fn [req] (handle-json dataset req)))]
-      "/json"             [(GET (fn [_] {:status 200 :headers json-headers :body json-body}))]
-      "/compression"      [(GET (fn [_] {:status 200 :headers json-headers :body compression-body}))]
-      "/delay/:ms"        [(GET handle-delay)]
-      "/echo"             [(POST handle-echo)]
-      "/async-db"         [(GET (fn [req] (handle-async-db pg-pool req)))]
-      "/crud/items"       [(GET (fn [req] (handle-crud-list pg-pool req)))
-                           (POST (fn [req] (handle-crud-create pg-pool req)))]
-      "/crud/items/:id"   [(GET (fn [req] (handle-crud-read pg-pool req)))
-                           (PUT (fn [req] (handle-crud-update pg-pool req)))]
-      "/fortunes"         [(GET (fn [req] (handle-fortunes pg-pool req)))]
-      "/static/:filename" [(GET (fn [req] (handle-static static-handler req)))]
-      "/"                 [(GET (fn [_] (text-response server-name)))]})))
-
-(defn- start-server! [handler port opts]
-  (try
-    (http/start-server handler (merge {:port                port
-                                       :raw-stream?         true
-                                       :executor            :none
-                                       :bootstrap-transform (fn [bootstrap]
-                                                              (.option bootstrap ChannelOption/ALLOCATOR PooledByteBufAllocator/DEFAULT)
-                                                              (.childOption bootstrap ChannelOption/ALLOCATOR PooledByteBufAllocator/DEFAULT))}
-                                      opts))
-    (println (str "Server running on port " port))
-    (catch Exception e
-      (println (str "Failed to start on port " port ": " (.getMessage e))))))
+(defn- ssl-context [http-versions]
+  (netty/ssl-server-context
+   {:private-key                 (io/file "/certs/server.key")
+    :certificate-chain           (io/file "/certs/server.crt")
+    :application-protocol-config (netty/application-protocol-config http-versions)}))
 
 (defn -main [& _]
-  (netty/leak-detector-level! :disabled)
-  (let [dataset (load-json (or (System/getenv "DATASET_PATH") dataset-path))
-        json-body (let [items (mapv #(process-item % 1) dataset)]
-                    (json/write-value-as-string
-                     {:items items :count (clojure.core/count items)}))
-        large-dataset (load-json dataset-large-path)
-        compression-body (when large-dataset
-                           (let [items (mapv #(process-item % 1) large-dataset)]
-                             (json/write-value-as-string
-                              {:items items :count (clojure.core/count items)})))
-        pg-pool (init-pg-pool)
-        handler (build-handler {:dataset          dataset
-                                :json-body        json-body
-                                :compression-body compression-body
-                                :pg-pool          pg-pool})]
-    (start-server! handler plain-port
-                   {:pipeline-transform (fn [pipeline]
-                                          (.remove pipeline "continue-handler")
-                                          (.addBefore pipeline "request-handler" "compressor"
-                                                      (HttpContentCompressor.)))})
-    (start-server! handler h2c-port
-                   {:socket-address (InetSocketAddress. "127.0.0.1" h2c-port)
-                    :http-versions [:http2]
-                    :use-h2c?      true})
-    (when-let [ssl-ctx (build-ssl-context nil)]
-      (start-server! handler tls-port
-                     {:ssl-context        ssl-ctx
-                      :http-versions      [:http1]
-                      :pipeline-transform (fn [pipeline]
-                                            (.remove pipeline "continue-handler"))}))
-    (when-let [ssl-ctx (build-ssl-context [:http2])]
-      (start-server! handler h2-port
-                     {:ssl-context   ssl-ctx
-                      :http-versions [:http2]
-                      :compression?  true}))
+  (let [handler (handler (load-json dataset-path))]
+    (start-server! handler {:port 8080 :compression? true})
+    (start-server! handler {:port 8082 :http-versions [:http2] :use-h2c? true})
+    (start-server! handler {:port          8081
+                            :ssl-context   (ssl-context [:http1])
+                            :http-versions [:http1]
+                            :compression?  true})
+    (start-server! handler {:port          8443
+                            :ssl-context   (ssl-context [:http2])
+                            :http-versions [:http2]
+                            :compression?  true})
     @(promise)))
