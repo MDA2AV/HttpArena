@@ -1,3 +1,4 @@
+#include <sys/resource.h>
 #include <aegon/http/Server.h>
 #include <aegon/http/middleware/Compress.h>
 #include <aegon/core/Task.h>
@@ -218,6 +219,9 @@ void register_routes(Router& router) {
     // 7. Static file serving (static-h2, static-h3) - Aegon core static_files API
     const char* static_dir = std::filesystem::exists("/data/static") ? "/data/static" : "data/static";
     router.static_files("/static", static_dir);
+
+    // 8. WebSocket Echo endpoint
+    router.ws("/ws");
 }
 
 unsigned int cgroup_cpus() {
@@ -287,9 +291,20 @@ int main() {
     const std::string keyFile = "/certs/server.key";
     bool has_certs = std::filesystem::exists(certFile) && std::filesystem::exists(keyFile);
 
+    struct rlimit rl{};
+    bool low_memlock = false;
+    if (getrlimit(RLIMIT_MEMLOCK, &rl) == 0 && rl.rlim_cur != RLIM_INFINITY && rl.rlim_cur < 64 * 1024 * 1024) {
+        low_memlock = true;
+    }
+
     Server server;
-    server.ring_entries(8192);
-    server.buffer_pool_entries(16384);
+    if (low_memlock) {
+        server.ring_entries(512);
+        server.buffer_pool_entries(256);
+    } else {
+        server.ring_entries(8192);
+        server.buffer_pool_entries(16384);
+    }
     register_routes(server.router());
 
     // Port 8080: Plaintext HTTP/1.1 (main benchmarks)

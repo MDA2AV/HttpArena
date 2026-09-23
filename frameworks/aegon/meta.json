@@ -30,7 +30,10 @@
     "json-h2c",
     "static-h2",
     "baseline-h3",
-    "static-h3"
+    "static-h3",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": [
     "UdayKhare09"
