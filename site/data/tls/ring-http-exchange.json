@@ -1,0 +1,5 @@
+{
+  "framework": "ring-http-exchange",
+  "tls": "pass",
+  "check": "none"
+}

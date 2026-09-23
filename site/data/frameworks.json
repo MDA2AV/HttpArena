@@ -1518,17 +1518,11 @@
   },
   "ring-http-exchange": {
     "dir": "ring-http-exchange",
-    "description": "",
+    "description": "Minimal HTTP/1.1 engine benchmark using ring-http-exchange and Robaho HttpServer.",
     "repo": "https://github.com/ruroru/ring-http-exchange",
-    "type": "emerging",
+    "type": "engine",
     "engine": "robaho-httpserver",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "ring-jetty-adapter": {
     "dir": "ring-jetty-adapter",
