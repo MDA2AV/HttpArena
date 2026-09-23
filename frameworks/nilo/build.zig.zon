@@ -8,8 +8,8 @@
         // the build the row describes. Move both lines together:
         //   zig fetch --save=nilo git+https://github.com/nevindra/nilo#<commit>
         .nilo = .{
-            .url = "git+https://github.com/nevindra/nilo#fa0055fadc0a69f377bcfd2d64af18b138d35b53",
-            .hash = "nilo-0.5.0-5HEqwvGNWAAS95fPlYHi9dgyIRbmHDL09GP9iF03qRO-",
+            .url = "git+https://github.com/nevindra/nilo#baaccf85df4ae600707c49964aec78df47ce9ccb",
+            .hash = "nilo-0.5.0-5HEqwnCPWADxQuiynAbbvX3NdwOzj5sOVrnVft01WOQh",
         },
     },
     .paths = .{ "build.zig", "build.zig.zon", "src" },
