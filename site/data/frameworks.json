@@ -1246,6 +1246,20 @@
       "response": false
     }
   },
+  "nilo": {
+    "dir": "nilo",
+    "description": "A toolkit for Zig 0.16 whose largest module is an HTTP/1.1 server on zio fibers (io_uring, epoll, kqueue). A plain function is a route: its argument list is the routing, the typed input, the 400 for anything that does not fit, and the OpenAPI document. One allocation per request, 4,669 bytes per idle connection, and a wait parks the fiber rather than the thread. Serves cleartext on 8080 and TLS 1.3 on 8081 from one process. Refuses HTTP/2, HTTP/3, gRPC and templates on the record, which is why it sits out those profiles.",
+    "repo": "https://github.com/nevindra/nilo",
+    "type": "emerging",
+    "engine": "nilo_http on zio",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "node-h3": {
     "dir": "node-h3",
     "description": "H3 v2, the unjs framework under Nitro and Nuxt, served on node:http by srvx with the cluster module for multi-core scaling.",
