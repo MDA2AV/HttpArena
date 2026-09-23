@@ -1546,17 +1546,11 @@
   },
   "ring-jetty9-adapter": {
     "dir": "ring-jetty9-adapter",
-    "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+    "description": "Minimal Ring Jetty9 adapter HTTP engine benchmark with HTTP/1.1, TLS, HTTP/2, H2C, and WebSocket support.",
     "repo": "https://github.com/sunng87/ring-jetty9-adapter",
-    "type": "emerging",
+    "type": "engine",
     "engine": "Jetty",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "ringzero-ws": {
     "dir": "ringzero-ws",
