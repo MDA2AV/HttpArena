@@ -2,7 +2,7 @@
   "display_name": "nilo",
   "language": "Zig",
   "engine": "nilo_http on zio",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "completeness": {
     "routing": true,
