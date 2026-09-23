@@ -214,6 +214,10 @@ void register_routes(Router& router) {
         ctx.res().header("Content-Type", "application/octet-stream");
         ctx.res().body(std::string(ctx.req().body()));
     });
+
+    // 7. Static file serving (static-h2, static-h3) - Aegon core static_files API
+    const char* static_dir = std::filesystem::exists("/data/static") ? "/data/static" : "data/static";
+    router.static_files("/static", static_dir);
 }
 
 unsigned int cgroup_cpus() {
@@ -283,45 +287,25 @@ int main() {
     const std::string keyFile = "/certs/server.key";
     bool has_certs = std::filesystem::exists(certFile) && std::filesystem::exists(keyFile);
 
-    std::vector<std::thread> server_threads;
-    std::unique_ptr<Server> server8081;
-    std::unique_ptr<Server> server8443;
+    Server server;
+    server.ring_entries(8192);
+    server.buffer_pool_entries(16384);
+    register_routes(server.router());
+
+    // Port 8080: Plaintext HTTP/1.1 (main benchmarks)
+    server.listen(8080);
+    // Port 8082: Plaintext HTTP/2 prior-knowledge (baseline-h2c, json-h2c)
+    server.listen(8082);
 
     if (has_certs) {
-        // Port 8081: TLS HTTP/1.1 (for json-tls, 8gbit)
-        server8081 = std::make_unique<Server>();
-        server8081->ring_entries(8192);
-        server8081->buffer_pool_entries(16384);
-        register_routes(server8081->router());
-        server8081->enable_tls(certFile, keyFile);
-        server8081->listen(8081);
-        server_threads.emplace_back([&]() {
-            server8081->run(threads);
-        });
-
-        // Port 8443: TLS HTTP/2 (for baseline-h2)
-        server8443 = std::make_unique<Server>();
-        server8443->ring_entries(8192);
-        server8443->buffer_pool_entries(16384);
-        register_routes(server8443->router());
-        server8443->enable_tls(certFile, keyFile);
-        server8443->listen(8443);
-        server_threads.emplace_back([&]() {
-            server8443->run(threads);
-        });
+        server.enable_tls(certFile, keyFile);
+        // Port 8081: TLS HTTP/1.1 (json-tls, 8gbit)
+        server.listen_tls(8081);
+        // Port 8443: TLS HTTP/2 (baseline-h2)
+        server.listen_tls(8443);
     }
 
-    // Port 8080: HTTP/1.1 (main server)
-    Server server8080;
-    server8080.ring_entries(8192);
-    server8080.buffer_pool_entries(16384);
-    register_routes(server8080.router());
-    server8080.listen(8080);
-    server8080.run(threads);
-
-    for (auto& t : server_threads) {
-        if (t.joinable()) t.join();
-    }
+    server.run(threads);
 
     return 0;
 }

@@ -48,6 +48,6 @@ ENV LD_LIBRARY_PATH=/usr/local/lib
 COPY --from=build /usr/local/lib/ /usr/local/lib/
 COPY --from=build /app/build/aegon-arena /usr/local/bin/aegon-arena
 
-EXPOSE 8080 8081 8443
+EXPOSE 8080 8081 8082 8443 8443/udp
 
 CMD ["/usr/local/bin/aegon-arena"]
