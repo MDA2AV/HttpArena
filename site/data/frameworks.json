@@ -804,7 +804,7 @@
   },
   "hirundo": {
     "dir": "hirundo",
-    "description": "Hirundo's Helidon/Nima Ring adapter, pinned to immutable upstream source, with HTTP/1.1, TLS, HTTP/2, H2c, and WebSocket listeners. HTTP/3 is not exposed by the selected Hirundo API.",
+    "description": "Minimal Hirundo engine benchmark pinned to the upstream Helidon/Nima Ring adapter with HTTP/1.1, TLS, HTTP/2, H2c, and WebSocket support.",
     "repo": "https://github.com/mpenet/hirundo",
     "type": "engine",
     "engine": "helidon-nima"
