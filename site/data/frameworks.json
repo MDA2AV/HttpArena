@@ -269,19 +269,19 @@
     "type": "infrastructure",
     "engine": "caddy"
   },
-  "capra": {
-    "dir": "capra",
-    "description": "Capra pinned to upstream master b0bda0dc: HTTP/1.1 with dynamic data.json encoding, gzip negotiation, and native WebSocket echo. The selected Capra API exposes no TLS, HTTP/2, H2c, or HTTP/3 listener.",
-    "repo": "https://github.com/weavejester/capra",
-    "type": "engine",
-    "engine": "capra"
-  },
   "cadente": {
     "dir": "cadente",
     "description": "Cadente is a standalone managed HTTP/1.1 server for .NET, running directly on sockets without the Sisk framework layer.",
     "repo": "https://github.com/sisk-http/core",
     "type": "engine",
     "engine": "managed sockets"
+  },
+  "capra": {
+    "dir": "capra",
+    "description": "Minimal Capra engine benchmark pinned to upstream master with HTTP/1.1, dynamic gzip JSON, and native WebSocket echo.",
+    "repo": "https://github.com/weavejester/capra",
+    "type": "engine",
+    "engine": "capra"
   },
   "cardigan": {
     "dir": "cardigan",
