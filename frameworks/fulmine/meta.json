@@ -12,6 +12,7 @@
   "engine": "uwebsockets",
   "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
   "repo": "https://github.com/nigrosimone/fulmine.js",
+  "website": "https://fulmine.sndesign.it/",
   "enabled": true,
   "tls_check": true,
   "tests": [
