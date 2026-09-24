@@ -264,7 +264,7 @@
   },
   "busker": {
     "dir": "busker",
-    "description": "Busker pinned to its upstream documented source/native-shim pair: HTTP/1.1, TLS, HTTP/2, H2c, and native HTTP/3 with dynamic data.json encoding and static files. The selected public API has no WebSocket listener or upgrade surface.",
+    "description": "Minimal Busker engine benchmark pinned to the upstream documented source/native-shim pair with HTTP/1.1, TLS, HTTP/2, H2c, and native HTTP/3.",
     "repo": "https://github.com/outskirtslabs/busker",
     "type": "engine",
     "engine": "busker"
