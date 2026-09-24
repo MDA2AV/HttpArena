@@ -1,0 +1,38 @@
+Sep 24, 2026 8:54:41 PM robaho.net.httpserver.ServerImpl <init>
+INFO: [http:8080] server bound to /0.0.0.0:8080 with backlog 8192
+Sep 24, 2026 8:54:41 PM robaho.net.httpserver.ServerImpl start
+INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@4db60246 as executor
+Sep 24, 2026 8:54:41 PM robaho.net.httpserver.ServerImpl <init>
+INFO: [https:8081] server bound to /0.0.0.0:8081 with backlog 8192
+Sep 24, 2026 8:54:41 PM robaho.net.httpserver.ServerImpl start
+INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@6824b913 as executor
+Sep 24, 2026 8:54:41 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+WARNING: [https:8081] unable to accept connection
+java.net.SocketException: Socket is closed
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(SSLSocketImpl.java:892)
+	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
+
+Sep 24, 2026 8:54:48 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+WARNING: [https:8081] unable to accept connection
+java.net.SocketException: Socket is closed
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(SSLSocketImpl.java:892)
+	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
+
+Sep 24, 2026 8:54:56 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+WARNING: [https:8081] unable to accept connection
+java.net.SocketException: Socket is closed
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(SSLSocketImpl.java:892)
+	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
+	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
+
