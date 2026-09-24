@@ -28,6 +28,6 @@ COPY default.vcl /etc/varnish/default.vcl
 COPY tls.conf /etc/varnish/tls.conf
 COPY --chmod=0755 entrypoint.sh /entrypoint.sh
 
-EXPOSE 8080 8443
+EXPOSE 8080 8081 8082 8443
 
 ENTRYPOINT ["/entrypoint.sh"]

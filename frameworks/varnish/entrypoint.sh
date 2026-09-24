@@ -3,6 +3,7 @@ set -e
 
 exec varnishd -F \
     -a :8080 \
+    -a :8082 \
     -A /etc/varnish/tls.conf \
     -f /etc/varnish/default.vcl \
     -p feature=+http2 \
