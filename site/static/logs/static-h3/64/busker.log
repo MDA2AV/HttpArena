@@ -1,0 +1,56 @@
+Picked up JAVA_TOOL_OPTIONS: --enable-native-access=ALL-UNNAMED
+thread 197 panic: member access within null pointer of type 'quicly_generate_resumption_token_t' (aka 'struct st_quicly_generate_resumption_token_t')
+???:?:?: 0x771e22f50f6d in ??? (/tmp/h2oclj_1790259273023_libh2oclj.so)
+???:?:?: 0x771e22efa03f in ??? (/tmp/h2oclj_1790259273023_libh2oclj.so)
+???:?:?: 0x771e22eefd82 in ??? (/tmp/h2oclj_1790259273023_libh2oclj.so)
+???:?:?: 0x771e2304b685 in ??? (/tmp/h2oclj_1790259273023_libh2oclj.so)
+???:?:?: 0x771e23045a55 in ??? (/tmp/h2oclj_1790259273023_libh2oclj.so)
+???:?:?: 0x771e22ff33b2 in ??? (/tmp/h2oclj_1790259273023_libh2oclj.so)
+???:?:?: 0x771f3f707aa0 in ??? (???)
+Unwind error at address `???:0x771f3f707aa0` (unwind info unavailable), remaining frames may be incorrect
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f49687f in ??? (???)
+???:?:?: 0x771f3f496dcf in ??? (???)
+???:?:?: 0x771f3f496dcf in ??? (???)
+???:?:?: 0x771f3f4968d1 in ??? (???)
+???:?:?: 0x771f3f496dcf in ??? (???)
+???:?:?: 0x771f3f496dcf in ??? (???)
+???:?:?: 0x771f3f4968d1 in ??? (???)
+???:?:?: 0x771f3f496dcf in ??? (???)
+???:?:?: 0x771f3f4968d1 in ??? (???)
+???:?:?: 0x771f3f496c35 in ??? (???)
+???:?:?: 0x771f3f496737 in ??? (???)
+???:?:?: 0x771f3f48f5a1 in ??? (???)
+???:?:?: 0x771f56413edf in _ZN9JavaCalls11call_helperEP9JavaValueRK12methodHandleP17JavaCallArgumentsP10JavaThread (/opt/java/openjdk/lib/server/libjvm.so)
+???:?:?: 0x771f5641582e in _ZN9JavaCalls12call_virtualEP9JavaValue6HandleP5KlassP6SymbolS6_P10JavaThread (/opt/java/openjdk/lib/server/libjvm.so)
+???:?:?: 0x771f5650ebcb in _ZL12thread_entryP10JavaThreadS0_ (/opt/java/openjdk/lib/server/libjvm.so)
+???:?:?: 0x771f5642fe78 in _ZN10JavaThread17thread_main_innerEv (/opt/java/openjdk/lib/server/libjvm.so)
+???:?:?: 0x771f56bfc5de in _ZN6Thread8call_runEv (/opt/java/openjdk/lib/server/libjvm.so)
+???:?:?: 0x771f56868225 in _ZL19thread_native_entryP6Thread (/opt/java/openjdk/lib/server/libjvm.so)
+???:?:?: 0x771f572e28ba in ??? (/lib/x86_64-linux-gnu/libc.so.6)
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x0000771e239d358a, pid=1, tid=197
+#
+# JRE version: OpenJDK Runtime Environment Temurin-26.0.2+10 (26.0.2+10) (build 26.0.2+10)
+# Java VM: OpenJDK 64-Bit Server VM Temurin-26.0.2+10 (26.0.2+10, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, linux-amd64)
+# Problematic frame:
+# C  [h2oclj_1790259273023_libh2oclj.so+0x1dd258a]
+#
+# Core dump will be written. Default location: Determined by the following: "/usr/share/apport/apport -p%p -s%s -c%c -d%d -P%P -u%u -g%g -F%F -- %E" (alternatively, falling back to /app/core.1)
+#
+# An error report file with more information is saved as:
+# /app/hs_err_pid1.log
+[6.129s][warning][os] Loading hsdis library failed
+#
+# If you would like to submit a bug report, please visit:
+#   https://github.com/adoptium/adoptium-support/issues
+# The crash happened outside the Java Virtual Machine in native code.
+# See problematic frame for where to report the bug.
+#
