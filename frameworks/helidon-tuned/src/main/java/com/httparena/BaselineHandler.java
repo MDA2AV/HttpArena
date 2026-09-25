@@ -18,6 +18,6 @@ class BaselineHandler implements Handler {
         int first = Integer.parseInt(query.getRaw("a"));
         int second = Integer.parseInt(query.getRaw("b"));
 
-        res.send(String.valueOf(first + second).getBytes(StandardCharsets.US_ASCII));
+        res.send(String.valueOf(first + second).getBytes(StandardCharsets.ISO_8859_1));
     }
 }
