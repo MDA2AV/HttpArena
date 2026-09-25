@@ -1,0 +1,3 @@
+2026/09/25 09:26:54 INFO taskpool: created pool=fib-workers id=1 mode=adaptive minWorkers=640 maxWorkers=64000 queueSize=100000 shrinkInterval=0s
+2026/09/25 09:26:54 INFO taskpool: started pool=fib-workers id=1 mode=adaptive shards=64 workers=640 minWorkers=640 maxWorkers=64000 queueSize=100000 shrinkInterval=1s
+2026/09/25 09:26:54 INFO fib: engine started engine=fib listen=tcp://[::]:8080 taskPool=fib-workers

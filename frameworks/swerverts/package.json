@@ -1,0 +1,6 @@
+{
+  "name": "swerverts-httparena",
+  "private": true,
+  "type": "module",
+  "dependencies": { "swerverts": "0.1.1" }
+}

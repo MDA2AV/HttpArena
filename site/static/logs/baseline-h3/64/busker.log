@@ -1,0 +1,2 @@
+Picked up JAVA_TOOL_OPTIONS: --enable-native-access=ALL-UNNAMED
+java: /home/ramblurr/src/github.com/outskirtslabs/busker/shim/zig-pkg/N-V-__8AACQ9LAQXcPEiLd_mcWtIxo1byemaSQy4unWdmIiz/lib/core/request.c:535: void do_sendvec(h2o_req_t *, h2o_sendvec_t *, size_t, h2o_send_state_t): Assertion `req->_generator != NULL' failed.
