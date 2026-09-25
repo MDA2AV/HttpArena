@@ -1502,20 +1502,6 @@
       "response": true
     }
   },
-  "reitit": {
-    "dir": "reitit",
-    "description": "Reitit 0.9 routing on Ring and the Jetty adapter, default configuration. Routes and path parameters through reitit.ring, query parsing through ring's wrap-params on the router, JSON through clojure.data.json, gzip through Jetty's GzipHandler, json-tls on 8081.",
-    "repo": "https://github.com/metosin/reitit",
-    "type": "flagship",
-    "engine": "jetty",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
-  },
   "ring-http-exchange": {
     "dir": "ring-http-exchange",
     "description": "",
