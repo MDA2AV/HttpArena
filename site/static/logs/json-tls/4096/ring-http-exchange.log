@@ -1,40 +1,38 @@
-Aug 27, 2026 1:52:10 PM robaho.net.httpserver.ServerImpl <init>
+Sep 24, 2026 8:53:46 PM robaho.net.httpserver.ServerImpl <init>
 INFO: [http:8080] server bound to /0.0.0.0:8080 with backlog 8192
-Aug 27, 2026 1:52:10 PM robaho.net.httpserver.ServerImpl start
-INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@22c75c01 as executor
-Server running on port 8080
-Aug 27, 2026 1:52:10 PM robaho.net.httpserver.ServerImpl <init>
+Sep 24, 2026 8:53:46 PM robaho.net.httpserver.ServerImpl start
+INFO: [http:8080] using java.util.concurrent.ThreadPerTaskExecutor@4db60246 as executor
+Sep 24, 2026 8:53:46 PM robaho.net.httpserver.ServerImpl <init>
 INFO: [https:8081] server bound to /0.0.0.0:8081 with backlog 8192
-Aug 27, 2026 1:52:10 PM robaho.net.httpserver.ServerImpl start
-INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@1eff3cfb as executor
-Server running on port 8081 (TLS)
-Aug 27, 2026 1:52:11 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+Sep 24, 2026 8:53:46 PM robaho.net.httpserver.ServerImpl start
+INFO: [https:8081] using java.util.concurrent.ThreadPerTaskExecutor@6824b913 as executor
+Sep 24, 2026 8:53:47 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
 WARNING: [https:8081] unable to accept connection
 java.net.SocketException: Socket is closed
-	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(Unknown Source)
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(SSLSocketImpl.java:892)
 	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
 	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
 	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
-	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(Unknown Source)
-	at java.base/java.lang.VirtualThread.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
 
-Aug 27, 2026 1:52:19 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+Sep 24, 2026 8:53:54 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
 WARNING: [https:8081] unable to accept connection
 java.net.SocketException: Socket is closed
-	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(Unknown Source)
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(SSLSocketImpl.java:892)
 	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
 	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
 	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
-	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(Unknown Source)
-	at java.base/java.lang.VirtualThread.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
 
-Aug 27, 2026 1:52:26 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
+Sep 24, 2026 8:54:02 PM robaho.net.httpserver.ServerImpl$Dispatcher lambda$run$0
 WARNING: [https:8081] unable to accept connection
 java.net.SocketException: Socket is closed
-	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(Unknown Source)
+	at java.base/sun.security.ssl.SSLSocketImpl.getInputStream(SSLSocketImpl.java:892)
 	at robaho.net.httpserver.HttpConnection.<init>(HttpConnection.java:73)
 	at robaho.net.httpserver.ServerImpl$Dispatcher.acceptConnection(ServerImpl.java:417)
 	at robaho.net.httpserver.ServerImpl$Dispatcher.lambda$run$0(ServerImpl.java:349)
-	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(Unknown Source)
-	at java.base/java.lang.VirtualThread.run(Unknown Source)
+	at java.base/java.util.concurrent.ThreadPerTaskExecutor$TaskRunner.run(ThreadPerTaskExecutor.java:291)
+	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
 

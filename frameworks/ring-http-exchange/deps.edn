@@ -1,0 +1,6 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+        org.clojure/data.json {:mvn/version "2.5.2"}
+        org.clojars.jj/ring-http-exchange {:mvn/version "1.4.5"}
+        io.github.robaho/httpserver {:mvn/version "1.0.29"}}
+ :aliases {:test {:extra-paths ["test"]}}}
