@@ -53,17 +53,11 @@
   },
   "aleph": {
     "dir": "aleph",
-    "description": "",
+    "description": "Minimal Aleph HTTP engine benchmark with HTTP/1.1, TLS, HTTP/2, H2C, and WebSocket support.",
     "repo": "https://github.com/clj-commons/aleph",
-    "type": "emerging",
+    "type": "engine",
     "engine": "netty",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "araara-standard": {
     "dir": "araara-standard",

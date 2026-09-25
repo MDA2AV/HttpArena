@@ -1,0 +1,4 @@
+Sep 24, 2026 9:30:00 PM clojure.tools.logging$eval465$fn__468 invoke
+INFO: Application protocol config supports protocols: http/1.1
+Sep 24, 2026 9:30:00 PM clojure.tools.logging$eval465$fn__468 invoke
+INFO: Application protocol config supports protocols: h2
