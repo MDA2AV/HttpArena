@@ -53,17 +53,11 @@
   },
   "aleph": {
     "dir": "aleph",
-    "description": "",
+    "description": "Minimal Aleph HTTP engine benchmark with HTTP/1.1, TLS, HTTP/2, H2C, and WebSocket support.",
     "repo": "https://github.com/clj-commons/aleph",
-    "type": "emerging",
+    "type": "engine",
     "engine": "netty",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "mode": "standard"
   },
   "araara-standard": {
     "dir": "araara-standard",
@@ -851,8 +845,15 @@
     "dir": "hical",
     "description": "Hical is a modern C++20/26 high-performance web framework built on Boost.Asio, featuring coroutine-based async I/O (boost::asio::awaitable<T>), three-tier PMR memory pools, zero-copy HTTP parsing via picohttpparser, and a self-developed WebSocket stack (RFC 6455 with permessage-deflate). SO_REUSEPORT multi-acceptor model on Linux. Dual-track C++26 reflection layer (P2996 / C++20 macro fallback).",
     "repo": "https://github.com/Hical61/Hical",
-    "type": "engine",
-    "engine": "hical"
+    "type": "experimental",
+    "engine": "hical",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "hirundo": {
     "dir": "hirundo",
@@ -891,17 +892,10 @@
   },
   "http-kit": {
     "dir": "http-kit",
-    "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+    "description": "Minimal http-kit engine benchmark with HTTP/1.1 and native WebSocket echo support.",
     "repo": "https://github.com/http-kit/http-kit",
-    "type": "emerging",
-    "engine": "http-kit",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "type": "engine",
+    "engine": "http-kit"
   },
   "http4k": {
     "dir": "http4k",
@@ -1584,17 +1578,10 @@
   },
   "ring-jetty-adapter": {
     "dir": "ring-jetty-adapter",
-    "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+    "description": "Minimal HTTP/1.1 and HTTPS engine benchmark using the official Ring Jetty adapter with native WebSocket echo.",
     "repo": "https://github.com/ring-clojure/ring",
-    "type": "emerging",
-    "engine": "Jetty",
-    "mode": "standard",
-    "completeness": {
-      "routing": false,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "type": "engine",
+    "engine": "ring-jetty-adapter"
   },
   "ring-jetty9-adapter": {
     "dir": "ring-jetty9-adapter",

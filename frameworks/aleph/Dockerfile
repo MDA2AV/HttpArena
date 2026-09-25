@@ -1,16 +1,10 @@
-FROM clojure:temurin-26-lein-trixie AS builder
+FROM docker.io/library/clojure:temurin-26-tools-deps-trixie@sha256:cdb48987feccf867d2bbc45a73ab697e32eb9e3c79779d68963e99b91d792d0d
+
 WORKDIR /app
-COPY project.clj ./
-COPY resources ./resources
-RUN lein deps
+
+COPY deps.edn ./
+RUN clojure -X:deps prep
+
 COPY src ./src
-RUN lein with-profile uberjar uberjar
 
-FROM eclipse-temurin:26-jre
-RUN mkdir -p /data/static
-WORKDIR /app
-COPY --from=builder /app/target/aleph-bench-0.1.0-standalone.jar /app/app.jar
-
-EXPOSE 8080 8081 8082 8443
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["clojure", "-M", "-m", "aleph-bench.core"]

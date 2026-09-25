@@ -1,24 +1,15 @@
 {
   "display_name": "http-kit",
   "language": "Clojure",
-  "type": "emerging",
-  "mode": "standard",
-  "completeness": {
-    "routing": false,
-    "middleware": true,
-    "request": true,
-    "response": true
-  },
+  "type": "engine",
   "engine": "http-kit",
-  "description": "Ring-compatible benchmark entry using blocking JDBC on http-kit's virtual request workers.",
+  "description": "Minimal http-kit engine benchmark with HTTP/1.1 and native WebSocket echo support.",
   "repo": "https://github.com/http-kit/http-kit",
   "enabled": true,
   "tests": [
     "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
-    "pipelined",
-    "limited-conn",
-    "json-comp",
-    "async-db"
+    "pipelined", "limited-conn", "json-comp",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
   "maintainers": []
 }
