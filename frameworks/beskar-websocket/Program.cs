@@ -11,12 +11,9 @@ internal static class Program
         {
             Path = "/ws",
             KeepAliveInterval = TimeSpan.Zero,
-            OnMessage = (session, payload, opcode) =>
-            {
-                _ = session.SendFrameAsync(payload, opcode);
-            }
+            OnMessageAsync = (session, payload, opcode) 
+                => session.SendFrameAsync(payload, opcode)
         };
-        options.TcpOptions.SocketOptions.IoQueueCount = Environment.ProcessorCount;
 
         var endPoint = new IPEndPoint(IPAddress.Any, 8080);
         var listener = new WsNetworkListener(endPoint, options);
@@ -29,6 +26,9 @@ internal static class Program
         }
 
         Console.WriteLine("Application started.");
-        await Task.Delay(-1);
+        while (true)
+        {
+            _ = await listener.AcceptSessionAsync();
+        }
     }
 }
