@@ -1862,6 +1862,20 @@
       "response": true
     }
   },
+  "swerverts": {
+    "dir": "swerverts",
+    "description": "TypeScript route handlers running in-process on the swerver (Zig) engine via an FFI park/resume bridge: a matched request is handed from the reactor to a Bun handler and its response taken back, with no socket hop. The engine installs as a platform prebuilt (no build step) and fans out one worker per core over SO_REUSEPORT. HTTP/1.1 only for now; the prebuilt is built without the native-only TLS/HTTP2/HTTP3 flags.",
+    "repo": "https://github.com/justinGrosvenor/swerver-ts",
+    "type": "experimental",
+    "engine": "swerver",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "swoole": {
     "dir": "swoole",
     "description": "Swoole is an event-driven, asynchronous, coroutine-based concurrency library with high performance for PHP.",
