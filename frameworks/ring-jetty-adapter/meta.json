@@ -1,27 +1,15 @@
 {
   "display_name": "ring-jetty-adapter",
   "language": "Clojure",
-  "type": "emerging",
-  "mode": "standard",
-  "completeness": {
-    "routing": false,
-    "middleware": true,
-    "request": true,
-    "response": true
-  },
-  "engine": "Jetty",
-  "description": "Ring application using the official Ring Jetty adapter and standard Ring middleware.",
+  "type": "engine",
+  "engine": "ring-jetty-adapter",
+  "description": "Minimal HTTP/1.1 and HTTPS engine benchmark using the official Ring Jetty adapter with native WebSocket echo.",
   "repo": "https://github.com/ring-clojure/ring",
   "maintainers": [],
   "enabled": true,
   "tests": [
     "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
-    "pipelined",
-    "limited-conn",
-    "json-tls",
-    "json-comp",
-    "8gbit",
-    "async-db",
-    "fortunes"
+    "pipelined", "limited-conn", "json-tls", "json-comp", "8gbit",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ]
 }

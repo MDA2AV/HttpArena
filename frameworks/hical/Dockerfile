@@ -11,13 +11,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates gcc-14 g++-14 cmake ninja-build git \
-        libboost-all-dev libssl-dev libgtest-dev zlib1g-dev \
+        libboost-all-dev libssl-dev libgtest-dev zlib1g-dev libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone Hical（包含 HttpArena benchmark 文件在 docker/HttpArena/ 下）
 # HICAL_REF pin 到固定 commit，确保构建可复现；更新跑分时改此值
 ARG HICAL_REPO=https://github.com/Hical61/Hical.git
-ARG HICAL_REF=a5abb27c59e604a5fe15dfde49c634de5a13efce
+ARG HICAL_REF=5cc47672caaa801c4883a402f4d5620db12e194a
 
 WORKDIR /src
 RUN git init . && \
@@ -31,6 +31,8 @@ RUN cmake -B build -G Ninja \
         -DCMAKE_CXX_COMPILER=g++-14 \
         -DCMAKE_CXX_FLAGS="-march=native -mtune=native" \
         -DHICAL_BUILD_HTTPARENA=ON \
+        -DHICAL_WITH_DATABASE=ON \
+        -DHICAL_WITH_PGSQL=ON \
         -DHICAL_BUILD_TESTS=OFF \
         -DHICAL_BUILD_EXAMPLES=OFF \
     && cmake --build build --target httparena_server -j$(nproc) \
@@ -40,7 +42,7 @@ RUN cmake -B build -G Ninja \
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libboost-json1.83.0 libssl3t64 zlib1g \
+        libboost-json1.83.0 libssl3t64 zlib1g libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /src/build/httparena_server /server
