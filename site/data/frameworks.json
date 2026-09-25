@@ -283,6 +283,13 @@
     "type": "engine",
     "engine": "managed sockets"
   },
+  "capra": {
+    "dir": "capra",
+    "description": "Minimal Capra engine benchmark pinned to upstream master with HTTP/1.1, dynamic gzip JSON, and native WebSocket echo.",
+    "repo": "https://github.com/weavejester/capra",
+    "type": "engine",
+    "engine": "capra"
+  },
   "cardigan": {
     "dir": "cardigan",
     "description": "Java HTTP engine built on io_uring, Panama FFI, virtual threads, and thread-per-core event loops.",
