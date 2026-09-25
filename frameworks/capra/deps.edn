@@ -1,0 +1,10 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+        org.clojure/data.json {:mvn/version "2.5.2"}
+        ring/ring-core {:mvn/version "1.15.5"}
+        amalloy/ring-gzip-middleware {:mvn/version "0.1.4"}
+        org.ring-clojure/ring-websocket-protocols {:mvn/version "1.15.5"}
+        dev.weavejester/teensyp {:mvn/version "0.9.3"}
+        dev.weavejester/capra {:git/url "https://github.com/weavejester/capra.git"
+                               :git/sha "b0bda0dc5d2b8601d98f243d73e0ad602e294eb1"}}
+ :aliases {:test {:extra-paths ["test"]}}}
