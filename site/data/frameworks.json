@@ -1386,17 +1386,10 @@
   },
   "pedestal": {
     "dir": "pedestal",
-    "description": "Pedestal connector-map benchmark entry using the standard Jetty-backed server.",
+    "description": "Default Pedestal Jetty connector benchmark retaining Pedestal routing and interceptors.",
     "repo": "https://github.com/pedestal/pedestal",
-    "type": "emerging",
-    "engine": "Jetty",
-    "mode": "standard",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
+    "type": "engine",
+    "engine": "Pedestal / Jetty"
   },
   "phoenix-bandit": {
     "dir": "phoenix-bandit",
