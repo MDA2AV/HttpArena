@@ -314,9 +314,10 @@ int main() {
 
     if (has_certs) {
         server.enable_tls(certFile, keyFile);
+        server.enable_http3(true);
         // Port 8081: TLS HTTP/1.1 (json-tls, 8gbit)
         server.listen_tls(8081);
-        // Port 8443: TLS HTTP/2 (baseline-h2)
+        // Port 8443: TLS HTTP/2 & HTTP/3 (baseline-h2, static-h2, baseline-h3, static-h3)
         server.listen_tls(8443);
     }
 
