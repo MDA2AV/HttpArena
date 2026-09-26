@@ -1100,10 +1100,10 @@
       "response": true
     }
   },
-  "libioma": {
-    "dir": "libioma",
-    "description": "Minimal HTTP/1.1 framework in C on a thread-per-core io_uring runtime with stackful coroutines. Raw io_uring syscalls, no liburing; multishot accept and recv over provided buffer rings.",
-    "repo": "https://github.com/MDA2AV/libioma",
+  "libioxd": {
+    "dir": "libioxd",
+    "description": "libioxd \u2014 an HTTP/1.1 server library in C23 on a thread-per-core io_uring runtime with stackful coroutines. Raw io_uring syscalls, no liburing: multishot accept and recv over provided buffer rings, one ring and one SO_REUSEPORT listener per worker; a handler reads as linear code and every wait - a body read, a timer, a send - parks the connection on the ring. TLS 1.3 handshakes in OpenSSL, records in the kernel (kTLS) on :8081. Static files are served from memory by the library's static module, checked against the disk per request; the dataset is parsed once with cJSON, serialized per request by the library's JSON writer, and coded by its compression middleware (brotli, gzip) when the client asks.",
+    "repo": "https://github.com/MDA2AV/libioxd",
     "type": "engine",
     "engine": "io_uring"
   },
