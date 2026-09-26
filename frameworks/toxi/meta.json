@@ -1,0 +1,13 @@
+{
+  "display_name": "toxi",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "experimental",
+  "mode": "standard",
+  "completeness": {"routing": true, "middleware": true, "request": true, "response": true},
+  "description": "Modular Rust web framework with typed request extractors.",
+  "repo": "https://github.com/meshackbahati/toxi",
+  "enabled": true,
+  "tests": ["baseline", "async", "pipelined", "limited-conn", "json-comp", "json-tls", "8gbit"],
+  "maintainers": ["meshackbahati"]
+}
