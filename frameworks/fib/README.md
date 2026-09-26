@@ -1,9 +1,10 @@
 # fib
 
 [fib](https://github.com/lesismal/fib) (Fast In Balance), a Go networking library: one
-edge-triggered event loop (epoll on Linux) feeding a logical worker pool, where each
-connection owns an ordered event queue and any idle worker may run it, with no fixed
-connection-to-thread binding.
+edge-triggered event loop (epoll on Linux) per CPU, each owning the connections it was handed,
+and a logical worker pool that HTTP/1 connections hand their rounds to, where each connection
+owns an ordered event queue and any idle worker may run it, with no fixed connection-to-thread
+binding.
 
 ## Stack
 
