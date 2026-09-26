@@ -4,6 +4,7 @@ const swerver = @import("swerver");
 const router = swerver.router;
 const response_mod = swerver.response;
 const clock = swerver.runtime.clock;
+const suspension = swerver.suspension;
 const db_routes = @import("db_routes.zig");
 
 // ── Dataset ──────────────────────────────────────────────────────
@@ -220,6 +221,36 @@ fn handleBaseline(ctx: *router.HandlerContext) response_mod.Response {
     };
 }
 
+// ── Async delay (GET /delay/{ms}) ────────────────────────────────
+// Park on swerver's reactor-owned timer wheel (the suspension table) for {ms},
+// then answer text/plain with the number. The worker stays free while tens of
+// thousands of these are outstanding, which is the whole point of the async
+// profile. The delay lives in the per-park stash, so 32 overlapping requests
+// with 32 different delays each get their own value.
+const DelayStash = struct { ms: u32 };
+
+fn handleDelay(ctx: *router.HandlerContext) response_mod.Response {
+    const ms_str = ctx.getParam("ms") orelse "0";
+    const ms = std.fmt.parseInt(u32, ms_str, 10) catch return .{
+        .status = 400,
+        .headers = &[_]response_mod.Header{.{ .name = "Content-Type", .value = "text/plain" }},
+        .body = .{ .bytes = "invalid delay" },
+    };
+    // Returns the park sentinel; onDelayDone runs when the timer fires. On a
+    // full suspension table, shed with 503 rather than blocking.
+    return ctx.suspension.sleep(ms, DelayStash, .{ .ms = ms }, onDelayDone) catch return .{
+        .status = 503,
+        .headers = &[_]response_mod.Header{},
+        .body = .{ .bytes = "too many parked requests" },
+    };
+}
+
+fn onDelayDone(rctx: *suspension.ResumeContext) response_mod.Response {
+    const ms = rctx.stash(DelayStash).ms;
+    const body = std.fmt.bufPrint(rctx.response_buf, "{d}", .{ms}) catch "0";
+    return rctx.text(200, body);
+}
+
 // ── Unary gRPC ───────────────────────────────────────────────────
 
 fn grpcError(status: []const u8) response_mod.Response {
@@ -421,6 +452,7 @@ pub fn main(init: std.process.Init) !void {
     try app_router.get("/baseline2", handleBaseline);
     try app_router.post("/baseline2", handleBaseline);
     try app_router.get("/json/:count", handleJson);
+    try app_router.get("/delay/:ms", handleDelay);
     try app_router.post("/benchmark.BenchmarkService/GetSum", handleGrpcSum);
     try db_routes.register(&app_router);
 

@@ -1,0 +1,7 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+        org.clojure/data.json {:mvn/version "2.5.2"}
+        com.outskirtslabs/busker {:git/url "https://github.com/outskirtslabs/busker.git"
+                                  :git/sha "0e2ead5507b03d18fa94c01647a37188b37b25f6"}
+        com.outskirtslabs.busker/linux-x86-64 {:mvn/version "0.0.4"}}
+ :aliases {:test {:extra-paths ["test"]}}}

@@ -2,47 +2,64 @@
   (:require
    [clojure.data.json :as json]
    [clojure.test :as test :refer [deftest is]]
-   [httparena.ring-jetty9-adapter.core :as core]))
+   [httparena.ring-jetty9-adapter.core :as core])
+  (:import [java.io ByteArrayInputStream]))
 
-(deftest converts-postgres-uri-for-hikari
-  (is (= {:jdbc-url          "jdbc:postgresql://localhost:5432/benchmark?ApplicationName=proof"
-          :username          "bench name"
-          :password          "p:a@ss"
-          :maximum-pool-size 256}
-         (core/database-url->hikari-options
-          "postgres://bench%20name:p%3Aa%40ss@localhost:5432/benchmark?ApplicationName=proof"))))
+(def sample-dataset
+  [{:id       1
+    :name     "widget"
+    :category "tools"
+    :price    10
+    :quantity 2
+    :active   true
+    :tags     ["sale"]
+    :rating   {:score 4 :count 9}}])
 
-(deftest async-db-falls-back-through-the-ring-handler
-  (with-redefs [core/datasource! (constantly nil)]
+(def app (core/handler sample-dataset))
+
+(deftest calculates-baseline-sums
+  (is (= {:status  200
+          :headers {"Content-Type" "text/plain"}
+          :body    "75"}
+         (app {:request-method :post
+               :uri            "/baseline11"
+               :query-string   "a=13&b=42"
+               :body           (ByteArrayInputStream. (.getBytes "20"))}))))
+
+(deftest encodes-dynamic-json-items
+  (is (= {"items" [{"id"       1
+                   "name"     "widget"
+                   "category" "tools"
+                   "price"    10
+                   "quantity" 2
+                   "active"   true
+                   "tags"     ["sale"]
+                   "rating"   {"score" 4 "count" 9}
+                   "total"    60}]
+          "count" 1}
+         (-> (app {:request-method :get
+                   :uri            "/json/1"
+                   :query-string   "m=3"})
+             :body
+             json/read-str))))
+
+(deftest echoes-request-bytes
+  (let [response (app {:request-method :post
+                       :uri            "/echo"
+                       :body           (ByteArrayInputStream. (byte-array [1 2 3]))})]
     (is (= {:status  200
-            :headers {"Content-Type" "application/json"}
-            :body    {"items" [] "count" 0}}
-           (update (core/handler {:uri "/async-db"
-                                  :request-method :get
-                                  :query-string "min=10&max=50&limit=50"})
-                   :body
-                   json/read-str)))))
+            :headers {"Content-Type" "application/octet-stream"}
+            :body    [1 2 3]}
+           (update response :body vec)))))
 
-(deftest maps-database-rows-with-nested-rating
-  (is (= [{:id       1
-           :name     "widget"
-           :category "tools"
-           :price    10
-           :quantity 2
-           :active   true
-           :tags     ["sale"]
-           :rating   {:score 4 :count 9}}]
-         (core/rows->items [{:id           1
-                             :name         "widget"
-                             :category     "tools"
-                             :price        10
-                             :quantity     2
-                             :active       true
-                             :tags         "[\"sale\"]"
-                             :rating_score 4
-                             :rating_count 9}]))))
+(deftest rejects-non-websocket-requests
+  (is (= {:status  426
+          :headers {"Content-Type" "text/plain"}
+          :body    "websocket upgrade required"}
+         (app {:request-method :get
+               :uri            "/ws"}))))
 
-(defn -main [& _args]
+(defn -main [& _]
   (let [results (test/run-tests 'httparena.ring-jetty9-adapter.core-test)]
     (when (pos? (+ (:fail results) (:error results)))
       (throw (ex-info "tests failed" results)))))

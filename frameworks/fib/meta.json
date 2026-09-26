@@ -1,0 +1,38 @@
+{
+  "display_name": "fib",
+  "language": "Go",
+  "type": "experimental",
+  "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": true,
+    "request": true,
+    "response": false
+  },
+  "engine": "fib",
+  "description": "fib (Fast In Balance) Go networking library: one edge-triggered epoll event loop feeding a logical worker pool, where each connection is an ordered task that any idle worker may run. Its http package serves HTTP/1.1, HTTP/2 (ALPN and prior-knowledge h2c) and, through package http3, HTTP/3 over its own QUIC, all through one handler taking a *http.Request and a Context; TLS through package tls on crypto/tls. Default configuration throughout; the certificate on the opt-in TLS hardening listener is picked per handshake through tls.Config.GetCertificate, so a renewed pair is served without a restart. Handlers dispatch on the path themselves; the JSON routes sit behind fib's compress middleware (middleware.Chain with compress.New(), defaults), which gzips per request as Accept-Encoding allows. /delay and /async-db answer retained requests from a timer and a goroutine, and /static goes through net/http's ServeContent on the Context, choosing the pre-compressed twin on disk off Accept-Encoding.",
+  "repo": "https://github.com/lesismal/fib",
+  "enabled": true,
+  "tls_check": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": ["lesismal"]
+}

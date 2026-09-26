@@ -1,0 +1,12 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.5"}
+        org.clojure/data.json {:mvn/version "2.5.2"}
+        com.s-exp/hirundo {:git/url "https://github.com/mpenet/hirundo.git"
+                            :git/sha "91f4c4ec0a7ee9aeab9b70b421bf7f01139f0411"}
+        io.helidon.http/helidon-http {:mvn/version "4.5.5"}
+        io.helidon.logging/helidon-logging-slf4j {:mvn/version "4.5.5"}
+        io.helidon.webserver/helidon-webserver {:mvn/version "4.5.5"}
+        io.helidon.webserver/helidon-webserver-grpc {:mvn/version "4.5.5"}
+        io.helidon.webserver/helidon-webserver-http2 {:mvn/version "4.5.5"}
+        io.helidon.webserver/helidon-webserver-websocket {:mvn/version "4.5.5"}}
+ :aliases {:test {:extra-paths ["test"]}}}

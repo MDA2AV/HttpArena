@@ -1,0 +1,5 @@
+{
+  "framework": "aleph",
+  "tls": "pass",
+  "check": "none"
+}

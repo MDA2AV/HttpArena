@@ -1,7 +1,5 @@
-FROM docker.io/library/clojure:tools-deps-trixie-slim
+FROM docker.io/library/clojure:temurin-26-tools-deps-trixie@sha256:cdb48987feccf867d2bbc45a73ab697e32eb9e3c79779d68963e99b91d792d0d
 
-RUN java -XshowSettings:properties -version 2>&1 | grep -Eq 'java\.specification\.version = 25' \
-    && java -version 2>&1 | grep -Eq 'version "25\.'
 
 WORKDIR /app
 
