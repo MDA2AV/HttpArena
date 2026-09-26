@@ -1,0 +1,22 @@
+{
+  "display_name": "touchsocket",
+  "language": "C#",
+  "type": "engine",
+  "engine": "touchsocket",
+  "description": "TouchSocket.Http, the HTTP/1.1 server component of the TouchSocket networking framework. Requests are answered from an IHttpPlugin, which is how TouchSocket exposes its HTTP pipeline: the plugin sees each request, answers the ones it recognises and passes the rest along. HTTP/1.1 cleartext on :8080. /json is serialized from the parsed model on every request and compressed only when the client asked for it, so nothing is answered from a precomputed body. Disabled pending a fix: a request that arrives split across TCP segments AND asks for Connection: close is answered with nothing - the socket is closed instead of the response being flushed. Fragmented requests with keep-alive pass at every offset, so it is the close path specifically.",
+  "repo": "https://github.com/RRQM/TouchSocket",
+  "enabled": false,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "json-comp"
+  ],
+  "maintainers": [
+    "MDA2AV",
+    "RRQM"
+  ]
+}
