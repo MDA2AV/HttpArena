@@ -1,4 +1,4 @@
-FROM debian:stable-slim AS build
+FROM debian:trixie-slim AS build
 
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends \
@@ -79,7 +79,7 @@ COPY . .
 # :8081); without it the tls module is a stub and the binary stays mbedtls-free.
 RUN v -prod -gc none -d vanilla_tls . -o server
 
-FROM debian:stable-slim
+FROM debian:trixie-slim
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends libpq5 liburing2 && \
     rm -rf /var/lib/apt/lists/*

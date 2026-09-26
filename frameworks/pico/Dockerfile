@@ -1,4 +1,4 @@
-FROM debian:stable-slim AS build
+FROM debian:trixie-slim AS build
 
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends \
@@ -19,7 +19,7 @@ COPY . .
 # the default garbage collector is the safe choice here.
 RUN v -prod . -o server
 
-FROM debian:stable-slim
+FROM debian:trixie-slim
 RUN apt-get -qq update && \
     apt-get -qy install --no-install-recommends util-linux && \
     rm -rf /var/lib/apt/lists/*
