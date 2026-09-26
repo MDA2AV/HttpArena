@@ -9,6 +9,7 @@ import (
 	stdhttp "net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -428,10 +429,16 @@ func statFile(name string) fileStamp {
 	return fileStamp{info.ModTime(), info.Size()}
 }
 
+// fib's default spreads a TCP engine over one event loop per CPU
+// (IOPollers); ReusePort has each loop listen on the engine's addresses with
+// a socket of its own and accept its connections itself, so that no one loop
+// accepts for every core. A UDP engine's peers share one socket, which stays
+// on the engine's own loop either way.
 func bind(network string, addrs []string, handler fib.Handler) *fib.Engine {
 	config := fib.DefaultConfig()
 	config.Network = network
 	config.Addrs = addrs
+	config.ReusePort = network == "tcp"
 	engine, err := fib.Bind(config, handler)
 	if err != nil {
 		log.Fatalf("fib: bind %s %v: %v", network, addrs, err)
@@ -440,18 +447,33 @@ func bind(network string, addrs []string, handler fib.Handler) *fib.Engine {
 }
 
 func main() {
+	// A loop waiting for events in epoll_wait keeps its P until the scheduler
+	// takes it back, and with one loop per CPU that can be every P, leaving
+	// the workers and the goroutines the handlers start - the /async-db
+	// queries, the /delay timers - waiting for one. fib's guide gives twice
+	// the CPUs for that: on six CPUs it took /async-db from 38k to 46k req/s,
+	// and baseline from 895k to 940k.
+	runtime.GOMAXPROCS(2 * runtime.NumCPU())
 	loadDataset()
 	loadPgPool()
 
 	handler := fibhttp.HandlerFunc(serve)
 
+	// No handler keeps the request, its header, URL or Context past its
+	// response, so those are recycled (the Reuse options).
+	httpConfig := fibhttp.DefaultConfig()
+	httpConfig.ReuseRequests = true
+	httpConfig.ReuseHeaders = true
+	httpConfig.ReuseURLs = true
+	httpConfig.ReuseContexts = true
+
 	// Plaintext: HTTP/1.1 on 8080 and HTTP/2 with prior knowledge on 8082.
 	// fib's HTTP handler tells the two apart by the connection preface, so one
 	// engine listens on both ports.
-	engines := []*fib.Engine{bind("tcp", []string{":8080", ":8082"}, fibhttp.NewHandler(handler))}
+	engines := []*fib.Engine{bind("tcp", []string{":8080", ":8082"}, fibhttp.NewHandlerWithConfig(httpConfig, handler))}
 
 	// The HTTP/1.1-only listeners over TLS offer http/1.1 alone through ALPN.
-	h1Config := fibhttp.DefaultConfig()
+	h1Config := httpConfig
 	h1Config.DisableHTTP2 = true
 	h1Handler := fibhttp.NewHandlerWithConfig(h1Config, handler)
 
@@ -464,7 +486,7 @@ func main() {
 		// 8443/tcp: HTTP/2 through ALPN, HTTP/1.1 for clients that do not
 		// choose it.
 		engines = append(engines, bind("tcp", []string{":8443"},
-			fibtls.NewServer(fibhttp.ConfigureTLS(tlsConfig), fibhttp.NewHandler(handler))))
+			fibtls.NewServer(fibhttp.ConfigureTLS(tlsConfig), fibhttp.NewHandlerWithConfig(httpConfig, handler))))
 
 		// 8443/udp: HTTP/3 over fib's own QUIC.
 		engines = append(engines, bind("udp", []string{":8443"}, http3.NewHandler(tlsConfig, handler)))

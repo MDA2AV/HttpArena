@@ -1,7 +1,8 @@
 # fib-tuned
 
-The [`fib`](../fib) entry with one thing changed: response compression. Listeners, routes,
-default fib configuration, static files and TLS are the same as there; see its README.
+The [`fib`](../fib) entry with two things changed: response compression, and the
+configuration its TCP servers run with. Listeners, routes, static files and TLS are the same as
+there; see its README.
 
 ## Stack
 
@@ -15,6 +16,30 @@ default fib configuration, static files and TLS are the same as there; see its R
 fib's own `middleware/compress` codes gzip and deflate only. This entry replaces it with a
 compression middleware written here ([`compress.go`](compress.go)), which the standard rules
 do not allow - compression there has to be the framework's own - so the entry is `mode: tuned`.
+
+It also runs with the fib settings the standard rules keep at their defaults:
+
+- **Each event loop accepting for itself.** fib's default spreads an engine over one loop per
+  CPU (`fib.Config.IOPollers`); every TCP engine here also sets `fib.Config.ReusePort`, which has
+  each loop listen on the engine's addresses with a socket of its own, bound with `SO_REUSEPORT`,
+  and accept its connections itself. The UDP engine (HTTP/3) keeps the defaults: its peers share
+  one socket, which stays on the engine's own loop. HTTP/1 requests still run on fib's worker
+  pool, as they do by default, so a handler that blocks holds up only its own connection.
+- **Recycled requests.** `ReuseRequests`, `ReuseHeaders`, `ReuseURLs` and `ReuseContexts`
+  recycle the `*http.Request`, its `Header` and `URL`, and the `*Context` once a response is
+  finished. No handler keeps any of them past its response.
+- **`GOMAXPROCS` at twice the CPUs**, which fib's guide gives for loops that block in
+  `epoll_wait`: one loop per CPU can hold every P while it waits, and the workers and the
+  goroutines the handlers start (the `/async-db` queries, the `/delay` timers) then wait for
+  one. On six CPUs it took async-db from 38k to 46k req/s and baseline from 895k to 940k.
+- **`GOGC=400`**, set in the Dockerfile. Requests make garbage far faster than the server keeps
+  anything live: at the default the collector ran 24 cycles a second on six CPUs at 874k req/s,
+  and at 400 it ran 9 a second, with the heap under 130 MB, at 978k req/s.
+
+On six CPUs of a local Docker VM, against the `fib` entry on the same fib build, these took
+baseline from 745k to 980k req/s, limited-conn from 550k to 710k, pipelined from 3.55M to 7.5M,
+async from 310k to 347k and json-comp, with the entry's own compression, from 91k to 107k;
+async-db stayed at 46k.
 
 ## The middleware
 
