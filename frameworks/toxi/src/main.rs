@@ -176,6 +176,30 @@ async fn main() -> Result<()> {
     router.get("/delay/:ms", delay);
     router.post("/echo", echo_bytes);
     router.get("/json/:count", json_dataset);
+
+    // TLS profiles (json-tls, 8gbit) serve the same router on 8081 with
+    // HTTP/1.1 only. Paths default to the harness mounts and accept
+    // TLS_CERT/TLS_KEY overrides for local validation.
+    let cert_path =
+        std::env::var("TLS_CERT").unwrap_or_else(|_| "/certs/server.crt".to_string());
+    let key_path =
+        std::env::var("TLS_KEY").unwrap_or_else(|_| "/certs/server.key".to_string());
+    let cert = std::path::Path::new(&cert_path);
+    let key = std::path::Path::new(&key_path);
+    if cert.exists() && key.exists() {
+        let tls_router = router.clone();
+        tokio::spawn(async move {
+            let tls = toxi_core::tls::TlsConfig::new(cert_path, key_path);
+            let addr: std::net::SocketAddr = "0.0.0.0:8081".parse().unwrap();
+            println!("toxi-arena https listening on {addr}");
+            toxi_core::tls::SecureServer::new(tls_router)
+                .with_tls(tls)
+                .with_http_version(toxi_core::HttpVersion::Http1)
+                .listen(addr)
+                .await
+        });
+    }
+
     let addr: std::net::SocketAddr = "0.0.0.0:8080".parse().unwrap();
     println!("toxi-arena listening on {addr}");
     Server::new(router).listen(addr).await
