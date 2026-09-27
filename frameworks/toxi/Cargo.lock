@@ -2412,6 +2412,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.49"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a45a52f43e1c16f667ccfe4dd8c85b7f7c204fd5e3bf46c5b0db9a5c3c0b8e9"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "libredox"
 version = "0.1.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2507,6 +2516,15 @@ name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
+
+[[package]]
+name = "mimalloc"
+version = "0.1.52"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d4139bb28d14ad1facf21d5eb8825051b326e172d216b39f6d31df53cc97862"
+dependencies = [
+ "libmimalloc-sys",
+]
 
 [[package]]
 name = "mime"
@@ -4485,6 +4503,7 @@ dependencies = [
  "flate2",
  "http 1.5.0",
  "http-body-util",
+ "mimalloc",
  "serde",
  "serde_json",
  "tokio",
@@ -4555,9 +4574,9 @@ dependencies = [
 
 [[package]]
 name = "toxi-core"
-version = "3.1.6"
+version = "3.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3782b3053a08f4ac491f643c633cf76e697d543eda9fd28c4de92a9bda9585cc"
+checksum = "acbca2b59c6b863704d71ec6d0f81dbe4cacdcef8e5a648e9a83ae42c7237306"
 dependencies = [
  "async-trait",
  "base64 0.22.1",

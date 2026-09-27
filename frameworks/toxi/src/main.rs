@@ -10,6 +10,9 @@ use std::io::Write;
 use std::sync::Arc;
 use toxi::prelude::*;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(serde::Deserialize, Clone)]
 struct Item {
     id: i64,
@@ -134,9 +137,7 @@ async fn json_dataset(
     .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
     if !wants_gzip {
-        return Ok(Response::json(serde_json::from_slice::<serde_json::Value>(
-            &body,
-        ).map_err(|e| Error::InternalServerError(e.to_string()))?));
+        return bytes_response(body, None);
     }
 
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
@@ -147,15 +148,27 @@ async fn json_dataset(
         .finish()
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
 
-    let res = http::Response::builder()
+    bytes_response(gz, Some("gzip"))
+}
+
+/// Build a JSON response directly from serialized bytes, skipping the
+/// serialize-parse-serialize round trip through `serde_json::Value`.
+fn bytes_response(body: Vec<u8>, encoding: Option<&str>) -> Result<Response> {
+    let mut res = http::Response::builder()
         .header(http::header::CONTENT_TYPE, "application/json")
-        .header(http::header::CONTENT_ENCODING, "gzip")
         .body(
-            Full::new(bytes::Bytes::from(gz))
+            Full::new(bytes::Bytes::from(body))
                 .map_err(|e| match e {})
                 .boxed(),
         )
         .map_err(|e| Error::InternalServerError(e.to_string()))?;
+    if let Some(enc) = encoding {
+        res.headers_mut().insert(
+            http::header::CONTENT_ENCODING,
+            enc.parse()
+                .map_err(|e| Error::InternalServerError(format!("{e}")))?,
+        );
+    }
     Ok(Response::new(res))
 }
 
