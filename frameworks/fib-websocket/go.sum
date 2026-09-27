@@ -2,3 +2,5 @@ github.com/lesismal/fib v0.0.0-20260926064024-9dec8fc9752b h1:yynWEMzqDsHKCqp+DP
 github.com/lesismal/fib v0.0.0-20260926064024-9dec8fc9752b/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
 github.com/lesismal/fib v0.0.0-20260926141701-7d159937d058 h1:ZMJ+QBL9sKIizaDHzDPDTgT6QX/Z/wGhvqPI1HjMg+4=
 github.com/lesismal/fib v0.0.0-20260926141701-7d159937d058/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
+github.com/lesismal/fib v1.0.0 h1:L+qfSMP/DS1c2D1kS7tmLUaA0XewK7JHr9pnQZKLksg=
+github.com/lesismal/fib v1.0.0/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
