@@ -1,0 +1,32 @@
+{
+  "display_name": "feersum",
+  "language": "Perl",
+  "type": "engine",
+  "engine": "feersum",
+  "description": "Feersum: an event-driven, high-performance HTTP server engine for Perl built on EV/libev with TLS 1.3, HTTP/2, WebSocket, and PostgreSQL support",
+  "repo": "https://github.com/vividsnow/feersum",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "async-db",
+    "fortunes",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": [
+    "vividsnow"
+  ]
+}
