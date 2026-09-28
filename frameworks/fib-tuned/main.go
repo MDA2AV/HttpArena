@@ -9,7 +9,6 @@ import (
 	stdhttp "net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -447,13 +446,6 @@ func bind(network string, addrs []string, handler fib.Handler) *fib.Engine {
 }
 
 func main() {
-	// A loop waiting for events in epoll_wait keeps its P until the scheduler
-	// takes it back, and with one loop per CPU that can be every P, leaving
-	// the workers and the goroutines the handlers start - the /async-db
-	// queries, the /delay timers - waiting for one. fib's guide gives twice
-	// the CPUs for that: on six CPUs it took /async-db from 38k to 46k req/s,
-	// and baseline from 895k to 940k.
-	runtime.GOMAXPROCS(2 * runtime.NumCPU())
 	loadDataset()
 	loadPgPool()
 

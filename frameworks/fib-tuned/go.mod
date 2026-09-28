@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.2.4
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/klauspost/compress v1.20.0
-	github.com/lesismal/fib v1.0.0
+	github.com/lesismal/fib v1.0.1-0.20260928072455-b96ecc517f38
 )
 
 require (
