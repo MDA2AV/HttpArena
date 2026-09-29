@@ -36,7 +36,7 @@ kotlin {
                 implementation("com.netonstream:neton-logging:$netonVersion")
                 implementation("com.netonstream:neton-http:$netonVersion")
                 implementation("com.netonstream:neton-routing:$netonVersion")
-                implementation("com.netonstream:neton-http-netonstream:$netonVersion")
+                implementation("com.netonstream:neton-http-hyper4k:$netonVersion")
                 // async-db / fortunes: async Postgres via sqlx4k.
                 implementation("com.netonstream:neton-database:$netonVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

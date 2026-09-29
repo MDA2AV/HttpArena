@@ -1,7 +1,7 @@
 {
-  "display_name": "neton",
+  "display_name": "neton-hyper",
   "language": "Kotlin",
-  "engine": "netonstream",
+  "engine": "hyper",
   "type": "emerging",
   "mode": "standard",
   "completeness": {
@@ -10,7 +10,7 @@
     "request": true,
     "response": true
   },
-  "description": "Neton with the Kotlin/Native neton-http-netonstream adapter, using com.netonstream io/http/tls and OpenSSL. The same framework routes, middleware, request parsing and response pipeline as neton-hyper; only the engine differs. HTTP/1.1 on 8080, h2c on 8082, h1 TLS on 8081 and h2 TLS on 8443.",
+  "description": "Neton, a Kotlin Multiplatform framework compiled to a native executable. Routing, middleware, request parsing and the response pipeline are the framework's; the hyper4k engine (Tokio + Hyper 1.x, linked in as a Rust static library) only does protocol and transport. Serves HTTP/1.1 on 8080, HTTP/2 cleartext on 8082, HTTP/1.1+TLS on 8081 and HTTP/2+TLS on 8443 (ALPN) from one route table; static files and TLS terminate in the framework.",
   "repo": "https://github.com/netonframework/neton",
   "enabled": true,
   "tests": [
