@@ -35,15 +35,16 @@ RUN git init -q /opt/v && cd /opt/v && \
 # specific commit: reproducible, with NO per-build network call to detect
 # changes. To pick up upstream library fixes, bump this commit.
 #
-# Pinned to vanilla main @f1a9691 — the commit that carries the HTTP/2
-# implementation (enghitalo/vanilla#122's http2 story) landed on top of the
-# conn-mode seam (#136): a self-contained RFC 9113/7541 codec — HPACK (static +
-# dynamic table, canonical Huffman, decoded-block ceiling), the frame codec,
-# and the connection state machine with send-side flow control — serving
-# cleartext h2c over the takeover seam, hardened against a live h2spec CI gate.
-# This entry composes that machine with a small application handler; see main.v.
-RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
-    git -C /root/.vmodules/vanilla checkout f1a96919587b6ba15a1dd9154cd1d75d10cb2a3e
+# Pinned to vanilla @88df58b: main @170ff4e plus response trailers
+# (enghitalo/vanilla#174), which unary-grpc needs to send grpc-status after
+# the message. Over the previous pin (@f1a9691, the HTTP/2 implementation of
+# #122 on the conn-mode seam #136) main also carries the http2 per-request
+# allocation fixes (pooled StreamStates, response DATA emitted straight from
+# the body), which keep RSS flat under -gc none. Fetched at that one commit.
+RUN git init -q /root/.vmodules/vanilla && \
+    git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
+        88df58b700e8fd19baafa884473305fbfcf7cad6 && \
+    git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 WORKDIR /app
 COPY . .
@@ -60,8 +61,9 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/server /server
 
-# h2c, prior-knowledge, on 8082 (HttpArena's cleartext HTTP/2 port).
-EXPOSE 8082
+# h2c, prior-knowledge, on 8082 (HttpArena's cleartext HTTP/2 port) and on
+# 8080, where the harness drives unary gRPC.
+EXPOSE 8080 8082
 # One worker per CPU the container may run on. vanilla defaults to nr_cpus,
 # which reads the host's online CPUs (128 on the bench box) and ignores the
 # cpuset, so a 64-CPU profile started 128 workers and latency-500k-8cpu would
