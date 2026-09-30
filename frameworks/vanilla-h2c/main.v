@@ -140,24 +140,35 @@ fn parse_u_at(s string, start int) i64 {
 }
 
 // q_int reads integer query parameter `key` from a full request-target string
-// (e.g. "/baseline2?a=13&b=42"). Returns 0 when the key is absent.
+// (e.g. "/baseline2?a=13&b=42"). Returns 0 when the key is absent. It indexes
+// into target: slicing substrings (target[a..], query[i..eq] == key) would
+// heap-copy each one, allocations per request that -gc none never frees.
+@[direct_array_access]
 fn q_int(target string, key string) i64 {
 	qpos := target.index_u8(`?`)
 	if qpos < 0 {
 		return 0
 	}
-	query := target[qpos + 1..]
-	mut i := 0
-	for i < query.len {
+	mut i := qpos + 1
+	for i < target.len {
 		mut eq := i
-		for eq < query.len && query[eq] != `=` && query[eq] != `&` {
+		for eq < target.len && target[eq] != `=` && target[eq] != `&` {
 			eq++
 		}
-		if eq < query.len && query[eq] == `=` && query[i..eq] == key {
-			return parse_u_at(query, eq + 1)
+		if eq < target.len && target[eq] == `=` && eq - i == key.len {
+			mut same := true
+			for k in 0 .. key.len {
+				if target[i + k] != key[k] {
+					same = false
+					break
+				}
+			}
+			if same {
+				return parse_u_at(target, eq + 1)
+			}
 		}
 		mut amp := eq
-		for amp < query.len && query[amp] != `&` {
+		for amp < target.len && target[amp] != `&` {
 			amp++
 		}
 		i = amp + 1

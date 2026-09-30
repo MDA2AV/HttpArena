@@ -35,15 +35,16 @@ RUN git init -q /opt/v && cd /opt/v && \
 # specific commit: reproducible, with NO per-build network call to detect
 # changes. To pick up upstream library fixes, bump this commit.
 #
-# Pinned to vanilla @88df58b: main @170ff4e plus response trailers
+# Pinned to vanilla @5012de9: main @170ff4e plus response trailers
 # (enghitalo/vanilla#174), which unary-grpc needs to send grpc-status after
-# the message. Over the previous pin (@f1a9691, the HTTP/2 implementation of
-# #122 on the conn-mode seam #136) main also carries the http2 per-request
-# allocation fixes (pooled StreamStates, response DATA emitted straight from
-# the body), which keep RSS flat under -gc none. Fetched at that one commit.
+# the message, and no allocation per request in http2 (#175): HPACK literals
+# decoded into a per-connection arena and copied into the stream's pooled
+# storage, and a fixed stream table instead of a map. Under -gc none the
+# old path kept ~200 B per request (10 GiB in a 5 s run); RSS is now flat
+# per request. Fetched at that one commit.
 RUN git init -q /root/.vmodules/vanilla && \
     git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
-        88df58b700e8fd19baafa884473305fbfcf7cad6 && \
+        5012de93d574f0e4af4b4cc607dabfcca80f810f && \
     git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 WORKDIR /app
