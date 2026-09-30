@@ -10,6 +10,7 @@ import json
 import os
 import strings
 import sync
+import time
 import compress.gzip
 
 struct Rating {
@@ -69,6 +70,9 @@ mut:
 	crud    []CrudSlot
 	crud_mu &sync.RwMutex = unsafe { nil }
 	gz      map[u64][]u8 // json-comp: (count<<32)|m -> gzipped response bytes
+	// production-stack /api/me: user-id-indexed slab, same shape as `crud`
+	users    []CrudSlot
+	users_mu &sync.RwMutex = unsafe { nil }
 	gz_mu   &sync.RwMutex = unsafe { nil }
 }
 
@@ -79,8 +83,9 @@ mut:
 // the next MISS to reuse (no time-based expiry — see the SharedRO.crud note).
 struct CrudSlot {
 mut:
-	buf   []u8
-	valid bool
+	buf     []u8
+	valid   bool
+	expires u64 // time.sys_mono_now() deadline; a HIT needs now < expires
 }
 
 // crud GET/PUT ids are `{RAND:1:50000}`; index the slab directly (1..50000). Index 0
@@ -90,6 +95,15 @@ const crud_cache_slots = 50001
 // category + tags + digits + ~95 B of JSON punctuation); 512 leaves ample margin
 // so a slot's buffer, allocated once on first MISS, never reallocates.
 const crud_cache_bufcap = 512
+
+// Cache-aside TTLs for production-stack (the spec caps items at 1 s, users at
+// 30 s). The same slab serves /crud/items, which keeps the 1 s item TTL.
+const item_ttl_ns = u64(1_000_000_000)
+const user_ttl_ns = u64(30_000_000_000)
+
+// /api/me ids index the users slab directly; the seed's ids are small, and an id
+// past the slab is served uncached rather than growing it.
+const user_cache_slots = 1024
 
 // WorkerCtx is the per-worker state handed to every handler call as ac.state
 // (the make_state contract). Each worker owns its own async Postgres pool (no
@@ -130,6 +144,11 @@ mut:
 	// was the /baseline11 chunked-POST leak (~6 GiB at 3.8M req/s in the arena
 	// baseline mix).
 	dechunk_buf []u8
+	// Idle one-shot timerfds for /delay: start_delay pops one instead of calling
+	// timerfd_create, on_delay_elapsed pushes it back instead of closing it. A
+	// recycled fd is still registered with the worker's poller, so re-arming it
+	// costs a timerfd_settime and a re-watch rather than create + add + close.
+	timer_fds []int
 }
 
 // Stash is the per-request state that must survive across the park (the request
@@ -149,6 +168,8 @@ const k_crud_get = u8(3)
 const k_crud_list = u8(4)
 const k_crud_create = u8(5)
 const k_crud_update = u8(6)
+const k_api_update = u8(7)
+const k_api_me = u8(8)
 
 // ── zero-alloc write helpers (push_many, never single-element `<<`) ──────────
 
@@ -343,20 +364,30 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		}
 		w.emit_int(mut out, 'text/plain', sum)
 		return done
+	} else if route == '/baseline2' {
+		// the gateway profiles' query-sum endpoint (GET only), behind the edge proxy
+		w.emit_int(mut out, 'text/plain', qint(req, qk_a) + qint(req, qk_b))
+		return done
+	} else if route.starts_with('/api/items/') {
+		// production-stack: the edge verified the JWT; GET is cache-aside, POST writes
+		id := int(parse_u_at(route, 11))
+		if method == 'POST' {
+			return w.start_api_update(mut out, mut ac, id, req)
+		}
+		return w.start_crud_get(mut out, mut ac, id)
+	} else if route == '/api/me' {
+		return w.start_api_me(mut out, mut ac, req)
+	} else if route == '/public/baseline' {
+		w.emit_int(mut out, 'text/plain', qint(req, qk_a) + qint(req, qk_b))
+		return done
+	} else if route.starts_with('/public/json/') {
+		w.serve_json(mut out, req, parse_u_at(route, 13))
+		return done
 	} else if route == '/echo' {
 		w.echo(mut out, req)
 		return done
 	} else if route.starts_with('/json/') {
-		count := clamp_count(parse_u_at(route, 6), w.ro.dataset.len)
-		mut m := qint(req, qk_m)
-		if m == 0 {
-			m = 1
-		}
-		if accepts_gzip(req) {
-			w.write_json_gzip(mut out, count, m)
-		} else {
-			w.write_json_response(mut out, count, m)
-		}
+		w.serve_json(mut out, req, parse_u_at(route, 6))
 		return done
 	} else if route == '/async-db' {
 		return w.start_async_db(mut out, mut ac, qint(req, qk_min), qint(req, qk_max), qint(req,
@@ -385,6 +416,17 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 			return w.start_crud_update(mut out, mut ac, id, req)
 		}
 		return w.start_crud_get(mut out, mut ac, id)
+	} else if route.starts_with('/delay/') {
+		ms := parse_delay_ms(route)
+		if ms < 0 {
+			wb(mut out, not_found)
+			return done
+		}
+		if ms == 0 {
+			w.emit_int(mut out, 'text/plain', 0)
+			return done
+		}
+		return w.start_delay(mut out, mut ac, ms)
 	}
 	wb(mut out, not_found)
 	return done
@@ -474,6 +516,8 @@ fn on_db_ready(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		k_crud_list { w.render_crud_list(mut out, res, st.page) }
 		k_crud_create { wb(mut out, created) }
 		k_crud_update { w.render_crud_update(mut out, st.id) }
+		k_api_update { w.render_api_update(mut out, st.id) }
+		k_api_me { w.render_api_me(mut out, res, st.id) }
 		else { wb(mut out, not_found) }
 	}
 	// No release: a pipelined connection is not held exclusively. Its in-flight
@@ -493,6 +537,208 @@ fn (mut w WorkerCtx) return_stash(st &Stash) {
 	}
 }
 
+// ── /delay/{ms} (async profile) ─────────────────────────────────────────────
+
+#include <sys/timerfd.h>
+
+fn C.timerfd_create(clockid int, flags int) int
+fn C.timerfd_settime(fd int, flags int, new_value voidptr, old_value voidptr) int
+
+// timer_pool_max bounds a worker's free-list of idle timerfds. The profile holds
+// ~32000/workers requests in flight per worker; past the bound a finished timer
+// is closed instead of kept.
+const timer_pool_max = 4096
+
+// parse_delay_ms reads {ms} from `/delay/{ms}`: 1-9 decimal digits and nothing
+// after them. Anything else is -1 (404).
+@[direct_array_access]
+fn parse_delay_ms(route string) i64 {
+	start := '/delay/'.len
+	if route.len == start || route.len - start > 9 {
+		return -1
+	}
+	mut n := i64(0)
+	for i := start; i < route.len; i++ {
+		c := route[i]
+		if c < `0` || c > `9` {
+			return -1
+		}
+		n = n * 10 + i64(c - `0`)
+	}
+	return n
+}
+
+// start_delay parks the request on a one-shot timerfd armed for `ms`; the worker
+// keeps serving its other connections and on_delay_elapsed answers when the
+// timer fires. The delay rides along as the watch udata.
+fn (mut w WorkerCtx) start_delay(mut out []u8, mut ac core.AsyncCtx, ms i64) core.AsyncStep {
+	mut tfd := -1
+	if w.timer_fds.len > 0 {
+		tfd = w.timer_fds.pop()
+	} else {
+		tfd = C.timerfd_create(C.CLOCK_MONOTONIC, C.TFD_NONBLOCK | C.TFD_CLOEXEC)
+		if tfd < 0 {
+			wb(mut out, service_unavailable)
+			return .done
+		}
+	}
+	// struct itimerspec: it_interval {sec, nsec} = 0 (one-shot), it_value {sec, nsec}
+	mut spec := [4]i64{}
+	spec[2] = ms / 1000
+	spec[3] = (ms % 1000) * 1_000_000
+	if C.timerfd_settime(tfd, 0, unsafe { voidptr(&spec[0]) }, unsafe { nil }) != 0 {
+		C.close(tfd)
+		wb(mut out, service_unavailable)
+		return .done
+	}
+	ac.watch(tfd, .readable, on_delay_elapsed, voidptr(usize(ms)))
+	return .suspend
+}
+
+// on_delay_elapsed answers a parked /delay request. It only answers once the
+// timerfd reports an expiration: a wake without one (a stale io_uring poll
+// completion for a closed fd whose number was reused, say) re-arms and keeps
+// waiting, so no response can leave before its delay has elapsed.
+fn on_delay_elapsed(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
+	mut w := unsafe { &WorkerCtx(ac.state) }
+	tfd := ac.ready_fd
+	mut expirations := u64(0)
+	if C.read(tfd, &expirations, 8) != 8 {
+		if ac.ready_err {
+			C.close(tfd)
+			wb(mut out, service_unavailable)
+			return .done
+		}
+		ac.watch(tfd, .readable, on_delay_elapsed, ac.udata)
+		return .suspend
+	}
+	if w.timer_fds.len < timer_pool_max {
+		w.timer_fds << tfd
+	} else {
+		C.close(tfd)
+	}
+	w.emit_int(mut out, 'text/plain', i64(usize(ac.udata)))
+	return .done
+}
+
+// serve_json answers /json/{count} (and production-stack's /public/json/{count}):
+// gzip from the lazy per-(count, m) cache when the client accepts it.
+fn (mut w WorkerCtx) serve_json(mut out []u8, req request_parser.HttpRequest, n i64) {
+	count := clamp_count(n, w.ro.dataset.len)
+	mut m := qint(req, qk_m)
+	if m == 0 {
+		m = 1
+	}
+	if accepts_gzip(req) {
+		w.write_json_gzip(mut out, count, m)
+	} else {
+		w.write_json_response(mut out, count, m)
+	}
+}
+
+// ── production-stack /api (behind the edge's JWT auth_request) ──────────────
+
+const no_content = 'HTTP/1.1 204 No Content\r\nServer: vanilla\r\nConnection: keep-alive\r\n\r\n'.bytes()
+
+const unauthorized = 'HTTP/1.1 401 Unauthorized\r\nServer: vanilla\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n'.bytes()
+
+// start_api_update is POST /api/items/{id}: {"name","price","quantity"} parsed in
+// place (borrowed views, no allocation), UPDATE, then render_api_update drops the
+// cached item and answers 204.
+fn (mut w WorkerCtx) start_api_update(mut out []u8, mut ac core.AsyncCtx, id int, req request_parser.HttpRequest) core.AsyncStep {
+	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
+	name := json_string_field_borrowed(body, '"name"') or {
+		wb(mut out, bad_request)
+		return .done
+	}
+	price := json_i64_field(body, '"price"') or {
+		wb(mut out, bad_request)
+		return .done
+	}
+	quantity := json_i64_field(body, '"quantity"') or {
+		wb(mut out, bad_request)
+		return .done
+	}
+	w.reset_params()
+	w.push_int(i64(id))
+	w.push_bytes(name)
+	w.push_int(price)
+	w.push_int(quantity)
+	return w.park(mut out, mut ac, 'UPDATE items SET name = \$2, price = \$3, quantity = \$4 WHERE id = \$1',
+		w.params_buf, k_api_update, id, 0, service_unavailable)
+}
+
+fn (mut w WorkerCtx) render_api_update(mut out []u8, id int) {
+	// invalidate after the write, so the next GET re-reads the updated row
+	if id >= 1 && id < crud_cache_slots {
+		w.ro.crud_mu.@lock()
+		w.ro.crud[id].valid = false
+		w.ro.crud_mu.unlock()
+	}
+	wb(mut out, no_content)
+}
+
+// start_api_me is GET /api/me: cache-aside on the user named by the edge's
+// X-User-Id (set from the verified JWT), 30 s TTL.
+fn (mut w WorkerCtx) start_api_me(mut out []u8, mut ac core.AsyncCtx, req request_parser.HttpRequest) core.AsyncStep {
+	uid := req.get_header_value_slice('X-User-Id') or {
+		wb(mut out, unauthorized)
+		return .done
+	}
+	id := int(parse_u_at(unsafe { tos(&req.buffer[uid.start], uid.len) }, 0))
+	if id >= 1 && id < user_cache_slots {
+		now := time.sys_mono_now()
+		mut hit := false
+		w.ro.users_mu.@rlock()
+		s := w.ro.users[id]
+		if s.valid && s.buf.len > 0 && now < s.expires {
+			unsafe { w.scratch.len = 0 }
+			w.scratch << s.buf
+			hit = true
+		}
+		w.ro.users_mu.runlock()
+		if hit {
+			emit_xcache(mut out, 'application/json', w.scratch, 'HIT')
+			return .done
+		}
+	}
+	w.reset_params()
+	w.push_int(i64(id))
+	return w.park(mut out, mut ac, 'SELECT id, name, email, plan FROM users WHERE id = \$1',
+		w.params_buf, k_api_me, id, 0, service_unavailable)
+}
+
+fn (mut w WorkerCtx) render_api_me(mut out []u8, res pg_async.Result, id int) {
+	mut rows := res.rows()
+	row := rows.next() or {
+		wb(mut out, not_found)
+		return
+	}
+	unsafe { w.scratch.len = 0 }
+	ws(mut w.scratch, '{"id":')
+	wi(mut w.scratch, i64(row.int4(0) or { 0 }))
+	ws(mut w.scratch, ',"name":"')
+	ws_json_str(mut w.scratch, row.text(1) or { ''.bytes() })
+	ws(mut w.scratch, '","email":"')
+	ws_json_str(mut w.scratch, row.text(2) or { ''.bytes() })
+	ws(mut w.scratch, '","plan":"')
+	ws_json_str(mut w.scratch, row.text(3) or { ''.bytes() })
+	ws(mut w.scratch, '"}')
+	if id >= 1 && id < user_cache_slots {
+		w.ro.users_mu.@lock()
+		mut slot := &w.ro.users[id]
+		if slot.buf.cap == 0 {
+			slot.buf = []u8{cap: crud_cache_bufcap}
+		}
+		unsafe { slot.buf.len = 0 }
+		slot.buf << w.scratch
+		slot.valid = true
+		slot.expires = time.sys_mono_now() + user_ttl_ns
+		w.ro.users_mu.unlock()
+	}
+	emit_xcache(mut out, 'application/json', w.scratch, 'MISS')
+}
+
 fn (w &WorkerCtx) render_error(mut out []u8, kind u8) {
 	match kind {
 		k_async_db {
@@ -507,6 +753,9 @@ fn (w &WorkerCtx) render_error(mut out []u8, kind u8) {
 		}
 		k_crud_get {
 			wb(mut out, not_found)
+		}
+		k_api_update, k_api_me {
+			wb(mut out, service_unavailable)
 		}
 		else {
 			wb(mut out, bad_request)
@@ -723,9 +972,10 @@ fn (mut w WorkerCtx) start_crud_get(mut out []u8, mut ac core.AsyncCtx, id int) 
 	// concurrent MISS-refill would mutate it). The read-lock hold is one memcpy.
 	mut hit := false
 	if id >= 1 && id < crud_cache_slots {
+		now := time.sys_mono_now()
 		w.ro.crud_mu.@rlock()
 		s := w.ro.crud[id]
-		if s.valid && s.buf.len > 0 {
+		if s.valid && s.buf.len > 0 && now < s.expires {
 			unsafe { w.scratch.len = 0 }
 			w.scratch << s.buf
 			hit = true
@@ -770,6 +1020,7 @@ fn (mut w WorkerCtx) render_crud_get(mut out []u8, res pg_async.Result, id int) 
 		unsafe { slot.buf.len = 0 }
 		slot.buf << w.scratch
 		slot.valid = true
+		slot.expires = time.sys_mono_now() + item_ttl_ns
 		w.ro.crud_mu.unlock()
 	}
 	emit_xcache(mut out, 'application/json', w.scratch, 'MISS')
@@ -953,12 +1204,18 @@ fn (w &WorkerCtx) json_body(count int, m i64) string {
 // the bytes that actually arrived, never from Content-Length, which a chunked
 // POST does not carry at all.
 fn (mut w WorkerCtx) echo(mut out []u8, req request_parser.HttpRequest) {
+	echo_into(mut out, req, mut w.dechunk_buf)
+}
+
+// echo_into is /echo for both listeners (plaintext :8080 and the 8gbit TLS
+// listener on :8081); `scratch` is the caller's reused dechunk buffer.
+fn echo_into(mut out []u8, req request_parser.HttpRequest, mut scratch []u8) {
 	if te := req.get_header_value_slice('Transfer-Encoding') {
 		val := unsafe { tos(&req.buffer[te.start], te.len) }
 		if val.contains('chunked') {
-			unsafe { w.dechunk_buf.len = 0 }
-			dechunk_into(mut w.dechunk_buf, req.buffer, req.body.start, req.body.len)
-			emit(mut out, 'application/octet-stream', w.dechunk_buf)
+			unsafe { scratch.len = 0 }
+			dechunk_into(mut scratch, req.buffer, req.body.start, req.body.len)
+			emit(mut out, 'application/octet-stream', scratch)
 			return
 		}
 	}
@@ -1330,6 +1587,20 @@ fn parse_db_url(u string) pg_async.ConnConfig {
 	}
 }
 
+// TlsWorker is the per-worker state of the TLS listener: the reused dechunk
+// buffer /echo needs for a chunked body (a per-request buffer would leak
+// under -gc none).
+struct TlsWorker {
+mut:
+	dechunk_buf []u8
+}
+
+fn new_tls_worker() voidptr {
+	return &TlsWorker{
+		dechunk_buf: []u8{cap: 16384}
+	}
+}
+
 // load_tls_config builds the json-tls server's TLS config. It reads the cert/key
 // the HttpArena harness bind-mounts at /certs (overridable via TLS_CERT/TLS_KEY).
 // If NO cert is mounted (local dev), it falls back to a fresh self-signed cert —
@@ -1417,6 +1688,8 @@ fn main() {
 		asv:      asv
 		crud:     []CrudSlot{len: crud_cache_slots}
 		crud_mu:  sync.new_rwmutex()
+		users:    []CrudSlot{len: user_cache_slots}
+		users_mu: sync.new_rwmutex()
 		gz:       map[u64][]u8{}
 		gz_mu:    sync.new_rwmutex()
 	}
@@ -1429,7 +1702,8 @@ fn main() {
 	// stateful path) capturing the read-only `ro`; it reuses write_json_into
 	// verbatim, so the bytes are identical to the plaintext /json. Mbed TLS 1.3,
 	// ALPN http/1.1 (set by the tls shim) → curl --http1.1 negotiates 1.1.
-	tls_handler := fn [ro] (req_buffer []u8, fd int, mut out []u8) ! {
+	tls_handler := fn [ro] (req_buffer []u8, fd int, mut out []u8, state voidptr) ! {
+		mut tw := unsafe { &TlsWorker(state) }
 		mut req := request_parser.HttpRequest{
 			buffer: req_buffer
 		}
@@ -1440,6 +1714,10 @@ fn main() {
 		target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
 		qpos := target.index_u8(`?`)
 		route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+		if route == '/echo' {
+			echo_into(mut out, req, mut tw.dechunk_buf)
+			return
+		}
 		if route.starts_with('/json/') {
 			count := clamp_count(parse_u_at(route, 6), ro.dataset.len)
 			mut m := qint(req, qk_m)
@@ -1460,13 +1738,15 @@ fn main() {
 	tls_server := http_server.new_server(http_server.ServerConfig{
 		port:            tls_port
 		io_multiplexing: .epoll
-		limits:          http_server.Limits{
-			// json-tls requests are tiny GETs; a small ceiling bounds per-conn
-			// memory and shrinks the DoS surface (the TLS port takes no bodies).
-			max_request_bytes: 64 * 1024
+		limits:           http_server.Limits{
+			// json-tls sends tiny GETs; 8gbit POSTs 10 KB to /echo and validation
+			// goes up to 100 KB, chunked included. 256 KiB covers that with room
+			// for chunk framing and still bounds a connection's read buffer.
+			max_request_bytes: 256 * 1024
 		}
-		request_handler: tls_handler
-		tls_config:      load_tls_config()
+		stateful_handler: tls_handler
+		make_state:       new_tls_worker
+		tls_config:       load_tls_config()
 	})!
 	// run() blocks in the accept loop, so the TLS server runs on its own thread
 	// while the plaintext server.run() below blocks main. run() has a value-mut
@@ -1497,6 +1777,7 @@ fn main() {
 				stash_pool:    []&Stash{cap: 64}    // Stash free-list
 				fortunes_buf:  []Fortune{cap: 256}  // reused /fortunes rows
 				dechunk_buf:   []u8{cap: 4096}      // reused chunked-body scratch
+				timer_fds:     []int{cap: 64}       // recycled /delay timerfds
 			}
 			return voidptr(w)
 		}
