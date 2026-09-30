@@ -330,6 +330,11 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 	}
 	qpos := target.index_u8(`?`)
 	route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+	// RFC 9112 §9.6: a request carrying the `close` connection option gets its
+	// final response and then the connection closes (.close flushes first).
+	// Only the synchronous routes below answer with `done`; the DB routes finish
+	// in their continuation.
+	done := if has_close_option(req) { core.AsyncStep.close } else { core.AsyncStep.done }
 
 	if route == '/baseline11' {
 		mut sum := qint(req, qk_a) + qint(req, qk_b)
@@ -337,10 +342,10 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 			sum += w.body_int(req)
 		}
 		w.emit_int(mut out, 'text/plain', sum)
-		return .done
+		return done
 	} else if route == '/echo' {
 		w.echo(mut out, req)
-		return .done
+		return done
 	} else if route.starts_with('/json/') {
 		count := clamp_count(parse_u_at(route, 6), w.ro.dataset.len)
 		mut m := qint(req, qk_m)
@@ -352,7 +357,7 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		} else {
 			w.write_json_response(mut out, count, m)
 		}
-		return .done
+		return done
 	} else if route == '/async-db' {
 		return w.start_async_db(mut out, mut ac, qint(req, qk_min), qint(req, qk_max), qint(req,
 			qk_limit))
@@ -367,7 +372,7 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		// path that ignored Accept-Encoding. Mounted at /static/; emits via the same
 		// core.queue_file sendfile handoff the worker already drains.
 		w.ro.asv.respond_into(req_buffer, mut out) or { wb(mut out, not_found) }
-		return .done
+		return done
 	} else if route == '/crud/items' {
 		if method == 'POST' {
 			return w.start_crud_create(mut out, mut ac, req)
@@ -382,7 +387,7 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		return w.start_crud_get(mut out, mut ac, id)
 	}
 	wb(mut out, not_found)
-	return .done
+	return done
 }
 
 // park submits a query and parks the request on its connection, stashing the
@@ -1153,6 +1158,35 @@ fn parse_hex_slice(buf []u8, start int, length int) int {
 		}
 	}
 	return int(n)
+}
+
+// is_token_sep: the bytes that can border a token in a Connection list.
+@[inline]
+fn is_token_sep(c u8) bool {
+	return c == `,` || c == ` ` || c == `\t`
+}
+
+// has_close_option reports whether the Connection header lists the `close`
+// option: a case-insensitive token in a comma-separated list (RFC 9110 §7.6.1),
+// matched in place without allocating (this binary may run -gc none).
+@[direct_array_access]
+fn has_close_option(req request_parser.HttpRequest) bool {
+	c := req.get_header_value_slice('Connection') or { return false }
+	end := c.start + c.len
+	mut i := c.start
+	for i + 5 <= end {
+		if (req.buffer[i] | 0x20) == `c` && (req.buffer[i + 1] | 0x20) == `l`
+			&& (req.buffer[i + 2] | 0x20) == `o` && (req.buffer[i + 3] | 0x20) == `s`
+			&& (req.buffer[i + 4] | 0x20) == `e` {
+			before := i == c.start || is_token_sep(req.buffer[i - 1])
+			after := i + 5 == end || is_token_sep(req.buffer[i + 5])
+			if before && after {
+				return true
+			}
+		}
+		i++
+	}
+	return false
 }
 
 fn accepts_gzip(req request_parser.HttpRequest) bool {
