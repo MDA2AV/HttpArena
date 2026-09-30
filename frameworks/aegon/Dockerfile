@@ -14,7 +14,7 @@ RUN pacman -Syu --noconfirm --needed \
 
 ARG AEGON_REPO=https://github.com/UdayKhare09/Aegon.git
 ARG AEGON_REF=main
-ARG AEGON_COMMIT=8ad36fe
+ARG AEGON_COMMIT=f9edfc3
 
 WORKDIR /src
 RUN echo "Building Aegon commit: ${AEGON_COMMIT}" && \
@@ -24,7 +24,7 @@ WORKDIR /src/aegon-src
 RUN cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr/local && \
-    cmake --build build --target aegon_core aegon_config aegon_redis aegon_memory aegon_http aegon_gateway aegon_cli -j$(nproc) && \
+    cmake --build build --target aegon_core aegon_config aegon_redis aegon_memory aegon_orm aegon_http aegon_gateway aegon_cli -j$(nproc) && \
     cmake --install build
 
 WORKDIR /app
