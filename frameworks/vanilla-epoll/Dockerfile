@@ -67,11 +67,22 @@ RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
 # tls_mbedtls_d_vanilla_tls.c.v (-L/usr/local/lib -lmbedtls -lmbedx509
 # -lmbedcrypto). 4.x also produces libtfpsacrypto (the TF-PSA-Crypto split),
 # linked transitively. Headers land in /usr/local/include for the build.
+#
+# mbedtls-rsa-sign-cache.patch (against 4.1.0): unpatched, every PSA RSA
+# signature re-parses the key and regenerates the RSA blinding values from
+# scratch, which was most of each TLS 1.3 handshake with the harness's
+# RSA-2048 certificate (~11 ms of CPU). The patch keeps the signing key's
+# parsed context in a per-thread cache, so blinding is updated by squaring
+# as with any long-lived mbedtls_rsa_context; with -O3 -march=native a
+# handshake costs ~8 ms. That is what 8gbit (512 fresh connections) and
+# json-tls (4096) pay up front before the first request is answered.
 ARG MBEDTLS_VERSION=4.1.0
+COPY mbedtls-rsa-sign-cache.patch /tmp/
 RUN curl -fsSL -o /tmp/mbedtls.tar.bz2 \
         "https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-${MBEDTLS_VERSION}/mbedtls-${MBEDTLS_VERSION}.tar.bz2" && \
     tar -xf /tmp/mbedtls.tar.bz2 -C /tmp && \
     cd "/tmp/mbedtls-${MBEDTLS_VERSION}" && \
+    patch -p1 < /tmp/mbedtls-rsa-sign-cache.patch && \
     # THREAD-SAFETY (load-bearing): vanilla runs N TLS worker threads, each driving
     # TLS 1.3 handshakes through Mbed TLS's PSA crypto, whose key store is a GLOBAL,
     # process-wide table. Without MBEDTLS_THREADING_C the concurrent handshakes race
@@ -83,7 +94,7 @@ RUN curl -fsSL -o /tmp/mbedtls.tar.bz2 \
     python3 tf-psa-crypto/scripts/config.py set MBEDTLS_THREADING_C && \
     python3 tf-psa-crypto/scripts/config.py set MBEDTLS_THREADING_PTHREAD && \
     cmake -S "/tmp/mbedtls-${MBEDTLS_VERSION}" -B /tmp/mbedtls-build \
-        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS_RELEASE="-O3 -march=native -DNDEBUG" \
         -DUSE_SHARED_MBEDTLS_LIBRARY=On -DUSE_STATIC_MBEDTLS_LIBRARY=Off \
         -DENABLE_TESTING=Off -DENABLE_PROGRAMS=Off \
         -DCMAKE_INSTALL_PREFIX=/usr/local && \
