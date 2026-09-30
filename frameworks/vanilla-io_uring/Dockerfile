@@ -6,56 +6,49 @@ RUN apt-get -qq update && \
         cmake curl bzip2 python3 && \
     rm -rf /var/lib/apt/lists/*
 
-# Pinned, reproducible V at master commit 02015a7c (built from source). Master is
-# now preferred over the 0.5.1 tag: the codegen regression that forced 0.5.1 (single-
-# element array push 4-7x slower, vlang/v#27468) is fixed (vlang/v#27470), and the
-# code uses the modern pooled Go-style db.pg (vlang/v#27265). 02015a7c descends from
-# cef604a26, so it keeps the Boehm GC free-space-divisor fix (vlang/v#27560, fixes
-# vlang/v#27555) that recovers the default-GC throughput regression seen in the
-# c0624b2..6c4d26f range (verified ancestor; the c..02015a7c range adds no GC change).
+# Pinned, reproducible V at master commit 0c41fadb (0.5.2, built from source). The
+# removed `json` module is replaced by x.json2 in main.v (encode with
+# escape_unicode, so the /json bodies stay byte-identical).
 #
 # The bootstrap is pinned too. A bare `make` clones vlang/vc and vlang/tccbin at
 # their CURRENT heads, so a fixed V source gets built by whatever compiler vc
 # holds that day: that is what broke every V entry in #1288 ("C function C.open
 # was already declared with a different signature"), and vc head has since
-# failed in other ways. vc fa590f29 is the snapshot generated from this exact V
-# commit, tccbin 696c1d84 was tccbin's head when it was cut, and `local=1` makes
-# `make` build with them instead of pulling.
+# failed in other ways. vc 2cbaf6bc is the snapshot generated from this exact V
+# commit, tccbin d6e7ac1b is the head of tccbin's thirdparty-linux-amd64 branch,
+# and `local=1` makes `make` build with both instead of pulling.
 #
 # Each repo is fetched at its one pinned commit (depth 1) rather than cloned:
 # a full clone of v, vc and tccbin is hundreds of MB and a slow or flaky link
 # stalls it past the validator's timeout; this is ~30 MB.
 RUN git init -q /opt/v && cd /opt/v && \
-    git fetch -q --depth 1 https://github.com/vlang/v 02015a7ce111e4d0cfd5b5d78711ad0db7586936 && \
+    git fetch -q --depth 1 https://github.com/vlang/v 0c41fadbef173ac6d461848fa8c19f8870fb21c0 && \
     git checkout -q FETCH_HEAD && \
     git init -q vc && \
-    git -C vc fetch -q --depth 1 https://github.com/vlang/vc fa590f293374518ed3582138d4971b64fcad6cc9 && \
+    git -C vc fetch -q --depth 1 https://github.com/vlang/vc 2cbaf6bc2367937cd5f0b4ef923d1ef9aad613b3 && \
     git -C vc checkout -q FETCH_HEAD && \
     git init -q thirdparty/tcc && \
-    git -C thirdparty/tcc fetch -q --depth 1 https://github.com/vlang/tccbin 696c1d84ad12e3a5b68b50fb0210819ed3d56bb8 && \
+    git -C thirdparty/tcc fetch -q --depth 1 https://github.com/vlang/tccbin d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74 && \
     git -C thirdparty/tcc checkout -q FETCH_HEAD && \
     make local=1 && ln -s /opt/v/v /usr/local/bin/v
 
-# Install the vanilla HTTP server as the `vanilla` module (import vanilla.http_server),
+# Install vanilla as the `vanilla` module (import vanilla.server, vanilla.core, ...),
 # pinned to a specific commit: reproducible, with NO per-build network call to detect
 # changes. The previous approach `ADD`ed the GitHub API main-ref URL to cache-bust when
 # main moved, but that hit api.github.com every build and a transient 504/rate-limit
 # failed the whole build (MDA2AV/HttpArena#895). Bump this commit to pick up lib fixes.
 #
-# Pinned to vanilla main @be46940 — carries enghitalo/vanilla#99 (async runtime for
-# the io_uring backend via oneshot IORING_OP_POLL_ADD), which this entry needs, and
-# #101 (epoll async-runtime hardening — resume drains buffered pipelined requests,
-# inline queue-drain deactivation, watch-then-reject teardown; the json-tls listener
-# here runs on the epoll backend, stateless, so #101 is inert for this entry but keeps
-# both entries on ONE lib SHA): main.v is now the vanilla-epoll entry's async_handler + pg_async code
-# verbatim (DB queries PARK on the PG socket instead of blocking the ring worker —
-# enghitalo/vanilla#83); an older pin REJECTS async_handler on io_uring at new_server()
-# and panics on boot. Also carries #94 (make_state on io_uring), #96 (epoll TLS stateful
-# fix), the lib-wide alloc audit (#72/#73/#74) and kTLS record offload (#79). The
-# io_uring backend has no TLS, so the json-tls listener runs on the lib's epoll backend
-# on :8081 (see main.v).
-RUN git clone https://github.com/enghitalo/vanilla /root/.vmodules/vanilla && \
-    git -C /root/.vmodules/vanilla checkout be46940b624363ed93991d3166f950143ee14c7b
+# Pinned to vanilla main @a6a73b0, the same commit as vanilla-epoll: one handler
+# contract (core.Handler returning core.Step, watches through core.EventLoop) on
+# both backends, so main.v is the vanilla-epoll code with the io_uring backend
+# selected; DB queries PARK on the PG socket (oneshot IORING_OP_POLL_ADD) instead of
+# blocking the ring worker. The io_uring backend has no TLS, so the json-tls and
+# 8gbit listener runs on the lib's epoll backend on :8081 with kTLS record offload
+# (see main.v). Fetched at that one commit.
+RUN git init -q /root/.vmodules/vanilla && \
+    git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
+        a6a73b0327e29fb36d4e60610bd9136a63a1230c && \
+    git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 # Mbed TLS 4 for the json-tls profile (the epoll TLS listener on :8081). The vanilla
 # `tls` C shim (built with -d vanilla_tls) targets the Mbed TLS 4.x API; Debian apt
