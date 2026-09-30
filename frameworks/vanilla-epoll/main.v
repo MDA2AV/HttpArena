@@ -8,7 +8,6 @@ import vanilla.http_server.static_assets
 import vanilla.pg_async
 import json
 import os
-import runtime
 import strings
 import sync
 import compress.gzip
@@ -1338,7 +1337,10 @@ fn main() {
 	if total < 1 {
 		total = 64
 	}
-	workers := runtime.nr_cpus()
+	// Same count the server starts with (VANILLA_WORKERS, which the image sets from
+	// the container's cpuset; nr_cpus otherwise), so the budget splits across the
+	// workers that actually run rather than the host's CPU count.
+	workers := core.max_thread_pool_size
 	mut per_worker := total / workers
 	if per_worker < 1 {
 		per_worker = 1

@@ -6,12 +6,30 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/*
 
 # Pinned, reproducible V at master commit 5fb31f25 (built from source), the
-# commit this entry was validated against. `make` bootstraps via the matching
-# vc; if a much later rebuild ever fails to bootstrap, pin vlang/vc to the
-# commit cut for this V.
-RUN git clone https://github.com/vlang/v /opt/v && \
-    cd /opt/v && git checkout 5fb31f25bd9b056cc63cedc51b669073658b41a8 && \
-    make && ln -s /opt/v/v /usr/local/bin/v
+# commit this entry was validated against.
+#
+# The bootstrap is pinned too. A bare `make` clones vlang/vc and vlang/tccbin at
+# their CURRENT heads, so a fixed V source gets built by whatever compiler vc
+# holds that day: that is what broke every V entry in #1288 ("C function C.open
+# was already declared with a different signature"), and vc head has since
+# failed in other ways. vc has no snapshot of 5fb31f25 itself; bd654de8 is the
+# one generated from its parent (34520ac6, one commit behind). tccbin 696c1d84
+# was tccbin's head when this V was cut, and `local=1` makes `make` build with
+# both instead of pulling.
+#
+# Each repo is fetched at its one pinned commit (depth 1) rather than cloned:
+# a full clone of v, vc and tccbin is hundreds of MB and a slow or flaky link
+# stalls it past the validator's timeout; this is ~30 MB.
+RUN git init -q /opt/v && cd /opt/v && \
+    git fetch -q --depth 1 https://github.com/vlang/v 5fb31f25bd9b056cc63cedc51b669073658b41a8 && \
+    git checkout -q FETCH_HEAD && \
+    git init -q vc && \
+    git -C vc fetch -q --depth 1 https://github.com/vlang/vc bd654de8a3e275178908fe824d29f58c70baaae5 && \
+    git -C vc checkout -q FETCH_HEAD && \
+    git init -q thirdparty/tcc && \
+    git -C thirdparty/tcc fetch -q --depth 1 https://github.com/vlang/tccbin 696c1d84ad12e3a5b68b50fb0210819ed3d56bb8 && \
+    git -C thirdparty/tcc checkout -q FETCH_HEAD && \
+    make local=1 && ln -s /opt/v/v /usr/local/bin/v
 
 # Install vanilla as the `vanilla` module (import vanilla.server), pinned to a
 # specific commit: reproducible, with NO per-build network call to detect
@@ -40,4 +58,8 @@ RUN apt-get -qq update && \
 COPY --from=build /app/server /server
 
 EXPOSE 8080
-CMD ["/server"]
+# One worker per CPU the container may run on. vanilla defaults to nr_cpus,
+# which reads the host's online CPUs (128 on the bench box) and ignores the
+# cpuset, so a 64-CPU profile started 128 workers and latency-500k-8cpu would
+# start 128 on 8. nproc honours the cpuset; an explicit VANILLA_WORKERS wins.
+CMD ["/bin/sh", "-c", "VANILLA_WORKERS=${VANILLA_WORKERS:-$(nproc)} exec /server"]

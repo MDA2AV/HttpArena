@@ -13,11 +13,28 @@ RUN apt-get -qq update && \
 # cef604a26, so it keeps the Boehm GC free-space-divisor fix (vlang/v#27560, fixes
 # vlang/v#27555) that recovers the default-GC throughput regression seen in the
 # c0624b2..6c4d26f range (verified ancestor; the c..02015a7c range adds no GC change).
-# For a current master commit, `make` bootstraps via the matching vc; if a much later
-# rebuild ever fails to bootstrap, pin vlang/vc to the commit cut for this V.
-RUN git clone https://github.com/vlang/v /opt/v && \
-    cd /opt/v && git checkout 02015a7ce111e4d0cfd5b5d78711ad0db7586936 && \
-    make && ln -s /opt/v/v /usr/local/bin/v
+#
+# The bootstrap is pinned too. A bare `make` clones vlang/vc and vlang/tccbin at
+# their CURRENT heads, so a fixed V source gets built by whatever compiler vc
+# holds that day: that is what broke every V entry in #1288 ("C function C.open
+# was already declared with a different signature"), and vc head has since
+# failed in other ways. vc fa590f29 is the snapshot generated from this exact V
+# commit, tccbin 696c1d84 was tccbin's head when it was cut, and `local=1` makes
+# `make` build with them instead of pulling.
+#
+# Each repo is fetched at its one pinned commit (depth 1) rather than cloned:
+# a full clone of v, vc and tccbin is hundreds of MB and a slow or flaky link
+# stalls it past the validator's timeout; this is ~30 MB.
+RUN git init -q /opt/v && cd /opt/v && \
+    git fetch -q --depth 1 https://github.com/vlang/v 02015a7ce111e4d0cfd5b5d78711ad0db7586936 && \
+    git checkout -q FETCH_HEAD && \
+    git init -q vc && \
+    git -C vc fetch -q --depth 1 https://github.com/vlang/vc fa590f293374518ed3582138d4971b64fcad6cc9 && \
+    git -C vc checkout -q FETCH_HEAD && \
+    git init -q thirdparty/tcc && \
+    git -C thirdparty/tcc fetch -q --depth 1 https://github.com/vlang/tccbin 696c1d84ad12e3a5b68b50fb0210819ed3d56bb8 && \
+    git -C thirdparty/tcc checkout -q FETCH_HEAD && \
+    make local=1 && ln -s /opt/v/v /usr/local/bin/v
 
 # Install the vanilla HTTP server as the `vanilla` module (import vanilla.http_server),
 # pinned to a specific commit: reproducible, with NO per-build network call to detect
@@ -86,4 +103,8 @@ COPY --from=build /app/server /server
 # backend). The harness bind-mounts the cert/key at /certs (override via
 # TLS_CERT/TLS_KEY); with no cert mounted the server self-signs.
 EXPOSE 8080 8081
-CMD ["/server"]
+# One worker per CPU the container may run on. vanilla defaults to nr_cpus,
+# which reads the host's online CPUs (128 on the bench box) and ignores the
+# cpuset, so a 64-CPU profile started 128 workers and latency-500k-8cpu would
+# start 128 on 8. nproc honours the cpuset; an explicit VANILLA_WORKERS wins.
+CMD ["/bin/sh", "-c", "VANILLA_WORKERS=${VANILLA_WORKERS:-$(nproc)} exec /server"]
