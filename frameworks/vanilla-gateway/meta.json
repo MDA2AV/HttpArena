@@ -1,0 +1,16 @@
+{
+  "display_name": "vanilla-epoll",
+  "language": "V",
+  "type": "engine",
+  "engine": "epoll",
+  "description": "vanilla-epoll behind a stock edge for the gateway profiles: nginx terminates TLS + h2 (gateway-64) and Caddy terminates QUIC + h3 (gateway-h3); both serve /static/* from disk and forward /baseline2, /json and /async-db to the vanilla-epoll image over loopback HTTP/1.1 with a 2048-connection keepalive pool. The server is the vanilla-epoll entry unchanged (same Dockerfile), one worker per CPU of its cpuset, async pg_async pools, and /json served gzip from its lazy per-(count, m) cache when the edge forwards Accept-Encoding.",
+  "repo": "https://github.com/enghitalo/vanilla",
+  "enabled": true,
+  "tests": [
+    "gateway-64",
+    "gateway-h3"
+  ],
+  "maintainers": [
+    "enghitalo"
+  ]
+}
