@@ -9,7 +9,7 @@ repositories {
 
 // Same framework release and business path in both entries; only the engine differs.
 // All dependencies resolve from Maven Central, without local repositories or source substitution.
-val netonVersion = "1.0.0-beta21"
+val netonVersion = "1.0.0-beta22"
 
 kotlin {
     // The arena builds linuxX64; macosArm64 is here so the endpoints can be

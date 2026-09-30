@@ -1,11 +1,11 @@
 # neton-hyper
 
-Neton 1.0.0-beta21 with Hyper4k (Rust Tokio + Hyper).
+Neton 1.0.0-beta22 with Hyper4k (Rust Tokio + Hyper).
 
 The engine is selected explicitly, alongside the framework core, logging, HTTP and routing:
 
 ```kotlin
-implementation("com.netonstream:neton-http-hyper4k:1.0.0-beta21")
+implementation("com.netonstream:neton-http-hyper4k:1.0.0-beta22")
 ```
 
 Both entries build entirely from Maven Central. Main.kt, compiler, GC and request
