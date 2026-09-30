@@ -1608,6 +1608,24 @@ fn new_tls_worker() voidptr {
 // cert IS present but the key is missing/unreadable, it FAILS LOUDLY rather than
 // silently self-signing, so a real misconfiguration can't slip through as "works
 // but with the wrong identity". TLS 1.3 + ALPN http/1.1 are fixed by the tls shim.
+// connect_pool brings up a worker's pool, retrying for up to 30 s while
+// Postgres refuses connections. The postgres image answers pg_isready and psql
+// over its unix socket while the init-time server is still up, then restarts
+// to listen on TCP, so a server started right after "ready" can meet a refused
+// connect for a moment.
+fn connect_pool(cfg pg_async.ConnConfig, size int) &pg_async.PgPool {
+	mut last := ''
+	for _ in 0 .. 150 {
+		if pool := pg_async.new_pool(cfg, size) {
+			return pool
+		} else {
+			last = err.msg()
+		}
+		time.sleep(200 * time.millisecond)
+	}
+	panic('vanilla-epoll: pg pool bring-up failed: ${last}')
+}
+
 fn load_tls_config() &tls.Config {
 	cert_path := os.getenv_opt('TLS_CERT') or { '/certs/server.crt' }
 	key_path := os.getenv_opt('TLS_KEY') or { '/certs/server.key' }
@@ -1765,9 +1783,7 @@ fn main() {
 		}
 		async_handler:   handle
 		make_state:      fn [ro, cfg, per_worker] () voidptr {
-			pool := pg_async.new_pool(cfg, per_worker) or {
-				panic('vanilla-epoll: pg pool bring-up failed: ${err}')
-			}
+			pool := connect_pool(cfg, per_worker)
 			w := &WorkerCtx{
 				ro:            ro
 				pool:          pool
