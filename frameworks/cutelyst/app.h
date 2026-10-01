@@ -12,6 +12,7 @@ public:
     ~ArenaApp() override = default;
 
     bool init() override;
+    bool postFork() override;
 };
 
 #endif
