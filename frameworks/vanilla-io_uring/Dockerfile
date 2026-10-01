@@ -40,16 +40,17 @@ RUN git init -q /opt/v && cd /opt/v && \
 # main moved, but that hit api.github.com every build and a transient 504/rate-limit
 # failed the whole build (MDA2AV/HttpArena#895). Bump this commit to pick up lib fixes.
 #
-# Pinned to vanilla main @a6a73b0, the same commit as vanilla-epoll: one handler
+# Pinned to vanilla main @b9004e9, the same commit as vanilla-epoll: one handler
 # contract (core.Handler returning core.Step, watches through core.EventLoop) on
 # both backends, so main.v is the vanilla-epoll code with the io_uring backend
 # selected; DB queries PARK on the PG socket (oneshot IORING_OP_POLL_ADD) instead of
-# blocking the ring worker. The io_uring backend has no TLS, so the json-tls and
-# 8gbit listener runs on the lib's epoll backend on :8081 with kTLS record offload
-# (see main.v). Fetched at that one commit.
+# blocking the ring worker. The io_uring backend has no TLS, so the json-tls,
+# static-tls and 8gbit listener runs on the lib's epoll backend on :8081 with kTLS
+# record offload and sendfile for static bodies (see main.v). Fetched at that one
+# commit.
 RUN git init -q /root/.vmodules/vanilla && \
     git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
-        a6a73b0327e29fb36d4e60610bd9136a63a1230c && \
+        b9004e90de0cb44fdc42f3197b0d84c2ba1299b8 && \
     git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 # Mbed TLS 4 for the json-tls profile (the epoll TLS listener on :8081). The vanilla

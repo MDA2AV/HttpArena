@@ -73,7 +73,7 @@ mut:
 	// production-stack /api/me: user-id-indexed slab, same shape as `crud`
 	users    []CrudSlot
 	users_mu &sync.RwMutex = unsafe { nil }
-	gz_mu   &sync.RwMutex = unsafe { nil }
+	gz_mu    &sync.RwMutex = unsafe { nil }
 }
 
 // CrudSlot is one entry of the id-indexed crud cache slab. `buf` is the rendered
@@ -104,6 +104,11 @@ const user_ttl_ns = u64(30_000_000_000)
 // /api/me ids index the users slab directly; the seed's ids are small, and an id
 // past the slab is served uncached rather than growing it.
 const user_cache_slots = 1024
+
+// static_revalidate_ms: how often each static representation is re-checked against
+// its file (one stat(2) per window, by the first request after it opens); 0 checks
+// on every request.
+const static_revalidate_ms = 100
 
 // WorkerCtx is the per-worker state handed to every handler call as worker_state
 // (the make_state contract). Each worker owns its own async Postgres pool (no
@@ -402,7 +407,7 @@ fn handle(req_buffer []u8, mut out []u8, _ int, worker_state voidptr, mut event_
 		// ONE audited implementation instead of a second hand-rolled identity-only
 		// path that ignored Accept-Encoding. Mounted at /static/; emits via the same
 		// core.queue_file sendfile handoff the worker already drains.
-		w.ro.asv.respond_into(req_buffer, mut out) or { wb(mut out, not_found) }
+		w.ro.asv.respond_req_into(&req, mut out)
 		return done
 	} else if route == '/crud/items' {
 		if method == 'POST' {
@@ -890,7 +895,7 @@ fn (mut w WorkerCtx) render_fortunes(mut out []u8, res pg_async.Result) {
 		id:      0
 		message: synthetic_fortune
 	}
-	w.fortunes_buf.sort_with_compare(cmp_fortune_message)
+	sort_fortunes(mut w.fortunes_buf)
 	unsafe { w.scratch.len = 0 } // reuse the worker's render buffer (no per-request body alloc)
 	ws(mut w.scratch,
 		'<!doctype html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>')
@@ -905,17 +910,33 @@ fn (mut w WorkerCtx) render_fortunes(mut out []u8, res pg_async.Result) {
 	emit(mut out, 'text/html; charset=utf-8', w.scratch)
 }
 
-// cmp_fortune_message orders fortunes by message, lexicographically by bytes — V has no
-// `<` on []u8, so the sort needs an explicit comparator (returns <0 / 0 / >0).
-fn cmp_fortune_message(a &Fortune, b &Fortune) int {
+fn C.qsort(base voidptr, nmemb usize, size usize, compar voidptr)
+
+// sort_fortunes orders the ~200 rows by message with libc qsort. sort_with_compare is a
+// merge sort whose scratch copy comes from V's malloc, which on a GC build is the
+// collector's allocator (and under -gc none a V allocation that must be freed by
+// hand); qsort's scratch, when it needs one, comes from libc malloc and is freed
+// inside the call, so the per-request sort never touches the GC heap.
+fn sort_fortunes(mut a []Fortune) {
+	C.qsort(a.data, usize(a.len), sizeof(Fortune), voidptr(cmp_fortune))
+}
+
+fn cmp_fortune(a &Fortune, b &Fortune) int {
+	return cmp_message(a.message, b.message)
+}
+
+// cmp_message orders messages lexicographically by bytes — V has no `<` on []u8
+// (returns <0 / 0 / >0).
+@[direct_array_access]
+fn cmp_message(a []u8, b []u8) int {
 	mut i := 0
-	for i < a.message.len && i < b.message.len {
-		if a.message[i] != b.message[i] {
-			return int(a.message[i]) - int(b.message[i])
+	for i < a.len && i < b.len {
+		if a[i] != b[i] {
+			return int(a[i]) - int(b[i])
 		}
 		i++
 	}
-	return a.message.len - b.message.len
+	return a.len - b.len
 }
 
 // ── /crud ────────────────────────────────────────────────────────────────────
@@ -1684,21 +1705,28 @@ fn main() {
 	}
 
 	static_dir := os.getenv_opt('STATIC_DIR') or { '/data/static' }
-	// Canonical static server: loads every asset PLUS its .br/.gz siblings once, mounts
-	// them at /static/, and negotiates Accept-Encoding per request, emitting via
-	// core.queue_buf (borrowed send of the preloaded bytes).
-	//
-	// Do NOT set sendfile_min_bytes here (unlike the epoll twin, which uses 16 KiB): the
-	// io_uring backend has NO sendfile path (no core.enable_sendfile / queue_file drain),
-	// so static_assets.respond_into would fall back to READING a "large" asset's body
-	// from disk on every request — a blocking read that stalls the ring. Keeping the
-	// default (256 KiB) preloads every arena .br/.gz sibling (all < 256 KiB) and serves
-	// them as a zero-copy borrowed send. (Measured: 16 KiB here collapsed static ~-86% to
-	// -99% — the large .br siblings hit the read-per-request fallback.)
+	// Canonical static server, mounted at /static/ on both listeners: negotiates the
+	// precompressed .br/.gz sibling per Accept-Encoding (the arena sends
+	// `br;q=1, gzip;q=0.8`), with ETag/Vary/Cache-Control. spa_fallback is off: the
+	// arena fixture set has no SPA entrypoint.
+	//   follow_disk: the cache follows the disk (engine rule: replace a file and the
+	//     next response carries the new bytes). Each representation is an immutable
+	//     snapshot re-checked with one stat(2) per REVALIDATE window and rebuilt when
+	//     the file's (dev, ino, size, mtime, ctime) changed.
+	//   sendfile_min_bytes: representations >= 16 KiB keep an fd and go out with
+	//     sendfile(2) where the worker can hand them off: the plain epoll worker and
+	//     kTLS connections on :8081 (the kernel encrypts the pages).
+	//   memory_fallback: those representations keep their bytes in RAM too, so a
+	//     worker that cannot sendfile them (io_uring's borrowed send, a userspace-TLS
+	//     connection) sends from memory instead of reading the file per request.
 	asv := static_assets.new(static_assets.Config{
-		root:         static_dir
-		url_prefix:   '/static/'
-		spa_fallback: ''
+		root:               static_dir
+		url_prefix:         '/static/'
+		spa_fallback:       ''
+		sendfile_min_bytes: 16 * 1024
+		memory_fallback:    true
+		follow_disk:        true
+		revalidate_ms:      static_revalidate_ms
 	}) or { panic('vanilla-io_uring: static_assets init failed: ${err}') }
 
 	ro := &SharedRO{
@@ -1715,9 +1743,12 @@ fn main() {
 
 	// ── json-tls profile: /json over HTTPS on :8081 via the epoll + kTLS backend ──
 	// The lib's io_uring backend has no TLS, so the json-tls listener runs on the
-	// epoll backend (a SECOND server anyway, because tls_config is server-wide). It serves ONLY /json and
-	// /echo (404 for everything else) so the TLS port exposes the minimal surface
-	// the json-tls and 8gbit profiles need — no /static, /crud or DB routes. The
+	// epoll backend (a SECOND server anyway, because tls_config is server-wide). It serves ONLY /json,
+	// /echo and /static (404 for everything else) so the TLS port exposes the minimal
+	// surface the json-tls, 8gbit and static-tls profiles need — no /crud or DB
+	// routes. On a kTLS connection a /static body of 16 KiB or more goes out with
+	// sendfile(2), headers coalesced into its first record; on a userspace-TLS
+	// connection it is sent from memory (memory_fallback). The
 	// handler captures the read-only `ro` and gets its TlsWorker (the /echo dechunk
 	// buffer) as worker_state from make_state. It must stay synchronous (.done): the
 	// TLS worker has no watch reactor, so a .suspend would drop the connection. It
@@ -1736,6 +1767,10 @@ fn main() {
 		target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
 		qpos := target.index_u8(`?`)
 		route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+		if route.starts_with('/static/') {
+			ro.asv.respond_req_into(&req, mut out)
+			return .done
+		}
 		if route == '/echo' {
 			echo_into(mut out, req, mut tw.dechunk_buf)
 			return .done
