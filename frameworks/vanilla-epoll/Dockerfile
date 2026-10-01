@@ -6,7 +6,7 @@ RUN apt-get -qq update && \
         cmake curl bzip2 python3 && \
     rm -rf /var/lib/apt/lists/*
 
-# Pinned, reproducible V at master commit 0c41fadb (0.5.2, built from source). The
+# Pinned, reproducible V at master commit b99970bd (0.5.2, built from source). The
 # removed `json` module is replaced by x.json2 in main.v (encode with
 # escape_unicode, so the /json bodies stay byte-identical).
 #
@@ -14,15 +14,17 @@ RUN apt-get -qq update && \
 # their CURRENT heads, so a fixed V source gets built by whatever compiler vc
 # holds that day: that is what broke every V entry in #1288 ("C function C.open
 # was already declared with a different signature"), and vc head has since
-# failed in other ways. vc 2cbaf6bc is the snapshot generated from this exact V
-# commit, tccbin d6e7ac1b is the head of tccbin's thirdparty-linux-amd64 branch,
-# and `local=1` makes `make` build with both instead of pulling.
+# failed in other ways. vc 2cbaf6bc is vc's newest snapshot (generated from V
+# 0c41fadb, 40 commits earlier; vc has none for b99970bd yet), so it is what
+# `make` bootstraps this V with today; tccbin d6e7ac1b is the head of tccbin's
+# thirdparty-linux-amd64 branch, and `local=1` makes `make` build with both
+# instead of pulling.
 #
 # Each repo is fetched at its one pinned commit (depth 1) rather than cloned:
 # a full clone of v, vc and tccbin is hundreds of MB and a slow or flaky link
 # stalls it past the validator's timeout; this is ~30 MB.
 RUN git init -q /opt/v && cd /opt/v && \
-    git fetch -q --depth 1 https://github.com/vlang/v 0c41fadbef173ac6d461848fa8c19f8870fb21c0 && \
+    git fetch -q --depth 1 https://github.com/vlang/v b99970bd438a7bdcdfbe38f74d9364db801d5439 && \
     git checkout -q FETCH_HEAD && \
     git init -q vc && \
     git -C vc fetch -q --depth 1 https://github.com/vlang/vc 2cbaf6bc2367937cd5f0b4ef923d1ef9aad613b3 && \
