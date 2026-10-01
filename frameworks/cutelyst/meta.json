@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "Cutelyst::Server",
-  "description": "Cutelyst on Cutelyst::Server with one thread per core. Catalyst-style controllers and routing, QJsonDocument serialization, async delays via ASync and QTimer.",
+  "description": "Cutelyst on Cutelyst::Server with one thread per core. Catalyst-style controllers and routing, QJsonDocument serialization, async delays via ASync and QTimer, async Postgres via ASql, fortunes via Cutelee.",
   "repo": "https://github.com/cutelyst/cutelyst",
   "enabled": true,
   "tests": [
@@ -22,7 +22,9 @@
     "pipelined",
     "limited-conn",
     "json-tls",
-    "8gbit"
+    "8gbit",
+    "async-db",
+    "fortunes"
   ],
   "maintainers": ["dantti"]
 }
