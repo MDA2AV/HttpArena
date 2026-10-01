@@ -36,7 +36,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # specific commit: reproducible, with NO per-build network call to detect
 # changes. To pick up upstream library fixes, bump this commit.
 #
-# Pinned to vanilla main @a6a73b0. It has response trailers
+# Pinned to vanilla main @091c014. It has response trailers
 # (enghitalo/vanilla#174), which unary-grpc needs to send grpc-status after
 # the message, and no allocation per request in http2 (#175): HPACK literals
 # decoded into a per-connection arena and copied into the stream's pooled
@@ -45,7 +45,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # per request. Fetched at that one commit.
 RUN git init -q /root/.vmodules/vanilla && \
     git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
-        a6a73b0327e29fb36d4e60610bd9136a63a1230c && \
+        091c014a0191afd7e740b84f5599b9b1fc1fd914 && \
     git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 WORKDIR /app

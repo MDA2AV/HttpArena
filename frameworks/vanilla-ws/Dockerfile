@@ -36,7 +36,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # specific commit: reproducible, with NO per-build network call to detect
 # changes. To pick up upstream library fixes, bump this commit.
 #
-# Pinned to vanilla main @a6a73b0, which carries the conn-mode seam
+# Pinned to vanilla main @091c014, which carries the conn-mode seam
 # (enghitalo/vanilla#136): a protocol-neutral connection-takeover contract in
 # core (queue_takeover + ConnHandler) that lets an HTTP handler flip the
 # connection out of the HTTP/1.1 state machine after the 101, plus the
@@ -45,7 +45,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # writers). This entry composes the two; see main.v. Fetched at that one commit.
 RUN git init -q /root/.vmodules/vanilla && \
     git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
-        a6a73b0327e29fb36d4e60610bd9136a63a1230c && \
+        091c014a0191afd7e740b84f5599b9b1fc1fd914 && \
     git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 WORKDIR /app
