@@ -34,6 +34,7 @@ Create a `meta.json` file in your framework directory:
 | `completeness` | Frameworks only: which of `routing`, `middleware`, `request` and `response` the framework does for you. Each one set to `false` takes 2.5% off the composite; an axis you leave out reads as done, and omitting the field scores a full ×1.00. Omit it entirely on an entry that runs only WebSocket or gRPC profiles - the factor never applies on those boards. See [Completeness](/docs/scoring/completeness/) |
 | `description` | Shown in the framework detail popup on the leaderboard |
 | `repo` | Link to the framework's source repository |
+| `website` | Optional link to the framework's official website |
 | `enabled` | Set to `false` to skip this framework during benchmark runs |
 | `tests` | Array of test profiles this framework participates in |
 | `maintainers` | Array of GitHub usernames to notify when a PR modifies this framework |
