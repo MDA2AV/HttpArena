@@ -37,6 +37,20 @@
       }
     ]
   },
+  "aegon": {
+    "dir": "aegon",
+    "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, and Glaze JSON serialization.",
+    "repo": "https://github.com/UdayKhare09/Aegon",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aiohttp": {
     "dir": "aiohttp",
     "description": "aiohttp 3.14 web server on uvloop, one forked worker per core sharing the port with SO_REUSEPORT. Routing through the aiohttp router, JSON through web.json_response, gzip through the built-in response compression.",
