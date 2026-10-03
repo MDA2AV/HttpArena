@@ -1,0 +1,16 @@
+{
+  "display_name": "hirundo",
+  "language": "Clojure",
+  "type": "engine",
+  "engine": "helidon-nima",
+  "description": "Minimal Hirundo engine benchmark pinned to the upstream Helidon/Nima Ring adapter with HTTP/1.1, TLS, HTTP/2, H2c, and WebSocket support.",
+  "repo": "https://github.com/mpenet/hirundo",
+  "enabled": true,
+  "tests": [
+    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "pipelined", "limited-conn", "json-comp", "json-tls", "static-tls", "8gbit",
+    "baseline-h2", "static-h2", "baseline-h2c", "json-h2c",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
+  ],
+  "maintainers": []
+}

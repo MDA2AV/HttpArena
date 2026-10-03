@@ -1,0 +1,5 @@
+{
+  "framework": "mongoose",
+  "tls": "pass",
+  "check": "none"
+}

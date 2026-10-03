@@ -1,0 +1,5 @@
+{
+  "framework": "ring-jetty-adapter",
+  "tls": "pass",
+  "check": "none"
+}

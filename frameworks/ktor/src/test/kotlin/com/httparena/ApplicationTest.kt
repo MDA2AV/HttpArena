@@ -259,4 +259,12 @@ class ApplicationTest {
         assertEquals(HttpStatusCode.NotFound.value, response.status.value)
     }
 
+    @Test
+    fun delayTest() = testApplication {
+        setup()
+        val response = client.get("/delay/1000")
+        assertEquals(HttpStatusCode.OK.value, response.status.value)
+        assertEquals("1000", response.bodyAsText())
+    }
+
 }

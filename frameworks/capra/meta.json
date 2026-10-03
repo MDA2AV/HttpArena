@@ -1,0 +1,15 @@
+{
+  "display_name": "capra",
+  "language": "Clojure",
+  "type": "engine",
+  "engine": "capra",
+  "description": "Minimal Capra engine benchmark pinned to upstream master with HTTP/1.1, dynamic gzip JSON, and native WebSocket echo.",
+  "repo": "https://github.com/weavejester/capra",
+  "enabled": true,
+  "tests": [
+    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "pipelined", "limited-conn", "json-comp",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
+  ],
+  "maintainers": []
+}

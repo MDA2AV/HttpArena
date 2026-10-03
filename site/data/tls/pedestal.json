@@ -1,0 +1,5 @@
+{
+  "framework": "pedestal",
+  "tls": "pass",
+  "check": "none"
+}

@@ -1,0 +1,46 @@
+# gateway-h3 - the same two services as compose.gateway.yml, reached over QUIC.
+# Stock Caddy binds 8443 on tcp and udp with `protocols h1 h2 h3`, serves
+# /static/* from disk and forwards the rest to the vanilla-epoll image over
+# loopback HTTP/1.1. Every entry on this profile measures within a few percent
+# behind the same Caddy edge, so the split is the even one they use.
+services:
+  proxy:
+    build:
+      context: ./proxy-caddy
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ../vanilla-epoll
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      # Postgres allows 256; split evenly across the server's workers
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      # the image also mounts its static handler at boot; Caddy serves /static here
+      - ${DATA_DIR}/static:/data/static:ro

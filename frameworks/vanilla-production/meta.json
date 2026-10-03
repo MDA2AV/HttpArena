@@ -1,0 +1,15 @@
+{
+  "display_name": "vanilla-epoll",
+  "language": "V",
+  "type": "engine",
+  "engine": "epoll",
+  "description": "vanilla-epoll in the four-service production stack: nginx terminates TLS + h2 and verifies every /api/* request's JWT through the shared authsvc (auth_request), serves /static/* from disk and forwards to the vanilla-epoll image over loopback HTTP/1.1 keepalive. The server is the vanilla-epoll entry unchanged: cache-aside on /api/items/{id} (1 s TTL) and /api/me (30 s TTL) in an in-process, id-indexed slab shared by its workers (X-Cache HIT/MISS), POST /api/items/{id} parsed in place, UPDATE through the async pg_async pools, then invalidate and 204. Redis runs as the stack's cache service; the server keeps its cache in-process, which the profile allows.",
+  "repo": "https://github.com/enghitalo/vanilla",
+  "enabled": true,
+  "tests": [
+    "production-stack"
+  ],
+  "maintainers": [
+    "enghitalo"
+  ]
+}

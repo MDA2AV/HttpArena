@@ -1,0 +1,24 @@
+{
+  "display_name": "mongoose",
+  "language": "C",
+  "type": "engine",
+  "engine": "mongoose",
+  "description": "Cesanta Mongoose — the embedded C networking library, run on the server side of its own event loop. One mg_mgr per core over SO_REUSEPORT listeners; HTTP/1.1, WebSocket and TLS (OpenSSL backend) all come from the library, with the entry supplying only the handlers.",
+  "repo": "https://github.com/cesanta/mongoose",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": []
+}

@@ -1,26 +1,19 @@
 {
   "display_name": "ring-jetty9-adapter",
   "language": "Clojure",
-  "type": "emerging",
+  "type": "engine",
   "mode": "standard",
-  "completeness": {
-    "routing": false,
-    "middleware": true,
-    "request": true,
-    "response": true
-  },
   "engine": "Jetty",
-  "description": "Ring application using the Sunng ring-jetty9-adapter on modern Jetty.",
+  "description": "Minimal Ring Jetty9 adapter HTTP engine benchmark with HTTP/1.1, TLS, HTTP/2, H2C, and WebSocket support.",
   "repo": "https://github.com/sunng87/ring-jetty9-adapter",
   "enabled": true,
+  "tls_check": false,
   "tests": [
-    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
-    "pipelined",
-    "limited-conn",
-    "json-tls",
-    "json-comp",
-    "8gbit",
-    "async-db"
+    "baseline", "pipelined", "limited-conn", "async",
+    "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "json-comp", "json-tls", "8gbit", "static-tls",
+    "baseline-h2", "static-h2", "baseline-h2c", "json-h2c",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
   "maintainers": []
 }

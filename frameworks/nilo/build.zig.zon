@@ -1,0 +1,16 @@
+.{
+    .name = .nilo_arena,
+    .version = "0.0.0",
+    .minimum_zig_version = "0.16.0",
+    .fingerprint = 0x31b5705688860733,
+    .dependencies = .{
+        // Pinned to a commit, not a branch, so the build the board ran is
+        // the build the row describes. Move both lines together:
+        //   zig fetch --save=nilo git+https://github.com/nevindra/nilo#<commit>
+        .nilo = .{
+            .url = "git+https://github.com/nevindra/nilo#224a507209b9d4d66f8d6e90406d00a394d14656",
+            .hash = "nilo-0.5.0-5HEqwlFaWQCQKkgQTyL_cehVbhjE2VRsdMlX2g2i2H38",
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "src" },
+}

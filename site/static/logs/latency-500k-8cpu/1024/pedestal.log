@@ -1,7 +1,26 @@
-Reflection warning, httparena/pedestal/core.clj:128:21 - call to static method sleep on java.lang.Thread can't be resolved (argument types: unknown).
-[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 25.0.4+7-LTS
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
 [main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
-[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@ba9a098{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@71f8d094{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@ba9a098{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@71f8d094{STARTED,min=32,inflate=-1}}
-[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@f308a2f{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:8080}
-[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@4af81941{STARTING}[12.0.36,sto=0] @5378ms
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@2ac974bc{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@50a7dc25{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@2ac974bc{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@50a7dc25{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@385936f3{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@26c9521a{STARTING}[12.0.36,sto=0] @4808ms
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@de2d0d4{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@2c1af4a6{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@de2d0d4{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@2c1af4a6{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.util.ssl.SslContextFactory - x509=X509@16ca9e06(1,h=[localhost],a=[/127.0.0.1, /0.0.0.0, /0:0:0:0:0:0:0:1],w=[localhost]) for Server@12a7999[provider=null,keyStore=file:///tmp/server.p12,trustStore=null]
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@3289d5df{SSL, (ssl, http/1.1)}{0.0.0.0:8081}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@774d286{STARTING}[12.0.36,sto=0] @4919ms
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@73c425d3{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@73a0353f{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@73c425d3{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@73a0353f{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@4988d5b0{HTTP/1.1, (http/1.1, h2c)}{0.0.0.0:8082}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@284c84de{STARTING}[12.0.36,sto=0] @4922ms
+[main] INFO org.eclipse.jetty.server.Server - jetty-12.0.36; built: 2026-05-31T22:48:44.797Z; git: a8f56e2a89f28be5a9466418a05f9e536b3b2c81; jvm 26.0.2+10
+[main] INFO org.eclipse.jetty.session.DefaultSessionIdManager - Session workerName=node0
+[main] INFO org.eclipse.jetty.server.handler.ContextHandler - Started oeje10s.ServletContextHandler@561fdee3{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@23092aba{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.ee10.servlet.ServletContextHandler - Started oeje10s.ServletContextHandler@561fdee3{ROOT,/,b=null,a=AVAILABLE,h=GzipHandler@23092aba{STARTED,min=32,inflate=-1}}
+[main] INFO org.eclipse.jetty.util.ssl.SslContextFactory - x509=X509@30661521(1,h=[localhost],a=[/127.0.0.1, /0.0.0.0, /0:0:0:0:0:0:0:1],w=[localhost]) for Server@18a63d08[provider=null,keyStore=file:///tmp/server.p12,trustStore=null]
+[main] INFO org.eclipse.jetty.server.AbstractConnector - Started ServerConnector@7290985c{SSL, (ssl, alpn, h2, http/1.1)}{0.0.0.0:8443}
+[main] INFO org.eclipse.jetty.server.Server - Started oejs.Server@70d4ea55{STARTING}[12.0.36,sto=0] @4957ms
