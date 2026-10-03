@@ -1,0 +1,41 @@
+{
+  "display_name": "morojs",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "@morojs/engine",
+  "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), default configuration, clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression, static files and the cache-aside through the built-in middleware and cache adapters, WebSockets through the engine's own RFC 6455 support.",
+  "repo": "https://github.com/Moro-JS/moro",
+  "enabled": true,
+  "tls_check": true,
+  "tests": [
+    "baseline",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "json-comp",
+    "8gbit",
+    "async-db",
+    "static-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "json-tls",
+    "gateway-64",
+    "gateway-h3",
+    "production-stack",
+    "fortunes"
+  ],
+  "maintainers": [
+    "M-Chris"
+  ]
+}
