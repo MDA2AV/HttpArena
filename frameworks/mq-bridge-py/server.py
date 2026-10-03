@@ -1,4 +1,5 @@
-"""HttpArena entry for mq-bridge-py (Python).
+"""HttpArena entry "mq-bridge-py": the mq-bridge Python bindings (PyPI package
+``mq-bridge``, imported as ``mq_bridge``).
 
 One catch-all ``http -> response`` route per listener, dispatching on the
 request's ``http_method`` / ``http_path`` / ``http_query`` metadata. mq-bridge

@@ -1,6 +1,7 @@
 # HttpArena image for the mq-bridge-py (Python) entry.
 #
-# Installs the prebuilt mq-bridge wheel from PyPI and runs server.py on port
+# "mq-bridge-py" is only this entry's name: the PyPI package is `mq-bridge`
+# (imported as `mq_bridge`). Installs its prebuilt wheel and runs server.py on port
 # 8080. The wheel is abi3 (cp38+) manylinux2014, so it works on this base image
 # without compiling from source. Pin MQB_VERSION to a released version.
 FROM python:3.12-slim
