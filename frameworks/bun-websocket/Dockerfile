@@ -1,4 +1,4 @@
-FROM oven/bun:latest
+FROM oven/bun:1.3
 WORKDIR /app
 COPY server.ts entrypoint.sh ./
 RUN chmod +x entrypoint.sh
