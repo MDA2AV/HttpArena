@@ -37,6 +37,13 @@
       }
     ]
   },
+  "agensio": {
+    "dir": "agensio",
+    "description": "agensio: a static-file and reverse-proxy server on standalone Asio with its own HTTP/1.1, TLS, HTTP/2 and HTTP/3 (QUIC) layers, one event loop per worker and a lock-free per-worker index over one shared file cache that serves pre-compressed twins. The benchmark endpoints are a handler module compiled in for the arena (/baseline11, /baseline2, /json/{count}, /pipeline); /static from the mounted directory. HTTP/1.1 on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 on :8443 (QUIC over UDP).",
+    "repo": "https://github.com/YiannisBourkelis/agensio",
+    "type": "infrastructure",
+    "engine": "agensio"
+  },
   "aiohttp": {
     "dir": "aiohttp",
     "description": "aiohttp 3.14 web server on uvloop, one forked worker per core sharing the port with SO_REUSEPORT. Routing through the aiohttp router, JSON through web.json_response, gzip through the built-in response compression.",
