@@ -1,16 +1,16 @@
 module main
 
-import vanilla.http_server
-import vanilla.http_server.http1_1.request_parser
-import vanilla.http_server.core
-import vanilla.http_server.tls
-import vanilla.http_server.static_assets
+import vanilla.server
+import vanilla.http1_1.request_parser
+import vanilla.core
+import vanilla.tls
+import vanilla.static_assets
 import vanilla.pg_async
-import json
+import x.json2 as json
 import os
-import runtime
 import strings
 import sync
+import time
 import compress.gzip
 
 struct Rating {
@@ -70,7 +70,10 @@ mut:
 	crud    []CrudSlot
 	crud_mu &sync.RwMutex = unsafe { nil }
 	gz      map[u64][]u8 // json-comp: (count<<32)|m -> gzipped response bytes
-	gz_mu   &sync.RwMutex = unsafe { nil }
+	// production-stack /api/me: user-id-indexed slab, same shape as `crud`
+	users    []CrudSlot
+	users_mu &sync.RwMutex = unsafe { nil }
+	gz_mu    &sync.RwMutex = unsafe { nil }
 }
 
 // CrudSlot is one entry of the id-indexed crud cache slab. `buf` is the rendered
@@ -80,8 +83,9 @@ mut:
 // the next MISS to reuse (no time-based expiry — see the SharedRO.crud note).
 struct CrudSlot {
 mut:
-	buf   []u8
-	valid bool
+	buf     []u8
+	valid   bool
+	expires u64 // time.sys_mono_now() deadline; a HIT needs now < expires
 }
 
 // crud GET/PUT ids are `{RAND:1:50000}`; index the slab directly (1..50000). Index 0
@@ -92,7 +96,21 @@ const crud_cache_slots = 50001
 // so a slot's buffer, allocated once on first MISS, never reallocates.
 const crud_cache_bufcap = 512
 
-// WorkerCtx is the per-worker state handed to every handler call as ac.state
+// Cache-aside TTLs for production-stack (the spec caps items at 1 s, users at
+// 30 s). The same slab serves /crud/items, which keeps the 1 s item TTL.
+const item_ttl_ns = u64(1_000_000_000)
+const user_ttl_ns = u64(30_000_000_000)
+
+// /api/me ids index the users slab directly; the seed's ids are small, and an id
+// past the slab is served uncached rather than growing it.
+const user_cache_slots = 1024
+
+// static_revalidate_ms: how often each static representation is re-checked against
+// its file (one stat(2) per window, by the first request after it opens); 0 checks
+// on every request.
+const static_revalidate_ms = 100
+
+// WorkerCtx is the per-worker state handed to every handler call as worker_state
 // (the make_state contract). Each worker owns its own async Postgres pool (no
 // lock); the caches live in the shared `ro` (mutex-guarded) so X-Cache hits
 // survive SO_REUSEPORT routing the two probe requests to different workers.
@@ -119,7 +137,7 @@ mut:
 	params_buf    []?[]u8
 	// Reused Stash free-list: park() borrows a Stash here instead of heap-allocating one
 	// per request; on_db_ready returns it on the terminal .done path only (NOT on the
-	// not-ready re-arm, where it stays live as the watch udata — incl. a FIX 3 dead
+	// not-ready re-arm, where it stays live as the watch payload — incl. a FIX 3 dead
 	// tombstone that keeps it referenced until its orphaned reply drains).
 	stash_pool []&Stash
 	// Reused /fortunes row buffer: messages are BORROWED views into the Result frames
@@ -131,6 +149,11 @@ mut:
 	// was the /baseline11 chunked-POST leak (~6 GiB at 3.8M req/s in the arena
 	// baseline mix).
 	dechunk_buf []u8
+	// Idle one-shot timerfds for /delay: start_delay pops one instead of calling
+	// timerfd_create, on_delay_elapsed pushes it back instead of closing it. A
+	// recycled fd is still registered with the worker's poller, so re-arming it
+	// costs a timerfd_settime and a re-watch rather than create + add + close.
+	timer_fds []int
 }
 
 // Stash is the per-request state that must survive across the park (the request
@@ -150,6 +173,8 @@ const k_crud_get = u8(3)
 const k_crud_list = u8(4)
 const k_crud_create = u8(5)
 const k_crud_update = u8(6)
+const k_api_update = u8(7)
+const k_api_me = u8(8)
 
 // ── zero-alloc write helpers (push_many, never single-element `<<`) ──────────
 
@@ -303,8 +328,8 @@ const service_unavailable = 'HTTP/1.1 503 Service Unavailable\r\nServer: vanilla
 
 // ── async handler ────────────────────────────────────────────────────────────
 
-fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
-	mut w := unsafe { &WorkerCtx(ac.state) }
+fn handle(req_buffer []u8, mut out []u8, _ int, worker_state voidptr, mut event_loop core.EventLoop) core.Step {
+	mut w := unsafe { &WorkerCtx(worker_state) }
 	// Skip-decode fast path: the fixed /pipeline plaintext (highest-RPS test) blits
 	// its response before ANY parsing. The request is already framed by the caller,
 	// so decode_into/parse_http1_request_line add nothing here (~17% of the request).
@@ -331,6 +356,11 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 	}
 	qpos := target.index_u8(`?`)
 	route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+	// RFC 9112 §9.6: a request carrying the `close` connection option gets its
+	// final response and then the connection closes (.close flushes first).
+	// Only the synchronous routes below answer with `done`; the DB routes finish
+	// in their continuation.
+	done := if has_close_option(req) { core.Step.close } else { core.Step.done }
 
 	if route == '/baseline11' {
 		mut sum := qint(req, qk_a) + qint(req, qk_b)
@@ -338,27 +368,37 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 			sum += w.body_int(req)
 		}
 		w.emit_int(mut out, 'text/plain', sum)
-		return .done
+		return done
+	} else if route == '/baseline2' {
+		// the gateway profiles' query-sum endpoint (GET only), behind the edge proxy
+		w.emit_int(mut out, 'text/plain', qint(req, qk_a) + qint(req, qk_b))
+		return done
+	} else if route.starts_with('/api/items/') {
+		// production-stack: the edge verified the JWT; GET is cache-aside, POST writes
+		id := int(parse_u_at(route, 11))
+		if method == 'POST' {
+			return w.start_api_update(mut out, mut event_loop, id, req)
+		}
+		return w.start_crud_get(mut out, mut event_loop, id)
+	} else if route == '/api/me' {
+		return w.start_api_me(mut out, mut event_loop, req)
+	} else if route == '/public/baseline' {
+		w.emit_int(mut out, 'text/plain', qint(req, qk_a) + qint(req, qk_b))
+		return done
+	} else if route.starts_with('/public/json/') {
+		w.serve_json(mut out, req, parse_u_at(route, 13))
+		return done
 	} else if route == '/echo' {
 		w.echo(mut out, req)
-		return .done
+		return done
 	} else if route.starts_with('/json/') {
-		count := clamp_count(parse_u_at(route, 6), w.ro.dataset.len)
-		mut m := qint(req, qk_m)
-		if m == 0 {
-			m = 1
-		}
-		if accepts_gzip(req) {
-			w.write_json_gzip(mut out, count, m)
-		} else {
-			w.write_json_response(mut out, count, m)
-		}
-		return .done
+		w.serve_json(mut out, req, parse_u_at(route, 6))
+		return done
 	} else if route == '/async-db' {
-		return w.start_async_db(mut out, mut ac, qint(req, qk_min), qint(req, qk_max), qint(req,
+		return w.start_async_db(mut out, mut event_loop, qint(req, qk_min), qint(req, qk_max), qint(req,
 			qk_limit))
 	} else if route == '/fortunes' {
-		return w.start_fortunes(mut out, mut ac)
+		return w.start_fortunes(mut out, mut event_loop)
 	} else if route.starts_with('/static/') {
 		// Canonical static serving via the lib's static_assets module: negotiates the
 		// precompressed .br/.gz sibling per Accept-Encoding (the arena sends
@@ -367,29 +407,40 @@ fn handle(req_buffer []u8, mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		// ONE audited implementation instead of a second hand-rolled identity-only
 		// path that ignored Accept-Encoding. Mounted at /static/; emits via the same
 		// core.queue_file sendfile handoff the worker already drains.
-		w.ro.asv.respond_into(req_buffer, mut out) or { wb(mut out, not_found) }
-		return .done
+		w.ro.asv.respond_req_into(&req, mut out)
+		return done
 	} else if route == '/crud/items' {
 		if method == 'POST' {
-			return w.start_crud_create(mut out, mut ac, req)
+			return w.start_crud_create(mut out, mut event_loop, req)
 		}
-		return w.start_crud_list(mut out, mut ac, qstr_slice(req, qk_category), qint(req, qk_page),
+		return w.start_crud_list(mut out, mut event_loop, qstr_slice(req, qk_category), qint(req, qk_page),
 			qint(req, qk_limit))
 	} else if route.starts_with('/crud/items/') {
 		id := int(parse_u_at(route, 12))
 		if method == 'PUT' {
-			return w.start_crud_update(mut out, mut ac, id, req)
+			return w.start_crud_update(mut out, mut event_loop, id, req)
 		}
-		return w.start_crud_get(mut out, mut ac, id)
+		return w.start_crud_get(mut out, mut event_loop, id)
+	} else if route.starts_with('/delay/') {
+		ms := parse_delay_ms(route)
+		if ms < 0 {
+			wb(mut out, not_found)
+			return done
+		}
+		if ms == 0 {
+			w.emit_int(mut out, 'text/plain', 0)
+			return done
+		}
+		return w.start_delay(mut out, mut event_loop, ms)
 	}
 	wb(mut out, not_found)
-	return .done
+	return done
 }
 
 // park submits a query and parks the request on its connection, stashing the
 // render kind (+ id/page for the routes that need them) for the continuation.
 // On a pool/flush failure it answers synchronously with `fallback`.
-fn (mut w WorkerCtx) park(mut out []u8, mut ac core.AsyncCtx, query_text string, params []?[]u8, kind u8, id int, page i64, fallback []u8) core.AsyncStep {
+fn (mut w WorkerCtx) park(mut out []u8, mut event_loop core.EventLoop, query_text string, params []?[]u8, kind u8, id int, page i64, fallback []u8) core.Step {
 	// Pick the least-loaded connection (shortest pipeline). Cross-request
 	// pipelining: a connection multiplexes up to max_inflight queries, so we shed
 	// only when every connection is at the cap — not when a connection is merely
@@ -431,18 +482,19 @@ fn (mut w WorkerCtx) park(mut out []u8, mut ac core.AsyncCtx, query_text string,
 	// One watch per parked request on the connection's fd. When several requests
 	// share a connection the reactor auto-promotes the fd to a FIFO queue and fans
 	// each reply out in submission order (queue[k] ↔ the connection's inflight[k]).
-	// watch_persistent: the fd is a POOLED connection — if this client disconnects
+	// watch_fd_persistent: the fd is a POOLED connection — if this client disconnects
 	// mid-query the runtime must drain the orphaned reply and keep the connection
 	// open for reuse, never close it (a close would force a reconnect + re-auth).
-	ac.watch_persistent(w.pool.fd(idx), .readable, on_db_ready, voidptr(st))
+	event_loop.watch_fd_persistent(w.pool.fd(idx), .readable, on_db_ready, voidptr(st))
 	return .suspend
 }
 
 // on_db_ready resumes a parked request when its PG socket is readable: pump the
-// result, render by kind, release the connection.
-fn on_db_ready(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
-	mut w := unsafe { &WorkerCtx(ac.state) }
-	st := unsafe { &Stash(ac.udata) }
+// result, render by kind, release the connection. The ready fd and its error flag
+// go unused: st.conn_idx already names the connection.
+fn on_db_ready(mut out []u8, _ int, _ bool, watch_payload voidptr, worker_state voidptr, mut event_loop core.EventLoop) core.Step {
+	mut w := unsafe { &WorkerCtx(worker_state) }
+	st := unsafe { &Stash(watch_payload) }
 	mut c := w.pool.conn(st.conn_idx)
 	// async_on_readable pops THIS request's reply: the reactor runs the connection's
 	// parked requests front-first and replies arrive in submit order, so the FIFO
@@ -455,11 +507,12 @@ fn on_db_ready(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 	}
 	if !poll.ready {
 		// Re-arm persistent: the single-watch path clears the slot before running this
-		// continuation, so the re-arm is a fresh entry — watch_persistent re-stamps the
-		// pool-owned flag that a plain watch would drop. (more bytes to come)
-		// NOTE: do NOT recycle st here — it stays live as the watch udata (incl. a FIX 3
+		// continuation, so the re-arm is a fresh entry — watch_fd_persistent re-stamps the
+		// pool-owned flag that a plain watch_fd would drop. (more bytes to come)
+		// NOTE: do NOT recycle st here — it stays live as the watch payload (incl. a FIX 3
 		// dead tombstone) until the reply completes on a later edge.
-		ac.watch_persistent(w.pool.fd(st.conn_idx), .readable, on_db_ready, ac.udata)
+		event_loop.watch_fd_persistent(w.pool.fd(st.conn_idx), .readable, on_db_ready,
+			watch_payload)
 		return .suspend
 	}
 	res := poll.result
@@ -470,6 +523,8 @@ fn on_db_ready(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 		k_crud_list { w.render_crud_list(mut out, res, st.page) }
 		k_crud_create { wb(mut out, created) }
 		k_crud_update { w.render_crud_update(mut out, st.id) }
+		k_api_update { w.render_api_update(mut out, st.id) }
+		k_api_me { w.render_api_me(mut out, res, st.id) }
 		else { wb(mut out, not_found) }
 	}
 	// No release: a pipelined connection is not held exclusively. Its in-flight
@@ -481,12 +536,214 @@ fn on_db_ready(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
 
 // return_stash recycles a finished request's Stash onto the per-worker free-list. Call
 // ONLY on a terminal .done path — never on the .suspend re-arm, where st stays live as
-// the watch udata. Bounded so a burst doesn't grow the list without limit.
+// the watch payload. Bounded so a burst doesn't grow the list without limit.
 @[inline]
 fn (mut w WorkerCtx) return_stash(st &Stash) {
 	if w.stash_pool.len < 64 {
 		w.stash_pool << st
 	}
+}
+
+// ── /delay/{ms} (async profile) ─────────────────────────────────────────────
+
+#include <sys/timerfd.h>
+
+fn C.timerfd_create(clockid int, flags int) int
+fn C.timerfd_settime(fd int, flags int, new_value voidptr, old_value voidptr) int
+
+// timer_pool_max bounds a worker's free-list of idle timerfds. The profile holds
+// ~32000/workers requests in flight per worker; past the bound a finished timer
+// is closed instead of kept.
+const timer_pool_max = 4096
+
+// parse_delay_ms reads {ms} from `/delay/{ms}`: 1-9 decimal digits and nothing
+// after them. Anything else is -1 (404).
+@[direct_array_access]
+fn parse_delay_ms(route string) i64 {
+	start := '/delay/'.len
+	if route.len == start || route.len - start > 9 {
+		return -1
+	}
+	mut n := i64(0)
+	for i := start; i < route.len; i++ {
+		c := route[i]
+		if c < `0` || c > `9` {
+			return -1
+		}
+		n = n * 10 + i64(c - `0`)
+	}
+	return n
+}
+
+// start_delay parks the request on a one-shot timerfd armed for `ms`; the worker
+// keeps serving its other connections and on_delay_elapsed answers when the
+// timer fires. The delay rides along as the watch payload.
+fn (mut w WorkerCtx) start_delay(mut out []u8, mut event_loop core.EventLoop, ms i64) core.Step {
+	mut tfd := -1
+	if w.timer_fds.len > 0 {
+		tfd = w.timer_fds.pop()
+	} else {
+		tfd = C.timerfd_create(C.CLOCK_MONOTONIC, C.TFD_NONBLOCK | C.TFD_CLOEXEC)
+		if tfd < 0 {
+			wb(mut out, service_unavailable)
+			return .done
+		}
+	}
+	// struct itimerspec: it_interval {sec, nsec} = 0 (one-shot), it_value {sec, nsec}
+	mut spec := [4]i64{}
+	spec[2] = ms / 1000
+	spec[3] = (ms % 1000) * 1_000_000
+	if C.timerfd_settime(tfd, 0, unsafe { voidptr(&spec[0]) }, unsafe { nil }) != 0 {
+		C.close(tfd)
+		wb(mut out, service_unavailable)
+		return .done
+	}
+	event_loop.watch_fd(tfd, .readable, on_delay_elapsed, voidptr(usize(ms)))
+	return .suspend
+}
+
+// on_delay_elapsed answers a parked /delay request. It only answers once the
+// timerfd reports an expiration: a wake without one (a stale io_uring poll
+// completion for a closed fd whose number was reused, say) re-arms and keeps
+// waiting, so no response can leave before its delay has elapsed.
+fn on_delay_elapsed(mut out []u8, ready_fd int, ready_fd_error bool, watch_payload voidptr, worker_state voidptr, mut event_loop core.EventLoop) core.Step {
+	mut w := unsafe { &WorkerCtx(worker_state) }
+	tfd := ready_fd
+	mut expirations := u64(0)
+	if C.read(tfd, &expirations, 8) != 8 {
+		if ready_fd_error {
+			C.close(tfd)
+			wb(mut out, service_unavailable)
+			return .done
+		}
+		event_loop.watch_fd(tfd, .readable, on_delay_elapsed, watch_payload)
+		return .suspend
+	}
+	if w.timer_fds.len < timer_pool_max {
+		w.timer_fds << tfd
+	} else {
+		C.close(tfd)
+	}
+	w.emit_int(mut out, 'text/plain', i64(usize(watch_payload)))
+	return .done
+}
+
+// serve_json answers /json/{count} (and production-stack's /public/json/{count}):
+// gzip from the lazy per-(count, m) cache when the client accepts it.
+fn (mut w WorkerCtx) serve_json(mut out []u8, req request_parser.HttpRequest, n i64) {
+	count := clamp_count(n, w.ro.dataset.len)
+	mut m := qint(req, qk_m)
+	if m == 0 {
+		m = 1
+	}
+	if accepts_gzip(req) {
+		w.write_json_gzip(mut out, count, m)
+	} else {
+		w.write_json_response(mut out, count, m)
+	}
+}
+
+// ── production-stack /api (behind the edge's JWT auth_request) ──────────────
+
+const no_content = 'HTTP/1.1 204 No Content\r\nServer: vanilla\r\nConnection: keep-alive\r\n\r\n'.bytes()
+
+const unauthorized = 'HTTP/1.1 401 Unauthorized\r\nServer: vanilla\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n'.bytes()
+
+// start_api_update is POST /api/items/{id}: {"name","price","quantity"} parsed in
+// place (borrowed views, no allocation), UPDATE, then render_api_update drops the
+// cached item and answers 204.
+fn (mut w WorkerCtx) start_api_update(mut out []u8, mut event_loop core.EventLoop, id int, req request_parser.HttpRequest) core.Step {
+	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
+	name := json_string_field_borrowed(body, '"name"') or {
+		wb(mut out, bad_request)
+		return .done
+	}
+	price := json_i64_field(body, '"price"') or {
+		wb(mut out, bad_request)
+		return .done
+	}
+	quantity := json_i64_field(body, '"quantity"') or {
+		wb(mut out, bad_request)
+		return .done
+	}
+	w.reset_params()
+	w.push_int(i64(id))
+	w.push_bytes(name)
+	w.push_int(price)
+	w.push_int(quantity)
+	return w.park(mut out, mut event_loop, 'UPDATE items SET name = \$2, price = \$3, quantity = \$4 WHERE id = \$1',
+		w.params_buf, k_api_update, id, 0, service_unavailable)
+}
+
+fn (mut w WorkerCtx) render_api_update(mut out []u8, id int) {
+	// invalidate after the write, so the next GET re-reads the updated row
+	if id >= 1 && id < crud_cache_slots {
+		w.ro.crud_mu.@lock()
+		w.ro.crud[id].valid = false
+		w.ro.crud_mu.unlock()
+	}
+	wb(mut out, no_content)
+}
+
+// start_api_me is GET /api/me: cache-aside on the user named by the edge's
+// X-User-Id (set from the verified JWT), 30 s TTL.
+fn (mut w WorkerCtx) start_api_me(mut out []u8, mut event_loop core.EventLoop, req request_parser.HttpRequest) core.Step {
+	uid := req.get_header_value_slice('X-User-Id') or {
+		wb(mut out, unauthorized)
+		return .done
+	}
+	id := int(parse_u_at(unsafe { tos(&req.buffer[uid.start], uid.len) }, 0))
+	if id >= 1 && id < user_cache_slots {
+		now := time.sys_mono_now()
+		mut hit := false
+		w.ro.users_mu.@rlock()
+		s := w.ro.users[id]
+		if s.valid && s.buf.len > 0 && now < s.expires {
+			unsafe { w.scratch.len = 0 }
+			w.scratch << s.buf
+			hit = true
+		}
+		w.ro.users_mu.runlock()
+		if hit {
+			emit_xcache(mut out, 'application/json', w.scratch, 'HIT')
+			return .done
+		}
+	}
+	w.reset_params()
+	w.push_int(i64(id))
+	return w.park(mut out, mut event_loop, 'SELECT id, name, email, plan FROM users WHERE id = \$1',
+		w.params_buf, k_api_me, id, 0, service_unavailable)
+}
+
+fn (mut w WorkerCtx) render_api_me(mut out []u8, res pg_async.Result, id int) {
+	mut rows := res.rows()
+	row := rows.next() or {
+		wb(mut out, not_found)
+		return
+	}
+	unsafe { w.scratch.len = 0 }
+	ws(mut w.scratch, '{"id":')
+	wi(mut w.scratch, i64(row.int4(0) or { 0 }))
+	ws(mut w.scratch, ',"name":"')
+	ws_json_str(mut w.scratch, row.text(1) or { ''.bytes() })
+	ws(mut w.scratch, '","email":"')
+	ws_json_str(mut w.scratch, row.text(2) or { ''.bytes() })
+	ws(mut w.scratch, '","plan":"')
+	ws_json_str(mut w.scratch, row.text(3) or { ''.bytes() })
+	ws(mut w.scratch, '"}')
+	if id >= 1 && id < user_cache_slots {
+		w.ro.users_mu.@lock()
+		mut slot := &w.ro.users[id]
+		if slot.buf.cap == 0 {
+			slot.buf = []u8{cap: crud_cache_bufcap}
+		}
+		unsafe { slot.buf.len = 0 }
+		slot.buf << w.scratch
+		slot.valid = true
+		slot.expires = time.sys_mono_now() + user_ttl_ns
+		w.ro.users_mu.unlock()
+	}
+	emit_xcache(mut out, 'application/json', w.scratch, 'MISS')
 }
 
 fn (w &WorkerCtx) render_error(mut out []u8, kind u8) {
@@ -503,6 +760,9 @@ fn (w &WorkerCtx) render_error(mut out []u8, kind u8) {
 		}
 		k_crud_get {
 			wb(mut out, not_found)
+		}
+		k_api_update, k_api_me {
+			wb(mut out, service_unavailable)
 		}
 		else {
 			wb(mut out, bad_request)
@@ -549,7 +809,7 @@ const fortunes_fallback = '<!doctype html><html><body><table></table></body></ht
 
 const async_db_sql = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN \$1 AND \$2 LIMIT \$3'
 
-fn (mut w WorkerCtx) start_async_db(mut out []u8, mut ac core.AsyncCtx, min i64, max i64, limit i64) core.AsyncStep {
+fn (mut w WorkerCtx) start_async_db(mut out []u8, mut event_loop core.EventLoop, min i64, max i64, limit i64) core.Step {
 	mut lim := limit
 	if lim < 1 {
 		lim = 1
@@ -561,7 +821,7 @@ fn (mut w WorkerCtx) start_async_db(mut out []u8, mut ac core.AsyncCtx, min i64,
 	w.push_int(min)
 	w.push_int(max)
 	w.push_int(lim)
-	return w.park(mut out, mut ac, async_db_sql, w.params_buf, k_async_db, 0, 0, adb_fallback)
+	return w.park(mut out, mut event_loop, async_db_sql, w.params_buf, k_async_db, 0, 0, adb_fallback)
 }
 
 fn (mut w WorkerCtx) render_async_db(mut out []u8, res pg_async.Result) {
@@ -611,9 +871,9 @@ fn render_item(mut body []u8, row pg_async.Row) {
 
 // ── /fortunes ────────────────────────────────────────────────────────────────
 
-fn (mut w WorkerCtx) start_fortunes(mut out []u8, mut ac core.AsyncCtx) core.AsyncStep {
+fn (mut w WorkerCtx) start_fortunes(mut out []u8, mut event_loop core.EventLoop) core.Step {
 	w.reset_params() // no params; reuse the (empty) params_buf rather than a fresh literal
-	return w.park(mut out, mut ac, 'SELECT id, message FROM fortune', w.params_buf, k_fortunes,
+	return w.park(mut out, mut event_loop, 'SELECT id, message FROM fortune', w.params_buf, k_fortunes,
 		0, 0, fortunes_fallback)
 }
 
@@ -635,7 +895,7 @@ fn (mut w WorkerCtx) render_fortunes(mut out []u8, res pg_async.Result) {
 		id:      0
 		message: synthetic_fortune
 	}
-	w.fortunes_buf.sort_with_compare(cmp_fortune_message)
+	sort_fortunes(mut w.fortunes_buf)
 	unsafe { w.scratch.len = 0 } // reuse the worker's render buffer (no per-request body alloc)
 	ws(mut w.scratch,
 		'<!doctype html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>')
@@ -650,17 +910,33 @@ fn (mut w WorkerCtx) render_fortunes(mut out []u8, res pg_async.Result) {
 	emit(mut out, 'text/html; charset=utf-8', w.scratch)
 }
 
-// cmp_fortune_message orders fortunes by message, lexicographically by bytes — V has no
-// `<` on []u8, so the sort needs an explicit comparator (returns <0 / 0 / >0).
-fn cmp_fortune_message(a &Fortune, b &Fortune) int {
+fn C.qsort(base voidptr, nmemb usize, size usize, compar voidptr)
+
+// sort_fortunes orders the ~200 rows by message with libc qsort. sort_with_compare is a
+// merge sort whose scratch copy comes from V's malloc, which on a GC build is the
+// collector's allocator (and under -gc none a V allocation that must be freed by
+// hand); qsort's scratch, when it needs one, comes from libc malloc and is freed
+// inside the call, so the per-request sort never touches the GC heap.
+fn sort_fortunes(mut a []Fortune) {
+	C.qsort(a.data, usize(a.len), sizeof(Fortune), voidptr(cmp_fortune))
+}
+
+fn cmp_fortune(a &Fortune, b &Fortune) int {
+	return cmp_message(a.message, b.message)
+}
+
+// cmp_message orders messages lexicographically by bytes — V has no `<` on []u8
+// (returns <0 / 0 / >0).
+@[direct_array_access]
+fn cmp_message(a []u8, b []u8) int {
 	mut i := 0
-	for i < a.message.len && i < b.message.len {
-		if a.message[i] != b.message[i] {
-			return int(a.message[i]) - int(b.message[i])
+	for i < a.len && i < b.len {
+		if a[i] != b[i] {
+			return int(a[i]) - int(b[i])
 		}
 		i++
 	}
-	return a.message.len - b.message.len
+	return a.len - b.len
 }
 
 // ── /crud ────────────────────────────────────────────────────────────────────
@@ -669,7 +945,7 @@ fn cmp_fortune_message(a &Fortune, b &Fortune) int {
 // the total come back together — one park instead of two queries.
 const crud_list_sql = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count, count(*) OVER() FROM items WHERE category = \$1 ORDER BY id LIMIT \$2 OFFSET \$3'
 
-fn (mut w WorkerCtx) start_crud_list(mut out []u8, mut ac core.AsyncCtx, category []u8, page i64, limit i64) core.AsyncStep {
+fn (mut w WorkerCtx) start_crud_list(mut out []u8, mut event_loop core.EventLoop, category []u8, page i64, limit i64) core.Step {
 	mut p := page
 	if p < 1 {
 		p = 1
@@ -686,7 +962,7 @@ fn (mut w WorkerCtx) start_crud_list(mut out []u8, mut ac core.AsyncCtx, categor
 	w.push_bytes(category) // borrowed view into the request buffer (qstr_slice)
 	w.push_int(lim)
 	w.push_int(offset)
-	return w.park(mut out, mut ac, crud_list_sql, w.params_buf, k_crud_list, 0, p, crud_list_fallback)
+	return w.park(mut out, mut event_loop, crud_list_sql, w.params_buf, k_crud_list, 0, p, crud_list_fallback)
 }
 
 fn (mut w WorkerCtx) render_crud_list(mut out []u8, res pg_async.Result, page i64) {
@@ -712,16 +988,17 @@ fn (mut w WorkerCtx) render_crud_list(mut out []u8, res pg_async.Result, page i6
 	emit(mut out, 'application/json', w.scratch)
 }
 
-fn (mut w WorkerCtx) start_crud_get(mut out []u8, mut ac core.AsyncCtx, id int) core.AsyncStep {
+fn (mut w WorkerCtx) start_crud_get(mut out []u8, mut event_loop core.EventLoop, id int) core.Step {
 	// Cache-aside lookup against the id-indexed slab. Snapshot the cached body into
 	// the per-worker scratch UNDER the read-lock, then build the response unlocked:
 	// the slot buffer is reused in place, so a bare ref must not outlive the lock (a
 	// concurrent MISS-refill would mutate it). The read-lock hold is one memcpy.
 	mut hit := false
 	if id >= 1 && id < crud_cache_slots {
+		now := time.sys_mono_now()
 		w.ro.crud_mu.@rlock()
 		s := w.ro.crud[id]
-		if s.valid && s.buf.len > 0 {
+		if s.valid && s.buf.len > 0 && now < s.expires {
 			unsafe { w.scratch.len = 0 }
 			w.scratch << s.buf
 			hit = true
@@ -735,7 +1012,7 @@ fn (mut w WorkerCtx) start_crud_get(mut out []u8, mut ac core.AsyncCtx, id int) 
 	}
 	w.reset_params()
 	w.push_int(i64(id))
-	return w.park(mut out, mut ac,
+	return w.park(mut out, mut event_loop,
 		'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE id = \$1',
 		w.params_buf, k_crud_get, id, 0, service_unavailable)
 }
@@ -766,12 +1043,13 @@ fn (mut w WorkerCtx) render_crud_get(mut out []u8, res pg_async.Result, id int) 
 		unsafe { slot.buf.len = 0 }
 		slot.buf << w.scratch
 		slot.valid = true
+		slot.expires = time.sys_mono_now() + item_ttl_ns
 		w.ro.crud_mu.unlock()
 	}
 	emit_xcache(mut out, 'application/json', w.scratch, 'MISS')
 }
 
-fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut ac core.AsyncCtx, req request_parser.HttpRequest) core.AsyncStep {
+fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut event_loop core.EventLoop, req request_parser.HttpRequest) core.Step {
 	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
 	if c := parse_crud_body_fast(body, true) {
 		w.reset_params()
@@ -780,12 +1058,12 @@ fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut ac core.AsyncCtx, req r
 		w.push_bytes(c.category)
 		w.push_int(c.price)
 		w.push_int(c.quantity)
-		return w.park(mut out, mut ac,
+		return w.park(mut out, mut event_loop,
 			"INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) VALUES (\$1, \$2, \$3, \$4, \$5, true, '[]', 0, 0) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price, quantity = EXCLUDED.quantity",
 			w.params_buf, k_crud_create, 0, 0, service_unavailable)
 	}
 	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
-	c := json.decode(CrudCreate, raw) or {
+	c := json.decode[CrudCreate](raw) or {
 		wb(mut out, bad_request)
 		return .done
 	}
@@ -795,12 +1073,12 @@ fn (mut w WorkerCtx) start_crud_create(mut out []u8, mut ac core.AsyncCtx, req r
 	w.push_bytes(unsafe { c.category.str.vbytes(c.category.len) })
 	w.push_int(i64(c.price))
 	w.push_int(i64(c.quantity))
-	return w.park(mut out, mut ac,
+	return w.park(mut out, mut event_loop,
 		"INSERT INTO items (id, name, category, price, quantity, active, tags, rating_score, rating_count) VALUES (\$1, \$2, \$3, \$4, \$5, true, '[]', 0, 0) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price, quantity = EXCLUDED.quantity",
 		w.params_buf, k_crud_create, 0, 0, service_unavailable)
 }
 
-fn (mut w WorkerCtx) start_crud_update(mut out []u8, mut ac core.AsyncCtx, id int, req request_parser.HttpRequest) core.AsyncStep {
+fn (mut w WorkerCtx) start_crud_update(mut out []u8, mut event_loop core.EventLoop, id int, req request_parser.HttpRequest) core.Step {
 	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
 	if c := parse_crud_body_fast(body, false) {
 		w.reset_params()
@@ -809,12 +1087,12 @@ fn (mut w WorkerCtx) start_crud_update(mut out []u8, mut ac core.AsyncCtx, id in
 		w.push_bytes(c.category)
 		w.push_int(c.price)
 		w.push_int(c.quantity)
-		return w.park(mut out, mut ac,
+		return w.park(mut out, mut event_loop,
 			'UPDATE items SET name = \$2, category = \$3, price = \$4, quantity = \$5 WHERE id = \$1',
 			w.params_buf, k_crud_update, id, 0, service_unavailable)
 	}
 	raw := unsafe { tos(&req.buffer[req.body.start], req.body.len) }
-	c := json.decode(CrudCreate, raw) or {
+	c := json.decode[CrudCreate](raw) or {
 		wb(mut out, bad_request)
 		return .done
 	}
@@ -824,7 +1102,7 @@ fn (mut w WorkerCtx) start_crud_update(mut out []u8, mut ac core.AsyncCtx, id in
 	w.push_bytes(unsafe { c.category.str.vbytes(c.category.len) })
 	w.push_int(i64(c.price))
 	w.push_int(i64(c.quantity))
-	return w.park(mut out, mut ac,
+	return w.park(mut out, mut event_loop,
 		'UPDATE items SET name = \$2, category = \$3, price = \$4, quantity = \$5 WHERE id = \$1',
 		w.params_buf, k_crud_update, id, 0, service_unavailable)
 }
@@ -845,8 +1123,8 @@ fn (mut w WorkerCtx) render_crud_update(mut out []u8, id int) {
 
 // write_json_into is the transport-agnostic /json serializer: it only APPENDS
 // response bytes to `out`, so the plaintext path (via WorkerCtx) and the json-tls
-// path (a stateless TLS handler) share it verbatim. `ro` is read-only and nothing
-// per-request is heap-allocated. Content-Length is precomputed from the SAME
+// path (the TLS listener's handler, which gets its TlsWorker as worker_state)
+// share it verbatim. `ro` is read-only and nothing per-request is heap-allocated. Content-Length is precomputed from the SAME
 // values the body emits, so the framed length can never desync from the body
 // (no response-splitting / smuggling surface).
 fn write_json_into(ro &SharedRO, mut out []u8, count int, m i64) {
@@ -949,12 +1227,18 @@ fn (w &WorkerCtx) json_body(count int, m i64) string {
 // the bytes that actually arrived, never from Content-Length, which a chunked
 // POST does not carry at all.
 fn (mut w WorkerCtx) echo(mut out []u8, req request_parser.HttpRequest) {
+	echo_into(mut out, req, mut w.dechunk_buf)
+}
+
+// echo_into is /echo for both listeners (plaintext :8080 and the 8gbit TLS
+// listener on :8081); `scratch` is the caller's reused dechunk buffer.
+fn echo_into(mut out []u8, req request_parser.HttpRequest, mut scratch []u8) {
 	if te := req.get_header_value_slice('Transfer-Encoding') {
 		val := unsafe { tos(&req.buffer[te.start], te.len) }
 		if val.contains('chunked') {
-			unsafe { w.dechunk_buf.len = 0 }
-			dechunk_into(mut w.dechunk_buf, req.buffer, req.body.start, req.body.len)
-			emit(mut out, 'application/octet-stream', w.dechunk_buf)
+			unsafe { scratch.len = 0 }
+			dechunk_into(mut scratch, req.buffer, req.body.start, req.body.len)
+			emit(mut out, 'application/octet-stream', scratch)
 			return
 		}
 	}
@@ -1156,6 +1440,35 @@ fn parse_hex_slice(buf []u8, start int, length int) int {
 	return int(n)
 }
 
+// is_token_sep: the bytes that can border a token in a Connection list.
+@[inline]
+fn is_token_sep(c u8) bool {
+	return c == `,` || c == ` ` || c == `\t`
+}
+
+// has_close_option reports whether the Connection header lists the `close`
+// option: a case-insensitive token in a comma-separated list (RFC 9110 §7.6.1),
+// matched in place without allocating (this binary may run -gc none).
+@[direct_array_access]
+fn has_close_option(req request_parser.HttpRequest) bool {
+	c := req.get_header_value_slice('Connection') or { return false }
+	end := c.start + c.len
+	mut i := c.start
+	for i + 5 <= end {
+		if (req.buffer[i] | 0x20) == `c` && (req.buffer[i + 1] | 0x20) == `l`
+			&& (req.buffer[i + 2] | 0x20) == `o` && (req.buffer[i + 3] | 0x20) == `s`
+			&& (req.buffer[i + 4] | 0x20) == `e` {
+			before := i == c.start || is_token_sep(req.buffer[i - 1])
+			after := i + 5 == end || is_token_sep(req.buffer[i + 5])
+			if before && after {
+				return true
+			}
+		}
+		i++
+	}
+	return false
+}
+
 fn accepts_gzip(req request_parser.HttpRequest) bool {
 	ae := req.get_header_value_slice('Accept-Encoding') or { return false }
 	return unsafe { tos(&req.buffer[ae.start], ae.len) }.contains('gzip')
@@ -1297,6 +1610,20 @@ fn parse_db_url(u string) pg_async.ConnConfig {
 	}
 }
 
+// TlsWorker is the per-worker state of the TLS listener: the reused dechunk
+// buffer /echo needs for a chunked body (a per-request buffer would leak
+// under -gc none).
+struct TlsWorker {
+mut:
+	dechunk_buf []u8
+}
+
+fn new_tls_worker() voidptr {
+	return &TlsWorker{
+		dechunk_buf: []u8{cap: 16384}
+	}
+}
+
 // load_tls_config builds the json-tls server's TLS config. It reads the cert/key
 // the HttpArena harness bind-mounts at /certs (overridable via TLS_CERT/TLS_KEY).
 // If NO cert is mounted (local dev), it falls back to a fresh self-signed cert —
@@ -1304,6 +1631,24 @@ fn parse_db_url(u string) pg_async.ConnConfig {
 // cert IS present but the key is missing/unreadable, it FAILS LOUDLY rather than
 // silently self-signing, so a real misconfiguration can't slip through as "works
 // but with the wrong identity". TLS 1.3 + ALPN http/1.1 are fixed by the tls shim.
+// connect_pool brings up a worker's pool, retrying for up to 30 s while
+// Postgres refuses connections. The postgres image answers pg_isready and psql
+// over its unix socket while the init-time server is still up, then restarts
+// to listen on TCP, so a server started right after "ready" can meet a refused
+// connect for a moment.
+fn connect_pool(cfg pg_async.ConnConfig, size int) &pg_async.PgPool {
+	mut last := ''
+	for _ in 0 .. 150 {
+		if pool := pg_async.new_pool(cfg, size) {
+			return pool
+		} else {
+			last = err.msg()
+		}
+		time.sleep(200 * time.millisecond)
+	}
+	panic('vanilla-io_uring: pg pool bring-up failed: ${last}')
+}
+
 fn load_tls_config() &tls.Config {
 	cert_path := os.getenv_opt('TLS_CERT') or { '/certs/server.crt' }
 	key_path := os.getenv_opt('TLS_KEY') or { '/certs/server.key' }
@@ -1338,7 +1683,10 @@ fn main() {
 	if total < 1 {
 		total = 64
 	}
-	workers := runtime.nr_cpus()
+	// Same count the server starts with (VANILLA_WORKERS, which the image sets from
+	// the container's cpuset; nr_cpus otherwise), so the budget splits across the
+	// workers that actually run rather than the host's CPU count.
+	workers := core.max_thread_pool_size
 	mut per_worker := total / workers
 	if per_worker < 1 {
 		per_worker = 1
@@ -1346,30 +1694,39 @@ fn main() {
 
 	dataset_path := os.getenv_opt('DATASET_PATH') or { '/data/dataset.json' }
 	dataset_raw := os.read_file(dataset_path) or { '[]' }
-	dataset := json.decode([]DatasetItem, dataset_raw) or { []DatasetItem{} }
+	dataset := json.decode[[]DatasetItem](dataset_raw) or { []DatasetItem{} }
 
 	mut prefixes := []string{cap: dataset.len}
 	for it in dataset {
-		enc := json.encode(it)
+		// escape_unicode: the byte-exact output of the removed `json` module's encode
+		// (non-ASCII as \uXXXX), so the /json bodies don't change with the toolchain.
+		enc := json.encode(it, escape_unicode: true)
 		prefixes << enc#[..-1] + ',"total":'
 	}
 
 	static_dir := os.getenv_opt('STATIC_DIR') or { '/data/static' }
-	// Canonical static server: loads every asset PLUS its .br/.gz siblings once, mounts
-	// them at /static/, and negotiates Accept-Encoding per request, emitting via
-	// core.queue_buf (borrowed send of the preloaded bytes).
-	//
-	// Do NOT set sendfile_min_bytes here (unlike the epoll twin, which uses 16 KiB): the
-	// io_uring backend has NO sendfile path (no core.enable_sendfile / queue_file drain),
-	// so static_assets.respond_into would fall back to READING a "large" asset's body
-	// from disk on every request — a blocking read that stalls the ring. Keeping the
-	// default (256 KiB) preloads every arena .br/.gz sibling (all < 256 KiB) and serves
-	// them as a zero-copy borrowed send. (Measured: 16 KiB here collapsed static ~-86% to
-	// -99% — the large .br siblings hit the read-per-request fallback.)
+	// Canonical static server, mounted at /static/ on both listeners: negotiates the
+	// precompressed .br/.gz sibling per Accept-Encoding (the arena sends
+	// `br;q=1, gzip;q=0.8`), with ETag/Vary/Cache-Control. spa_fallback is off: the
+	// arena fixture set has no SPA entrypoint.
+	//   follow_disk: the cache follows the disk (engine rule: replace a file and the
+	//     next response carries the new bytes). Each representation is an immutable
+	//     snapshot re-checked with one stat(2) per REVALIDATE window and rebuilt when
+	//     the file's (dev, ino, size, mtime, ctime) changed.
+	//   sendfile_min_bytes: representations >= 16 KiB keep an fd and go out with
+	//     sendfile(2) where the worker can hand them off: the plain epoll worker and
+	//     kTLS connections on :8081 (the kernel encrypts the pages).
+	//   memory_fallback: those representations keep their bytes in RAM too, so a
+	//     worker that cannot sendfile them (io_uring's borrowed send, a userspace-TLS
+	//     connection) sends from memory instead of reading the file per request.
 	asv := static_assets.new(static_assets.Config{
-		root:         static_dir
-		url_prefix:   '/static/'
-		spa_fallback: ''
+		root:               static_dir
+		url_prefix:         '/static/'
+		spa_fallback:       ''
+		sendfile_min_bytes: 16 * 1024
+		memory_fallback:    true
+		follow_disk:        true
+		revalidate_ms:      static_revalidate_ms
 	}) or { panic('vanilla-io_uring: static_assets init failed: ${err}') }
 
 	ro := &SharedRO{
@@ -1378,30 +1735,46 @@ fn main() {
 		asv:      asv
 		crud:     []CrudSlot{len: crud_cache_slots}
 		crud_mu:  sync.new_rwmutex()
+		users:    []CrudSlot{len: user_cache_slots}
+		users_mu: sync.new_rwmutex()
 		gz:       map[u64][]u8{}
 		gz_mu:    sync.new_rwmutex()
 	}
 
 	// ── json-tls profile: /json over HTTPS on :8081 via the epoll + kTLS backend ──
 	// The lib's io_uring backend has no TLS, so the json-tls listener runs on the
-	// epoll backend (a SECOND server anyway, because tls_config is server-wide). It serves ONLY /json
-	// (404 for everything else) so the TLS port exposes the minimal surface the
-	// profile needs — no /static, /echo, /crud or DB routes. The handler is a
-	// STATELESS request_handler (no make_state, sidestepping the TLS worker's
-	// stateful path) capturing the read-only `ro`; it reuses write_json_into
-	// verbatim, so the bytes are identical to the plaintext /json. Mbed TLS 1.3,
-	// ALPN http/1.1 (set by the tls shim) → curl --http1.1 negotiates 1.1.
-	tls_handler := fn [ro] (req_buffer []u8, fd int, mut out []u8) ! {
+	// epoll backend (a SECOND server anyway, because tls_config is server-wide). It serves ONLY /json,
+	// /echo and /static (404 for everything else) so the TLS port exposes the minimal
+	// surface the json-tls, 8gbit and static-tls profiles need — no /crud or DB
+	// routes. On a kTLS connection a /static body of 16 KiB or more goes out with
+	// sendfile(2), headers coalesced into its first record; on a userspace-TLS
+	// connection it is sent from memory (memory_fallback). The
+	// handler captures the read-only `ro` and gets its TlsWorker (the /echo dechunk
+	// buffer) as worker_state from make_state. It must stay synchronous (.done): the
+	// TLS worker has no watch reactor, so a .suspend would drop the connection. It
+	// reuses write_json_into verbatim, so the bytes are identical to the plaintext
+	// /json. Mbed TLS 1.3, ALPN http/1.1 (set by the tls shim) → curl --http1.1
+	// negotiates 1.1.
+	tls_handler := fn [ro] (req_buffer []u8, mut out []u8, client_fd int, worker_state voidptr, mut event_loop core.EventLoop) core.Step {
+		mut tw := unsafe { &TlsWorker(worker_state) }
 		mut req := request_parser.HttpRequest{
 			buffer: req_buffer
 		}
 		if !request_parser.decode_into(mut req) {
 			wb(mut out, bad_request)
-			return
+			return .done
 		}
 		target := unsafe { tos(&req.buffer[req.path.start], req.path.len) }
 		qpos := target.index_u8(`?`)
 		route := if qpos < 0 { target } else { unsafe { tos(target.str, qpos) } }
+		if route.starts_with('/static/') {
+			ro.asv.respond_req_into(&req, mut out)
+			return .done
+		}
+		if route == '/echo' {
+			echo_into(mut out, req, mut tw.dechunk_buf)
+			return .done
+		}
 		if route.starts_with('/json/') {
 			count := clamp_count(parse_u_at(route, 6), ro.dataset.len)
 			mut m := qint(req, qk_m)
@@ -1409,9 +1782,10 @@ fn main() {
 				m = 1
 			}
 			write_json_into(ro, mut out, count, m)
-			return
+			return .done
 		}
 		wb(mut out, not_found)
+		return .done
 	}
 	// Port is fixed to 8081 by the HttpArena harness; TLS_PORT lets local runs pick
 	// a free port (the harness injects nothing, so the default is the contract).
@@ -1419,19 +1793,21 @@ fn main() {
 	if tls_port <= 0 {
 		tls_port = 8081
 	}
-	tls_server := http_server.new_server(http_server.ServerConfig{
+	tls_server := server.new_server(server.ServerConfig{
 		port:            tls_port
 		io_multiplexing: .epoll
-		limits:          http_server.Limits{
-			// json-tls requests are tiny GETs; a small ceiling bounds per-conn
-			// memory and shrinks the DoS surface (the TLS port takes no bodies).
-			max_request_bytes: 64 * 1024
+		limits:          server.Limits{
+			// json-tls sends tiny GETs; 8gbit POSTs 10 KB to /echo and validation
+			// goes up to 100 KB, chunked included. 256 KiB covers that with room
+			// for chunk framing and still bounds a connection's read buffer.
+			max_request_bytes: 256 * 1024
 		}
-		request_handler: tls_handler
+		handler:         tls_handler
+		make_state:      new_tls_worker
 		tls_config:      load_tls_config()
 	})!
 	// run() blocks in the accept loop, so the TLS server runs on its own thread
-	// while the plaintext server.run() below blocks main. run() has a value-mut
+	// while the plaintext srv.run() below blocks main. run() has a value-mut
 	// receiver, so spawn it via a closure with a local mut copy (each Server is
 	// independent — own socket, workers and counters).
 	spawn fn [tls_server] () {
@@ -1439,17 +1815,15 @@ fn main() {
 		s.run()
 	}()
 
-	mut server := http_server.new_server(http_server.ServerConfig{
+	mut srv := server.new_server(server.ServerConfig{
 		port:            8080
 		io_multiplexing: .io_uring
-		limits:          http_server.Limits{
+		limits:          server.Limits{
 			max_request_bytes: 32 * 1024 * 1024
 		}
-		async_handler:   handle
+		handler:         handle
 		make_state:      fn [ro, cfg, per_worker] () voidptr {
-			pool := pg_async.new_pool(cfg, per_worker) or {
-				panic('vanilla-io_uring: pg pool bring-up failed: ${err}')
-			}
+			pool := connect_pool(cfg, per_worker)
 			w := &WorkerCtx{
 				ro:            ro
 				pool:          pool
@@ -1459,9 +1833,10 @@ fn main() {
 				stash_pool:    []&Stash{cap: 64}    // Stash free-list
 				fortunes_buf:  []Fortune{cap: 256}  // reused /fortunes rows
 				dechunk_buf:   []u8{cap: 4096}      // reused chunked-body scratch
+				timer_fds:     []int{cap: 64}       // recycled /delay timerfds
 			}
 			return voidptr(w)
 		}
 	})!
-	server.run()
+	srv.run()
 }

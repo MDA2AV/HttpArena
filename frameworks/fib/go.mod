@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/lesismal/fib v0.0.0-20260925053615-180b6d22a084
+	github.com/lesismal/fib v1.0.1-0.20260928072455-b96ecc517f38
 )
 
 require (

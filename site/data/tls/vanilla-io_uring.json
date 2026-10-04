@@ -1,0 +1,5 @@
+{
+  "framework": "vanilla-io_uring",
+  "tls": "pass",
+  "check": "none"
+}
