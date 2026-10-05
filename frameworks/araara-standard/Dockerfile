@@ -1,38 +1,37 @@
-# HttpArena standard-mode submission image for araara.
-#
-# This package builds the same benchmark server as the tuned araara entry, but
-# sets HCS_ARENA_MODE=standard so arena/server/arena.ml keeps Hcs.Server defaults
-# where the harness does not require protocol, port, TLS, or upload size fields.
+# HttpArena standard entry. Export with arena/prepare-submission.sh first.
+# Same released HCS library and benchmark source as the tuned entry.
 
 FROM ocaml/opam:debian-12-ocaml-5.4 AS build
 
-ARG HCS_VERSION=0.16.1
+ARG HCS_VERSION=0.18.0
+ARG OPAM_JOBS=4
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git libpq-dev libgmp-dev zlib1g-dev libzstd-dev libssl-dev pkg-config m4 cmake \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /app && chown opam:opam /app
 USER opam
 WORKDIR /app
 
-# Provides hcs, http-proto, repodb, and repodb-postgresql. Public-readable git.
-RUN opam repo add araara git+https://tangled.org/gdiazlo.tngl.sh/repo && opam update
+# Install the released library, not an unpublished checkout. Refresh both
+# indexes so the base image's cached opam repository cannot hide new releases.
+RUN opam repo add araara git+https://tangled.org/gdiazlo.tngl.sh/repo \
+ && opam update \
+ && opam install -y --jobs=${OPAM_JOBS} "hcs.${HCS_VERSION}" repodb repodb-postgresql climate yojson
 
-RUN opam source --dir hcs "hcs.${HCS_VERSION}"
-COPY standard-mode.patch /app/standard-mode.patch
-WORKDIR /app/hcs
-RUN git apply /app/standard-mode.patch
-RUN opam install -y . --deps-only \
- && opam install -y repodb repodb-postgresql climate yojson \
- && opam exec -- dune build arena/server/arena.exe
+# The benchmark application is part of the submission, independent of the
+# library release. HttpArena can review and update its endpoints here.
+RUN printf '(lang dune 3.20)\n(name httparena_araara)\n' > dune-project
+COPY --chown=opam:opam server ./server
+RUN opam exec -- dune build server/arena.exe
 
 RUN mkdir -p /app/staging/lib \
- && cp -L _build/default/arena/server/arena.exe /app/staging/server \
- && ldd _build/default/arena/server/arena.exe \
+ && cp -L _build/default/server/arena.exe /app/staging/server \
+ && ldd _build/default/server/arena.exe \
       | awk '/=> \//{print $3}' | sort -u \
       | grep -vE '/(libc|libm|libpthread|libdl|librt|ld-linux)[.-]' \
-      | while read -r lib; do cp -Lv "$lib" /app/staging/lib/ 2>/dev/null || true; done \
- && ls -1 /app/staging/lib
+      | while read -r lib; do cp -Lv "$lib" /app/staging/lib/; done
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \

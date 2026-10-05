@@ -1,0 +1,12 @@
+(executable
+ (name arena)
+ (libraries
+  hcs
+  eio
+  eio_main
+  eio_posix
+  yojson
+  climate
+  repodb
+  repodb-postgresql
+  unix))
