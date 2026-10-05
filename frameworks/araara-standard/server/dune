@@ -5,7 +5,7 @@
   eio
   eio_main
   eio_posix
-  yojson
+  simdjsont
   climate
   repodb
   repodb-postgresql

@@ -9,12 +9,21 @@
 
    See arena/README.md for the endpoint contract and scope notes. *)
 
-let server_name = "hcs"
-let plaintext_ct = "text/plain"
-let json_ct = "application/json"
+(* Use the same application APIs in both modes. Only server configuration
+   differs; routing, serialization, compression and static serving are not
+   replaced by benchmark-specific fast paths. *)
+module Json = Simdjsont.Json
+
 let html_ct = "text/html; charset=utf-8"
 
-(* ── Dataset (loaded once at boot) ──────────────────────────────────────── *)
+let respond ?(status = `OK) ~ct ?(extra = []) body =
+  Hcs.Response.make ~status ~headers:(("content-type", ct) :: extra) body
+
+let not_found () = Hcs.Response.not_found ()
+let respond_json ?(status = `OK) value =
+  Hcs.Response.json ~status (Json.to_string value)
+
+(* ── Dataset and typed JSON codecs ─────────────────────────────────────── *)
 
 type item = {
   id : int;
@@ -26,331 +35,83 @@ type item = {
   tags : string list;
   rating_score : int;
   rating_count : int;
+  total : int option;
 }
+
+let rating_codec =
+  let open Simdjsont.Codec in
+  Obj.field (fun score count -> (score, count))
+  |> Obj.mem "score" int ~enc:fst
+  |> Obj.mem "count" int ~enc:snd
+  |> Obj.finish
+
+let item_codec =
+  let open Simdjsont.Codec in
+  Obj.field (fun id name category price quantity active tags
+                 (rating_score, rating_count) total ->
+      { id; name; category; price; quantity; active; tags;
+        rating_score; rating_count; total })
+  |> Obj.mem "id" int ~enc:(fun i -> i.id)
+  |> Obj.mem "name" string ~enc:(fun i -> i.name)
+  |> Obj.mem "category" string ~enc:(fun i -> i.category)
+  |> Obj.mem "price" int ~enc:(fun i -> i.price)
+  |> Obj.mem "quantity" int ~enc:(fun i -> i.quantity)
+  |> Obj.mem "active" bool ~enc:(fun i -> i.active)
+  |> Obj.mem "tags" (list string) ~enc:(fun i -> i.tags)
+  |> Obj.mem "rating" rating_codec ~enc:(fun i -> (i.rating_score, i.rating_count))
+  |> Obj.opt_mem "total" int ~enc:(fun i -> i.total)
+  |> Obj.finish
+
+let items_codec =
+  let open Simdjsont.Codec in
+  Obj.field (fun items count -> (items, count))
+  |> Obj.mem "items" (list item_codec) ~enc:fst
+  |> Obj.mem "count" int ~enc:snd
+  |> Obj.finish
 
 let dataset : item array ref = ref [||]
 
 let load_dataset path =
-  match Yojson.Safe.from_file path with
-  | exception _ -> [||]
-  | json ->
-      let open Yojson.Safe.Util in
-      json |> to_list
-      |> List.map (fun j ->
-          {
-            id = j |> member "id" |> to_int;
-            name = j |> member "name" |> to_string;
-            category = j |> member "category" |> to_string;
-            price = j |> member "price" |> to_int;
-            quantity = j |> member "quantity" |> to_int;
-            active = j |> member "active" |> to_bool;
-            tags = j |> member "tags" |> to_list |> List.map to_string;
-            rating_score = j |> member "rating" |> member "score" |> to_int;
-            rating_count = j |> member "rating" |> member "count" |> to_int;
-          })
-      |> Array.of_list
+  let body = In_channel.with_open_bin path In_channel.input_all in
+  match Simdjsont.Codec.decode_string (Simdjsont.Codec.array item_codec) body with
+  | Ok items -> items
+  | Error message -> failwith ("Invalid HttpArena dataset: " ^ message)
 
-(* ── JSON helpers (plain Buffer, manual construction) ───────────────────── *)
+let respond_items items =
+  Hcs.Response.json
+    (Simdjsont.Codec.encode_string items_codec (items, List.length items))
 
-let json_escape buf s =
-  String.iter
-    (fun c ->
-      match c with
-      | '"' -> Buffer.add_string buf "\\\""
-      | '\\' -> Buffer.add_string buf "\\\\"
-      | '\n' -> Buffer.add_string buf "\\n"
-      | '\r' -> Buffer.add_string buf "\\r"
-      | '\t' -> Buffer.add_string buf "\\t"
-      | c when Char.code c < 0x20 ->
-          Buffer.add_string buf (Printf.sprintf "\\u%04x" (Char.code c))
-      | c -> Buffer.add_char buf c)
-    s
+(* ── Endpoint handlers ─────────────────────────────────────────────────── *)
 
-let add_str buf s =
-  Buffer.add_char buf '"';
-  json_escape buf s;
-  Buffer.add_char buf '"'
-
-(* {"id":..,"name":..,...,"tags":[..],"rating":{"score":..,"count":..},"total":T}
-   [total] is included only when [total] is Some _. *)
-let add_item_json buf (it : item) ~total =
-  Buffer.add_string buf "{\"id\":";
-  Buffer.add_string buf (string_of_int it.id);
-  Buffer.add_string buf ",\"name\":";
-  add_str buf it.name;
-  Buffer.add_string buf ",\"category\":";
-  add_str buf it.category;
-  Buffer.add_string buf ",\"price\":";
-  Buffer.add_string buf (string_of_int it.price);
-  Buffer.add_string buf ",\"quantity\":";
-  Buffer.add_string buf (string_of_int it.quantity);
-  Buffer.add_string buf ",\"active\":";
-  Buffer.add_string buf (if it.active then "true" else "false");
-  Buffer.add_string buf ",\"tags\":[";
-  List.iteri
-    (fun i t ->
-      if i > 0 then Buffer.add_char buf ',';
-      add_str buf t)
-    it.tags;
-  Buffer.add_string buf "],\"rating\":{\"score\":";
-  Buffer.add_string buf (string_of_int it.rating_score);
-  Buffer.add_string buf ",\"count\":";
-  Buffer.add_string buf (string_of_int it.rating_count);
-  Buffer.add_char buf '}';
-  (match total with
-  | Some t ->
-      Buffer.add_string buf ",\"total\":";
-      Buffer.add_string buf (string_of_int t)
-  | None -> ());
-  Buffer.add_char buf '}'
-
-(* ── Query / path parsing ───────────────────────────────────────────────── *)
-
-let find_param query name =
-  query |> String.split_on_char '&'
-  |> List.find_map (fun part ->
-      match String.index_opt part '=' with
-      | None -> if part = name then Some "" else None
-      | Some i ->
-          let k = String.sub part 0 i in
-          if k = name then
-            Some (String.sub part (i + 1) (String.length part - i - 1))
-          else None)
-
-let int_param query name default =
-  match Option.bind (find_param query name) int_of_string_opt with
-  | Some n -> n
-  | None -> default
-
-(* ── Allocation-free target scanning (hot paths) ────────────────────────── *)
-
-let is_digit c = c >= '0' && c <= '9'
-
-(* Parse a (possibly signed) integer from s[off, lim), ignoring trailing
-   non-digits. No allocation. *)
-let parse_int_sub s off lim =
-  let i = ref off and neg = ref false in
-  if !i < lim && s.[!i] = '-' then (
-    neg := true;
-    incr i);
-  let n = ref 0 in
-  while !i < lim && is_digit s.[!i] do
-    n := (!n * 10) + (Char.code s.[!i] - Char.code '0');
-    incr i
-  done;
-  if !neg then - !n else !n
-
-let parse_int_trimmed s =
-  let len = String.length s in
-  let i = ref 0 in
-  let ws c = c = ' ' || c = '\t' || c = '\n' || c = '\r' in
-  while !i < len && ws s.[!i] do
-    incr i
-  done;
-  let lim = ref len in
-  while !lim > !i && ws s.[!lim - 1] do
-    decr lim
-  done;
-  parse_int_sub s !i !lim
-
-(* Sum the integer values of the "a" and "b" query params in [target], scanning
-   the string once with no intermediate allocation (à la fasthttp's arg access). *)
-let baseline_query_sum target =
-  let len = String.length target in
-  let i =
-    ref (match String.index_opt target '?' with Some q -> q + 1 | None -> len)
-  in
-  let sum = ref 0 in
-  while !i < len do
-    let ks = !i in
-    while !i < len && target.[!i] <> '=' && target.[!i] <> '&' do
-      incr i
-    done;
-    if !i < len && target.[!i] = '=' then begin
-      let ke = !i in
-      incr i;
-      let vs = !i in
-      while !i < len && target.[!i] <> '&' do
-        incr i
-      done;
-      if ke - ks = 1 && (target.[ks] = 'a' || target.[ks] = 'b') then
-        sum := !sum + parse_int_sub target vs !i
-    end;
-    if !i < len && target.[!i] = '&' then incr i
-  done;
-  !sum
-
-(* Length of the path portion of [target] (up to '?'), no allocation. *)
-let path_len target =
-  let len = String.length target in
-  let rec go i = if i >= len || target.[i] = '?' then i else go (i + 1) in
-  go 0
-
-(* The path portion of [target] (length [plen]) equals [lit], no allocation. *)
-let path_eq target plen lit =
-  String.length lit = plen
-  &&
-  let rec go i = i = plen || (target.[i] = lit.[i] && go (i + 1)) in
-  go 0
-
-(* ── Responses ──────────────────────────────────────────────────────────── *)
-
-let respond ?(status = `OK) ~ct ?(extra = []) body =
-  Hcs.Server.respond ~status
-    ~headers:(("content-type", ct) :: ("server", server_name) :: extra)
-    body
-
-(* Cstruct (bigarray) body — emitted by the server zero-copy (by reference), so
-   a shared in-memory file is never copied per response, even under HTTP/2
-   stream fan-out. *)
-let respond_cstruct ?(status = `OK) ~ct ?(extra = []) cs =
-  Hcs.Response.cstruct ~status
-    ~headers:(("content-type", ct) :: ("server", server_name) :: extra)
-    cs
-
-let not_found () = respond ~status:`Not_found ~ct:plaintext_ct "Not Found"
-
-(* Header lists allocated once and reused, so the hot paths don't rebuild them
-   per request. *)
-let plaintext_headers =
-  [ ("content-type", plaintext_ct); ("server", server_name) ]
-
-let json_headers = [ ("content-type", json_ct); ("server", server_name) ]
-let respond_plaintext body = Hcs.Server.respond ~headers:plaintext_headers body
-let respond_json body = Hcs.Server.respond ~headers:json_headers body
-
-(* /pipeline always returns the same bytes — serve a fully pre-serialized
-   response (headers + body cached) instead of rebuilding it each request. *)
-let pipeline_resp =
-  Hcs.Server.Prebuilt.create ~status:`OK ~headers:plaintext_headers "ok"
-
-(* True if the Accept-Encoding header lists gzip. *)
-let accepts_gzip (req : Hcs.Server.request) =
-  match Hcs.Request.header req "accept-encoding" with
-  | None -> false
-  | Some v ->
-      let v = String.lowercase_ascii v in
-      let len = String.length v in
-      let rec scan i =
-        i + 4 <= len && (String.sub v i 4 = "gzip" || scan (i + 1))
-      in
-      scan 0
-
-let gzip_headers = [ ("content-encoding", "gzip"); ("vary", "Accept-Encoding") ]
-
-(* ── Baseline: sum a+b (+ integer body on POST) ─────────────────────────── *)
-
-let handle_baseline ~target ~body =
-  let sum = baseline_query_sum target in
+let handle_baseline _params req =
   let sum =
-    if String.length body = 0 then sum else sum + parse_int_trimmed body
+    Hcs.Request.query_int_or ~default:0 req "a"
+    + Hcs.Request.query_int_or ~default:0 req "b"
   in
-  respond_plaintext (string_of_int sum)
+  let body_sum =
+    if Hcs.Request.is_post req then
+      Option.value ~default:0
+        (int_of_string_opt (String.trim (Hcs.Request.body req)))
+    else 0
+  in
+  Hcs.Response.text (string_of_int (sum + body_sum))
 
-(* ── JSON: first {count} dataset items, each + total = price*quantity*m ──── *)
-
-let handle_json ~req ~count_str ~query =
+let handle_json params req =
   let count =
-    match int_of_string_opt count_str with
-    | Some n -> max 0 (min n (Array.length !dataset))
-    | None -> 0
+    Hcs.Router.param_int_or "count" ~default:0 params
+    |> max 0 |> min (Array.length !dataset)
   in
-  let m = int_param query "m" 1 in
-  let buf = Buffer.create ((count * 160) + 32) in
-  Buffer.add_string buf "{\"items\":[";
-  for i = 0 to count - 1 do
-    if i > 0 then Buffer.add_char buf ',';
-    let it = !dataset.(i) in
-    add_item_json buf it ~total:(Some (it.price * it.quantity * m))
-  done;
-  Buffer.add_string buf "],\"count\":";
-  Buffer.add_string buf (string_of_int count);
-  Buffer.add_char buf '}';
-  let body = Buffer.contents buf in
-  (* json-comp: body is generated per request, so compress inline when accepted. *)
-  if accepts_gzip req && String.length body >= 256 then
-    let z = Hcs.Plug.Compress.gzip_compress ~level:6 body in
-    respond ~ct:json_ct ~extra:gzip_headers z
-  else respond_json body
-
-(* ── Static files (loaded into memory at boot) ──────────────────────────── *)
-
-(* In-memory static cache (like go-fasthttp's FS{Compress:true}): each file is
-   loaded once at boot with a precomputed gzip variant for compressible types. *)
-(* bodies are held as Cstruct (bigarray) so the server emits them zero-copy *)
-type static_entry = { raw : Cstruct.t; gzip : Cstruct.t option; ctype : string }
-
-let static_table : (string, static_entry) Hashtbl.t = Hashtbl.create 64
-
-let compressible_ctype = function
-  | "text/css" | "application/javascript" | "text/html" | "image/svg+xml"
-  | "application/json" ->
-      true
-  | _ ->
-      false (* webp/woff2/png are already compressed — gzip wastes CPU/space *)
-
-let mime_of_ext name =
-  let ext =
-    match String.rindex_opt name '.' with
-    | Some i -> String.sub name i (String.length name - i)
-    | None -> ""
+  let m = Hcs.Request.query_int_or ~default:1 req "m" in
+  let items = List.init count (fun n ->
+      let item = !dataset.(n) in
+      { item with total = Some (item.price * item.quantity * m) })
   in
-  match ext with
-  | ".css" -> "text/css"
-  | ".js" -> "application/javascript"
-  | ".html" -> "text/html"
-  | ".json" -> "application/json"
-  | ".woff2" -> "font/woff2"
-  | ".svg" -> "image/svg+xml"
-  | ".webp" -> "image/webp"
-  | ".png" -> "image/png"
-  | _ -> "application/octet-stream"
+  (* Serialization happens on every request. Compression is a route plug. *)
+  respond_items items
 
-let load_static dir =
-  match Sys.readdir dir with
-  | exception _ -> ()
-  | names ->
-      Array.iter
-        (fun name ->
-          let path = Filename.concat dir name in
-          if try Sys.is_directory path with _ -> true then ()
-          else
-            match In_channel.with_open_bin path In_channel.input_all with
-            | raw ->
-                let ctype = mime_of_ext name in
-                let gzip =
-                  if compressible_ctype ctype && String.length raw >= 256 then
-                    let z = Hcs.Plug.Compress.gzip_compress ~level:6 raw in
-                    if String.length z < String.length raw then
-                      Some (Cstruct.of_string z)
-                    else None
-                  else None
-                in
-                Hashtbl.replace static_table name
-                  { raw = Cstruct.of_string raw; gzip; ctype }
-            | exception _ -> ())
-        names
-
-let handle_static ~req path =
-  (* path is "/static/<name>" *)
-  let name = String.sub path 8 (String.length path - 8) in
-  match Hashtbl.find_opt static_table name with
-  | None -> not_found ()
-  | Some e -> (
-      match e.gzip with
-      | Some z when accepts_gzip req ->
-          respond_cstruct ~ct:e.ctype ~extra:gzip_headers z
-      | _ -> respond_cstruct ~ct:e.ctype e.raw)
-
-(* ── Upload: return byte count of body ──────────────────────────────────── *)
-
-(* Report the body byte count without materializing it as a string (uses the
-   codec's bigstring length directly). *)
 let handle_upload req =
-  respond ~ct:plaintext_ct (string_of_int (Hcs.Request.body_length req))
+  Hcs.Response.text (string_of_int (Hcs.Request.body_length req))
 
-(* Echo the decoded bytes, including binary and chunked request bodies. All
-   listeners share this handler, including HTTP/1.1 over TLS on port 8081. *)
 let handle_echo req =
   respond ~ct:"application/octet-stream" (Hcs.Request.body req)
 
@@ -394,76 +155,43 @@ let row_bool row col =
   | Repodb.Driver.Value.Text s -> s = "t" || s = "true" || s = "1"
   | _ -> false
 
-(* tags is a JSONB column; the driver returns it as a JSON-array text we embed
-   verbatim. active is boolean. Builds one item object into [buf]. *)
-let add_pg_item buf row =
-  Buffer.add_string buf "{\"id\":";
-  Buffer.add_string buf (string_of_int (row_int row "id"));
-  Buffer.add_string buf ",\"name\":";
-  add_str buf (row_text row "name");
-  Buffer.add_string buf ",\"category\":";
-  add_str buf (row_text row "category");
-  Buffer.add_string buf ",\"price\":";
-  Buffer.add_string buf (string_of_int (row_int row "price"));
-  Buffer.add_string buf ",\"quantity\":";
-  Buffer.add_string buf (string_of_int (row_int row "quantity"));
-  Buffer.add_string buf ",\"active\":";
-  Buffer.add_string buf (if row_bool row "active" then "true" else "false");
-  Buffer.add_string buf ",\"tags\":";
-  Buffer.add_string buf (row_text row "tags");
-  Buffer.add_string buf ",\"rating\":{\"score\":";
-  Buffer.add_string buf (string_of_int (row_int row "rating_score"));
-  Buffer.add_string buf ",\"count\":";
-  Buffer.add_string buf (string_of_int (row_int row "rating_count"));
-  Buffer.add_string buf "}}"
+let pg_item row =
+  let tags =
+    Simdjsont.Codec.decode_string_exn
+      Simdjsont.Codec.(list string) (row_text row "tags")
+  in
+  { id = row_int row "id";
+    name = row_text row "name";
+    category = row_text row "category";
+    price = row_int row "price";
+    quantity = row_int row "quantity";
+    active = row_bool row "active";
+    tags;
+    rating_score = row_int row "rating_score";
+    rating_count = row_int row "rating_count";
+    total = None }
 
 let item_columns =
-  "id, name, category, price, quantity, active, tags, rating_score, \
-   rating_count"
+  "id, name, category, price, quantity, active, tags, rating_score, rating_count"
 
-let db_error_response () =
-  respond ~status:`Internal_server_error ~ct:plaintext_ct
-    "Internal Server Error"
+let db_error_response () = Hcs.Response.internal_error ()
 
-(* async-db: items WHERE price BETWEEN min AND max LIMIT limit *)
-let handle_async_db ~query =
-  let mn = int_param query "min" 10 in
-  let mx = int_param query "max" 50 in
-  let lim = max 1 (min 50 (int_param query "limit" 50)) in
-  if !pool = None then respond ~ct:json_ct "{\"items\":[],\"count\":0}"
-  else
-    let sql =
-      Printf.sprintf
-        "SELECT %s FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3"
-        item_columns
-    in
-    match
-      with_conn (fun c ->
-          Pg.query c sql
-            ~params:
-              [|
-                Repodb.Driver.Value.Int mn;
-                Repodb.Driver.Value.Int mx;
-                Repodb.Driver.Value.Int lim;
-              |])
-    with
-    | Error _ -> db_error_response ()
-    | Ok rows ->
-        let buf = Buffer.create 4096 in
-        Buffer.add_string buf "{\"items\":[";
-        List.iteri
-          (fun i row ->
-            if i > 0 then Buffer.add_char buf ',';
-            add_pg_item buf row)
-          rows;
-        Buffer.add_string buf "],\"count\":";
-        Buffer.add_string buf (string_of_int (List.length rows));
-        Buffer.add_char buf '}';
-        respond ~ct:json_ct (Buffer.contents buf)
+let handle_async_db req =
+  let mn = Hcs.Request.query_int_or ~default:10 req "min" in
+  let mx = Hcs.Request.query_int_or ~default:50 req "max" in
+  let lim = max 1 (min 50 (Hcs.Request.query_int_or ~default:50 req "limit")) in
+  let sql =
+    Printf.sprintf "SELECT %s FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3"
+      item_columns
+  in
+  match with_conn (fun c -> Pg.query c sql
+      ~params:Repodb.Driver.Value.[| Int mn; Int mx; Int lim |]) with
+  | Error _ -> db_error_response ()
+  | Ok rows -> respond_items (List.map pg_item rows)
 
 (* ── CRUD: cache-aside REST API over the items table ────────────────────── *)
 
-let cache : (int, string * float) Hashtbl.t = Hashtbl.create 4096
+let cache : (int, item * float) Hashtbl.t = Hashtbl.create 4096
 let cache_mutex = Mutex.create ()
 let cache_ttl = 0.2 (* 200 ms *)
 
@@ -471,15 +199,15 @@ let cache_get id =
   Mutex.lock cache_mutex;
   let r =
     match Hashtbl.find_opt cache id with
-    | Some (body, exp) when Unix.gettimeofday () < exp -> Some body
+    | Some (item, exp) when Unix.gettimeofday () < exp -> Some item
     | _ -> None
   in
   Mutex.unlock cache_mutex;
   r
 
-let cache_put id body =
+let cache_put id item =
   Mutex.lock cache_mutex;
-  Hashtbl.replace cache id (body, Unix.gettimeofday () +. cache_ttl);
+  Hashtbl.replace cache id (item, Unix.gettimeofday () +. cache_ttl);
   Mutex.unlock cache_mutex
 
 let cache_del id =
@@ -487,7 +215,7 @@ let cache_del id =
   Hashtbl.remove cache id;
   Mutex.unlock cache_mutex
 
-let fetch_item_json id =
+let fetch_item id =
   let sql = Printf.sprintf "SELECT %s FROM items WHERE id = $1" item_columns in
   match
     with_conn (fun c -> Pg.query c sql ~params:[| Repodb.Driver.Value.Int id |])
@@ -495,25 +223,27 @@ let fetch_item_json id =
   | Error _ -> Error `Db
   | Ok [] -> Ok None
   | Ok (row :: _) ->
-      let buf = Buffer.create 256 in
-      add_pg_item buf row;
-      Ok (Some (Buffer.contents buf))
+      Ok (Some (pg_item row))
+
+let item_response ?(extra = []) item =
+  Hcs.Response.json (Simdjsont.Codec.encode_string item_codec item)
+  |> Hcs.Response.with_headers extra
 
 let handle_crud_get id =
   match cache_get id with
-  | Some body -> respond ~ct:json_ct ~extra:[ ("x-cache", "HIT") ] body
+  | Some item -> item_response ~extra:[ ("x-cache", "HIT") ] item
   | None -> (
-      match fetch_item_json id with
-      | Error `Db -> db_error_response ()
+      match fetch_item id with
+      | Error _ -> db_error_response ()
       | Ok None -> not_found ()
-      | Ok (Some body) ->
-          cache_put id body;
-          respond ~ct:json_ct ~extra:[ ("x-cache", "MISS") ] body)
+      | Ok (Some item) ->
+          cache_put id item;
+          item_response ~extra:[ ("x-cache", "MISS") ] item)
 
-let handle_crud_list ~query =
-  let category = Option.value ~default:"" (find_param query "category") in
-  let page = max 1 (int_param query "page" 1) in
-  let limit = max 1 (int_param query "limit" 10) in
+let handle_crud_list req =
+  let category = Hcs.Request.query_or ~default:"" req "category" in
+  let page = max 1 (Hcs.Request.query_int_or ~default:1 req "page") in
+  let limit = max 1 (Hcs.Request.query_int_or ~default:10 req "limit") in
   let offset = (page - 1) * limit in
   let list_sql =
     Printf.sprintf
@@ -547,30 +277,27 @@ let handle_crud_list ~query =
   with
   | Error _ -> db_error_response ()
   | Ok (rows, total) ->
-      let buf = Buffer.create 4096 in
-      Buffer.add_string buf "{\"items\":[";
-      List.iteri
-        (fun i row ->
-          if i > 0 then Buffer.add_char buf ',';
-          add_pg_item buf row)
-        rows;
-      Buffer.add_string buf "],\"total\":";
-      Buffer.add_string buf (string_of_int total);
-      Buffer.add_string buf ",\"page\":";
-      Buffer.add_string buf (string_of_int page);
-      Buffer.add_char buf '}';
-      respond ~ct:json_ct (Buffer.contents buf)
+      respond_json Json.(Object [
+          "items", Array (List.map (fun row ->
+              Simdjsont.Codec.to_json item_codec (pg_item row)) rows);
+          "total", Int (Int64.of_int total);
+          "page", Int (Int64.of_int page) ])
+
+let json_member j k =
+  match j with Json.Object fields -> List.assoc_opt k fields | _ -> None
 
 let json_member_int j k default =
-  try Yojson.Safe.Util.(j |> member k |> to_int) with _ -> default
+  match json_member j k with
+  | Some (Json.Int n) -> Int64.to_int n
+  | _ -> default
 
 let json_member_str j k default =
-  try Yojson.Safe.Util.(j |> member k |> to_string) with _ -> default
+  match json_member j k with Some (Json.String s) -> s | _ -> default
 
 let handle_crud_create ~body =
-  match Yojson.Safe.from_string body with
-  | exception _ -> respond ~status:`Bad_request ~ct:plaintext_ct "Bad Request"
-  | j ->
+  match Simdjsont.Codec.decode_string Simdjsont.Codec.value body with
+  | Error _ -> Hcs.Response.bad_request ()
+  | Ok j ->
       let id = json_member_int j "id" 0 in
       let name = json_member_str j "name" "" in
       let category = json_member_str j "category" "" in
@@ -597,12 +324,12 @@ let handle_crud_create ~body =
        with
       | Error _ -> ()
       | Ok () -> cache_del id);
-      respond ~status:`Created ~ct:json_ct "{\"status\":\"created\"}"
+      respond_json ~status:`Created Json.(Object [ "status", String "created" ])
 
 let handle_crud_update id ~body =
-  match Yojson.Safe.from_string body with
-  | exception _ -> respond ~status:`Bad_request ~ct:plaintext_ct "Bad Request"
-  | j ->
+  match Simdjsont.Codec.decode_string Simdjsont.Codec.value body with
+  | Error _ -> Hcs.Response.bad_request ()
+  | Ok j ->
       let name = json_member_str j "name" "" in
       let category = json_member_str j "category" "" in
       let price = json_member_int j "price" 0 in
@@ -625,7 +352,7 @@ let handle_crud_update id ~body =
        with
       | Error _ -> ()
       | Ok () -> cache_del id);
-      respond ~ct:json_ct "{\"status\":\"updated\"}"
+      respond_json Json.(Object [ "status", String "updated" ])
 
 (* ── Fortunes: DB rows + runtime row, sorted by message, HTML table ─────── *)
 
@@ -671,61 +398,50 @@ let handle_fortunes () =
       Buffer.add_string buf "</table></body></html>";
       respond ~ct:html_ct (Buffer.contents buf)
 
-(* ── Main request router ────────────────────────────────────────────────── *)
+(* ── Framework routing and middleware ─────────────────────────────────── *)
 
-let crud_id_of path =
-  (* path = "/crud/items/<id>" → Some id *)
-  let prefix = "/crud/items/" in
-  let pl = String.length prefix in
-  if String.length path > pl && String.sub path 0 pl = prefix then
-    int_of_string_opt (String.sub path pl (String.length path - pl))
-  else None
-
-let starts_with ~prefix s =
-  String.length s >= String.length prefix
-  && String.sub s 0 (String.length prefix) = prefix
-
-(* Cold routes: split the target once and dispatch on the path. These do real
-   work (DB, JSON building, file serving), so the split cost is negligible. *)
-let handle_cold (req : Hcs.Server.request) path query : Hcs.Server.response =
-  match (Hcs.Request.meth req, path) with
-  | `GET, "/async-db" -> handle_async_db ~query
-  | `GET, "/fortunes" -> handle_fortunes ()
-  | `GET, "/crud/items" -> handle_crud_list ~query
-  | `POST, "/crud/items" -> handle_crud_create ~body:(Hcs.Request.body req)
-  | `GET, p when starts_with ~prefix:"/json/" p ->
-      handle_json ~req ~count_str:(String.sub p 6 (String.length p - 6)) ~query
-  | `GET, p when starts_with ~prefix:"/static/" p -> handle_static ~req p
-  | `GET, p when crud_id_of p <> None ->
-      handle_crud_get (Option.get (crud_id_of p))
-  | (`PUT | `POST), p when crud_id_of p <> None ->
-      handle_crud_update
-        (Option.get (crud_id_of p))
-        ~body:(Hcs.Request.body req)
-  | _ -> not_found ()
-
-let handler (req : Hcs.Server.request) : Hcs.Server.response =
-  let t = Hcs.Request.target req in
-  let pl = path_len t in
-  match Hcs.Request.meth req with
-  | `GET when path_eq t pl "/baseline11" || path_eq t pl "/baseline2" ->
-      handle_baseline ~target:t ~body:""
-  | `POST when path_eq t pl "/baseline11" ->
-      handle_baseline ~target:t ~body:(Hcs.Request.body req)
-  | `GET when path_eq t pl "/pipeline" ->
-      Hcs.Server.respond_prebuilt pipeline_resp
-  | `POST when path_eq t pl "/upload" -> handle_upload req
-  | `POST when path_eq t pl "/echo" -> handle_echo req
-  | _ ->
-      let path = String.sub t 0 pl in
-      let query =
-        if pl < String.length t then
-          String.sub t (pl + 1) (String.length t - pl - 1)
-        else ""
-      in
-      handle_cold req path query
-
-(* ── WebSocket echo ─────────────────────────────────────────────────────── *)
+let make_handler static_root =
+  let static = Hcs.Plug.Static.server static_root in
+  let handle_static params (req : Hcs.Server.request) =
+    (* Mount the framework handler under /static. The router captures the
+       suffix; Plug.Static owns path validation, filesystem reads and MIME. *)
+    let suffix = Hcs.Router.param_or "*" ~default:"" params in
+    let response = static { req with target = "/" ^ suffix } in
+    (* HCS 0.18.0's server derives Content-Length from the response body.
+       Plug.Static also sets it, so remove that redundant header: duplicate
+       lengths are rejected by HTTP/2 clients. File bytes remain untouched. *)
+    { response with headers = List.filter (fun (name, _) ->
+          String.lowercase_ascii name <> "content-length") response.headers }
+  in
+  let ignore_params f _params req = f req in
+  let with_id f params req =
+    match Hcs.Router.param_int "id" params with
+    | None -> Hcs.Response.not_found ()
+    | Some id -> f id req
+  in
+  let router = Hcs.Router.compile Hcs.Router.Route.[
+      get "/baseline11" handle_baseline;
+      post "/baseline11" handle_baseline;
+      get "/baseline2" handle_baseline;
+      get "/pipeline" (fun _ _ -> Hcs.Response.text "ok");
+      get "/json/:count" handle_json |> plug (Hcs.Plug.Compress.create ());
+      get "/static/*" handle_static |> plug (Hcs.Plug.Compress.create ());
+      post "/echo" (ignore_params handle_echo);
+      post "/upload" (ignore_params handle_upload);
+      get "/async-db" (ignore_params handle_async_db);
+      get "/fortunes" (fun _ _ -> handle_fortunes ());
+      get "/crud/items" (ignore_params handle_crud_list);
+      post "/crud/items" (ignore_params (fun req ->
+          handle_crud_create ~body:(Hcs.Request.body req)));
+      get "/crud/items/:id" (with_id (fun id _ -> handle_crud_get id));
+      put "/crud/items/:id" (with_id (fun id req ->
+          handle_crud_update id ~body:(Hcs.Request.body req)));
+      post "/crud/items/:id" (with_id (fun id req ->
+          handle_crud_update id ~body:(Hcs.Request.body req)));
+    ]
+  in
+  Hcs.Endpoint.to_handler
+    (Hcs.Endpoint.router (Hcs.Endpoint.create Hcs.Endpoint.default_config) router)
 
 let ws_handler (ws : Hcs.Websocket.t) =
   let rec loop () =
@@ -848,12 +564,16 @@ let make_configs ~certs_dir ~port ~h2_port ~h1tls_port ~h2c_port =
 (* Spawn [domains] domains; each runs all listeners on SO_REUSEPORT sockets.
    This keeps the total domain count at [domains] regardless of listener count
    (vs. run_parallel-per-port, which would multiply it). *)
-let run_all env ~domains ~configs =
+let run_all env ~domains ~configs ~static_dir =
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
   let dm = Eio.Stdenv.domain_mgr env in
   let serve_one () =
     Eio.Switch.run @@ fun sw ->
+    let static_root =
+      Eio.Path.open_dir ~sw Eio.Path.(Eio.Stdenv.fs env / static_dir)
+    in
+    let handler = make_handler static_root in
     Eio.Fiber.all
       (List.map
          (fun (cfg, use_ws) () ->
@@ -944,7 +664,6 @@ let command =
   in
   fun () ->
     dataset := load_dataset dataset_path;
-    load_static static_dir;
     (match Sys.getenv_opt "DATABASE_URL" with
     | Some url when String.length url > 0 ->
         let size =
@@ -960,12 +679,8 @@ let command =
         pool := Some (make_pool url ~size)
     | _ -> pool := None);
     Printf.printf
-      "[arena] HCS HttpArena server: %d domains, dataset=%d items, static=%d \
-       files, db=%b\n\
-       %!"
-      domains (Array.length !dataset)
-      (Hashtbl.length static_table)
-      (!pool <> None);
+      "[arena] HCS HttpArena server: %d domains, dataset=%d items, static=%s, db=%b\n%!"
+      domains (Array.length !dataset) static_dir (!pool <> None);
     Printf.printf
       "[arena] listeners: 8080 (h1/h2c/ws) 8443 (h2 TLS) 8081 (h1 TLS) 8082 \
        (h2c)\n\
@@ -974,6 +689,6 @@ let command =
     let configs =
       make_configs ~certs_dir ~port ~h2_port ~h1tls_port ~h2c_port
     in
-    run_all env ~domains ~configs
+    run_all env ~domains ~configs ~static_dir
 
 let () = Climate.Command.run command ()

@@ -4,8 +4,8 @@
   "engine": "hcs",
   "type": "experimental",
   "mode": "tuned",
-  "description": "araara — an OCaml 5 web stack built on HCS, Eio, a zero-copy sans-I/O HTTP codec, radix-trie routing, Phoenix-style plugs, Postgres via repodb, and gzip/zstd compression. The benchmark app does not implement HTTP/3 or gRPC endpoints.",
-  "repo": "https://araara.ml",
+  "description": "araara on HCS 0.18.0 and standard OCaml 5.4: HCS routing and query helpers, simdjsont JSON codecs, HCS compression and Plug.Static, Postgres via repodb, HTTP/1.1, HTTP/2 and WebSocket. Tuned connection capacity and HTTP/2 stream limit.",
+  "repo": "https://tangled.org/gdiazlo.tngl.sh/hcs",
   "enabled": true,
   "tests": [
     "baseline",
@@ -23,5 +23,13 @@
     "json-h2c",
     "echo-ws"
   ],
-  "maintainers": ["gdiazlo"]
+  "maintainers": [
+    "gdiazlo"
+  ],
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": false
+  }
 }

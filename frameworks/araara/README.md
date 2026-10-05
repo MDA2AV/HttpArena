@@ -60,3 +60,62 @@ random binary bodies, empty bodies, Content-Length and chunked framing, sizes
 up to 1 MiB (including both sides of the old 256 KiB discard threshold), and
 keep-alive reuse. The official `scripts/validate-ws.py` checks `/ws` and is
 included in the full validator.
+
+## Implementation rules
+
+Both modes register handlers through `Hcs.Router` and `Hcs.Endpoint`, read
+parameters with `Hcs.Request` and `Hcs.Router`, and build responses with
+`Hcs.Response`. JSON is decoded and serialized with published **simdjsont
+0.5.0**, araara's [documented JSON library](https://araara.ml/docs/simdjsont).
+HCS deliberately leaves JSON codec selection to applications. Every JSON
+response is serialized per request; no hand-built JSON or cached response bytes
+are used. `Plug.Compress.create ()` handles JSON and static compression in the
+normal route pipeline, with its default settings.
+
+Static routes use the released **`Hcs.Plug.Static.server`** with an Eio directory
+capability rooted at `/data/static`. The adapter removes the `/static` mount prefix using the router's wildcard
+parameter and strips the redundant `Content-Length` emitted by `Plug.Static`:
+HCS 0.18.0's server adds its own length, and duplicates break HTTP/2 framing.
+This is a compatibility correction; file bytes are unchanged. HCS owns file access,
+path validation and MIME selection. The application has no static cache;
+replacing, adding or deleting a file takes effect on the next request.
+`/pipeline` also constructs its response for each request.
+
+Completeness is declared explicitly: routing, middleware and request are
+`true`; response is conservatively `false` because the application invokes the
+JSON serializer before passing bytes to `Hcs.Response.json`. HCS supplies form
+parsing and buffered/streaming body access, but does not serialize JSON values
+as part of its response constructor. These declarations are proposed for
+maintainer review under the [completeness rules](https://www.http-arena.com/#doc=scoring/completeness).
+
+The additional regression requires curl with HTTP/2 support and a **writable
+host copy of the fixtures mounted into an isolated test container**:
+
+```sh
+python3 test-compliance.py https://localhost:8443 \
+  --static-dir /path/to/mounted/data/static \
+  --dataset /path/to/mounted/data/dataset.json
+```
+
+It compares all static assets byte-for-byte, atomically replaces a file with
+one of the same size and timestamp, checks gzip and identity responses,
+restores the file, checks additions/deletions and traversal rejection, and
+checks JSON schema, parameter variation, URI decoding and content negotiation.
+For JSON escaping coverage, repeat with a dataset containing quotes,
+backslashes, control characters and Unicode, mounted before starting the server.
+
+## Validation of this revision
+
+Against HttpArena `5b111b8889fee61076f1d7dd14fdb3dfd12c8492`, both entries passed:
+
+- The full upstream suite: **84 passed, 0 failed** per entry.
+- Extra binary echo: **18 HTTPS + 18 plaintext** checks per entry.
+- `test-compliance.py`: **74 passed** per entry, using a dataset with quotes,
+  backslashes, control characters and Unicode as well as the live file tests.
+
+Both standalone images and the local HCS arena image built with standard OCaml
+5.4 and opam-installed HCS 0.18.0 and simdjsont 0.5.0. Yojson is not installed
+or linked by the benchmark. The remote test host denies unlimited memlock, so
+only `--ulimit memlock=-1:-1` was removed from a temporary validator copy;
+no correctness assertions were changed or skipped. Eio used its POSIX fallback.
+These are correctness checks, not leaderboard performance measurements.
