@@ -1,6 +1,3 @@
-# HttpArena standard entry. Export with arena/prepare-submission.sh first.
-# Same released HCS library and benchmark source as the tuned entry.
-
 FROM ocaml/opam:debian-12-ocaml-5.4 AS build
 
 ARG HCS_VERSION=0.18.0
@@ -19,11 +16,11 @@ WORKDIR /app
 # indexes so the base image's cached opam repository cannot hide new releases.
 RUN opam repo add araara git+https://tangled.org/gdiazlo.tngl.sh/repo \
  && opam update \
- && opam install -y --jobs=${OPAM_JOBS} "hcs.${HCS_VERSION}" repodb repodb-postgresql climate "simdjsont.${SIMDJSONT_VERSION}"
+ && opam install -y --jobs=${OPAM_JOBS} "hcs.${HCS_VERSION}" repodb repodb-postgresql "simdjsont.${SIMDJSONT_VERSION}"
 
 # The benchmark application is part of the submission, independent of the
 # library release. HttpArena can review and update its endpoints here.
-RUN printf '(lang dune 3.20)\n(name httparena_araara)\n' > dune-project
+COPY --chown=opam:opam dune-project ./
 COPY --chown=opam:opam server ./server
 RUN opam exec -- dune build server/arena.exe
 

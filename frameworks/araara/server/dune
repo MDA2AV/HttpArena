@@ -6,7 +6,6 @@
   eio_main
   eio_posix
   simdjsont
-  climate
   repodb
   repodb-postgresql
   unix))

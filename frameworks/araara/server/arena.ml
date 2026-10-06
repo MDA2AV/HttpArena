@@ -7,22 +7,11 @@
      8081  TLS, ALPN http/1.1 only    — /json (json-tls), /echo (8gbit)
      8082  cleartext Http2_only (h2c) — /baseline2, /json (baseline-h2c, json-h2c)
 
-   See arena/README.md for the endpoint contract and scope notes. *)
+   See meta.json for the subscribed HttpArena profiles. *)
 
 (* Use the same application APIs in both modes. Only server configuration
    differs; routing, serialization, compression and static serving are not
    replaced by benchmark-specific fast paths. *)
-module Json = Simdjsont.Json
-
-let html_ct = "text/html; charset=utf-8"
-
-let respond ?(status = `OK) ~ct ?(extra = []) body =
-  Hcs.Response.make ~status ~headers:(("content-type", ct) :: extra) body
-
-let not_found () = Hcs.Response.not_found ()
-let respond_json ?(status = `OK) value =
-  Hcs.Response.json ~status (Json.to_string value)
-
 (* ── Dataset and typed JSON codecs ─────────────────────────────────────── *)
 
 type item = {
@@ -109,13 +98,11 @@ let handle_json params req =
   (* Serialization happens on every request. Compression is a route plug. *)
   respond_items items
 
-let handle_upload req =
-  Hcs.Response.text (string_of_int (Hcs.Request.body_length req))
-
 let handle_echo req =
-  respond ~ct:"application/octet-stream" (Hcs.Request.body req)
+  Hcs.Response.make ~headers:[ ("content-type", "application/octet-stream") ]
+    (Hcs.Request.body req)
 
-(* ── Postgres-backed endpoints (async-db, crud, fortunes) ───────────────── *)
+(* ── Postgres-backed async-db endpoint ────────────────────────────────── *)
 
 module Pg = Repodb_postgresql
 
@@ -189,215 +176,6 @@ let handle_async_db req =
   | Error _ -> db_error_response ()
   | Ok rows -> respond_items (List.map pg_item rows)
 
-(* ── CRUD: cache-aside REST API over the items table ────────────────────── *)
-
-let cache : (int, item * float) Hashtbl.t = Hashtbl.create 4096
-let cache_mutex = Mutex.create ()
-let cache_ttl = 0.2 (* 200 ms *)
-
-let cache_get id =
-  Mutex.lock cache_mutex;
-  let r =
-    match Hashtbl.find_opt cache id with
-    | Some (item, exp) when Unix.gettimeofday () < exp -> Some item
-    | _ -> None
-  in
-  Mutex.unlock cache_mutex;
-  r
-
-let cache_put id item =
-  Mutex.lock cache_mutex;
-  Hashtbl.replace cache id (item, Unix.gettimeofday () +. cache_ttl);
-  Mutex.unlock cache_mutex
-
-let cache_del id =
-  Mutex.lock cache_mutex;
-  Hashtbl.remove cache id;
-  Mutex.unlock cache_mutex
-
-let fetch_item id =
-  let sql = Printf.sprintf "SELECT %s FROM items WHERE id = $1" item_columns in
-  match
-    with_conn (fun c -> Pg.query c sql ~params:[| Repodb.Driver.Value.Int id |])
-  with
-  | Error _ -> Error `Db
-  | Ok [] -> Ok None
-  | Ok (row :: _) ->
-      Ok (Some (pg_item row))
-
-let item_response ?(extra = []) item =
-  Hcs.Response.json (Simdjsont.Codec.encode_string item_codec item)
-  |> Hcs.Response.with_headers extra
-
-let handle_crud_get id =
-  match cache_get id with
-  | Some item -> item_response ~extra:[ ("x-cache", "HIT") ] item
-  | None -> (
-      match fetch_item id with
-      | Error _ -> db_error_response ()
-      | Ok None -> not_found ()
-      | Ok (Some item) ->
-          cache_put id item;
-          item_response ~extra:[ ("x-cache", "MISS") ] item)
-
-let handle_crud_list req =
-  let category = Hcs.Request.query_or ~default:"" req "category" in
-  let page = max 1 (Hcs.Request.query_int_or ~default:1 req "page") in
-  let limit = max 1 (Hcs.Request.query_int_or ~default:10 req "limit") in
-  let offset = (page - 1) * limit in
-  let list_sql =
-    Printf.sprintf
-      "SELECT %s FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3"
-      item_columns
-  in
-  let count_sql = "SELECT COUNT(*) AS n FROM items WHERE category = $1" in
-  match
-    with_conn (fun c ->
-        match
-          Pg.query c list_sql
-            ~params:
-              [|
-                Repodb.Driver.Value.Text category;
-                Repodb.Driver.Value.Int limit;
-                Repodb.Driver.Value.Int offset;
-              |]
-        with
-        | Error e -> Error e
-        | Ok rows -> (
-            match
-              Pg.query c count_sql
-                ~params:[| Repodb.Driver.Value.Text category |]
-            with
-            | Error e -> Error e
-            | Ok crows ->
-                let total =
-                  match crows with [ r ] -> row_int r "n" | _ -> 0
-                in
-                Ok (rows, total)))
-  with
-  | Error _ -> db_error_response ()
-  | Ok (rows, total) ->
-      respond_json Json.(Object [
-          "items", Array (List.map (fun row ->
-              Simdjsont.Codec.to_json item_codec (pg_item row)) rows);
-          "total", Int (Int64.of_int total);
-          "page", Int (Int64.of_int page) ])
-
-let json_member j k =
-  match j with Json.Object fields -> List.assoc_opt k fields | _ -> None
-
-let json_member_int j k default =
-  match json_member j k with
-  | Some (Json.Int n) -> Int64.to_int n
-  | _ -> default
-
-let json_member_str j k default =
-  match json_member j k with Some (Json.String s) -> s | _ -> default
-
-let handle_crud_create ~body =
-  match Simdjsont.Codec.decode_string Simdjsont.Codec.value body with
-  | Error _ -> Hcs.Response.bad_request ()
-  | Ok j ->
-      let id = json_member_int j "id" 0 in
-      let name = json_member_str j "name" "" in
-      let category = json_member_str j "category" "" in
-      let price = json_member_int j "price" 0 in
-      let quantity = json_member_int j "quantity" 0 in
-      let sql =
-        "INSERT INTO items (id, name, category, price, quantity, active, tags, \
-         rating_score, rating_count) VALUES ($1,$2,$3,$4,$5,true,'[]',0,0) ON \
-         CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, \
-         category=EXCLUDED.category, price=EXCLUDED.price, \
-         quantity=EXCLUDED.quantity"
-      in
-      (match
-         with_conn (fun c ->
-             Pg.exec c sql
-               ~params:
-                 [|
-                   Repodb.Driver.Value.Int id;
-                   Repodb.Driver.Value.Text name;
-                   Repodb.Driver.Value.Text category;
-                   Repodb.Driver.Value.Int price;
-                   Repodb.Driver.Value.Int quantity;
-                 |])
-       with
-      | Error _ -> ()
-      | Ok () -> cache_del id);
-      respond_json ~status:`Created Json.(Object [ "status", String "created" ])
-
-let handle_crud_update id ~body =
-  match Simdjsont.Codec.decode_string Simdjsont.Codec.value body with
-  | Error _ -> Hcs.Response.bad_request ()
-  | Ok j ->
-      let name = json_member_str j "name" "" in
-      let category = json_member_str j "category" "" in
-      let price = json_member_int j "price" 0 in
-      let quantity = json_member_int j "quantity" 0 in
-      let sql =
-        "UPDATE items SET name=$2, category=$3, price=$4, quantity=$5 WHERE \
-         id=$1"
-      in
-      (match
-         with_conn (fun c ->
-             Pg.exec c sql
-               ~params:
-                 [|
-                   Repodb.Driver.Value.Int id;
-                   Repodb.Driver.Value.Text name;
-                   Repodb.Driver.Value.Text category;
-                   Repodb.Driver.Value.Int price;
-                   Repodb.Driver.Value.Int quantity;
-                 |])
-       with
-      | Error _ -> ()
-      | Ok () -> cache_del id);
-      respond_json Json.(Object [ "status", String "updated" ])
-
-(* ── Fortunes: DB rows + runtime row, sorted by message, HTML table ─────── *)
-
-let html_escape buf s =
-  String.iter
-    (function
-      | '&' -> Buffer.add_string buf "&amp;"
-      | '<' -> Buffer.add_string buf "&lt;"
-      | '>' -> Buffer.add_string buf "&gt;"
-      | '"' -> Buffer.add_string buf "&quot;"
-      | '\'' -> Buffer.add_string buf "&#39;"
-      | c -> Buffer.add_char buf c)
-    s
-
-let handle_fortunes () =
-  match
-    with_conn (fun c ->
-        Pg.query c "SELECT id, message FROM fortune" ~params:[||])
-  with
-  | Error _ -> db_error_response ()
-  | Ok rows ->
-      let fortunes =
-        List.map (fun r -> (row_int r "id", row_text r "message")) rows
-      in
-      let fortunes =
-        (0, "Additional fortune added at request time.") :: fortunes
-      in
-      let fortunes =
-        List.sort (fun (_, a) (_, b) -> String.compare a b) fortunes
-      in
-      let buf = Buffer.create 16384 in
-      Buffer.add_string buf
-        "<!DOCTYPE \
-         html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>";
-      List.iter
-        (fun (id, msg) ->
-          Buffer.add_string buf "<tr><td>";
-          Buffer.add_string buf (string_of_int id);
-          Buffer.add_string buf "</td><td>";
-          html_escape buf msg;
-          Buffer.add_string buf "</td></tr>")
-        fortunes;
-      Buffer.add_string buf "</table></body></html>";
-      respond ~ct:html_ct (Buffer.contents buf)
-
 (* ── Framework routing and middleware ─────────────────────────────────── *)
 
 let make_handler static_root =
@@ -414,11 +192,6 @@ let make_handler static_root =
           String.lowercase_ascii name <> "content-length") response.headers }
   in
   let ignore_params f _params req = f req in
-  let with_id f params req =
-    match Hcs.Router.param_int "id" params with
-    | None -> Hcs.Response.not_found ()
-    | Some id -> f id req
-  in
   let router = Hcs.Router.compile Hcs.Router.Route.[
       get "/baseline11" handle_baseline;
       post "/baseline11" handle_baseline;
@@ -427,17 +200,7 @@ let make_handler static_root =
       get "/json/:count" handle_json |> plug (Hcs.Plug.Compress.create ());
       get "/static/*" handle_static |> plug (Hcs.Plug.Compress.create ());
       post "/echo" (ignore_params handle_echo);
-      post "/upload" (ignore_params handle_upload);
       get "/async-db" (ignore_params handle_async_db);
-      get "/fortunes" (fun _ _ -> handle_fortunes ());
-      get "/crud/items" (ignore_params handle_crud_list);
-      post "/crud/items" (ignore_params (fun req ->
-          handle_crud_create ~body:(Hcs.Request.body req)));
-      get "/crud/items/:id" (with_id (fun id _ -> handle_crud_get id));
-      put "/crud/items/:id" (with_id (fun id req ->
-          handle_crud_update id ~body:(Hcs.Request.body req)));
-      post "/crud/items/:id" (with_id (fun id req ->
-          handle_crud_update id ~body:(Hcs.Request.body req)));
     ]
   in
   Hcs.Endpoint.to_handler
@@ -461,47 +224,13 @@ let ws_handler (ws : Hcs.Websocket.t) =
 
 (* ── Listener setup ─────────────────────────────────────────────────────── *)
 
-(* GC tuning. Profiling at the physical-core domain count showed the dominant
-   remaining cost is major-GC marking/sweeping of per-request allocations that
-   survive a minor collection (always some in flight under load → promoted). A
-   larger minor heap lets more die young; a higher space_overhead runs the major
-   collector less often. Both are env-tunable for experimentation. *)
-let gc_tuning () =
-  let env name default =
-    match Sys.getenv_opt name with
-    | Some s -> (
-        match int_of_string_opt s with Some n -> n | None -> default)
-    | None -> default
-  in
-  Hcs.Server.Gc_tune.
-    {
-      minor_heap_size = env "HCS_MINOR_HEAP_MB" 128 * 1024 * 1024;
-      major_heap_increment = 64 * 1024 * 1024;
-      space_overhead = env "HCS_SPACE_OVERHEAD" 400;
-      max_overhead = 1000;
-    }
-
 let is_standard_mode () = Sys.getenv_opt "HCS_ARENA_MODE" = Some "standard"
 
 let base_config =
   let open Hcs.Server in
-  if is_standard_mode () then { default_config with reuse_port = true }
-  else
-    {
-      default_config with
-      max_connections = 200000;
-      reuse_port = true;
-      (* Keep the default whole-body buffering: /echo must return the bytes,
-         including bodies larger than the retired upload profile's 256 KiB
-         buffering cap. That cap discards bytes instead of retaining them. *)
-      (* No GC tuning by default: the aggressive tuning (large minor heap + high
-         space_overhead) was tuned for the old allocation-heavy ocaml-h1/h2
-         server; with the lean http.* codec it cost 2-3.5x RSS for ~2-8% rps, so
-         stock OCaml GC is the better balance. Opt back in with HCS_GC_TUNE=on. *)
-      gc_tuning =
-        (if Sys.getenv_opt "HCS_GC_TUNE" = Some "on" then Some (gc_tuning ())
-         else None);
-    }
+  let config = { default_config with reuse_port = true } in
+  if is_standard_mode () then config
+  else { config with max_connections = 200000 }
 
 let make_configs ~certs_dir ~port ~h2_port ~h1tls_port ~h2c_port =
   let tls_of alpn =
@@ -524,13 +253,9 @@ let make_configs ~certs_dir ~port ~h2_port ~h1tls_port ~h2c_port =
           base_config with
           port;
           protocol = Auto_websocket;
-          max_body_size = Some 26_214_400L (* 25 MiB for /upload *);
         },
       true )
   in
-  (* depth 1 = inline: the h2 library multiplexes streams itself. A higher
-     depth blocks the handler on the token pool once streams-per-connection
-     exceeds it, deadlocking the read loop. *)
   let h2c =
     ( Hcs.Server.{ base_config with port = h2c_port; protocol = Http2_only },
       false )
@@ -586,19 +311,7 @@ let run_all env ~domains ~configs ~static_dir =
     (List.init domains (fun i () ->
          if i = 0 then serve_one () else Eio.Domain_manager.run dm serve_one))
 
-(* ── CLI ────────────────────────────────────────────────────────────────── *)
-
-(* Default domain count = PHYSICAL cores, not logical CPUs.
-   [Domain.recommended_domain_count ()] returns logical CPUs (= SMT threads).
-   Oversubscribing one domain per hyperthread is actively harmful for an
-   allocation-heavy server: every minor GC is a stop-the-world rendezvous across
-   ALL domains, so more domains means more frequent and more expensive STW
-   barriers. Profiling showed ~30% of CPU lost to STW spin at 32 domains on a
-   16-core/32-thread part; dropping to 16 domains (one per physical core) erased
-   it and raised throughput ~13-15% across H1 and H2.
-   We count unique [core_cpus_list] topology entries (Linux); each physical
-   core's sibling threads share one, so the unique count is the physical-core
-   count. Fall back to the logical count where the topology isn't readable. *)
+(* Use one domain per physical core; fall back to the runtime's CPU count. *)
 let physical_core_count () =
   let fallback = Domain.recommended_domain_count () in
   try
@@ -632,63 +345,20 @@ let run_eio fn =
     Printf.eprintf "[arena] io_uring unavailable — falling back to epoll\n%!";
     Eio_posix.run fn
 
-let command =
-  Climate.Command.singleton ~doc:"HttpArena benchmark server (HCS)"
-  @@
-  let open Climate.Arg_parser in
-  let+ domains =
-    named_with_default [ "d"; "domains"; "cpus" ] int
-      ~default:(physical_core_count ())
-      ~doc:"Number of server domains (default: physical core count)"
-  and+ dataset_path =
-    named_with_default [ "dataset" ] string ~default:"/data/dataset.json"
-      ~doc:"Path to dataset.json"
-  and+ static_dir =
-    named_with_default [ "static-dir" ] string ~default:"/data/static"
-      ~doc:"Static files directory"
-  and+ certs_dir =
-    named_with_default [ "certs-dir" ] string ~default:"/certs"
-      ~doc:"TLS certificate directory (server.crt/server.key)"
-  and+ port =
-    named_with_default [ "p"; "port" ] int ~default:8080
-      ~doc:"Plaintext H/1.1+h2c+WebSocket port (default: 8080)"
-  and+ h2_port =
-    named_with_default [ "h2-port" ] int ~default:8443
-      ~doc:"HTTP/2 over TLS port (default: 8443)"
-  and+ h1tls_port =
-    named_with_default [ "h1tls-port" ] int ~default:8081
-      ~doc:"HTTP/1.1 over TLS port (default: 8081)"
-  and+ h2c_port =
-    named_with_default [ "h2c-port" ] int ~default:8082
-      ~doc:"HTTP/2 cleartext (prior-knowledge) port (default: 8082)"
+let () =
+  dataset := load_dataset "/data/dataset.json";
+  (match Sys.getenv_opt "DATABASE_URL" with
+  | Some url when String.length url > 0 ->
+      let size =
+        match Sys.getenv_opt "DATABASE_MAX_CONN" with
+        | Some s -> Option.value ~default:128 (int_of_string_opt s)
+        | None -> 128
+      in
+      pool := Some (make_pool url ~size)
+  | _ -> ());
+  run_eio @@ fun env ->
+  let configs =
+    make_configs ~certs_dir:"/certs" ~port:8080 ~h2_port:8443
+      ~h1tls_port:8081 ~h2c_port:8082
   in
-  fun () ->
-    dataset := load_dataset dataset_path;
-    (match Sys.getenv_opt "DATABASE_URL" with
-    | Some url when String.length url > 0 ->
-        let size =
-          (* Decoupled from domain count: DB-bound profiles (async-db, crud) are
-             limited by pool concurrency, not CPU, so the pool must not shrink
-             when we drop to the physical-core domain count. 128 matched the old
-             32-domain pool and stays within the bench Postgres limit. *)
-          match Sys.getenv_opt "DATABASE_MAX_CONN" with
-          | Some s -> (
-              match int_of_string_opt s with Some n -> n | None -> 128)
-          | None -> 128
-        in
-        pool := Some (make_pool url ~size)
-    | _ -> pool := None);
-    Printf.printf
-      "[arena] HCS HttpArena server: %d domains, dataset=%d items, static=%s, db=%b\n%!"
-      domains (Array.length !dataset) static_dir (!pool <> None);
-    Printf.printf
-      "[arena] listeners: 8080 (h1/h2c/ws) 8443 (h2 TLS) 8081 (h1 TLS) 8082 \
-       (h2c)\n\
-       %!";
-    run_eio @@ fun env ->
-    let configs =
-      make_configs ~certs_dir ~port ~h2_port ~h1tls_port ~h2c_port
-    in
-    run_all env ~domains ~configs ~static_dir
-
-let () = Climate.Command.run command ()
+  run_all env ~domains:(physical_core_count ()) ~configs ~static_dir:"/data/static"
