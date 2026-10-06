@@ -18,8 +18,10 @@
     "pipelined",
     "limited-conn",
     "async",
-    "json-comp",
+    "json-comp", "json-tls",
+    "8gbit",
     "async-db",
+    "fortunes",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
   "maintainers": [
