@@ -12,8 +12,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/urpc/uio v1.5.3 h1:4o8KSldSsLh/tva5rtNA8fxM4+wC4otSPjStCxpFOGs=
-github.com/urpc/uio v1.5.3/go.mod h1:Jso/P2w3//g9d2ibEbFjDlqc/lLYBmh709BxKVfOhS8=
+github.com/urpc/uio v1.5.4 h1:jQveJ3I0G4z8ToDr30ClPo5GuwetNNpc4rvWF+QuuIk=
+github.com/urpc/uio v1.5.4/go.mod h1:Jso/P2w3//g9d2ibEbFjDlqc/lLYBmh709BxKVfOhS8=
 golang.org/x/sys v0.44.0 h1:ildZl3J4uzeKP07r2F++Op7E9B29JRUy+a27EibtBTQ=
 golang.org/x/sys v0.44.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c h1:dUUwHk2QECo/6vqA44rthZ8ie2QXMNeKRTHCNY2nXvo=

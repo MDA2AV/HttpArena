@@ -2,7 +2,7 @@ module httparena/uio-ws
 
 go 1.25.0
 
-require github.com/urpc/uio v1.5.3
+require github.com/urpc/uio v1.5.4
 
 require (
 	github.com/klauspost/compress v1.20.1 // indirect
