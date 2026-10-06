@@ -104,81 +104,53 @@ let handle_echo req =
 
 (* ── Postgres-backed async-db endpoint ────────────────────────────────── *)
 
-module Pg = Repodb_postgresql
-
-let pool : Pg.connection Repodb.Pool.t option ref = ref None
-
-let make_pool url ~size =
-  Repodb.Pool.create
-    {
-      max_size = size;
-      connect =
-        (fun () ->
-          match Pg.connect url with Ok c -> Ok c | Error e -> Error e);
-      close = Pg.close;
-      validate = None;
-    }
-
-(* Run [f] with a pooled connection. Returns Error on pool/db failure. *)
-let with_conn f =
-  match !pool with
-  | None -> Error "no database"
-  | Some p -> (
-      match Repodb.Pool.with_connection_blocking p f with
-      | Ok (Ok v) -> Ok v
-      | Ok (Error e) -> Error e
-      | Error e -> Error (Repodb.Pool.error_to_string e))
-
-let row_int row col =
-  Repodb.Driver.Value.to_int (Repodb.Driver.row_get_exn row col)
-
-let row_text row col =
-  Repodb.Driver.Value.to_string (Repodb.Driver.row_get_exn row col)
-
-let row_bool row col =
-  match Repodb.Driver.row_get_exn row col with
-  | Repodb.Driver.Value.Bool b -> b
-  | Repodb.Driver.Value.Int n -> n <> 0
-  | Repodb.Driver.Value.Text s -> s = "t" || s = "true" || s = "1"
-  | _ -> false
-
-let pg_item row =
-  let tags =
-    Simdjsont.Codec.decode_string_exn
-      Simdjsont.Codec.(list string) (row_text row "tags")
+(* Caqti's PostgreSQL driver waits through Eio, and prepares this query once
+   per connection. The pool is local to each HTTP worker domain. *)
+let db_item =
+  let open Caqti.Template.Row_type in
+  let tags = custom
+      ~encode:(fun tags -> Ok (Simdjsont.Codec.encode_string
+          Simdjsont.Codec.(list string) tags))
+      ~decode:(Simdjsont.Codec.decode_string Simdjsont.Codec.(list string))
+      string
   in
-  { id = row_int row "id";
-    name = row_text row "name";
-    category = row_text row "category";
-    price = row_int row "price";
-    quantity = row_int row "quantity";
-    active = row_bool row "active";
-    tags;
-    rating_score = row_int row "rating_score";
-    rating_count = row_int row "rating_count";
-    total = None }
+  product (fun id name category price quantity active tags rating_score rating_count ->
+      Ok { id; name; category; price; quantity; active; tags;
+           rating_score; rating_count; total = None })
+  @@ proj int (fun i -> i.id)
+  @@ proj string (fun i -> i.name)
+  @@ proj string (fun i -> i.category)
+  @@ proj int (fun i -> i.price)
+  @@ proj int (fun i -> i.quantity)
+  @@ proj bool (fun i -> i.active)
+  @@ proj tags (fun i -> i.tags)
+  @@ proj int (fun i -> i.rating_score)
+  @@ proj int (fun i -> i.rating_count)
+  @@ proj_end
 
-let item_columns =
-  "id, name, category, price, quantity, active, tags, rating_score, rating_count"
+let select_items =
+  let open Caqti.Templater in
+  static T.(t3 int int int -->* db_item)
+    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count \
+     FROM items WHERE price BETWEEN ? AND ? LIMIT ?"
 
-let db_error_response () = Hcs.Response.internal_error ()
-
-let handle_async_db req =
+let handle_async_db pool req =
   let mn = Hcs.Request.query_int_or ~default:10 req "min" in
   let mx = Hcs.Request.query_int_or ~default:50 req "max" in
   let lim = max 1 (min 50 (Hcs.Request.query_int_or ~default:50 req "limit")) in
-  let sql =
-    Printf.sprintf "SELECT %s FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3"
-      item_columns
+  let items = match pool with
+    | None -> []
+    | Some pool ->
+        match Caqti_eio.Pool.use (fun (module Db : Caqti_eio.CONNECTION) ->
+            Db.collect_list select_items (mn, mx, lim)) pool with
+        | Ok items -> items
+        | Error _ -> []
   in
-  match with_conn (fun c -> Pg.query c sql
-      ~params:Repodb.Driver.Value.[| Int mn; Int mx; Int lim |]) with
-  | Error _ -> db_error_response ()
-  | Ok rows -> respond_items (List.map pg_item rows)
+  respond_items items
 
 (* ── Framework routing and middleware ─────────────────────────────────── *)
 
-let make_handler static_root =
+let make_handler static_root pool =
   let static = Hcs.Plug.Static.server static_root in
   let handle_static params (req : Hcs.Server.request) =
     (* Mount the framework handler under /static. The router captures the
@@ -200,7 +172,7 @@ let make_handler static_root =
       get "/json/:count" handle_json |> plug (Hcs.Plug.Compress.create ());
       get "/static/*" handle_static |> plug (Hcs.Plug.Compress.create ());
       post "/echo" (ignore_params handle_echo);
-      get "/async-db" (ignore_params handle_async_db);
+      get "/async-db" (ignore_params (handle_async_db pool));
     ]
   in
   Hcs.Endpoint.to_handler
@@ -232,73 +204,41 @@ let base_config =
   if is_standard_mode () then config
   else { config with max_connections = 200000 }
 
-let make_configs ~certs_dir ~port ~h2_port ~h1tls_port ~h2c_port =
-  let tls_of alpn =
-    match
-      Hcs.Tls_config.Server.of_pem
-        ~cert_file:(Filename.concat certs_dir "server.crt")
-        ~key_file:(Filename.concat certs_dir "server.key")
-    with
-    | Ok t -> Some (alpn t)
-    | Error msg ->
-        Printf.eprintf "[arena] TLS load failed (%s): %s\n%!" certs_dir msg;
-        None
+let make_configs () =
+  let tls = match Hcs.Tls_config.Server.of_pem
+      ~cert_file:"/certs/server.crt" ~key_file:"/certs/server.key" with
+    | Ok tls -> tls
+    | Error message -> failwith ("HttpArena TLS certificates: " ^ message)
   in
-  let h2_tls = tls_of Hcs.Tls_config.Server.h2_or_http11 in
-  let h1_tls = tls_of Hcs.Tls_config.Server.h1_only in
-  (* (config, use_ws) *)
-  let plain =
-    ( Hcs.Server.
-        {
-          base_config with
-          port;
-          protocol = Auto_websocket;
-        },
-      true )
-  in
-  let h2c =
-    ( Hcs.Server.{ base_config with port = h2c_port; protocol = Http2_only },
-      false )
-  in
-  let configs = [ plain; h2c ] in
-  let configs =
-    match h2_tls with
-    | Some tls ->
-        ( Hcs.Server.
-            { base_config with port = h2_port; protocol = Auto; tls = Some tls },
-          false )
-        :: configs
-    | None -> configs
-  in
-  let configs =
-    match h1_tls with
-    | Some tls ->
-        ( Hcs.Server.
-            {
-              base_config with
-              port = h1tls_port;
-              protocol = Http1_only;
-              tls = Some tls;
-            },
-          false )
-        :: configs
-    | None -> configs
-  in
-  configs
+  let open Hcs.Server in
+  [ ({ base_config with port = 8080; protocol = Auto_websocket }, true);
+    ({ base_config with port = 8082; protocol = Http2_only }, false);
+    ({ base_config with port = 8443; protocol = Auto;
+        tls = Some (Hcs.Tls_config.Server.h2_or_http11 tls) }, false);
+    ({ base_config with port = 8081; protocol = Http1_only;
+        tls = Some (Hcs.Tls_config.Server.h1_only tls) }, false) ]
 
 (* Spawn [domains] domains; each runs all listeners on SO_REUSEPORT sockets.
    This keeps the total domain count at [domains] regardless of listener count
    (vs. run_parallel-per-port, which would multiply it). *)
-let run_all env ~domains ~configs ~static_dir =
+let run_all env ~domains ~configs ~database =
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
   let dm = Eio.Stdenv.domain_mgr env in
-  let serve_one () =
+  let serve_one index () =
     Eio.Switch.run @@ fun sw ->
-    let static_root =
-      Eio.Path.open_dir ~sw Eio.Path.(Eio.Stdenv.fs env / static_dir)
+    let pool = Option.map (fun (uri, budget) ->
+        (* Divide the supplied connection budget without exceeding it across
+           domains. Caqti pools and connections stay on their owning domain. *)
+        let size = budget / domains + (if index < budget mod domains then 1 else 0) in
+        Caqti_eio_unix.connect_pool ~sw ~stdenv:(env :> Caqti_eio.stdenv)
+          ~pool_config:(Caqti.Pool.Config.create ~max_size:size ()) uri
+        |> Caqti_eio.or_fail) database
     in
-    let handler = make_handler static_root in
+    let static_root =
+      Eio.Path.open_dir ~sw Eio.Path.(Eio.Stdenv.fs env / "/data/static")
+    in
+    let handler = make_handler static_root pool in
     Eio.Fiber.all
       (List.map
          (fun (cfg, use_ws) () ->
@@ -309,31 +249,8 @@ let run_all env ~domains ~configs ~static_dir =
   in
   Eio.Fiber.all
     (List.init domains (fun i () ->
-         if i = 0 then serve_one () else Eio.Domain_manager.run dm serve_one))
-
-(* Use one domain per physical core; fall back to the runtime's CPU count. *)
-let physical_core_count () =
-  let fallback = Domain.recommended_domain_count () in
-  try
-    let base = "/sys/devices/system/cpu" in
-    let seen = Hashtbl.create 64 in
-    Array.iter
-      (fun entry ->
-        if
-          String.length entry > 3
-          && String.sub entry 0 3 = "cpu"
-          && match entry.[3] with '0' .. '9' -> true | _ -> false
-        then
-          let path =
-            Filename.concat base (entry ^ "/topology/core_cpus_list")
-          in
-          match In_channel.with_open_bin path In_channel.input_all with
-          | siblings -> Hashtbl.replace seen (String.trim siblings) ()
-          | exception _ -> ())
-      (Sys.readdir base);
-    let n = Hashtbl.length seen in
-    if n > 0 then n else fallback
-  with _ -> fallback
+         if i = 0 then serve_one i ()
+         else Eio.Domain_manager.run dm (serve_one i)))
 
 (* Prefer Eio's io_uring backend, but fall back to epoll if io_uring is
    unavailable (e.g. denied by an enforcing SELinux policy inside a container,
@@ -347,18 +264,20 @@ let run_eio fn =
 
 let () =
   dataset := load_dataset "/data/dataset.json";
-  (match Sys.getenv_opt "DATABASE_URL" with
-  | Some url when String.length url > 0 ->
-      let size =
-        match Sys.getenv_opt "DATABASE_MAX_CONN" with
-        | Some s -> Option.value ~default:128 (int_of_string_opt s)
-        | None -> 128
-      in
-      pool := Some (make_pool url ~size)
-  | _ -> ());
-  run_eio @@ fun env ->
-  let configs =
-    make_configs ~certs_dir:"/certs" ~port:8080 ~h2_port:8443
-      ~h1tls_port:8081 ~h2c_port:8082
+  let database = match Sys.getenv_opt "DATABASE_URL" with
+    | Some url when url <> "" ->
+        let size = match Sys.getenv_opt "DATABASE_MAX_CONN" with
+          | Some s -> max 1 (Option.value ~default:256 (int_of_string_opt s))
+          | None -> 256
+        in
+        Some (Uri.of_string url, size)
+    | _ -> None
   in
-  run_all env ~domains:(physical_core_count ()) ~configs ~static_dir:"/data/static"
+  (* The runtime respects CPU affinity, including Docker's --cpuset-cpus. *)
+  let domains = Domain.recommended_domain_count () in
+  let domains = match database with
+    | Some (_, budget) -> min domains budget
+    | None -> domains
+  in
+  run_eio @@ fun env ->
+  run_all env ~domains ~configs:(make_configs ()) ~database

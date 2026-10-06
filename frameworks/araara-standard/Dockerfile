@@ -2,6 +2,7 @@ FROM ocaml/opam:debian-12-ocaml-5.4 AS build
 
 ARG HCS_VERSION=0.18.0
 ARG SIMDJSONT_VERSION=0.5.0
+ARG CAQTI_VERSION=3.0.0
 ARG OPAM_JOBS=4
 
 USER root
@@ -16,13 +17,13 @@ WORKDIR /app
 # indexes so the base image's cached opam repository cannot hide new releases.
 RUN opam repo add araara git+https://tangled.org/gdiazlo.tngl.sh/repo \
  && opam update \
- && opam install -y --jobs=${OPAM_JOBS} "hcs.${HCS_VERSION}" repodb repodb-postgresql "simdjsont.${SIMDJSONT_VERSION}"
+ && opam install -y --jobs=${OPAM_JOBS} "hcs.${HCS_VERSION}" "caqti-eio.${CAQTI_VERSION}" "caqti-driver-postgresql.${CAQTI_VERSION}" "simdjsont.${SIMDJSONT_VERSION}"
 
 # The benchmark application is part of the submission, independent of the
 # library release. HttpArena can review and update its endpoints here.
 COPY --chown=opam:opam dune-project ./
 COPY --chown=opam:opam server ./server
-RUN opam exec -- dune build server/arena.exe
+RUN opam exec -- dune build --profile release server/arena.exe
 
 RUN mkdir -p /app/staging/lib \
  && cp -L _build/default/server/arena.exe /app/staging/server \
