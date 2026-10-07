@@ -3,8 +3,7 @@ const zio = @import("zio");
 const http = @import("dusty");
 const json = @import("json");
 const pg = @import("pg");
-
-const flate = std.compress.flate;
+const templates = @import("templates/fortunes.zig");
 
 var dataset: ?[]const DatasetItem = null;
 var pool: ?*pg.Pool = null;
@@ -77,11 +76,6 @@ fn delay(req: *http.Request, res: *http.Response) !void {
     try w.end();
 }
 
-fn acceptsGzip(headers: *const http.Headers) bool {
-    const ae = headers.get("Accept-Encoding") orelse return false;
-    return std.mem.indexOf(u8, ae, "gzip") != null;
-}
-
 fn jsonItems(req: *http.Request, res: *http.Response) !void {
     const items = dataset orelse {
         res.status = .service_unavailable;
@@ -115,27 +109,12 @@ fn jsonItems(req: *http.Request, res: *http.Response) !void {
     }
 
     const payload = .{ .items = resp_items, .count = count };
-    const want_gzip = acceptsGzip(&req.headers);
 
-    if (want_gzip) {
-        try res.header("Content-Encoding", "gzip");
-        try res.header("Vary", "Accept-Encoding");
-        try res.header("Content-Type", "application/json");
-
-        var stream_buf: [4096]u8 = undefined;
-        var body = try res.stream(&stream_buf);
-
-        const window = try req.arena.alloc(u8, flate.max_window_len);
-        var compressor = try flate.Compress.init(&body.interface, window, .gzip, .fastest);
-        try json.encode(payload, &compressor.writer);
-        try compressor.finish();
-        try body.end();
-    } else {
-        try res.header("Content-Type", "application/json");
-        var w = res.writer();
-        try json.encode(payload, &w.interface);
-        try w.end();
-    }
+    res.compress = true;
+    try res.header("Content-Type", "application/json");
+    var w = res.writer();
+    try json.encode(payload, &w.interface);
+    try w.end();
 }
 
 const DbItem = struct {
@@ -154,7 +133,7 @@ const DbResponse = struct {
     count: usize,
 };
 
-const empty_db_response = DbResponse{ .items = &.{}, .count = 0 };
+const empty_db_response: DbResponse = .{ .items = &.{}, .count = 0 };
 
 fn asyncDb(req: *http.Request, res: *http.Response) !void {
     const p = pool orelse {
@@ -169,9 +148,10 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
     const max = req.query.getInt(i32, "max") orelse 50;
     const limit = std.math.clamp(req.query.getInt(i32, "limit") orelse 50, 1, 50);
 
-    var result = p.query(
+    var result = p.queryOpts(
         "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
         .{ min, max, limit },
+        .{ .cache_name = "async_db" },
     ) catch {
         try res.header("Content-Type", "application/json");
         var w = res.writer();
@@ -188,8 +168,8 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
 
         try items.append(req.arena, DbItem{
             .id = try row.get(i32, 0),
-            .name = try row.get([]const u8, 1),
-            .category = try row.get([]const u8, 2),
+            .name = try req.arena.dupe(u8, try row.get([]const u8, 1)),
+            .category = try req.arena.dupe(u8, try row.get([]const u8, 2)),
             .price = try row.get(i32, 3),
             .quantity = try row.get(i32, 4),
             .active = try row.get(bool, 5),
@@ -201,10 +181,41 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
         });
     }
 
-    const payload = DbResponse{ .items = items.items, .count = items.items.len };
+    const payload: DbResponse = .{ .items = items.items, .count = items.items.len };
     try res.header("Content-Type", "application/json");
     var w = res.writer();
     try json.encode(payload, &w.interface);
+    try w.end();
+}
+
+const Fortune = templates.Fortune;
+
+fn fortuneLessThan(_: void, a: Fortune, b: Fortune) bool {
+    return std.mem.lessThan(u8, a.message, b.message);
+}
+
+fn fortunes(req: *http.Request, res: *http.Response) !void {
+    const p = pool orelse {
+        res.status = .service_unavailable;
+        return;
+    };
+
+    var result = try p.queryOpts("SELECT id, message FROM fortune", .{}, .{ .cache_name = "fortunes" });
+    defer result.deinit();
+
+    var list: std.ArrayList(Fortune) = .empty;
+    while (try result.next()) |row| {
+        try list.append(req.arena, .{
+            .id = try row.get(i32, 0),
+            .message = try req.arena.dupe(u8, try row.get([]const u8, 1)),
+        });
+    }
+    try list.append(req.arena, .{ .id = 0, .message = "Additional fortune added at request time." });
+    std.mem.sort(Fortune, list.items, {}, fortuneLessThan);
+
+    res.content_type = .html;
+    var w = res.writer();
+    try templates.FortunesPage.render(.{list.items}, &w.interface);
     try w.end();
 }
 
@@ -248,7 +259,22 @@ pub fn main(init: std.process.Init) !void {
         }) catch null;
     }
 
+    const cert_path = init.environ_map.get("TLS_CERT") orelse "/certs/server.crt";
+    const key_path = init.environ_map.get("TLS_KEY") orelse "/certs/server.key";
+    const have_certs = blk: {
+        std.Io.Dir.cwd().access(rt.io(), cert_path, .{}) catch break :blk false;
+        std.Io.Dir.cwd().access(rt.io(), key_path, .{}) catch break :blk false;
+        break :blk true;
+    };
+    const listeners = [_]http.Listener{
+        .{ .address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8080) } },
+        .{
+            .address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8081) },
+            .tls = .{ .cert_path = cert_path, .key_path = key_path },
+        },
+    };
     var server = http.Server(void).init(init.gpa, rt.io(), .{
+        .listeners = if (have_certs) &listeners else listeners[0..1],
         .max_connections = 65_536,
     }, {});
     defer server.deinit();
@@ -263,7 +289,7 @@ pub fn main(init: std.process.Init) !void {
     server.router.post("/echo", echoBody);
     server.router.get("/ws", wsEcho);
     server.router.get("/async-db", asyncDb);
+    server.router.get("/fortunes", fortunes);
 
-    const addr: http.Address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8080) };
-    try server.listen(addr);
+    try server.run();
 }

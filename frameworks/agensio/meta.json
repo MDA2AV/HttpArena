@@ -1,0 +1,25 @@
+{
+  "display_name": "agensio",
+  "language": "C++",
+  "type": "infrastructure",
+  "engine": "agensio",
+  "description": "agensio: a static-file and reverse-proxy server on standalone Asio with its own HTTP/1.1, TLS, HTTP/2 and HTTP/3 (QUIC) layers, one event loop per worker and a lock-free per-worker index over one shared file cache that serves pre-compressed twins. The benchmark endpoints are a handler module compiled in for the arena (/baseline11, /baseline2, /json/{count}, /pipeline); /static from the mounted directory. HTTP/1.1 on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 on :8443 (QUIC over UDP).",
+  "repo": "https://github.com/YiannisBourkelis/agensio",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json-tls",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": [
+    "YiannisBourkelis"
+  ]
+}

@@ -37,6 +37,13 @@
       }
     ]
   },
+  "agensio": {
+    "dir": "agensio",
+    "description": "agensio: a static-file and reverse-proxy server on standalone Asio with its own HTTP/1.1, TLS, HTTP/2 and HTTP/3 (QUIC) layers, one event loop per worker and a lock-free per-worker index over one shared file cache that serves pre-compressed twins. The benchmark endpoints are a handler module compiled in for the arena (/baseline11, /baseline2, /json/{count}, /pipeline); /static from the mounted directory. HTTP/1.1 on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 on :8443 (QUIC over UDP).",
+    "repo": "https://github.com/YiannisBourkelis/agensio",
+    "type": "infrastructure",
+    "engine": "agensio"
+  },
   "aiohttp": {
     "dir": "aiohttp",
     "description": "aiohttp 3.14 web server on uvloop, one forked worker per core sharing the port with SO_REUSEPORT. Routing through the aiohttp router, JSON through web.json_response, gzip through the built-in response compression.",
@@ -321,7 +328,7 @@
   },
   "cutelyst": {
     "dir": "cutelyst",
-    "description": "Cutelyst on Cutelyst::Server with one thread per core. Catalyst-style controllers and routing, QJsonDocument serialization, async delays via ASync and QTimer.",
+    "description": "Cutelyst on Cutelyst::Server with one thread per core. Catalyst-style controllers and routing, QJsonDocument serialization, async delays via ASync and QTimer, async Postgres via ASql, fortunes via Cutelee.",
     "repo": "https://github.com/cutelyst/cutelyst",
     "type": "flagship",
     "engine": "Cutelyst::Server",
@@ -1299,12 +1306,26 @@
       "response": true
     }
   },
-  "neton": {
-    "dir": "neton",
+  "neton-hyper": {
+    "dir": "neton-hyper",
     "description": "Neton, a Kotlin Multiplatform framework compiled to a native executable. Routing, middleware, request parsing and the response pipeline are the framework's; the hyper4k engine (Tokio + Hyper 1.x, linked in as a Rust static library) only does protocol and transport. Serves HTTP/1.1 on 8080, HTTP/2 cleartext on 8082, HTTP/1.1+TLS on 8081 and HTTP/2+TLS on 8443 (ALPN) from one route table; static files and TLS terminate in the framework.",
     "repo": "https://github.com/netonframework/neton",
     "type": "emerging",
     "engine": "hyper",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "neton": {
+    "dir": "neton",
+    "description": "Neton with the Kotlin/Native neton-http-netonstream adapter, using com.netonstream io/http/tls and OpenSSL. The same framework routes, middleware, request parsing and response pipeline as neton-hyper; only the engine differs. HTTP/1.1 on 8080, h2c on 8082, h1 TLS on 8081 and h2 TLS on 8443.",
+    "repo": "https://github.com/netonframework/neton",
+    "type": "emerging",
+    "engine": "netonstream",
     "mode": "standard",
     "completeness": {
       "routing": true,
@@ -2088,6 +2109,14 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "uio-ws": {
+    "dir": "uio-ws",
+    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. Default configuration otherwise.",
+    "repo": "https://github.com/urpc/uio",
+    "type": "experimental",
+    "engine": "uio",
+    "mode": "standard"
+  },
   "ultimate-express": {
     "dir": "ultimate-express",
     "description": "ultimate-express (Express API on uWebSockets.js) with the cluster module for multi-core scaling.",
@@ -2353,6 +2382,20 @@
     "repo": "https://github.com/skylightis666/zeemo",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "zinc": {
+    "dir": "zinc",
+    "description": "Zinc on the Go net/http server, default configuration. Routing and path/query values through the Zinc API, encoding/json via c.JSON, JSON bodies through c.Bind().JSON, gzip through the Zinc compress middleware.",
+    "repo": "https://github.com/gozinc/zinc",
+    "type": "emerging",
+    "engine": "net/http",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
   },
   "zio-http": {
     "dir": "zio-http",
