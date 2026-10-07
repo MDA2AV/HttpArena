@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package benchmark;
+
+option go_package = "httparena/fib-tuned/proto";
+
+service BenchmarkService {
+  rpc GetSum (SumRequest) returns (SumReply);
+}
+
+message SumRequest {
+  int32 a = 1;
+  int32 b = 2;
+}
+
+message SumReply {
+  int32 result = 1;
+}

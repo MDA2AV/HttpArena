@@ -7,7 +7,8 @@ require (
 	github.com/bytedance/sonic v1.15.4
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/klauspost/compress v1.20.0
-	github.com/lesismal/fib v1.0.1-0.20261007063132-a241ac2ebdb5
+	github.com/lesismal/fib v1.0.1-0.20261007151532-fddcb68dbe15
+	google.golang.org/protobuf v1.36.10
 )
 
 require (

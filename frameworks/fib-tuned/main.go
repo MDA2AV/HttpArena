@@ -14,13 +14,17 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/encoder"
 	"github.com/jackc/pgx/v5/pgxpool"
 	fib "github.com/lesismal/fib"
+	"github.com/lesismal/fib/grpc"
 	fibhttp "github.com/lesismal/fib/http"
 	"github.com/lesismal/fib/http3"
-	"github.com/lesismal/fib/middleware"
 	"github.com/lesismal/fib/prefork"
 	fibtls "github.com/lesismal/fib/tls"
+	"google.golang.org/protobuf/proto"
+
+	pb "httparena/fib-tuned/proto"
 )
 
 type Rating struct {
@@ -73,44 +77,69 @@ const (
 // serves every response.
 var okBody = []byte("ok")
 
+// newRouter routes the entry's requests through fib's Router, whose API is
+// chi's with fib's handlers. The same router answers HTTP/1.1, HTTP/2 and
+// HTTP/3: fib hands each of them a *http.Request and a Context to respond
+// through, and the Context the route's parameters. Anything else is answered
+// 404, or 405 on a path served for other methods.
+//
 // The entry's own compression middleware (compress.go), built on fib's
-// middleware API, around the routes whose bodies are JSON: brotli, zstd, gzip
-// or deflate, whichever Accept-Encoding prefers, and the body as it is when the
-// client asks for none. It sees each response whole, which on HTTP/1 would
-// keep a file off sendfile, so /static, whose compressed variants are already
-// on disk, is left outside it. gzip stays at level 6: json-comp's score weighs
-// requests a second by the square of the bytes a response takes, and level 1,
-// which served 431k requests a second against 382k on 64 CPUs, took 1492 bytes
-// a response against 1361, which scores 6% less.
-var (
-	compressJSON   = newCompress(CompressConfig{})
-	jsonHandler    = middleware.Chain(fibhttp.HandlerFunc(jsonItems), compressJSON)
-	asyncDBHandler = middleware.Chain(fibhttp.HandlerFunc(asyncDB), compressJSON)
-)
+// middleware API, is around the routes whose bodies are JSON: brotli, zstd,
+// gzip or deflate, whichever Accept-Encoding prefers, and the body as it is
+// when the client asks for none. It sees each response whole, which on HTTP/1
+// would keep a file off sendfile, so /static, whose compressed variants are
+// already on disk, is left outside it. gzip stays at level 6: json-comp's
+// score weighs requests a second by the square of the bytes a response takes,
+// and level 1, which served 431k requests a second against 382k on 64 CPUs,
+// took 1492 bytes a response against 1361, which scores 6% less.
+func newRouter() *fibhttp.Router {
+	r := fibhttp.NewRouter()
+	r.Get("/baseline11", baseline)
+	r.Post("/baseline11", baseline)
+	r.Get("/baseline2", baseline)
+	r.Get("/pipeline", pipeline)
+	r.Post("/echo", echo)
+	r.Get("/delay/{ms}", delay)
+	r.Get("/static/*", staticFile)
+	compressed := r.With(newCompress(CompressConfig{}))
+	compressed.Get("/json/{count}", jsonItems)
+	compressed.Get("/async-db", asyncDB)
+	r.Handle("/benchmark.BenchmarkService/*", newGRPCServer())
+	return r
+}
 
-// fib has no router, so the handler every protocol shares dispatches on the
-// path itself. The same function answers HTTP/1.1, HTTP/2 and HTTP/3: fib
-// hands each of them a *http.Request and a Context to respond through.
-func serve(c *fibhttp.Context, r *stdhttp.Request) {
-	path := r.URL.Path
-	switch {
-	case path == "/baseline11" || path == "/baseline2":
-		baseline(c, r)
-	case path == "/pipeline":
-		c.Respond(stdhttp.StatusOK, textPlain, okBody)
-	case strings.HasPrefix(path, "/json/"):
-		jsonHandler.ServeHTTP(c, r)
-	case path == "/echo":
-		echo(c, r)
-	case strings.HasPrefix(path, "/delay/"):
-		delay(c, path[len("/delay/"):])
-	case strings.HasPrefix(path, "/static/"):
-		staticFile(c, r, path[len("/static/"):])
-	case path == "/async-db":
-		asyncDBHandler.ServeHTTP(c, r)
-	default:
-		c.Respond(stdhttp.StatusNotFound, textPlain, nil)
-	}
+// newGRPCServer serves BenchmarkService through fib's grpc package, whose
+// Server answers the calls its routes hand it from fib's HTTP/2, so gRPC
+// shares 8080 (h2c with prior knowledge) and 8443 (h2 over TLS) with the
+// HTTP the other profiles send there. The service's code is what protoc
+// generates, its messages google.golang.org/protobuf's.
+func newGRPCServer() *grpc.Server {
+	server := grpc.NewServer()
+	pb.RegisterBenchmarkServiceServer(server, benchmarkService{})
+	return server
+}
+
+type benchmarkService struct {
+	pb.UnimplementedBenchmarkServiceServer
+}
+
+func (benchmarkService) GetSum(_ context.Context, req *pb.SumRequest) (*pb.SumReply, error) {
+	return &pb.SumReply{Result: req.A + req.B}, nil
+}
+
+// protoCodec encodes the messages with google.golang.org/protobuf, which fib's
+// grpc package, depending on nothing outside the standard library, leaves to
+// the program.
+type protoCodec struct{}
+
+func (protoCodec) Name() string                    { return "proto" }
+func (protoCodec) Marshal(v any) ([]byte, error)   { return proto.Marshal(v.(proto.Message)) }
+func (protoCodec) Unmarshal(b []byte, v any) error { return proto.Unmarshal(b, v.(proto.Message)) }
+
+func init() { grpc.RegisterCodec(protoCodec{}) }
+
+func pipeline(c *fibhttp.Context, r *stdhttp.Request) {
+	c.Respond(stdhttp.StatusOK, textPlain, okBody)
 }
 
 // a + b from the query, plus the integer in the body on POST. Context.Query
@@ -127,13 +156,14 @@ func baseline(c *fibhttp.Context, r *stdhttp.Request) {
 	c.Respond(stdhttp.StatusOK, textPlain, strconv.AppendInt(nil, int64(sum), 10))
 }
 
-// The JSON responses are encoded with sonic, the encoder tuned mode names
-// first among what it allows and fiber-tuned uses: json-tls served 1.06M
-// requests a second with it against 747k through encoding/json, whose output
-// for these types is the same bytes. Its JIT compiles an encoder per type the
-// first time it meets one, which main does before load arrives.
+// The JSON responses are encoded by Context.JSON with sonic, the encoder
+// tuned mode names first among what it allows and fiber-tuned uses, which run
+// sets as fib's JSONEncoder: json-tls served 1.06M requests a second with it
+// against 747k through encoding/json, whose output for these types is the
+// same bytes. Its JIT compiles an encoder per type the first time it meets
+// one, which run does before load arrives.
 func jsonItems(c *fibhttp.Context, r *stdhttp.Request) {
-	count, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/json/"))
+	count, err := strconv.Atoi(c.Param("count"))
 	if err != nil {
 		c.Respond(stdhttp.StatusBadRequest, textPlain, nil)
 		return
@@ -145,12 +175,9 @@ func jsonItems(c *fibhttp.Context, r *stdhttp.Request) {
 		d := dataset[i]
 		items[i] = ProcessedItem{DatasetItem: d, Total: d.Price * d.Quantity * m}
 	}
-	body, err := sonic.Marshal(ProcessResponse{Items: items, Count: count})
-	if err != nil {
+	if err := c.JSON(stdhttp.StatusOK, ProcessResponse{Items: items, Count: count}); err != nil {
 		c.Respond(stdhttp.StatusInternalServerError, textPlain, nil)
-		return
 	}
-	c.Respond(stdhttp.StatusOK, appJSON, body)
 }
 
 // The body arrives already read off the connection, decoded from whichever
@@ -166,8 +193,8 @@ func echo(c *fibhttp.Context, r *stdhttp.Request) {
 // request and answering it from time.AfterFunc instead started a goroutine
 // per request for the timer's callback, and on 64 CPUs served 1.40M requests
 // a second against 1.63M waiting in the handler.
-func delay(c *fibhttp.Context, arg string) {
-	ms, err := strconv.Atoi(arg)
+func delay(c *fibhttp.Context, r *stdhttp.Request) {
+	ms, err := strconv.Atoi(c.Param("ms"))
 	if err != nil || ms < 0 {
 		c.Respond(stdhttp.StatusBadRequest, textPlain, nil)
 		return
@@ -187,12 +214,12 @@ func delay(c *fibhttp.Context, arg string) {
 // says none, as ServeContent does. Each prefork child has its own.
 var staticFiles *fibhttp.FileCache
 
-func staticFile(c *fibhttp.Context, r *stdhttp.Request, name string) {
+func staticFile(c *fibhttp.Context, r *stdhttp.Request) {
 	if staticFiles == nil {
 		c.Respond(stdhttp.StatusNotFound, textPlain, nil)
 		return
 	}
-	staticFiles.ServeFile(c, r, name)
+	staticFiles.ServeFile(c, r, c.Param("*"))
 }
 
 // itemsResponse is /async-db's body.
@@ -259,12 +286,9 @@ func asyncDB(c *fibhttp.Context, r *stdhttp.Request) {
 			c.Respond(stdhttp.StatusInternalServerError, textPlain, nil)
 			return
 		}
-		body, err := sonic.Marshal(itemsResponse{items, len(items)})
-		if err != nil {
+		if err := c.JSON(stdhttp.StatusOK, itemsResponse{items, len(items)}); err != nil {
 			c.Respond(stdhttp.StatusInternalServerError, textPlain, nil)
-			return
 		}
-		c.Respond(stdhttp.StatusOK, appJSON, body)
 	}()
 }
 
@@ -384,6 +408,10 @@ func run(ctx context.Context) error {
 	if fc, err := fibhttp.NewFileCache(fibhttp.FileCacheConfig{Root: "/data/static", Precompressed: true}); err == nil {
 		staticFiles = fc
 	}
+	fibhttp.JSONEncoder = func(dst []byte, v any) ([]byte, error) {
+		err := encoder.EncodeInto(&dst, v, 0)
+		return dst, err
+	}
 	for _, t := range []reflect.Type{reflect.TypeOf(ProcessResponse{}), reflect.TypeOf(itemsResponse{})} {
 		if err := sonic.Pretouch(t); err != nil {
 			log.Printf("sonic pretouch %s: %v", t, err)
@@ -392,7 +420,7 @@ func run(ctx context.Context) error {
 	loadDataset()
 	loadPgPool()
 
-	handler := fibhttp.HandlerFunc(serve)
+	handler := newRouter()
 
 	// Plaintext: HTTP/1.1 on 8080 and HTTP/2 with prior knowledge on 8082.
 	// fib's HTTP handler tells the two apart by the connection preface, so one

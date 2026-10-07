@@ -7,9 +7,10 @@ the same as there; see its README.
 ## Stack
 
 - **Language:** Go 1.27 (fib's own `go.mod` requires it)
-- **Framework:** fib `http`, `http3`, `tls` and `middleware` packages
+- **Framework:** fib `http`, `http3`, `grpc`, `tls` and `middleware` packages
 - **Compression:** `andybalholm/brotli`, `klauspost/compress` (zstd, gzip, deflate)
-- **JSON:** `bytedance/sonic`, as fiber-tuned uses, for the `/json` and `/async-db` responses:
+- **JSON:** `bytedance/sonic`, as fiber-tuned uses, for the `/json` and `/async-db` responses,
+  which answer through `Context.JSON` as in `fib`, with sonic set as fib's `JSONEncoder`:
   json-tls served 1.06M requests a second with it against 747k through `encoding/json` on 64
   CPUs, with the same bytes out
 - **Build:** `golang:1.27-alpine`, static binary on `scratch`
@@ -43,7 +44,7 @@ once its response is finished; no handler here keeps any of them past its respon
 
 It is built the way fib's `compress` is: a `middleware.Middleware` that registers one
 `Context.OnResponse` hook and codes the whole body there, wrapped around `/json` and
-`/async-db` with `middleware.Chain`. `/static` stays outside it, as in `fib`: its compressed
+`/async-db` with `Router.With`. `/static` stays outside it, as in `fib`: its compressed
 variants are already on disk.
 
 - **Codings:** `br`, `zstd`, `gzip`, `deflate`. The one `Accept-Encoding` gives the highest q
