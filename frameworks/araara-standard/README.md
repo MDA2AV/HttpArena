@@ -18,6 +18,12 @@ bind the range and limit parameters. Its synchronous calls run through
 connection budget, so waiting requests suspend their fibers. An unavailable
 database returns the required empty JSON result. Worker count follows CPU affinity.
 
+Both entries reuse the immutable tags codec and retain decoded ratings as pairs.
+This avoids rebuilding codecs per database row and temporary rating pairs during
+encoding. Standard keeps the framework's typed `Hcs.Request.query_int_or`
+accessors; parse-once query lookup is tuned-only. GC settings, database work,
+per-request serialization, and compression are unchanged.
+
 Handlers use HCS routing, query/body APIs, response constructors,
 `Plug.Compress`, and `Plug.Static.server`. JSON uses per-request simdjsont
 serialization, following [araara's JSON documentation](https://araara.ml/docs/simdjsont).

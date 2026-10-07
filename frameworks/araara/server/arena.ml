@@ -22,10 +22,13 @@ type item = {
   quantity : int;
   active : bool;
   tags : string list;
-  rating_score : int;
-  rating_count : int;
+  rating : int * int;
   total : int option;
 }
+
+(* Codecs describe shapes, not values: build them once, including the tags
+   decoder used for every PostgreSQL row. *)
+let tags_codec = Simdjsont.Codec.(list string)
 
 let rating_codec =
   let open Simdjsont.Codec in
@@ -37,17 +40,16 @@ let rating_codec =
 let item_codec =
   let open Simdjsont.Codec in
   Obj.field (fun id name category price quantity active tags
-                 (rating_score, rating_count) total ->
-      { id; name; category; price; quantity; active; tags;
-        rating_score; rating_count; total })
+                 rating total ->
+      { id; name; category; price; quantity; active; tags; rating; total })
   |> Obj.mem "id" int ~enc:(fun i -> i.id)
   |> Obj.mem "name" string ~enc:(fun i -> i.name)
   |> Obj.mem "category" string ~enc:(fun i -> i.category)
   |> Obj.mem "price" int ~enc:(fun i -> i.price)
   |> Obj.mem "quantity" int ~enc:(fun i -> i.quantity)
   |> Obj.mem "active" bool ~enc:(fun i -> i.active)
-  |> Obj.mem "tags" (list string) ~enc:(fun i -> i.tags)
-  |> Obj.mem "rating" rating_codec ~enc:(fun i -> (i.rating_score, i.rating_count))
+  |> Obj.mem "tags" tags_codec ~enc:(fun i -> i.tags)
+  |> Obj.mem "rating" rating_codec ~enc:(fun i -> i.rating)
   |> Obj.opt_mem "total" int ~enc:(fun i -> i.total)
   |> Obj.finish
 
@@ -69,6 +71,13 @@ let load_dataset path =
 let respond_items items =
   Hcs.Response.json
     (Simdjsont.Codec.encode_string items_codec (items, List.length items))
+
+(* Read HCS's decoded query parameters once when a route needs several values.
+   Keep its integer/default semantics, including first-value-wins duplicates. *)
+let query_int_or ~default query name =
+  match List.assoc_opt name query with
+  | Some value -> Option.value ~default (int_of_string_opt value)
+  | None -> default
 
 (* ── Small tuned helpers ───────────────────────────────────────────────── *)
 
@@ -95,12 +104,7 @@ let handle_baseline _params req =
   (* Tuned mode still uses HCS.Request's parsed query API, but parses the
      query-string once instead of rebuilding the assoc list for each lookup. *)
   let query = Hcs.Request.query_params req in
-  let int_param name =
-    match List.assoc_opt name query with
-    | Some value -> Option.value ~default:0 (int_of_string_opt value)
-    | None -> 0
-  in
-  let sum = int_param "a" + int_param "b" in
+  let sum = query_int_or ~default:0 query "a" + query_int_or ~default:0 query "b" in
   let body_sum =
     if Hcs.Request.is_post req then parse_int_trimmed (Hcs.Request.body req)
     else 0
@@ -164,16 +168,15 @@ let db_item row =
     price = row_int row 3;
     quantity = row_int row 4;
     active = row_bool row 5;
-    tags = Simdjsont.Codec.decode_string_exn
-        Simdjsont.Codec.(list string) (row_text row 6);
-    rating_score = row_int row 7;
-    rating_count = row_int row 8;
+    tags = Simdjsont.Codec.decode_string_exn tags_codec (row_text row 6);
+    rating = (row_int row 7, row_int row 8);
     total = None }
 
 let handle_async_db database req =
-  let mn = Hcs.Request.query_int_or ~default:10 req "min" in
-  let mx = Hcs.Request.query_int_or ~default:50 req "max" in
-  let lim = max 1 (min 50 (Hcs.Request.query_int_or ~default:50 req "limit")) in
+  let query = Hcs.Request.query_params req in
+  let mn = query_int_or ~default:10 query "min" in
+  let mx = query_int_or ~default:50 query "max" in
+  let lim = max 1 (min 50 (query_int_or ~default:50 query "limit")) in
   let items = match database with
     | None -> []
     | Some (pool, slots) ->

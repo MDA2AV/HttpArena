@@ -22,10 +22,13 @@ type item = {
   quantity : int;
   active : bool;
   tags : string list;
-  rating_score : int;
-  rating_count : int;
+  rating : int * int;
   total : int option;
 }
+
+(* Codecs describe shapes, not values: build them once, including the tags
+   decoder used for every PostgreSQL row. *)
+let tags_codec = Simdjsont.Codec.(list string)
 
 let rating_codec =
   let open Simdjsont.Codec in
@@ -37,17 +40,16 @@ let rating_codec =
 let item_codec =
   let open Simdjsont.Codec in
   Obj.field (fun id name category price quantity active tags
-                 (rating_score, rating_count) total ->
-      { id; name; category; price; quantity; active; tags;
-        rating_score; rating_count; total })
+                 rating total ->
+      { id; name; category; price; quantity; active; tags; rating; total })
   |> Obj.mem "id" int ~enc:(fun i -> i.id)
   |> Obj.mem "name" string ~enc:(fun i -> i.name)
   |> Obj.mem "category" string ~enc:(fun i -> i.category)
   |> Obj.mem "price" int ~enc:(fun i -> i.price)
   |> Obj.mem "quantity" int ~enc:(fun i -> i.quantity)
   |> Obj.mem "active" bool ~enc:(fun i -> i.active)
-  |> Obj.mem "tags" (list string) ~enc:(fun i -> i.tags)
-  |> Obj.mem "rating" rating_codec ~enc:(fun i -> (i.rating_score, i.rating_count))
+  |> Obj.mem "tags" tags_codec ~enc:(fun i -> i.tags)
+  |> Obj.mem "rating" rating_codec ~enc:(fun i -> i.rating)
   |> Obj.opt_mem "total" int ~enc:(fun i -> i.total)
   |> Obj.finish
 
@@ -142,10 +144,8 @@ let db_item row =
     price = row_int row 3;
     quantity = row_int row 4;
     active = row_bool row 5;
-    tags = Simdjsont.Codec.decode_string_exn
-        Simdjsont.Codec.(list string) (row_text row 6);
-    rating_score = row_int row 7;
-    rating_count = row_int row 8;
+    tags = Simdjsont.Codec.decode_string_exn tags_codec (row_text row 6);
+    rating = (row_int row 7, row_int row 8);
     total = None }
 
 let handle_async_db database req =
