@@ -21,7 +21,9 @@ database returns the required empty JSON result. Worker count follows CPU affini
 Handlers use HCS routing, query/body APIs, response constructors,
 `Plug.Compress`, and `Plug.Static.server`. JSON uses per-request simdjsont
 serialization, following [araara's JSON documentation](https://araara.ml/docs/simdjsont).
-The static mount adapter removes a redundant `Content-Length`: HCS 0.18.0's
+The static mount adapter uses `Plug.Static.server` and, per HttpArena's standard
+static-file rules, selects disk-backed `.br` / `.gz` sidecars when the client
+advertises them. It also removes a redundant `Content-Length`: HCS 0.18.0's
 server adds its own, and duplicates break HTTP/2 responses.
 
 Standard mode retains HCS defaults with the listener settings and

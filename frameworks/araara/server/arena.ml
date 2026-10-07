@@ -218,6 +218,11 @@ let make_handler static_root database =
         in
         loop 0
   in
+  let has_precompressed_sidecar suffix =
+    match String.lowercase_ascii (Filename.extension suffix) with
+    | ".css" | ".js" | ".mjs" | ".html" | ".htm" | ".json" | ".svg" -> true
+    | _ -> false
+  in
   let handle_static params req =
     (* Tuned static path: HttpArena permits selecting pre-compressed .br/.gz
        sidecars from the mounted static directory when a framework has no
@@ -229,29 +234,24 @@ let make_handler static_root database =
        || String.contains suffix '/'
     then Hcs.Response.not_found ()
     else
-      let preferred =
-        if accepts_token req "br" then
-          [ (suffix ^ ".br", Some "br"); (suffix, None) ]
-        else if accepts_token req "gzip" then
-          [ (suffix ^ ".gz", Some "gzip"); (suffix, None) ]
-        else [ (suffix, None) ]
+      let file, encoding =
+        if has_precompressed_sidecar suffix && accepts_token req "br" then
+          (suffix ^ ".br", Some "br")
+        else if has_precompressed_sidecar suffix && accepts_token req "gzip" then
+          (suffix ^ ".gz", Some "gzip")
+        else (suffix, None)
       in
-      let rec load = function
-        | [] -> Hcs.Response.not_found ()
-        | (file, encoding) :: rest ->
-            try
-              let body = Eio.Path.load Eio.Path.(static_root / file) in
-              let headers =
-                ("Content-Type", mime_type suffix) ::
-                ("Vary", "Accept-Encoding") ::
-                match encoding with
-                | None -> []
-                | Some enc -> [ ("Content-Encoding", enc) ]
-              in
-              Hcs.Response.make ~headers body
-            with _ -> load rest
-      in
-      load preferred
+      try
+        let body = Eio.Path.load Eio.Path.(static_root / file) in
+        let headers =
+          ("Content-Type", mime_type suffix) ::
+          ("Vary", "Accept-Encoding") ::
+          match encoding with
+          | None -> []
+          | Some enc -> [ ("Content-Encoding", enc) ]
+        in
+        Hcs.Response.make ~headers body
+      with _ -> Hcs.Response.not_found ()
   in
   let ignore_params f _params req = f req in
   let router = Hcs.Router.compile Hcs.Router.Route.[

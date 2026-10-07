@@ -173,16 +173,76 @@ let handle_async_db database req =
 
 let make_handler static_root database =
   let static = Hcs.Plug.Static.server static_root in
+  let mime_type path =
+    match String.lowercase_ascii (Filename.extension path) with
+    | ".html" | ".htm" -> "text/html; charset=utf-8"
+    | ".css" -> "text/css; charset=utf-8"
+    | ".js" | ".mjs" -> "application/javascript; charset=utf-8"
+    | ".json" -> "application/json"
+    | ".svg" -> "image/svg+xml"
+    | ".webp" -> "image/webp"
+    | ".woff2" -> "font/woff2"
+    | _ -> "application/octet-stream"
+  in
+  let accepts_token req token =
+    match Hcs.Request.header req "accept-encoding" with
+    | None -> false
+    | Some value ->
+        let token_len = String.length token in
+        let value_len = String.length value in
+        let rec loop i =
+          if i + token_len > value_len then false
+          else if String.sub value i token_len = token then true
+          else loop (i + 1)
+        in
+        loop 0
+  in
+  let strip_content_length headers =
+    List.filter
+      (fun (name, _) -> String.lowercase_ascii name <> "content-length")
+      headers
+  in
+  let serve_static_file req suffix file encoding =
+    let response = static { req with target = "/" ^ file } in
+    if response.status <> `OK then response
+    else
+      let headers = strip_content_length response.headers in
+      match encoding with
+      | None -> { response with headers }
+      | Some enc ->
+          let headers =
+            ("Content-Type", mime_type suffix)
+            :: ("Content-Encoding", enc)
+            :: ("Vary", "Accept-Encoding")
+            :: List.filter
+                 (fun (name, _) ->
+                   match String.lowercase_ascii name with
+                   | "content-type" | "content-encoding" | "vary" -> false
+                   | _ -> true)
+                 headers
+          in
+          { response with headers }
+  in
+  let has_precompressed_sidecar suffix =
+    match String.lowercase_ascii (Filename.extension suffix) with
+    | ".css" | ".js" | ".mjs" | ".html" | ".htm" | ".json" | ".svg" -> true
+    | _ -> false
+  in
   let handle_static params (req : Hcs.Server.request) =
-    (* Mount the framework handler under /static. The router captures the
-       suffix; Plug.Static owns path validation, filesystem reads and MIME. *)
+    (* Use HCS's documented static handler, but select the pre-compressed
+       sidecar when the client asks for it. HttpArena allows this for standard
+       entries when the framework has no built-in precompressed-static option;
+       Plug.Static still reads the selected file from disk per request. *)
     let suffix = Hcs.Router.param_or "*" ~default:"" params in
-    let response = static { req with target = "/" ^ suffix } in
-    (* HCS 0.18.0's server derives Content-Length from the response body.
-       Plug.Static also sets it, so remove that redundant header: duplicate
-       lengths are rejected by HTTP/2 clients. File bytes remain untouched. *)
-    { response with headers = List.filter (fun (name, _) ->
-          String.lowercase_ascii name <> "content-length") response.headers }
+    if suffix = "" || String.contains suffix '\x00'
+       || String.starts_with ~prefix:"." suffix
+       || String.contains suffix '/'
+    then Hcs.Response.not_found ()
+    else if has_precompressed_sidecar suffix && accepts_token req "br" then
+      serve_static_file req suffix (suffix ^ ".br") (Some "br")
+    else if has_precompressed_sidecar suffix && accepts_token req "gzip" then
+      serve_static_file req suffix (suffix ^ ".gz") (Some "gzip")
+    else serve_static_file req suffix suffix None
   in
   let ignore_params f _params req = f req in
   let router = Hcs.Router.compile Hcs.Router.Route.[
@@ -191,7 +251,7 @@ let make_handler static_root database =
       get "/baseline2" handle_baseline;
       get "/pipeline" (fun _ _ -> Hcs.Response.text "ok");
       get "/json/:count" handle_json |> plug (Hcs.Plug.Compress.create ());
-      get "/static/*" handle_static |> plug (Hcs.Plug.Compress.create ());
+      get "/static/*" handle_static;
       post "/echo" (ignore_params handle_echo);
       get "/async-db" (ignore_params (handle_async_db database));
     ]

@@ -4,7 +4,7 @@
   "engine": "hcs",
   "type": "experimental",
   "mode": "standard",
-  "description": "araara on HCS 0.18.0 and standard OCaml 5.4: HCS routing and query helpers, simdjsont JSON codecs, HCS compression and Plug.Static, Postgres via Repodb with Eio offloading, HTTP/1.1, HTTP/2 and WebSocket. HCS server defaults with harness listener settings.",
+  "description": "araara on HCS 0.18.0 and standard OCaml 5.4: HCS routing and query helpers, simdjsont JSON codecs, HCS compression for JSON, Plug.Static with disk-backed pre-compressed static sidecars, Postgres via Repodb with Eio offloading, HTTP/1.1, HTTP/2 and WebSocket. HCS server defaults with harness listener settings.",
   "repo": "https://tangled.org/gdiazlo.tngl.sh/hcs",
   "enabled": true,
   "tests": [
