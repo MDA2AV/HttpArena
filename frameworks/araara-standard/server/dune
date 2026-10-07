@@ -6,7 +6,7 @@
   eio_main
   eio_posix
   simdjsont
-  caqti-eio.unix
-  caqti-driver-postgresql
-  uri
+  eio.unix
+  repodb
+  repodb-postgresql
   unix))

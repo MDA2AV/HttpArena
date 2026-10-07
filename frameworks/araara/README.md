@@ -11,10 +11,12 @@ docker build -t httparena-araara frameworks/araara
 `meta.json` lists the 14 supported profiles. Listeners: HTTP/1.1 and WebSocket
 on 8080, HTTP/2 TLS on 8443, HTTP/1.1 TLS on 8081, and h2c on 8082. The harness
 mounts `/data/dataset.json`, `/data/static` and `/certs`; Postgres uses
-`DATABASE_URL` and `DATABASE_MAX_CONN`. The async-db handler uses Caqti 3.0.0’s
-nonblocking PostgreSQL driver with Eio pools and a prepared, parameterized query.
-Worker count follows CPU affinity; their pools share the supplied connection
-budget. An unavailable database returns the required empty JSON result.
+`DATABASE_URL` and `DATABASE_MAX_CONN`. Repodb 0.9.0 owns the shared connection
+pool and prepared queries. Typed `Query`/`Expr` builders and `Repo.all_query`
+bind the range and limit parameters. Its synchronous calls run through
+`Eio_unix.run_in_systhread`; an Eio semaphore bounds offloaded work by the
+connection budget, so waiting requests suspend their fibers. An unavailable
+database returns the required empty JSON result. Worker count follows CPU affinity.
 
 Handlers use HCS routing, query/body APIs, response constructors,
 `Plug.Compress`, and `Plug.Static.server`. JSON uses per-request simdjsont

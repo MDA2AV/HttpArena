@@ -104,53 +104,74 @@ let handle_echo req =
 
 (* ── Postgres-backed async-db endpoint ────────────────────────────────── *)
 
-(* Caqti's PostgreSQL driver waits through Eio, and prepares this query once
-   per connection. The pool is local to each HTTP worker domain. *)
-let db_item =
-  let open Caqti.Template.Row_type in
-  let tags = custom
-      ~encode:(fun tags -> Ok (Simdjsont.Codec.encode_string
-          Simdjsont.Codec.(list string) tags))
-      ~decode:(Simdjsont.Codec.decode_string Simdjsont.Codec.(list string))
-      string
-  in
-  product (fun id name category price quantity active tags rating_score rating_count ->
-      Ok { id; name; category; price; quantity; active; tags;
-           rating_score; rating_count; total = None })
-  @@ proj int (fun i -> i.id)
-  @@ proj string (fun i -> i.name)
-  @@ proj string (fun i -> i.category)
-  @@ proj int (fun i -> i.price)
-  @@ proj int (fun i -> i.quantity)
-  @@ proj bool (fun i -> i.active)
-  @@ proj tags (fun i -> i.tags)
-  @@ proj int (fun i -> i.rating_score)
-  @@ proj int (fun i -> i.rating_count)
-  @@ proj_end
+module Db = Repodb_postgresql
+module Db_pool = Repodb.Pool.Make (Db)
+module Repo = Repodb.Repo.Make (Db.Driver)
 
-let select_items =
-  let open Caqti.Templater in
-  static T.(t3 int int int -->* db_item)
-    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count \
-     FROM items WHERE price BETWEEN ? AND ? LIMIT ?"
+let item_column name ty =
+  Repodb.Expr.qualified ~source:"items" ~column:name ty
 
-let handle_async_db pool req =
+let price_column = item_column "price" Repodb.Types.int
+
+let items_query =
+  let open Repodb in
+  Query.from (Schema.table "items")
+  |> Query.select Expr.[
+      item_column "id" Types.int;
+      item_column "name" Types.string;
+      item_column "category" Types.string;
+      price_column;
+      item_column "quantity" Types.int;
+      item_column "active" Types.bool;
+      item_column "tags" Types.json;
+      item_column "rating_score" Types.int;
+      item_column "rating_count" Types.int;
+    ]
+
+let select_items mn mx lim =
+  let open Repodb in
+  items_query
+  |> Query.where Expr.(between price_column (int mn) (int mx))
+  |> Query.limit_expr (Expr.int lim)
+
+let db_item row =
+  let open Repodb.Driver in
+  { id = row_int row 0;
+    name = row_text row 1;
+    category = row_text row 2;
+    price = row_int row 3;
+    quantity = row_int row 4;
+    active = row_bool row 5;
+    tags = Simdjsont.Codec.decode_string_exn
+        Simdjsont.Codec.(list string) (row_text row 6);
+    rating_score = row_int row 7;
+    rating_count = row_int row 8;
+    total = None }
+
+let handle_async_db database req =
   let mn = Hcs.Request.query_int_or ~default:10 req "min" in
   let mx = Hcs.Request.query_int_or ~default:50 req "max" in
   let lim = max 1 (min 50 (Hcs.Request.query_int_or ~default:50 req "limit")) in
-  let items = match pool with
+  let items = match database with
     | None -> []
-    | Some pool ->
-        match Caqti_eio.Pool.use (fun (module Db : Caqti_eio.CONNECTION) ->
-            Db.collect_list select_items (mn, mx, lim)) pool with
-        | Ok items -> items
-        | Error _ -> []
+    | Some (pool, slots) ->
+        (* Wait in the HTTP fiber before using a system thread. Both connection
+           establishment and query execution may block in Repodb/libpq. *)
+        Eio.Semaphore.acquire slots;
+        let result = Fun.protect ~finally:(fun () -> Eio.Semaphore.release slots)
+            (fun () -> Eio_unix.run_in_systhread (fun () ->
+                Db_pool.with_connection pool (fun conn ->
+                    Repo.all_query conn (select_items mn mx lim) ~decode:db_item)))
+        in
+        match result with
+        | Ok (Ok items) -> items
+        | Ok (Error _) | Error _ -> []
   in
   respond_items items
 
 (* ── Framework routing and middleware ─────────────────────────────────── *)
 
-let make_handler static_root pool =
+let make_handler static_root database =
   let static = Hcs.Plug.Static.server static_root in
   let handle_static params (req : Hcs.Server.request) =
     (* Mount the framework handler under /static. The router captures the
@@ -172,7 +193,7 @@ let make_handler static_root pool =
       get "/json/:count" handle_json |> plug (Hcs.Plug.Compress.create ());
       get "/static/*" handle_static |> plug (Hcs.Plug.Compress.create ());
       post "/echo" (ignore_params handle_echo);
-      get "/async-db" (ignore_params (handle_async_db pool));
+      get "/async-db" (ignore_params (handle_async_db database));
     ]
   in
   Hcs.Endpoint.to_handler
@@ -225,20 +246,12 @@ let run_all env ~domains ~configs ~database =
   let net = Eio.Stdenv.net env in
   let clock = Eio.Stdenv.clock env in
   let dm = Eio.Stdenv.domain_mgr env in
-  let serve_one index () =
+  let serve_one () =
     Eio.Switch.run @@ fun sw ->
-    let pool = Option.map (fun (uri, budget) ->
-        (* Divide the supplied connection budget without exceeding it across
-           domains. Caqti pools and connections stay on their owning domain. *)
-        let size = budget / domains + (if index < budget mod domains then 1 else 0) in
-        Caqti_eio_unix.connect_pool ~sw ~stdenv:(env :> Caqti_eio.stdenv)
-          ~pool_config:(Caqti.Pool.Config.create ~max_size:size ()) uri
-        |> Caqti_eio.or_fail) database
-    in
     let static_root =
       Eio.Path.open_dir ~sw Eio.Path.(Eio.Stdenv.fs env / "/data/static")
     in
-    let handler = make_handler static_root pool in
+    let handler = make_handler static_root database in
     Eio.Fiber.all
       (List.map
          (fun (cfg, use_ws) () ->
@@ -249,8 +262,8 @@ let run_all env ~domains ~configs ~database =
   in
   Eio.Fiber.all
     (List.init domains (fun i () ->
-         if i = 0 then serve_one i ()
-         else Eio.Domain_manager.run dm (serve_one i)))
+         if i = 0 then serve_one ()
+         else Eio.Domain_manager.run dm serve_one))
 
 (* Prefer Eio's io_uring backend, but fall back to epoll if io_uring is
    unavailable (e.g. denied by an enforcing SELinux policy inside a container,
@@ -270,14 +283,10 @@ let () =
           | Some s -> max 1 (Option.value ~default:256 (int_of_string_opt s))
           | None -> 256
         in
-        Some (Uri.of_string url, size)
+        Some (Db_pool.create ~max_size:size ~conninfo:url (), Eio.Semaphore.make size)
     | _ -> None
   in
   (* The runtime respects CPU affinity, including Docker's --cpuset-cpus. *)
   let domains = Domain.recommended_domain_count () in
-  let domains = match database with
-    | Some (_, budget) -> min domains budget
-    | None -> domains
-  in
   run_eio @@ fun env ->
   run_all env ~domains ~configs:(make_configs ()) ~database
