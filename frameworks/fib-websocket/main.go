@@ -1,12 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	fib "github.com/lesismal/fib"
+	"github.com/lesismal/fib/prefork"
 	"github.com/lesismal/fib/websocket"
 )
 
@@ -14,7 +13,7 @@ import (
 // upgrade on the engine's connections and then parses frames off the same read
 // buffer the event loop filled, so a message is echoed on the loop that read it
 // without a goroutine per connection. Anything that is not an upgrade gets 400.
-func main() {
+func run(ctx context.Context) error {
 	handler := websocket.NewHandler(websocket.HandlerFuncs{
 		// A message arrives whole, reassembled from its frames, and is valid
 		// only during the call; WriteMessage copies it into the send queue.
@@ -27,27 +26,23 @@ func main() {
 
 	config := fib.DefaultConfig()
 	config.Addr = ":8080"
-	// fib's default spreads the connections over one event loop per CPU
-	// (IOPollers), each running the rounds of the connections it owns itself.
-	// ReusePort has each loop accept its own connections too, on a socket of
-	// its own bound to :8080 with SO_REUSEPORT, instead of the engine's loop
-	// accepting every connection and waking the loop it hands it to.
-	// echo-ws-limited reconnects after every ten messages, and that one
-	// accepting loop held it near 95k connections/s, on 35 of the 64 CPUs.
-	config.ReusePort = true
 	engine, err := fib.Bind(config, handler)
 	if err != nil {
-		log.Fatalf("fib: bind: %v", err)
+		return err
 	}
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		<-stop
+		<-ctx.Done()
 		engine.Stop()
 	}()
+	return engine.Run()
+}
 
-	if err := engine.Run(); err != nil {
+// fib's prefork serves the entry from a process for every two CPUs, each with
+// two Ps and its own event loop, all listening on :8080 through SO_REUSEPORT
+// so that the kernel spreads the connections over them, as fiber's
+// EnablePrefork does with one P each.
+func main() {
+	if err := prefork.Run(prefork.Config{}, run); err != nil {
 		log.Fatalf("fib: %v", err)
 	}
 }

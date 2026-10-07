@@ -32,7 +32,7 @@ All of them run the same `fibhttp.HandlerFunc`, which takes a `*http.Request` an
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/pipeline` | GET | Returns `ok` (plain text) |
-| `/baseline11`, `/baseline2` | GET, POST | Sum of the integer query parameters, plus the body on POST |
+| `/baseline11`, `/baseline2` | GET, POST | `a + b` from the query, plus the body on POST |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m`, gzipped when asked for |
 | `/echo` | POST | Returns the request body verbatim |
 | `/delay/{ms}` | GET | Answers `ms` after waiting that long |
@@ -41,12 +41,24 @@ All of them run the same `fibhttp.HandlerFunc`, which takes a `*http.Request` an
 
 ## Notes
 
+- **Prefork.** `main` serves through fib's `prefork` package, as fiber's entry does through
+  `EnablePrefork`: a master process starts a child for every two CPUs, each with two Ps and a
+  heap and collector of its own, and every engine a child binds listens with `SO_REUSEPORT`, so
+  the children share the ports and the kernel spreads connections over them. Everything the
+  entry loads, the dataset and the database pool, is each child's own; the pool takes the
+  child's share of `DATABASE_MAX_CONN` (`prefork.Children()`). One process of 64 Ps spent most
+  of a request on the collector's shared work buffers and the heap lock: json-tls served 0.56M
+  requests a second that way and 0.87M from 32 children.
 - **Default configuration.** Every engine is built from `fib.DefaultConfig()` and every
   HTTP handler from fib's defaults; the only change is `DisableHTTP2` on 8081 and 9000,
-  which serve HTTP/1.1 alone.
-- fib has no router, so the handler switches on `r.URL.Path` itself. Query parameters come
-  from `r.URL.Query()`, and request bodies arrive read whole (Content-Length or chunked)
-  before the handler runs.
+  which serve HTTP/1.1 alone. In a child of two Ps fib's defaults serve each engine on its
+  own event loop, with its rounds on the worker pool.
+- fib has no router, so the handler switches on `r.URL.Path` itself. Query parameters are
+  read with `Context.Query`, which finds one without building `URL.Query`'s map, and request
+  bodies arrive read whole (Content-Length or chunked) before the handler runs, so
+  `Context.Body` hands them over without the copy `io.ReadAll` would make. fib's defaults
+  recycle each request's `*http.Request`, `Header`, `URL` and `Context` once its response is
+  finished; no handler keeps them past that.
 - **`tls_check`.** The 9000 listener chooses its certificate through
   `tls.Config.GetCertificate`, which reloads the pair when either file changes, so a renewed
   certificate is served without a restart; a pair caught halfway through being replaced does
@@ -54,19 +66,22 @@ All of them run the same `fibhttp.HandlerFunc`, which takes a `*http.Request` an
   crypto/tls issues session tickets, so every check in the section passes.
 - `/async-db` sizes its `pgx` pool from `DATABASE_MAX_CONN`, as the profile's standard rule
   asks, rather than from `pgxpool`'s CPU-count default. A failed query answers 500.
-- `/delay` does not hold a worker while it waits: the handler calls `Context.Retain`, which
-  keeps the response open past its return, and a `time.AfterFunc` timer responds and calls
-  `Release`. `/async-db` does the same around a goroutine running the query.
-- `/static` goes through `net/http`'s `ServeContent` with the `Context` as its
-  `ResponseWriter`, which is how fib documents serving files: on plaintext HTTP/1 the file
-  goes to the socket by `sendfile`. The file is opened on every request, so a replaced file
-  is served as it is on disk. The `.br`/`.gz` twin already on disk is chosen off
-  `Accept-Encoding`; nothing is compressed at runtime.
+- `/delay` waits in its handler, as Fiber's does in its connection's goroutine: fib's worker
+  pool grows for handlers that block. Retaining the request and answering from a
+  `time.AfterFunc` timer started a goroutine per request for the callback, and served 1.40M
+  requests a second against 1.63M on 64 CPUs. `/async-db` calls `Context.Retain`, which keeps
+  the response open past the handler's return, and answers from a goroutine running the query.
+- `/static` goes through fib's `http.FileCache`, which serves the files from memory and follows
+  the disk: an inotify watch on the directory tells it of a replaced file, its `.br`/`.gz`
+  twins included, at once, and it reads the file again for the next request, so no request
+  touches the disk. The twin already on disk is chosen off `Accept-Encoding`; nothing is
+  compressed at runtime. Each prefork child keeps its own. Opening the file on every request
+  instead served static-tls at 0.74M requests a second on 64 CPUs, against 1.17M, and
+  static-h2 at 0.53M against 1.04M.
 - **Compression** is fib's own middleware: `/json` and `/async-db` are wrapped with
   `middleware.Chain(handler, compress.New())` at its defaults, which gzips a JSON body of a
   kilobyte or more per request when `Accept-Encoding` takes it, and sends it as it is when the
-  client asks for nothing (`json-tls`, `json-h2c`). `/static` stays outside it: the middleware
-  sees each response whole, which on HTTP/1 would keep files off `sendfile`, and the compressed
+  client asks for nothing (`json-tls`, `json-h2c`). `/static` stays outside it: the compressed
   variants of the static files are already on disk.
 - **No gRPC.** fib's HTTP/2 serves plain requests, it has no gRPC layer.
 - **No `fortunes`.** fib has no template engine, and the profile asks entries without one to
