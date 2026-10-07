@@ -18,14 +18,16 @@ bind the range and limit parameters. Its synchronous calls run through
 connection budget, so waiting requests suspend their fibers. An unavailable
 database returns the required empty JSON result. Worker count follows CPU affinity.
 
-Handlers use HCS routing, query/body APIs, response constructors,
-`Plug.Compress`, and `Plug.Static.server`. JSON uses per-request simdjsont
-serialization, following [araara's JSON documentation](https://araara.ml/docs/simdjsont).
-The static mount adapter removes a redundant `Content-Length`: HCS 0.18.0's
-server adds its own, and duplicates break HTTP/2 responses.
+Handlers use HCS routing, request body/query APIs, response constructors, and
+`Plug.Compress` for JSON. JSON uses per-request simdjsont serialization,
+following [araara's JSON documentation](https://araara.ml/docs/simdjsont).
+The tuned static path selects disk-backed `.br` / `.gz` sidecars according to
+`Accept-Encoding` and reads the chosen file per request, so file replacements are
+reflected by the next response.
 
-Tuned mode raises connection capacity to 200,000 and sets
-`HCS_H2_MAX_STREAMS=64`.
+Tuned mode raises connection capacity to 200,000, sets `HCS_H2_MAX_STREAMS=64`,
+serves pre-compressed static sidecars, and trims a few hot-route allocations
+while keeping the same HCS router/request/response surface.
 
 Completeness declares routing, middleware and request as true, and response
 as false because the application invokes JSON serialization before

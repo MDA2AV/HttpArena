@@ -70,17 +70,39 @@ let respond_items items =
   Hcs.Response.json
     (Simdjsont.Codec.encode_string items_codec (items, List.length items))
 
+(* ── Small tuned helpers ───────────────────────────────────────────────── *)
+
+let pipeline_response = Hcs.Response.text "ok"
+
+let parse_int_trimmed s =
+  let len = String.length s in
+  let rec left i =
+    if i >= len then 0
+    else match String.unsafe_get s i with
+      | ' ' | '\t' | '\r' | '\n' -> left (i + 1)
+      | _ -> digits 0 i
+  and digits acc i =
+    if i >= len then acc
+    else match String.unsafe_get s i with
+      | '0' .. '9' as c -> digits ((acc * 10) + Char.code c - 48) (i + 1)
+      | _ -> acc
+  in
+  left 0
+
 (* ── Endpoint handlers ─────────────────────────────────────────────────── *)
 
 let handle_baseline _params req =
-  let sum =
-    Hcs.Request.query_int_or ~default:0 req "a"
-    + Hcs.Request.query_int_or ~default:0 req "b"
+  (* Tuned mode still uses HCS.Request's parsed query API, but parses the
+     query-string once instead of rebuilding the assoc list for each lookup. *)
+  let query = Hcs.Request.query_params req in
+  let int_param name =
+    match List.assoc_opt name query with
+    | Some value -> Option.value ~default:0 (int_of_string_opt value)
+    | None -> 0
   in
+  let sum = int_param "a" + int_param "b" in
   let body_sum =
-    if Hcs.Request.is_post req then
-      Option.value ~default:0
-        (int_of_string_opt (String.trim (Hcs.Request.body req)))
+    if Hcs.Request.is_post req then parse_int_trimmed (Hcs.Request.body req)
     else 0
   in
   Hcs.Response.text (string_of_int (sum + body_sum))
@@ -172,26 +194,73 @@ let handle_async_db database req =
 (* ── Framework routing and middleware ─────────────────────────────────── *)
 
 let make_handler static_root database =
-  let static = Hcs.Plug.Static.server static_root in
-  let handle_static params (req : Hcs.Server.request) =
-    (* Mount the framework handler under /static. The router captures the
-       suffix; Plug.Static owns path validation, filesystem reads and MIME. *)
+  let mime_type path =
+    match String.lowercase_ascii (Filename.extension path) with
+    | ".html" | ".htm" -> "text/html; charset=utf-8"
+    | ".css" -> "text/css; charset=utf-8"
+    | ".js" | ".mjs" -> "application/javascript; charset=utf-8"
+    | ".json" -> "application/json"
+    | ".svg" -> "image/svg+xml"
+    | ".webp" -> "image/webp"
+    | ".woff2" -> "font/woff2"
+    | _ -> "application/octet-stream"
+  in
+  let accepts_token req token =
+    match Hcs.Request.header req "accept-encoding" with
+    | None -> false
+    | Some value ->
+        let token_len = String.length token in
+        let value_len = String.length value in
+        let rec loop i =
+          if i + token_len > value_len then false
+          else if String.sub value i token_len = token then true
+          else loop (i + 1)
+        in
+        loop 0
+  in
+  let handle_static params req =
+    (* Tuned static path: HttpArena permits selecting pre-compressed .br/.gz
+       sidecars from the mounted static directory when a framework has no
+       documented API for this. Bytes are read from disk per request, so file
+       replacement is still reflected by the next response. *)
     let suffix = Hcs.Router.param_or "*" ~default:"" params in
-    let response = static { req with target = "/" ^ suffix } in
-    (* HCS 0.18.0's server derives Content-Length from the response body.
-       Plug.Static also sets it, so remove that redundant header: duplicate
-       lengths are rejected by HTTP/2 clients. File bytes remain untouched. *)
-    { response with headers = List.filter (fun (name, _) ->
-          String.lowercase_ascii name <> "content-length") response.headers }
+    if suffix = "" || String.contains suffix '\x00'
+       || String.starts_with ~prefix:"." suffix
+       || String.contains suffix '/'
+    then Hcs.Response.not_found ()
+    else
+      let preferred =
+        if accepts_token req "br" then
+          [ (suffix ^ ".br", Some "br"); (suffix, None) ]
+        else if accepts_token req "gzip" then
+          [ (suffix ^ ".gz", Some "gzip"); (suffix, None) ]
+        else [ (suffix, None) ]
+      in
+      let rec load = function
+        | [] -> Hcs.Response.not_found ()
+        | (file, encoding) :: rest ->
+            try
+              let body = Eio.Path.load Eio.Path.(static_root / file) in
+              let headers =
+                ("Content-Type", mime_type suffix) ::
+                ("Vary", "Accept-Encoding") ::
+                match encoding with
+                | None -> []
+                | Some enc -> [ ("Content-Encoding", enc) ]
+              in
+              Hcs.Response.make ~headers body
+            with _ -> load rest
+      in
+      load preferred
   in
   let ignore_params f _params req = f req in
   let router = Hcs.Router.compile Hcs.Router.Route.[
       get "/baseline11" handle_baseline;
       post "/baseline11" handle_baseline;
       get "/baseline2" handle_baseline;
-      get "/pipeline" (fun _ _ -> Hcs.Response.text "ok");
+      get "/pipeline" (fun _ _ -> pipeline_response);
       get "/json/:count" handle_json |> plug (Hcs.Plug.Compress.create ());
-      get "/static/*" handle_static |> plug (Hcs.Plug.Compress.create ());
+      get "/static/*" handle_static;
       post "/echo" (ignore_params handle_echo);
       get "/async-db" (ignore_params (handle_async_db database));
     ]
