@@ -15,7 +15,8 @@ WORKDIR /app
 
 # Install the released library, not an unpublished checkout. Refresh both
 # indexes so the base image's cached opam repository cannot hide new releases.
-RUN opam repo add araara git+https://tangled.org/gdiazlo.tngl.sh/repo \
+RUN opam repo set-url default git+https://github.com/ocaml/opam-repository.git \
+ && opam repo add araara git+https://tangled.org/gdiazlo.tngl.sh/repo \
  && opam update \
  && opam install -y --jobs=${OPAM_JOBS} "hcs.${HCS_VERSION}" "repodb.${REPODB_VERSION}" "repodb-postgresql.${REPODB_VERSION}" "simdjsont.${SIMDJSONT_VERSION}"
 
