@@ -14,7 +14,11 @@
   "repo": "https://github.com/ruroru/ring-http-exchange",
   "enabled": true,
   "tests": [
-    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "baseline", 
+    "async", 
+    "latency-1m", 
+    "latency-10k", 
+    "latency-500k-8cpu",
     "limited-conn",
     "json-comp",
     "8gbit",
@@ -22,5 +26,7 @@
     "async-db",
     "static-tls",
     "fortunes"
-  ]
+  ],
+  "maintainers": ["ruroru"]
+
 }
