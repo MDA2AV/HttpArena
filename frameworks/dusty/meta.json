@@ -18,7 +18,7 @@
     "pipelined",
     "limited-conn",
     "async",
-    "json-comp", "json-tls",
+    "json-comp", "json-tls", "static-tls",
     "8gbit",
     "async-db",
     "fortunes",
