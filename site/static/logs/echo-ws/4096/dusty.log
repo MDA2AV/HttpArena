@@ -1,4 +1,6 @@
 info(dusty): Listening on 0.0.0.0:8080
+info(dusty): Listening on 0.0.0.0:8081
+error(dusty): unhandled error after response headers were sent: error.EndOfStream (GET /ws)
 error(dusty): unhandled error after response headers were sent: error.EndOfStream (GET /ws)
 error(dusty): unhandled error after response headers were sent: error.EndOfStream (GET /ws)
 error(dusty): unhandled error after response headers were sent: error.EndOfStream (GET /ws)

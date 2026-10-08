@@ -1,20 +1,21 @@
 # HttpArena image for the mq-bridge-py (Python) entry.
 #
-# Installs the prebuilt mq_bridge_py wheel from PyPI and runs server.py on port
+# "mq-bridge-py" is only this entry's name: the PyPI package is `mq-bridge`
+# (imported as `mq_bridge`). Installs its prebuilt wheel and runs server.py on port
 # 8080. The wheel is abi3 (cp38+) manylinux2014, so it works on this base image
 # without compiling from source. Pin MQB_VERSION to a released version.
 FROM python:3.12-slim
 
-ARG MQB_VERSION=0.4.8
+ARG MQB_VERSION=0.4.17
 
 RUN groupadd --system appuser \
     && useradd --system --gid appuser --create-home --home-dir /home/appuser --shell /usr/sbin/nologin appuser \
     && mkdir -p /app \
     && chown -R appuser:appuser /app
-# psycopg[binary] powers the DB-backed profiles (/async-db, /fortunes, /crud); absent
+# psycopg[binary] powers the DB-backed profiles (/async-db, /fortunes); absent
 # DATABASE_URL they are unused. Jinja2 renders /fortunes — the fortunes profile
 # requires a real template engine, not string concatenation in the handler.
-RUN pip install --no-cache-dir "mq-bridge-py==${MQB_VERSION}" "psycopg[binary]>=3.1" "psycopg_pool>=3.2" "redis>=5.2" "jinja2>=3.1"
+RUN pip install --no-cache-dir "mq-bridge==${MQB_VERSION}" "psycopg[binary]>=3.1" "psycopg_pool>=3.2" "jinja2>=3.1"
 WORKDIR /app
 COPY --chown=appuser:appuser server.py /app/server.py
 # The fortunes template is a separate artifact, as the profile requires.

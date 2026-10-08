@@ -1,8 +1,4 @@
-github.com/lesismal/fib v0.0.0-20260926064024-9dec8fc9752b h1:yynWEMzqDsHKCqp+DPyJf9aNfhol/GsmoUejHWpLjZQ=
-github.com/lesismal/fib v0.0.0-20260926064024-9dec8fc9752b/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
-github.com/lesismal/fib v0.0.0-20260926141701-7d159937d058 h1:ZMJ+QBL9sKIizaDHzDPDTgT6QX/Z/wGhvqPI1HjMg+4=
-github.com/lesismal/fib v0.0.0-20260926141701-7d159937d058/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
-github.com/lesismal/fib v1.0.0 h1:L+qfSMP/DS1c2D1kS7tmLUaA0XewK7JHr9pnQZKLksg=
-github.com/lesismal/fib v1.0.0/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
-github.com/lesismal/fib v1.0.1-0.20260928072455-b96ecc517f38 h1:QvAuMXxX1Vc+g/OQigotK9fhqvkj1V6JlgKU8htVc/0=
-github.com/lesismal/fib v1.0.1-0.20260928072455-b96ecc517f38/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
+github.com/lesismal/fib v1.0.1-0.20261007151532-fddcb68dbe15 h1:OvV4pwNk1lJ14QB1WHD1SZE0lLGmZiBB8fOnjym/lek=
+github.com/lesismal/fib v1.0.1-0.20261007151532-fddcb68dbe15/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=
+github.com/lesismal/fib v1.0.1-0.20261007162414-12c8367fcc93 h1:5NRW5RQp+fvpbDcNd0N1u+aRbJEJ9rxWaEr4TXOk5fs=
+github.com/lesismal/fib v1.0.1-0.20261007162414-12c8367fcc93/go.mod h1:ECyKMzlRaSlOWKBorTaEushOJZclLtclDlfONJxBB4U=

@@ -8,6 +8,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Network)
 find_package(Cutelyst5Qt6 5.1.0 REQUIRED)
+find_package(ASql1Qt6 REQUIRED)
+find_package(Cutelee6Qt6 REQUIRED)
 
 add_executable(server
   main.cpp
@@ -22,4 +24,9 @@ target_link_libraries(server PRIVATE
   Qt6::Network
   Cutelyst::Core
   Cutelyst::Server
+  Cutelyst::View::Cutelee
+  ASql::Core
+  ASql::Pg
 )
+
+# fortunes.html is loaded from CUTELEE_INCLUDE_PATH or /templates at runtime.

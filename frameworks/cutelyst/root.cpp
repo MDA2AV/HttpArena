@@ -3,14 +3,26 @@
 #include <Cutelyst/Context>
 #include <Cutelyst/Request>
 #include <Cutelyst/Response>
+#include <Cutelyst/View>
+
+#include <acoroexpected.h>
+#include <apool.h>
+#include <apreparedquery.h>
+#include <aresult.h>
 
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTimer>
+#include <QVariantList>
+#include <QVariantMap>
+#include <QVector>
 
+#include <algorithm>
 #include <cstdlib>
 
+using namespace ASql;
 using namespace Qt::StringLiterals;
 
 namespace {
@@ -27,6 +39,111 @@ qint64 toLong(const QByteArray &value)
     bool ok = false;
     const qint64 n = value.toLongLong(&ok);
     return ok ? n : 0;
+}
+
+int queryInt(Context *c, const QString &key, int defaultValue)
+{
+    const QString raw = c->req()->queryParam(key);
+    if (raw.isEmpty()) {
+        return defaultValue;
+    }
+    bool ok = false;
+    const int n = raw.toInt(&ok);
+    return ok ? n : defaultValue;
+}
+
+void emptyAsyncDb(Context *c)
+{
+    c->res()->setJsonObjectBody({
+        {u"items"_s, QJsonArray{}},
+        {u"count"_s, 0},
+    });
+}
+
+ACoroTerminator runAsyncDb(Context *c, ASync async, int min, int max, int limit)
+{
+    Q_UNUSED(async);
+
+    auto result = co_await APool::exec(
+        APreparedQueryLiteral(
+            u"SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count "
+            u"FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3"),
+        QVariantList{min, max, limit},
+        c);
+
+    if (!result) {
+        emptyAsyncDb(c);
+        co_return;
+    }
+
+    QJsonArray items;
+    for (const auto &row : *result) {
+        QJsonObject item;
+        item.insert(u"id"_s, row[0].toInt());
+        item.insert(u"name"_s, row[1].toString());
+        item.insert(u"category"_s, row[2].toString());
+        item.insert(u"price"_s, row[3].toInt());
+        item.insert(u"quantity"_s, row[4].toInt());
+        item.insert(u"active"_s, row[5].toBool());
+        item.insert(u"tags"_s, row[6].toJsonValue());
+        item.insert(u"rating"_s,
+                    QJsonObject{
+                        {u"score"_s, row[7].toInt()},
+                        {u"count"_s, row[8].toInt()},
+                    });
+        items.append(item);
+    }
+
+    c->res()->setJsonObjectBody({
+        {u"items"_s, items},
+        {u"count"_s, items.size()},
+    });
+}
+
+struct FortuneRow {
+    int id = 0;
+    QString message;
+};
+
+ACoroTerminator runFortunes(Context *c, ASync async)
+{
+    Q_UNUSED(async);
+
+    auto result = co_await APool::exec(
+        APreparedQueryLiteral(u"SELECT id, message FROM fortune"), c);
+
+    if (!result) {
+        c->res()->setStatus(Response::InternalServerError);
+        co_return;
+    }
+
+    QVector<FortuneRow> rows;
+    rows.reserve(result->size() + 1);
+    for (const auto &row : *result) {
+        rows.append(FortuneRow{row[0].toInt(), row[1].toString()});
+    }
+    rows.append(FortuneRow{0, u"Additional fortune added at request time."_s});
+
+    std::sort(rows.begin(), rows.end(), [](const FortuneRow &a, const FortuneRow &b) {
+        return a.message < b.message;
+    });
+
+    QVariantList fortunes;
+    fortunes.reserve(rows.size());
+    for (const FortuneRow &row : rows) {
+        fortunes.append(QVariantMap{
+            {u"id"_s, row.id},
+            {u"message"_s, row.message},
+        });
+    }
+
+    c->setStash(u"template"_s, u"fortunes.html"_s);
+    c->setStash(u"fortunes"_s, fortunes);
+
+    if (View *view = c->view()) {
+        view->execute(c);
+    }
+    c->response()->setContentType("text/html; charset=utf-8"_ba);
 }
 
 } // namespace
@@ -123,4 +240,23 @@ void Root::echo(Context *c)
     }
     c->res()->setContentType("application/octet-stream"_ba);
     c->res()->setBody(data);
+}
+
+void Root::async_db(Context *c)
+{
+    int min = queryInt(c, u"min"_s, 10);
+    int max = queryInt(c, u"max"_s, 50);
+    int limit = queryInt(c, u"limit"_s, 50);
+    if (limit < 1) {
+        limit = 1;
+    } else if (limit > 50) {
+        limit = 50;
+    }
+
+    runAsyncDb(c, ASync(c), min, max, limit);
+}
+
+void Root::fortunes(Context *c)
+{
+    runFortunes(c, ASync(c));
 }

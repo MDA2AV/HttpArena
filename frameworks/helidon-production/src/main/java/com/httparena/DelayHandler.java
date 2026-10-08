@@ -16,6 +16,6 @@ final class DelayHandler implements Handler {
         Thread.sleep(delay);
 
         res.header(CONTENT_TYPE_TEXT_PLAIN);
-        res.send(Integer.toString(delay).getBytes(StandardCharsets.US_ASCII));
+        res.send(Integer.toString(delay).getBytes(StandardCharsets.ISO_8859_1));
     }
 }
