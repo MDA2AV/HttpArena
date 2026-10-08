@@ -1,0 +1,37 @@
+{
+  "display_name": "zinc",
+  "language": "Go",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "net/http",
+  "description": "Zinc on the Go net/http server, default configuration. Routing and path/query values through the Zinc API, encoding/json via c.JSON, JSON bodies through c.Bind().JSON, gzip through the Zinc compress middleware.",
+  "repo": "https://github.com/gozinc/zinc",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c"
+  ],
+  "maintainers": [
+    "0mjs"
+  ]
+}

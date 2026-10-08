@@ -15,8 +15,10 @@
            (io.vertx.sqlclient PoolOptions)
            (java.io ByteArrayOutputStream FileInputStream InputStream OutputStream)
            (java.net URI)
-           (java.security KeyStore PEMDecoder PrivateKey)
+           (java.security KeyFactory KeyStore PrivateKey)
            (java.security.cert Certificate CertificateFactory)
+           (java.security.spec PKCS8EncodedKeySpec)
+           (java.util Base64)
            (java.util.concurrent Executors)
            (java.util.zip GZIPOutputStream))
   (:gen-class))
@@ -200,11 +202,28 @@
    :tags     (json/read-value (str (:tags row)))
    :rating   {:score (:rating_score row) :count (:rating_count row)}})
 
+(defn- pem->der ^bytes [^String pem]
+  (let [body (-> pem
+                 (str/replace #"-----BEGIN [^-]+-----" "")
+                 (str/replace #"-----END [^-]+-----" "")
+                 (str/replace #"\s" ""))]
+    (.decode (Base64/getDecoder) body)))
+
+(defn- der->private-key ^PrivateKey [^bytes der]
+  (let [spec (PKCS8EncodedKeySpec. der)]
+    (loop [algos ["RSA" "EC" "DSA" "EdDSA"]]
+      (if-let [algo (first algos)]
+        (or (try
+              (.generatePrivate (KeyFactory/getInstance ^String algo) spec)
+              (catch Exception _ nil))
+            (recur (rest algos)))
+        (throw (ex-info "Unsupported private key algorithm" {}))))))
+
 (defn- pem->keystore [^String cert-path ^String key-path]
   (let [certs (with-open [in (FileInputStream. cert-path)]
                 (.generateCertificates (CertificateFactory/getInstance "X.509") in))
         cert-array (into-array Certificate certs)
-        private-key ^PrivateKey (.decode (PEMDecoder/of) ^String (slurp key-path) PrivateKey)
+        private-key (der->private-key (pem->der (slurp key-path)))
         password (char-array 0)]
     (doto (KeyStore/getInstance "PKCS12")
       (.load nil password)

@@ -1,0 +1,5 @@
+{
+  "framework": "vanilla-epoll",
+  "tls": "pass",
+  "check": "none"
+}

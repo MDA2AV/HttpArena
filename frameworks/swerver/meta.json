@@ -16,6 +16,7 @@
   "tests": [
     "baseline", "latency-1m", "latency-10k",
     "pipelined",
+    "async",
     "limited-conn",
     "json-tls",
     "8gbit",

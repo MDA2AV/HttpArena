@@ -1,0 +1,13 @@
+{
+  "display_name": "swerverts",
+  "language": "TS",
+  "type": "experimental",
+  "mode": "standard",
+  "completeness": { "routing": true, "middleware": true, "request": true, "response": true },
+  "engine": "swerver",
+  "description": "TypeScript route handlers running in-process on the swerver (Zig) engine via an FFI park/resume bridge: a matched request is handed from the reactor to a Bun handler and its response taken back, with no socket hop. The engine installs as a platform prebuilt (no build step) and fans out one worker per core over SO_REUSEPORT. HTTP/1.1 only for now; the prebuilt is built without the native-only TLS/HTTP2/HTTP3 flags.",
+  "repo": "https://github.com/justinGrosvenor/swerver-ts",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn"],
+  "maintainers": ["justinGrosvenor"]
+}

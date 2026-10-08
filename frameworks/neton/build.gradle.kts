@@ -1,16 +1,15 @@
 plugins {
-    kotlin("multiplatform") version "2.4.20-RC3"
-    kotlin("plugin.serialization") version "2.4.20-RC3"
+    kotlin("multiplatform") version "2.4.0"
+    kotlin("plugin.serialization") version "2.4.0"
 }
 
 repositories {
     mavenCentral()
 }
 
-// One published coordinate. `neton` brings core + logging + http + routing and
-// the hyper4k engine, so the arena entry builds from Maven exactly like any
-// other application would — no source checkout, no composite build.
-val netonVersion = "1.0.0-beta17"
+// Same framework release and business path in both entries; only the engine differs.
+// All dependencies resolve from Maven Central, without local repositories or source substitution.
+val netonVersion = "1.0.0-beta22"
 
 kotlin {
     // The arena builds linuxX64; macosArm64 is here so the endpoints can be
@@ -18,10 +17,11 @@ kotlin {
     listOf(macosArm64(), linuxX64(), linuxArm64()).forEach { target ->
         target.binaries.executable {
             entryPoint = "main"
-            // hyper4k and sqlx4k (neton-database) are each a Rust static library, so
-            // both bundle the Rust runtime — linking both defines rust_eh_personality
-            // (and friends) twice. The copies are identical; take the first.
-            linkerOpts("--allow-multiple-definition")
+            // Preserve the existing Linux link policy in both entries for this comparison.
+            // The Hyper4k entry links Rust-backed engine and database static libraries.
+            if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
+                linkerOpts("--allow-multiple-definition")
+            }
         }
     }
 
@@ -32,7 +32,11 @@ kotlin {
         val nativeMain by creating {
             dependsOn(commonMain.get())
             dependencies {
-                implementation("com.netonstream:neton:$netonVersion")
+                implementation("com.netonstream:neton-core:$netonVersion")
+                implementation("com.netonstream:neton-logging:$netonVersion")
+                implementation("com.netonstream:neton-http:$netonVersion")
+                implementation("com.netonstream:neton-routing:$netonVersion")
+                implementation("com.netonstream:neton-http-netonstream:$netonVersion")
                 // async-db / fortunes: async Postgres via sqlx4k.
                 implementation("com.netonstream:neton-database:$netonVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")

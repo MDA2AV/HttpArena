@@ -1,28 +1,18 @@
 {
   "display_name": "aleph",
   "language": "Clojure",
-  "type": "emerging",
+  "type": "engine",
   "mode": "standard",
-  "completeness": {
-    "routing": true,
-    "middleware": true,
-    "request": true,
-    "response": true
-  },
   "engine": "netty",
-  "description": "",
+  "description": "Minimal Aleph HTTP engine benchmark with HTTP/1.1, TLS, HTTP/2, H2C, and WebSocket support.",
   "repo": "https://github.com/clj-commons/aleph",
   "enabled": true,
+  "tls_check": false,
   "tests": [
-    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
-    "baseline-h2", "static-h2",
-    "baseline-h2c", "json-h2c",
-    "limited-conn",
-    "json-comp",
-    "8gbit",
-    "json-tls",
-    "async-db",
-    "static-tls",
-    "fortunes"
+    "baseline", "pipelined", "limited-conn", "async",
+    "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "json-comp", "json-tls", "8gbit", "static-tls",
+    "baseline-h2", "static-h2", "baseline-h2c", "json-h2c",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ]
 }

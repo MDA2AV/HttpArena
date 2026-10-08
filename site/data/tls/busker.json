@@ -1,0 +1,5 @@
+{
+  "framework": "busker",
+  "tls": "pass",
+  "check": "none"
+}

@@ -1,0 +1,103 @@
+# production-stack - nginx edge + Redis + the shared authsvc + the vanilla-epoll
+# image, on the reference entry's 64-CPU split (the spec's tuning note: the best
+# split has edge, authsvc and server near their ceilings at once):
+#
+#   edge     nginx     30 logical  TLS + h2, static from disk, auth_request
+#   cache    redis      2 logical  the stack's cache service
+#   authsvc  shared     8 logical  HMAC-SHA256 JWT check on every /api/* call
+#   server   vanilla   24 logical  /public/*, /api/* with in-process cache-aside
+#
+# Override with EDGE_CPUSET / CACHE_CPUSET / AUTH_CPUSET / SERVER_CPUSET.
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "${EDGE_CPUSET:-0-14,64-78}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      authsvc:
+        condition: service_healthy
+      server:
+        condition: service_started
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "${CACHE_CPUSET:-15,79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "${AUTH_CPUSET:-16-19,80-83}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+    # the sidecar's own /_health, probed with the image's busybox wget
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/_health"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  server:
+    build:
+      context: ../vanilla-epoll
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      # Postgres allows 256; split evenly across the server's workers
+      - DATABASE_MAX_CONN=256
+      - REDIS_URL=redis://127.0.0.1:6379
+      - DATASET_PATH=/data/dataset.json
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      # the image mounts its static handler at boot; the edge serves /static here
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      cache:
+        condition: service_healthy

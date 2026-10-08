@@ -1,0 +1,16 @@
+{
+  "display_name": "fib",
+  "language": "Go",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "fib",
+  "description": "fib (Fast In Balance) WebSocket echo through its websocket package: the RFC 6455 handshake and frame parser run as a connection handler on fib's edge-triggered epoll event loop, in each of the children fib's prefork package starts, one for every two CPUs with two Ps each, all listening on :8080 with SO_REUSEPORT, so each message is parsed from the buffer its loop read into and echoed with WriteMessage on that loop, with no goroutine per connection. Default configuration throughout.",
+  "repo": "https://github.com/lesismal/fib",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": ["lesismal"]
+}

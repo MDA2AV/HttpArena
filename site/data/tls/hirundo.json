@@ -1,0 +1,5 @@
+{
+  "framework": "hirundo",
+  "tls": "pass",
+  "check": "none"
+}

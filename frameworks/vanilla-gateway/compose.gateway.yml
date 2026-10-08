@@ -1,0 +1,49 @@
+# gateway-64 - stock nginx (TLS + h2 on 8443) in front of the vanilla-epoll
+# image, which serves /baseline2, /json and /async-db on 8080. nginx serves
+# /static/* from disk and forwards the rest over loopback HTTP/1.1 through a
+# keepalive pool.
+#
+# The split follows the nginx entries that lead this profile: terminating TLS
+# under multiplexed h2 is the heavier half, so the edge gets 20 cores against
+# the server's 12. Sweep it with PROXY_CPUSET / SERVER_CPUSET.
+services:
+  proxy:
+    build:
+      context: ./proxy-nginx
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-19,64-83}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ../vanilla-epoll
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      # Postgres allows 256; split evenly across the server's workers
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      # the image also mounts its static handler at boot; nginx serves /static here
+      - ${DATA_DIR}/static:/data/static:ro
