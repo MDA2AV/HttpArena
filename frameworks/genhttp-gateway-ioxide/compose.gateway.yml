@@ -23,8 +23,11 @@ services:
     volumes:
       - ${CERTS_DIR}:/app/certs:ro
       - ${DATA_DIR}/static:/data/static:ro
+    # start only once the server answers: validation's first proxied request
+    # (/json/50) otherwise races the server's startup and gets a 502
     depends_on:
-      - server
+      server:
+        condition: service_healthy
 
   server:
     build:
@@ -47,3 +50,11 @@ services:
     # /static is not mounted on the server at all.
     volumes:
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    # the runtime image has no curl, so speak HTTP/1.1 through bash's /dev/tcp
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /json/1 HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && head -c 12 <&3 | grep -q ' 200'"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
