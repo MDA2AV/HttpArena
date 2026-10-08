@@ -692,9 +692,23 @@
       "response": true
     }
   },
+  "genhttp-gateway-ioxide": {
+    "dir": "genhttp-gateway-ioxide",
+    "description": "GenHTTP end to end on the ioxide io_uring engine: the published GenHTTP Gateway image (genhttp/gateway, engine: ioxide) terminates TLS + h2 (gateway-64) and QUIC + h3 (gateway-h3) on 8443, serves /static/* from disk and forwards /baseline2, /json and /async-db over loopback HTTP/1.1 through GenHTTP's reverse proxy to the genhttp-ioxide image, unchanged (same Dockerfile), which compresses /json itself when the edge forwards Accept-Encoding.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP.Gateway",
+    "type": "emerging",
+    "engine": "ioxide",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "genhttp-ioxide": {
     "dir": "genhttp-ioxide",
-    "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP 11 preview 24 packages, which carry the merged ioxide engine branch (PR #887): TLS is terminated in the engine itself, with HTTP/2 and HTTP/3: :8080 is HTTP/1.1, :8082 h2c, :8081 HTTP/1.1 over TLS, and :8443 serves HTTP/1.1 and HTTP/2 over TCP plus HTTP/3 over QUIC on the same port. Static is served by IoxideFiles, which reads bodies positionally off the io_uring ring through a per-reactor descriptor snapshot; responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool).",
+    "description": "GenHTTP 11 on .NET 11 on a custom io_uring server engine (the ioxide runtime) instead of the default socket engine. Built from the GenHTTP 11.0.5 packages on ioxide 0.15.251: TLS is terminated in the engine itself, with HTTP/2 and HTTP/3: :8080 is HTTP/1.1, :8082 h2c, :8081 HTTP/1.1 over TLS, and :8443 serves HTTP/1.1 and HTTP/2 over TCP plus HTTP/3 over QUIC on the same port. Static is served by IoxideFiles, which reads bodies positionally off the io_uring ring through a per-reactor descriptor snapshot; responses go through GenHTTP's own routing + serialization; Postgres rides ioxide.pg (per-reactor ring-native pool).",
     "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
     "type": "emerging",
     "engine": "ioxide",
