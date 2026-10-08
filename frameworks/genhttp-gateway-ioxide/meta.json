@@ -1,0 +1,21 @@
+{
+  "display_name": "genhttp-gateway-ioxide",
+  "language": "C#",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "ioxide",
+  "description": "GenHTTP end to end on the ioxide io_uring engine: the published GenHTTP Gateway image (genhttp/gateway, engine: ioxide) terminates TLS + h2 (gateway-64) and QUIC + h3 (gateway-h3) on 8443, serves /static/* from disk and forwards /baseline2, /json and /async-db over loopback HTTP/1.1 through GenHTTP's reverse proxy to the genhttp-ioxide image, unchanged (same Dockerfile), which compresses /json itself when the edge forwards Accept-Encoding.",
+  "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP.Gateway",
+  "enabled": true,
+  "tests": [
+    "gateway-64",
+    "gateway-h3"
+  ],
+  "maintainers": []
+}

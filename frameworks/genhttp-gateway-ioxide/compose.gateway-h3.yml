@@ -1,0 +1,42 @@
+# gateway-h3 - same stack as compose.gateway.yml, but the gateway also serves
+# HTTP/3 over QUIC on UDP 8443 (ioxide terminates QUIC via ngtcp2, loading the
+# certificate from the PEM files). The upstream hop stays loopback HTTP/1.1.
+services:
+  proxy:
+    build:
+      context: ./proxy
+      args:
+        CONFIG: gateway-h3.yaml
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/app/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ../genhttp-ioxide
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

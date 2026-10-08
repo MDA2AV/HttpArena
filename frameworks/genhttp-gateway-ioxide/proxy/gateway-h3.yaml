@@ -1,0 +1,34 @@
+# gateway-h3: same as gateway.yaml, plus HTTP/3 over QUIC on UDP 8443.
+engine: ioxide
+
+ports:
+  # the gateway always opens a plain port; keep it off the server's 8080-8082
+  plain: 8000
+  secure: 8443
+
+protocols:
+  - http1
+  - http2
+  - http3
+
+hosts:
+
+  # matches every host name, so h2load's "localhost" lands here
+  any:
+
+    # ${CERTS_DIR} is mounted as /app/certs; ioxide needs PEM files for HTTP/3
+    security:
+      certificate:
+        pem: server.crt
+        key: server.key
+
+    # /baseline2, /json/{count}, /async-db -> genhttp-ioxide over loopback HTTP/1.1
+    default:
+      destination: http://127.0.0.1:8080/
+
+    routes:
+
+      # served by the gateway itself from ${DATA_DIR}/static
+      static:
+        content:
+          directory: /data/static/

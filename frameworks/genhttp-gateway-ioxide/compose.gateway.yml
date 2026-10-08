@@ -1,0 +1,49 @@
+# gateway-64 - the GenHTTP Gateway on the ioxide engine (TLS + h2 on 8443) in
+# front of the genhttp-ioxide image, which serves /baseline2, /json and /async-db
+# on 8080. The gateway serves /static/* from disk and forwards the rest over
+# loopback HTTP/1.1 through GenHTTP's reverse proxy (pooled HttpClient).
+#
+# Both halves are GenHTTP on io_uring, so the split starts even. Sweep it with
+# PROXY_CPUSET / SERVER_CPUSET.
+services:
+  proxy:
+    build:
+      context: ./proxy
+      args:
+        CONFIG: gateway.yaml
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/app/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ../genhttp-ioxide
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    # No certificates and no static directory: the image then only opens its
+    # plaintext listeners (8080, 8082), leaving 8443 to the gateway, and
+    # /static is not mounted on the server at all.
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
