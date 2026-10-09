@@ -17,27 +17,50 @@
 //! 10,000 closes the rest at accept (ADR 0265). The deploying guide is where
 //! that knob is documented, which is what standard mode asks for.
 //!
-//! **Two listeners, and the second is why this file needs a recent nilo.**
-//! 8080 carries cleartext and 8081 carries TLS, from one process, because
-//! the board restarts the container per profile and tells the binary
-//! nothing about which profile is coming (ADR 0289). The certificate is the
-//! board's, mounted at `/certs`, and its paths are overridable the way the
-//! `json-tls` guidelines say frameworks usually do it.
+//! **Four listeners, from one process**, because the board restarts the
+//! container per profile and tells the binary nothing about which profile is
+//! coming (ADR 213). 8080 is cleartext HTTP/1.1, and also h2c for the gRPC
+//! profiles: a build with `.http2 = true` tells an HTTP/2 connection from an
+//! HTTP/1.1 one by its first bytes (ADR 259, ADR 220). 8081 is HTTP/1.1 over
+//! TLS. 8082 is h2c with prior knowledge. 8443 is HTTP/2 over TLS, chosen by
+//! ALPN. They share one route table, so `/baseline2`, `/json/{count}` and
+//! `/static/*` answer on every port. The certificate is the board's, mounted
+//! at `/certs`, and its paths are overridable the way the `json-tls`
+//! guidelines say frameworks usually do it.
 //!
 //! **`-Dcpu` is load-bearing here and the Dockerfile says so.** Zig's
 //! `x86_64_v3` carries no `aes` and no `pclmul`, and `std.crypto`'s
-//! AES-256-GCM without them is seventy times slower — enough that `8gbit`
+//! AES-256-GCM without them is seventy times slower, enough that `8gbit`
 //! delivers 39% of its offered rate at a six-second p99. The measured run
 //! is in `bench/result/http.md`.
 //!
+//! **Scheduling is zio's default here, not nilo's.** nilo builds zio with
+//! `.pinned` (a connection stays on the thread it was dealt to), and says an
+//! application's own `zio_options` can override it. This entry does, below,
+//! with `.work_stealing`. See the comment on `zio_options`.
+//!
 //! Profiles nilo does not subscribe to, and why: `fortunes` in standard
-//! mode needs a template engine, refused on the record (ADR 0028), and so
-//! are the HTTP/2, HTTP/3 and gRPC profiles.
+//! mode needs a template engine, refused on the record (README, "What it won't do"), and so is
+//! HTTP/3. The gRPC profiles are unary only; the streaming ones are not
+//! served (ADR 220).
 
 const std = @import("std");
 const nilo = @import("nilo_http");
 const sql = @import("nilo_sql");
+const zio = @import("zio");
 const fail = nilo.fail;
+
+/// zio's scheduling, read by zio from the root module the way std reads
+/// `std_options`. nilo builds its own zio `.pinned` (ADR 199), so a task never
+/// leaves the thread it was spawned on. This entry asks for `.work_stealing`,
+/// which is zio's own default, as a measured hypothesis and not a tuning
+/// claim: on the board's `async-db` profile nilo read 57k req/s at 830% CPU
+/// where dusty, also on zio and running `.work_stealing`, read 290k at 4,606%.
+/// A pinned fiber that waits on Postgres cannot be picked up by an idle
+/// thread; a stolen one can. Whether that is the gap is what this run on the
+/// board's 64 cores is for. Every other profile is expected to move little,
+/// and the board will say if one does not.
+pub const zio_options: zio.Options = .{ .scheduling = .work_stealing };
 
 pub const std_options = nilo.std_options;
 pub const std_options_debug_io = nilo.debug_io;
@@ -194,14 +217,15 @@ fn noDb() Listing {
     return nothing;
 }
 
-// ---- json-comp, json-tls ----
+// ---- json-comp, json-tls, json-h2c ----
 //
 // `GET /json/{count}?m={multiplier}` answers the first `count` items of the
 // board's 50-item dataset with `total = price * quantity * m` added to each,
-// wrapped in `{items, count}`. The same route serves both profiles: over
+// wrapped in `{items, count}`. The same route serves all three profiles: over
 // 8081 with TLS and no `Accept-Encoding` it is `json-tls`, and over 8080
 // with `Accept-Encoding: gzip, br` it is `json-comp`, where the answer goes
-// out gzipped because `app.compress` is on.
+// out gzipped because `app.compress` is on, with libdeflate because the
+// build asked for it (ADR 248). Over 8082 with HTTP/2 it is `json-h2c`.
 //
 // The dataset is read once at startup and the arithmetic is done per
 // request, which is what both profiles' anti-cheat rules require: a
@@ -288,6 +312,54 @@ fn echoBody(c: *nilo.Ctx) !void {
     try c.send(200, "application/octet-stream", body.view());
 }
 
+// ---- baseline-h2, baseline-h2c ----
+//
+// `GET /baseline2?a=1&b=1` answers the sum as `text/plain`, the same
+// workload as `/baseline11` over HTTP/2: on 8443 with TLS and ALPN, and on
+// 8082 as h2c with prior knowledge. It is the same function as the HTTP/1.1
+// route, because the protocol is the listener's business and not the
+// handler's.
+
+// ---- static-h2 ----
+//
+// `GET /static/{file}` for the twenty files in `/data/static`, over 8443.
+// `reload = true` is what the profile's rule asks for: the cache must follow
+// the disk, "replace a file and the next response must carry the new bytes",
+// and nilo's default holds the directory in memory from startup. With it on,
+// every file is opened per request (ADR 009), which costs the profile the
+// gzipped copy `app.static` would otherwise have made at load. Compression is
+// optional there, and the pre-compressed `.br` and `.gz` files on disk are
+// not selected: nilo has no API for that, and selecting them by hand is
+// what standard mode does not allow.
+
+// ---- unary-grpc, unary-grpc-tls ----
+//
+// `benchmark.BenchmarkService/GetSum`, from `requests/benchmark.proto`:
+// `SumRequest{a, b}` in, `SumReply{result}` out, as a unary call over h2c on
+// 8080 and over h2 with TLS on 8443. The service is a struct and a method is
+// a function from a message to a message (ADR 258), so the call is an
+// ordinary route: it takes the message, nilo frames the reply and sends
+// `grpc-status` as a trailer.
+
+const SumRequest = struct {
+    pub const wire = .{ .a = 1, .b = 2 };
+    a: i32 = 0,
+    b: i32 = 0,
+};
+
+const SumReply = struct {
+    pub const wire = .{ .result = 1 };
+    result: i32 = 0,
+};
+
+const BenchmarkService = struct {
+    pub const nilo_service = "benchmark.BenchmarkService";
+
+    pub fn getSum(in: SumRequest) SumReply {
+        return .{ .result = in.a +% in.b };
+    }
+};
+
 // ---- echo-ws ----
 //
 // `/ws` upgrades and echoes every message back with the opcode it arrived
@@ -337,10 +409,22 @@ pub fn main(init: std.process.Init) !void {
 
     try app.get("/baseline11", baselineGet);
     try app.post("/baseline11", baselinePost);
+    try app.get("/baseline2", baselineGet);
     try app.get("/pipeline", pipeline);
     try app.get("/delay/:ms", delay);
     try app.get("/ws", ws);
     try app.post("/echo", echoBody);
+    try app.rpc(BenchmarkService);
+
+    // The board mounts `/data/static` for the static profiles. A developer
+    // running this by hand from the repository does not have it, and the
+    // other profiles should not die for want of it.
+    const static_dir = env.getPosix("STATIC_DIR") orelse "/data/static";
+    if (readable(gpa, static_dir)) {
+        try app.staticWith("/static", static_dir, .{ .reload = true });
+    } else {
+        std.log.warn("no static directory at \"{s}\", so /static is a 404: static-h2 cannot be served.", .{static_dir});
+    }
 
     // The 50-item dataset the board mounts. Both `/json` profiles need it,
     // and a container without it should say so once here rather than answer
@@ -393,40 +477,46 @@ pub fn main(init: std.process.Init) !void {
         try app.get("/async-db", noDb);
     }
 
-    // No logger, for the reason `bench/main.zig` gives: a line per request
-    // would measure the logger. `max_connections` is the one setting off
-    // its default, and the header comment says why.
-    // 8081 with TLS beside 8080 in cleartext, which `json-tls` and `8gbit`
-    // both want while the other nine profiles want the plain one (ADR 0289).
-    // ALPN advertises `http/1.1` only, which is what those profiles ask for
-    // and what nilo's TLS listener does.
+    // 8080 carries HTTP/1.1 and h2c (gRPC); the `also` listeners are 8082
+    // (h2c, nothing else on it), 8081 (TLS, which `json-tls` and `8gbit` use
+    // and which advertises `http/1.1` when a client offers only that) and
+    // 8443 (TLS, `h2` first by ALPN). In a build with `.http2 = true` a TLS
+    // listener offers both by ALPN and serves what the client chose, so the
+    // two TLS ports differ only in who connects to them.
     const cert = env.getPosix("TLS_CERT") orelse "/certs/server.crt";
     const key = env.getPosix("TLS_KEY") orelse "/certs/server.key";
-    const secure: []const nilo.Options.Listener = if (readable(gpa, cert) and readable(gpa, key))
-        &.{.{ .address = "0.0.0.0", .port = 8081, .tls = .{ .cert = cert, .key = key } }}
-    else secure: {
+    var also: [3]nilo.Options.Listener = undefined;
+    var n_also: usize = 0;
+    also[n_also] = .{ .address = "0.0.0.0", .port = 8082 };
+    n_also += 1;
+    if (readable(gpa, cert) and readable(gpa, key)) {
+        also[n_also] = .{ .address = "0.0.0.0", .port = 8081, .tls = .{ .cert = cert, .key = key } };
+        n_also += 1;
+        also[n_also] = .{ .address = "0.0.0.0", .port = 8443, .tls = .{ .cert = cert, .key = key } };
+        n_also += 1;
+    } else {
         // Loud, and then up anyway. The board always mounts the pair, so
-        // reaching this line means the mount moved — and refusing to start
-        // would take the nine profiles that need no certificate down with
-        // the two that do.
+        // reaching this line means the mount moved, and refusing to start
+        // would take the profiles that need no certificate down with the
+        // ones that do.
         std.log.warn(
-            "no certificate at \"{s}\" and \"{s}\", so there is no TLS listener on 8081: " ++
-                "json-tls and 8gbit cannot be served. Every cleartext profile is unaffected.",
+            "no certificate at \"{s}\" and \"{s}\", so there is no TLS listener on 8081 or 8443: " ++
+                "json-tls, 8gbit, baseline-h2, static-h2 and unary-grpc-tls cannot be served. " ++
+                "Every cleartext profile is unaffected.",
             .{ cert, key },
         );
-        break :secure &.{};
-    };
+    }
 
     // No logger, for the reason `bench/main.zig` gives: a line per request
     // would measure the logger. `max_connections` is the one setting off
     // its default, and the header comment says why. It counts the sockets
     // this process holds rather than the sockets a port holds, so it is not
-    // doubled by the second listener.
+    // multiplied by the extra listeners.
     try app.listen(.{
         .address = "0.0.0.0",
         .port = 8080,
         .max_connections = 65_536,
-        .also = secure,
+        .also = also[0..n_also],
     });
 }
 
@@ -435,6 +525,10 @@ pub fn main(init: std.process.Init) !void {
 
 test "the baseline sum is the two operands, plus the body on a POST" {
     try std.testing.expectEqual(@as(i64, 55), baselineGet(.{ .value = .{ .a = 13, .b = 42 } }).value);
+}
+
+test "the gRPC sum is the two operands" {
+    try std.testing.expectEqual(@as(i32, 3), BenchmarkService.getSum(.{ .a = 1, .b = 2 }).result);
 }
 
 test "a zero delay answers zero without waiting" {
