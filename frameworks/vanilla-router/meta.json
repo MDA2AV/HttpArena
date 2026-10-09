@@ -1,0 +1,30 @@
+{
+  "display_name": "vanilla-router",
+  "language": "V",
+  "engine": "vanilla",
+  "type": "emerging",
+  "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": false,
+    "response": false
+  },
+  "description": "vanilla, a multi-threaded HTTP/1.1 server written in V (epoll, SO_REUSEPORT, one worker per CPU), with its explicit router http1_1.router: each route is a `match` over the request's path segments, read through a zero-copy cursor. Handlers append the raw response into a server-owned buffer and return done, suspend or close. /json is serialized per request from the dataset's fields and gzip-compressed per request with libdeflate when the client accepts gzip. async-db and fortunes park the request on vanilla's async Postgres driver (pg_async, one pipelined pool per worker, sized from DATABASE_MAX_CONN); fortunes is rendered by hand per request with HTML escaping. /delay/{ms} parks on a one-shot timerfd. /static goes through vanilla's static_assets (precompressed .br/.gz siblings, follows the disk, sendfile for 16 KiB or more). :8081 serves json-tls, static-tls and 8gbit over TLS 1.3 (Mbed TLS 4). Built with -prod -gc none, vanilla's production build: nothing is allocated per request. Tuned: hand-written JSON and HTML, libdeflate, -gc none.",
+  "repo": "https://github.com/enghitalo/vanilla",
+  "enabled": true,
+  "tests": [
+    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls",
+    "static-tls",
+    "8gbit",
+    "async-db",
+    "fortunes"
+  ],
+  "maintainers": [
+    "enghitalo"
+  ]
+}
