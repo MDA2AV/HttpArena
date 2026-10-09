@@ -2,7 +2,7 @@
   "display_name": "vanilla-router",
   "language": "V",
   "engine": "vanilla",
-  "type": "flagship",
+  "type": "emerging",
   "mode": "tuned",
   "completeness": {
     "routing": false,
