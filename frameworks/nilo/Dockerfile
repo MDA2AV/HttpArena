@@ -22,7 +22,7 @@ WORKDIR /server
 COPY build.zig build.zig.zon ./
 COPY src ./src
 
-# nilo and zio come from the pins in build.zig.zon. build.zig asks nilo for
+# nilo comes from the pin in build.zig.zon, and zio from nilo's. build.zig asks nilo for
 # four flags, and each fetches what it needs: the Postgres and SQLite drivers
 # behind nilo_sql, tls.zig for the TLS listeners, libdeflate for gzip. HTTP/2
 # and gRPC (`http2`) fetch nothing. Static against musl, so the runtime image

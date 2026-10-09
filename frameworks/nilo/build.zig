@@ -33,13 +33,6 @@ pub fn build(b: *std.Build) void {
         .libdeflate = true,
     });
 
-    // zio itself, at the commit nilo pins, because `zio_options` is typed
-    // `zio.Options` and nilo does not re-export zio. The arguments are the
-    // ones nilo's own build passes, so this is the same zio nilo links and not
-    // a second copy; the scheduling the program runs is the root file's
-    // `zio_options`, which overrides this build option.
-    const zio = b.dependency("zio", .{ .target = target, .optimize = optimize, .scheduling = .pinned });
-
     const exe = b.addExecutable(.{
         .name = "nilo-arena",
         .root_module = b.createModule(.{
@@ -53,7 +46,6 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "nilo_http", .module = nilo.module("nilo_http") },
                 .{ .name = "nilo_sql", .module = nilo.module("nilo_sql") },
-                .{ .name = "zio", .module = zio.module("zio") },
             },
         }),
     });

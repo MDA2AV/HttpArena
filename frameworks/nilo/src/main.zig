@@ -34,10 +34,11 @@
 //! delivers 39% of its offered rate at a six-second p99. The measured run
 //! is in `bench/result/http.md`.
 //!
-//! **Scheduling is zio's default here, not nilo's.** nilo builds zio with
-//! `.pinned` (a connection stays on the thread it was dealt to), and says an
-//! application's own `zio_options` can override it. This entry does, below,
-//! with `.work_stealing`. See the comment on `zio_options`.
+//! **Scheduling is nilo's, `.pinned`** (a connection stays on the thread it
+//! was dealt to, ADR 199). The previous run overrode it with zio's
+//! `.work_stealing` to test the `async-db` gap; it did not close that gap
+//! and it put every HTTP/2 profile at the bottom (a stream's call could not
+//! stay on its connection's executor), so the override is gone.
 //!
 //! Profiles nilo does not subscribe to, and why: `fortunes` in standard
 //! mode needs a template engine, refused on the record (README, "What it won't do"), and so is
@@ -47,20 +48,7 @@
 const std = @import("std");
 const nilo = @import("nilo_http");
 const sql = @import("nilo_sql");
-const zio = @import("zio");
 const fail = nilo.fail;
-
-/// zio's scheduling, read by zio from the root module the way std reads
-/// `std_options`. nilo builds its own zio `.pinned` (ADR 199), so a task never
-/// leaves the thread it was spawned on. This entry asks for `.work_stealing`,
-/// which is zio's own default, as a measured hypothesis and not a tuning
-/// claim: on the board's `async-db` profile nilo read 57k req/s at 830% CPU
-/// where dusty, also on zio and running `.work_stealing`, read 290k at 4,606%.
-/// A pinned fiber that waits on Postgres cannot be picked up by an idle
-/// thread; a stolen one can. Whether that is the gap is what this run on the
-/// board's 64 cores is for. Every other profile is expected to move little,
-/// and the board will say if one does not.
-pub const zio_options: zio.Options = .{ .scheduling = .work_stealing };
 
 pub const std_options = nilo.std_options;
 pub const std_options_debug_io = nilo.debug_io;
@@ -133,6 +121,310 @@ fn delay(ms: u32) !Number {
     return .{ .value = ms };
 }
 
+
+// ---- async-db instrumentation: one line a second in the container's log ----
+//
+// What the board publishes for a profile is its log, so a run that comes out
+// slow can say why. Every counter is one relaxed atomic add on the request
+// path, and the line is written by one plain OS thread that sleeps a second.
+
+const Stats = struct {
+    const sub = 8; // buckets per power of two
+    const buckets = 24 * sub; // 1 us .. 16 s
+    answered: std.atomic.Value(u64) = .init(0),
+    inflight: std.atomic.Value(i64) = .init(0),
+    max_inflight: std.atomic.Value(i64) = .init(0),
+    stmt_hist: [buckets]std.atomic.Value(u32) = @splat(.init(0)),
+    req_hist: [buckets]std.atomic.Value(u32) = @splat(.init(0)),
+    stmt_sum: std.atomic.Value(u64) = .init(0),
+    req_sum: std.atomic.Value(u64) = .init(0),
+    stmt_n: std.atomic.Value(u64) = .init(0),
+
+    fn bucket(us: u64) usize {
+        if (us < sub) return @intCast(us);
+        const lg: u6 = @intCast(63 - @clz(us));
+        const frac: u64 = (us >> (lg - 3)) & (sub - 1);
+        const b = (@as(usize, lg) - 2) * sub + @as(usize, @intCast(frac));
+        return @min(b, buckets - 1);
+    }
+
+    fn upper(b: usize) u64 {
+        if (b < sub) return b + 1;
+        const lg = b / sub + 2;
+        const frac = b % sub;
+        return (@as(u64, sub) + frac + 1) << @intCast(lg - 3);
+    }
+
+    fn add(hist: *[buckets]std.atomic.Value(u32), us: u64) void {
+        _ = hist[bucket(us)].fetchAdd(1, .monotonic);
+    }
+
+    /// Mean and p99 of what was added since the last call, and the histogram emptied.
+    fn drain(hist: *[buckets]std.atomic.Value(u32), sum: *std.atomic.Value(u64), n_out: *u64) struct { mean: u64, p99: u64 } {
+        var counts: [buckets]u32 = undefined;
+        var n: u64 = 0;
+        for (hist, &counts) |*h, *c| {
+            c.* = h.swap(0, .monotonic);
+            n += c.*;
+        }
+        const total = sum.swap(0, .monotonic);
+        n_out.* = n;
+        if (n == 0) return .{ .mean = 0, .p99 = 0 };
+        const want = n - n / 100;
+        var seen: u64 = 0;
+        var p99: u64 = 0;
+        for (counts, 0..) |c, b| {
+            seen += c;
+            if (seen >= want) {
+                p99 = upper(b);
+                break;
+            }
+        }
+        return .{ .mean = total / n, .p99 = p99 };
+    }
+};
+
+
+/// What the operating system says about this process's threads, read from
+/// /proc once a second: where the CPU went (a few hot threads or all of
+/// them), how often they slept, and how many pages they faulted in.
+const Deltas = struct { minflt: u64, vol: u64, invol: u64 };
+
+const Proc = struct {
+    const max_threads = 256;
+    tids: [max_threads]u32 = undefined,
+    ticks: [max_threads]u64 = @splat(0),
+    n: usize = 0,
+    minflt: u64 = 0,
+    vol: u64 = 0,
+    invol: u64 = 0,
+    /// Kernel io_uring workers seen among the threads: any at all says the ring backend is in use.
+    iou: usize = 0,
+
+    /// A small /proc file read in one go, or null. /proc files report a size
+    /// of zero, so the usual read-the-whole-file calls do not take them.
+    fn readSmall(path: []const u8, buf: []u8) ?[]const u8 {
+        var z: [96]u8 = undefined;
+        if (path.len >= z.len) return null;
+        @memcpy(z[0..path.len], path);
+        z[path.len] = 0;
+        const zp: [*:0]const u8 = @ptrCast(&z);
+        const rc = std.os.linux.open(zp, .{ .ACCMODE = .RDONLY }, 0);
+        if (std.os.linux.errno(rc) != .SUCCESS) return null;
+        const fd: i32 = @intCast(rc);
+        defer _ = std.os.linux.close(fd);
+        const n = std.os.linux.read(fd, buf.ptr, buf.len);
+        if (std.os.linux.errno(n) != .SUCCESS) return null;
+        return buf[0..n];
+    }
+
+    fn field(text: []const u8, name: []const u8) u64 {
+        const at = std.mem.indexOf(u8, text, name) orelse return 0;
+        var rest = text[at + name.len ..];
+        rest = std.mem.trimStart(u8, rest, " \t");
+        const end = std.mem.indexOfAny(u8, rest, "\n \t") orelse rest.len;
+        return std.fmt.parseInt(u64, rest[0..end], 10) catch 0;
+    }
+
+    /// Fills `cpu` (percent of one CPU per thread, descending) and returns
+    /// the number of threads, with the deltas of the three counters.
+    fn sample(self: *Proc, io: std.Io, secs_x100: u64, cpu: []u64, d: *Deltas) usize {
+        var dir = std.Io.Dir.cwd().openDir(io, "/proc/self/task", .{ .iterate = true }) catch |err| {
+            std.log.info("asyncdb: cannot read /proc/self/task: {s}", .{@errorName(err)});
+            return 0;
+        };
+        defer dir.close(io);
+        var it = dir.iterate();
+        var count: usize = 0;
+        var iou: usize = 0;
+        var minflt: u64 = 0;
+        var vol: u64 = 0;
+        var invol: u64 = 0;
+        var path_buf: [64]u8 = undefined;
+        while (it.next(io) catch null) |entry| {
+            const tid = std.fmt.parseInt(u32, entry.name, 10) catch continue;
+            const stat_path = std.fmt.bufPrint(&path_buf, "/proc/self/task/{d}/stat", .{tid}) catch continue;
+            var stat_buf: [1024]u8 = undefined;
+            const stat = readSmall(stat_path, &stat_buf) orelse continue;
+            const close = std.mem.lastIndexOfScalar(u8, stat, ')') orelse continue;
+            if (std.mem.indexOf(u8, stat[0..close], "(iou-") != null) iou += 1;
+            var f = std.mem.tokenizeScalar(u8, stat[close + 1 ..], ' ');
+            var i: usize = 0;
+            var ut: u64 = 0;
+            var st: u64 = 0;
+            var mf: u64 = 0;
+            while (f.next()) |tok| : (i += 1) {
+                if (i == 7) mf = std.fmt.parseInt(u64, tok, 10) catch 0;
+                if (i == 11) ut = std.fmt.parseInt(u64, tok, 10) catch 0;
+                if (i == 12) st = std.fmt.parseInt(u64, tok, 10) catch 0;
+            }
+            minflt += mf;
+            const status_path = std.fmt.bufPrint(&path_buf, "/proc/self/task/{d}/status", .{tid}) catch continue;
+            var status_buf: [2048]u8 = undefined;
+            if (readSmall(status_path, &status_buf)) |status| {
+                vol += field(status, "voluntary_ctxt_switches:");
+                invol += field(status, "nonvoluntary_ctxt_switches:");
+            }
+            const now = ut + st;
+            var prev: u64 = 0;
+            var slot: ?usize = null;
+            for (self.tids[0..self.n], 0..) |t, k| if (t == tid) {
+                slot = k;
+                break;
+            };
+            if (slot) |k| {
+                prev = self.ticks[k];
+                self.ticks[k] = now;
+            } else if (self.n < max_threads) {
+                self.tids[self.n] = tid;
+                self.ticks[self.n] = now;
+                self.n += 1;
+                prev = now;
+            }
+            if (count < cpu.len) {
+                cpu[count] = (now -| prev) * 10_000 / @max(secs_x100, 1);
+                count += 1;
+            }
+        }
+        self.iou = iou;
+        d.minflt = minflt -| self.minflt;
+        d.vol = vol -| self.vol;
+        d.invol = invol -| self.invol;
+        self.minflt = minflt;
+        self.vol = vol;
+        self.invol = invol;
+        std.mem.sort(u64, cpu[0..count], {}, std.sort.desc(u64));
+        return count;
+    }
+};
+
+var stats: Stats = .{};
+var stats_db: ?*sql.Db = null;
+
+fn statementTold(sent: sql.Sent) void {
+    Stats.add(&stats.stmt_hist, sent.micros);
+    _ = stats.stmt_sum.fetchAdd(sent.micros, .monotonic);
+}
+
+fn requestStarted() i64 {
+    const now: i64 = @intCast(nilo.monotonicNanos());
+    const in = stats.inflight.fetchAdd(1, .monotonic) + 1;
+    if (in > stats.max_inflight.load(.monotonic)) stats.max_inflight.store(in, .monotonic);
+    return now;
+}
+
+fn requestEnded(started: i64) void {
+    const us: u64 = @intCast(@divTrunc(@as(i64, @intCast(nilo.monotonicNanos())) - started, 1000));
+    _ = stats.inflight.fetchSub(1, .monotonic);
+    _ = stats.answered.fetchAdd(1, .monotonic);
+    Stats.add(&stats.req_hist, us);
+    _ = stats.req_sum.fetchAdd(us, .monotonic);
+}
+
+fn statsThread() void {
+    var threaded: std.Io.Threaded = .init(std.heap.smp_allocator, .{});
+    const io = threaded.io();
+    var proc: Proc = .{};
+    var sysctl: [16]u8 = undefined;
+    const disabled = Proc.readSmall("/proc/sys/kernel/io_uring_disabled", &sysctl) orelse "unreadable";
+    std.log.info("asyncdb: kernel.io_uring_disabled={s} (0 means the ring backend can be used; 1 or 2 means zio falls back to epoll)", .{std.mem.trim(u8, disabled, " \n")});
+    var last_ns: u64 = nilo.monotonicNanos();
+    var cpu: [Proc.max_threads]u64 = undefined;
+    var last_answered: u64 = 0;
+    var last_stmts: usize = 0;
+    var last_waited: usize = 0;
+    var last_dropped: usize = 0;
+    var in_use_sum: u64 = 0;
+    var avail_sum: u64 = 0;
+    var samples: u64 = 0;
+    var tick: u32 = 0;
+    while (true) {
+        io.sleep(.fromMilliseconds(100), .awake) catch return;
+        const pool = (stats_db orelse continue).poolStats() orelse continue;
+        in_use_sum += pool.in_use;
+        avail_sum += pool.available;
+        samples += 1;
+        tick += 1;
+        if (tick < 10) continue;
+        tick = 0;
+        const now_ns = nilo.monotonicNanos();
+        const secs_x100: u64 = (now_ns - last_ns) / 10_000_000;
+        last_ns = now_ns;
+        var delta: Deltas = undefined;
+        const nthreads = proc.sample(io, secs_x100, &cpu, &delta);
+        var total: u64 = 0;
+        var hot: usize = 0;
+        var warm: usize = 0;
+        for (cpu[0..nthreads]) |c| {
+            total += c;
+            if (c >= 5000) hot += 1;
+            if (c >= 1000) warm += 1;
+        }
+        var sn: u64 = 0;
+        var rn: u64 = 0;
+        const st = Stats.drain(&stats.stmt_hist, &stats.stmt_sum, &sn);
+        const rq = Stats.drain(&stats.req_hist, &stats.req_sum, &rn);
+        const answered = stats.answered.load(.monotonic);
+        const rate = answered - last_answered;
+        last_answered = answered;
+        const stmts = pool.statements -% last_stmts;
+        last_stmts = pool.statements;
+        const waited = pool.waited -% last_waited;
+        last_waited = pool.waited;
+        const dropped = pool.dropped -% last_dropped;
+        last_dropped = pool.dropped;
+        const mean_in_use = in_use_sum * 10 / @max(samples, 1);
+        const mean_avail = avail_sum * 10 / @max(samples, 1);
+        // hold: Little's law on the pool, mean connections in use over statements a second.
+        const hold_us: u64 = if (stmts > 0) mean_in_use * 100_000 / stmts else 0;
+        std.log.info(
+            "asyncdb: answered={d}/s inflight={d} (max {d}) pool size={d} open={d} in_use={d}.{d} idle={d}.{d} missing={d} " ++
+                "waited={d} dropped={d} | statement mean={d}us p99={d}us | request mean={d}us p99={d}us | hold~{d}us",
+            .{
+                rate,
+                stats.inflight.load(.monotonic),
+                stats.max_inflight.swap(0, .monotonic),
+                pool.size,
+                pool.size - pool.missing,
+                mean_in_use / 10,
+                mean_in_use % 10,
+                mean_avail / 10,
+                mean_avail % 10,
+                pool.missing,
+                waited,
+                dropped,
+                st.mean,
+                st.p99,
+                rq.mean,
+                rq.p99,
+                hold_us,
+            },
+        );
+        std.log.info(
+            "asyncdb: threads={d} cpu={d}% hot(>=50%)={d} warm(>=10%)={d} top=[{d},{d},{d},{d},{d},{d}]% sleeps={d}/s preempted={d}/s faults={d}/s io_uring_workers={d}",
+            .{
+                nthreads,
+                total / 100,
+                hot,
+                warm,
+                cpu[0] / 100,
+                cpu[1] / 100,
+                cpu[2] / 100,
+                cpu[3] / 100,
+                cpu[4] / 100,
+                cpu[5] / 100,
+                delta.vol,
+                delta.invol,
+                delta.minflt,
+                proc.iou,
+            },
+        );
+        in_use_sum = 0;
+        avail_sum = 0;
+        samples = 0;
+    }
+}
+
 // ---- async-db ----
 //
 // `GET /async-db?min=10&max=50&limit=20`: a range scan over `items` with the
@@ -189,7 +481,10 @@ const Range = struct {
     limit: i32 = 50,
 };
 
+
 fn asyncDb(db: *sql.Db, c: *nilo.Ctx, q: nilo.Query(Range)) !Listing {
+    const started = requestStarted();
+    defer requestEnded(started);
     const limit: usize = @intCast(std.math.clamp(q.value.limit, 1, 50));
     const rows = db.select(Item, c, .{
         .where = .{ .price = .{ .gte = q.value.min, .lte = q.value.max } },
@@ -247,6 +542,11 @@ const DatasetItem = struct {
 /// The dataset, held for the life of the process. A pointer, so it reaches a
 /// handler as a service rather than as a global the handler names.
 const Dataset = struct {
+    /// Read once at startup and never written, so a route that takes it
+    /// cannot wait on it, and HTTP/2 may run that route on the connection's
+    /// own fiber (ADR 260).
+    pub const nilo_never_waits = true;
+
     items: []const DatasetItem,
 };
 
@@ -279,9 +579,9 @@ const Multiplier = struct {
 
 /// `count` is the path param, clamped to what the dataset holds. The board
 /// rotates 1, 5, 10, 15, 25, 40 and 50 through it.
-fn jsonItems(data: *Dataset, c: *nilo.Ctx, count: usize, q: nilo.Query(Multiplier)) !JsonListing {
+fn jsonItems(data: *Dataset, arena: std.mem.Allocator, count: usize, q: nilo.Query(Multiplier)) !JsonListing {
     const take = @min(count, data.items.len);
-    const out = try c.arena().alloc(JsonItem, take);
+    const out = try arena.alloc(JsonItem, take);
     for (data.items[0..take], out) |item, *listed| listed.* = .{
         .id = item.id,
         .name = item.name,
@@ -323,14 +623,14 @@ fn echoBody(c: *nilo.Ctx) !void {
 // ---- static-h2 ----
 //
 // `GET /static/{file}` for the twenty files in `/data/static`, over 8443.
-// `reload = true` is what the profile's rule asks for: the cache must follow
-// the disk, "replace a file and the next response must carry the new bytes",
-// and nilo's default holds the directory in memory from startup. With it on,
-// every file is opened per request (ADR 009), which costs the profile the
-// gzipped copy `app.static` would otherwise have made at load. Compression is
-// optional there, and the pre-compressed `.br` and `.gz` files on disk are
-// not selected: nilo has no API for that, and selecting them by hand is
-// what standard mode does not allow.
+// The profile's rule is that the cache must follow the disk, "replace a file
+// and the next response must carry the new bytes", and nilo's default holds
+// the directory in memory from startup. `follow = true` (ADR 277) is nilo's
+// documented answer: the tree stays in memory and is read again when inotify
+// says a file changed, and a response already being written finishes on the
+// tree it began on. The `.br` and `.gz` files beside each original are served
+// as its codings by `app.static` itself (ADR 273), chosen by the client's q
+// values, so the entry selects nothing by hand.
 
 // ---- unary-grpc, unary-grpc-tls ----
 //
@@ -421,7 +721,7 @@ pub fn main(init: std.process.Init) !void {
     // other profiles should not die for want of it.
     const static_dir = env.getPosix("STATIC_DIR") orelse "/data/static";
     if (readable(gpa, static_dir)) {
-        try app.staticWith("/static", static_dir, .{ .reload = true });
+        try app.staticWith("/static", static_dir, .{ .follow = true });
     } else {
         std.log.warn("no static directory at \"{s}\", so /static is a 404: static-h2 cannot be served.", .{static_dir});
     }
@@ -471,6 +771,9 @@ pub fn main(init: std.process.Init) !void {
         db = sql.Db.init(gpa, url, .{ .size = size });
         db.checking(.{ .tables = &.{Item} });
         has_db = true;
+        db.watching(statementTold);
+        stats_db = &db;
+        _ = std.Thread.spawn(.{}, statsThread, .{}) catch {};
         try app.provide(&db);
         try app.get("/async-db", asyncDb);
     } else {
@@ -508,14 +811,19 @@ pub fn main(init: std.process.Init) !void {
     }
 
     // No logger, for the reason `bench/main.zig` gives: a line per request
-    // would measure the logger. `max_connections` is the one setting off
-    // its default, and the header comment says why. It counts the sockets
-    // this process holds rather than the sockets a port holds, so it is not
-    // multiplied by the extra listeners.
+    // would measure the logger. `max_connections` is off its default, and
+    // the header comment says why. It counts the sockets this process holds
+    // rather than the sockets a port holds, so it is not multiplied by the
+    // extra listeners. `max_requests_per_connection` is off too: it ends a
+    // keep-alive connection after about 1,000 requests so that a balancer can
+    // move a busy client (ADR 275), and here there is one client and no
+    // balancer, so all it would do is drop the requests a pipelined client
+    // already sent behind the last one.
     try app.listen(.{
         .address = "0.0.0.0",
         .port = 8080,
         .max_connections = 65_536,
+        .max_requests_per_connection = 0,
         .also = also[0..n_also],
     });
 }
