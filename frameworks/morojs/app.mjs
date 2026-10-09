@@ -190,17 +190,23 @@ function defineRoutes(app) {
 
     // json-comp: the framework's compression middleware on this route alone,
     // so no other endpoint pays for the encoder. It negotiates off
-    // Accept-Encoding per request and sends the body as is when none is sent,
-    // which is what json-tls on :8081 gets. gzip is preferred over brotli:
-    // at the middleware's default level it costs about half the CPU of
-    // brotli at the default quality for a body one tenth larger, and the
-    // profile prices bytes squared against rate. brotli stays available for
-    // a client that accepts nothing else.
-    app.get('/json/:count')
-        .before(middleware.compression({ encodings: ['gzip', 'br'] }))
-        .handler((req, res) => {
-            res.json(jsonItems(req));
-        });
+    // Accept-Encoding per request and sends the body as is when none is sent.
+    // gzip is preferred over brotli: at the middleware's default level it
+    // costs about half the CPU of brotli at the default quality for a body one
+    // tenth larger, and the profile prices bytes squared against rate. brotli
+    // stays available for a client that accepts nothing else. The TLS listener
+    // (json-tls) is never asked for an encoding, so its route carries no
+    // middleware and stays on the router's fast path.
+    const json = (req, res) => {
+        res.json(jsonItems(req));
+    };
+    if (ROLE === 'plain') {
+        app.get('/json/:count')
+            .before(middleware.compression({ encodings: ['gzip', 'br'] }))
+            .handler(json);
+    } else {
+        app.get('/json/:count').handler(json);
+    }
 
     // 8gbit: the body exactly as it arrived, Content-Length or chunked, sent
     // back as the same bytes. req.rawBody is the framework's undecoded copy.
