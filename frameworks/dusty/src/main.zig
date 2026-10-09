@@ -197,13 +197,16 @@ fn wsEcho(req: *http.Request, res: *http.Response) !void {
         return;
     };
     defer ws.deinit();
+    ws.autoflush = false;
     while (true) {
-        const msg = try ws.receive();
-        switch (msg.type) {
-            .text, .binary => try ws.send(msg.type, msg.data),
-            .close => return,
-            else => {},
+        for (try ws.receiveMany()) |msg| {
+            switch (msg.type) {
+                .text, .binary => try ws.send(msg.type, msg.data),
+                .close => return,
+                else => {},
+            }
         }
+        try ws.flush();
     }
 }
 
