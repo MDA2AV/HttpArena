@@ -1,17 +1,16 @@
-# Neton
+# neton
 
-Kotlin Multiplatform compiled to a native executable, on the hyper4k engine
-(Tokio + Hyper 1.x, linked in as a Rust static library).
+Neton 1.0.0-beta22 with NetonStream (Kotlin/Native io/http/tls with OpenSSL).
 
-The framework is consumed from Maven Central as a single coordinate:
+The engine is selected explicitly, alongside the framework core, logging, HTTP and routing:
 
 ```kotlin
-implementation("com.netonstream:neton:1.0.0-beta13")
+implementation("com.netonstream:neton-http-netonstream:1.0.0-beta22")
 ```
 
-That one dependency carries core, logging, HTTP, routing and the hyper4k engine,
-so this entry builds the way any application would — there is no source checkout
-and no composite build.
+Both entries build entirely from Maven Central. Main.kt, compiler, GC and request
+admission settings are identical; only Engine.kt and the engine dependency differ.
+No local repository, composite build or benchmark-only business fast path is used.
 
 ## Ports
 
@@ -19,8 +18,10 @@ and no composite build.
 |---|---|
 | 8080 | HTTP/1.1 |
 | 8082 | HTTP/2 cleartext (prior knowledge) |
+| 8081 | HTTP/1.1 TLS |
+| 8443 | HTTP/2 TLS (ALPN) |
 
-Both listeners serve one route table.
+All listeners serve one route table. TLS starts when the harness mounts certificates.
 
 ## Running it outside the container
 
@@ -32,7 +33,9 @@ machine, point `ARENA_DATASET` somewhere writable:
 ARENA_DATASET=../../data/dataset.json ./build/bin/macosArm64/releaseExecutable/neton-httparena.kexe
 ```
 
-## Not subscribed
+## Comparison
 
-The TLS profiles (the engine terminates no TLS today) and json-comp, which needs
-gzip/br response compression.
+Run neton and neton-hyper baseline separately on the same runner, repeating in
+alternating order. Do not run both servers at once. Existing profile subscriptions
+are retained, but the first requested comparison is baseline; new-engine
+high-load results are not yet known.

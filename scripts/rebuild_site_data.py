@@ -76,6 +76,8 @@ def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
         }
         if "mode" in m:
             entry["mode"] = m["mode"]
+        if m.get("website"):
+            entry["website"] = m["website"]
         if "completeness" in m:
             entry["completeness"] = _completeness(m["completeness"], meta_path)
         groups.setdefault(display, []).append(entry)

@@ -1,4 +1,4 @@
-[0.016s][warning][os] NUMA support disabled: Failed to initialize libnuma
+[0.020s][warning][os] NUMA support disabled: Failed to initialize libnuma
 Ktor HttpArena server starting on :8080 (HTTP/1.1), :8081 (JSON + TLS), :8082 (H2C), :8443 (HTTPS/HTTP2/HTTP3)
 WARNING: A restricted method in java.lang.System has been called
 WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil in an unnamed module (file:/app/ktor-tuned-httparena.jar)

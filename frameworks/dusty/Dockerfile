@@ -30,5 +30,5 @@ RUN set -eu; \
 
 FROM alpine:3.20
 COPY --from=build /server/zig-out/bin/dusty-arena /dusty-arena
-EXPOSE 8080
+EXPOSE 8080 8081
 ENTRYPOINT ["/dusty-arena"]

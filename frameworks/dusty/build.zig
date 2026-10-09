@@ -1,4 +1,5 @@
 const std = @import("std");
+const zt = @import("zt");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -7,7 +8,6 @@ pub fn build(b: *std.Build) void {
     const dusty_dep = b.dependency("dusty", .{
         .target = target,
         .optimize = optimize,
-        .use_tls = false,
     });
     const dusty_mod = dusty_dep.module("dusty");
 
@@ -29,6 +29,14 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const zt_dep = b.dependency("zt", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const templates = zt.addTemplates(b, zt_dep, &.{
+        b.path("src/templates/fortunes.zt"),
+    });
+
     const exe = b.addExecutable(.{
         .name = "dusty-arena",
         .root_module = b.createModule(.{
@@ -42,6 +50,8 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("zio", zio_mod);
     exe.root_module.addImport("json", json_dep.module("json"));
     exe.root_module.addImport("pg", pg_dep.module("pg"));
+    exe.root_module.addImport("zt", zt_dep.module("zt"));
+    exe.step.dependOn(templates);
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run the server");

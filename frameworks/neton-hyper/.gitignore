@@ -1,0 +1,2 @@
+# Runtime output: the entry writes its log files next to the binary.
+logs/

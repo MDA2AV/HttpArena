@@ -29,6 +29,12 @@ public:
     C_ATTR(echo, :Local :AutoArgs)
     void echo(Context *c);
 
+    C_ATTR(async_db, :Path("async-db") :Args(0))
+    void async_db(Context *c);
+
+    C_ATTR(fortunes, :Local :AutoArgs)
+    void fortunes(Context *c);
+
 private:
     QJsonArray m_dataset;
 };

@@ -2,3 +2,4 @@ zig-pkg/
 zig-out/
 zig-cache/
 .zig-cache/
+src/templates/*.zig

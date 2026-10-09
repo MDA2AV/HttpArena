@@ -3,7 +3,7 @@ Helidon Production
 
 # Project
 
-This framework runs Helidon SE 4.5.4 on Níma WebServer as a `production`
+This framework runs Helidon SE 27.0.0 on Níma WebServer as a `production`
 benchmark entry.
 
 The current subscribed benchmark profiles are:
@@ -44,8 +44,9 @@ The benchmark wiring is split by listener:
 - `8082` (`h2c`): cleartext prior-knowledge HTTP/2 for `baseline-h2c` and `json-h2c`
 - `8443` (`h2-tls`): HTTP/2 + TLS for `baseline-h2`, `static-h2`, and `unary-grpc-tls`
 
-Static content and TLS are configured from `application.yaml`, not
-programmatically.
+Static content and TLS are configured from `application.yaml`. Helidon's
+static-content feature serves `/data/static` with precompressed `.br` and `.gz`
+sidecars, negotiates `Accept-Encoding`, and sets `Vary: Accept-Encoding`.
 
 # Divergence from benchmark guidance
 

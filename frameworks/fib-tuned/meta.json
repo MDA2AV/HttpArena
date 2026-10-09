@@ -4,13 +4,13 @@
   "type": "experimental",
   "mode": "tuned",
   "completeness": {
-    "routing": false,
+    "routing": true,
     "middleware": true,
     "request": true,
-    "response": false
+    "response": true
   },
   "engine": "fib",
-  "description": "The fib entry with its compression replaced: the JSON routes sit behind a compression middleware written in the entry on fib's middleware API (middleware.Chain and Context.OnResponse, as fib's own compress), coding brotli (andybalholm/brotli), zstd, gzip and deflate (klauspost/compress) as Accept-Encoding weighs them. Between codings a client weighs the same it picks gzip, then zstd, brotli and deflate, the order measured to cost least for the bytes saved on these 4-8 KB bodies. Its TCP engines run one epoll loop per CPU (IOPollers), each accepting its own connections on an SO_REUSEPORT socket (ReusePort), with HTTP/1 requests on fib's worker pool and their Request, Header, URL and Context recycled (the Reuse options), GOMAXPROCS at twice the CPUs, and GOGC=400. Everything else - listeners on 8080/8082/8081/8443 tcp+udp/9000, routes, static through ServeContent, TLS - is the fib entry's.",
+  "description": "The fib entry with its compression replaced: the JSON routes sit behind a compression middleware written in the entry on fib's middleware API (Context.OnResponse, as fib's own compress, around the routes through Router.With), coding brotli (andybalholm/brotli), zstd, gzip and deflate (klauspost/compress) as Accept-Encoding weighs them. Between codings a client weighs the same it picks gzip, then zstd, brotli and deflate, the order measured to cost least for the bytes saved on these 4-8 KB bodies. JSON responses are encoded with sonic, which Context.JSON calls as fib's JSONEncoder. It runs with GOGC=200. Everything else - prefork with a child for every two CPUs, fib's default configuration, listeners on 8080/8082/8081/8443 tcp+udp/9000, fib's Router and routes, gRPC through fib's grpc package, static through FileCache, TLS - is the fib entry's.",
   "repo": "https://github.com/lesismal/fib",
   "enabled": true,
   "tls_check": true,
@@ -32,7 +32,9 @@
     "baseline-h2c",
     "json-h2c",
     "baseline-h3",
-    "static-h3"
+    "static-h3",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
   "maintainers": [
     "lesismal"

@@ -20,6 +20,6 @@ class BaselinePostHandler implements Handler {
         int second = Integer.parseInt(query.getRaw("b"));
         int third = Integer.parseInt(req.content().as(GenericType.STRING));
 
-        res.send(String.valueOf(first + second + third).getBytes(StandardCharsets.US_ASCII));
+        res.send(String.valueOf(first + second + third).getBytes(StandardCharsets.ISO_8859_1));
     }
 }
