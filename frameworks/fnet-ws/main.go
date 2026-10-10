@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/gobwas/ws"
+	"github.com/linfeip/fnet"
 	"github.com/linfeip/fnet/fhttp"
 	"github.com/linfeip/fnet/websocket"
 )
@@ -34,7 +36,12 @@ func main() {
 		_ = websocket.Upgrade(w, r, echoHandler{}, websocket.Options{})
 	})
 
-	server, err := fhttp.NewServer(":8080", mux, fhttp.Options{})
+	server, err := fhttp.NewServer(":8080", mux, fhttp.Options{
+		// ReusePort gives every loop a listening socket of its own, sharing
+		// :8080 through SO_REUSEPORT, so on Linux the kernel spreads the
+		// connections over the loops instead of feeding them from one listener.
+		Engine: fnet.Options{ReusePort: true},
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +53,9 @@ func main() {
 		_ = server.Close()
 	}()
 
-	if err := server.Serve(); err != nil {
+	// Close makes Serve return http.ErrServerClosed; that is a clean shutdown,
+	// so the process must not report it as a crash.
+	if err := server.Serve(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
 }

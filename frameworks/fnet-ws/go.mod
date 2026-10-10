@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/gobwas/ws v1.4.0
-	github.com/linfeip/fnet v0.0.0-20261004034957-d78da1c331cd
+	github.com/linfeip/fnet v1.0.0
 )
 
 require (
