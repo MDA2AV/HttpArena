@@ -1,0 +1,16 @@
+{
+  "display_name": "fnet-ws",
+  "language": "Go",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "fnet",
+  "description": "fnet v1.0.0's websocket package on fhttp: the upgrade is answered on fnet's epoll event loops, then frames are parsed in the connection's own task on fnet's executor, so an unfragmented message is echoed straight from the read buffer it arrived in, with no goroutine per connection; replies written while a batch of frames is processed are coalesced into one write. fnet's ReusePort option is on: on Linux every sub-reactor listens on :8080 with a socket of its own, sharing the port through SO_REUSEPORT so the kernel spreads the connections over the loops.",
+  "repo": "https://github.com/linfeip/fnet",
+  "enabled": true,
+  "tests": [
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": ["linfeip"]
+}
