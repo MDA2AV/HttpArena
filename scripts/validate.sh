@@ -1507,7 +1507,7 @@ fi
 #
 # Gated on json-comp ALONE, and deliberately not on json-h2c. This block probes
 # plaintext :8080, and an h2c-only entry has no HTTP/1.1 listener there at all -
-# actix-h2c, quarkus-jvm-h2c, wtx-http2, zix-http2 and nginx would
+# actix-h2c, quarkus-jvm-h2c, vanilla-h2c, wtx-http2, zix-http2 and nginx would
 # every one of them fail a check for a port they never open. json-h2c validates
 # the same endpoint over :8082 in its own block below, and json-tls over :8081
 # in its own.
