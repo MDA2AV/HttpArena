@@ -13,9 +13,9 @@ final class DelayHandler implements Handler {
     public void handle(ServerRequest req, ServerResponse res) throws InterruptedException {
         int delay = Integer.parseInt(req.path().pathParameters().get("ms"));
 
-        Thread.sleep(delay);
+        DelayWait.await(delay);
 
         res.header(CONTENT_TYPE_TEXT_PLAIN);
-        res.send(Integer.toString(delay).getBytes(StandardCharsets.US_ASCII));
+        res.send(Integer.toString(delay).getBytes(StandardCharsets.ISO_8859_1));
     }
 }

@@ -3,14 +3,18 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY *.go ./
+COPY proto ./proto
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o server .
 
 FROM scratch
 COPY --from=build /app/server /server
-# Requests make garbage far faster than the server keeps anything live, so at
-# the default GOGC=100 the collector ran 24 cycles a second on six CPUs at
-# 874k req/s, each taking a share of the Ps while it marks. GOGC=400 ran 9 a
-# second, with the heap under 130 MB, at 978k req/s.
-ENV GOGC=400
+# Requests make garbage far faster than the server keeps anything live, so a
+# higher GOGC trades memory for the collector's share of the CPUs. Each prefork
+# child has a heap of its own, and on 64 CPUs, against GOGC=100 and 400,
+# GOGC=200 served json-tls at 1.56M req/s (1.42M, 1.64M) in 688 MB (511 MB,
+# 1.0 GB), json-comp over 16384 connections at 586k (559k, 600k) in 2.5 GB
+# (0.9 GB, 6.7 GB), and baseline and limited-conn alike at about half 400's
+# memory.
+ENV GOGC=200
 EXPOSE 8080 8081 8082 8443/tcp 8443/udp 9000
 CMD ["/server"]

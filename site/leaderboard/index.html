@@ -986,6 +986,7 @@ document.addEventListener('DOMContentLoaded', function(){
     h+='<div class="modal-links">';
     h+='<a href="/frameworks/'+encodeURIComponent(slugOf(fw))+'/"><span>Results page</span><span>→</span></a>';
     if(m.repo) h+='<a href="'+esc(m.repo)+'" target="_blank" rel="noopener"><span>Official repository</span><span>↗</span></a>';
+    if(m.website) h+='<a href="'+esc(m.website)+'" target="_blank" rel="noopener"><span>Official website</span><span>↗</span></a>';
     h+='<a href="'+impl+'" target="_blank" rel="noopener"><span>Benchmark implementation</span><span>↗</span></a>';
     if(state.view==='profile' && state.profile && state.conns){
       var log=LOGBASE+state.profile+'/'+state.conns+'/'+encodeURIComponent(dir)+'.log';

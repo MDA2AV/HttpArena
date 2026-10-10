@@ -4,13 +4,13 @@
   "type": "experimental",
   "mode": "standard",
   "completeness": {
-    "routing": false,
+    "routing": true,
     "middleware": true,
     "request": true,
-    "response": false
+    "response": true
   },
   "engine": "fib",
-  "description": "fib (Fast In Balance) Go networking library: one edge-triggered epoll event loop per CPU (IOPollers, its default), with HTTP/1 connections handing their rounds to a logical worker pool, where each connection is an ordered task that any idle worker may run. Its http package serves HTTP/1.1, HTTP/2 (ALPN and prior-knowledge h2c) and, through package http3, HTTP/3 over its own QUIC, all through one handler taking a *http.Request and a Context; TLS through package tls on crypto/tls. Default configuration throughout; the certificate on the opt-in TLS hardening listener is picked per handshake through tls.Config.GetCertificate, so a renewed pair is served without a restart. Handlers dispatch on the path themselves; the JSON routes sit behind fib's compress middleware (middleware.Chain with compress.New(), defaults), which gzips per request as Accept-Encoding allows. /delay and /async-db answer retained requests from a timer and a goroutine, and /static goes through net/http's ServeContent on the Context, choosing the pre-compressed twin on disk off Accept-Encoding.",
+  "description": "fib (Fast In Balance) Go networking library, served through its prefork package: a master process starts a child for every two CPUs, each with two Ps and its own heap, and every engine a child binds listens with SO_REUSEPORT, so the children share the ports. In each child an edge-triggered epoll event loop hands HTTP/1 connections' rounds to a logical worker pool, where each connection is an ordered task that any idle worker may run. Its http package serves HTTP/1.1, HTTP/2 (ALPN and prior-knowledge h2c) and, through package http3, HTTP/3 over its own QUIC, all through one handler taking a *http.Request and a Context; TLS through package tls on crypto/tls. Default configuration throughout; the certificate on the opt-in TLS hardening listener is picked per handshake through tls.Config.GetCertificate, so a renewed pair is served without a restart. Requests are routed by fib's Router (chi's API with fib's handlers), the same one for every protocol, with path parameters read through Context.Param, and JSON answered through Context.JSON, encoding/json's encoding; the JSON routes sit behind fib's compress middleware (Router.With(compress.New()), defaults), which gzips per request as Accept-Encoding allows. The gRPC profiles' BenchmarkService, protoc-generated with google.golang.org/protobuf messages, is served by fib's grpc package through the same router, so gRPC shares 8080 (h2c) and 8443 (h2 over TLS) with HTTP. /delay waits in its handler, on fib's worker pool, which grows for handlers that block, /async-db answers a retained request from a goroutine, and /static goes through fib's FileCache, which serves the files from memory and follows the disk through an inotify watch, choosing the pre-compressed twin on disk off Accept-Encoding.",
   "repo": "https://github.com/lesismal/fib",
   "enabled": true,
   "tls_check": true,
@@ -32,7 +32,9 @@
     "baseline-h2c",
     "json-h2c",
     "baseline-h3",
-    "static-h3"
+    "static-h3",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
   "maintainers": ["lesismal"]
 }

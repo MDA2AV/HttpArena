@@ -2514,6 +2514,8 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
     links = []
     if m.get("repo"):
         links.append('<li><a href="%s" rel="noopener">Official repository</a></li>' % e(m["repo"]))
+    if m.get("website"):
+        links.append('<li><a href="%s" rel="noopener">Official website</a></li>' % e(m["website"]))
     links.append('<li><a href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/%s" '
                  'rel="noopener">Benchmark implementation</a></li>' % quote(m.get("dir") or fw))
     if lang_url:
@@ -3553,6 +3555,8 @@ def main():
                 "mode": m.get("mode", "standard"),
                 "language": m.get("language", ""),
                 "repo": m.get("repo", ""),
+                # optional and rare, so only on the entries that set it
+                **({"website": m["website"]} if m.get("website") else {}),
                 "dir": m.get("dir", ""),
                 "engine": m.get("engine", ""),
                 "cmp": m.get("completeness"),
