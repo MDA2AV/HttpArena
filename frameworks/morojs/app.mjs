@@ -23,12 +23,20 @@ const STATIC_ROOT = '/data/static';
 // One process per listener, because Moro locks one configuration per
 // process. 'plain' serves :8080; 'tls' serves json-tls, static-tls and 8gbit
 // on :8081 from /certs; 'tlscheck' serves the opt-in TLS hardening section on
-// :9000 from /certs-tls, reloading the pair whenever the files change.
+// :9000 from /certs-tls, reloading the pair whenever the files change. The
+// two HTTP/2 listeners run on Moro's own HTTP/2 server (Node's http2 module,
+// `engine: 'node'` with `http2: true`): the native engine speaks HTTP/1.1
+// only. 'h2' is TLS with ALPN h2 on :8443 for baseline-h2 and static-h2;
+// 'h2c' is cleartext prior-knowledge HTTP/2 on :8082 for baseline-h2c and
+// json-h2c. Both cluster as node:cluster processes, Moro's transport for the
+// Node servers.
 const ROLE = process.env.MORO_ROLE || 'plain';
 const LISTENERS = {
     plain: { port: 8080 },
     tls: { port: 8081, certs: '/certs' },
     tlscheck: { port: 9000, certs: '/certs-tls', watch: true },
+    h2: { port: 8443, certs: '/certs', http2: true },
+    h2c: { port: 8082, http2: true },
 };
 const pairIn = dir => ({ keyFile: join(dir, 'server.key'), certFile: join(dir, 'server.crt') });
 const hasPair = dir => existsSync(pairIn(dir).keyFile) && existsSync(pairIn(dir).certFile);
@@ -55,11 +63,12 @@ const workers = cpuCount();
 const isWorker = !isMainThread || cluster.isWorker;
 const isPrimary = !isWorker;
 
-// The harness mounts /certs for the TLS profiles and /certs-tls for the
-// tls_check section only; a listener whose pair is absent is not started.
+// The harness mounts /certs for the TLS and HTTP/2 profiles and /certs-tls
+// for the tls_check section only; a listener whose pair is absent is not
+// started. h2c needs no material and always starts.
 if (ROLE === 'plain' && isPrimary) {
-    for (const role of ['tls', 'tlscheck']) {
-        if (!hasPair(LISTENERS[role].certs)) continue;
+    for (const role of ['tls', 'tlscheck', 'h2', 'h2c']) {
+        if (LISTENERS[role].certs && !hasPair(LISTENERS[role].certs)) continue;
         const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
             stdio: 'inherit',
             env: { ...process.env, MORO_ROLE: role },
@@ -170,8 +179,11 @@ function defineRoutes(app) {
     app.post('/baseline11').handler(baseline11);
 
     // Behind the gateway proxies, which terminate TLS and h2 and forward this
-    // over loopback h1.
+    // over loopback h1, and directly on the HTTP/2 listeners. The type is set
+    // by hand so a bare number is text/plain on every listener, whatever a
+    // server's content sniff would make of it.
     app.get('/baseline2').handler((req, res) => {
+        res.setHeader('Content-Type', 'text/plain');
         res.send(String(sumQuery(req.query)));
     });
 
@@ -190,17 +202,23 @@ function defineRoutes(app) {
 
     // json-comp: the framework's compression middleware on this route alone,
     // so no other endpoint pays for the encoder. It negotiates off
-    // Accept-Encoding per request and sends the body as is when none is sent,
-    // which is what json-tls on :8081 gets. gzip is preferred over brotli:
-    // at the middleware's default level it costs about half the CPU of
-    // brotli at the default quality for a body one tenth larger, and the
-    // profile prices bytes squared against rate. brotli stays available for
-    // a client that accepts nothing else.
-    app.get('/json/:count')
-        .before(middleware.compression({ encodings: ['gzip', 'br'] }))
-        .handler((req, res) => {
-            res.json(jsonItems(req));
-        });
+    // Accept-Encoding per request and sends the body as is when none is sent.
+    // gzip is preferred over brotli: at the middleware's default level it
+    // costs about half the CPU of brotli at the default quality for a body one
+    // tenth larger, and the profile prices bytes squared against rate. brotli
+    // stays available for a client that accepts nothing else. The TLS listener
+    // (json-tls) is never asked for an encoding, so its route carries no
+    // middleware and stays on the router's fast path.
+    const json = (req, res) => {
+        res.json(jsonItems(req));
+    };
+    if (ROLE === 'plain') {
+        app.get('/json/:count')
+            .before(middleware.compression({ encodings: ['gzip', 'br'] }))
+            .handler(json);
+    } else {
+        app.get('/json/:count').handler(json);
+    }
 
     // 8gbit: the body exactly as it arrived, Content-Length or chunked, sent
     // back as the same bytes. req.rawBody is the framework's undecoded copy.
@@ -372,6 +390,10 @@ const server = { port: listener.port };
 if (listener.certs) {
     server.ssl = { ...pairIn(listener.certs), ...(listener.watch ? { watch: true } : {}) };
 }
+if (listener.http2) {
+    server.engine = 'node';
+    server.http2 = true;
+}
 
 const app = await createApp({
     server: {
@@ -408,7 +430,7 @@ if (ROLE === 'plain') {
     );
 }
 
-if (ROLE === 'tls') {
+if (ROLE === 'tls' || ROLE === 'h2') {
     // Static files through the framework's own handler, which stats and
     // reads the file on every request and serves the .br or .gz sidecar on
     // disk when the client accepts it. Behind a path check so the JSON route
