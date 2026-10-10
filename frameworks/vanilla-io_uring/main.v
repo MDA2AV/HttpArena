@@ -6,6 +6,7 @@ import vanilla.core
 import vanilla.tls
 import vanilla.static_assets
 import vanilla.pg_async
+import vanilla.websocket
 import x.json2 as json
 import os
 import strings
@@ -432,6 +433,8 @@ fn handle(req_buffer []u8, mut out []u8, _ int, worker_state voidptr, mut event_
 			return done
 		}
 		return w.start_delay(mut out, mut event_loop, ms)
+	} else if route == '/ws' {
+		return upgrade_ws(mut out, method, req)
 	}
 	wb(mut out, not_found)
 	return done
@@ -1244,6 +1247,114 @@ fn echo_into(mut out []u8, req request_parser.HttpRequest, mut scratch []u8) {
 	}
 	body := unsafe { req.buffer[req.body.start..req.body.start + req.body.len] }
 	emit(mut out, 'application/octet-stream', body)
+}
+
+// ── /ws (echo-ws profiles) ───────────────────────────────────────────────────
+//
+// WebSocket echo on vanilla's conn-mode seam (enghitalo/vanilla#136): GET /ws
+// with a well-formed RFC 6455 upgrade gets its `101 Switching Protocols`, and the
+// CONNECTION is handed over via core.queue_takeover. From then on every readable
+// burst on it is fed to ws_echo_conn instead of the HTTP/1.1 state machine. Read
+// buffering/compaction, batched flushes and EPOLLOUT backpressure are the
+// engine's own, so a pipelined burst of frames (echo-ws-pipeline) is drained in
+// one call and coalesced into one write. The websocket module is a pure RFC 6455
+// codec; its accept key is computed on the stack (enghitalo/vanilla#208), so an
+// upgrade allocates nothing — this binary is -gc none and echo-ws-limited runs
+// ~100K upgrades/s.
+
+const ws_switching_prefix = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: '.bytes()
+const ws_head_end = '\r\n\r\n'.bytes()
+// 501: this worker cannot take connections over (queue_takeover returned false)
+// — upgrading would leave the peer speaking frames nobody parses.
+const ws_cannot_upgrade = 'HTTP/1.1 501 Not Implemented\r\nServer: vanilla\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'.bytes()
+const ws_bad_upgrade = 'HTTP/1.1 400 Bad Request\r\nServer: vanilla\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'.bytes()
+
+// upgrade_ws validates the RFC 6455 §4.2.1 client handshake (GET, an
+// `Upgrade: websocket` token, a Sec-WebSocket-Key to sign) and performs the
+// takeover hand-off.
+fn upgrade_ws(mut out []u8, method string, req request_parser.HttpRequest) core.Step {
+	if method != 'GET' {
+		wb(mut out, not_found)
+		return .done
+	}
+	upgrade := req.get_header_value_slice('Upgrade') or {
+		wb(mut out, ws_bad_upgrade)
+		return .close
+	}
+	if unsafe { tos(&req.buffer[upgrade.start], upgrade.len) } != 'websocket' {
+		wb(mut out, ws_bad_upgrade)
+		return .close
+	}
+	key := req.get_header_value_slice('Sec-WebSocket-Key') or {
+		wb(mut out, ws_bad_upgrade)
+		return .close
+	}
+	// The takeover FIRST: only append the 101 if this worker can actually flip
+	// the connection's mode (queue_takeover is false off the epoll worker, e.g.
+	// on the io_uring backend) — the peer then gets a clear error, not a dead 101.
+	if !core.queue_takeover(ws_echo_conn, unsafe { nil }) {
+		wb(mut out, ws_cannot_upgrade)
+		return .close
+	}
+	wb(mut out, ws_switching_prefix)
+	websocket.append_accept_key(mut out, unsafe { tos(&req.buffer[key.start], key.len) })
+	wb(mut out, ws_head_end)
+	return .done
+}
+
+// ws_echo_conn drives the connection after the upgrade (a core.ConnHandler fed
+// every readable burst): echoes text/binary frames, answers pings with pongs,
+// completes the close handshake.
+fn ws_echo_conn(buf []u8, mut out []u8, _ int, _ voidptr, _ voidptr, mut _ core.EventLoop) (int, core.Step) {
+	mut consumed := 0
+	for consumed < buf.len {
+		mut rest := unsafe { (&buf[consumed]).vbytes(buf.len - consumed) }
+		h := websocket.frame_head(rest)
+		if h.total == websocket.incomplete {
+			break // partial frame — the engine buffers the tail and re-calls
+		}
+		if h.total == websocket.err_malformed || !h.masked {
+			// Framing violation, or an unmasked client frame (RFC 6455 §5.1
+			// requires the server to fail the connection).
+			websocket.write_close(mut out, websocket.close_protocol_error)
+			return consumed, core.Step.close
+		}
+		websocket.unmask_in_place(mut rest, h)
+		payload := if h.payload_len > 0 {
+			unsafe { (&rest[h.payload_off]).vbytes(h.payload_len) }
+		} else {
+			[]u8{}
+		}
+		match h.opcode {
+			websocket.op_text, websocket.op_binary {
+				if !h.fin {
+					// Whole messages only; the echo profiles never fragment.
+					websocket.write_close(mut out, websocket.close_unsupported)
+					return consumed, core.Step.close
+				}
+				websocket.write_frame_header(mut out, h.opcode, h.payload_len)
+				wb(mut out, payload)
+			}
+			websocket.op_ping {
+				websocket.write_pong(mut out, payload)
+			}
+			websocket.op_pong {
+				// unsolicited pong — ignored (RFC 6455 §5.5.3 allows it)
+			}
+			websocket.op_close {
+				websocket.write_close(mut out, websocket.close_normal)
+				return consumed + h.total, core.Step.close
+			}
+			else {
+				// op_cont with no message in flight (the fin=false path above
+				// already closed) — protocol error.
+				websocket.write_close(mut out, websocket.close_protocol_error)
+				return consumed, core.Step.close
+			}
+		}
+		consumed += h.total
+	}
+	return consumed, core.Step.done
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────

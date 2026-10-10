@@ -40,7 +40,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # main moved, but that hit api.github.com every build and a transient 504/rate-limit
 # failed the whole build (MDA2AV/HttpArena#895). Bump this commit to pick up lib fixes.
 #
-# Pinned to vanilla main @091c014, the same commit as vanilla-epoll: one handler
+# Pinned to vanilla main @3dd5a79, the same commit as vanilla-epoll: one handler
 # contract (core.Handler returning core.Step, watches through core.EventLoop) on
 # both backends, so main.v is the vanilla-epoll code with the io_uring backend
 # selected; DB queries PARK on the PG socket (oneshot IORING_OP_POLL_ADD) instead of
@@ -50,7 +50,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # commit.
 RUN git init -q /root/.vmodules/vanilla && \
     git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
-        091c014a0191afd7e740b84f5599b9b1fc1fd914 && \
+        3dd5a79ed28aa2bd208ec2268e74b3217aa4422e && \
     git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 # Mbed TLS 4 for the json-tls profile (the epoll TLS listener on :8081). The vanilla
