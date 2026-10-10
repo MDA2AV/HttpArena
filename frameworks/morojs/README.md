@@ -57,6 +57,12 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   validated and swapped onto the running listener without a restart and without touching
   connections already established. Only started when `/certs-tls` is mounted, which validate.sh
   alone does.
+- `baseline-h2`, `static-h2`, `baseline-h2c` and `json-h2c` run on Moro's HTTP/2 server, which is
+  Node's http2 module behind the framework's own request and response objects (`engine: 'node'`
+  with `http2: true`); the native engine speaks HTTP/1.1 only. `:8443` terminates TLS with ALPN
+  `h2` (HTTP/1.1 still accepted), `:8082` is cleartext prior-knowledge HTTP/2. Each is its own
+  process for the same one-configuration-per-process reason, clustered as node:cluster processes,
+  which is Moro's transport for its Node servers.
 - `/echo` sends back `req.rawBody`, the framework's undecoded copy of the request body, so the
   bytes are the bytes that arrived, `Content-Length` or chunked alike.
 - `/ws` is the engine's own RFC 6455 support through `app.websocket()` with `{ raw: true }`, so a
