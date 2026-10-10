@@ -20,6 +20,7 @@ backend.
 | `async-db` | `GET /async-db?min&max&limit` | `db.pg` ConnectionPool |
 | `crud` | `GET/POST/PUT /crud/items[/id]` | list + read + create + update; in-memory cache-aside (`X-Cache` MISS/HIT, invalidated on update — no Redis) |
 | `fortunes` | `GET /fortunes` | DB rows + runtime row, HTML-escaped |
+| `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` | `GET /ws` (WebSocket) | RFC 6455 upgrade, then the connection is handed to a frame handler (`core.queue_takeover`): text/binary echoed, ping → pong, close handshake; a pipelined burst is answered in one write |
 
 ## Stack
 
