@@ -117,10 +117,11 @@ COPY --from=build /usr/local/lib/libmbedcrypto.so* /usr/local/lib/libmbedx509.so
 RUN ldconfig
 COPY --from=build /app/server /server
 
-# 8080 = plaintext HTTP; 8081 = json-tls (HTTP/1.1 over TLS). The harness
+# 8080 = plaintext HTTP (plus unary-grpc over h2c); 8081 = json-tls (HTTP/1.1
+# over TLS); 8082 = h2c only (baseline-h2c, json-h2c). The harness
 # bind-mounts the cert/key at /certs and the server reads /certs/server.{crt,key}
 # (override via TLS_CERT/TLS_KEY); with no cert mounted it self-signs.
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8082
 # One worker per CPU the container may run on. vanilla defaults to nr_cpus,
 # which reads the host's online CPUs (128 on the bench box) and ignores the
 # cpuset, so a 64-CPU profile started 128 workers and latency-500k-8cpu would
