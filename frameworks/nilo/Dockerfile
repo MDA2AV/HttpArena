@@ -1,9 +1,9 @@
-# nilo — a toolkit for Zig 0.16 whose largest module is an HTTP server on
+# nilo, a toolkit for Zig 0.17 whose largest module is an HTTP server on
 # zio fibers. One static binary, built from the commit `build.zig.zon` pins.
 
 FROM alpine:3.20 AS build
 ARG TARGETARCH
-ARG ZIG_VERSION=0.16.0
+ARG ZIG_VERSION=0.17.0
 RUN apk add --no-cache ca-certificates curl git tar xz
 
 # The official toolchain, for the arch Buildx is building.
@@ -22,9 +22,11 @@ WORKDIR /server
 COPY build.zig build.zig.zon ./
 COPY src ./src
 
-# nilo and its one dependency (zio) come from the pin in build.zig.zon; the
-# Postgres driver behind nilo_sql is fetched because build.zig asks for it.
-# Static against musl, so the runtime image needs nothing.
+# nilo comes from the pin in build.zig.zon, and zio from nilo's. build.zig asks nilo for
+# four flags, and each fetches what it needs: the Postgres and SQLite drivers
+# behind nilo_sql, tls.zig for the TLS listeners, libdeflate for gzip. HTTP/2
+# and gRPC (`http2`) fetch nothing. Static against musl, so the runtime image
+# needs nothing.
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
         # `+aes+pclmul` is not decoration. Zig's `x86_64_v3` level carries
@@ -44,5 +46,5 @@ RUN set -eu; \
 
 FROM alpine:3.20
 COPY --from=build /server/zig-out/bin/nilo-arena /nilo-arena
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["/nilo-arena"]

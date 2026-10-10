@@ -9,11 +9,29 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // `.tls = true` is what makes the TLS listener on 8081 exist at all: the
+    // Four flags, each of which keeps its dependency out of a build that does
+    // not ask:
+    //
+    // `.tls = true` makes the TLS listeners on 8081 and 8443 exist at all: the
     // library behind it is fetched and linked only for a dependent that asks
-    // (ADR 0288), and a build without it refuses `.tls` at `listen()` rather
+    // (ADR 212), and a build without it refuses `.tls` at `listen()` rather
     // than serving cleartext on a port the entry believed was encrypted.
-    const nilo = b.dependency("nilo", .{ .target = target, .optimize = optimize, .sql = true, .tls = true });
+    //
+    // `.http2 = true` builds HTTP/2 and gRPC into the one server (ADR 259,
+    // ADR 220): a plain listener tells h2c from HTTP/1.1 by the first bytes,
+    // and a TLS one offers `h2` and `http/1.1` by ALPN. It brings no
+    // dependency, only code.
+    //
+    // `.libdeflate = true` makes `app.compress` gzip with libdeflate instead of
+    // `std.flate` (ADR 248), which is what `json-comp` spends its time on.
+    const nilo = b.dependency("nilo", .{
+        .target = target,
+        .optimize = optimize,
+        .sql = true,
+        .tls = true,
+        .http2 = true,
+        .libdeflate = true,
+    });
 
     const exe = b.addExecutable(.{
         .name = "nilo-arena",
@@ -24,7 +42,7 @@ pub fn build(b: *std.Build) void {
             // A release build strips, the way nilo's own measured binaries
             // do: a panic still names the request (`nilo.panic`), and the
             // board never opens a debugger.
-            .strip = optimize != .Debug,
+            .strip = optimize != .debug,
             .imports = &.{
                 .{ .name = "nilo_http", .module = nilo.module("nilo_http") },
                 .{ .name = "nilo_sql", .module = nilo.module("nilo_sql") },

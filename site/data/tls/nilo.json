@@ -1,0 +1,5 @@
+{
+  "framework": "nilo",
+  "tls": "pass",
+  "check": "none"
+}
