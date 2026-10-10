@@ -1,21 +1,21 @@
-Oct 03, 2026 12:02:51 PM io.helidon.logging.jul.JulProvider doConfigureLogging
+Oct 09, 2026 7:54:45 PM io.helidon.logging.jul.JulProvider doConfigureLogging
 INFO: Logging at runtime configured using defaults
-Oct 03, 2026 12:02:52 PM io.helidon.common.features.HelidonFeatures features
+Oct 09, 2026 7:54:46 PM io.helidon.common.features.HelidonFeatures features
 INFO: Helidon SE 27.0.0 features: [Config, Encoding, JSON, Media, Registry, Tracing, WebServer]
-Oct 03, 2026 12:02:52 PM io.helidon.common.features.HelidonFeatures features
+Oct 09, 2026 7:54:46 PM io.helidon.common.features.HelidonFeatures features
 INFO: You are using preview features. These APIs are production ready, yet may change more frequently. Please follow Helidon release changelog!
-Oct 03, 2026 12:02:52 PM io.helidon.common.features.HelidonFeatures lambda$features$6
+Oct 09, 2026 7:54:46 PM io.helidon.common.features.HelidonFeatures lambda$features$6
 INFO: 	Preview feature: GRPC (WebServer/GRPC)
-Oct 03, 2026 12:02:52 PM io.helidon.webserver.SocketTransportBinding logStarted
-INFO: [0x776515b7] http://0.0.0.0:8082 bound for socket 'h2c'
-Oct 03, 2026 12:02:52 PM io.helidon.webserver.SocketTransportBinding logStarted
-INFO: [0x3f847736] http://0.0.0.0:8080 bound for socket '@default'
-Oct 03, 2026 12:02:52 PM io.helidon.webserver.SocketTransportBinding logStarted
-INFO: [0x3ae15397] https://0.0.0.0:8443 bound for socket 'h2-tls'
-Oct 03, 2026 12:02:52 PM io.helidon.webserver.SocketTransportBinding logStarted
-INFO: [0x77d8c00e] https://0.0.0.0:8081 bound for socket 'h1-tls'
-Oct 03, 2026 12:02:52 PM io.helidon.webserver.LoomServer startIt
-INFO: Started all channels in 45 milliseconds. 1056 milliseconds since JVM startup. Java 27+35-2325
+Oct 09, 2026 7:54:46 PM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x73429744] http://0.0.0.0:8082 bound for socket 'h2c'
+Oct 09, 2026 7:54:46 PM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x5dd34840] http://0.0.0.0:8080 bound for socket '@default'
+Oct 09, 2026 7:54:46 PM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x1b00b293] https://0.0.0.0:8081 bound for socket 'h1-tls'
+Oct 09, 2026 7:54:46 PM io.helidon.webserver.SocketTransportBinding logStarted
+INFO: [0x3317b1b0] https://0.0.0.0:8443 bound for socket 'h2-tls'
+Oct 09, 2026 7:54:46 PM io.helidon.webserver.LoomServer startIt
+INFO: Started all channels in 37 milliseconds. 1097 milliseconds since JVM startup. Java 27+35-2325
 Helidon HttpArena server started on ports: 
 plain (8080)
 https (8443)
