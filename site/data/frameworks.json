@@ -2004,6 +2004,21 @@
       "response": true
     }
   },
+  "tako": {
+    "dir": "tako",
+    "description": "Tako 2.4 on hyper and Tokio, default configuration. Plain HTTP/1.1 on :8080 runs tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); json-tls, 8gbit and static-tls run tako's multi-thread Server with rustls on :8081. Routing, Path/Query/body extractors and the Json responder (serde_json per request) through the tako API, the compression plugin with default settings on the /json route, and ServeDir with precompressed .br/.gz sidecars read from disk per request.",
+    "repo": "https://github.com/rust-dd/tako",
+    "type": "emerging",
+    "engine": "hyper",
+    "mode": "standard",
+    "website": "https://tako.rust-dd.com",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "tokio-uring-ws": {
     "dir": "tokio-uring-ws",
     "description": "Hand-rolled WebSocket echo on tokio-uring \u2014 the io_uring-backed Rust runtime with a completion/owned-buffer API. One tokio-uring runtime per core with SO_REUSEPORT, and a from-scratch RFC 6455 handshake (hand-written SHA-1 + base64) and frame parser/masking on tokio-uring's TcpStream. No WebSocket library.",
