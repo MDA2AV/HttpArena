@@ -6,5 +6,5 @@ RUN RUSTFLAGS="-C target-cpu=native" cargo build --release --locked
 
 FROM debian:trixie-slim
 COPY --from=build /app/target/release/httparena-tako /server
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8082 8443/tcp 8443/udp
 CMD ["/server"]
