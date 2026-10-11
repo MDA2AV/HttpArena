@@ -1,0 +1,31 @@
+{
+  "display_name": "tako",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "Tako 2.4 on hyper and Tokio, default configuration. Plain HTTP/1.1 on :8080 runs tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); json-tls, 8gbit and static-tls run tako's multi-thread Server with rustls on :8081. Routing, Path/Query/body extractors and the Json responder (serde_json per request) through the tako API, the compression plugin with default settings on the /json route, and ServeDir with precompressed .br/.gz sidecars read from disk per request.",
+  "repo": "https://github.com/rust-dd/tako",
+  "website": "https://tako.rust-dd.com",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls"
+  ],
+  "maintainers": ["dancixx"]
+}
