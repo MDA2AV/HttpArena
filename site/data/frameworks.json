@@ -2006,7 +2006,7 @@
   },
   "tako": {
     "dir": "tako",
-    "description": "Tako 2.4 on hyper and Tokio, default configuration. Plain HTTP/1.1 on :8080 runs tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); json-tls, 8gbit and static-tls run tako's multi-thread Server with rustls on :8081. Routing, Path/Query/body extractors and the Json responder (serde_json per request) through the tako API, the compression plugin with default settings on the /json route, and ServeDir with precompressed .br/.gz sidecars read from disk per request.",
+    "description": "Tako 2.4.1 on hyper and Tokio, default configuration. Plain HTTP/1.1 and WebSocket on :8080 run tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); h2c (:8082), HTTP/1.1 and h2 over rustls (:8081, :8443) and HTTP/3 over quinn (:8443/udp) run tako's multi-thread Server. Routing, Path/Query/State/body extractors and the Json responder through the tako API, the compression plugin with default settings on the JSON routes, ServeDir with precompressed .br/.gz sidecars read from disk per request, TakoWs for /ws, and deadpool-postgres for async-db.",
     "repo": "https://github.com/rust-dd/tako",
     "type": "emerging",
     "engine": "hyper",
@@ -2017,7 +2017,33 @@
       "middleware": true,
       "request": true,
       "response": true
-    }
+    },
+    "variants": [
+      {
+        "dir": "tako-gateway",
+        "description": "The tako server from frameworks/tako behind stock Caddy. Gateway: Caddy terminates TLS with h2 (and h3 for gateway-h3) on :8443, serves /static/* from disk with precompressed sidecars, and proxies the rest to tako's per-thread server on :8080 over HTTP/1.1 keepalive. Production stack: Caddy forward_auth against the shared authsvc on every /api/* call; the server does cache-aside in process (moka, 1 s item TTL, 30 s user TTL) over deadpool-postgres and invalidates on writes.",
+        "repo": "https://github.com/rust-dd/tako",
+        "type": "emerging",
+        "engine": "hyper",
+        "mode": "standard",
+        "website": "https://tako.rust-dd.com",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
+      },
+      {
+        "dir": "tako-grpc",
+        "description": "Tako 2.4.1 gRPC: benchmark.BenchmarkService/GetSum as a plain tako route with the GrpcRequest extractor and GrpcResponse responder, prost messages. h2c on :8080 and h2 over rustls on :8443, both on tako's multi-thread Server with default configuration.",
+        "repo": "https://github.com/rust-dd/tako",
+        "type": "emerging",
+        "engine": "hyper",
+        "mode": "standard",
+        "website": "https://tako.rust-dd.com"
+      }
+    ]
   },
   "tokio-uring-ws": {
     "dir": "tokio-uring-ws",
