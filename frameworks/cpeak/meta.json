@@ -2,7 +2,7 @@
   "display_name": "cpeak",
   "language": "Rust",
   "type": "emerging",
-  "mode": "standard",
+  "mode": "tuned",
   "completeness": {
     "routing": true,
     "middleware": true,
