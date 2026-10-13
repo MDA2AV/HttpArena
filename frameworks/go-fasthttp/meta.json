@@ -23,5 +23,5 @@
     "async-db",
     "static-tls"
   ],
-  "maintainers": []
+  "maintainers": ["erikdubbelboer"]
 }
