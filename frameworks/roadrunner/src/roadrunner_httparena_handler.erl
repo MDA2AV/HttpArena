@@ -5,22 +5,36 @@
 -export([handle/1]).
 
 -spec routes() -> [roadrunner_router:route()].
+%% Each route's state names the endpoint it serves, so the handler
+%% dispatches on what the router already matched. `roadrunner_static`
+%% serves the precompressed `.br` / `.gz` siblings on disk itself (and
+%% sends files with `sendfile`, which the compress middleware passes
+%% through), so the static route needs no compress middleware.
 routes() ->
     [
-        {~"/baseline11", ?MODULE, undefined},
-        {~"/baseline2", ?MODULE, undefined},
-        {~"/pipeline", ?MODULE, undefined},
-        {~"/delay/:ms", ?MODULE, undefined},
-        #{path => ~"/json/:count", handler => ?MODULE, middlewares => [roadrunner_compress]},
-        {~"/echo", ?MODULE, undefined},
-        {~"/async-db", ?MODULE, undefined},
-        #{path => ~"/fortunes", handler => ?MODULE, middlewares => [roadrunner_compress]},
-        {~"/ws", ?MODULE, undefined},
+        {~"/baseline11", ?MODULE, baseline},
+        {~"/baseline2", ?MODULE, baseline},
+        {~"/pipeline", ?MODULE, pipeline},
+        {~"/delay/:ms", ?MODULE, delay},
+        #{
+            path => ~"/json/:count",
+            handler => ?MODULE,
+            state => json,
+            middlewares => [roadrunner_compress]
+        },
+        {~"/echo", ?MODULE, echo},
+        {~"/async-db", ?MODULE, async_db},
+        #{
+            path => ~"/fortunes",
+            handler => ?MODULE,
+            state => fortunes,
+            middlewares => [roadrunner_compress]
+        },
+        {~"/ws", ?MODULE, ws},
         #{
             path => ~"/static/*path",
             handler => roadrunner_static,
-            state => #{dir => static_dir(), cache_ttl_ms => 1000},
-            middlewares => [roadrunner_compress]
+            state => #{dir => static_dir(), cache_ttl_ms => 1000}
         }
     ].
 
@@ -32,28 +46,24 @@ static_dir() ->
 
 -spec handle(roadrunner_req:request()) -> roadrunner_handler:result().
 handle(Req) ->
-    handle_route(roadrunner_req:path(Req), Req).
+    handle_route(roadrunner_req:state(Req), Req).
 
-handle_route(~"/baseline11", Req) ->
+handle_route(baseline, Req) ->
     baseline(Req);
-handle_route(~"/baseline2", Req) ->
-    baseline(Req);
-handle_route(~"/pipeline", Req) ->
+handle_route(pipeline, Req) ->
     {roadrunner_resp:text(200, ~"ok"), Req};
-handle_route(<<"/delay/", _/binary>>, Req) ->
+handle_route(delay, Req) ->
     delay_endpoint(Req);
-handle_route(<<"/json/", _/binary>>, Req) ->
+handle_route(json, Req) ->
     json_endpoint(Req);
-handle_route(~"/echo", Req) ->
+handle_route(echo, Req) ->
     echo_endpoint(Req);
-handle_route(~"/async-db", Req) ->
+handle_route(async_db, Req) ->
     async_db_endpoint(Req);
-handle_route(~"/fortunes", Req) ->
+handle_route(fortunes, Req) ->
     fortunes_endpoint(Req);
-handle_route(~"/ws", Req) ->
-    {{websocket, roadrunner_httparena_ws, undefined}, Req};
-handle_route(_, Req) ->
-    {roadrunner_resp:not_found(), Req}.
+handle_route(ws, Req) ->
+    {{websocket, roadrunner_httparena_ws, undefined}, Req}.
 
 %% roadrunner_resp has no octet-stream builder, so the buffered
 %% `{Status, Headers, Body}` triple is assembled here. `content-length`
