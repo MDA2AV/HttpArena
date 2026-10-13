@@ -25,7 +25,7 @@
 
 (set! *warn-on-reflection* true)
 
-(def default-executor (Executors/newVirtualThreadPerTaskExecutor))
+(def default-executor (Executors/newCachedThreadPool))
 
 (def ^:private ^:const ct-json "application/json")
 (def ^:private ^:const ct-text "text/plain")
