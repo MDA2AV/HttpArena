@@ -3,7 +3,6 @@
 
 -export([routes/0]).
 -export([handle/1]).
--export([bin_int/2]).
 
 -spec routes() -> [roadrunner_router:route()].
 routes() ->
@@ -16,8 +15,6 @@ routes() ->
         {~"/echo", ?MODULE, undefined},
         {~"/async-db", ?MODULE, undefined},
         #{path => ~"/fortunes", handler => ?MODULE, middlewares => [roadrunner_compress]},
-        {~"/crud/items", ?MODULE, undefined},
-        {~"/crud/items/:id", ?MODULE, undefined},
         {~"/ws", ?MODULE, undefined},
         #{
             path => ~"/static/*path",
@@ -53,18 +50,6 @@ handle_route(~"/async-db", Req) ->
     async_db_endpoint(Req);
 handle_route(~"/fortunes", Req) ->
     fortunes_endpoint(Req);
-handle_route(~"/crud/items", Req) ->
-    case roadrunner_req:method(Req) of
-        ~"GET" -> roadrunner_httparena_crud:list(Req);
-        ~"POST" -> roadrunner_httparena_crud:create(Req);
-        _ -> {roadrunner_resp:status(405), Req}
-    end;
-handle_route(<<"/crud/items/", _/binary>>, Req) ->
-    case roadrunner_req:method(Req) of
-        ~"GET" -> roadrunner_httparena_crud:get(Req);
-        ~"PUT" -> roadrunner_httparena_crud:update(Req);
-        _ -> {roadrunner_resp:status(405), Req}
-    end;
 handle_route(~"/ws", Req) ->
     {{websocket, roadrunner_httparena_ws, undefined}, Req};
 handle_route(_, Req) ->

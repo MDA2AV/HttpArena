@@ -17,36 +17,6 @@
 %% `#statement{}` record instead of re-parsing on every request.
 statements() ->
     #{
-        read => ~"""
-        SELECT id, name, category, price, quantity, active, tags,
-               rating_score, rating_count
-          FROM items
-         WHERE id = $1
-        """,
-        list => ~"""
-        SELECT id, name, category, price, quantity, active, tags,
-               rating_score, rating_count
-          FROM items
-         WHERE category = $1
-         ORDER BY id
-         LIMIT $2 OFFSET $3
-        """,
-        count => ~"SELECT COUNT(*) FROM items WHERE category = $1",
-        create => ~"""
-        INSERT INTO items (id, name, category, price, quantity,
-                           active, tags, rating_score, rating_count)
-        VALUES ($1, $2, $3, $4, $5, true, '[]'::jsonb, 0, 0)
-        ON CONFLICT (id) DO UPDATE
-           SET name = EXCLUDED.name,
-               category = EXCLUDED.category,
-               price = EXCLUDED.price,
-               quantity = EXCLUDED.quantity
-        """,
-        update => ~"""
-        UPDATE items
-           SET name = $2, category = $3, price = $4, quantity = $5
-         WHERE id = $1
-        """,
         async_db => ~"""
         SELECT id, name, category, price, quantity, active, tags,
                rating_score, rating_count

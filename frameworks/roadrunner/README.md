@@ -4,17 +4,15 @@
 
 ## Profiles
 
-Covered (21 of 28 profiles):
+Covered:
 
-- `baseline`, `pipelined`, `limited-conn`
-- `json`, `json-comp`, `json-tls`
-- `upload`
-- `async-db`
-- `static`, `static-h2`
-- `fortunes`, `crud`
-- `baseline-h2`, `baseline-h2c`, `json-h2c`
+- `baseline`, `pipelined`, `limited-conn`, `async`
+- `latency-1m`, `latency-10k`, `latency-500k-8cpu`
+- `json-comp`, `json-tls`, `8gbit`, `static-tls`
+- `async-db`, `fortunes`
+- `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c`
 - `baseline-h3`, `static-h3`
-- `echo-ws`, `echo-ws-pipeline`
+- `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`
 
 Deferred (tracked under [HttpArena coverage gaps](https://github.com/arizona-framework/roadrunner/blob/main/docs/roadmap.md) in the roadrunner roadmap):
 

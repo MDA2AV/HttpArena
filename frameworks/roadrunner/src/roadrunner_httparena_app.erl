@@ -7,7 +7,6 @@ start(_StartType, _StartArgs) ->
     {ok, SupPid} = roadrunner_httparena_sup:start_link(),
     ok = roadrunner_httparena_dataset:load(),
     _ = roadrunner_httparena_db:start_pool(),
-    ok = roadrunner_httparena_crud:init(),
     Routes = roadrunner_httparena_handler:routes(),
     HttpPort = application:get_env(roadrunner_httparena, http_port, 8080),
     {ok, _} = roadrunner:start_listener(httparena_http, #{
