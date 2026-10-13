@@ -4,7 +4,7 @@ Fiber web framework on fasthttp, with prefork for multi-core scaling.
 
 ## Stack
 
-- **Language:** Go — `go 1.25.0` in go.mod, built with the 1.26 toolchain
+- **Language:** Go, `go 1.26.0` in go.mod, built with the 1.26 toolchain
 - **Framework:** Fiber 3
 - **Build:** `golang:1.26-alpine` -> `alpine:3.23` runtime
 
@@ -39,12 +39,13 @@ Fiber web framework on fasthttp, with prefork for multi-core scaling.
   parameter with `fiber.Params[int]`, and `/async-db` and `/crud/items` read theirs with
   `fiber.Query[int]` as well. No request materialises the query string into a map.
 - JSON through `c.JSON`, serialized per request.
-- The `compress` middleware is mounted on `/json` and `/static` rather than on the whole app.
+- The `compress` middleware is mounted on `/json` rather than on the whole app.
   What that leaves out is either answered in a handful of bytes — `/pipeline`, `/baseline11`,
   `/delay/{ms}`, `/baseline2`, where fasthttp's 200-byte floor means the middleware could only
   stamp a `Vary` header on the endpoints the throughput and CPU-per-request profiles drive — or
   wanted back unchanged, which is `/echo`. `/async-db` and `/crud/*` are outside it too; their
-  profiles send no `Accept-Encoding`, so nothing would have compressed there anyway.
+  profiles send no `Accept-Encoding`, so nothing would have compressed there anyway. `/static`
+  is outside it as well, for the reason given with the static handler below.
 - A worker that is signalled directly finishes the requests it is holding before it exits: a
   request signalled 0.4 s into a 1.5 s handler still answers 200 at 1.5 s. `docker stop` is a
   different path and does not drain — it signals PID 1, which here is the prefork master, and
@@ -71,11 +72,12 @@ profile drives them any more.
   holds no copy of its own.
 - Where the client accepts an encoding, the `.br`/`.gz` twin the harness ships beside the file
   is read instead of the original, picked with Fiber's own `AcceptsEncodings`. The profile
-  allows selecting the variant off `Accept-Encoding` where a framework has no API for it, and
-  the alternative is not compression but the rotation going out at full size: the 20 files
-  weigh 1.21 MB as originals and 318 KB as the twins the client is offered, and the compress
-  middleware sits the round out because fasthttp's Accept-Encoding matcher compares whole
-  tokens while the profile sends `br;q=1, gzip;q=0.8`.
+  allows selecting the variant off `Accept-Encoding` where a framework has no API for it. The
+  20 files weigh 1.21 MB as originals and 318 KB as the twins the client is offered. The
+  compress middleware is kept off this route: since Fiber 3.6.0 it honours the q-values in the
+  profile's `br;q=1, gzip;q=0.8`, so it would encode per request whatever has no twin and a
+  compressible type. That is the two woff2 fonts, which are compressed already: the 22,528 bytes
+  of `bold.woff2` come out as 22,518.
 - `/delay/{ms}` parks the handler's goroutine on a timer, which is what makes `async` a
   question about the process rather than about the handler.
 - Postgres goes through `pgx`, and every database and cache call carries a deadline: Fiber's
@@ -155,12 +157,11 @@ results on `main`, so the trade is a number rather than an argument.
 
 ## Tuned sibling
 
-Four things this entry leaves at the framework's defaults — sonic behind `c.JSON`, the compress
-middleware at its best-speed level, the Postgres pool filled at startup, and fasthttp at `master`
-for the go-brrr brotli it swapped in — are set in the [`fiber-tuned`](../fiber-tuned/) entry,
-`mode: tuned`. sonic is the one standard mode forbids.
+Three things this entry leaves at the framework's defaults (sonic behind `c.JSON`, the compress
+middleware at its best-speed level, and the Postgres pool filled at startup) are set in the
+[`fiber-tuned`](../fiber-tuned/) entry, `mode: tuned`. sonic is the one standard mode forbids.
 The compress level is an option of the same middleware, and `carter` and `salvo` run theirs at
 level 1 in standard mode; it stays at default here so that "default configuration" stays true,
-and its README has the numbers: on a sandbox core, json-comp costs this entry roughly 380 µs per
-request, about 260 of them brotli at fasthttp's default level 4. The board runs both entries, so
-each setting is a delta against this one rather than a claim.
+and the `fiber-tuned` README has the numbers: on a sandbox core, the brotli step for the
+json-comp body measured about 107 µs at fasthttp's default level 4 and about 26 µs at level 0.
+The board runs both entries, so each setting is a delta against this one rather than a claim.
