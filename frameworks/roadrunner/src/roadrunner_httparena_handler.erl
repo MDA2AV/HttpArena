@@ -110,23 +110,8 @@ fortunes_endpoint(Req) ->
         end,
     Runtime = {0, ~"Additional fortune added at request time."},
     Sorted = lists:keysort(2, [Runtime | Rows]),
-    Body = render_fortunes(Sorted),
-    {roadrunner_resp:html(200, Body), Req}.
-
-render_fortunes(Rows) ->
-    [
-        ~"<!doctype html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>",
-        [render_fortune_row(Id, Msg) || {Id, Msg} <- Rows],
-        ~"</table></body></html>"
-    ].
-
-render_fortune_row(Id, Msg) ->
-    [~"<tr><td>", integer_to_binary(Id), ~"</td><td>", html_escape(Msg), ~"</td></tr>"].
-
-html_escape(Bin) when is_binary(Bin) ->
-    B1 = binary:replace(Bin, ~"&", ~"&amp;", [global]),
-    B2 = binary:replace(B1, ~"<", ~"&lt;", [global]),
-    binary:replace(B2, ~">", ~"&gt;", [global]).
+    Page = roadrunner_httparena_fortunes:render(#{fortunes => Sorted}),
+    {roadrunner_resp:html(200, arizona_render:render_to_iolist(Page)), Req}.
 
 baseline(Req) ->
     Qs = roadrunner_req:parse_qs(Req),
