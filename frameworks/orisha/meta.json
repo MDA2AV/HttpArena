@@ -1,7 +1,7 @@
 {
   "display_name": "orisha",
   "language": "Koru",
-  "type": "emerging",
+  "type": "engine",
   "mode": "standard",
   "completeness": {
     "routing": true,
