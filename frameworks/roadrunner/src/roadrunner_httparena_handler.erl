@@ -72,11 +72,11 @@ handle_route(_, Req) ->
 
 %% roadrunner_resp has no octet-stream builder, so the buffered
 %% `{Status, Headers, Body}` triple is assembled here. `content-length`
-%% comes from the collected body rather than from the request, which is
-%% what makes the chunked case work: a chunked request carries no
+%% comes from the body read rather than from the request, which is what
+%% makes the chunked case work: a chunked request carries no
 %% `Content-Length` to forward, and an empty one still gets a `0`.
 echo_endpoint(Req) ->
-    {Body, Req2} = collect_body(Req, []),
+    {ok, Body, Req2} = roadrunner_req:read_body(Req),
     Resp =
         {200,
             [
@@ -85,21 +85,6 @@ echo_endpoint(Req) ->
             ],
             Body},
     {Resp, Req2}.
-
-%% Read the request body in 64 KB chunks, keeping each one. With
-%% `body_buffering => manual` on the listener, `read_body/2
-%% #{length => 65536}` returns one chunk at a time; `read_body/2`
-%% decodes chunked framing itself, so this is the same loop either way.
-%% The chunks are accumulated in reverse and returned as `iodata()` --
-%% the auto-buffered body is `iodata()` too, so nothing is flattened
-%% before it goes back out on the wire.
-collect_body(Req, Acc) ->
-    case roadrunner_req:read_body(Req, #{length => 65536}) of
-        {ok, Bytes, Req2} ->
-            {lists:reverse([Bytes | Acc]), Req2};
-        {more, Bytes, Req2} ->
-            collect_body(Req2, [Bytes | Acc])
-    end.
 
 async_db_endpoint(Req) ->
     Qs = roadrunner_req:parse_qs(Req),
