@@ -1449,6 +1449,34 @@
       "response": true
     }
   },
+  "orisha-uring": {
+    "dir": "orisha-uring",
+    "description": "Koru HTTP server compiled to native code via Zig \u2014 io_uring pump variant (per-worker ring + SO_REUSEPORT, multishot recv, kTLS). HttpArena routes wired through Orisha's handler seam. No response cache and no startup pre-serialization: json serializes every field per request and compresses per request.",
+    "repo": "https://github.com/korulang/orisha",
+    "type": "engine",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
+  "orisha": {
+    "dir": "orisha",
+    "description": "Koru HTTP server compiled to native code via Zig. HttpArena routes wired through Orisha's handler seam. No response cache and no startup pre-serialization: json serializes every field per request and compresses per request.",
+    "repo": "https://github.com/korulang/orisha",
+    "type": "engine",
+    "engine": "orisha",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": false,
+      "request": true,
+      "response": true
+    }
+  },
   "oxpecker": {
     "dir": "oxpecker",
     "description": "F# web framework built on ASP.NET Core endpoint routing, with a functional handler DSL and its own code-as-markup view engine.",
