@@ -2330,6 +2330,20 @@
       "response": true
     }
   },
+  "viltrum": {
+    "dir": "viltrum",
+    "description": "HTTP framework for V with its own HTTP/1.1 engine: router with :params, middleware chain, first-party WebSocket, strict request framing (Content-Length and chunked, smuggling-hardened, fuzzed in CI). Tuned: one SO_REUSEPORT epoll loop per CPU (epoll_cores) instead of the default thread-per-connection I/O. json-comp uses viltrum's gzip middleware.",
+    "repo": "https://github.com/Tuntii/viltrum",
+    "type": "emerging",
+    "engine": "viltrum",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "Vinyl Cache": {
     "dir": "vinyl-cache",
     "description": "Vinyl Cache HTTP accelerator.",
