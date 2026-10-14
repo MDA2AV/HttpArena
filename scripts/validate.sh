@@ -1723,7 +1723,7 @@ print(f'{count} {valid} {faithful}')
 
     # Content-Type must be application/json
     jt_ct=$(curl -sk --max-time 30 -D- -o /dev/null "https://localhost:$H1TLS_PORT/json/1?m=1" | grep -i "^content-type:" | tr -d '\r' || true)
-    if echo "$jt_ct" | grep -qi 'application/json'; then
+    if grep -qi 'application/json' <<<"$jt_ct"; then
         echo "  PASS [json-tls Content-Type: application/json]"
         PASS=$((PASS + 1))
     else
@@ -2250,7 +2250,10 @@ if has_test "fortunes"; then
     check_header "GET /fortunes Content-Type" "Content-Type" "text/html" "$FORTUNES_DOCS" \
         "http://localhost:$PORT/fortunes"
 
-    if echo "$body" | grep -qi '<!doctype html>'; then
+    # Here-strings and pattern tests, not `echo | grep -q`: under pipefail
+    # grep -q's early exit can hand echo an EPIPE on a 24 KB body and fail a
+    # check the body passed.
+    if grep -qi '<!doctype html>' <<<"$body"; then
         echo "  PASS [GET /fortunes <!DOCTYPE html>]"
         PASS=$((PASS + 1))
     else
@@ -2271,7 +2274,7 @@ if has_test "fortunes"; then
 
     # Runtime-injected row text — proves the handler appended id=0 in memory
     # rather than caching a pre-rendered page from the DB rows alone.
-    if echo "$body" | grep -qF 'Additional fortune added at request time.'; then
+    if [[ "$body" == *'Additional fortune added at request time.'* ]]; then
         echo "  PASS [GET /fortunes runtime-injected row]"
         PASS=$((PASS + 1))
     else
@@ -2281,7 +2284,7 @@ if has_test "fortunes"; then
     # XSS escape — load-bearing check. Row 11 contains a raw <script> tag
     # in the DB; the rendered output must encode it as &lt;script&gt; and
     # must NOT contain the raw <script>alert sequence anywhere.
-    if echo "$body" | grep -qF '&lt;script&gt;' && ! echo "$body" | grep -qF '<script>alert'; then
+    if [[ "$body" == *'&lt;script&gt;'* ]] && [[ "$body" != *'<script>alert'* ]]; then
         echo "  PASS [GET /fortunes XSS escape]"
         PASS=$((PASS + 1))
     else
@@ -2478,6 +2481,8 @@ fi
 # same port, so endpoint correctness is still covered. If h3 itself is
 # broken, h2load-h3 will catch it at benchmark time with 0 rps.
 _validate_gateway() {
+    _stop_standalone_for_compose
+    local fail_before=$FAIL
     local profile="$1"
     local compose_file="$2"
     local gateway_docs="$3"
@@ -2630,10 +2635,34 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
         FAIL=$((FAIL + 1))
     fi
 
+    # A failed check with the stack still up is the moment the containers'
+    # logs say why (an edge answering 502 is the proxy's view; the server's
+    # own exit is in its log). Only compose-up failures dumped them before.
+    if [ "$FAIL" -gt "$fail_before" ]; then
+        dump_stack_logs "$gw_project"
+    fi
+
     # Cleanup gateway compose stack
     if [ -f "$compose_file" ]; then
         CERTS_DIR="$CERTS_DIR" DATA_DIR="$DATA_DIR" DATABASE_URL="postgres://bench:bench@localhost:5432/benchmark" \
             docker compose -f "$compose_file" -p "$gw_project" down --remove-orphans 2>/dev/null || true
+    fi
+}
+
+# The standalone container stays up through the compose sections, on the host
+# network (it was started that way for the Postgres sidecar), and nothing below
+# talks to it again (dump_logs reads a stopped container fine). Left running it
+# keeps :8080 bound, so with SO_REUSEPORT the kernel splits the proxy's upstream
+# traffic between it and the stack's own server, and an entry that also
+# subscribes to the H2 family keeps :8443 bound, so the stack's edge cannot bind
+# at all and every gateway check is quietly answered by the entry's own listener
+# (an entry whose H2 listener has the same routes and database passes anyway;
+# production-stack is where it shows, the entry answering 500 where the edge
+# would have said 401). Stop it before the first stack comes up.
+_stop_standalone_for_compose() {
+    if [ "$GATEWAY_ONLY" = "false" ] && [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null)" = "true" ]; then
+        echo "[compose] stopping the standalone container: the stacks bind the same host ports"
+        docker stop -t 5 "$CONTAINER_NAME" >/dev/null 2>&1 || true
     fi
 }
 
@@ -2690,6 +2719,8 @@ _prodstack_restore_redis() {
 }
 
 _validate_production_stack() {
+    _stop_standalone_for_compose
+    local fail_before=$FAIL
     local compose_file="$1"
     local docs_url="$2"
     local profile="production-stack"
@@ -2890,6 +2921,10 @@ print(f'{count} {valid} {correct_totals}')
         echo "  FAIL: $profile HTTPS port $GW_PORT not responding after 60s"
         dump_stack_logs "$gw_project"
         FAIL=$((FAIL + 1))
+    fi
+
+    if [ "$FAIL" -gt "$fail_before" ]; then
+        dump_stack_logs "$gw_project"
     fi
 
     # Cleanup

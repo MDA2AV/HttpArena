@@ -1,7 +1,19 @@
+using HttpArena.Services;
+using HttpArena.Types;
+
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
+
+// The same source-generated JSON context and services as aspnet-minimal, whose
+// Handlers.cs this entry compiles against (see the Dockerfile).
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
+
+builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<DatasetService>();
+builder.Services.AddSingleton<ItemService>();
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -13,7 +25,10 @@ builder.WebHost.ConfigureKestrel(options =>
 
 var app = builder.Build();
 
-AppData.Load();
+// Load the dataset and open the Postgres pool at startup instead of on the
+// first request.
+_ = app.Services.GetRequiredService<DatasetService>();
+_ = app.Services.GetRequiredService<ItemService>();
 
 app.MapGet("/baseline2", Handlers.Sum);
 app.MapGet("/json/{count}", Handlers.Json);

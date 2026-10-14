@@ -1,12 +1,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-# Copy project file and shared source from aspnet-minimal
+# The project file and Program.cs are this entry's; the handlers, services
+# and types are aspnet-minimal's, compiled in as-is.
 COPY frameworks/aspnet-minimal_nginx/aspnet-minimal_nginx.csproj .
 COPY frameworks/aspnet-minimal_nginx/Program.cs .
 COPY frameworks/aspnet-minimal/Handlers.cs .
-COPY frameworks/aspnet-minimal/AppData.cs .
-COPY frameworks/aspnet-minimal/Models.cs .
+COPY frameworks/aspnet-minimal/Services ./Services
+COPY frameworks/aspnet-minimal/Types ./Types
 
 RUN dotnet publish -c Release -o out
 

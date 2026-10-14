@@ -1,4 +1,6 @@
 using System.Text.Json;
+using HttpArena.Services;
+using HttpArena.Types;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -8,6 +10,15 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
+
+// The same source-generated JSON context and services as aspnet-minimal, whose
+// Handlers.cs this entry compiles against (see the Dockerfile).
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
+
+builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<DatasetService>();
+builder.Services.AddSingleton<ItemService>();
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -67,7 +78,10 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
 
 var app = builder.Build();
 
-AppData.Load();
+// Load the dataset and open the Postgres pool at startup instead of on the
+// first request.
+_ = app.Services.GetRequiredService<DatasetService>();
+_ = app.Services.GetRequiredService<ItemService>();
 
 // ── gateway-64 routes (unchanged) ───────────────────────────────────────────
 
@@ -123,7 +137,7 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
     // wasMiss is captured in the factory closure so we can report the
     // X-Cache: MISS vs HIT header to the client. It's only flipped inside
     // the factory, which runs at most once per GetOrCreateAsync call.
-    app.MapGet("/api/items/{id:int}", async (int id, HybridCache cache, HttpContext ctx, CancellationToken ct) =>
+    app.MapGet("/api/items/{id:int}", async (int id, HybridCache cache, DatabaseService db, HttpContext ctx, CancellationToken ct) =>
     {
         var wasMiss = false;
         var cacheKey = $"item:{id}";
@@ -133,9 +147,9 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
             async cancel =>
             {
                 wasMiss = true;
-                if (AppData.PgDataSource is null) return "";
+                if (db.Postgres is null) return "";
 
-                await using var cmd = AppData.PgDataSource.CreateCommand(
+                await using var cmd = db.Postgres.CreateCommand(
                     "SELECT id, name, category, price, quantity, active, rating_score, rating_count " +
                     "FROM items WHERE id = $1 LIMIT 1");
                 cmd.Parameters.AddWithValue(id);
@@ -177,7 +191,7 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
     // HybridCache.RemoveAsync clears the key from BOTH L1 and L2. Next GET
     // on the same key will fall through to the factory and re-populate
     // from Postgres.
-    app.MapPost("/api/items/{id:int}", async (int id, HybridCache cache, HttpContext ctx) =>
+    app.MapPost("/api/items/{id:int}", async (int id, HybridCache cache, DatabaseService db, HttpContext ctx) =>
     {
         ItemUpdate? update;
         try
@@ -195,13 +209,13 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
             return;
         }
 
-        if (AppData.PgDataSource is null)
+        if (db.Postgres is null)
         {
             ctx.Response.StatusCode = 503;
             return;
         }
 
-        await using var cmd = AppData.PgDataSource.CreateCommand(
+        await using var cmd = db.Postgres.CreateCommand(
             "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4");
         cmd.Parameters.AddWithValue(update.Name);
         cmd.Parameters.AddWithValue(update.Price);
@@ -225,7 +239,7 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
     // header that was set by the edge after auth_request validated the
     // session cookie. The framework trusts the header completely — nginx
     // strips any client-supplied X-User-Id before running auth_request.
-    app.MapGet("/api/me", async (HybridCache cache, HttpContext ctx, CancellationToken ct) =>
+    app.MapGet("/api/me", async (HybridCache cache, DatabaseService db, HttpContext ctx, CancellationToken ct) =>
     {
         var userIdHeader = ctx.Request.Headers["X-User-Id"].ToString();
         if (string.IsNullOrWhiteSpace(userIdHeader) || !int.TryParse(userIdHeader, out var uid))
@@ -242,9 +256,9 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
             async cancel =>
             {
                 wasMiss = true;
-                if (AppData.PgDataSource is null) return "";
+                if (db.Postgres is null) return "";
 
-                await using var cmd = AppData.PgDataSource.CreateCommand(
+                await using var cmd = db.Postgres.CreateCommand(
                     "SELECT id, name, email, plan FROM users WHERE id = $1 LIMIT 1");
                 cmd.Parameters.AddWithValue(uid);
 

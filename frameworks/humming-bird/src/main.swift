@@ -483,6 +483,9 @@ func loadTLSConfiguration() -> TLSConfiguration? {
         )
         // http/1.1 only: json-tls requires the ALPN not to fall into h2.
         configuration.applicationProtocols = ["http/1.1"]
+        // NIOSSL's default floor is TLS 1.0; the validator's TLS quality probe
+        // fails a server that still completes a TLS 1.0 or 1.1 handshake.
+        configuration.minimumTLSVersion = .tlsv12
         return configuration
     } catch {
         return nil

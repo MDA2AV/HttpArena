@@ -10,7 +10,10 @@ RUN apt-get update -qq && \
         libclang-dev \
         media-types \
         pkg-config \
-        varnish-dev
+        "varnish-dev=$(dpkg-query -W -f='${Version}' varnish)"
+# varnish-dev is pinned to the version the image ships (9.0.3-5~trixie): the
+# image's apt source also carries 9.1.0 now, and an unpinned varnish-dev picks
+# that, which depends on varnish 9.1.0 and conflicts with the installed one.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable -q
 ENV PATH="/root/.cargo/bin:${PATH}"
 
