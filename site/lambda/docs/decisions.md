@@ -14,7 +14,7 @@ the editor, or pushed to this lambda's own git repository, is replaced by the ne
 ## The site is data, not a version
 
 The site is what `scripts/gen_leaderboard_data.py` generated and `scripts/assemble_site.sh
---no-logs` laid out: the same tree GitHub Pages serves, without the logs. Nearly every page of it
+--no-logs` laid out: the same tree GitHub Pages served, without the logs. Nearly every page of it
 is generated from the results, so it changes whenever they do, and a version for every such
 change is what the owner did not want: a version is the program. So the site is sent like the results,
 through `api/ingest/site/`, and kept in the workspace; a deploy leaves it alone, and a
@@ -27,10 +27,12 @@ of a ~1,770-file site are sent the first time and only what changed after that. 
 neither the new paths nor the ones before them is deleted then, so a page in the middle of being
 sent while the site changes still finds its file.
 
-`Site.cs` serves it the way GitHub Pages does: a folder answers with its `index.html`, a folder
+`Site.cs` serves it the way GitHub Pages did: a folder answers with its `index.html`, a folder
 asked for without its slash is sent on to it with a 301, and a path that is nothing answers 404
 with the site's own `404.html` - never the `index.html` of a folder above it. Types come from the
-names, and ETags from the files, so a browser that has a page is told it is unchanged.
+names, and ETags from the files, so a browser that has a page is told it is unchanged. Every
+answer carries `Access-Control-Allow-Origin: *`, as on Pages: the docs' "Browse" links open
+`openapi.json` in Redoc, which reads it from an origin of its own.
 
 The pages link absolutely (`/docs/...`, `/data.js`): they are generated for the root of a domain.
 That works at the lambda's own address and on a domain of its own, and not in a feature's preview
@@ -54,7 +56,7 @@ are what everything that reads results already understands. They are built per r
 
 The container log of every run is kept where `benchmark.sh` writes it, in the repository under
 `site/static/logs/`, as the owner wants, and this lambda keeps no copy. The board links a log at
-`logs/{profile}/{conns}/{framework dir}.log`, as it does on GitHub Pages; here that answers 302 to
+`logs/{profile}/{conns}/{framework dir}.log`, as it did on GitHub Pages; here that answers 302 to
 the same file on `raw.githubusercontent.com`, as it is on main. The redirect is temporary so that
 browsers don't remember it, and the links work wherever the board is served from. The lambda
 kept gzipped copies until `V3__Drop_logs.sql` dropped their table.

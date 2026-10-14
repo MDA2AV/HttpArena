@@ -20,8 +20,8 @@ The endpoints are split across two files:
 
 | Spec | Profiles covered | |
 |------|-----------------|---|
-| [openapi.json](/openapi.json) | All HTTP/1.1, HTTP/2, HTTP/3, gRPC, and WebSocket profiles | [Browse](https://redocly.github.io/redoc/?url=https://www.http-arena.com/openapi.json) |
-| [openapi-gateway.json](/openapi-gateway.json) | Gateway profiles (production-stack) | [Browse](https://redocly.github.io/redoc/?url=https://www.http-arena.com/openapi-gateway.json) |
+| [openapi.json](/openapi.json) | All HTTP/1.1, HTTP/2, HTTP/3, gRPC, and WebSocket profiles | [Browse](https://redocly.github.io/redoc/?url=https://http-arena.com/openapi.json) |
+| [openapi-gateway.json](/openapi-gateway.json) | Gateway profiles (production-stack) | [Browse](https://redocly.github.io/redoc/?url=https://http-arena.com/openapi-gateway.json) |
 
 ## Benchmark parameters
 

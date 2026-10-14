@@ -1,5 +1,5 @@
 // The site: what scripts/gen_leaderboard_data.py generated and scripts/assemble_site.sh laid out
-// at a commit of main - the tree GitHub Pages serves, without the logs. It is data, like the
+// at a commit of main - the tree GitHub Pages served, without the logs. It is data, like the
 // results beside it: the HttpArena repository sends it through api/ingest/site/ when its publish
 // workflow is run, no version is saved for it, and a deploy leaves it as it is.
 //
@@ -11,8 +11,9 @@
 // changes finds its file.
 //
 // A folder answers with its index.html (docs/scoring/ is docs/scoring/index.html), a folder
-// asked for without its slash is sent on to it as GitHub Pages does, and a path that is nothing
-// answers 404 with the site's own 404.html.
+// asked for without its slash is sent on to it as GitHub Pages did, and a path that is nothing
+// answers 404 with the site's own 404.html. Any origin may read it, as on Pages: the docs open
+// openapi.json in Redoc, on an origin of its own.
 
 using System.Security.Cryptography;
 
@@ -291,7 +292,7 @@ public sealed class SiteStore
     }
 }
 
-/// <summary>Answers a path of the site the way GitHub Pages does.</summary>
+/// <summary>Answers a path of the site the way GitHub Pages did.</summary>
 public sealed class SiteHandler(SiteStore site) : IHandler
 {
     private static readonly ContentType Html = new("text/html; charset=utf-8");
@@ -304,7 +305,7 @@ public sealed class SiteHandler(SiteStore site) : IHandler
     {
         if (!request.HasType(RequestMethod.Get, RequestMethod.Head))
         {
-            return request.Respond().Status(ResponseStatus.MethodNotAllowed).Header("Allow", "GET, HEAD").Build();
+            return Respond(request).Status(ResponseStatus.MethodNotAllowed).Header("Allow", "GET, HEAD").Build();
         }
 
         var target = request.Header.Target;
@@ -315,12 +316,12 @@ public sealed class SiteHandler(SiteStore site) : IHandler
 
         if (await site.OpenAsync(name) is (var resource, var type))
         {
-            return request.Respond().Content(resource, type).Build();
+            return Respond(request).Content(resource, type).Build();
         }
 
         if (!site.Published)
         {
-            return request.Respond()
+            return Respond(request)
                           .Status(ResponseStatus.ServiceUnavailable)
                           .Content("The site was not published here yet: the HttpArena repository sends it with scripts/publish_genhttp.py.", Text)
                           .Build();
@@ -329,14 +330,17 @@ public sealed class SiteHandler(SiteStore site) : IHandler
         if (path.Length > 0 && !target.HasTrailingSlash && site.Has(path + "/index.html"))
         {
             // relative, as every address here is: "scoring/" from docs/scoring
-            return request.Respond()
+            return Respond(request)
                           .Status(ResponseStatus.MovedPermanently)
                           .Header("Location", path[(path.LastIndexOf('/') + 1)..] + "/")
                           .Build();
         }
 
-        var notFound = request.Respond().Status(ResponseStatus.NotFound);
+        var notFound = Respond(request).Status(ResponseStatus.NotFound);
 
         return (await site.OpenAsync("404.html") is (var page, _) ? notFound.Content(page, Html) : notFound.Content("Not found.", Text)).Build();
     }
+
+    /// <summary>Every answer of the site, readable from any origin.</summary>
+    private static IResponseBuilder Respond(IRequest request) => request.Respond().Header("Access-Control-Allow-Origin", "*");
 }

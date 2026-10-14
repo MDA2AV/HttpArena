@@ -461,7 +461,7 @@ fi
 
 # ───── Helpers ─────
 
-DOCS_BASE="https://www.http-arena.com/#doc=test-profiles"
+DOCS_BASE="https://http-arena.com/#doc=test-profiles"
 
 # Every parameter the profiles below send is drawn fresh per run. The suite used
 # to ask for a fixed set - /json/12?m=3, /json/50?m=1, min=10&max=50&limit=50 -

@@ -5,7 +5,7 @@
 - The site: `/` is the board, a folder answers with its `index.html` (`docs/scoring/`), a folder
   without its slash is sent on to it (`docs` answers 301 to `docs/`), and a path that is nothing
   answers 404 with the site's `404.html`. Every page answers exactly what `assemble_site.sh` laid
-  out at the commit `api/site` names.
+  out at the commit `api/site` names, with `Access-Control-Allow-Origin: *`.
 - Publishing the same site twice sends nothing the second time; content no longer named by the
   site or the one before it is deleted.
 - `api/frameworks`, `api/results/{slug}` and `api/host` answer exactly what the repository's

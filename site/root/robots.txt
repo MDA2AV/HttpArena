@@ -4,4 +4,4 @@ Allow: /
 # away from the pages that matter.
 Disallow: /logs/
 
-Sitemap: https://www.http-arena.com/sitemap.xml
+Sitemap: https://http-arena.com/sitemap.xml

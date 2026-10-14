@@ -24,6 +24,7 @@ await check("the site is published", "api/site", (r, body) => r.status !== 200 ?
 await check("a folder answers with its index", "docs/", status(200));
 await check("a folder without its slash is sent on", "docs", (r) => r.status !== 301 ? `answered ${r.status}` : r.headers.get("location") === "docs/" ? null : `sent to ${r.headers.get("location")}`);
 await check("a path that is nothing is 404", "no/such/page/", status(404));
+await check("any origin may read the site", "openapi.json", (r) => r.status !== 200 ? `answered ${r.status}` : r.headers.get("access-control-allow-origin") === "*" ? null : "no Access-Control-Allow-Origin: *");
 await check("badges for shields.io", "badge/index.json", (r, body) => r.status !== 200 ? `answered ${r.status}` : JSON.parse(body) && null);
 await check("the entries", "api/frameworks", (r, body) => r.status !== 200 ? `answered ${r.status}` : typeof JSON.parse(body) === "object" ? null : "not an object");
 await check("the publishes", "api/publishes", (r, body) => r.status !== 200 ? `answered ${r.status}` : Array.isArray(JSON.parse(body)) ? null : "not a list");

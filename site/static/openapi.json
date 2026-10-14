@@ -15,7 +15,7 @@
   },
   "externalDocs": {
     "description": "Knowledge Base",
-    "url": "https://www.http-arena.com/docs/"
+    "url": "https://http-arena.com/docs/"
   },
   "x-tagGroups": [
     {
@@ -83,7 +83,7 @@
       "description": "Primary throughput benchmark over persistent keep-alive connections (512, 4096 connections). Also covers the **short-lived** profile (connections closed after 10 requests) and the **API-4 / API-16** mixed workload profiles — all use the same `/baseline11` endpoint.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/baseline/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/baseline/"
       }
     },
     {
@@ -91,7 +91,7 @@
       "description": "Serves 20 static assets (CSS, JS, HTML, fonts, SVG, WebP, JSON) from `/data/static/` in a round-robin pattern. Compression via `Accept-Encoding: br;q=1, gzip;q=0.8` is optional but improves throughput. Pre-compressed `.gz` and `.br` sidecars are available on disk for all text files.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/static/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/static/"
       }
     },
     {
@@ -99,7 +99,7 @@
       "description": "Large request body ingestion benchmark. Measures body reading throughput with payloads rotating across 500 KB, 2 MB, 10 MB, and 20 MB.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/upload/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/upload/"
       }
     },
     {
@@ -107,7 +107,7 @@
       "description": "JSON serialization benchmark. Loads a 50-item dataset at startup and computes per-request `total` fields. Also covers the **JSON Compressed** profile (same endpoint, client sends `Accept-Encoding: gzip, br`, server must compress), the **JSON TLS** profile (same endpoint on port 8081 over HTTP/1.1+TLS), and the **JSON H2C** profile (same endpoint on port 8082 over HTTP/2 cleartext).",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/json-processing/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/json-processing/"
       }
     },
     {
@@ -115,7 +115,7 @@
       "description": "Async Postgres range query benchmark. Exercises async I/O scheduling, connection pooling, and JSON serialization with live database queries against the `items` table.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/async-database/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/async-database/"
       }
     },
     {
@@ -123,7 +123,7 @@
       "description": "Realistic REST API benchmark with paginated list, cached single-item read (200 ms TTL), create (upsert), and update with cache invalidation against Postgres.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/"
       }
     },
     {
@@ -131,7 +131,7 @@
       "description": "HTTP pipelining benchmark. 16 requests are sent back-to-back on each connection before awaiting responses, isolating raw I/O throughput from application logic.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/pipelined/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/pipelined/"
       }
     },
     {
@@ -139,7 +139,7 @@
       "description": "HTTP/2 baseline — same `a + b` sum as `/baseline11` but served over HTTP/2. Two sub-profiles: **baseline-h2** (port 8443, TLS + ALPN `h2`) and **baseline-h2c** (port 8082, h2c prior-knowledge, no TLS). Port 8082 must refuse HTTP/1.1.",
       "externalDocs": {
         "description": "Test Profile (H2 TLS)",
-        "url": "https://www.http-arena.com/docs/test-profiles/h2/baseline-h2/"
+        "url": "https://http-arena.com/docs/test-profiles/h2/baseline-h2/"
       }
     },
     {
@@ -147,7 +147,7 @@
       "description": "Same `/static/*` endpoint as the HTTP/1.1 static profile, served over HTTP/2+TLS on port 8443 with 32 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h2/static-h2/"
+        "url": "https://http-arena.com/docs/test-profiles/h2/static-h2/"
       }
     },
     {
@@ -155,7 +155,7 @@
       "description": "Same `/json/{count}` endpoint as the HTTP/1.1 JSON profile, served over HTTP/2 cleartext (h2c) on port 8082 with 32 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h2/json-h2c/"
+        "url": "https://http-arena.com/docs/test-profiles/h2/json-h2c/"
       }
     },
     {
@@ -163,7 +163,7 @@
       "description": "Same `/baseline2` endpoint as the H2 baseline, served over HTTP/3 / QUIC on port 8443. Only frameworks with native QUIC support participate.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h3/baseline-h3/"
+        "url": "https://http-arena.com/docs/test-profiles/h3/baseline-h3/"
       }
     },
     {
@@ -171,7 +171,7 @@
       "description": "Same `/static/*` endpoint, served over HTTP/3 / QUIC on port 8443 with 64 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/h3/static-h3/"
+        "url": "https://http-arena.com/docs/test-profiles/h3/static-h3/"
       }
     },
     {
@@ -179,7 +179,7 @@
       "description": "Unary gRPC RPC (`GetSum`) over HTTP/2 cleartext on port 8080. Load generator: h2load with 100 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/grpc/unary/"
+        "url": "https://http-arena.com/docs/test-profiles/grpc/unary/"
       }
     },
     {
@@ -187,7 +187,7 @@
       "description": "WebSocket echo benchmark. Each connection upgrades via HTTP/1.1 then exchanges text frames. Note: the WebSocket message exchange after the `101` response cannot be modeled in OpenAPI 3.0 — only the HTTP upgrade handshake is documented here.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/ws/echo/"
+        "url": "https://http-arena.com/docs/test-profiles/ws/echo/"
       }
     }
   ],
@@ -202,7 +202,7 @@
         "operationId": "baselineGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
         },
         "parameters": [
           {
@@ -252,7 +252,7 @@
         "operationId": "baselinePost",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
         },
         "parameters": [
           {
@@ -317,7 +317,7 @@
         "operationId": "baseline2Get",
         "externalDocs": {
           "description": "Implementation Guidelines (H2)",
-          "url": "https://www.http-arena.com/docs/test-profiles/h2/baseline-h2/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h2/baseline-h2/implementation/"
         },
         "parameters": [
           {
@@ -369,7 +369,7 @@
         "operationId": "pipelineGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/pipelined/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/pipelined/implementation/"
         },
         "responses": {
           "200": {
@@ -398,7 +398,7 @@
         "operationId": "staticGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/static/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/static/implementation/"
         },
         "parameters": [
           {
@@ -458,7 +458,7 @@
         "operationId": "upload",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/upload/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/upload/implementation/"
         },
         "requestBody": {
           "required": true,
@@ -498,7 +498,7 @@
         "operationId": "jsonGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/json-processing/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/json-processing/implementation/"
         },
         "parameters": [
           {
@@ -585,7 +585,7 @@
         "operationId": "asyncDbGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/async-database/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/async-database/implementation/"
         },
         "parameters": [
           {
@@ -672,7 +672,7 @@
         "operationId": "itemsList",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
         },
         "parameters": [
           {
@@ -759,7 +759,7 @@
         "operationId": "itemsCreate",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
         },
         "requestBody": {
           "required": true,
@@ -802,7 +802,7 @@
         "operationId": "itemsGetById",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
         },
         "parameters": [
           {
@@ -870,7 +870,7 @@
         "operationId": "itemsUpdate",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
         },
         "parameters": [
           {
@@ -927,7 +927,7 @@
         "operationId": "wsUpgrade",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/ws/echo/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/ws/echo/implementation/"
         },
         "parameters": [
           {
@@ -1016,7 +1016,7 @@
         "operationId": "grpcGetSum",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/grpc/unary/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/grpc/unary/implementation/"
         },
         "requestBody": {
           "required": true,
