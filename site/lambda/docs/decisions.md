@@ -2,19 +2,21 @@
 
 ## The HttpArena repository is the source
 
-The lambda's code lives in the HttpArena repository, in `site/lambda/`.
-`scripts/publish_genhttp.py`, run by `.github/workflows/publish-genhttp.yml` when a pull request
-merges, saves it as a version only when it changed: the publish writes a hash of the code into
-the version's specification and compares. A change made in the editor, or pushed to this
-lambda's own git repository, is replaced by the next change to `site/lambda/`: make it in
-HttpArena instead.
+The results, what the site is generated from and the lambda's code (`site/lambda/`) all live in
+the HttpArena repository. A merge changes them there and nothing here: the lambda is brought up
+to date by running the repository's "Publish to genhttp.dev" workflow
+(`.github/workflows/publish-genhttp.yml`) by hand. Its `scripts/publish_genhttp.py` sends the
+site and the results as of main, and saves the code as a version only when it changed: the
+publish writes a hash of the code into the version's specification and compares. A change made in
+the editor, or pushed to this lambda's own git repository, is replaced by the next change to
+`site/lambda/`: make it in HttpArena instead.
 
 ## The site is data, not a version
 
 The site is what `scripts/gen_leaderboard_data.py` generated and `scripts/assemble_site.sh
 --no-logs` laid out: the same tree GitHub Pages serves, without the logs. Nearly every page of it
-is generated from the results, so it changes with every merge, and a version per merge is what
-the owner did not want: a version is the program. So the site is sent like the results,
+is generated from the results, so it changes whenever they do, and a version for every such
+change is what the owner did not want: a version is the program. So the site is sent like the results,
 through `api/ingest/site/`, and kept in the workspace; a deploy leaves it alone, and a
 rollback of the code does not roll it back. An older site is put back by publishing its commit.
 
@@ -42,7 +44,7 @@ results, benchmark machine - and replaces what the previous publish left. Each r
 as the JSON `benchmark.sh` wrote, compacted, with a SHA-256 of it: a row whose hash did not change
 is left alone, a changed one gets a new `result_history` entry, and one the snapshot no longer has
 is removed and gets a history entry with no row. The same commit published twice with the same
-data adds nothing, so the workflow may run twice for one merge.
+data adds nothing, so running the workflow again is harmless.
 
 The read routes write these rows back out as they are, in the shapes of `site/data/` - the files
 are what everything that reads results already understands. They are built per request; with

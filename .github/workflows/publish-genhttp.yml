@@ -1,28 +1,21 @@
 name: Publish to genhttp.dev
 
-# Puts the site and its results on the genhttp.dev lambda that serves
-# https://http-arena.genhttp.run (and www.http-arena.com, once the domain moves there) every
-# time main changes, through the lambda's api/ingest/: they are data, and no version of the
-# lambda is saved for them. One is saved only when site/lambda/, the lambda's code, changed.
-# The runs' logs stay in this repository; the lambda sends the site's links to them here.
-# scripts/publish_genhttp.py says what each step does.
+# Puts the site and its results, as they are on main, on the genhttp.dev lambda that serves
+# https://http-arena.genhttp.run (and www.http-arena.com, once the domain moves there). By hand
+# only: this repository holds the results, a merge changes them here and nothing else, and the
+# lambda is brought up to date when someone runs this - Actions > Publish to genhttp.dev > Run
+# workflow, or `gh workflow run publish-genhttp.yml`.
 #
-# A merge is caught on purpose by two triggers. pull_request_target fires for every merged pull
-# request - including one whose squash message carries the [skip ci] of a "Benchmark results"
-# commit, which stops push-triggered workflows (deploy.yml among them) for most merges. push
-# catches what lands on main without a pull request. Publishing is idempotent, so whichever
-# comes second finds nothing to do.
+# The site and the results go through the lambda's api/ingest/ as data, and no version of the
+# lambda is saved for them; one is saved only when site/lambda/, the lambda's code, changed. The
+# runs' logs stay in this repository, where the lambda sends the site's links to them.
+# scripts/publish_genhttp.py says what each step does. Running it twice changes nothing.
 #
 # Secrets: ARENA_INGEST_KEY, the same value as the lambda's secret of that name, puts the site
 # and the results; GENHTTP_EDITOR_KEY, the lambda's editor key, saves and deploys a version when
 # site/lambda/ changed.
 
 on:
-  pull_request_target:
-    types: [closed]
-    branches: [main]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -34,15 +27,12 @@ concurrency:
 
 jobs:
   publish:
-    # never from a fork, and for a pull request only once it merged
-    if: >-
-      github.event.repository.fork == false &&
-      (github.event_name != 'pull_request_target' || github.event.pull_request.merged == true)
+    # never from a fork, which has neither secret
+    if: github.event.repository.fork == false
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      # main as it is now, never the pull request's head: pull_request_target hands this job
-      # the secrets, which is only safe because it runs nothing a merge has not put on main.
+      # main, whichever branch the run was started from: the lambda only shows what merged.
       # Full history, because the sitemap dates each page from the commit that last touched it.
       - uses: actions/checkout@v5
         with:
@@ -66,5 +56,4 @@ jobs:
         env:
           GENHTTP_EDITOR_KEY: ${{ secrets.GENHTTP_EDITOR_KEY }}
           ARENA_INGEST_KEY: ${{ secrets.ARENA_INGEST_KEY }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: python3 scripts/publish_genhttp.py ${PR_NUMBER:+--pr "$PR_NUMBER"}
+        run: python3 scripts/publish_genhttp.py

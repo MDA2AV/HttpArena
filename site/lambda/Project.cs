@@ -7,10 +7,10 @@ public static class Project
     private static async Task<object> BuildAsync()
     {
         // HttpArena's site, and the results behind it. Neither is edited here: the HttpArena
-        // repository publishes both through api/ingest/ when a pull request merges
-        // (scripts/publish_genhttp.py), as data - a new version of this lambda is saved only
-        // when its code in the repository's site/lambda/ changed. The runs' logs stay in the
-        // repository, and the site's links to them are sent on there.
+        // repository holds them, and publishes both through api/ingest/ when its "Publish to
+        // genhttp.dev" workflow is run (scripts/publish_genhttp.py), as data - a new version of
+        // this lambda is saved only when its code in the repository's site/lambda/ changed. The
+        // runs' logs stay in the repository, and the site's links to them are sent on there.
         //
         //   GET    /, docs/, frameworks/, badge/, ...         the site, as published last
         //   GET    logs/{profile}/{conns}/{name}.log          302 to the run's log in the repository
