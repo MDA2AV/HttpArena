@@ -2,25 +2,33 @@
 
 ## The HttpArena repository is the source
 
-The lambda's code lives in the HttpArena repository, in `site/lambda/`, and
-`scripts/publish_genhttp.py` saves it as a version - with the site - every time a pull request
-merges (`.github/workflows/publish-genhttp.yml`). A change made in the editor, or pushed to this
-lambda's own git repository, is replaced by the next publish: make it in HttpArena instead.
+The lambda's code lives in the HttpArena repository, in `site/lambda/`.
+`scripts/publish_genhttp.py`, run by `.github/workflows/publish-genhttp.yml` when a pull request
+merges, saves it as a version only when it changed: the publish writes a hash of the code into
+the version's specification and compares. A change made in the editor, or pushed to this
+lambda's own git repository, is replaced by the next change to `site/lambda/`: make it in
+HttpArena instead.
 
-## The site is a version's resources
+## The site is data, not a version
 
 The site is what `scripts/gen_leaderboard_data.py` generated and `scripts/assemble_site.sh
---no-logs` laid out: the same tree GitHub Pages serves, without the logs. It is not in the
-repository; the publish builds it into every version it saves, at the root of `resources/`
-beside `migrations/` (which is not served). So the pages and the code go online together, and
-rolling back a version brings back the site it had.
+--no-logs` laid out: the same tree GitHub Pages serves, without the logs. Nearly every page of it
+is generated from the results, so it changes with every merge, and a version per merge is what
+the owner did not want: a version is the program. So the site is sent like the results and the
+logs, through `api/ingest/site/`, and kept in the workspace; a deploy leaves it alone, and a
+rollback of the code does not roll it back. An older site is put back by publishing its commit.
 
-It has no folder of its own because the platform takes resource names at most six parts deep,
-and the deepest docs pages (`docs/test-profiles/h3/static-h3/validation/index.html`) already
-are. The publish checks every name before it saves, so a deeper page fails it with the list.
+Every file is kept once, under `site/{sha256 of its content}`, and `site_files` says which content
+each path is. A publish asks which content is kept, sends what is not, and then sends every path
+at once: the site moves from one commit to the next in a single step, and ~1,500 distinct files
+of a ~1,770-file site are sent the first time and only what changed after that. Content named by
+neither the new paths nor the ones before them is deleted then, so a page in the middle of being
+sent while the site changes still finds its file.
 
-A version that holds exactly what the newest one holds is not saved again: the publish writes a
-hash of the version's files into its specification and compares.
+`Site.cs` serves it the way GitHub Pages does: a folder answers with its `index.html`, a folder
+asked for without its slash is sent on to it with a 301, and a path that is nothing answers 404
+with the site's own `404.html` - never the `index.html` of a folder above it. Types come from the
+names, and ETags from the files, so a browser that has a page is told it is unchanged.
 
 The pages link absolutely (`/docs/...`, `/data.js`): they are generated for the root of a domain.
 That works at the lambda's own address and on a domain of its own, and not in a feature's preview
@@ -53,8 +61,8 @@ compresses on the way out.
 Everything below `api/ingest/` needs the header `X-Api-Key` to be the secret `ARENA_INGEST_KEY`,
 compared in constant time and read per request, so a new key works without a deploy. Without the
 secret set nothing gets in. The repository's workflow holds the same value as its secret
-`ARENA_INGEST_KEY`, and the lambda's editor key - which saves and deploys versions - as
-`GENHTTP_EDITOR_KEY`.
+`ARENA_INGEST_KEY`, and the lambda's editor key - which saves and deploys a version when
+`site/lambda/` changed - as `GENHTTP_EDITOR_KEY`.
 
 ## No "Made with GenHTTP Lambda" line yet
 

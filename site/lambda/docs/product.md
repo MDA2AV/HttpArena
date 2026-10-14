@@ -11,7 +11,8 @@ is meant to answer at www.http-arena.com.
 - **README badges** across the frameworks' own repositories: shields.io reads
   `badge/{entry}/{family}.json` for the rank it draws.
 - **The HttpArena repository** publishes here every time a pull request merges: the new site,
-  the results and the logs. Nothing is changed here by hand.
+  the results and the logs, as data - no version is saved for them. Nothing is changed here by
+  hand.
 - **Anyone who wants the numbers as data** reads `api/results`, `api/frameworks` and
   `api/history`, in the same shapes as the repository's `site/data/` files.
 

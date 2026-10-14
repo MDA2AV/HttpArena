@@ -1,6 +1,7 @@
 // The records: every publish, the entries and results as of the newest one, each result as
-// every publish left it, and which log is kept under which path. The tables are the
-// migration's in resources/migrations/; ArenaContext only maps them.
+// every publish left it, which log is kept under which path, and which content each path of the
+// site is (Site.cs). The tables are the migrations' in resources/migrations/; ArenaContext only
+// maps them.
 //
 // A publish is a whole snapshot of the HttpArena repository's site/data at one commit of main,
 // and it replaces what was there: a row the snapshot no longer has is removed, and its history
@@ -98,6 +99,28 @@ public sealed class LogEntry
     public DateTime Updated { get; set; }
 }
 
+public sealed class SitePublishEntry
+{
+    public long Id { get; set; }
+
+    public DateTime Created { get; set; }
+
+    public string Commit { get; set; }
+
+    public int Files { get; set; }
+
+    public int Changed { get; set; }
+
+    public int Removed { get; set; }
+}
+
+public sealed class SiteFileEntry
+{
+    public string Path { get; set; }
+
+    public string Sha256 { get; set; }
+}
+
 public sealed class ArenaContext(SqliteConnection connection) : DbContext
 {
     public DbSet<PublishEntry> Publishes => Set<PublishEntry>();
@@ -109,6 +132,10 @@ public sealed class ArenaContext(SqliteConnection connection) : DbContext
     public DbSet<HistoryEntry> History => Set<HistoryEntry>();
 
     public DbSet<LogEntry> Logs => Set<LogEntry>();
+
+    public DbSet<SitePublishEntry> SitePublishes => Set<SitePublishEntry>();
+
+    public DbSet<SiteFileEntry> SiteFiles => Set<SiteFileEntry>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite(connection, contextOwnsConnection: true);
@@ -137,6 +164,13 @@ public sealed class ArenaContext(SqliteConnection connection) : DbContext
         var log = model.Entity<LogEntry>().ToTable("logs");
         log.HasKey(l => l.Path);
         log.Property(l => l.Updated).HasConversion(t => Times.Write(t), t => Times.Read(t));
+
+        var sitePublish = model.Entity<SitePublishEntry>().ToTable("site_publishes");
+        sitePublish.Property(p => p.Commit).HasColumnName("commit_sha");
+        sitePublish.Property(p => p.Created).HasConversion(t => Times.Write(t), t => Times.Read(t));
+
+        var siteFile = model.Entity<SiteFileEntry>().ToTable("site_files");
+        siteFile.HasKey(f => f.Path);
     }
 }
 
@@ -580,7 +614,7 @@ public static class Json
     public static string Hash(string json) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json))).ToLowerInvariant();
 }
 
-/// <summary>What a slug, a result key and the parts of a log's path may be.</summary>
+/// <summary>What a slug, a result key, the parts of a log's path, a path of the site and a SHA-256 may be.</summary>
 public static class Names
 {
     /// <summary>As rebuild_site_data.py's _slug makes them: [a-z0-9._-], not starting with a dot.</summary>
@@ -610,4 +644,13 @@ public static class Names
     public static bool IsLogName(string value)
         => value is { Length: > 4 and <= 128 } && value.EndsWith(".log", StringComparison.Ordinal) && char.IsAsciiLetterOrDigit(value[0])
            && !value.Contains("..") && value.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-');
+
+    /// <summary>A file of the site: docs/scoring/index.html - folders and a name of [A-Za-z0-9._-], none starting with a dot.</summary>
+    public static bool IsSitePath(string value)
+        => value is { Length: > 0 and <= 300 }
+           && value.Split('/').All(part => part is { Length: > 0 and <= 128 } && part[0] != '.' && part.All(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-'));
+
+    /// <summary>A SHA-256 as 64 lower case hex digits, which is how content is named.</summary>
+    public static bool IsSha256(string value)
+        => value is { Length: 64 } && value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
 }

@@ -2,8 +2,9 @@ name: Publish to genhttp.dev
 
 # Puts the site, its results and its logs on the genhttp.dev lambda that serves
 # https://http-arena.genhttp.run (and www.http-arena.com, once the domain moves there) every
-# time main changes. scripts/publish_genhttp.py says what each step does; site/lambda/ is the
-# lambda itself.
+# time main changes, through the lambda's api/ingest/: they are data, and no version of the
+# lambda is saved for them. One is saved only when site/lambda/, the lambda's code, changed.
+# scripts/publish_genhttp.py says what each step does.
 #
 # A merge is caught on purpose by two triggers. pull_request_target fires for every merged pull
 # request - including one whose squash message carries the [skip ci] of a "Benchmark results"
@@ -11,8 +12,9 @@ name: Publish to genhttp.dev
 # catches what lands on main without a pull request. Publishing is idempotent, so whichever
 # comes second finds nothing to do.
 #
-# Secrets: GENHTTP_EDITOR_KEY, the lambda's editor key, saves and deploys its versions;
-# ARENA_INGEST_KEY, the same value as the lambda's secret of that name, puts results and logs.
+# Secrets: ARENA_INGEST_KEY, the same value as the lambda's secret of that name, puts the site,
+# the results and the logs; GENHTTP_EDITOR_KEY, the lambda's editor key, saves and deploys a
+# version when site/lambda/ changed.
 
 on:
   pull_request_target:

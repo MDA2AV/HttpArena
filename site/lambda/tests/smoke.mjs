@@ -20,12 +20,15 @@ async function check(name, path, expect) {
 const status = (code) => (r) => r.status === code ? null : `answered ${r.status}`;
 
 await check("the board", "./", (r, body) => r.status !== 200 ? `answered ${r.status}` : body.includes("HttpArena") ? null : "no HttpArena in it");
+await check("the site is published", "api/site", (r, body) => r.status !== 200 ? `answered ${r.status}` : JSON.parse(body).commit ? null : "no commit");
 await check("a folder answers with its index", "docs/", status(200));
+await check("a folder without its slash is sent on", "docs", (r) => r.status !== 301 ? `answered ${r.status}` : r.headers.get("location") === "docs/" ? null : `sent to ${r.headers.get("location")}`);
 await check("a path that is nothing is 404", "no/such/page/", status(404));
 await check("badges for shields.io", "badge/index.json", (r, body) => r.status !== 200 ? `answered ${r.status}` : JSON.parse(body) && null);
 await check("the entries", "api/frameworks", (r, body) => r.status !== 200 ? `answered ${r.status}` : typeof JSON.parse(body) === "object" ? null : "not an object");
 await check("the publishes", "api/publishes", (r, body) => r.status !== 200 ? `answered ${r.status}` : Array.isArray(JSON.parse(body)) ? null : "not a list");
 await check("ingest wants a key", "api/ingest/logs", status(401));
+await check("so does the site's", "api/ingest/site", status(401));
 
 // one entry's results, when anything was published yet
 const results = await fetch(new URL("api/results", base)).then((r) => r.json()).catch(() => ({}));

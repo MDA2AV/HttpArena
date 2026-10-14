@@ -2,19 +2,22 @@
 """Publish the site, its results and its logs to the genhttp.dev lambda behind http-arena.
 
 .github/workflows/publish-genhttp.yml runs this when a pull request merges, after
-gen_leaderboard_data.py has generated the site. Three steps, in this order:
+gen_leaderboard_data.py has generated the site. The site, the results and the logs are data:
+they go through the lambda's api/ingest/, and no version is saved for them. Four steps, in
+this order:
 
-  site   site/lambda/ (the lambda's code) and the site scripts/assemble_site.sh lays out,
-         at the root of its resources/, saved as a new version of the lambda and put online.
-         Skipped when the newest version already holds exactly this.
+  code   site/lambda/, the lambda's code, saved as a new version and put online - only when
+         it changed: the newest version says in its specification what it holds.
+  site   the tree scripts/assemble_site.sh lays out, to api/ingest/site/: the content the
+         lambda does not keep yet, then every path at once, which switches the site over.
   logs   site/static/logs/**/*.log, gzipped, to api/ingest/logs/. Only what differs from
          what the lambda keeps is sent, and what the repository no longer has is deleted.
   data   site/data/frameworks.json, current.json and results/*.json at this commit,
          as one snapshot to api/ingest/publish.
 
 Environment:
-  GENHTTP_EDITOR_KEY   the lambda's editor key (site)
-  ARENA_INGEST_KEY     the lambda's secret of that name (logs, data)
+  GENHTTP_EDITOR_KEY   the lambda's editor key (code)
+  ARENA_INGEST_KEY     the lambda's secret of that name (site, logs, data)
   ARENA_URL            where the lambda answers, default https://http-arena.genhttp.run
   GENHTTP_API          the platform's API, default https://genhttp.dev/api/v1
 
@@ -46,19 +49,21 @@ LAMBDA = ROOT / "site" / "lambda"
 LOGS = ROOT / "site" / "static" / "logs"
 DATA = ROOT / "site" / "data"
 
-# what the lambda accepts as {profile}/{conns}/{name}.log (Names in site/lambda/Store.cs)
+# what the lambda accepts as {profile}/{conns}/{name}.log and as a path of the site
+# (Names in site/lambda/Store.cs)
 LOG_PATH = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}/[0-9]{1,7}/[A-Za-z0-9][A-Za-z0-9._-]{0,123}\.log$")
+SITE_PATH = re.compile(r"^(?:[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}/)*[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}$")
 
 # the lambda's own folders that are never part of a version
 NOT_CODE = {"bin", "obj", "workspace", "database"}
 
-# what the platform takes as a name below resources/: these characters, no part starting with a
-# dot, an extension to serve it by, at most six parts and 120 characters
-RESOURCE_NAME = re.compile(r"^(?!.*(?:^|/)\.)(?:[A-Za-z0-9_.-]+/){0,5}[A-Za-z0-9_-][A-Za-z0-9_.-]*\.[A-Za-z0-9]+$")
+
+class Conflict(Exception):
+    """A 409 the caller asked to see rather than fail on."""
 
 
 def request(method: str, url: str, body: bytes | None = None, headers: dict | None = None,
-            timeout: int = 120, attempts: int = 4) -> bytes:
+            timeout: int = 120, attempts: int = 4, conflict: bool = False) -> bytes:
     """One HTTP call, retried on connection errors and 5xx; anything else is final."""
     for attempt in range(1, attempts + 1):
         req = urllib.request.Request(url, data=body, method=method, headers=headers or {})
@@ -67,6 +72,8 @@ def request(method: str, url: str, body: bytes | None = None, headers: dict | No
                 return response.read()
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:2000]
+            if e.code == 409 and conflict:
+                raise Conflict(detail)
             if e.code < 500 or attempt == attempts:
                 raise SystemExit(f"{method} {redact(url)} -> {e.code}: {detail}")
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
@@ -101,7 +108,7 @@ def field(obj: dict, name: str):
     return None
 
 
-# ----------------------------------------------------------------------------- site
+# ----------------------------------------------------------------------------- code
 
 def lambda_files() -> list[tuple[str, Path]]:
     """The lambda's code: every file under site/lambda/ but what a build or a run writes."""
@@ -116,23 +123,12 @@ def lambda_files() -> list[tuple[str, Path]]:
     return files
 
 
-def build_zip(site_dir: Path) -> tuple[bytes, str]:
+def build_zip() -> tuple[bytes, str]:
     """The version, laid out as a clone of the lambda is, and a hash of what it holds."""
-    entries = lambda_files()
-    site = [(f"resources/{p.relative_to(site_dir).as_posix()}", p) for p in sorted(site_dir.rglob("*")) if p.is_file()]
-
-    taken = {name for name, _ in entries}
-    if clash := [name for name, _ in site if name in taken]:
-        raise SystemExit(f"[site] the site has files the lambda already ships: {', '.join(clash)}")
-    if refused := [name for name, _ in site if len(name) > 120 or not RESOURCE_NAME.match(name[len("resources/"):])]:
-        raise SystemExit("[site] the platform takes resource names of [A-Za-z0-9_.-], at most six parts deep and "
-                         "120 characters, with an extension; these are not:\n  " + "\n  ".join(refused))
-    entries += site
-
     digest = hashlib.sha256()
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for name, path in entries:
+        for name, path in lambda_files():
             content = path.read_bytes()
             digest.update(name.encode() + b"\0" + hashlib.sha256(content).digest())
             # a fixed time, so that the same files make the same zip
@@ -143,13 +139,9 @@ def build_zip(site_dir: Path) -> tuple[bytes, str]:
     return buffer.getvalue(), digest.hexdigest()
 
 
-def publish_site(api: str, commit: str, title: str, pr: int | None) -> None:
+def publish_code(api: str, commit: str, title: str, pr: int | None) -> None:
     key = env("GENHTTP_EDITOR_KEY")
-
-    with tempfile.TemporaryDirectory() as tmp:
-        site_dir = Path(tmp) / "site"
-        subprocess.check_call([str(ROOT / "scripts" / "assemble_site.sh"), "--no-logs", str(site_dir)])
-        archive, content = build_zip(site_dir)
+    archive, content = build_zip()
 
     # the newest version says in its specification what it holds; the same again is skipped
     marker = f"content {content}"
@@ -159,24 +151,79 @@ def publish_site(api: str, commit: str, title: str, pr: int | None) -> None:
     if newest and marker in (field(newest, "specification") or ""):
         deployment = json.loads(request("GET", f"{api}/lambdas/{key}/deployment") or b"{}")
         if field(deployment, "deployed") and field(deployment, "version") == field(newest, "version"):
-            print(f"[site] version {field(newest, 'version')} already holds this and is online")
+            print(f"[code] version {field(newest, 'version')} already holds site/lambda/ as it is, and is online")
             return
 
     change = f"Publishes {commit[:9]}: {title}"[:200]
-    specification = (f"The HttpArena site as of https://github.com/MDA2AV/HttpArena/commit/{commit}"
-                     + (f" (#{pr})" if pr else "") + f". {marker}")
+    specification = (f"The code of the HttpArena site's lambda, site/lambda/ as of "
+                     f"https://github.com/MDA2AV/HttpArena/commit/{commit}" + (f" (#{pr})" if pr else "") + f". {marker}")
     query = urllib.parse.urlencode({"deploy": "true", "layout": "project",
                                     "change": change, "specification": specification})
 
-    print(f"[site] saving a version: {len(archive) / 1e6:.1f} MB zipped")
+    print(f"[code] site/lambda/ changed: saving a version, {len(archive) / 1e3:.0f} KB zipped")
     answer = json.loads(request("POST", f"{api}/lambdas/{key}/versions/zip?{query}", archive,
                                 {"Content-Type": "application/zip"}, timeout=600, attempts=2) or b"{}")
     saved = field(answer, "payload") or answer
     deployment = field(saved, "deployment") or {}
     if not field(deployment, "success"):
         problems = "\n".join(json.dumps(d) for d in (field(deployment, "diagnostics") or []))
-        raise SystemExit(f"[site] version {field(saved, 'version')} was saved but not deployed:\n{problems}")
-    print(f"[site] version {field(saved, 'version')} is online")
+        raise SystemExit(f"[code] version {field(saved, 'version')} was saved but not deployed:\n{problems}")
+    print(f"[code] version {field(saved, 'version')} is online")
+
+
+# ----------------------------------------------------------------------------- site
+
+def publish_site(url: str, commit: str, workers: int) -> None:
+    headers = {"X-Api-Key": env("ARENA_INGEST_KEY")}
+
+    with tempfile.TemporaryDirectory() as tmp:
+        site_dir = Path(tmp) / "site"
+        subprocess.check_call([str(ROOT / "scripts" / "assemble_site.sh"), "--no-logs", str(site_dir)])
+
+        files: dict[str, str] = {}
+        content: dict[str, Path] = {}
+        for path in sorted(site_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(site_dir).as_posix()
+            if len(rel) > 300 or not SITE_PATH.match(rel):
+                raise SystemExit(f"[site] {rel} is not a path the lambda serves: folders and a name of "
+                                 "[A-Za-z0-9._-], none starting with a dot")
+            sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+            files[rel] = sha256
+            content.setdefault(sha256, path)
+
+        def send() -> int:
+            """Sends the content the lambda does not keep, and says how many."""
+            kept = set(field(json.loads(request("GET", f"{url}/api/ingest/site", headers=headers)), "kept") or [])
+            missing = [sha256 for sha256 in content if sha256 not in kept]
+
+            def put(sha256: str) -> None:
+                request("PUT", f"{url}/api/ingest/site/{sha256}", content[sha256].read_bytes(),
+                        {**headers, "Content-Type": "application/octet-stream"}, timeout=300)
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+                list(pool.map(put, missing))
+            return len(missing)
+
+        def post(conflict: bool) -> dict:
+            """Puts every path online at once - refused while content is missing."""
+            body = json.dumps({"commit": commit, "files": files}, separators=(",", ":")).encode()
+            return json.loads(request("POST", f"{url}/api/ingest/site", body,
+                                      {**headers, "Content-Type": "application/json"}, timeout=300, conflict=conflict))
+
+        sent = send()
+        try:
+            summary = post(conflict=True)
+        except Conflict:
+            # content went away between the two calls: send what is missing now, once
+            sent += send()
+            summary = post(conflict=False)
+
+    print(f"[site] {len(files)} files, {len(content)} distinct, {sent} sent: publish {field(summary, 'id')}, "
+          + ("unchanged, already online" if field(summary, "unchanged") else
+             f"{field(summary, 'changed')} changed, {field(summary, 'removed')} removed, "
+             f"{field(summary, 'deleted')} no longer kept"))
 
 
 # ----------------------------------------------------------------------------- logs
@@ -234,9 +281,9 @@ def publish_data(url: str, commit: str, title: str, pr: int | None) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--pr", type=int, help="the pull request whose merge this is")
-    parser.add_argument("--skip", action="append", default=[], choices=["site", "logs", "data"],
+    parser.add_argument("--skip", action="append", default=[], choices=["code", "site", "logs", "data"],
                         help="leave a step out (repeatable)")
-    parser.add_argument("--workers", type=int, default=8, help="logs sent at once")
+    parser.add_argument("--workers", type=int, default=8, help="files sent at once")
     args = parser.parse_args()
 
     url = os.environ.get("ARENA_URL", "https://http-arena.genhttp.run").rstrip("/")
@@ -248,8 +295,10 @@ def main() -> None:
     if args.pr is None and (merged := re.search(r"\(#(\d+)\)$", title)):
         args.pr = int(merged.group(1))
 
+    if "code" not in args.skip:
+        publish_code(api, commit, title, args.pr)
     if "site" not in args.skip:
-        publish_site(api, commit, title, args.pr)
+        publish_site(url, commit, args.workers)
     if "logs" not in args.skip:
         publish_logs(url, args.workers)
     if "data" not in args.skip:

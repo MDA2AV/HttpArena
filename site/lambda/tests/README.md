@@ -2,8 +2,12 @@
 
 ## What has to keep working
 
-- The site: `/` is the board, a folder answers with its `index.html` (`docs/scoring/`), and a
-  path that is nothing answers 404 with the site's `404.html`.
+- The site: `/` is the board, a folder answers with its `index.html` (`docs/scoring/`), a folder
+  without its slash is sent on to it (`docs` answers 301 to `docs/`), and a path that is nothing
+  answers 404 with the site's `404.html`. Every page answers exactly what `assemble_site.sh` laid
+  out at the commit `api/site` names.
+- Publishing the same site twice sends nothing the second time; content no longer named by the
+  site or the one before it is deleted.
 - `api/frameworks`, `api/results/{slug}` and `api/host` answer exactly what the repository's
   `site/data/frameworks.json`, `results/{slug}.json` and `current.json` held at the commit
   published last.
@@ -25,14 +29,14 @@ live lambda. The platform's files (`Program.cs`, the `.csproj`, `Platform/`) com
 the lambda:
 
     git clone <the lambda's git address> run && cp -r site/lambda/. run/
+    cd run && ARENA_INGEST_KEY=test dotnet run          # http://localhost:8080/, no site yet
+
+Then generate the site and publish to it as the workflow does, but for the code, twice - the
+second run must send nothing and say each publish is unchanged:
+
     python3 scripts/gen_leaderboard_data.py
-    scripts/assemble_site.sh --no-logs /tmp/site && cp -r /tmp/site/. run/resources/
-    cd run && ARENA_INGEST_KEY=test dotnet run          # http://localhost:8080/
+    ARENA_URL=http://localhost:8080 ARENA_INGEST_KEY=test python3 scripts/publish_genhttp.py --skip code
 
-Then publish to it as the workflow does, twice - the second run must send nothing and say the
-publish is unchanged:
-
-    ARENA_URL=http://localhost:8080 ARENA_INGEST_KEY=test python3 scripts/publish_genhttp.py --skip site
-
-and compare what it answers with the files: every `api/results/{slug}` against
-`site/data/results/{slug}.json`, every log against `site/static/logs/`.
+and compare what it answers with the files: every page against `scripts/assemble_site.sh
+--no-logs`, every `api/results/{slug}` against `site/data/results/{slug}.json`, every log against
+`site/static/logs/`.
