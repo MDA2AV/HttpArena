@@ -16,7 +16,7 @@ in the repository, where the lambda sends the site's links to them. Three steps,
 Environment:
   GENHTTP_EDITOR_KEY   the lambda's editor key (code)
   ARENA_INGEST_KEY     the lambda's secret of that name (site, data)
-  ARENA_URL            where the lambda answers, default https://http-arena.genhttp.run
+  ARENA_URL            where the lambda answers, default https://http-arena.com
   GENHTTP_API          the platform's API, default https://genhttp.dev/api/v1
 
 Standard library only, so the workflow installs nothing for it.
@@ -55,20 +55,32 @@ class Conflict(Exception):
     """A 409 the caller asked to see rather than fail on."""
 
 
+class NoRedirects(urllib.request.HTTPRedirectHandler):
+    """A redirect is an answer, not followed: the keys go only where they were sent."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+OPENER = urllib.request.build_opener(NoRedirects)
+
+
 def request(method: str, url: str, body: bytes | None = None, headers: dict | None = None,
             timeout: int = 120, attempts: int = 4, conflict: bool = False) -> bytes:
     """One HTTP call, retried on connection errors and 5xx; anything else is final."""
     for attempt in range(1, attempts + 1):
         req = urllib.request.Request(url, data=body, method=method, headers=headers or {})
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
+            with OPENER.open(req, timeout=timeout) as response:
                 return response.read()
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:2000]
             if e.code == 409 and conflict:
                 raise Conflict(detail)
             if e.code < 500 or attempt == attempts:
-                raise SystemExit(f"{method} {redact(url)} -> {e.code}: {detail}")
+                # the lambda moved, as it did to its own domain: ARENA_URL says where it answers
+                moved = f" to {redact(e.headers.get('Location') or '?')}" if 300 <= e.code < 400 else ""
+                raise SystemExit(f"{method} {redact(url)} -> {e.code}{moved}: {detail}")
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             if attempt == attempts:
                 raise SystemExit(f"{method} {redact(url)} failed: {e}")
@@ -246,7 +258,7 @@ def main() -> None:
     parser.add_argument("--workers", type=int, default=8, help="files sent at once")
     args = parser.parse_args()
 
-    url = os.environ.get("ARENA_URL", "https://http-arena.genhttp.run").rstrip("/")
+    url = os.environ.get("ARENA_URL", "https://http-arena.com").rstrip("/")
     api = os.environ.get("GENHTTP_API", "https://genhttp.dev/api/v1").rstrip("/")
     commit = git("rev-parse", "HEAD")
     title = git("log", "-1", "--format=%s")

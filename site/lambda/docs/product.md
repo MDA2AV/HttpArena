@@ -2,7 +2,7 @@
 
 The HttpArena website - the leaderboard of HTTP frameworks, its knowledge base and the log of
 every benchmark run - together with the results behind it, which it also serves as an API. It
-is meant to answer at www.http-arena.com.
+answers at http-arena.com; www.http-arena.com and http-arena.genhttp.run redirect there.
 
 ## Who uses it, and for what
 

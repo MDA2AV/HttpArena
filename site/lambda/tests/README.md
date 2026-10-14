@@ -19,7 +19,7 @@
 
 ## Against any address: read only
 
-    node tests/smoke.mjs https://http-arena.genhttp.run/
+    node tests/smoke.mjs https://http-arena.com/
 
 It only reads, so it is safe against the live lambda.
 

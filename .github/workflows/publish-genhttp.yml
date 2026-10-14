@@ -1,7 +1,7 @@
 name: Publish to genhttp.dev
 
 # Puts the site and its results, as they are on main, on the genhttp.dev lambda that serves
-# https://http-arena.genhttp.run (and www.http-arena.com, once the domain moves there). By hand
+# https://http-arena.com (www.http-arena.com and http-arena.genhttp.run redirect there). By hand
 # only: this repository holds the results, a merge changes them here and nothing else, and the
 # lambda is brought up to date when someone runs this - Actions > Publish to genhttp.dev > Run
 # workflow, or `gh workflow run publish-genhttp.yml`.

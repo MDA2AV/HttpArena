@@ -1,4 +1,4 @@
-// Read-only checks against an address: node tests/smoke.mjs https://http-arena.genhttp.run/
+// Read-only checks against an address: node tests/smoke.mjs https://http-arena.com/
 
 const base = new URL(process.argv[2] ?? "http://localhost:8080/");
 
