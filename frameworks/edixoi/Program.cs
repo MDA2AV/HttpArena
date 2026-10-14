@@ -62,6 +62,11 @@ internal static class Program
         var config = new ServerConfig
         {
             ReactorCount = reactors,
+            Incremental = new IncrementalOptions
+            {
+                RecvSlots = 16,
+                RecvBufferSize = 16 * 1024
+            },
             Tcp = new TcpOptions
             {
                 Port = port,
