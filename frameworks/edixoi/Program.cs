@@ -88,9 +88,9 @@ internal static class Program
         {
             CertificatePath = certPath,
             KeyPath = keyPath,
-            //KernelTx = KernelTlsAvailable(),
-            KernelTx = false,
-            KernelRx = false
+            KernelTx = KernelTlsAvailable(),
+            //KernelTx = false,
+            //KernelRx = false
         };
 
         Console.WriteLine($"[edixoi] {reactors} reactors on :{port}"
