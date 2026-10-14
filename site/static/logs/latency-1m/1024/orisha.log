@@ -1,0 +1,4 @@
+compress ready
+Orisha listening on http://0.0.0.0:8080
+Orisha listening on https://0.0.0.0:8081
+Pump: epoll, 64 workers on one shared queue, 64 accept listeners, keep-alive, TCP_NODELAY
