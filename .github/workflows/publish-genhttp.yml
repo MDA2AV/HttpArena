@@ -1,0 +1,70 @@
+name: Publish to genhttp.dev
+
+# Puts the site and its results on the genhttp.dev lambda that serves
+# https://http-arena.genhttp.run (and www.http-arena.com, once the domain moves there) every
+# time main changes, through the lambda's api/ingest/: they are data, and no version of the
+# lambda is saved for them. One is saved only when site/lambda/, the lambda's code, changed.
+# The runs' logs stay in this repository; the lambda sends the site's links to them here.
+# scripts/publish_genhttp.py says what each step does.
+#
+# A merge is caught on purpose by two triggers. pull_request_target fires for every merged pull
+# request - including one whose squash message carries the [skip ci] of a "Benchmark results"
+# commit, which stops push-triggered workflows (deploy.yml among them) for most merges. push
+# catches what lands on main without a pull request. Publishing is idempotent, so whichever
+# comes second finds nothing to do.
+#
+# Secrets: ARENA_INGEST_KEY, the same value as the lambda's secret of that name, puts the site
+# and the results; GENHTTP_EDITOR_KEY, the lambda's editor key, saves and deploys a version when
+# site/lambda/ changed.
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: genhttp-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # never from a fork, and for a pull request only once it merged
+    if: >-
+      github.event.repository.fork == false &&
+      (github.event_name != 'pull_request_target' || github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # main as it is now, never the pull request's head: pull_request_target hands this job
+      # the secrets, which is only safe because it runs nothing a merge has not put on main.
+      # Full history, because the sitemap dates each page from the commit that last touched it.
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Only the og:image cards need it, and the generator leaves them out without it.
+      - name: Install Pillow (social cards)
+        continue-on-error: true
+        run: python3 -m pip install --quiet --disable-pip-version-check 'pillow==11.3.0'
+
+      - name: Generate the site
+        run: python3 scripts/gen_leaderboard_data.py
+
+      # A badge that disagrees with the board it links to is worse than none.
+      - name: Check badge ranks against the board
+        run: node scripts/check_badge_parity.js
+
+      - name: Publish
+        env:
+          GENHTTP_EDITOR_KEY: ${{ secrets.GENHTTP_EDITOR_KEY }}
+          ARENA_INGEST_KEY: ${{ secrets.ARENA_INGEST_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 scripts/publish_genhttp.py ${PR_NUMBER:+--pr "$PR_NUMBER"}
