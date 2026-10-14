@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-
+using System.Text;
 using ioxide;
 using ioxide.timer;
 using ioxide.tls;
@@ -88,7 +88,9 @@ internal static class Program
         {
             CertificatePath = certPath,
             KeyPath = keyPath,
-            KernelTx = KernelTlsAvailable(),
+            //KernelTx = KernelTlsAvailable(),
+            KernelTx = false,
+            KernelRx = false
         };
 
         Console.WriteLine($"[edixoi] {reactors} reactors on :{port}"
