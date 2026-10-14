@@ -11,7 +11,8 @@
 - `api/frameworks`, `api/results/{slug}` and `api/host` answer exactly what the repository's
   `site/data/frameworks.json`, `results/{slug}.json` and `current.json` held at the commit
   published last.
-- `logs/{profile}/{conns}/{name}.log` answers the log byte for byte, and 304 to its ETag.
+- `logs/{profile}/{conns}/{name}.log` answers 302 to `site/static/logs/{profile}/{conns}/{name}.log`
+  on `raw.githubusercontent.com`, main; a name that is no log answers 404.
 - `api/ingest/` answers 401 without a key and 403 with a wrong one.
 - Publishing the same commit twice changes nothing; a row the snapshot drops is removed, with a
   history entry that has no row.
@@ -38,5 +39,4 @@ second run must send nothing and say each publish is unchanged:
     ARENA_URL=http://localhost:8080 ARENA_INGEST_KEY=test python3 scripts/publish_genhttp.py --skip code
 
 and compare what it answers with the files: every page against `scripts/assemble_site.sh
---no-logs`, every `api/results/{slug}` against `site/data/results/{slug}.json`, every log against
-`site/static/logs/`.
+--no-logs`, every `api/results/{slug}` against `site/data/results/{slug}.json`.

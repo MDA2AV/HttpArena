@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Lays out the site that gets served, from what scripts/gen_leaderboard_data.py generated:
 # site/public/ for GitHub Pages (deploy.yml), and the same tree without the run logs for
-# the genhttp.dev lambda (publish_genhttp.py), which keeps the logs as data instead.
+# the genhttp.dev lambda (publish_genhttp.py), which sends the site's log links on to the
+# logs in this repository instead.
 #
 #   scripts/assemble_site.sh [--no-logs] [out-dir]     out-dir defaults to site/public
 set -euo pipefail

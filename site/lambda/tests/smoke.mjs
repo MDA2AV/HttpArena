@@ -27,8 +27,8 @@ await check("a path that is nothing is 404", "no/such/page/", status(404));
 await check("badges for shields.io", "badge/index.json", (r, body) => r.status !== 200 ? `answered ${r.status}` : JSON.parse(body) && null);
 await check("the entries", "api/frameworks", (r, body) => r.status !== 200 ? `answered ${r.status}` : typeof JSON.parse(body) === "object" ? null : "not an object");
 await check("the publishes", "api/publishes", (r, body) => r.status !== 200 ? `answered ${r.status}` : Array.isArray(JSON.parse(body)) ? null : "not a list");
-await check("ingest wants a key", "api/ingest/logs", status(401));
-await check("so does the site's", "api/ingest/site", status(401));
+await check("a log is sent on to the repository", "logs/baseline/4096/actix.log", (r) => r.status !== 302 ? `answered ${r.status}` : r.headers.get("location") === "https://raw.githubusercontent.com/MDA2AV/HttpArena/main/site/static/logs/baseline/4096/actix.log" ? null : `sent to ${r.headers.get("location")}`);
+await check("ingest wants a key", "api/ingest/site", status(401));
 
 // one entry's results, when anything was published yet
 const results = await fetch(new URL("api/results", base)).then((r) => r.json()).catch(() => ({}));

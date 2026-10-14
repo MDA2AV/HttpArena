@@ -10,9 +10,9 @@ is meant to answer at www.http-arena.com.
   entry's page, or read the container log of a run that looks wrong.
 - **README badges** across the frameworks' own repositories: shields.io reads
   `badge/{entry}/{family}.json` for the rank it draws.
-- **The HttpArena repository** publishes here every time a pull request merges: the new site,
-  the results and the logs, as data - no version is saved for them. Nothing is changed here by
-  hand.
+- **The HttpArena repository** publishes here every time a pull request merges: the new site
+  and the results, as data - no version is saved for them. Nothing is changed here by hand. The
+  runs' logs stay in the repository.
 - **Anyone who wants the numbers as data** reads `api/results`, `api/frameworks` and
   `api/history`, in the same shapes as the repository's `site/data/` files.
 
@@ -21,7 +21,7 @@ is meant to answer at www.http-arena.com.
 - Serves the site exactly as the repository generated it at a commit of main.
 - Keeps every published result, and how each changed from one publish to the next - so a
   result's history survives the repository overwriting it.
-- Serves every run's log at the address the site links it from.
+- Sends the address the site links a run's log from on to that log in the repository.
 
 ## What it does not do
 

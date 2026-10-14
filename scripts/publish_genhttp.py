@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
-"""Publish the site, its results and its logs to the genhttp.dev lambda behind http-arena.
+"""Publish the site and its results to the genhttp.dev lambda behind http-arena.
 
 .github/workflows/publish-genhttp.yml runs this when a pull request merges, after
-gen_leaderboard_data.py has generated the site. The site, the results and the logs are data:
-they go through the lambda's api/ingest/, and no version is saved for them. Four steps, in
-this order:
+gen_leaderboard_data.py has generated the site. The site and the results are data: they go
+through the lambda's api/ingest/, and no version is saved for them. The runs' logs stay in the
+repository, where the lambda sends the site's links to them. Three steps, in this order:
 
   code   site/lambda/, the lambda's code, saved as a new version and put online - only when
          it changed: the newest version says in its specification what it holds.
   site   the tree scripts/assemble_site.sh lays out, to api/ingest/site/: the content the
          lambda does not keep yet, then every path at once, which switches the site over.
-  logs   site/static/logs/**/*.log, gzipped, to api/ingest/logs/. Only what differs from
-         what the lambda keeps is sent, and what the repository no longer has is deleted.
   data   site/data/frameworks.json, current.json and results/*.json at this commit,
          as one snapshot to api/ingest/publish.
 
 Environment:
   GENHTTP_EDITOR_KEY   the lambda's editor key (code)
-  ARENA_INGEST_KEY     the lambda's secret of that name (site, logs, data)
+  ARENA_INGEST_KEY     the lambda's secret of that name (site, data)
   ARENA_URL            where the lambda answers, default https://http-arena.genhttp.run
   GENHTTP_API          the platform's API, default https://genhttp.dev/api/v1
 
@@ -28,14 +26,12 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
-import gzip
 import hashlib
 import io
 import json
 import os
 import re
 import subprocess
-import sys
 import tempfile
 import time
 import urllib.error
@@ -46,12 +42,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LAMBDA = ROOT / "site" / "lambda"
-LOGS = ROOT / "site" / "static" / "logs"
 DATA = ROOT / "site" / "data"
 
-# what the lambda accepts as {profile}/{conns}/{name}.log and as a path of the site
-# (Names in site/lambda/Store.cs)
-LOG_PATH = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}/[0-9]{1,7}/[A-Za-z0-9][A-Za-z0-9._-]{0,123}\.log$")
+# what the lambda accepts as a path of the site (Names in site/lambda/Store.cs)
 SITE_PATH = re.compile(r"^(?:[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}/)*[A-Za-z0-9_-][A-Za-z0-9._-]{0,127}$")
 
 # the lambda's own folders that are never part of a version
@@ -226,39 +219,6 @@ def publish_site(url: str, commit: str, workers: int) -> None:
              f"{field(summary, 'deleted')} no longer kept"))
 
 
-# ----------------------------------------------------------------------------- logs
-
-def publish_logs(url: str, workers: int) -> None:
-    headers = {"X-Api-Key": env("ARENA_INGEST_KEY")}
-    kept = field(json.loads(request("GET", f"{url}/api/ingest/logs", headers=headers)), "logs") or {}
-
-    local: dict[str, Path] = {}
-    for path in sorted(LOGS.rglob("*.log")):
-        rel = path.relative_to(LOGS).as_posix()
-        if LOG_PATH.match(rel):
-            local[rel] = path
-        else:
-            print(f"[logs] skipping {rel}: not a {{profile}}/{{conns}}/{{name}}.log the lambda takes", file=sys.stderr)
-
-    def put(rel: str) -> int:
-        content = local[rel].read_bytes()
-        if kept.get(rel) == hashlib.sha256(content).hexdigest():
-            return 0
-        body = gzip.compress(content, compresslevel=9, mtime=0)
-        request("PUT", f"{url}/api/ingest/logs/{rel}", body,
-                {**headers, "Content-Type": "application/gzip"}, timeout=300)
-        return 1
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        sent = sum(pool.map(put, local))
-
-    gone = sorted(set(kept) - set(local))
-    for rel in gone:
-        request("DELETE", f"{url}/api/ingest/logs/{rel}", headers=headers)
-
-    print(f"[logs] {len(local)} in the repository: {sent} sent, {len(local) - sent} already kept, {len(gone)} deleted")
-
-
 # ----------------------------------------------------------------------------- data
 
 def publish_data(url: str, commit: str, title: str, pr: int | None) -> None:
@@ -281,7 +241,7 @@ def publish_data(url: str, commit: str, title: str, pr: int | None) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--pr", type=int, help="the pull request whose merge this is")
-    parser.add_argument("--skip", action="append", default=[], choices=["code", "site", "logs", "data"],
+    parser.add_argument("--skip", action="append", default=[], choices=["code", "site", "data"],
                         help="leave a step out (repeatable)")
     parser.add_argument("--workers", type=int, default=8, help="files sent at once")
     args = parser.parse_args()
@@ -299,8 +259,6 @@ def main() -> None:
         publish_code(api, commit, title, args.pr)
     if "site" not in args.skip:
         publish_site(url, commit, args.workers)
-    if "logs" not in args.skip:
-        publish_logs(url, args.workers)
     if "data" not in args.skip:
         publish_data(url, commit, title, args.pr)
 

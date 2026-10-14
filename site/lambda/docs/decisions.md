@@ -14,8 +14,8 @@ HttpArena instead.
 The site is what `scripts/gen_leaderboard_data.py` generated and `scripts/assemble_site.sh
 --no-logs` laid out: the same tree GitHub Pages serves, without the logs. Nearly every page of it
 is generated from the results, so it changes with every merge, and a version per merge is what
-the owner did not want: a version is the program. So the site is sent like the results and the
-logs, through `api/ingest/site/`, and kept in the workspace; a deploy leaves it alone, and a
+the owner did not want: a version is the program. So the site is sent like the results,
+through `api/ingest/site/`, and kept in the workspace; a deploy leaves it alone, and a
 rollback of the code does not roll it back. An older site is put back by publishing its commit.
 
 Every file is kept once, under `site/{sha256 of its content}`, and `site_files` says which content
@@ -48,13 +48,14 @@ The read routes write these rows back out as they are, in the shapes of `site/da
 are what everything that reads results already understands. They are built per request; with
 ~2,600 rows that is cheap, and nothing reads them often yet.
 
-## Logs are gzipped and kept once per content
+## Logs stay in the repository
 
-Container logs are 99% of what the site weighs (~615 MB in the repository), most of it the same
-lines over and over. They are sent and kept gzipped, in the workspace under `logs/{sha256}.gz`,
-named by the content: ~3,450 logs are ~1,160 distinct ones, ~12 MB. The `logs` table maps each
-path to its content. They are served decompressed, with the hash as the checksum, and the server
-compresses on the way out.
+The container log of every run is kept where `benchmark.sh` writes it, in the repository under
+`site/static/logs/`, as the owner wants, and this lambda keeps no copy. The board links a log at
+`logs/{profile}/{conns}/{framework dir}.log`, as it does on GitHub Pages; here that answers 302 to
+the same file on `raw.githubusercontent.com`, as it is on main. The redirect is temporary so that
+browsers don't remember it, and the links work wherever the board is served from. The lambda
+kept gzipped copies until `V3__Drop_logs.sql` dropped their table.
 
 ## Who may publish
 

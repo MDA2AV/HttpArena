@@ -1,6 +1,6 @@
 // api/: the results and entries as JSON, for anybody, and api/ingest/, where the HttpArena
-// repository's publish workflow puts them, the site and the logs - behind the X-Api-Key header,
-// which has to be the secret ARENA_INGEST_KEY. Without that secret set, nothing gets in.
+// repository's publish workflow puts them and the site - behind the X-Api-Key header, which has
+// to be the secret ARENA_INGEST_KEY. Without that secret set, nothing gets in.
 //
 // The JSON the read routes answer with is written from the stored rows as they are, in the
 // shapes of the files in site/data/, so anything that read those files reads these.
@@ -18,7 +18,7 @@ public static class Api
 
     private static readonly Publisher Workflow = new("httparena-publish", []);
 
-    public static IHandlerBuilder Create(ArenaStore store, LogStore logs, SiteStore site)
+    public static IHandlerBuilder Create(ArenaStore store, SiteStore site)
     {
         var key = ApiKeyAuthentication.Create()
                                       .WithHeader("X-Api-Key")
@@ -29,9 +29,6 @@ public static class Api
                            .Get("site", () => site.Manifest())
                            .Put("site/:sha256", (string sha256, Stream body) => site.PutAsync(sha256, body))
                            .Post("site", (SiteUpload upload) => site.Publish(upload))
-                           .Get("logs", () => logs.Manifest())
-                           .Put("logs/:profile/:conns/:name", (string profile, string conns, string name, Stream body) => logs.PutAsync(profile, conns, name, body))
-                           .Delete("logs/:profile/:conns/:name", (string profile, string conns, string name) => logs.Remove(profile, conns, name))
                            .Authentication(key);
 
         var read = Inline.Create()

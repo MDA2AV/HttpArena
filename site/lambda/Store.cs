@@ -1,7 +1,6 @@
 // The records: every publish, the entries and results as of the newest one, each result as
-// every publish left it, which log is kept under which path, and which content each path of the
-// site is (Site.cs). The tables are the migrations' in resources/migrations/; ArenaContext only
-// maps them.
+// every publish left it, and which content each path of the site is (Site.cs). The tables are
+// the migrations' in resources/migrations/; ArenaContext only maps them.
 //
 // A publish is a whole snapshot of the HttpArena repository's site/data at one commit of main,
 // and it replaces what was there: a row the snapshot no longer has is removed, and its history
@@ -86,19 +85,6 @@ public sealed class HistoryEntry
     public long PublishId { get; set; }
 }
 
-public sealed class LogEntry
-{
-    public string Path { get; set; }
-
-    public string Sha256 { get; set; }
-
-    public long Bytes { get; set; }
-
-    public long Stored { get; set; }
-
-    public DateTime Updated { get; set; }
-}
-
 public sealed class SitePublishEntry
 {
     public long Id { get; set; }
@@ -131,8 +117,6 @@ public sealed class ArenaContext(SqliteConnection connection) : DbContext
 
     public DbSet<HistoryEntry> History => Set<HistoryEntry>();
 
-    public DbSet<LogEntry> Logs => Set<LogEntry>();
-
     public DbSet<SitePublishEntry> SitePublishes => Set<SitePublishEntry>();
 
     public DbSet<SiteFileEntry> SiteFiles => Set<SiteFileEntry>();
@@ -160,10 +144,6 @@ public sealed class ArenaContext(SqliteConnection connection) : DbContext
         history.Property(h => h.Key).HasColumnName("result_key");
         history.Property(h => h.Row).HasColumnName("row_json");
         history.Property(h => h.PublishId).HasColumnName("publish_id");
-
-        var log = model.Entity<LogEntry>().ToTable("logs");
-        log.HasKey(l => l.Path);
-        log.Property(l => l.Updated).HasConversion(t => Times.Write(t), t => Times.Read(t));
 
         var sitePublish = model.Entity<SitePublishEntry>().ToTable("site_publishes");
         sitePublish.Property(p => p.Commit).HasColumnName("commit_sha");
@@ -373,78 +353,6 @@ public sealed class ArenaStore
 
             writer.WriteEndArray();
         });
-    }
-
-    public Dictionary<string, string> LogHashes()
-    {
-        using var db = new ArenaContext(Database.GetConnection());
-
-        return db.Logs.AsNoTracking().ToDictionary(l => l.Path, l => l.Sha256);
-    }
-
-    public (long Bytes, long Stored) LogTotals()
-    {
-        using var db = new ArenaContext(Database.GetConnection());
-
-        return (db.Logs.Sum(l => l.Bytes), db.Logs.Sum(l => l.Stored));
-    }
-
-    public LogEntry FindLog(string path)
-    {
-        using var db = new ArenaContext(Database.GetConnection());
-
-        return db.Logs.AsNoTracking().FirstOrDefault(l => l.Path == path);
-    }
-
-    /// <summary>Keeps the log under its path, and says what it replaced - null where it is new.</summary>
-    public string SaveLog(string path, string sha256, long bytes, long stored)
-    {
-        using var db = new ArenaContext(Database.GetConnection());
-
-        var entry = db.Logs.Find(path);
-
-        var previous = entry?.Sha256;
-
-        if (entry == null)
-        {
-            db.Logs.Add(new LogEntry { Path = path, Sha256 = sha256, Bytes = bytes, Stored = stored, Updated = DateTime.UtcNow });
-        }
-        else
-        {
-            entry.Sha256 = sha256;
-            entry.Bytes = bytes;
-            entry.Stored = stored;
-            entry.Updated = DateTime.UtcNow;
-        }
-
-        db.SaveChanges();
-
-        return previous;
-    }
-
-    /// <summary>Forgets the log under a path, and says what it was - null where there was none.</summary>
-    public string RemoveLog(string path)
-    {
-        using var db = new ArenaContext(Database.GetConnection());
-
-        var entry = db.Logs.Find(path);
-
-        if (entry == null)
-        {
-            return null;
-        }
-
-        db.Logs.Remove(entry);
-        db.SaveChanges();
-
-        return entry.Sha256;
-    }
-
-    public bool LogContentInUse(string sha256)
-    {
-        using var db = new ArenaContext(Database.GetConnection());
-
-        return db.Logs.Any(l => l.Sha256 == sha256);
     }
 
     private static bool PublishFrameworks(ArenaContext db, Snapshot snapshot, long publishId)
