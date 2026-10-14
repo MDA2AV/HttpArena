@@ -5,6 +5,10 @@ site/public/
 site/generated/
 site/resources/
 
+# What a local `dotnet run` of the genhttp.dev lambda (site/lambda/) writes
+site/lambda/workspace/
+site/lambda/database/
+
 # Build artifacts
 *.o
 *.exe
