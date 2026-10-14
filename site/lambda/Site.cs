@@ -1,7 +1,7 @@
 // The site: what scripts/gen_leaderboard_data.py generated and scripts/assemble_site.sh laid out
 // at a commit of main - the tree GitHub Pages serves, without the logs. It is data, like the
-// results beside it: the HttpArena repository sends it through api/ingest/site/ when a pull
-// request merges, no version is saved for it, and a deploy leaves it as it is.
+// results beside it: the HttpArena repository sends it through api/ingest/site/ when its publish
+// workflow is run, no version is saved for it, and a deploy leaves it as it is.
 //
 // The workspace keeps every file under site/{sha256 of its content}, and the site_files table
 // says which content each path is. A publish first sends the content the workspace does not

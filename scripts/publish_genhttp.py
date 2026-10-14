@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Publish the site and its results to the genhttp.dev lambda behind http-arena.
 
-.github/workflows/publish-genhttp.yml runs this when a pull request merges, after
-gen_leaderboard_data.py has generated the site. The site and the results are data: they go
-through the lambda's api/ingest/, and no version is saved for them. The runs' logs stay in the
-repository, where the lambda sends the site's links to them. Three steps, in this order:
+.github/workflows/publish-genhttp.yml runs this when someone starts it, after
+gen_leaderboard_data.py has generated the site from main. The site and the results are data:
+they go through the lambda's api/ingest/, and no version is saved for them. The runs' logs stay
+in the repository, where the lambda sends the site's links to them. Three steps, in this order:
 
   code   site/lambda/, the lambda's code, saved as a new version and put online - only when
          it changed: the newest version says in its specification what it holds.
