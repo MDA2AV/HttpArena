@@ -1,0 +1,20 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    agoo (2.15.15)
+    rack (3.2.7)
+
+PLATFORMS
+  arm64-darwin-24
+  ruby
+
+DEPENDENCIES
+  agoo
+  rack
+
+CHECKSUMS
+  agoo (2.15.15) sha256=5781d0894c1b8edf622988a2211874439724b2ae1661ff7a3979a3ac66770421
+  rack (3.2.7) sha256=93e13e1c24f93556671d85d2d79fa228c3485815c50d7e2f265b5330c6528fb7
+
+BUNDLED WITH
+  4.0.8
