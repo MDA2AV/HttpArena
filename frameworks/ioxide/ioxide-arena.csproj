@@ -27,13 +27,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="ioxide" Version="0.17.339" />
-        <PackageReference Include="ioxide.pg" Version="0.17.339" />
-        <PackageReference Include="ioxide.timer" Version="0.17.339" />
-        <PackageReference Include="ioxide.file" Version="0.17.339" />
-        <PackageReference Include="ioxide.http2" Version="0.17.339" />
-        <PackageReference Include="ioxide.ngtcp2" Version="0.17.339" />
-        <PackageReference Include="ioxide.nghttp3" Version="0.17.339" />
+        <PackageReference Include="ioxide" Version="0.18.374" />
+        <PackageReference Include="ioxide.pg" Version="0.18.374" />
+        <PackageReference Include="ioxide.timer" Version="0.18.374" />
+        <PackageReference Include="ioxide.file" Version="0.18.374" />
+        <PackageReference Include="ioxide.http2" Version="0.18.374" />
+        <PackageReference Include="ioxide.ngtcp2" Version="0.18.374" />
+        <PackageReference Include="ioxide.nghttp3" Version="0.18.374" />
     </ItemGroup>
 
 </Project>
