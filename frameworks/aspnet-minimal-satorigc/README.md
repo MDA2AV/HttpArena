@@ -1,4 +1,4 @@
-# aspnet-minimal
+# aspnet-minimal-satorigc
 
 Minimal ASP.NET Core HTTP server using .NET 10 with Kestrel, minimal API routing and Satori GC.
 
