@@ -14,11 +14,13 @@ RUN pacman -Syu --noconfirm --needed \
 
 ARG AEGON_REPO=https://github.com/UdayKhare09/Aegon.git
 ARG AEGON_REF=main
-ARG AEGON_COMMIT=f9edfc3
+ARG AEGON_COMMIT=e649022
 
 WORKDIR /src
 RUN echo "Building Aegon commit: ${AEGON_COMMIT}" && \
-    git clone --depth 1 --branch "${AEGON_REF}" "${AEGON_REPO}" aegon-src
+    git clone --branch "${AEGON_REF}" "${AEGON_REPO}" aegon-src && \
+    cd aegon-src && \
+    git checkout "${AEGON_COMMIT}"
 
 WORKDIR /src/aegon-src
 RUN cmake -B build -G Ninja \
