@@ -774,7 +774,7 @@ tls_resumption_probe() {
     out=$(timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost \
           -sess_in "$sess" </dev/null 2>/dev/null || true)
     rm -f "$sess"
-    if printf '%s' "$out" | grep -q "Reused"; then
+    if grep -q "Reused" <<< "$out"; then
         echo "  PASS [tls_check session resumption] (ticket issued and accepted)"
         PASS=$((PASS + 1))
     else
@@ -791,9 +791,9 @@ tls_close_notify_probe() {
     # openssl report "unexpected eof while reading".
     out=$(printf 'GET /json/1 HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' \
           | timeout 8 openssl s_client -connect "localhost:$TLS_CHECK_PORT" -servername localhost 2>&1 >/dev/null || true)
-    if printf '%s' "$out" | grep -qi "unexpected eof"; then
+    if grep -qi "unexpected eof" <<< "$out"; then
         fail_with_link "[tls_check close_notify]: the server dropped the connection without a close_notify alert, so a truncated response is indistinguishable from a complete one" "$docs"
-    elif printf '%s' "$out" | grep -qE "DONE|close notify"; then
+    elif grep -qE "DONE|close notify" <<< "$out"; then
         echo "  PASS [tls_check close_notify] (closed at the TLS layer, not just the socket)"
         PASS=$((PASS + 1))
     else
@@ -1723,7 +1723,7 @@ print(f'{count} {valid} {faithful}')
 
     # Content-Type must be application/json
     jt_ct=$(curl -sk --max-time 30 -D- -o /dev/null "https://localhost:$H1TLS_PORT/json/1?m=1" | grep -i "^content-type:" | tr -d '\r' || true)
-    if echo "$jt_ct" | grep -qi 'application/json'; then
+    if grep -qi 'application/json' <<< "$jt_ct"; then
         echo "  PASS [json-tls Content-Type: application/json]"
         PASS=$((PASS + 1))
     else
@@ -2246,11 +2246,15 @@ if has_test "fortunes"; then
     echo "[test] fortunes endpoint"
 
     body=$(curl -s --max-time 30 "http://localhost:$PORT/fortunes" || true)
+    # The page is matched with here-strings, never `echo "$body" | grep -q`.
+    # grep -q exits on the first match, echo is still writing the rest of the
+    # ~25 KB page and dies of SIGPIPE, and pipefail fails the check on a
+    # correct page: 769 of 2000 runs on the XSS check (#1548).
 
     check_header "GET /fortunes Content-Type" "Content-Type" "text/html" "$FORTUNES_DOCS" \
         "http://localhost:$PORT/fortunes"
 
-    if echo "$body" | grep -qi '<!doctype html>'; then
+    if grep -qi '<!doctype html>' <<< "$body"; then
         echo "  PASS [GET /fortunes <!DOCTYPE html>]"
         PASS=$((PASS + 1))
     else
@@ -2271,7 +2275,7 @@ if has_test "fortunes"; then
 
     # Runtime-injected row text — proves the handler appended id=0 in memory
     # rather than caching a pre-rendered page from the DB rows alone.
-    if echo "$body" | grep -qF 'Additional fortune added at request time.'; then
+    if grep -qF 'Additional fortune added at request time.' <<< "$body"; then
         echo "  PASS [GET /fortunes runtime-injected row]"
         PASS=$((PASS + 1))
     else
@@ -2281,7 +2285,7 @@ if has_test "fortunes"; then
     # XSS escape — load-bearing check. Row 11 contains a raw <script> tag
     # in the DB; the rendered output must encode it as &lt;script&gt; and
     # must NOT contain the raw <script>alert sequence anywhere.
-    if echo "$body" | grep -qF '&lt;script&gt;' && ! echo "$body" | grep -qF '<script>alert'; then
+    if grep -qF '&lt;script&gt;' <<< "$body" && ! grep -qF '<script>alert' <<< "$body"; then
         echo "  PASS [GET /fortunes XSS escape]"
         PASS=$((PASS + 1))
     else
