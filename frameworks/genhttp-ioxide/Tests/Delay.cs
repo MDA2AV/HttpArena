@@ -80,7 +80,7 @@ public sealed class Delay : IHandler
         var pool = _timers ??= new Stack<RingTimer>();
 
         // A connection per timer at most; the ceiling keeps a burst from pinning memory for good.
-        if (pool.Count < 4096)
+        if (pool.Count < 16384)
         {
             pool.Push(timer);
         }
