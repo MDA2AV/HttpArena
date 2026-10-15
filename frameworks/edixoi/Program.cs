@@ -62,7 +62,7 @@ internal static class Program
         var config = new ServerConfig
         {
             ReactorCount = reactors,
-            Incrtemental = null,
+            Incremental = null,
             /*Incremental = new IncrementalOptions
             {
                 RecvSlots = 16,
