@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "fasthttp",
-  "description": "Fiber 3 on fasthttp, the fiber entry with what it leaves at default: sonic behind c.JSON, the compress middleware at best speed (brotli 0, gzip 1), the Postgres pool filled at startup, and fasthttp at master for its go-brrr brotli. Same routes, prefork, static and TLS paths as fiber.",
+  "description": "Fiber 3 on fasthttp, the fiber entry with what it leaves at default: sonic behind c.JSON, the compress middleware at best speed (brotli 0, gzip 1) and the Postgres pool filled at startup. Same routes, prefork, static and TLS paths as fiber.",
   "repo": "https://github.com/gofiber/fiber",
   "enabled": true,
   "tests": [

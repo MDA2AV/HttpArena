@@ -1,0 +1,36 @@
+{
+  "display_name": "uWebZockets",
+  "language": "Zig",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "libxev",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "Zero-allocation, shared-nothing Zig 0.16 framework: a typed Request/Response API over HTTP/1.1, HTTP/2, HTTP/3, WebSocket and JSON-RPC, served from bounded startup slabs. Each cluster worker runs its own libxev loop; the kernel schedules workers across the benchmark's assigned logical CPUs. BoringSSL, lsquic and libdeflate are compiled in. Standard configuration, no tuning.",
+  "repo": "https://github.com/farbenbuilds/uWebZockets",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu"
+  ],
+  "maintainers": [
+    "farbenbuilds",
+    "Coder-Blue"
+  ]
+}

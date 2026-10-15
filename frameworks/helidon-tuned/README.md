@@ -76,6 +76,13 @@ tradeoff for the current Helidon/Níma tuned entry.
 
 Helidon WebServer is designed for Java Virtual Threads and optimized for blocking operations.
 
-The `async` delay handler uses `Thread.sleep` on Helidon's request virtual
-thread. The virtual thread is suspended for the requested delay without
-occupying its carrier thread.
+The `async` delay handler reads the delay from each `/delay/{ms}` request and
+parks Helidon's request virtual thread until a monotonic deadline. It rechecks
+that deadline after every wakeup, so an early unpark cannot shorten the delay.
+Zero means no intentional wait; negative delays are rejected.
+
+`LockSupport.parkNanos` suspends the virtual thread without occupying its
+carrier. This avoids the parking permit that virtual-thread `Thread.sleep`
+restores on return in JDK 27, which can cause extra work in the next socket
+wait. The handler remains interruptible and sends the response on the original
+request thread. No timer executor or response callback is needed.

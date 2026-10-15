@@ -653,7 +653,7 @@ def build_rounds():
 # without this every doc collapses into the single "/" URL. Content is the exact
 # HTML build_docs() already produces; only the link scheme differs (#doc=x -> /docs/x/).
 
-SITE = "https://www.http-arena.com"
+SITE = "https://http-arena.com"
 GEN = ROOT / "site" / "generated"
 DOCS_OUT = GEN / "docs"
 
@@ -3353,7 +3353,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
             _og_card(dest / "og.png", "Head to head · " + SCOPE_NAME[DEFAULT_SCOPE],
                      lang + " web frameworks, compared",
                      [(r[0], "%.0f" % r[3]) for r in rows[:5]],
-                     "%d entries · %s · www.http-arena.com" % (len(members), round_name))
+                     "%d entries · %s · http-arena.com" % (len(members), round_name))
             cards += 1
         written.append((lang, len(members)))
 
@@ -3374,7 +3374,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
             _og_card(dest / "og.png", "Head to head · every language",
                      "Compare any two entries, whatever they are written in",
                      [(r[0], "%.0f" % r[3]) for r in all_rows[:5]],
-                     "%d entries · %s · www.http-arena.com" % (len(all_members), round_name))
+                     "%d entries · %s · http-arena.com" % (len(all_members), round_name))
             cards += 1
         written.insert(0, (None, len(all_members)))
 
@@ -3383,7 +3383,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
                  "Compare two web frameworks, profile by profile",
                  [(lang or "Every language", "%d entries" % n) for lang, n in
                   sorted(written, key=lambda x: -x[1])[:5]],
-                 "%d languages · %s · www.http-arena.com" % (len(written), round_name))
+                 "%d languages · %s · http-arena.com" % (len(written), round_name))
         cards += 1
     (COMPARE_OUT / "index.html").write_text(
         _compare_index_page(written, updated, "/compare/og.png" if with_og else ""),
@@ -3483,7 +3483,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
                      [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
                       for s, rank, field, _, _link in ranks],
                      " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
-                                            round_name, "www.http-arena.com"] if x),
+                                            round_name, "http-arena.com"] if x),
                      blurb=m.get("desc", ""))
             cards += 1
         entries.append((fw, lang, kind))
@@ -3518,14 +3518,14 @@ def build_og_images(content, trails, rows, fw_lang, round_name):
              "Composite ranking · " + SCOPE_NAME[DEFAULT_SCOPE],
              "Which web framework is actually fastest?",
              top,
-             f"{len(rows)} entries · {round_name} · www.http-arena.com")
+             f"{len(rows)} entries · {round_name} · http-arena.com")
     written = 1
 
     for did, d in content.items():
         crumb = " › ".join(t for t, _ in trails.get(did, [])[:-1]) or "Knowledge Base"
         _og_card(DOCS_OUT / did / "og.png" if did else DOCS_OUT / "og.png",
                  crumb, d["t"] or "Knowledge Base", [],
-                 "HttpArena Knowledge Base · www.http-arena.com",
+                 "HttpArena Knowledge Base · http-arena.com",
                  blurb=d.get("d") or _meta_desc(d["html"]))
         written += 1
     return "/og.png", written

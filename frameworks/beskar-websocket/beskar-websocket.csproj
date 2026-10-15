@@ -3,15 +3,19 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>Preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Features>$(Features);runtime-async=on</Features>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <RootNamespace>beskar_websocket</RootNamespace>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beskar.Networking.Transports.Ws" Version="11.0.0-rc.1" />
+    <PackageReference Include="Beskar.Networking.Transports.Ws" Version="11.0.0-rc.3.3" />
   </ItemGroup>
 
 </Project>

@@ -1,11 +1,9 @@
 // fiber-tuned is the fiber entry with what the standard entry leaves at the
 // framework's defaults: sonic in place of encoding/json, the compress
-// middleware at its best-speed level, the Postgres pool opened to its full
-// size at startup rather than lazily, and - in go.mod, not here - fasthttp at
-// master instead of the v1.73.0 Fiber 3.5.0 pins, for the go-brrr brotli that
-// valyala/fasthttp#2366 swapped in. Everything else - the routes, prefork, the
-// static and TLS paths, the shutdown - is the standard entry's, unchanged, and
-// its README explains those.
+// middleware at its best-speed level, and the Postgres pool opened to its full
+// size at startup rather than lazily. Everything else - the routes, prefork,
+// the static and TLS paths, the shutdown - is the standard entry's, unchanged,
+// and its README explains those.
 package main
 
 import (
@@ -496,11 +494,12 @@ var mimeTypes = map[string]string{
 // So the twins are picked up here. The profile allows selecting them off
 // Accept-Encoding where a framework has no API of its own for it; those bytes
 // exist on disk either way, which makes this a file read rather than
-// compression. It is also the difference between answering the 20-file rotation
-// with the 1.21 MB the originals weigh and the 318 KB the twins do, because the
-// compress middleware sits this round out: fasthttp's Accept-Encoding matcher
-// compares whole tokens, and the profile sends "br;q=1, gzip;q=0.8".
+// compression. It is also what answers the 20-file rotation in 318 KB instead
+// of 1.21 MB without the compress middleware encoding the originals on every
+// request.
 func staticFile(c fiber.Ctx) error {
+	// The variant is chosen off Accept-Encoding, so every answer varies on it.
+	c.Set(fiber.HeaderVary, fiber.HeaderAcceptEncoding)
 	name := c.Params("filename")
 	if name == "" || strings.Contains(name, "/") || strings.Contains(name, "..") {
 		return c.SendStatus(fiber.StatusNotFound)
@@ -510,7 +509,7 @@ func staticFile(c fiber.Ctx) error {
 	var data []byte
 	enc := ""
 	// Fiber's own negotiation reads the q-values the way RFC 9110 says, which
-	// is the whole difficulty here. It is guarded on the header being present
+	// the profile's header needs. It is guarded on the header being present
 	// because with no Accept-Encoding at all a negotiator answers with the
 	// first offer, and that would encode a body for a client that never asked.
 	if c.Get(fiber.HeaderAcceptEncoding) != "" {
@@ -534,8 +533,7 @@ func staticFile(c fiber.Ctx) error {
 	}
 
 	// The Content-Type is the original file's either way; only the encoding
-	// changes. Set before Send so the compress middleware sees a body that is
-	// already encoded and leaves it alone.
+	// changes.
 	ct := mimeTypes[filepath.Ext(name)]
 	if ct == "" {
 		ct = "application/octet-stream"
@@ -543,7 +541,6 @@ func staticFile(c fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, ct)
 	if enc != "" {
 		c.Set(fiber.HeaderContentEncoding, enc)
-		c.Set(fiber.HeaderVary, fiber.HeaderAcceptEncoding)
 	}
 	return c.Send(data)
 }
@@ -576,7 +573,7 @@ func main() {
 		JSONDecoder: sonic.Unmarshal,
 	})
 
-	// Compression is mounted on the two routes with a body worth compressing
+	// Compression is mounted on the one route with a body worth compressing
 	// rather than on the whole app, as in the standard entry. The level is
 	// what differs: best speed rather than the default. json-comp scores
 	// requests per second for a body that is serialized and compressed per
@@ -584,12 +581,11 @@ func main() {
 	// the compress middleware picks brotli for the profile's "gzip, br", so
 	// this is brotli level 0 instead of fasthttp's default 4, and gzip level 1
 	// instead of 6 for a client that accepts only gzip. On a sandbox core the
-	// brotli step for the 8.4 KB /json/50 body is ~259 us at the default on
-	// the release's library, ~107 us at the default on go-brrr, and ~26 us at
-	// level 0 on go-brrr, at 1490 -> 1944 bytes on the wire. Static is
-	// unaffected either way: the twins on disk are compressed already, and the
-	// middleware leaves an encoded body alone.
-	app.Use([]string{"/json", "/static"}, compress.New(compress.Config{
+	// brotli step for the 8.4 KB /json/50 body measured ~107 us at the default
+	// and ~26 us at level 0, at 1489 -> 1944 bytes on the wire. Static is
+	// outside the mount, as in the standard entry, so the level never reaches
+	// it.
+	app.Use("/json", compress.New(compress.Config{
 		Level: compress.LevelBestSpeed,
 	}))
 

@@ -1,2 +1,5 @@
-info: nilo listening on 0.0.0.0:8080 across 64 thread(s)
-info: nilo also listening on https://0.0.0.0:8081
+2026-10-11T14:25:46.320Z info nilo: loaded 20 static file(s) (1758039 bytes held, 486436 of them precompressed files) from "/data/static" onto "/static"
+2026-10-11T14:25:46.361Z info nilo listening on 0.0.0.0:8080 across 64 thread(s)
+2026-10-11T14:25:46.361Z info nilo also listening on 0.0.0.0:8082
+2026-10-11T14:25:46.361Z info nilo also listening on https://0.0.0.0:8081
+2026-10-11T14:25:46.361Z info nilo also listening on https://0.0.0.0:8443

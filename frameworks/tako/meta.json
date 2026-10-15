@@ -1,0 +1,41 @@
+{
+  "display_name": "tako",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "Tako 2.4.1 on hyper and Tokio, default configuration. Plain HTTP/1.1 and WebSocket on :8080 run tako's per-thread server (one current-thread runtime per CPU, SO_REUSEPORT listeners, PerThreadConfig::default()); h2c (:8082), HTTP/1.1 and h2 over rustls (:8081, :8443) and HTTP/3 over quinn (:8443/udp) run tako's multi-thread Server. Routing, Path/Query/State/body extractors and the Json responder through the tako API, the compression plugin with default settings on the JSON routes, ServeDir with precompressed .br/.gz sidecars read from disk per request, TakoWs for /ws, and deadpool-postgres for async-db.",
+  "repo": "https://github.com/rust-dd/tako",
+  "website": "https://tako.rust-dd.com",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": ["dancixx"]
+}

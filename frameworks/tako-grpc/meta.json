@@ -1,0 +1,16 @@
+{
+  "display_name": "tako",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "standard",
+  "description": "Tako 2.4.1 gRPC: benchmark.BenchmarkService/GetSum as a plain tako route with the GrpcRequest extractor and GrpcResponse responder, prost messages. h2c on :8080 and h2 over rustls on :8443, both on tako's multi-thread Server with default configuration.",
+  "repo": "https://github.com/rust-dd/tako",
+  "website": "https://tako.rust-dd.com",
+  "enabled": true,
+  "tests": [
+    "unary-grpc",
+    "unary-grpc-tls"
+  ],
+  "maintainers": ["dancixx"]
+}

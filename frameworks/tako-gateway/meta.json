@@ -1,0 +1,23 @@
+{
+  "display_name": "tako",
+  "language": "Rust",
+  "engine": "hyper",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "The tako server from frameworks/tako behind stock Caddy. Gateway: Caddy terminates TLS with h2 (and h3 for gateway-h3) on :8443, serves /static/* from disk with precompressed sidecars, and proxies the rest to tako's per-thread server on :8080 over HTTP/1.1 keepalive. Production stack: Caddy forward_auth against the shared authsvc on every /api/* call; the server does cache-aside in process (moka, 1 s item TTL, 30 s user TTL) over deadpool-postgres and invalidates on writes.",
+  "repo": "https://github.com/rust-dd/tako",
+  "website": "https://tako.rust-dd.com",
+  "enabled": true,
+  "tests": [
+    "gateway-64",
+    "gateway-h3",
+    "production-stack"
+  ],
+  "maintainers": ["dancixx"]
+}

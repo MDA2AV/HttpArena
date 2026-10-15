@@ -1,0 +1,13 @@
+[package]
+name = "httparena-tako-grpc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+prost = "0.14"
+tako-rs = { version = "2.4.1", features = ["grpc", "http2", "tls"] }
+tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
+
+[profile.release]
+codegen-units = 1
+lto = "fat"

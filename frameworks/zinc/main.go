@@ -408,7 +408,7 @@ func main() {
 	app.Get("/crud/items/{id}", crudRead)
 	app.Put("/crud/items/{id}", crudUpdate)
 
-	// json-tls and static-tls on 8081, and baseline-h2 and static-h2 on 8443:
+	// json-tls and static-tls on 8081, and baseline-h2 on 8443:
 	// the same app behind TLS, where net/http negotiates HTTP/2 by ALPN. The
 	// harness only mounts /certs for the TLS profiles, so without them neither
 	// is opened.

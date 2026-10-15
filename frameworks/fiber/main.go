@@ -463,11 +463,12 @@ var mimeTypes = map[string]string{
 // So the twins are picked up here. The profile allows selecting them off
 // Accept-Encoding where a framework has no API of its own for it; those bytes
 // exist on disk either way, which makes this a file read rather than
-// compression. It is also the difference between answering the 20-file rotation
-// with the 1.21 MB the originals weigh and the 318 KB the twins do, because the
-// compress middleware sits this round out: fasthttp's Accept-Encoding matcher
-// compares whole tokens, and the profile sends "br;q=1, gzip;q=0.8".
+// compression. It is also what answers the 20-file rotation in 318 KB instead
+// of 1.21 MB without the compress middleware encoding the originals on every
+// request.
 func staticFile(c fiber.Ctx) error {
+	// The variant is chosen off Accept-Encoding, so every answer varies on it.
+	c.Set(fiber.HeaderVary, fiber.HeaderAcceptEncoding)
 	name := c.Params("filename")
 	if name == "" || strings.Contains(name, "/") || strings.Contains(name, "..") {
 		return c.SendStatus(fiber.StatusNotFound)
@@ -477,7 +478,7 @@ func staticFile(c fiber.Ctx) error {
 	var data []byte
 	enc := ""
 	// Fiber's own negotiation reads the q-values the way RFC 9110 says, which
-	// is the whole difficulty here. It is guarded on the header being present
+	// the profile's header needs. It is guarded on the header being present
 	// because with no Accept-Encoding at all a negotiator answers with the
 	// first offer, and that would encode a body for a client that never asked.
 	if c.Get(fiber.HeaderAcceptEncoding) != "" {
@@ -501,8 +502,7 @@ func staticFile(c fiber.Ctx) error {
 	}
 
 	// The Content-Type is the original file's either way; only the encoding
-	// changes. Set before Send so the compress middleware sees a body that is
-	// already encoded and leaves it alone.
+	// changes.
 	ct := mimeTypes[filepath.Ext(name)]
 	if ct == "" {
 		ct = "application/octet-stream"
@@ -510,7 +510,6 @@ func staticFile(c fiber.Ctx) error {
 	c.Set(fiber.HeaderContentType, ct)
 	if enc != "" {
 		c.Set(fiber.HeaderContentEncoding, enc)
-		c.Set(fiber.HeaderVary, fiber.HeaderAcceptEncoding)
 	}
 	return c.Send(data)
 }
@@ -536,14 +535,16 @@ func main() {
 	// the 8gbit validation posts.
 	app := fiber.New()
 
-	// Compression is mounted on the two routes with a body worth compressing
+	// Compression is mounted on the one route with a body worth compressing
 	// rather than on the whole app. What that leaves out is either answered in
 	// a handful of bytes - /pipeline, /baseline11, /delay and /baseline2, where
 	// fasthttp's 200-byte floor means the middleware could only walk the chain
 	// and stamp a Vary header on the endpoints baseline, latency-1m and
 	// latency-10k drive - or wanted back unchanged, which is /echo. /async-db
 	// and /crud are outside it too, and their callers send no Accept-Encoding.
-	app.Use([]string{"/json", "/static"}, compress.New())
+	// So is /static: its text files go out as the twins on disk, and what has
+	// no twin is woff2 and webp, which are compressed already.
+	app.Use("/json", compress.New())
 
 	app.Get("/pipeline", pipeline)
 	app.Get("/baseline11", baseline11)

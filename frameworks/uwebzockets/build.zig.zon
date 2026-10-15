@@ -1,0 +1,13 @@
+.{
+    .name = .uwebzockets_arena,
+    .version = "0.0.0",
+    .fingerprint = 0xa939cd74d1827fbb,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .uWebZockets = .{
+            .url = "git+https://github.com/farbenbuilds/uWebZockets?ref=v1.8.0#d94b4e546000455f2ca680d07cb61d032034d5ec",
+            .hash = "uWebZockets-1.8.0-SD3SPCtoJgB2t5E5ldRsnhw2iSXJXaEU03GScHvbL_8s",
+        },
+    },
+    .paths = .{""},
+}

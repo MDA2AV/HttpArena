@@ -9,7 +9,7 @@ HTTP framework benchmark platform.
 
 30 test profiles. 64-core dedicated hardware. Same conditions for every framework.
 
-[View Leaderboard](https://www.http-arena.com/) | [Documentation](https://www.http-arena.com/#doc=) | [Add a Framework](https://www.http-arena.com/#doc=add-framework)
+[View Leaderboard](https://http-arena.com/) | [Documentation](https://http-arena.com/#doc=) | [Add a Framework](https://http-arena.com/#doc=add-framework)
 
 ---
 
@@ -69,7 +69,7 @@ cd HttpArena
 
 ## Contributing
 
-- [Add a new framework](https://www.http-arena.com/#doc=add-framework)
+- [Add a new framework](https://http-arena.com/#doc=add-framework)
 - Improve an existing implementation by opening a PR that modifies files under `frameworks/<name>/`
 - [Open an issue](https://github.com/MDA2AV/HttpArena/issues)
 - Comment on any open issue or PR
@@ -87,10 +87,10 @@ Add your GitHub username to the `maintainers` array in your framework's `meta.js
 Benchmarked here? Put your rank in your own README. It re-renders itself every
 time the board is republished, so you paste it once and never touch it again:
 
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1.json)](https://http-arena.com/#type=emerging,flagship&tuned=0)
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1.json)](https://http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
 Swap `actix` for your entry and `h1` for the family you want:
@@ -108,7 +108,7 @@ Swap `actix` for your entry and `h1` for the family you want:
 outside `A-Z a-z 0-9 . _ -` turned into `-`, the same name as your file in
 [`site/data/results/`](site/data/results). The full list of what is published,
 with every rank in it, is at
-[`/badge/index.json`](https://www.http-arena.com/badge/index.json).
+[`/badge/index.json`](https://http-arena.com/badge/index.json).
 
 ### Ranked among your own language
 
@@ -117,7 +117,7 @@ Optional. Append `-<language>` to the family for a badge reading
 entries in your language:
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1-rust.json)](https://http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
 ```
 
 The language is lowercased, with `#` spelled `sharp` and `++` spelled `pp`, so
@@ -131,7 +131,7 @@ Also optional. By default the field is **standard configurations only**, so the
 number compares like for like. Append `-with-tuned` to count tuned entries too:
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1-with-tuned.json)](https://http-arena.com/#type=emerging,flagship&tuned=1)
 ```
 
 It combines with the language suffix, as in `h1-rust-with-tuned.json`. Every

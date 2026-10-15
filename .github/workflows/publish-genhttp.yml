@@ -1,0 +1,59 @@
+name: Publish to genhttp.dev
+
+# Puts the site and its results, as they are on main, on the genhttp.dev lambda that serves
+# https://http-arena.com (www.http-arena.com and http-arena.genhttp.run redirect there). By hand
+# only: this repository holds the results, a merge changes them here and nothing else, and the
+# lambda is brought up to date when someone runs this - Actions > Publish to genhttp.dev > Run
+# workflow, or `gh workflow run publish-genhttp.yml`.
+#
+# The site and the results go through the lambda's api/ingest/ as data, and no version of the
+# lambda is saved for them; one is saved only when site/lambda/, the lambda's code, changed. The
+# runs' logs stay in this repository, where the lambda sends the site's links to them.
+# scripts/publish_genhttp.py says what each step does. Running it twice changes nothing.
+#
+# Secrets: ARENA_INGEST_KEY, the same value as the lambda's secret of that name, puts the site
+# and the results; GENHTTP_EDITOR_KEY, the lambda's editor key, saves and deploys a version when
+# site/lambda/ changed.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: genhttp-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # never from a fork, which has neither secret
+    if: github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # main, whichever branch the run was started from: the lambda only shows what merged.
+      # Full history, because the sitemap dates each page from the commit that last touched it.
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Only the og:image cards need it, and the generator leaves them out without it.
+      - name: Install Pillow (social cards)
+        continue-on-error: true
+        run: python3 -m pip install --quiet --disable-pip-version-check 'pillow==11.3.0'
+
+      - name: Generate the site
+        run: python3 scripts/gen_leaderboard_data.py
+
+      # A badge that disagrees with the board it links to is worse than none.
+      - name: Check badge ranks against the board
+        run: node scripts/check_badge_parity.js
+
+      - name: Publish
+        env:
+          GENHTTP_EDITOR_KEY: ${{ secrets.GENHTTP_EDITOR_KEY }}
+          ARENA_INGEST_KEY: ${{ secrets.ARENA_INGEST_KEY }}
+        run: python3 scripts/publish_genhttp.py

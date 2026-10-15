@@ -14,12 +14,12 @@ itself each time the leaderboard is republished. You paste it once.
 ## Paste it
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1.json)](https://http-arena.com/#type=emerging,flagship&tuned=0)
 ```
 
 Replace `actix` with your entry and `h1` with the family you want. The exact
 line for your framework, already assembled and deep-linked to the right view of
-the board, is in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
+the board, is in [`/badge/index.json`](https://http-arena.com/badge/index.json)
 under `scopes.<family>.default.markdown`.
 
 ## Families
@@ -44,13 +44,13 @@ Optional, and a second badge rather than a replacement. Append `-<language>` to
 the family and the badge reads **`#1 of 6 (Rust)`**:
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-rust.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1-rust.json)](https://http-arena.com/#type=emerging,flagship&tuned=0&lang=Rust)
 ```
 
 The language segment is the board's own language name, lowercased, with `#`
 spelled out as `sharp` and `++` as `pp`: `C#` → `csharp`, `C++` → `cpp`,
 `TS` → `ts`, `JS` → `js`. Your ready-made line is in
-[`/badge/index.json`](https://www.http-arena.com/badge/index.json) under
+[`/badge/index.json`](https://http-arena.com/badge/index.json) under
 `scopes.<family>.byLanguage.markdown`.
 
 ## Counting tuned entries in
@@ -61,7 +61,7 @@ someone else's hand-tuned build. Append `-with-tuned` to count tuned entries
 as well:
 
 ```md
-[![HTTP Arena](https://img.shields.io/endpoint?url=https://www.http-arena.com/badge/actix/h1-with-tuned.json)](https://www.http-arena.com/#type=emerging,flagship&tuned=1)
+[![HTTP Arena](https://img.shields.io/endpoint?url=https://http-arena.com/badge/actix/h1-with-tuned.json)](https://http-arena.com/#type=emerging,flagship&tuned=1)
 ```
 
 The suffixes combine, so the full set for one family is:
@@ -73,7 +73,7 @@ The suffixes combine, so the full set for one family is:
 | `h1-rust.json` | standard, one language |
 | `h1-rust-with-tuned.json` | standard + tuned, one language |
 
-Each is in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
+Each is in [`/badge/index.json`](https://http-arena.com/badge/index.json)
 under `scopes.<family>`, keyed `default`, `withTuned`, `byLanguage` and
 `byLanguageWithTuned`.
 
@@ -102,7 +102,7 @@ type swatch beside every framework name:
 | 🟧 | `experimental` | other experimental entries |
 | 🟥 | `engine` | other engines, on the profiles engines are scored on |
 
-The tier is also in [`/badge/index.json`](https://www.http-arena.com/badge/index.json)
+The tier is also in [`/badge/index.json`](https://http-arena.com/badge/index.json)
 as `type`, next to each entry's ranks.
 
 ## What the number means
