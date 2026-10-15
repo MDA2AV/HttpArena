@@ -91,41 +91,24 @@ static void load_dataset() {
     }
 }
 
-void handle_baseline_get(Context& ctx) {
-    int64_t sum = 0;
-    std::string_view q = ctx.req().query();
-    while (!q.empty()) {
-        size_t amp = q.find('&');
-        std::string_view pair = (amp != std::string_view::npos) ? q.substr(0, amp) : q;
-        size_t eq = pair.find('=');
-        if (eq != std::string_view::npos) {
-            int64_t val = 0;
-            std::from_chars(pair.data() + eq + 1, pair.data() + pair.size(), val);
-            sum += val;
-        }
-        if (amp == std::string_view::npos) break;
-        q.remove_prefix(amp + 1);
+// Query parameters are read through the framework's query_param accessor; a missing one counts as 0.
+int64_t query_int(Context& ctx, std::string_view key) {
+    int64_t val = 0;
+    if (auto str = ctx.req().query_param(key)) {
+        std::from_chars(str->data(), str->data() + str->size(), val);
     }
+    return val;
+}
+
+void handle_baseline_get(Context& ctx) {
+    int64_t sum = query_int(ctx, "a") + query_int(ctx, "b");
     char buf[32];
     auto [p, _] = std::to_chars(buf, buf + sizeof(buf), sum);
     ctx.res().text(std::string_view(buf, p - buf));
 }
 
 void handle_baseline_post(Context& ctx) {
-    int64_t sum = 0;
-    std::string_view q = ctx.req().query();
-    while (!q.empty()) {
-        size_t amp = q.find('&');
-        std::string_view pair = (amp != std::string_view::npos) ? q.substr(0, amp) : q;
-        size_t eq = pair.find('=');
-        if (eq != std::string_view::npos) {
-            int64_t val = 0;
-            std::from_chars(pair.data() + eq + 1, pair.data() + pair.size(), val);
-            sum += val;
-        }
-        if (amp == std::string_view::npos) break;
-        q.remove_prefix(amp + 1);
-    }
+    int64_t sum = query_int(ctx, "a") + query_int(ctx, "b");
     std::string_view body = ctx.req().body();
     while (!body.empty() && std::isspace(static_cast<unsigned char>(body.front()))) body.remove_prefix(1);
     while (!body.empty() && std::isspace(static_cast<unsigned char>(body.back()))) body.remove_suffix(1);
