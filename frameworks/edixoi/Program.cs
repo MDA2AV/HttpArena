@@ -95,7 +95,7 @@ internal static class Program
             KeyPath = keyPath,
             //KernelTx = KernelTlsAvailable(),
             KernelTx = true,
-            KernelRx = true
+            KernelRx = false
         };
 
         Console.WriteLine($"[edixoi] {reactors} reactors on :{port}"
