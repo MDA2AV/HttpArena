@@ -38,7 +38,7 @@ if (Directory.Exists(staticRoot))
 
 // The harness mounts a certificate pair; without it only the plaintext listeners come up.
 // kTLS derives its keys from one TLS 1.3 ciphersuite, so it pins the floor to 1.3 as well.
-var kernelTls = Environment.GetEnvironmentVariable("IOXIDE_KTLS") != "0";
+var kernelTls = true;
 var tlsFloor = kernelTls ? SslProtocols.Tls13 : SslProtocols.Tls12 | SslProtocols.Tls13;
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
