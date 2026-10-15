@@ -41,29 +41,35 @@ fn main() {
 	app.get('/pipeline', fn (mut c viltrum.Ctx) {
 		c.text(200, 'ok')
 	})
+	// Only scalars are local here: V -prod pins every local struct or array around each
+	// call statement (see docs/request-response.md), so the dataset stays captured.
 	app.get('/json/:count', viltrum.gzip, fn [mut copies] (mut c viltrum.Ctx) {
-		mut items := copies[c.worker_id()]
+		w := c.worker_id()
 		mut n := int(c.param_int('count') or { 0 })
 		if n < 0 {
 			n = 0
-		} else if n > items.len {
-			n = items.len
+		} else if n > copies[w].len {
+			n = copies[w].len
 		}
 		m := c.query_int('m') or { 1 }
 		for i in 0 .. n {
-			items[i].total = i64(items[i].price) * i64(items[i].quantity) * m
-		}
-		mut page := unsafe { items }
-		unsafe {
-			// n is clamped to items.len and jsonenc only reads page, so the shortened view is safe
-			page.len = n
+			copies[w][i].total = i64(copies[w][i].price) * i64(copies[w][i].quantity) * m
 		}
 		c.json(200, Page{
-			items: page
+			items: first(copies[w], n)
 			count: n
 		})
 	})
 	app.listen('0.0.0.0:8080') or { panic(err) }
+}
+
+// first is a view of a's first n items; safe because n <= a.len and jsonenc only reads.
+fn first(a []Item, n int) []Item {
+	mut v := unsafe { a }
+	unsafe {
+		v.len = n
+	}
+	return v
 }
 
 fn baseline(mut c viltrum.Ctx) {
