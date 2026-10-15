@@ -3,11 +3,11 @@
   "language": "V",
   "engine": "viltrum",
   "type": "emerging",
-  "mode": "tuned",
+  "mode": "standard",
   "completeness": { "routing": true, "middleware": true, "request": true, "response": true },
-  "description": "HTTP framework for V with its own HTTP/1.1 engine: router with :params, middleware chain, first-party WebSocket, strict request framing (Content-Length and chunked, smuggling-hardened, fuzzed in CI). Tuned: one SO_REUSEPORT epoll loop per CPU (epoll_cores) instead of the default thread-per-connection I/O. json-comp uses viltrum's gzip middleware.",
+  "description": "HTTP framework for V with its own HTTP/1.1 engine: one SO_REUSEPORT epoll worker per CPU, pipelined responses batched into one write, and no allocation per request inside the framework (CI-enforced). Router with :params, middleware chain (c.next()), compile-time JSON encoder, gzip middleware on miniz. Request framing is smuggling-hardened (Content-Length and chunked) and fuzzed in CI. Default configuration.",
   "repo": "https://github.com/Tuntii/viltrum",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json-comp", "echo-ws"],
+  "tests": ["baseline", "pipelined", "limited-conn", "json-comp"],
   "maintainers": ["Tuntii"]
 }
