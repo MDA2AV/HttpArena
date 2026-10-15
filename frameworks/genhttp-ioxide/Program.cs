@@ -7,7 +7,6 @@ using genhttp.Infrastructure;
 using GenHTTP.Api.Infrastructure;
 
 using GenHTTP.Engine.Ioxide;
-using GenHTTP.Modules.Compression;
 
 using ioxide;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -76,10 +75,10 @@ var options = new EngineOptions
     },
 };
 
+// Compression is attached per route in Project.cs, not to the host.
 var host = Host.Create(onReactorStart: onReactorStart, options: options)
                .Logging(NullLoggerFactory.Instance, false)
-               .Handler(Project.Create())
-               .Compression(CompressedContent.Default());
+               .Handler(Project.Create());
 
 //   :8080  HTTP/1.1 plaintext          baseline, pipelined, limited-conn, async, json-comp, async-db, ws
 //   :8082  HTTP/1.1 + HTTP/2 cleartext baseline-h2c, json-h2c - the preface decides which
