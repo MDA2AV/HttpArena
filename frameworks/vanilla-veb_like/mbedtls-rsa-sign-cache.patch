@@ -1,0 +1,101 @@
+--- a/tf-psa-crypto/drivers/builtin/src/psa_crypto_rsa.c
++++ b/tf-psa-crypto/drivers/builtin/src/psa_crypto_rsa.c
+@@ -306,6 +306,68 @@
+     return PSA_SUCCESS;
+ }
+ 
++/* vanilla (HttpArena) patch: per-thread cache of the signing key's parsed RSA
++ * context.
++ *
++ * Unpatched, every psa_sign_hash() re-parses the key into a fresh
++ * mbedtls_rsa_context, so mbedtls_rsa_private() finds no blinding values and
++ * regenerates them from scratch (a random value, its modular inverse and an
++ * exponentiation) before signing. For a TLS 1.3 server with an RSA
++ * certificate that is most of every handshake's CertificateVerify. A
++ * long-lived context, as the legacy RSA API always had, updates its blinding
++ * values by squaring instead.
++ *
++ * The cache is thread-local, so there is no locking and no thread ever sees
++ * another's (mutable) blinding state. It holds one key, compared byte for
++ * byte, so a different or re-imported key simply reloads. The entry lives as
++ * long as the thread. */
++static __thread mbedtls_rsa_context *vanilla_sign_rsa = NULL;
++static __thread uint8_t *vanilla_sign_key = NULL;
++static __thread size_t vanilla_sign_key_len = 0;
++
++static psa_status_t vanilla_rsa_sign_context(psa_key_type_t type,
++                                             const uint8_t *key_buffer,
++                                             size_t key_buffer_size,
++                                             mbedtls_rsa_context **p_rsa,
++                                             int *cached)
++{
++    psa_status_t status;
++    mbedtls_rsa_context *rsa = NULL;
++    uint8_t *copy;
++
++    if (vanilla_sign_rsa != NULL && vanilla_sign_key_len == key_buffer_size &&
++        memcmp(vanilla_sign_key, key_buffer, key_buffer_size) == 0) {
++        *p_rsa = vanilla_sign_rsa;
++        *cached = 1;
++        return PSA_SUCCESS;
++    }
++    status = mbedtls_psa_rsa_load_representation(type, key_buffer,
++                                                 key_buffer_size, &rsa);
++    *p_rsa = rsa;
++    *cached = 0;
++    if (status != PSA_SUCCESS) {
++        return status;
++    }
++    copy = mbedtls_calloc(1, key_buffer_size);
++    if (copy == NULL) {
++        return PSA_SUCCESS; /* sign uncached; the caller frees rsa */
++    }
++    memcpy(copy, key_buffer, key_buffer_size);
++    if (vanilla_sign_rsa != NULL) {
++        mbedtls_rsa_free(vanilla_sign_rsa);
++        mbedtls_free(vanilla_sign_rsa);
++    }
++    if (vanilla_sign_key != NULL) {
++        mbedtls_platform_zeroize(vanilla_sign_key, vanilla_sign_key_len);
++        mbedtls_free(vanilla_sign_key);
++    }
++    vanilla_sign_rsa = rsa;
++    vanilla_sign_key = copy;
++    vanilla_sign_key_len = key_buffer_size;
++    *cached = 1;
++    return PSA_SUCCESS;
++}
++
+ psa_status_t mbedtls_psa_rsa_sign_hash(
+     const psa_key_attributes_t *attributes,
+     const uint8_t *key_buffer, size_t key_buffer_size,
+@@ -316,11 +378,12 @@
+     mbedtls_rsa_context *rsa = NULL;
+     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+     mbedtls_md_type_t md_alg;
++    int cached = 0;
+ 
+-    status = mbedtls_psa_rsa_load_representation(attributes->type,
+-                                                 key_buffer,
+-                                                 key_buffer_size,
+-                                                 &rsa);
++    status = vanilla_rsa_sign_context(attributes->type,
++                                      key_buffer,
++                                      key_buffer_size,
++                                      &rsa, &cached);
+     if (status != PSA_SUCCESS) {
+         goto exit;
+     }
+@@ -377,8 +440,10 @@
+     status = mbedtls_to_psa_error(ret);
+ 
+ exit:
+-    mbedtls_rsa_free(rsa);
+-    mbedtls_free(rsa);
++    if (!cached) {
++        mbedtls_rsa_free(rsa);
++        mbedtls_free(rsa);
++    }
+ 
+     return status;
+ }
