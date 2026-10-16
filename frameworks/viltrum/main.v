@@ -60,6 +60,15 @@ fn main() {
 			count: n
 		})
 	})
+	// The worker is not held while a request waits: after() answers it from a timer.
+	app.get('/delay/:ms', fn (mut c viltrum.Ctx) {
+		ms := c.param_int('ms') or { -1 }
+		if ms < 0 {
+			c.text(400, 'bad delay')
+			return
+		}
+		c.after(int(ms), delay_done, u64(ms))
+	})
 	app.listen('0.0.0.0:8080') or { panic(err) }
 }
 
@@ -70,6 +79,10 @@ fn first(a []Item, n int) []Item {
 		v.len = n
 	}
 	return v
+}
+
+fn delay_done(mut c viltrum.Ctx, ms u64) {
+	c.text_int(200, i64(ms))
 }
 
 fn baseline(mut c viltrum.Ctx) {

@@ -8,6 +8,6 @@
   "description": "HTTP framework for V with its own HTTP/1.1 engine: one SO_REUSEPORT epoll worker per CPU, pipelined responses batched into one write, and no allocation per request inside the framework (CI-enforced). Router with :params, middleware chain (c.next()), compile-time JSON encoder, gzip middleware on miniz. Request framing is smuggling-hardened (Content-Length and chunked) and fuzzed in CI. Default configuration.",
   "repo": "https://github.com/Tuntii/viltrum",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json-comp", "latency-1m", "latency-10k", "latency-500k-8cpu"],
+  "tests": ["baseline", "pipelined", "limited-conn", "json-comp", "latency-1m", "latency-10k", "latency-500k-8cpu", "async"],
   "maintainers": ["Tuntii"]
 }
