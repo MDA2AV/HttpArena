@@ -24,6 +24,14 @@ source "$SOURCE_DIR/redis.sh"
 source "$SOURCE_DIR/gateway.sh"
 source "$SOURCE_DIR/framework.sh"
 source "$SOURCE_DIR/profiles.sh"
+# Optional host profile (HOST_PROFILE=rpi -> scripts/lib/hosts/rpi.sh) for
+# machines other than the bench host. It rescales cpusets, connection counts and
+# generator threads, and sends results to their own directory so they never mix
+# with the main board. Unset, nothing changes.
+if [ -n "${HOST_PROFILE:-}" ]; then
+    [ -f "$SOURCE_DIR/hosts/$HOST_PROFILE.sh" ] || { echo "[FAIL] unknown HOST_PROFILE '$HOST_PROFILE' (no scripts/lib/hosts/$HOST_PROFILE.sh)" >&2; exit 1; }
+    source "$SOURCE_DIR/hosts/$HOST_PROFILE.sh"
+fi
 source "$SOURCE_DIR/tools/gcannon.sh"
 source "$SOURCE_DIR/tools/h2load.sh"
 source "$SOURCE_DIR/tools/h2load-h3.sh"
@@ -84,6 +92,7 @@ docker volume prune -f >/dev/null 2>&1 || true
 docker image prune  -f >/dev/null 2>&1 || true
 
 info "available CPUs: $(nproc 2>/dev/null || echo ?)"
+[ -n "${HOST_PROFILE:-}" ] && info "host profile: $HOST_PROFILE (${HOST_LABEL:-}) server cpus ${SERVER_CPUS:-?}, generator cpus $GCANNON_CPUS"
 
 # ── Docker-mode setup — BEFORE system_tune() ────────────────────────────────
 #
@@ -115,6 +124,9 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     for i in "${!_loadgen_images[@]}"; do
         img="${_loadgen_images[$i]}"
         df="${_loadgen_files[$i]}"
+        # A host profile that runs no HTTP/3 profile can skip the h2load-h3
+        # image, which compiles quictls + ngtcp2 + nghttp2 from source.
+        if [ "$df" = "h2load-h3.Dockerfile" ] && [ "${SKIP_H3_LOADGEN:-}" = "true" ]; then continue; fi
         if ! docker image inspect "$img" >/dev/null 2>&1; then
             info "building $img from docker/$df"
             _build_args=""
@@ -584,7 +596,7 @@ EOF
     info "saved results/$profile/$CONNS/${FRAMEWORK}.json"
 
     # Persist container logs alongside results for post-mortem.
-    local log_dir="$ROOT_DIR/site/static/logs/$profile/$CONNS"
+    local log_dir="${LOGS_DIR:-$ROOT_DIR/site/static/logs}/$profile/$CONNS"
     mkdir -p "$log_dir"
     # Cap what a noisy container can write. A framework that logs per request
     # produces a log proportional to throughput: sanic's static run emitted a
@@ -629,7 +641,9 @@ done
 
 # ── Rebuild site data ───────────────────────────────────────────────────────
 
-if [ "$SAVE_RESULTS" = "true" ]; then
+if [ "$SAVE_RESULTS" = "true" ] && [ -n "${HOST_PROFILE:-}" ]; then
+    info "host profile $HOST_PROFILE: results kept in ${RESULTS_DIR#$ROOT_DIR/} (site data untouched)"
+elif [ "$SAVE_RESULTS" = "true" ]; then
     info "rebuilding site/data/*.json"
     python3 "$SCRIPT_DIR/rebuild_site_data.py" --root "$ROOT_DIR"
 fi

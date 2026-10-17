@@ -12,13 +12,22 @@
 # Bumping the version is a deliberate act that re-baselines the profile.
 FROM ubuntu:24.04 AS build
 ARG ZRK_VERSION=2.3.0
-ARG ZRK_SHA256=ab6f1c1ce34ce73f52afd106419d15e5c494bd1cedd475afa56babb85b09a816
+# One checksum per release asset; the build picks the one for the host's
+# architecture so the same Dockerfile works on x86_64 and aarch64 hosts.
+ARG ZRK_SHA256_X86_64=ab6f1c1ce34ce73f52afd106419d15e5c494bd1cedd475afa56babb85b09a816
+ARG ZRK_SHA256_AARCH64=361f2632e3cee672cf6a8676438c9fa93e8a5702a0007bacc266861767bab213
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
-RUN curl -fsSL -o zrk.tar.gz \
-        "https://github.com/zoxy-io/zrk/releases/download/v${ZRK_VERSION}/zrk-${ZRK_VERSION}-x86_64-linux.tar.gz" && \
-    echo "${ZRK_SHA256}  zrk.tar.gz" | sha256sum -c - && \
+RUN arch="$(uname -m)" && \
+    case "$arch" in \
+        x86_64)  sum="$ZRK_SHA256_X86_64" ;; \
+        aarch64) sum="$ZRK_SHA256_AARCH64" ;; \
+        *) echo "zrk: no release for $arch" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL -o zrk.tar.gz \
+        "https://github.com/zoxy-io/zrk/releases/download/v${ZRK_VERSION}/zrk-${ZRK_VERSION}-${arch}-linux.tar.gz" && \
+    echo "${sum}  zrk.tar.gz" | sha256sum -c - && \
     tar xzf zrk.tar.gz && chmod +x zrk
 
 FROM ubuntu:24.04
