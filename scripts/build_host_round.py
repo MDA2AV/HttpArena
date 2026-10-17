@@ -70,6 +70,13 @@ def main() -> None:
     # benchmark.sh sets the loopback MTU to 1500 for the run and restores it on
     # exit, so what this reads afterwards is not what the results ran under.
     current.setdefault("tcp", {})["lo_mtu"] = "1500"
+    # A board that cannot sustain its top clock is run at a fixed, lower one;
+    # record it, since it decides every number in the round.
+    try:
+        khz = int(Path("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq").read_text())
+        current["cpu_max_mhz"] = str(khz // 1000)
+    except (OSError, ValueError):
+        pass
     current["arch"] = subprocess.check_output(["uname", "-m"]).decode().strip()
     try:
         current["model"] = Path("/proc/device-tree/model").read_text().strip("\x00 \n")
@@ -104,6 +111,7 @@ def main() -> None:
         "docker_runtime": current.get("docker_runtime"),
         "governor": current.get("governor"),
         "arch": current.get("arch"),
+        "cpu_max_mhz": current.get("cpu_max_mhz"),
         "commit": commit,
     })
     if current.get("tcp"):
