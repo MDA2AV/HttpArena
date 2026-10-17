@@ -718,6 +718,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     D = Object.assign({}, D, { current: window.LB_ROUND.current, profiles: window.LB_ROUND.profiles,
       results: window.LB_ROUND.results, runmeta: window.LB_ROUND.runmeta, achievements: window.LB_ROUND.achievements||{} });
   } else { ROUND_ID=''; }
+  // The copy under the board is pre-rendered from the current round, so it
+  // would describe the wrong machine and ranking under an archived one.
+  if(ROUND_ID){ var _seo=document.getElementById('boardSeo'); if(_seo) _seo.hidden=true; }
   var LB_DOCS = window.LB_DOCS || {};
   // Run-logs are deployed at /logs/ (the board is the root site). Locally,
   // serve site/ and open /leaderboard/ so ../static/logs/ reaches site/static/logs/.
