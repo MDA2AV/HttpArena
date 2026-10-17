@@ -15,16 +15,16 @@
     <GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>
   </PropertyGroup>
 
-  <!-- GenHTTP.Engine.Ioxide 11.0.5 pins ioxide 0.15.251; ioxide.pg and ioxide.timer below are
+  <!-- GenHTTP.Engine.Ioxide 11.1.0 pins ioxide 0.15.251; ioxide.pg and ioxide.timer below are
        built against the same ioxide, so they move with it. -->
   <ItemGroup>
-    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.5" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.5" />
-    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.5" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.5" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.5" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.5" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.1.0" />
+    <PackageReference Include="GenHTTP.Modules.IO" Version="11.1.0" />
+    <PackageReference Include="GenHTTP.Modules.Files" Version="11.1.0" />
+    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.1.0" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.1.0" />
+    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.1.0" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.1.0" />
   </ItemGroup>
 
   <ItemGroup>
