@@ -67,6 +67,9 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         write_current_json(ROOT, Path(tmp))
         current = json.loads((Path(tmp) / "current.json").read_text())
+    # benchmark.sh sets the loopback MTU to 1500 for the run and restores it on
+    # exit, so what this reads afterwards is not what the results ran under.
+    current.setdefault("tcp", {})["lo_mtu"] = "1500"
     current["arch"] = subprocess.check_output(["uname", "-m"]).decode().strip()
     try:
         current["model"] = Path("/proc/device-tree/model").read_text().strip("\x00 \n")
