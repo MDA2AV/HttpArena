@@ -77,3 +77,6 @@ PROFILE_ORDER=(
 SKIP_H3_LOADGEN=true
 # The generators run as containers: there are no native builds on the Pi.
 LOADGEN_DOCKER=true
+# JVM and Clojure servers take well over the default 30 s to answer on two
+# cores at 1.2 GHz; a server that is merely slow to start is not a failure.
+READY_TIMEOUT=120

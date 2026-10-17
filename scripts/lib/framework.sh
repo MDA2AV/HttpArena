@@ -233,7 +233,7 @@ framework_wait_ready() {
     esac
 
     local i
-    for i in $(seq 1 30); do
+    for i in $(seq 1 "${READY_TIMEOUT:-30}"); do
         if curl -sk -o /dev/null --max-time 2 "${probe_extra[@]}" "$probe_url" 2>/dev/null; then
             info "server ready"
             return 0
@@ -268,7 +268,7 @@ _wait_grpc() {
     printf '\x00\x00\x00\x00\x04\x08\x01\x10\x02' > "$frame"
 
     local i head
-    for i in $(seq 1 30); do
+    for i in $(seq 1 "${READY_TIMEOUT:-30}"); do
         # Ready means a gRPC answer, not merely an open socket: an h2 server
         # that has not registered the service yet still accepts connections.
         #
