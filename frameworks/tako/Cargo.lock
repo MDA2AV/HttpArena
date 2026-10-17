@@ -2648,9 +2648,9 @@ checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 
 [[package]]
 name = "tako-rs"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa5e097cfb81d8adc24743b24e7f649bc9a717aaf810128da0968532948d7fdf"
+checksum = "3b14a9fe140df4f1bba8c1dc55c2d3033b59d96e28b8b82f890a2fa77ead1d34"
 dependencies = [
  "linkme",
  "tako-rs-core",
@@ -2664,9 +2664,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-core"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfebf99c7554fa9d7b7612a393c72fa6c161eab5c391cd76de32b0a2648e82e2"
+checksum = "a913ace8ee7960be78124eb776c097ba83af6fbbb8c0a3aaaa2b8bb3ed78139f"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2714,9 +2714,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-extractors"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20271324f81439e9e86b50f301d85493c11c29640549bb34a0b2d7f1aad091cd"
+checksum = "3c41a681af6b40fcfd3a3228dd799e8dc5acc6e16ef85120c9be7780eaf81a18"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2749,9 +2749,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-macros"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a60a349ad85a7dd7fa9a10578770029d249850b7dd21f86bad2b5d1cbf17e8cc"
+checksum = "66453ad4b25d4beef59531f9614d9ec2e6f85ba1321d20bf4b673ed2bb0058c9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2760,9 +2760,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-plugins"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df77e9e5dbce9805764bba99c806c74d131abb9d3b078a0eccf179212d849a16"
+checksum = "d6eec747af944875d67f719ce15a4a35d43fd5301fe84dbe8ee27ad505df7a13"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2798,9 +2798,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-server"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea19bb546daccd8fa4508ae161c56e5d385b8cf8a4c088635656f910a619b8f3"
+checksum = "4dfd96a982ee7a3b732c0cb930f6b59dfb26863a9bb4af719c24e23331fd291f"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2827,9 +2827,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-server-pt"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19a26ea7172ebd4fbee900dfc697af2e925c19112b6fb84508711e6e2673313d"
+checksum = "a6cdc21ac0cb39e22adfd6fb931fd4aa8df92e224f322ef5f887771de62f1166"
 dependencies = [
  "core_affinity",
  "futures-util",
@@ -2844,9 +2844,9 @@ dependencies = [
 
 [[package]]
 name = "tako-rs-streams"
-version = "2.4.1"
+version = "2.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f435c8191629d3c6a77f270c999047c5ee8153adf021169c783c371d03a0be9"
+checksum = "374a13704cb651b62c86af2ed9aed5d71ba1c5a6c7bdc5d7461d71a2edf928ee"
 dependencies = [
  "anyhow",
  "base64",

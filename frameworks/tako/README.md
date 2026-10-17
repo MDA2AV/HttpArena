@@ -1,13 +1,13 @@
 # tako
 
-[Tako](https://github.com/rust-dd/tako) 2.4.1 (`tako-rs` on crates.io) on hyper and Tokio, default configuration.
+[Tako](https://github.com/rust-dd/tako) 2.4.2 (`tako-rs` on crates.io) on hyper and Tokio, default configuration.
 gRPC lives in [`tako-grpc`](../tako-grpc) and the gateway stacks in [`tako-gateway`](../tako-gateway);
 all three report as `tako`.
 
 ## Stack
 
 - **Language:** Rust 1.99
-- **Framework:** tako-rs 2.4.1
+- **Framework:** tako-rs 2.4.2
 - **Build:** Multi-stage, `debian:trixie-slim` runtime
 
 ## Listeners
