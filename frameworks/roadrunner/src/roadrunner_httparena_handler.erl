@@ -3,27 +3,38 @@
 
 -export([routes/0]).
 -export([handle/1]).
--export([bin_int/2]).
 
 -spec routes() -> [roadrunner_router:route()].
+%% Each route's state names the endpoint it serves, so the handler
+%% dispatches on what the router already matched. `roadrunner_static`
+%% serves the precompressed `.br` / `.gz` siblings on disk itself (and
+%% sends files with `sendfile`, which the compress middleware passes
+%% through), so the static route needs no compress middleware.
 routes() ->
     [
-        {~"/baseline11", ?MODULE, undefined},
-        {~"/baseline2", ?MODULE, undefined},
-        {~"/pipeline", ?MODULE, undefined},
-        {~"/delay/:ms", ?MODULE, undefined},
-        #{path => ~"/json/:count", handler => ?MODULE, middlewares => [roadrunner_compress]},
-        {~"/echo", ?MODULE, undefined},
-        {~"/async-db", ?MODULE, undefined},
-        #{path => ~"/fortunes", handler => ?MODULE, middlewares => [roadrunner_compress]},
-        {~"/crud/items", ?MODULE, undefined},
-        {~"/crud/items/:id", ?MODULE, undefined},
-        {~"/ws", ?MODULE, undefined},
+        {~"/baseline11", ?MODULE, baseline},
+        {~"/baseline2", ?MODULE, baseline},
+        {~"/pipeline", ?MODULE, pipeline},
+        {~"/delay/:ms", ?MODULE, delay},
+        #{
+            path => ~"/json/:count",
+            handler => ?MODULE,
+            state => json,
+            middlewares => [roadrunner_compress]
+        },
+        {~"/echo", ?MODULE, echo},
+        {~"/async-db", ?MODULE, async_db},
+        #{
+            path => ~"/fortunes",
+            handler => ?MODULE,
+            state => fortunes,
+            middlewares => [roadrunner_compress]
+        },
+        {~"/ws", ?MODULE, ws},
         #{
             path => ~"/static/*path",
             handler => roadrunner_static,
-            state => #{dir => static_dir(), cache_ttl_ms => 1000},
-            middlewares => [roadrunner_compress]
+            state => #{dir => static_dir(), cache_ttl_ms => 1000}
         }
     ].
 
@@ -35,48 +46,32 @@ static_dir() ->
 
 -spec handle(roadrunner_req:request()) -> roadrunner_handler:result().
 handle(Req) ->
-    handle_route(roadrunner_req:path(Req), Req).
+    handle_route(roadrunner_req:state(Req), Req).
 
-handle_route(~"/baseline11", Req) ->
+handle_route(baseline, Req) ->
     baseline(Req);
-handle_route(~"/baseline2", Req) ->
-    baseline(Req);
-handle_route(~"/pipeline", Req) ->
+handle_route(pipeline, Req) ->
     {roadrunner_resp:text(200, ~"ok"), Req};
-handle_route(<<"/delay/", _/binary>>, Req) ->
+handle_route(delay, Req) ->
     delay_endpoint(Req);
-handle_route(<<"/json/", _/binary>>, Req) ->
+handle_route(json, Req) ->
     json_endpoint(Req);
-handle_route(~"/echo", Req) ->
+handle_route(echo, Req) ->
     echo_endpoint(Req);
-handle_route(~"/async-db", Req) ->
+handle_route(async_db, Req) ->
     async_db_endpoint(Req);
-handle_route(~"/fortunes", Req) ->
+handle_route(fortunes, Req) ->
     fortunes_endpoint(Req);
-handle_route(~"/crud/items", Req) ->
-    case roadrunner_req:method(Req) of
-        ~"GET" -> roadrunner_httparena_crud:list(Req);
-        ~"POST" -> roadrunner_httparena_crud:create(Req);
-        _ -> {roadrunner_resp:status(405), Req}
-    end;
-handle_route(<<"/crud/items/", _/binary>>, Req) ->
-    case roadrunner_req:method(Req) of
-        ~"GET" -> roadrunner_httparena_crud:get(Req);
-        ~"PUT" -> roadrunner_httparena_crud:update(Req);
-        _ -> {roadrunner_resp:status(405), Req}
-    end;
-handle_route(~"/ws", Req) ->
-    {{websocket, roadrunner_httparena_ws, undefined}, Req};
-handle_route(_, Req) ->
-    {roadrunner_resp:not_found(), Req}.
+handle_route(ws, Req) ->
+    {{websocket, roadrunner_httparena_ws, undefined}, Req}.
 
 %% roadrunner_resp has no octet-stream builder, so the buffered
 %% `{Status, Headers, Body}` triple is assembled here. `content-length`
-%% comes from the collected body rather than from the request, which is
-%% what makes the chunked case work: a chunked request carries no
+%% comes from the body read rather than from the request, which is what
+%% makes the chunked case work: a chunked request carries no
 %% `Content-Length` to forward, and an empty one still gets a `0`.
 echo_endpoint(Req) ->
-    {Body, Req2} = collect_body(Req, []),
+    {ok, Body, Req2} = roadrunner_req:read_body(Req),
     Resp =
         {200,
             [
@@ -85,21 +80,6 @@ echo_endpoint(Req) ->
             ],
             Body},
     {Resp, Req2}.
-
-%% Read the request body in 64 KB chunks, keeping each one. With
-%% `body_buffering => manual` on the listener, `read_body/2
-%% #{length => 65536}` returns one chunk at a time; `read_body/2`
-%% decodes chunked framing itself, so this is the same loop either way.
-%% The chunks are accumulated in reverse and returned as `iodata()` --
-%% the auto-buffered body is `iodata()` too, so nothing is flattened
-%% before it goes back out on the wire.
-collect_body(Req, Acc) ->
-    case roadrunner_req:read_body(Req, #{length => 65536}) of
-        {ok, Bytes, Req2} ->
-            {lists:reverse([Bytes | Acc]), Req2};
-        {more, Bytes, Req2} ->
-            collect_body(Req2, [Bytes | Acc])
-    end.
 
 async_db_endpoint(Req) ->
     Qs = roadrunner_req:parse_qs(Req),
@@ -130,23 +110,8 @@ fortunes_endpoint(Req) ->
         end,
     Runtime = {0, ~"Additional fortune added at request time."},
     Sorted = lists:keysort(2, [Runtime | Rows]),
-    Body = render_fortunes(Sorted),
-    {roadrunner_resp:html(200, Body), Req}.
-
-render_fortunes(Rows) ->
-    [
-        ~"<!doctype html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>",
-        [render_fortune_row(Id, Msg) || {Id, Msg} <- Rows],
-        ~"</table></body></html>"
-    ].
-
-render_fortune_row(Id, Msg) ->
-    [~"<tr><td>", integer_to_binary(Id), ~"</td><td>", html_escape(Msg), ~"</td></tr>"].
-
-html_escape(Bin) when is_binary(Bin) ->
-    B1 = binary:replace(Bin, ~"&", ~"&amp;", [global]),
-    B2 = binary:replace(B1, ~"<", ~"&lt;", [global]),
-    binary:replace(B2, ~">", ~"&gt;", [global]).
+    Page = roadrunner_httparena_fortunes:render(#{fortunes => Sorted}),
+    {roadrunner_resp:html(200, arizona_render:render_to_iolist(Page)), Req}.
 
 baseline(Req) ->
     Qs = roadrunner_req:parse_qs(Req),

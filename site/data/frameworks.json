@@ -156,6 +156,20 @@
       "response": true
     }
   },
+  "aspnet-minimal-satorigc": {
+    "dir": "aspnet-minimal-satorigc",
+    "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing, published self-contained with the Satori GC.",
+    "repo": "https://github.com/dotnet/aspnetcore",
+    "type": "experimental",
+    "engine": "kestrel",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aspnet-minimal + caddy": {
     "dir": "aspnet-minimal_caddy",
     "description": "ASP.NET minimal API behind Caddy, serving HTTP/3 (QUIC) at the edge with h1 forwarding to Kestrel.",

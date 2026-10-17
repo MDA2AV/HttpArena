@@ -1,7 +1,7 @@
 FROM erlang:29.0-alpine AS build
 RUN apk add --no-cache ca-certificates git
 WORKDIR /src
-COPY rebar.config ./
+COPY rebar.config rebar.lock ./
 COPY config ./config
 COPY src ./src
 RUN rebar3 as prod release
