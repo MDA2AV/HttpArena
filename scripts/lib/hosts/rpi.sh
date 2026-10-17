@@ -80,3 +80,5 @@ LOADGEN_DOCKER=true
 # JVM and Clojure servers take well over the default 30 s to answer on two
 # cores at 1.2 GHz; a server that is merely slow to start is not a failure.
 READY_TIMEOUT=120
+# Stop a framework at the first profile its server does not come up for.
+FAIL_FAST=true

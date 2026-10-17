@@ -635,7 +635,14 @@ for profile in "${profiles_to_run[@]}"; do
     parse_profile "${PROFILES[$profile]}"
     IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
     for CONNS in "${CONN_COUNTS[@]}"; do
-        run_one "$profile" "$CONNS" || continue
+        run_one "$profile" "$CONNS" && continue
+        # FAIL_FAST (set by small-host profiles): a server that did not come up
+        # once will not come up for the next profile either, and every attempt
+        # costs a full READY_TIMEOUT. Stop measuring this framework.
+        if [ "${FAIL_FAST:-}" = "true" ]; then
+            warn "FAIL_FAST: $FRAMEWORK did not come up - skipping its remaining profiles"
+            break 2
+        fi
     done
 done
 
