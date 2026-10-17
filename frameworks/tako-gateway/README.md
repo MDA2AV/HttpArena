@@ -1,6 +1,6 @@
 # tako-gateway
 
-The gateway profiles for [Tako](https://github.com/rust-dd/tako) 2.4.1, reported as `tako`.
+The gateway profiles for [Tako](https://github.com/rust-dd/tako) 2.4.2, reported as `tako`.
 The server is built from [`frameworks/tako`](../tako); this directory only holds
 the compose files and the edge configuration.
 
