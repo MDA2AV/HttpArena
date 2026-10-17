@@ -21,6 +21,24 @@ HOST_PROFILE="${HOST_PROFILE:?set HOST_PROFILE, e.g. HOST_PROFILE=rpi}"
 export HOST_PROFILE
 BUILD_TIMEOUT="${BUILD_TIMEOUT:-45m}"
 RUN_TIMEOUT="${RUN_TIMEOUT:-90m}"
+# Before each benchmark, wait for the board to cool below COOL_BELOW_C (at most
+# COOL_MAX_S seconds), so every framework starts from the same temperature
+# rather than from whatever the previous one left behind. Needs vcgencmd.
+COOL_BELOW_C="${COOL_BELOW_C:-60}"
+COOL_MAX_S="${COOL_MAX_S:-600}"
+
+cool_down() {
+    command -v vcgencmd >/dev/null 2>&1 || return 0
+    local waited=0 t
+    while :; do
+        t=$(vcgencmd measure_temp | tr -dc '0-9.')
+        [ "${t%.*}" -lt "$COOL_BELOW_C" ] && break
+        [ "$waited" -ge "$COOL_MAX_S" ] && { echo "[warn] still ${t}C after ${COOL_MAX_S}s"; break; }
+        sleep 10; waited=$((waited + 10))
+    done
+    [ "$waited" -gt 0 ] && echo "[$(date +%H:%M:%S)] cooled to ${t}C in ${waited}s"
+    return 0
+}
 
 OUT="$ROOT_DIR/results-hosts/$HOST_PROFILE"
 STATUS="$OUT/_status.tsv"
@@ -71,12 +89,35 @@ for fw in "${FWS[@]}"; do
         printf '%s\t%s\t%s\t%s\n' "$fw" "skip" "$reason" "$(( $(date +%s) - start ))s" >>"$STATUS"
         echo "[$(date +%H:%M:%S)] $fw: $reason"
     else
+        cool_down
         echo "[$(date +%H:%M:%S)] $fw: benchmarking"
+        # Sample the board's live throttle bits and temperature for the whole
+        # run (the "has occurred" bits are sticky until reboot, so one reading
+        # at the end says nothing about this framework).
+        thermal="$LOGS/$fw.thermal"
+        : >"$thermal"
+        if command -v vcgencmd >/dev/null 2>&1; then
+            ( while sleep 2; do
+                  printf '%s %s\n' "$(vcgencmd get_throttled | cut -d= -f2)" \
+                      "$(vcgencmd measure_temp | tr -dc '0-9.')"
+              done ) >>"$thermal" &
+            sampler=$!
+        fi
         timeout "$RUN_TIMEOUT" scripts/benchmark.sh "$fw" --save >>"$log" 2>&1
         rc=$?
+        [ -n "${sampler:-}" ] && kill "$sampler" 2>/dev/null; sampler=""
         saved=$(grep -c "^\[info\] saved results/" "$log")
         failed=$(grep -c "did not come up" "$log")
-        throttled=$(vcgencmd get_throttled 2>/dev/null | cut -d= -f2)
+        # Live bits 0x2 (capped), 0x4 (throttled), 0x8 (soft temp limit).
+        throttled=$(python3 -c '
+import sys
+t, m = False, 0.0
+for line in open(sys.argv[1]):
+    p = line.split()
+    if len(p) == 2:
+        t |= bool(int(p[0], 16) & 0xe)
+        m = max(m, float(p[1] or 0))
+print(("YES" if t else "no") + "/max%.0fC" % m)' "$thermal" 2>/dev/null)
         state="ok"; [ "$saved" -eq 0 ] && state="skip"
         printf '%s\t%s\t%s\t%s\n' "$fw" "$state" \
             "rc=$rc saved=$saved not_ready=$failed throttled=${throttled:-n/a}" \
