@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net11.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <!-- Runtime async, as on edixoi: every request is served from an async method awaiting an
+             IValueTaskSource that completes inline on the reactor, which is the shape runtime async
+             consumes as-is. $(Features) is prepended so this appends rather than replacing whatever
+             the SDK already set. -->
+        <Features>$(Features);runtime-async=on</Features>
+        <RootNamespace>EpoxideArena</RootNamespace>
+        <AssemblyName>epoxide-arena</AssemblyName>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>
+        <InvariantGlobalization>true</InvariantGlobalization>
+
+        <!-- epoxide is not on NuGet yet, so it is built from its source, which the Dockerfile puts
+             here. To build outside Docker, point it at a checkout: -p:EpoxideSource=<ioxide>/src/epoxide -->
+        <EpoxideSource Condition="'$(EpoxideSource)' == ''">/ioxide/src/epoxide</EpoxideSource>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(EpoxideSource)/epoxide.csproj" />
+    </ItemGroup>
+
+</Project>

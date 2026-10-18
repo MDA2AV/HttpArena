@@ -1,0 +1,21 @@
+{
+  "display_name": "epoxide",
+  "language": "C#",
+  "type": "engine",
+  "engine": "epoll",
+  "description": "epoxide — ioxide's thread-per-core runtime on epoll instead of io_uring, on its raw recv/send API and nothing above it: the edixoi entry on the other kernel interface. One reactor per core, each owning its epoll set and its share of the SO_REUSEPORT listeners. A recv or a send is an ordinary syscall on the handler's own thread; a read or flush that has to wait parks on the reactor, which finishes it at the next readiness edge and resumes the handler inline. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, hand-written against that API — no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated on the BoringSSL ioxide bundles, with kernel TX offload and BoringSSL receive. The async profile's wait is a deadline in the reactor's own timer queue, so a held connection costs a timer rather than a thread. Companion to edixoi, which serves the same profiles on ioxide's io_uring ring.",
+  "repo": "https://github.com/MDA2AV/ioxide",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "latency-1m",
+    "latency-10k",
+    "async",
+    "json-tls",
+    "8gbit"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}
