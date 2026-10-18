@@ -8,7 +8,7 @@ ARG DOTNET_RUNTIME_TAG=11.0.0-preview.7
 # it links (the one ioxide bundles). To build a tree that is not pushed, replace the epoxide-src
 # stage with a directory holding the same three paths: --build-context epoxide-src=<dir>
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_TAG} AS epoxide-fetch
-ARG EPOXIDE_COMMIT=b785e61f9fb7600ef8e94e8bb6d8fac32e3e33c7
+ARG EPOXIDE_COMMIT=d7309d5647ecacbb2235561e5a936397d32774aa
 WORKDIR /ioxide
 RUN git init -q \
  && git remote add origin https://github.com/MDA2AV/ioxide.git \
