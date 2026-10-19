@@ -5,7 +5,8 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/*
 
 # V 0.5.2 release (the version viltrum's CI pins) and viltrum at a release tag.
-RUN curl -fsSL -o /tmp/v.zip https://github.com/vlang/v/releases/download/0.5.2/v_linux.zip && \
+RUN asset=v_linux.zip; [ "$(uname -m)" = aarch64 ] && asset=v_linux_arm64.zip; \
+    curl -fsSL -o /tmp/v.zip "https://github.com/vlang/v/releases/download/0.5.2/$asset" && \
     unzip -q /tmp/v.zip -d /opt && rm /tmp/v.zip
 ENV PATH=/opt/v:$PATH
 

@@ -4,9 +4,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends clang zlib1g-de
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY minima-sync.csproj ./
-RUN dotnet restore -r linux-x64
+RUN dotnet restore --use-current-runtime
 COPY . .
-RUN dotnet publish -c Release -r linux-x64 -p:PublishAot=true -o /app/out
+RUN dotnet publish -c Release --use-current-runtime -p:PublishAot=true -o /app/out
 
 FROM debian:bookworm-slim
 WORKDIR /app
