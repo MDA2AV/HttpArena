@@ -1990,6 +1990,21 @@
     "type": "engine",
     "engine": "System.Net.Sockets"
   },
+  "spliffy": {
+    "dir": "spliffy",
+    "description": "spliffy: directory based routing on uWebSockets.js. A route is a file, a handler returns the response, static files and WebSockets come from the same tree.",
+    "repo": "https://github.com/SRFNStack/spliffy",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "standard",
+    "website": "https://srfnstack.github.io/spliffy/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "spring-boot": {
     "dir": "spring-boot",
     "description": "Spring Boot with embedded Tomcat on JDK 25 with virtual threads.",
