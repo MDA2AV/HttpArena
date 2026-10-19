@@ -1,6 +1,6 @@
 [
   {
-    "id": 3,
+    "id": "rpi-1",
     "name": "Raspberry Pi 4 (arm64)",
     "host": "rpi",
     "date": "2026-10-19",

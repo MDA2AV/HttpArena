@@ -42,3 +42,4 @@ __pycache__/
 
 # clojure tools-deps classpath cache
 .cpcache/
+site/leaderboard/rounds/
