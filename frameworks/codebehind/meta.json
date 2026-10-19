@@ -13,6 +13,6 @@
     "request": true,
     "response": true
   },
-  "tests": ["baseline", "async", "json", "echo", "pipelined"],
+  "tests": ["baseline", "async", "json-tls", "8gbit", "pipelined"],
   "maintainers": ["elanatframework"]
 }
