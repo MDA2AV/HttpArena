@@ -1,0 +1,5 @@
+bin/
+obj/
+code_behind/*
+!code_behind/options.ini
+wwwroot/script/

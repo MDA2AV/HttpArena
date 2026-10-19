@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- A project named "codebehind" would collide with the CodeBehind
+         package (NuGet rejects the restore as a dependency cycle, NU1108),
+         so the assembly gets a distinct name. -->
+    <AssemblyName>httparena-codebehind</AssemblyName>
+    <RootNamespace>HttpArena</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CodeBehind" Version="4.8.1" />
+    <PackageReference Include="Npgsql.DependencyInjection" Version="10.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- CodeBehind reads its options from code_behind/ in the working directory. -->
+    <None Update="code_behind/options.ini" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

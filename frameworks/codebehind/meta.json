@@ -1,0 +1,39 @@
+{
+  "display_name": "codebehind",
+  "language": "C#",
+  "type": "emerging",
+  "mode": "tuned",
+  "completeness": {
+    "routing": false,
+    "middleware": true,
+    "request": true,
+    "response": false
+  },
+  "engine": "kestrel",
+  "description": "CodeBehind by Elanat: an MVC framework on ASP.NET Core with aspx views (Razor syntax) compiled at startup, controllers selected from the route.",
+  "repo": "https://github.com/elanatframework/CodeBehind",
+  "website": "https://elanat.net/codebehind",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

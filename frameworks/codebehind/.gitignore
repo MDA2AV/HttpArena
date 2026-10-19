@@ -1,0 +1,5 @@
+# Written by CodeBehind at startup (generated view class, logs, defaults,
+# WebForms script). options.ini is ours; CodeBehind fills in the defaults.
+code_behind/*
+!code_behind/options.ini
+wwwroot/script/
