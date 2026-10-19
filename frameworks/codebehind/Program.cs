@@ -61,6 +61,19 @@ if (Directory.Exists(staticPath))
         ContentTypeProvider = staticContentTypes,
         ServeUnknownFileTypes = false
     });
+
+    // /static/* that UseStaticFiles could not resolve must be 404, not fall through
+    // to CodeBehind (which would answer 200 with an empty body).
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/static")
+            && !context.Response.HasStarted)
+        {
+            context.Response.StatusCode = 404;
+            return;
+        }
+        await next();
+    });
 }
 
 app.UseResponseCompression();
