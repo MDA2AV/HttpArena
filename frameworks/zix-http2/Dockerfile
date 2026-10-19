@@ -53,10 +53,10 @@ RUN set -eu; \
 # +adx speeds the RSA / Montgomery path. Every x86_64_v3 CPU has them, so it is safe.
 RUN set -eu; \
     case "${TARGETARCH:-amd64}" in \
-        amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3 ;; \
+        amd64) ZIG_TARGET=x86_64-linux-musl; ZIG_CPU=x86_64_v3+aes+pclmul+adx ;; \
         arm64) ZIG_TARGET=aarch64-linux-musl; ZIG_CPU=baseline ;; \
     esac; \
-    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}+aes+pclmul+adx" --release=fast
+    zig build -Dtarget="${ZIG_TARGET}" -Dcpu="${ZIG_CPU}" --release=fast
 
 
 FROM alpine:3.20
