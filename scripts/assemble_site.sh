@@ -20,6 +20,7 @@ cd "$site"
 
 cp generated/index.html "$out/index.html"                                  # the board with its default view pre-rendered into #rows (leaderboard/index.html is the source)
 cp leaderboard/data.js "$out/data.js"
+if [ -d leaderboard/rounds ]; then cp -r leaderboard/rounds "$out/rounds"; fi       # archived rounds, loaded by the board on ?round=<id>
 cp leaderboard/search.js "$out/search.js"                                   # plain-text Knowledge Base index for the board's page search
 if [ "$logs" = 1 ]; then cp -r static/logs "$out/logs"; fi                  # run logs, served at /logs/
 for f in openapi.json openapi-gateway.json; do [ -f "static/$f" ] && cp "static/$f" "$out/$f"; done   # OpenAPI specs linked from the docs

@@ -647,6 +647,89 @@ def build_rounds():
     return {"name": CURRENT_ROUND, "ongoing": True, "archived": archived}
 
 
+ROUNDS_OUT = OUT.parent / "rounds"
+
+
+def _round_views(bundle):
+    """profiles/results/runmeta for one archived round, in data.js's shape.
+
+    Same transform main() applies to the current results, with one difference:
+    a round may come from another machine with its own connection counts (a
+    Raspberry Pi cannot hold 4096 connections), so the counts shown are the ones
+    the round measured rather than CATALOG's explorer list. A profile CATALOG
+    scores at all is scored at every count the round has.
+    """
+    profiles, results, runmeta = [], {}, {}
+    for category, entries in CATALOG:
+        for pid, label, blurb, _explorer, scored, s, es, isf in entries:
+            conns = sorted(int(k[len(pid) + 1:]) for k in bundle
+                           if k.startswith(pid + "-") and k[len(pid) + 1:].isdigit())
+            present = []
+            for c in conns:
+                rows = bundle.get(f"{pid}-{c}") or []
+                trimmed = []
+                for r in rows:
+                    fw = r.get("framework")
+                    if not fw:
+                        continue
+                    row = {"fw": fw, "lang": r.get("language", "")}
+                    for f in BASE_FIELDS:
+                        row[f] = r.get(f)
+                    for f in TPL_FIELDS:
+                        if r.get(f):
+                            row[f] = r.get(f)
+                    for f in EFF_FIELDS:
+                        if r.get(f) is not None:
+                            row[f] = r.get(f)
+                    trimmed.append(row)
+                if not trimmed:
+                    continue
+                results[f"{pid}-{c}"] = trimmed
+                for src in rows:
+                    rm = {f: src.get(f) for f in RUNMETA_FIELDS if src.get(f) is not None}
+                    if rm:
+                        runmeta[f"{pid}-{c}"] = rm
+                        break
+                present.append(c)
+            if present:
+                prof = {"id": pid, "label": label, "category": category, "blurb": blurb,
+                        "conns": present, "scoredConns": present if scored else [],
+                        "scored": s, "engineScored": es, "infraScored": isf}
+                if PROFILE_DOC.get(pid):
+                    prof["doc"] = PROFILE_DOC[pid]
+                profiles.append(prof)
+    return profiles, results, runmeta
+
+
+def write_round_payloads(archived):
+    """site/leaderboard/rounds/<id>.js for every archived round with a bundle.
+
+    The board loads one of these when it is opened with ?round=<id> and lays
+    it over LB_DATA, so an archived round is browsed with the same page as the
+    current one. Medals are left out: they belong to the current round.
+    """
+    ROUNDS_OUT.mkdir(parents=True, exist_ok=True)
+    keep = set()
+    for r in archived:
+        rid = str(r.get("id", ""))
+        bundle = load(f"rounds/{rid}.json") if rid else None
+        if not isinstance(bundle, dict):
+            continue
+        profiles, results, runmeta = _round_views(bundle)
+        current = bundle.get("current") or {k: r.get(k) for k in ("cpu", "cores", "threads", "ram", "os", "kernel")}
+        payload = {"id": r.get("id"), "name": r.get("name", rid), "current": current,
+                   "profiles": profiles, "results": results, "runmeta": runmeta,
+                   "achievements": {}}
+        out = ROUNDS_OUT / f"{rid}.js"
+        out.write_text(js_payload("LB_ROUND", payload))
+        keep.add(out.name)
+        print(f"wrote {out.relative_to(ROOT)} - round {rid}: {len(profiles)} profiles, "
+              f"{sum(len(v) for v in results.values())} rows")
+    for f in ROUNDS_OUT.glob("*.js"):
+        if f.name not in keep:
+            f.unlink()
+
+
 # ── Static docs site (SEO) ────────────────────────────────────────────────
 # The Knowledge Base is pre-rendered to real /docs/<id>/ pages so search engines
 # can index each doc — hash-routed SPA state (#doc=x) is invisible to crawlers, so
@@ -3626,6 +3709,7 @@ def main():
                "achievements": achievements, "rounds": build_rounds()}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(js_payload("LB_DATA", payload))
+    write_round_payloads(payload["rounds"]["archived"])
 
     # Docs are pre-rendered to real /docs/<id>/ pages (SEO); the SPA links out to
     # them. LB_DATA still carries the docs *tree* for the sidebar labels, but the
