@@ -1,0 +1,11 @@
+{
+  "display_name": "codebehind",
+  "language": "C#",
+  "type": "flagship",
+  "mode": "standard",
+  "engine": "kestrel",
+  "description": "CodeBehind 4.8.2 on ASP.NET Core and Kestrel. Routes via CodeBehind controller classes, JSON through System.Text.Json, gzip and brotli through ResponseCompression at level 1, json-tls on 8081.",
+  "repo": "https://github.com/elanatframework/CodeBehind",
+  "enabled": true,
+  "tests": ["baseline", "async", "json", "echo", "pipelined"]
+}

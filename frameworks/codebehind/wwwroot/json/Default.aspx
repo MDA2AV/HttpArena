@@ -1,0 +1,3 @@
+@page
+@controller JsonController
+@segment
