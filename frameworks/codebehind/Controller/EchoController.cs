@@ -1,14 +1,15 @@
 using CodeBehind;
-using System.Text;
 
 public partial class EchoController : CodeBehindController
 {
     public async Task PageLoad(HttpContext context)
     {
-        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8);
-        var body = await reader.ReadToEndAsync();
+        using var ms = new MemoryStream();
+        await context.Request.Body.CopyToAsync(ms);
+        var bytes = ms.ToArray();
 
         context.Response.ContentType = "application/octet-stream";
-        Write(body);
+        context.Response.ContentLength = bytes.Length;
+        await context.Response.Body.WriteAsync(bytes);
     }
 }
