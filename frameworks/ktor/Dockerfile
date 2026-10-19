@@ -1,4 +1,4 @@
-FROM gradle:9.5.1-jdk25-corretto AS build
+FROM gradle:9.5.1-jdk25 AS build
 WORKDIR /app
 COPY build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY gradle/libs.versions.toml ./gradle/
