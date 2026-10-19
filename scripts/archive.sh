@@ -36,7 +36,7 @@ create)
 import json, sys
 with open(sys.argv[1]) as f:
     rounds = json.load(f)
-ids = [r['id'] for r in rounds]
+ids = [r['id'] for r in rounds if isinstance(r['id'], int)]  # named rounds (e.g. rpi-1) do not count
 print(max(ids) if ids else 0)
 " "$ROUNDS_DIR/index.json")
         NEXT_ID=$((MAX_ID + 1))
