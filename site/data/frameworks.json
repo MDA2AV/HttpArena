@@ -354,6 +354,20 @@
       "response": true
     }
   },
+  "codebehind": {
+    "dir": "codebehind",
+    "description": "CodeBehind 4.8.2 on ASP.NET Core and Kestrel. Routes via CodeBehind controller classes under wwwroot/*/Default.aspx, JSON through System.Text.Json with web defaults, gzip and brotli through ResponseCompression at level 1, json-tls on 8081, static files on 8081, dataset loaded once at startup.",
+    "repo": "https://github.com/elanatframework/CodeBehind",
+    "type": "flagship",
+    "engine": "kestrel",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "cpeak": {
     "dir": "cpeak",
     "description": "Cpeak for Rust is an HTTP framework on hyper with one single-threaded Tokio event loop per core. Default configuration: routing, path and query parameters through the Cpeak API, JSON through res.json() (sonic-rs), Cpeak's built-in compression (gzip or brotli, per request), cpeak::sleep() for the waits and Cpeak's https option (rustls) for TLS.",
