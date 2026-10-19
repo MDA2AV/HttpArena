@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -54,6 +55,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("host", help="host profile name, e.g. rpi")
     ap.add_argument("--name", required=True, help="round name shown in the selector")
+    ap.add_argument("--id", help="round id, used in ?round=<id> (letters, digits, - and _); "
+                    "default: the host's existing entry, else the next free number")
     args = ap.parse_args()
 
     results_dir = ROOT / "results-hosts" / args.host
@@ -88,11 +91,18 @@ def main() -> None:
     index_path = ROUNDS / "index.json"
     index = json.loads(index_path.read_text()) if index_path.exists() else []
 
-    entry = next((r for r in index if r.get("host") == args.host), None)
+    if args.id is not None and not re.fullmatch(r"[A-Za-z0-9_-]+", args.id):
+        raise SystemExit(f"--id {args.id!r}: use letters, digits, - and _ only")
+    if args.id is not None:
+        entry = next((r for r in index if str(r.get("id")) == args.id), None)
+    else:
+        entry = next((r for r in index if r.get("host") == args.host), None)
     if entry is None:
-        # Ids already used by bundles that are no longer indexed stay taken.
-        used = [r.get("id", 0) for r in index] + [int(p.stem) for p in ROUNDS.glob("*.json") if p.stem.isdigit()]
-        entry = {"id": max(used, default=0) + 1}
+        if args.id is None:
+            # Ids already used by bundles that are no longer indexed stay taken.
+            used = [r["id"] for r in index if isinstance(r.get("id"), int)]
+            used += [int(p.stem) for p in ROUNDS.glob("*.json") if p.stem.isdigit()]
+        entry = {"id": args.id if args.id is not None else max(used, default=0) + 1}
         index.append(entry)
 
     commit = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
