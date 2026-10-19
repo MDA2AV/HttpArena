@@ -25,6 +25,7 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 
 ## Notes
 
+- Netty's epoll native transport rather than the JDK's NIO selector
 - Routing, path and query params through the vertx-web `Router`
 - JSON built as `JsonObject` and written with `RoutingContext.json`
 - Compression through `HttpServerOptions.setCompressionSupported(true)`
