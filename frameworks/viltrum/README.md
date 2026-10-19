@@ -10,6 +10,7 @@ This entry runs viltrum with its default configuration (standard mode).
 | baseline, limited-conn | `GET/POST /baseline11` | `c.query_int`, `c.body_int` (Content-Length or chunked) |
 | pipelined | `GET /pipeline` | the engine batches pipelined responses into one write |
 | json-comp | `GET /json/:count?m=` | `c.json` per request, `viltrum.gzip` middleware |
+| async | `GET /delay/:ms` | `c.after` answers from a per-worker timer; the worker is not held while the request waits |
 
 The entry is typed `experimental`: viltrum's first commit is from July 2026, so it is new work
 that has not proved itself in production yet, which is what that tier is for.
