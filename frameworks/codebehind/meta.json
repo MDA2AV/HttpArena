@@ -20,7 +20,6 @@
     "json-comp",
     "json-tls",
     "8gbit",
-    "upload",
     "static-tls",
     "pipelined",
     "latency-1m",
