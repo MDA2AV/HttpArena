@@ -7,5 +7,12 @@
   "description": "CodeBehind 4.8.2 on ASP.NET Core and Kestrel. Routes via CodeBehind controller classes under wwwroot/*/Default.aspx, JSON through System.Text.Json with web defaults, dataset loaded once at startup.",
   "repo": "https://github.com/elanatframework/CodeBehind",
   "enabled": true,
-  "tests": ["baseline", "async", "json", "echo", "pipelined"]
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "tests": ["baseline", "async", "json", "echo", "pipelined"],
+  "maintainers": ["elanatframework"]
 }
