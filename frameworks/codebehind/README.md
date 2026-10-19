@@ -17,16 +17,22 @@ CodeBehind on ASP.NET Core and Kestrel, default configuration.
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |
 | `/delay/{ms}` | GET | Waits `ms` milliseconds, returns `ms` |
 | `/echo` | POST | Returns the request body back verbatim |
+| `/upload` | POST | Reads the request body and returns its byte length |
 | `/pipeline` | GET | Returns `ok` |
+| `/static/*` | GET | Serves static files from the mounted directory |
 
 ## Tests subscribed to
 
 - `baseline` — GET/POST `/baseline11`
 - `async` — GET `/delay/{ms}`
-- `json` — GET `/json/{count}?m=N`
-- `echo` — POST `/echo` (also covers the HTTP half of `8gbit`)
-- `pipelined` — GET `/pipeline` (reference-only in HttpArena, not scored for
-  frameworks)
+- `limited-conn` — GET/POST `/baseline11`, connections close after 10 requests
+- `json-comp` — GET `/json/{count}?m=N` with gzip/brotli when `Accept-Encoding` asks for it
+- `json-tls` — GET `/json/{count}?m=N` on port 8081 over TLS
+- `8gbit` — POST `/echo` on port 8081 over TLS, byte-exact
+- `upload` — POST `/upload`
+- `static-tls` — GET `/static/*` on port 8081 over TLS
+- `pipelined` — GET `/pipeline` (reference-only in HttpArena)
+- `latency-1m`, `latency-10k`, `latency-500k-8cpu` — GET/POST `/baseline11`, fixed request rate with CPU measurement
 
 ## Notes
 
@@ -40,15 +46,24 @@ CodeBehind on ASP.NET Core and Kestrel, default configuration.
 - Responses are written through the controller's `Write()` method, which
   CodeBehind flushes into the HTTP response
 - JSON through System.Text.Json with web defaults, serialized per request
+- gzip and brotli through ASP.NET Core's `ResponseCompression` at
+  `CompressionLevel.Fastest`, which is level 1 and what the profile asks for
 - The dataset is read once at startup via `DatasetService` (registered as a
-  singleton); `DATASET_PATH` overrides the default location, which resolves
-  to `data/dataset.json` under the app base directory. A missing or broken
-  file is not fatal and `/json` then answers with an empty list
-- `baseline11`, `delay`, and `echo` declare `async Task PageLoad`; all I/O is
-  asynchronous. `json` and `pipeline` are synchronous — they do no I/O.
-- `echo` reads the request body as UTF-8 text and writes it back; the HttpArena
-  echo test sends text bodies, so this is sufficient
-- Only port 8080 (HTTP/1.1) is configured. TLS on 8081, response compression,
-  and the H/2, H/3, gRPC, WebSocket, Gateway and Production Stack profiles are
-  not implemented in this entry
+  singleton); `DATASET_PATH` overrides the default `/data/dataset.json`. A
+  missing or broken file is not fatal and `/json` then answers with an empty list
+- `baseline11`, `delay`, and `echo` declare `async Task PageLoad` and read the
+  request body asynchronously. `json`, `pipeline`, and `upload` are synchronous
+- `echo` returns the request body byte for byte; the `8gbit` profile sends
+  random binary bodies, so the echo path must not decode them as text
+- `upload` reads the body and answers with its byte length; it does not trust
+  `Content-Length`
+- json-tls, 8gbit, and static-tls are served on port 8081, an HTTP/1.1-only
+  Kestrel listener, so ALPN advertises `http/1.1` and an h2-capable client is
+  never offered the upgrade
+- A missing `/certs` leaves the TLS listener down instead of aborting startup;
+  `validate.sh` mounts the directory only for entries subscribed to a TLS test
+- Static files come from the directory named by `STATIC_PATH`, defaulting to
+  `/data/static`, mounted by the harness for the `static-tls` profile
+- The H/2, H/3, gRPC, WebSocket, Gateway, Production Stack, Database, and
+  Fortunes profiles are not implemented in this entry
 - The project is `httparena-codebehind.csproj` with assembly `server`
