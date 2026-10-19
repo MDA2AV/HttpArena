@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Security.Authentication;
 
 using genhttp;
@@ -96,7 +97,11 @@ if (hasCert)
     //          and HTTP/3 over QUIC on the       baseline-h3, static-h3
     //          same port number
     host.Bind(IPAddress.Any, 8081, certificate, sslProtocols: tlsFloor, httpProtocols: HttpProtocols.Http1);
-    host.Bind(IPAddress.Any, 8443, certificate, sslProtocols: tlsFloor, httpProtocols: HttpProtocols.All);
+    // ioxide.ngtcp2 / ioxide.nghttp3 ship their native libraries for linux-x64 only, so on other
+    // architectures (an arm64 host) :8443 serves HTTP/1.1 + HTTP/2 and HTTP/3 stays off.
+    var http3 = RuntimeInformation.ProcessArchitecture == Architecture.X64;
+    host.Bind(IPAddress.Any, 8443, certificate, sslProtocols: tlsFloor,
+              httpProtocols: http3 ? HttpProtocols.All : HttpProtocols.Http1AndHttp2);
 }
 
 await host.RunAsync();
