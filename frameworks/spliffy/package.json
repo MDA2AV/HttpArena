@@ -1,0 +1,10 @@
+{
+  "name": "httparena-spliffy",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@srfnstack/spliffy": "^1.6.0",
+    "ejs": "^3.1.10",
+    "pg": "^8.13.0"
+  }
+}

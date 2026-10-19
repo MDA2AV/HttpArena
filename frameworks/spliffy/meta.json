@@ -1,0 +1,35 @@
+{
+  "display_name": "spliffy",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "uwebsockets",
+  "description": "spliffy: directory based routing on uWebSockets.js. A route is a file, a handler returns the response, static files and WebSockets come from the same tree.",
+  "repo": "https://github.com/SRFNStack/spliffy",
+  "website": "https://srfnstack.github.io/spliffy/",
+  "enabled": true,
+  "tests": [
+    "baseline", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": [
+    "snowbldr"
+  ]
+}
