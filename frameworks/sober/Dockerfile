@@ -1,6 +1,4 @@
 # The sober compiler is a single static ELF (the standard library is built in), taken from the release tarball.
-# TODO(0.6.0): SOBER_VERSION points at a release that is not published yet; the asset name follows the
-# existing Release CI (sober-v<version>-x86_64-linux.tar.gz).
 FROM alpine:3.20 AS build
 ARG SOBER_VERSION=0.6.0
 RUN apk add --no-cache curl tar
