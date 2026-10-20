@@ -27,9 +27,8 @@
   (Content-Length or chunked), `http.Form` and `http.JsonDoc`. The response is a value
   (`http.Text`, `http.Json`, or `http.Response{status, contentType, body | stream, headers}`)
 - JSON serialized per request by `std/json` (`json.Encode`)
-- gzip is the server's built-in response compression (`http.ServeConn(..., compress: http.Gzip{level: 3})`),
-  negotiated per request off `Accept-Encoding`, with `Vary: Accept-Encoding`. The level is the documented
-  `level` field of `http.Gzip`
+- gzip is the server's built-in response compression (`http.ServeConn(..., compress: http.Gzip{})`),
+  at the default level, negotiated per request off `Accept-Encoding`, with `Vary: Accept-Encoding`
 - `json-tls` and `8gbit` listen on `8081` when `/certs/server.crt` and `/certs/server.key` (or `TLS_CERT` /
   `TLS_KEY`) can be read: `tls.Serve` hands each connection to the same route table only after the handshake,
   and `http.ServeWith` serves it over `tls.Recv` / `tls.Send`. TLS 1.3 only, X25519, AES-128-GCM and

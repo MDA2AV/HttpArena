@@ -148,7 +148,7 @@ func run(port string, tport string) int {
 func plain(rs []http.Route, gzw task.Local, port string) error? {
     for l <- net.Listen("0.0.0.0:${port}")? {
         io.WriteStdout(bytes("ready ${net.Port(l)}\n"))?
-        net.Serve(l, (c net.Conn) => http.ServeConn(c, (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, compress: http.Gzip{level: 3}, work: gzw), conns: 40000)?
+        net.Serve(l, (c net.Conn) => http.ServeConn(c, (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, compress: http.Gzip{}, work: gzw), conns: 40000)?
     }
     return nil
 }
