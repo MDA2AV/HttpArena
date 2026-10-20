@@ -1,0 +1,32 @@
+{
+  "display_name": "cnetmod",
+  "language": "C++",
+  "type": "emerging",
+  "mode": "standard",
+  "engine": "cnetmod/io_uring",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "Cross-platform pure C++23 Modules networking framework using native stackless coroutines, io_uring with epoll fallback, per-loop HTTP/1.1 and HTTP/2, BoringSSL QUIC/HTTP/3, routed WebSocket upgrades, and native gRPC. One image serves HTTP/1.1, WebSocket and gRPC h2c on :8080, TLS HTTP/1.1 on :8081, h2c on :8082, HTTP/2 on :8443/tcp and HTTP/3 on :8443/udp.",
+  "repo": "https://github.com/banderzhm/cnetmod",
+  "enabled": true,
+  "tls_check": false,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "baseline-h2",
+    "baseline-h2c",
+    "baseline-h3",
+    "static-h3",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "unary-grpc",
+    "unary-grpc-tls"
+  ],
+  "maintainers": ["banderzhm"]
+}
