@@ -139,9 +139,11 @@ app.get('/fortunes', async (req, res) => {
     res.render('fortunes', { fortunes: rows });
 });
 
-// production-stack: the edge checks the JWT and serves /static, Redis is the cache.
-if (process.env.REDIS_URL) {
-    const redis = new Redis(process.env.REDIS_URL, { enableAutoPipelining: true });
+// production-stack: the edge checks the JWT and serves /static, Redis is the cache. Registered in
+// every profile, as validate.sh keeps the plain container on the shared port during the stack, and
+// lazyConnect opens no connection until a request needs one.
+{
+    const redis = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', { enableAutoPipelining: true, lazyConnect: true });
     redis.on('error', () => {});
     const CACHE_HIT = { 'x-cache': 'HIT' };
     const CACHE_MISS = { 'x-cache': 'MISS' };
