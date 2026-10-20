@@ -1,11 +1,10 @@
-# The sober compiler is a single static ELF (the standard library is built in), taken from the release tarball.
-FROM alpine:3.20 AS build
-ARG SOBER_VERSION=0.6.0
-RUN apk add --no-cache curl tar
-RUN curl -fsSL "https://github.com/sober-lang/sober/releases/download/v${SOBER_VERSION}/sober-v${SOBER_VERSION}-x86_64-linux.tar.gz" | tar -xz -C /opt
+# The sober toolchain is pulled as an image (built by the release CI from the release tarball,
+# sha256-checked - alpine with the single static ELF compiler on PATH). A registry pull only:
+# nothing is downloaded from github.com at docker-build time.
+FROM ghcr.io/sober-lang/sober:0.6.0 AS build
 WORKDIR /app
 COPY main.sober ./
-RUN /opt/sober-v${SOBER_VERSION}-x86_64-linux/sober build main.sober -o server
+RUN sober build main.sober -o server
 
 # Runtime notes (the HttpArena harness already runs every entry this way):
 #   - io_uring is blocked by Docker's default seccomp profile; run with --security-opt seccomp=unconfined.
