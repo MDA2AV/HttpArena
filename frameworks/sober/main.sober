@@ -1,0 +1,189 @@
+package main
+
+// HttpArena の Sober のエントリ（net 4c — report-671）: /baseline11・/pipeline・/delay/{ms}・/json/{count}?m= を 0.0.0.0:8080（引数で上書き — 0 = 空いている番号）で。
+// 引数 = [port] [tls の port]。
+// "ready <port>" を出してから受ける（examples/http_arena・testdata/httpcheck/srv.sober と同じ route）。種目 = meta.json の tests。
+// /json/{count}?m=（report-703 — 本家の json-comp / json-tls / json-h2c の端点。素の json 種目は本家に無い — 手元の local.sh の json だけが測る）:
+// 起動時に dataset（DATASET_PATH・既定 /data/dataset.json — 読めなければ空）を読み、毎要求で先頭 count 本に total = price × quantity × m を足して
+// std/json で直列化する（go-stdlib と同じ寛容さ: count は [0, 本数] に詰める・m が数でないか 0 なら 1）。
+// 応答の gzip は std/http の組み込み（ServeConn の compress: — 既定の level 6・閾値 1024・Vary — json-comp の条文「framework の組み込みの応答圧縮」。report-714）。
+// 符号器の作業域はワーカー局所の lease（ServeConn の work: — Serve の前に 1 回 NewLocal。作業域は ≈ 650 KB × ワーカーの数で接続の数に依らない — report-720）
+// json-tls（report-841）: 証明書（TLS_CERT / TLS_KEY・既定 /certs/server.{crt,key} — 本家の harness が TLS の種目のときだけ置く）が読めれば、同じ route を
+// 0.0.0.0:8081（2 番目の引数で上書き）の HTTP/1.1 over TLS 1.3（std/tls — ALPN http/1.1）でも受ける（go-stdlib と同じ形 — 読めなければ開かない）。
+// POST /echo（8gbit — report-848）: 要求の本文（Content-Length でも chunked でも — std/http が framing から読む）をそのまま application/octet-stream で返す
+// （go-stdlib の echoBody と同じ — 読み切ってから書く）。本文の上限 = maxBody 128 KiB（両方の port — 本家の validate は 100 KB まで。std/http の既定 16 KiB では 413。値札 = 要求が切片をまたいだ接続の持ち越しの列 ≈ 260 KB — report-848 / 849）。
+// 転送路は tls.Recv / tls.Send を http.ServeWith に渡す（std/tls の Serve が handshake を済ませた接続だけを渡す）。"tls-ready <port>" を出してから受ける（"^ready" に当たらない名前 — local.sh の平文の待ち）
+
+import "std/compress/flate"
+import "std/convert"
+import "std/http"
+import "std/io"
+import "std/json"
+import "std/net"
+import "std/os"
+import "std/task"
+import "std/iter"
+import "std/tls"
+
+// num は数でなければ 0（go-stdlib と同じ寛容さ）
+func num(s string?) int {
+    if s == nil {
+        return 0
+    }
+    v, e := convert.ParseInt(s)
+    return if e != nil { 0 } else { v }
+}
+
+type Rating struct {
+    score int
+    count int
+}
+
+// Item は dataset の 1 本
+type Item struct {
+    id int
+    name string
+    category string
+    price int
+    quantity int
+    active bool
+    tags []string
+    rating Rating
+}
+
+// Processed は応答の 1 本（Item の欄 + total）
+type Processed struct {
+    id int
+    name string
+    category string
+    price int
+    quantity int
+    active bool
+    tags []string
+    rating Rating
+    total int
+}
+
+type Body struct {
+    items []Processed
+    count int
+}
+
+// load は dataset（JSON の配列）を読む（読めない・形が違えば空 — go-stdlib と同じくサーバは立つ）
+func load() []Item {
+    p := os.Getenv("DATASET_PATH") catch nil
+    b := io.ReadFile(if p != nil { p } else { "/data/dataset.json" }) catch return []Item{}
+    d := json.Parse(b) catch return []Item{}
+    ns := json.Items(d, json.Root(d)) catch return []Item{}
+    mut xs := mut []Item{}
+    for i <- iter.Range(0, len(ns)) {
+        xs = append(xs, json.Decode[Item](d, ns[i]) catch return []Item{})
+    }
+    return freeze(xs)
+}
+
+// items は /json/:count?m= の応答（毎要求で組んで直列化する）
+func items(ds []Item, r http.Request) http.Response {
+    c := num(http.Param(r, "count"))
+    n := if c < 0 { 0 } else if c > len(ds) { len(ds) } else { c }
+    m0 := num(http.Query(r, "m"))
+    m := if m0 == 0 { 1 } else { m0 }
+    mut out := mut []Processed{}
+    for i <- iter.Range(0, n) {
+        d := ds[i]
+        out = append(out, Processed{id: d.id, name: d.name, category: d.category, price: d.price, quantity: d.quantity, active: d.active, tags: d.tags, rating: d.rating, total: d.price * d.quantity * m})
+    }
+    return http.Json(json.Encode[Body](Body{items: freeze(out), count: n}))
+}
+
+// baseline は /baseline11（GET = a + b・POST = a + b + 本文の数）
+func baseline(r http.Request) http.Response {
+    body := if r.method == "POST" { num(string(r.body) catch "") } else { 0 }
+    return http.Text(convert.FormatInt(num(http.Query(r, "a")) + num(http.Query(r, "b")) + body))
+}
+
+// echo は POST /echo（要求の本文をそのまま返す）
+func echo(r http.Request) http.Response {
+    return http.Response{status: 200, contentType: "application/octet-stream", body: r.body}
+}
+
+// maxBody は要求の本文の上限（/echo — 本家の 8gbit の validate は 100 KB まで・go-stdlib は上限なし）
+const maxBody = 131072
+
+// delay は /delay/:ms（ms ミリ秒眠ってから ms を返す — async の種目）
+func delay(r http.Request) http.Response {
+    ms := num(http.Param(r, "ms"))
+    os.Sleep(ms)
+    return http.Text(convert.FormatInt(ms))
+}
+
+// routes はルートの表（平文の 8080 と TLS の 8081 が同じ表を引く — go-stdlib の ServeMux と同じ形）
+func routes(ds []Item) []http.Route {
+    none := []http.Middleware{}
+    return []http.Route{
+        http.Route{method: "GET", path: "/pipeline", handler: (r) => http.Text("ok"), middleware: none},
+        http.Route{method: "GET", path: "/baseline11", handler: baseline, middleware: none},
+        http.Route{method: "POST", path: "/baseline11", handler: baseline, middleware: none},
+        http.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
+        http.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none},
+        http.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
+    }
+}
+
+// certs は TLS の設定（TLS_CERT / TLS_KEY か /certs/server.{crt,key} — 読めなければ nil = 8081 を開かない）
+func certs() tls.Config? {
+    c, _ := os.Getenv("TLS_CERT")
+    k, _ := os.Getenv("TLS_KEY")
+    cfg, e := tls.Load(if c != nil { c } else { "/certs/server.crt" }, if k != nil { k } else { "/certs/server.key" })
+    if e != nil {
+        return nil
+    }
+    return cfg
+}
+
+// serveTls は tport で TLS の接続を受ける（返らない — 失敗したら 1）。tls.Serve の k は名前つきの関数型（値の位置）で、関数値を持つルートの表は
+// 捕捉できない — dataset を捕捉して接続ごとに表を組む（5 行の表 — handshake に比べて無視できる）
+func serveTls(ds []Item, cfg tls.Config, tport string) int {
+    _ = io.WriteStdout(bytes("tls-ready ${tport}\n"))
+    e := tls.Serve("0.0.0.0:${tport}", cfg, (c tls.Conn) => serveTlsConn(routes(ds), c))
+    return if e != nil { 1 } else { 0 }
+}
+
+// serveTlsConn は handshake の済んだ接続 1 本の HTTP/1.1（転送路 = tls.Recv / tls.Send）
+func serveTlsConn(rs []http.Route, c tls.Conn) error? {
+    return http.ServeWith((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody)
+}
+
+// run は 8080 の平文（本体）と 8081 の TLS（子 task — 証明書が読めたときだけ）を受ける。どちらも返らない
+func run(port string, tport string) int {
+    ds := load()
+    gzw := task.NewLocal((w mut flate.Work) => flate.Prepare(mut w))
+    cfg := certs()
+    pe, se := task.Run((s task.Scope) => {
+        if cfg != nil {
+            _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
+        }
+        plain(routes(ds), gzw, port)
+    })
+    return if se != nil || pe != nil { 1 } else { 0 }
+}
+
+// plain は port で平文の接続を受ける（返らない）
+func plain(rs []http.Route, gzw task.Local, port string) error? {
+    for l <- net.Listen("0.0.0.0:${port}")? {
+        // 直に書く（task.Run の本体の println は scope の出力の順の規律で溜まる — 待ち受けの合図は今すぐ要る）
+        io.WriteStdout(bytes("ready ${net.Port(l)}\n"))?
+        // level 3 = json-comp の採点（rps × (minBpr/Bpr)²）の手元最適（report-736 2 節の掃引 — eff lv6 比 +4.2%。734 の 4 バイトハッシュで
+        // greedy 級の率が zlib 超えになった〔lv3 本文 1359 vs zlib 1405〕ので、軽い level の係数の損を速さが上回る。条文の「chosen level」の範囲）
+        net.Serve(l, (c net.Conn) => http.ServeConn(c, (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, compress: http.Gzip{level: 3}, work: gzw), conns: 40000)?
+    }
+    return nil
+}
+
+func main() int {
+    args := os.Args() catch return 2
+    if len(args) > 3 {
+        return 2
+    }
+    return run(if len(args) >= 2 { args[1] } else { "8080" }, if len(args) == 3 { args[2] } else { "8081" })
+}

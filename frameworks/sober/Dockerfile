@@ -1,0 +1,21 @@
+# The sober compiler is a single static ELF (the standard library is built in), taken from the release tarball.
+# TODO(0.6.0): SOBER_VERSION points at a release that is not published yet; the asset name follows the
+# existing Release CI (sober-v<version>-x86_64-linux.tar.gz).
+FROM alpine:3.20 AS build
+ARG SOBER_VERSION=0.6.0
+RUN apk add --no-cache curl tar
+RUN curl -fsSL "https://github.com/sober-lang/sober/releases/download/v${SOBER_VERSION}/sober-v${SOBER_VERSION}-x86_64-linux.tar.gz" | tar -xz -C /opt
+WORKDIR /app
+COPY main.sober ./
+RUN /opt/sober-v${SOBER_VERSION}-x86_64-linux/sober build main.sober -o server
+
+# Runtime notes (the HttpArena harness already runs every entry this way):
+#   - io_uring is blocked by Docker's default seccomp profile; run with --security-opt seccomp=unconfined.
+#     Under a seccomp profile or sandbox that blocks io_uring (gVisor), set SOBER_NET=1 for the epoll path.
+#   - Each worker owns an io_uring ring; on kernels before 5.12 the ring memory counts against RLIMIT_MEMLOCK
+#     (--ulimit memlock=-1:-1).
+#   - One fd per connection: raise RLIMIT_NOFILE (--ulimit nofile=1048576:1048576).
+FROM scratch
+COPY --from=build /app/server /server
+EXPOSE 8080 8081
+CMD ["/server"]
