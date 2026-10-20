@@ -2,23 +2,42 @@
   "display_name": "araara",
   "language": "OCaml",
   "engine": "hcs",
-  "type": "experimental",
-  "mode": "tuned",
-  "description": "araara - an OCaml 5 web stack built on HCS, Eio, a zero-copy sans-I/O HTTP codec, radix-trie routing, Phoenix-style plugs, Postgres via repodb, and gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
-  "repo": "https://araara.ml",
-  "enabled": false,
+  "type": "emerging",
+  "mode": "standard",
+  "description": "araara: the OCaml 5 web stack on hcs (Eio, io_uring). HCS router, request/response helpers, Plug.Compress for JSON, Plug.Static for files (pre-compressed .br/.gz twins selected per request), hcs gRPC transport with ocaml-protoc codecs, simdjsont JSON, repodb for Postgres. HTTP/1.1, HTTP/2 (TLS and h2c) and WebSocket from one process, one single-domain worker per CPU with SO_REUSEPORT and the runtime's default GC settings.",
+  "repo": "https://tangled.org/gdiazlo.tngl.sh/hcs",
+  "website": "https://araara.ml",
+  "enabled": true,
   "tests": [
-    "baseline", "latency-1m", "latency-10k",
+    "baseline",
     "pipelined",
     "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
     "json-comp",
     "json-tls",
+    "8gbit",
+    "static-tls",
     "async-db",
     "baseline-h2",
     "static-h2",
     "baseline-h2c",
     "json-h2c",
-    "echo-ws"
+    "unary-grpc",
+    "unary-grpc-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
-  "maintainers": ["gdiazlo"]
+  "maintainers": [
+    "gdiazlo"
+  ],
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": false
+  }
 }

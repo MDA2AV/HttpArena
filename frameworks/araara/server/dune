@@ -1,0 +1,24 @@
+(executable
+ (name arena)
+ (ocamlopt_flags
+  (:standard -O3))
+ (libraries
+  hcs
+  eio
+  eio_main
+  eio_posix
+  eio.unix
+  simdjsont
+  repodb
+  repodb-postgresql
+  pbrt
+  unix))
+
+; The gRPC codecs come from ocaml-protoc, the OCaml protobuf compiler, run on
+; HttpArena's canonical benchmark.proto at build time.
+
+(rule
+ (targets benchmark.ml benchmark.mli)
+ (deps benchmark.proto)
+ (action
+  (run ocaml-protoc --binary --int32_type int_t --ml_out . %{deps})))
