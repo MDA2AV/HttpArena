@@ -197,7 +197,7 @@ public class ServerVerticle extends VerticleBase {
             }
         }
 
-	List<TotalItem> items = new ArrayList<>(count);
+        List<TotalItem> items = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             items.add(TotalItem.from(dataset[i], m));
         }

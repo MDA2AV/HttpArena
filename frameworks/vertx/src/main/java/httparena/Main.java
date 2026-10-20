@@ -15,11 +15,11 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         String path = System.getenv().getOrDefault("DATASET_PATH", "/data/dataset.json");
-	Item[] dataset = new Item[0];
+        Item[] dataset = new Item[0];
         try {
             dataset = Json.decodeValue(
-                  Buffer.buffer(Files.readAllBytes(Path.of(path))),
-                  Item[].class);
+                Buffer.buffer(Files.readAllBytes(Path.of(path))),
+                Item[].class);
         } catch (Exception ignored) {
         }
 
