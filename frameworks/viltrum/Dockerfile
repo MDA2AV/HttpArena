@@ -9,7 +9,7 @@ RUN curl -fsSL -o /tmp/v.zip https://github.com/vlang/v/releases/download/0.5.2/
     unzip -q /tmp/v.zip -d /opt && rm /tmp/v.zip
 ENV PATH=/opt/v:$PATH
 
-ARG VILTRUM_REF=v1.1.0
+ARG VILTRUM_REF=v1.2.2
 RUN git clone --depth 1 --branch ${VILTRUM_REF} https://github.com/Tuntii/viltrum /root/.vmodules/viltrum
 
 WORKDIR /app
@@ -18,5 +18,5 @@ RUN v -prod -o server main.v
 
 FROM debian:bookworm-slim
 COPY --from=build /app/server /server
-EXPOSE 8080
+EXPOSE 8080 8081 9000
 CMD ["/server"]
