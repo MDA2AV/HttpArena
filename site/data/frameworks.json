@@ -361,6 +361,13 @@
       "response": true
     }
   },
+  "cnetmod": {
+    "dir": "cnetmod",
+    "description": "Cross-platform pure C++23 Modules networking engine using native stackless coroutines, io_uring with epoll fallback, per-loop HTTP/1.1 and HTTP/2, BoringSSL QUIC/HTTP/3, routed WebSocket upgrades, and native gRPC. One image serves HTTP/1.1, WebSocket and gRPC h2c on :8080, TLS HTTP/1.1 on :8081, h2c on :8082, HTTP/2 on :8443/tcp and HTTP/3 on :8443/udp.",
+    "repo": "https://github.com/banderzhm/cnetmod",
+    "type": "engine",
+    "engine": "cnetmod"
+  },
   "codebehind": {
     "dir": "codebehind",
     "description": "CodeBehind 4.8.2 on ASP.NET Core and Kestrel. Routes via CodeBehind controller classes under wwwroot/*/Default.aspx, JSON through System.Text.Json with web defaults, gzip and brotli through ResponseCompression at level 1, json-tls on 8081, static files on 8081, dataset loaded once at startup.",
