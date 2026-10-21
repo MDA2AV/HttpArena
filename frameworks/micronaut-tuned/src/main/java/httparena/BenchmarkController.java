@@ -1,0 +1,146 @@
+package httparena;
+
+import java.util.concurrent.TimeUnit;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.io.ByteArrayOutputStream;
+
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpRequest;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.annotation.Body;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.PathVariable;
+import io.micronaut.http.annotation.Post;
+import io.micronaut.http.annotation.QueryValue;
+
+@Controller
+public class BenchmarkController {
+
+    private final Dataset dataset;
+
+    BenchmarkController(Dataset dataset) {
+        this.dataset = dataset;
+    }
+
+    @Get(value = "/pipeline", produces = MediaType.TEXT_PLAIN)
+    public String pipeline() {
+        return "ok";
+    }
+
+    // A delayed CompletableFuture rather than a sleep: nothing holds a request thread while the
+    // wait runs, so the waits in flight are bounded by memory rather than by the pool. The JDK's
+    // delayedExecutor keeps this to the standard library - the entry has no reactive dependency.
+    @Get(value = "/delay/{ms}", produces = MediaType.TEXT_PLAIN)
+    public CompletableFuture<String> delay(int ms) {
+        String body = Integer.toString(ms);
+
+        if (ms <= 0) {
+            return CompletableFuture.completedFuture(body);
+        }
+
+        return CompletableFuture.supplyAsync(
+                () -> body, CompletableFuture.delayedExecutor(ms, TimeUnit.MILLISECONDS));
+    }
+
+    @Get(value = "/baseline11", produces = MediaType.TEXT_PLAIN)
+    public String baselineGet(@QueryValue @Nullable String a, @QueryValue @Nullable String b) {
+        return Long.toString(parseLong(a, 0) + parseLong(b, 0));
+    }
+
+    @Post(value = "/baseline11", consumes = MediaType.ALL, produces = MediaType.TEXT_PLAIN)
+    public String baselinePost(@QueryValue @Nullable String a, @QueryValue @Nullable String b, @Body @Nullable byte[] body) {
+        long sum = parseLong(a, 0) + parseLong(b, 0);
+        if (body != null && body.length > 0) {
+            sum += parseLong(new String(body, StandardCharsets.UTF_8), 0);
+        }
+        return Long.toString(sum);
+    }
+
+    @Get(value = "/json/{count}", produces = MediaType.APPLICATION_JSON)
+    public ItemsResponse json(@PathVariable String count,
+                              @QueryValue(value = "m", defaultValue = "1") String m) {
+        List<Item> source = dataset.items();
+        int n = (int) Math.max(0, Math.min(parseLong(count, 0), source.size()));
+        long multiplier = parseLong(m, 1);
+
+        List<PricedItem> items = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            Item item = source.get(i);
+            items.add(new PricedItem(
+                    item.id(), item.name(), item.category(),
+                    item.price(), item.quantity(), item.active(),
+                    item.tags(), item.rating(),
+                    item.price() * item.quantity() * multiplier));
+        }
+        return new ItemsResponse(items, n);
+    }
+
+    /**
+     * The body is bound as a stream of chunks and collected: the echo needs the
+     * bytes, and the response cannot be framed until its length is known - which
+     * is also what makes a chunked request work.
+     */
+    @Post(value = "/echo", consumes = MediaType.ALL, produces = MediaType.APPLICATION_OCTET_STREAM)
+    public CompletableFuture<byte[]> echoBody(@Body @Nullable Publisher<byte[]> body) {
+        CompletableFuture<byte[]> received = new CompletableFuture<>();
+        if (body == null) {
+            received.complete(new byte[0]);
+            return received;
+        }
+        body.subscribe(new Subscriber<byte[]>() {
+
+            private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                subscription.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(byte[] chunk) {
+                buffer.writeBytes(chunk);
+            }
+
+            @Override
+            public void onError(Throwable error) {
+                received.completeExceptionally(error);
+            }
+
+            @Override
+            public void onComplete() {
+                received.complete(buffer.toByteArray());
+            }
+        });
+        return received;
+    }
+
+    private static long querySum(HttpRequest<?> request) {
+        long sum = 0;
+        for (Map.Entry<String, List<String>> parameter : request.getParameters()) {
+            for (String value : parameter.getValue()) {
+                sum += parseLong(value, 0);
+            }
+        }
+        return sum;
+    }
+
+    private static long parseLong(String value, long fallback) {
+        if (value == null) {
+            return fallback;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException notANumber) {
+            return fallback;
+        }
+    }
+}

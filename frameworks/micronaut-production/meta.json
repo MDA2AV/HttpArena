@@ -1,0 +1,29 @@
+{
+  "display_name": "micronaut-production",
+  "language": "Java",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "netty",
+  "description": "Micronaut 5.2 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
+  "repo": "https://github.com/micronaut-projects/micronaut-core",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-tls",
+    "json-comp",
+    "8gbit"
+  ],
+  "maintainers": []
+}
