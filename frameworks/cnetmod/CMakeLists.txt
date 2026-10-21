@@ -15,6 +15,8 @@ set(CNETMOD_ENABLE_QUIC ON CACHE BOOL "" FORCE)
 set(CNETMOD_ENABLE_BORINGSSL_QUIC ON CACHE BOOL "" FORCE)
 set(CNETMOD_ENABLE_WEBSOCKET ON CACHE BOOL "" FORCE)
 set(CNETMOD_ENABLE_GRPC ON CACHE BOOL "" FORCE)
+set(CNETMOD_ENABLE_POSTGRESQL ON CACHE BOOL "" FORCE)
+set(CNETMOD_ENABLE_REDIS ON CACHE BOOL "" FORCE)
 set(CNETMOD_ENABLE_ORM OFF CACHE BOOL "" FORCE)
 set(CNETMOD_ENABLE_YAML_CONFIGURATION OFF CACHE BOOL "" FORCE)
 set(CNETMOD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -31,7 +33,7 @@ add_subdirectory("${CNETMOD_SOURCE_DIR}" cnetmod-build EXCLUDE_FROM_ALL)
 
 add_executable(cnetmod-httparena server.cpp)
 target_link_libraries(cnetmod-httparena PRIVATE
-    cnetmod::grpc cnetmod::websocket)
+    cnetmod::grpc cnetmod::postgresql cnetmod::redis cnetmod::websocket)
 cnetmod_enable_mimalloc(cnetmod-httparena)
 
 add_executable(cnetmod-httparena-h3

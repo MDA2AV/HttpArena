@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates cmake curl git gnupg libbrotli-dev liburing-dev \
+        ca-certificates cmake curl git gnupg libbrotli-dev libicu-dev liburing-dev \
         ninja-build zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,7 +43,7 @@ FROM ubuntu:24.04
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        libatomic1 libbrotli1 liburing2 zlib1g \
+        libatomic1 libbrotli1 libicu74 liburing2 zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /usr/lib/x86_64-linux-gnu/libc++.so.1* /usr/local/lib/
