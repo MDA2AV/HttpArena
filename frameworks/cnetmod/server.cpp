@@ -113,6 +113,8 @@ auto make_router(grpc::service_router& grpc_service, bool websocket)
     -> http::router
 {
     http::router routes;
+    routes.get("/static/*filepath",
+        http::serve_dir({.root = "/data/static"}));
     routes.get_sync("/baseline11", baseline);
     routes.post_sync("/baseline11", baseline);
     routes.get_sync("/baseline2", baseline);

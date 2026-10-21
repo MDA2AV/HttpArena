@@ -2,7 +2,7 @@
 set -eu
 
 workers="$(nproc)"
-/server-h3 /certs/server.crt /certs/server.key 8443 "${workers}" &
+/server-h3 /certs/server.crt /certs/server.key 8443 "${workers}" /data/static &
 h3_pid="$!"
 /server &
 server_pid="$!"
