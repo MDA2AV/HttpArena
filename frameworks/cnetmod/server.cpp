@@ -147,7 +147,7 @@ void configure_server(http::server& server, grpc::service_router& service,
 
 [[nodiscard]] auto available_processors() -> std::vector<unsigned>
 {
-    std::vector<unsigned> processors;
+    std::vector<unsigned> eligible;
 #ifdef __linux__
     cpu_set_t affinity;
     CPU_ZERO(&affinity);
@@ -155,16 +155,62 @@ void configure_server(http::server& server, grpc::service_router& service,
     {
         for (unsigned processor = 0; processor < CPU_SETSIZE; ++processor)
             if (CPU_ISSET(processor, &affinity))
-                processors.push_back(processor);
+                eligible.push_back(processor);
     }
 #endif
-    if (processors.empty())
+    if (eligible.empty())
     {
         const auto count = std::max(std::thread::hardware_concurrency(), 1U);
-        processors.resize(count);
-        std::iota(processors.begin(), processors.end(), 0U);
+        eligible.resize(count);
+        std::iota(eligible.begin(), eligible.end(), 0U);
     }
-    return processors;
+
+#ifdef __linux__
+    auto read_topology_id = [](unsigned processor, std::string_view field)
+        -> std::optional<unsigned>
+    {
+        std::ifstream input{std::format(
+            "/sys/devices/system/cpu/cpu{}/topology/{}", processor, field)};
+        unsigned value{};
+        if (input >> value)
+            return value;
+        return std::nullopt;
+    };
+
+    std::set<std::pair<unsigned, unsigned>> physical_cores;
+    std::vector<unsigned> primary_threads;
+    std::vector<unsigned> sibling_threads;
+    primary_threads.reserve(eligible.size());
+    sibling_threads.reserve(eligible.size());
+    for (const auto processor : eligible)
+    {
+        const auto package = read_topology_id(processor, "physical_package_id");
+        const auto core = read_topology_id(processor, "core_id");
+        if (!package || !core || physical_cores.emplace(*package, *core).second)
+            primary_threads.push_back(processor);
+        else
+            sibling_threads.push_back(processor);
+    }
+
+    if (const auto* configured = std::getenv("CNETMOD_HTTP_WORKERS"))
+    {
+        unsigned requested{};
+        const auto text = std::string_view{configured};
+        const auto [end, error] = std::from_chars(
+            text.data(), text.data() + text.size(), requested);
+        if (error == std::errc{} && end == text.data() + text.size() &&
+            requested > 0 && requested <= eligible.size())
+        {
+            primary_threads.insert(primary_threads.end(),
+                sibling_threads.begin(), sibling_threads.end());
+            primary_threads.resize(requested);
+        }
+    }
+
+    if (!primary_threads.empty())
+        return primary_threads;
+#endif
+    return eligible;
 }
 
 auto listen(http::server& server, std::uint16_t port) -> bool

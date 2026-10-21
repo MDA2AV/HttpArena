@@ -10,17 +10,17 @@ RUN apt-get update \
 
 RUN curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key \
         | gpg --dearmor -o /usr/share/keyrings/apt.llvm.org.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-22 main" \
+    && echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-23 main" \
         > /etc/apt/sources.list.d/apt.llvm.org.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        clang-22 libc++-22-dev libc++abi-22-dev lld-22 \
+        clang-23 libc++-23-dev libc++abi-23-dev lld-23 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
 RUN git clone --filter=blob:none \
         https://github.com/banderzhm/cnetmod.git /src/cnetmod \
-    && git -C /src/cnetmod checkout a705e9b9bb2558bc934fcfde13ab2669a8e00b76 \
+    && git -C /src/cnetmod checkout 764fa115bfdb570b8c1d76dd3454366f8bf3fc7a \
     && git -C /src/cnetmod submodule update --init --depth 1 \
         3rdparty/boringssl 3rdparty/json 3rdparty/mimalloc \
         3rdparty/spdlog 3rdparty/stdexec
@@ -30,8 +30,10 @@ WORKDIR /src/entry
 
 RUN cmake -S . -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_COMPILER=clang-22 \
-        -DCMAKE_CXX_COMPILER=clang++-22 \
+        -DCMAKE_C_COMPILER=clang-23 \
+        -DCMAKE_CXX_COMPILER=clang++-23 \
+        -DSTDLIB_MODULE_DIRS=/usr/lib/llvm-23/share/libc++/v1 \
+        -DSTDLIB_INCLUDE_DIRS=/usr/lib/llvm-23/include/c++/v1 \
         -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
     && cmake --build build \
         --target cnetmod-httparena cnetmod-httparena-h3 \
