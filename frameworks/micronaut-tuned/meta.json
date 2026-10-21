@@ -33,7 +33,9 @@
     "static-h2",
     "static-tls",
     "async-db",
-    "fortunes"
+    "fortunes",
+    "baseline-h3",
+    "static-h3"
   ],
   "maintainers": []
 }

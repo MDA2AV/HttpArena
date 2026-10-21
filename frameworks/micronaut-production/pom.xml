@@ -25,6 +25,12 @@
   </properties>
 
   <dependencies>
+    <!-- HTTP/3 over QUIC; the native QUIC codec for both architectures -->
+    <dependency>
+      <groupId>io.micronaut</groupId>
+      <artifactId>micronaut-http-netty-http3</artifactId>
+      <scope>compile</scope>
+    </dependency>
     <dependency>
       <groupId>io.micronaut.views</groupId>
       <artifactId>micronaut-views-thymeleaf</artifactId>
