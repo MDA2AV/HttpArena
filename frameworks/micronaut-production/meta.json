@@ -23,7 +23,15 @@
     "limited-conn",
     "json-tls",
     "json-comp",
-    "8gbit"
+    "8gbit",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "baseline-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "static-h2",
+    "static-tls"
   ],
   "maintainers": []
 }

@@ -6,11 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.io.ByteArrayOutputStream;
 
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpRequest;
@@ -51,6 +47,11 @@ public class BenchmarkController {
                 () -> body, CompletableFuture.delayedExecutor(ms, TimeUnit.MILLISECONDS));
     }
 
+    @Get(value = "/baseline2", produces = MediaType.TEXT_PLAIN)
+    public String baseline2(@QueryValue @Nullable String a, @QueryValue @Nullable String b) {
+        return Long.toString(parseLong(a, 0) + parseLong(b, 0));
+    }
+
     @Get(value = "/baseline11", produces = MediaType.TEXT_PLAIN)
     public String baselineGet(@QueryValue @Nullable String a, @QueryValue @Nullable String b) {
         return Long.toString(parseLong(a, 0) + parseLong(b, 0));
@@ -84,43 +85,10 @@ public class BenchmarkController {
         return new ItemsResponse(items, n);
     }
 
-    /**
-     * The body is bound as a stream of chunks and collected: the echo needs the
-     * bytes, and the response cannot be framed until its length is known - which
-     * is also what makes a chunked request work.
-     */
+    /** The framework aggregates the body, which also covers a chunked request, and the echo returns it. */
     @Post(value = "/echo", consumes = MediaType.ALL, produces = MediaType.APPLICATION_OCTET_STREAM)
-    public CompletableFuture<byte[]> echoBody(@Body @Nullable Publisher<byte[]> body) {
-        CompletableFuture<byte[]> received = new CompletableFuture<>();
-        if (body == null) {
-            received.complete(new byte[0]);
-            return received;
-        }
-        body.subscribe(new Subscriber<byte[]>() {
-
-            private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                subscription.request(Long.MAX_VALUE);
-            }
-
-            @Override
-            public void onNext(byte[] chunk) {
-                buffer.writeBytes(chunk);
-            }
-
-            @Override
-            public void onError(Throwable error) {
-                received.completeExceptionally(error);
-            }
-
-            @Override
-            public void onComplete() {
-                received.complete(buffer.toByteArray());
-            }
-        });
-        return received;
+    public byte[] echoBody(@Body @Nullable byte[] body) {
+        return body == null ? new byte[0] : body;
     }
 
     private static long querySum(HttpRequest<?> request) {

@@ -48,9 +48,7 @@ public class Application {
             System.err.println("json-tls: could not build a key store from the mounted PEMs: " + e);
             return;
         }
-        System.setProperty("micronaut.server.dual-protocol", "true");
         System.setProperty("micronaut.server.ssl.enabled", "true");
-        System.setProperty("micronaut.server.ssl.port", "8081");
         System.setProperty("micronaut.server.ssl.key-store.path", "file:" + KEYSTORE);
         System.setProperty("micronaut.server.ssl.key-store.type", "PKCS12");
         System.setProperty("micronaut.server.ssl.key-store.password", "");
