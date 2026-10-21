@@ -2025,6 +2025,20 @@
       "response": true
     }
   },
+  "sober": {
+    "dir": "sober",
+    "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection, io_uring with an acceptor per worker (epoll fallback). Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compress: option of the server. Static ELF with no libc, FROM scratch.",
+    "repo": "https://github.com/sober-lang/sober",
+    "type": "emerging",
+    "engine": "std/http",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "socketify": {
     "dir": "socketify",
     "description": "socketify.py 0.0.31 on its uWebSockets bindings, one process per core per port sharing the port through SO_REUSEPORT. Disabled: socketify's bundled libsocketify rejects a request whose request line is split across TCP segments, which fails the fragmentation suite. The uWebSockets.js entries here are unaffected.",
