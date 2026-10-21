@@ -32,7 +32,8 @@
     "json-h2c",
     "static-h2",
     "static-tls",
-    "async-db"
+    "async-db",
+    "fortunes"
   ],
   "maintainers": []
 }
