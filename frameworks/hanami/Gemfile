@@ -4,4 +4,4 @@ gem "hanami", "~> 2.3"
 gem "hanami-controller", "~> 2.3"
 gem "hanami-router", "~> 2.3"
 gem "json"
-gem "puma", "~> 8.0"
+gem 'puma', git: 'https://github.com/p8/puma.git', ref: 'performance/stringio-chunked-bodies'

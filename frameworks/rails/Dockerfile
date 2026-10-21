@@ -1,7 +1,7 @@
 FROM ruby:4.0.6-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libpq-dev libyaml-dev libjemalloc2 libpq5 && \
+    apt-get install -y --no-install-recommends build-essential git libpq-dev libyaml-dev libjemalloc2 libpq5 && \
     rm -rf /var/lib/apt/lists/*
 
 # Use Jemalloc
