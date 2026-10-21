@@ -7,6 +7,7 @@ import java.util.Map;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.Future;
 import io.vertx.core.VerticleBase;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
@@ -441,12 +442,10 @@ public class ServerVerticle extends VerticleBase {
     }
 
     private void echo(RoutingContext ctx) {
-        HttpServerRequest request = ctx.request();
-        Buffer body = Buffer.buffer();
-        request.handler(body::appendBuffer);
-        request.endHandler(v -> ctx.response()
-                .putHeader("content-type", "application/octet-stream")
-                .end(body));
-        request.resume();
+        var req = ctx.request();
+        var res = ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_OCTET_STREAM);
+        var cl = req.getHeader(HttpHeaders.CONTENT_LENGTH);
+        if (cl != null) { res.putHeader(HttpHeaders.CONTENT_LENGTH, cl); } else { res.setChunked(true); }
+        res.send(req);
     }
 }
