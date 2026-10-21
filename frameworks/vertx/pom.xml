@@ -55,6 +55,10 @@
       <artifactId>vertx-redis-client</artifactId>
       <version>${vertx.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
     <!-- epoll native transport; without it Vert.x runs on NIO, which ignores SO_REUSEPORT.
          Both architectures, so the same jar runs on the arm64 round. -->
     <dependency>

@@ -1,7 +1,10 @@
 package httparena;
 
+import httparena.JsonDtos.*;
+
 import java.io.File;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 
 import io.vertx.core.buffer.Buffer;
@@ -39,12 +42,12 @@ public class ServerVerticle extends VerticleBase {
     // the writes have already moved past.
     private static final String CRUD_TTL_MS = "200";
 
-    private final JsonArray dataset;
+    private final Item[] dataset;
 
     private Pool pgPool;
     private RedisAPI redis;
 
-    public ServerVerticle(JsonArray dataset) {
+    public ServerVerticle(Item[] dataset) {
         this.dataset = dataset;
     }
 
@@ -184,7 +187,7 @@ public class ServerVerticle extends VerticleBase {
         } catch (NumberFormatException e) {
             count = 0;
         }
-        count = Math.max(0, Math.min(count, dataset.size()));
+        count = Math.max(0, Math.min(count, dataset.length));
 
         long m = 1;
         String multiplier = ctx.queryParams().get("m");
@@ -195,13 +198,11 @@ public class ServerVerticle extends VerticleBase {
             }
         }
 
-        JsonArray items = new JsonArray();
+        List<TotalItem> items = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            JsonObject item = dataset.getJsonObject(i).copy();
-            item.put("total", item.getLong("price") * item.getLong("quantity") * m);
-            items.add(item);
+            items.add(TotalItem.from(dataset[i], m));
         }
-        ctx.json(new JsonObject().put("items", items).put("count", count));
+        ctx.json(new ItemResponse(items, count));
     }
 
     // tags is a JSONB column, so the client hands back a JsonArray rather than text.

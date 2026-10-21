@@ -1,5 +1,7 @@
 package httparena;
 
+import httparena.JsonDtos.Item;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -7,15 +9,17 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.Json;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
         String path = System.getenv().getOrDefault("DATASET_PATH", "/data/dataset.json");
-        JsonArray dataset = new JsonArray();
+        Item[] dataset = new Item[0];
         try {
-            dataset = new JsonArray(Buffer.buffer(Files.readAllBytes(Path.of(path))));
+            dataset = Json.decodeValue(
+                Buffer.buffer(Files.readAllBytes(Path.of(path))),
+                Item[].class);
         } catch (Exception ignored) {
         }
 
@@ -26,7 +30,7 @@ public class Main {
             System.err.println("epoll native transport unavailable: " + vertx.unavailableNativeTransportCause());
             System.exit(1);
         }
-        JsonArray items = dataset;
+        Item[] items = dataset;
         int instances = Runtime.getRuntime().availableProcessors();
         vertx.deployVerticle(() -> new ServerVerticle(items), new DeploymentOptions().setInstances(instances));
     }

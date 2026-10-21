@@ -41,7 +41,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # transient 504 (or rate-limit) failed the whole build (MDA2AV/HttpArena#895). To
 # pick up upstream library fixes, bump this commit.
 #
-# Pinned to vanilla main @3dd5a79: top-level modules and one handler contract
+# Pinned to vanilla main @b7543c4: top-level modules and one handler contract
 # (core.Handler returning core.Step, watches through core.EventLoop), which main.v
 # uses for both listeners. /ws upgrades through the conn-mode seam
 # (core.queue_takeover + a ConnHandler, enghitalo/vanilla#136) and the websocket
@@ -53,7 +53,7 @@ RUN git init -q /opt/v && cd /opt/v && \
 # connection gets the bytes from RAM). Fetched at that one commit.
 RUN git init -q /root/.vmodules/vanilla && \
     git -C /root/.vmodules/vanilla fetch -q --depth 1 https://github.com/enghitalo/vanilla \
-        3dd5a79ed28aa2bd208ec2268e74b3217aa4422e && \
+        b7543c406e32b1da708f98728c57d630d919edb3 && \
     git -C /root/.vmodules/vanilla checkout -q FETCH_HEAD
 
 # Mbed TLS 4 for the json-tls profile. The vanilla `tls` module's C shim

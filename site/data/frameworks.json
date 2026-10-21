@@ -90,11 +90,18 @@
   },
   "araara": {
     "dir": "araara",
-    "description": "araara - an OCaml 5 web stack built on HCS, Eio, a zero-copy sans-I/O HTTP codec, radix-trie routing, Phoenix-style plugs, Postgres via repodb, and gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
-    "repo": "https://araara.ml",
-    "type": "experimental",
+    "description": "araara: the OCaml 5 web stack on hcs (Eio, io_uring). HCS router, request/response helpers, Plug.Compress for JSON, Plug.Static for files (pre-compressed .br/.gz twins selected per request), hcs gRPC transport with ocaml-protoc codecs, simdjsont JSON, repodb for Postgres. HTTP/1.1, HTTP/2 (TLS and h2c) and WebSocket from one process, one single-domain worker per CPU with SO_REUSEPORT and the runtime's default GC settings.",
+    "repo": "https://tangled.org/gdiazlo.tngl.sh/hcs",
+    "type": "emerging",
     "engine": "hcs",
-    "mode": "tuned"
+    "mode": "standard",
+    "website": "https://araara.ml",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": false
+    }
   },
   "aspnet-minimal": {
     "dir": "aspnet-minimal",
