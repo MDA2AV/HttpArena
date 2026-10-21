@@ -20,7 +20,7 @@ RUN curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key \
 WORKDIR /src
 RUN git clone --filter=blob:none \
         https://github.com/banderzhm/cnetmod.git /src/cnetmod \
-    && git -C /src/cnetmod checkout 11a9369c67e475b7b8a9bd12076ea6a7ed4d08e7 \
+    && git -C /src/cnetmod checkout aa65803a \
     && git -C /src/cnetmod submodule update --init --depth 1 \
         3rdparty/boringssl 3rdparty/json 3rdparty/mimalloc \
         3rdparty/spdlog 3rdparty/stdexec
