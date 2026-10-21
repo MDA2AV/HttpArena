@@ -809,17 +809,20 @@ void configure_server(http::server &server, grpc::service_router &service,
       sibling_threads.push_back(processor);
   }
 
+  // One worker per assigned logical CPU. The benchmark gives the server both
+  // SMT threads of each core, and the I/O-bound workers scale across them.
+  // Primary threads come first so a smaller CNETMOD_HTTP_WORKERS keeps one
+  // worker per physical core before doubling up on a sibling.
+  primary_threads.insert(primary_threads.end(), sibling_threads.begin(),
+                         sibling_threads.end());
   if (const auto *configured = std::getenv("CNETMOD_HTTP_WORKERS")) {
     unsigned requested{};
     const auto text = std::string_view{configured};
     const auto [end, error] =
         std::from_chars(text.data(), text.data() + text.size(), requested);
     if (error == std::errc{} && end == text.data() + text.size() &&
-        requested > 0 && requested <= eligible.size()) {
-      primary_threads.insert(primary_threads.end(), sibling_threads.begin(),
-                             sibling_threads.end());
+        requested > 0 && requested <= eligible.size())
       primary_threads.resize(requested);
-    }
   }
 
   if (!primary_threads.empty())
