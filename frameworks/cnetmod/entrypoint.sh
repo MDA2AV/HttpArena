@@ -2,6 +2,8 @@
 set -eu
 
 workers="$(nproc)"
+CNETMOD_QUIC_GSO="${CNETMOD_QUIC_GSO:-1}"
+export CNETMOD_QUIC_GSO
 /server-h3 /certs/server.crt /certs/server.key 8443 "${workers}" /data/static &
 h3_pid="$!"
 /server &
