@@ -144,6 +144,17 @@ public class ServerVerticle extends VerticleBase {
     }
 
     private long querySum(RoutingContext ctx) {
+        var query = ctx.request().query();
+        if (query != null && query.startsWith("a=")) {
+            var b = query.indexOf("&b=", 2);
+            if (b >= 2 && query.indexOf('&', b + 3) < 0) {
+                try {
+                    return Long.parseLong(query, 2, b, 10) + Long.parseLong(query, b + 3, query.length(), 10);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
         long sum = 0;
         for (Map.Entry<String, String> entry : ctx.queryParams()) {
             try {
