@@ -1,7 +1,7 @@
 {
   "display_name": "sober",
   "language": "Sober",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "completeness": {
     "routing": true,
