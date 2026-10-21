@@ -31,7 +31,8 @@
     "baseline-h2c",
     "json-h2c",
     "static-h2",
-    "static-tls"
+    "static-tls",
+    "async-db"
   ],
   "maintainers": []
 }
