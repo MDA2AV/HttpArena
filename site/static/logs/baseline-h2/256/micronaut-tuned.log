@@ -1,0 +1,606 @@
+ __  __ _                                  _   
+|  \/  (_) ___ _ __ ___  _ __   __ _ _   _| |_ 
+| |\/| | |/ __| '__/ _ \| '_ \ / _` | | | | __|
+| |  | | | (__| | | (_) | | | | (_| | |_| | |_ 
+|_|  |_|_|\___|_|  \___/|_| |_|\__,_|\__,_|\__|
+11:52:48.040 INFO  io.micronaut.runtime.Micronaut - Startup completed in 800ms. Server Running: https://diogo:8443
+11:52:54.186 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.188 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.189 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.190 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.191 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.192 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.193 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.194 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.194 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.194 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.194 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.194 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.194 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.195 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.195 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.195 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.195 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.195 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.196 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.197 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.197 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.197 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.197 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.197 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.201 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.207 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.208 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.208 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.208 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.208 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.208 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.208 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.209 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.209 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.209 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.213 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.214 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.214 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.214 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.214 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.214 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:52:54.214 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.319 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.320 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.321 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.321 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.321 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.321 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.322 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.323 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.323 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.323 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.323 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.324 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.325 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.326 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:01.327 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.477 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.478 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.479 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
+11:53:08.480 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
+io.netty.channel.unix.Errors$NativeIoException: sendAddress(..) failed with error(-32): Broken pipe
