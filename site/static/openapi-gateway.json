@@ -15,7 +15,7 @@
   },
   "externalDocs": {
     "description": "Knowledge Base",
-    "url": "https://www.http-arena.com/docs/"
+    "url": "https://http-arena.com/docs/"
   },
   "x-tagGroups": [
     {
@@ -35,7 +35,7 @@
       "description": "Full production stack benchmark: four services (edge proxy, Redis cache, shared JWT authsvc, framework server) behind HTTPS/H2 on port 8443. `/api/*` endpoints require JWT Bearer auth verified by authsvc at the edge. `/public/*` endpoints are unauthenticated. Gateway H2 and Gateway H3 profiles reuse the existing `/baseline2`, `/json/{count}`, `/async-db`, and `/static/*` endpoints via a reverse proxy — no additional endpoint contract.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/"
+        "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/"
       }
     }
   ],
@@ -50,7 +50,7 @@
         "operationId": "publicBaselineGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
         },
         "parameters": [
           {
@@ -88,7 +88,7 @@
         "operationId": "publicJsonGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
         },
         "parameters": [
           {
@@ -129,7 +129,7 @@
         "security": [{ "BearerAuth": [] }],
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
         },
         "parameters": [
           {
@@ -169,7 +169,7 @@
         "security": [{ "BearerAuth": [] }],
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
         },
         "parameters": [
           {
@@ -207,7 +207,7 @@
         "security": [{ "BearerAuth": [] }],
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://www.http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/implementation/"
         },
         "responses": {
           "200": {

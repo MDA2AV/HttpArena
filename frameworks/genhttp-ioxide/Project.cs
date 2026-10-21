@@ -8,6 +8,7 @@ using GenHTTP.Modules.Webservices;
 using GenHTTP.Modules.Websockets;
 
 using genhttp.Infrastructure;
+using GenHTTP.Modules.Compression;
 using GenHTTP.Modules.Compression.Algorithms;
 using genhttp.Tests;
 
@@ -17,12 +18,17 @@ public static class Project
 {
     public static IHandlerBuilder Create()
     {
+        // Compression sits on /json, the one route whose clients ask for it (json-comp), rather
+        // than on the whole host. Host-wide, every request passes through the concern, /delay
+        // included, whose body is a number: one more async frame for each of the async profile's
+        // 32000 parked requests to suspend and resume, for nothing. Static assets do not need it:
+        // the asset handler serves the pre-compressed .br files itself.
         var app = Layout.Create()
                         .Add("pipeline", Content.From(Resource.FromString("ok")))
                         .AddService<Baseline>("baseline11")
                         .AddService<Baseline>("baseline2")
                         .AddService<Echo>("echo")
-                        .AddService<Json>("json")
+                        .Add("json", ServiceResource.From<Json>().Add(CompressedContent.Default()))
                         .Add("delay", new DelayBuilder());
 
         // async-db and crud require a configured Postgres (DATABASE_URL).

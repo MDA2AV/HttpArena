@@ -27,4 +27,4 @@ Zinc web framework on the Go `net/http` server, default configuration.
 
 ## Added profiles
 
-`static`, `static-tls`, `json-tls`, `async-db`, `crud`, `baseline-h2`, `static-h2`, `baseline-h2c` and `json-h2c`.
+`static`, `static-tls`, `json-tls`, `async-db`, `crud`, `baseline-h2`, `baseline-h2c` and `json-h2c`.

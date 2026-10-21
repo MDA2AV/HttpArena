@@ -12,6 +12,7 @@
   "engine": "kestrel",
   "description": "Lightweight, embeddable and modular C# web server.",
   "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+  "website": "https://genhttp.org/documentation/server/engines/kestrel/",
   "enabled": true,
   "tests": [
     "baseline",

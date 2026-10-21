@@ -1,0 +1,39 @@
+{
+  "display_name": "aspnet-minimal-satorigc",
+  "language": "C#",
+  "type": "experimental",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "kestrel",
+  "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing, published self-contained with the Satori GC.",
+  "repo": "https://github.com/dotnet/aspnetcore",
+  "enabled": true,
+  "tls_check": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

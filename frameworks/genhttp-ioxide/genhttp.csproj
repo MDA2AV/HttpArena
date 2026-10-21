@@ -8,25 +8,29 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Features>runtime-async=on</Features>
     <ServerGarbageCollection>true</ServerGarbageCollection>
+    <!-- Server GC without DATAS, which .NET turns on with Server GC by default and which trades
+         throughput for a smaller heap. Holding the async profile's 32000 requests across their
+         waits, it cost 2-3% throughput and a worse p99 locally. Documented setting:
+         https://learn.microsoft.com/dotnet/core/runtime-config/garbage-collector#dynamic-adaptation-to-application-sizes-datas -->
+    <GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>
   </PropertyGroup>
 
-  <!-- The ioxide engine branch (PR #887) is merged and ships in the 11.0.0-preview.24 packages,
-       the same preview the genhttp entry builds against. Engine.Ioxide pins ioxide 0.13.218, which
-       is what ioxide.timer below is built for. -->
+  <!-- GenHTTP.Engine.Ioxide 11.0.5 pins ioxide 0.15.251; ioxide.pg and ioxide.timer below are
+       built against the same ioxide, so they move with it. -->
   <ItemGroup>
-    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.0" />
-    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.0" />
-    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.0" />
-    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.0" />
-    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.0" />
-    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.0" />
-    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.0" />
+    <PackageReference Include="GenHTTP.Engine.Ioxide" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Modules.IO" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Modules.Files" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Modules.Layouting" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Modules.Webservices" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Modules.Compression" Version="11.0.5" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ioxide.pg" Version="0.13.225" />
+    <PackageReference Include="ioxide.pg" Version="0.15.251" />
     <!-- Ring-native timeouts for /delay: the wait completes on the reactor, not the thread pool. -->
-    <PackageReference Include="ioxide.timer" Version="0.13.225" />
+    <PackageReference Include="ioxide.timer" Version="0.15.251" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
   </ItemGroup>
 

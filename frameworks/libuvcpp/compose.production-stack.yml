@@ -1,0 +1,131 @@
+# production-stack — edge + cache + authsvc + server, four services on a 64
+# logical CPU budget.
+#
+#   edge     (nginx)     30 logical CPUs. TLS + h2 termination, /static served
+#                        off disk, one auth subrequest per /api/* call.
+#   cache    (redis)      2. Redis is single-threaded on the data path; a
+#                        second core would sit idle.
+#   authsvc  (rust)       8. One HMAC-SHA256 per /api/* request, nothing else.
+#                         Built from the shared frameworks/_shared/authsvc/,
+#                         unmodified -- the profile requires that.
+#   server   (libuvcpp)  24. /public/* compute, /api/* cache-aside reads
+#                        against Postgres, and the write path.
+#
+# All four on host networking, so what passes between them is loopback: the
+# edge owns 8443, authsvc 9090, the server 8085, the cache 6379.
+#
+# The edge is nginx rather than the Caddy this stack used before. The profile's
+# own architecture diagram names nginx and `auth_request`, and on a 4-core
+# stand-in for this shape Caddy's edge cost 392-440 us of CPU per request
+# against nginx's 101, with the edge pinned at its core budget in every arm.
+# proxy-production/nginx.conf carries the measurement. Nothing here is h3, so
+# unlike the gateway pair this stack does not need a Caddy twin.
+#
+# The server is not given /certs, for the same reason as the gateway stacks --
+# main.cc opens its TLS listeners only when the certificate pair is readable, so
+# without it the server stays on its two cleartext ports and the edge has 8443
+# to itself. Those two are 8085/8086 rather than the 8080/8082 the entry uses
+# when it runs alone, because on the host network they would otherwise be
+# competing with anything else already listening there; see the longer note in
+# compose.gateway.yml. The one port this stack does want on its original number
+# is 8080, which the server also opens best-effort: that is where the
+# benchmark's readiness probe looks for a gateway stack's server, and a profile
+# whose probe fails is skipped with no numbers published at all.
+#
+# Two depends_on entries here are map-form with a condition, and both are
+# required rather than stylistic. `depends_on: - cache` waits only for the
+# container to start, so a cache that dies on boot (something else holding 6379)
+# leaves the server running happily against whatever does hold it and the run
+# gets published anyway. Same for the edge: without a healthy authsvc it answers
+# 5xx for every /api/* request and never reaches the server at all.
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "${EDGE_CPUSET:-0-14,64-78}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      authsvc:
+        condition: service_healthy
+      server:
+        condition: service_started
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "${CACHE_CPUSET:-15,79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "${AUTH_CPUSET:-16-19,80-83}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/_health"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+      - H1_PORT=8085
+      - H2C_PORT=8086
+      - H1_PROBE_PORT=8080
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    depends_on:
+      cache:
+        condition: service_healthy

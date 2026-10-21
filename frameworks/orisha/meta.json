@@ -1,0 +1,28 @@
+{
+  "display_name": "orisha",
+  "language": "Koru",
+  "type": "engine",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": true
+  },
+  "engine": "orisha",
+  "description": "Koru HTTP server compiled to native code via Zig. HttpArena routes wired through Orisha's handler seam. No response cache and no startup pre-serialization: json serializes every field per request and compresses per request.",
+  "repo": "https://github.com/korulang/orisha",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "latency-1m",
+    "latency-10k",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls"
+  ],
+  "maintainers": [
+    "COCPORN"
+  ]
+}

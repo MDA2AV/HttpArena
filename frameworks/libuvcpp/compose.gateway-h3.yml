@@ -1,0 +1,64 @@
+# gateway-h3 — the same two-service stack as compose.gateway.yml, exercised
+# over HTTP/3 at the edge.
+#
+# Same shape, same backend, same upstream hop (plain h1 over loopback), and a
+# different edge *image*: this one is stock Caddy from ./proxy-h3, where
+# gateway-64 is stock nginx from ./proxy. The split exists because h3 needs
+# QUIC and nginx has no HTTP/3 without a custom build against a QUIC library,
+# while over the profile's h1 upstream hop Caddy costs ~3x nginx per request at
+# gateway-64's multiplexing -- so the two profiles want different edges. Caddy
+# binds 8443 on both tcp and udp from its `protocols h1 h2 h3` server block,
+# and the h3 load generator reaches the udp half (h2load with `--alpn-list=h3`).
+#
+# Kept as a separate file rather than a symlink because the harness resolves
+# compose files by name (`compose.<profile>.yml`, with gateway-64 on the legacy
+# `compose.gateway.yml`), and because a real h3-only deployment would put a
+# UDP-capable edge somewhere other than in front of the same backend.
+#
+# The backend hops on 8085/8086 rather than 8080/8082 for the reason spelled out
+# in compose.gateway.yml: both services are on the host network, and the
+# cleartext ports are the ones something else can already be holding.
+# H1_PROBE_PORT=8080 travels with them -- it is where the harness's readiness
+# probe looks for a gateway stack's server, and it is best-effort for that same
+# reason. See the longer note in compose.gateway.yml.
+services:
+  proxy:
+    build:
+      context: ./proxy-h3
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - DATASET_PATH=/data/dataset.json
+      - H1_PORT=8085
+      - H2C_PORT=8086
+      - H1_PROBE_PORT=8080
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

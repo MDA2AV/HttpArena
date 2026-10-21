@@ -1,2 +1,80 @@
-info: nilo listening on 0.0.0.0:8080 across 64 thread(s)
-info: nilo also listening on https://0.0.0.0:8081
+2026-10-11T14:19:41.002Z info nilo: loaded 20 static file(s) (1758039 bytes held, 486436 of them precompressed files) from "/data/static" onto "/static"
+2026-10-11T14:19:41.002Z info asyncdb: kernel.io_uring_disabled=0 (0 means the ring backend can be used; 1 or 2 means zio falls back to epoll)
+2026-10-11T14:19:41.056Z info nilo listening on 0.0.0.0:8080 across 64 thread(s)
+2026-10-11T14:19:41.056Z info nilo also listening on 0.0.0.0:8082
+2026-10-11T14:19:41.056Z info nilo also listening on https://0.0.0.0:8081
+2026-10-11T14:19:41.056Z info nilo also listening on https://0.0.0.0:8443
+2026-10-11T14:19:42.006Z info asyncdb: answered=0/s inflight=0 (max 0) pool size=256 open=256 in_use=0.0 idle=165.6 missing=0 waited=0 dropped=0 | statement mean=0us p99=0us | request mean=0us p99=0us | hold~0us
+2026-10-11T14:19:42.006Z info asyncdb: threads=68 cpu=0% hot(>=50%)=0 warm(>=10%)=0 top=[0,0,0,0,0,0]% sleeps=2609/s preempted=3/s faults=2796/s io_uring_workers=2
+2026-10-11T14:19:43.009Z info asyncdb: answered=51975/s inflight=713 (max 770) pool size=256 open=256 in_use=232.2 idle=23.8 missing=0 waited=50396 dropped=0 | statement mean=11131us p99=61440us | request mean=11133us p99=61440us | hold~4480us
+2026-10-11T14:19:43.009Z info asyncdb: threads=68 cpu=540% hot(>=50%)=0 warm(>=10%)=1 top=[10,9,9,9,9,9]% sleeps=50898/s preempted=10715/s faults=81035/s io_uring_workers=2
+2026-10-11T14:19:44.013Z info asyncdb: answered=67871/s inflight=717 (max 772) pool size=256 open=256 in_use=254.8 idle=1.2 missing=0 waited=67845 dropped=0 | statement mean=10626us p99=57344us | request mean=10627us p99=57344us | hold~3756us
+2026-10-11T14:19:44.013Z info asyncdb: threads=68 cpu=766% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,13,13,13]% sleeps=71483/s preempted=9593/s faults=95446/s io_uring_workers=2
+2026-10-11T14:19:45.017Z info asyncdb: answered=68634/s inflight=686 (max 771) pool size=256 open=256 in_use=254.7 idle=1.3 missing=0 waited=68590 dropped=0 | statement mean=10374us p99=57344us | request mean=10375us p99=57344us | hold~3711us
+2026-10-11T14:19:45.017Z info asyncdb: threads=68 cpu=758% hot(>=50%)=0 warm(>=10%)=64 top=[15,14,13,13,13,13]% sleeps=70369/s preempted=9933/s faults=93450/s io_uring_workers=2
+2026-10-11T14:19:46.020Z info asyncdb: answered=69160/s inflight=693 (max 777) pool size=256 open=256 in_use=255.3 idle=0.7 missing=0 waited=69240 dropped=0 | statement mean=10245us p99=57344us | request mean=10246us p99=57344us | hold~3690us
+2026-10-11T14:19:46.020Z info asyncdb: threads=68 cpu=758% hot(>=50%)=0 warm(>=10%)=64 top=[13,13,13,13,13,13]% sleeps=69926/s preempted=10165/s faults=94254/s io_uring_workers=2
+2026-10-11T14:19:47.024Z info asyncdb: answered=70668/s inflight=694 (max 766) pool size=256 open=256 in_use=254.8 idle=1.2 missing=0 waited=70653 dropped=0 | statement mean=9889us p99=53248us | request mean=9890us p99=53248us | hold~3603us
+2026-10-11T14:19:47.024Z info asyncdb: threads=68 cpu=791% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,14,14,13]% sleeps=73248/s preempted=9404/s faults=95358/s io_uring_workers=2
+2026-10-11T14:19:48.028Z info asyncdb: answered=67873/s inflight=703 (max 751) pool size=256 open=256 in_use=255.2 idle=0.8 missing=0 waited=67931 dropped=0 | statement mean=10190us p99=57344us | request mean=10190us p99=57344us | hold~3760us
+2026-10-11T14:19:48.028Z info asyncdb: threads=68 cpu=755% hot(>=50%)=0 warm(>=10%)=63 top=[14,13,13,13,13,13]% sleeps=72862/s preempted=10184/s faults=91789/s io_uring_workers=2
+2026-10-11T14:19:49.031Z info asyncdb: answered=67907/s inflight=659 (max 743) pool size=256 open=256 in_use=255.0 idle=1.0 missing=0 waited=67710 dropped=0 | statement mean=10056us p99=57344us | request mean=10057us p99=57344us | hold~3756us
+2026-10-11T14:19:49.031Z info asyncdb: threads=68 cpu=748% hot(>=50%)=0 warm(>=10%)=64 top=[14,13,13,13,13,13]% sleeps=72845/s preempted=10815/s faults=90621/s io_uring_workers=2
+2026-10-11T14:19:50.035Z info asyncdb: answered=69187/s inflight=591 (max 735) pool size=256 open=256 in_use=254.2 idle=1.8 missing=0 waited=69224 dropped=0 | statement mean=9718us p99=57344us | request mean=9719us p99=57344us | hold~3674us
+2026-10-11T14:19:50.035Z info asyncdb: threads=68 cpu=764% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,13,13,13]% sleeps=74699/s preempted=10162/s faults=92944/s io_uring_workers=2
+2026-10-11T14:19:51.039Z info asyncdb: answered=66057/s inflight=634 (max 716) pool size=256 open=256 in_use=254.3 idle=1.7 missing=0 waited=66059 dropped=0 | statement mean=9939us p99=61440us | request mean=9940us p99=61440us | hold~3847us
+2026-10-11T14:19:51.039Z info asyncdb: threads=68 cpu=758% hot(>=50%)=0 warm(>=10%)=64 top=[15,14,13,13,13,13]% sleeps=76824/s preempted=10115/s faults=92524/s io_uring_workers=2
+2026-10-11T14:19:52.042Z info asyncdb: answered=70162/s inflight=661 (max 708) pool size=256 open=256 in_use=253.7 idle=2.3 missing=0 waited=70154 dropped=0 | statement mean=9280us p99=57344us | request mean=9281us p99=57344us | hold~3617us
+2026-10-11T14:19:52.042Z info asyncdb: threads=68 cpu=773% hot(>=50%)=0 warm(>=10%)=64 top=[15,14,14,14,13,13]% sleeps=75925/s preempted=11570/s faults=91106/s io_uring_workers=2
+2026-10-11T14:19:53.046Z info asyncdb: answered=10759/s inflight=0 (max 695) pool size=256 open=256 in_use=25.3 idle=230.7 missing=0 waited=10350 dropped=0 | statement mean=10125us p99=57344us | request mean=10126us p99=57344us | hold~2318us
+2026-10-11T14:19:53.046Z info asyncdb: threads=68 cpu=121% hot(>=50%)=0 warm(>=10%)=0 top=[3,3,3,3,3,3]% sleeps=12591/s preempted=1769/s faults=15121/s io_uring_workers=2
+2026-10-11T14:19:54.052Z info asyncdb: answered=0/s inflight=0 (max 0) pool size=256 open=256 in_use=0.0 idle=256.0 missing=0 waited=0 dropped=0 | statement mean=0us p99=0us | request mean=0us p99=0us | hold~0us
+2026-10-11T14:19:54.052Z info asyncdb: threads=68 cpu=0% hot(>=50%)=0 warm(>=10%)=0 top=[0,0,0,0,0,0]% sleeps=35/s preempted=0/s faults=0/s io_uring_workers=2
+2026-10-11T14:19:55.056Z info asyncdb: answered=44724/s inflight=716 (max 760) pool size=256 open=256 in_use=157.5 idle=98.5 missing=0 waited=38244 dropped=0 | statement mean=8747us p99=49152us | request mean=8748us p99=49152us | hold~3533us
+2026-10-11T14:19:55.056Z info asyncdb: threads=68 cpu=488% hot(>=50%)=0 warm(>=10%)=0 top=[9,9,9,9,9,9]% sleeps=43204/s preempted=5827/s faults=57702/s io_uring_workers=2
+2026-10-11T14:19:56.060Z info asyncdb: answered=67812/s inflight=697 (max 785) pool size=256 open=256 in_use=254.9 idle=1.1 missing=0 waited=67812 dropped=0 | statement mean=10624us p99=57344us | request mean=10624us p99=57344us | hold~3758us
+2026-10-11T14:19:56.060Z info asyncdb: threads=68 cpu=759% hot(>=50%)=0 warm(>=10%)=64 top=[13,13,13,13,13,13]% sleeps=67923/s preempted=9109/s faults=95632/s io_uring_workers=2
+2026-10-11T14:19:57.064Z info asyncdb: answered=67660/s inflight=677 (max 768) pool size=256 open=256 in_use=254.9 idle=1.1 missing=0 waited=67681 dropped=0 | statement mean=10460us p99=57344us | request mean=10461us p99=57344us | hold~3766us
+2026-10-11T14:19:57.064Z info asyncdb: threads=68 cpu=753% hot(>=50%)=0 warm(>=10%)=64 top=[15,14,14,13,13,13]% sleeps=68827/s preempted=9281/s faults=89565/s io_uring_workers=2
+2026-10-11T14:19:58.068Z info asyncdb: answered=68290/s inflight=680 (max 753) pool size=256 open=256 in_use=255.1 idle=0.9 missing=0 waited=68171 dropped=0 | statement mean=10234us p99=53248us | request mean=10234us p99=53248us | hold~3740us
+2026-10-11T14:19:58.068Z info asyncdb: threads=68 cpu=753% hot(>=50%)=0 warm(>=10%)=64 top=[13,13,13,13,13,13]% sleeps=66955/s preempted=10724/s faults=91437/s io_uring_workers=2
+2026-10-11T14:19:59.072Z info asyncdb: answered=67325/s inflight=698 (max 752) pool size=256 open=256 in_use=255.7 idle=0.3 missing=0 waited=67400 dropped=0 | statement mean=10243us p99=53248us | request mean=10244us p99=53248us | hold~3796us
+2026-10-11T14:19:59.072Z info asyncdb: threads=68 cpu=752% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,13,13,13,13]% sleeps=67703/s preempted=8820/s faults=92921/s io_uring_workers=2
+2026-10-11T14:20:00.075Z info asyncdb: answered=69772/s inflight=702 (max 750) pool size=256 open=256 in_use=254.6 idle=1.4 missing=0 waited=69846 dropped=0 | statement mean=9843us p99=53248us | request mean=9844us p99=53248us | hold~3645us
+2026-10-11T14:20:00.075Z info asyncdb: threads=68 cpu=772% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,13,13,13,13]% sleeps=69948/s preempted=9178/s faults=93308/s io_uring_workers=2
+2026-10-11T14:20:01.079Z info asyncdb: answered=70128/s inflight=688 (max 744) pool size=256 open=256 in_use=254.9 idle=1.1 missing=0 waited=70038 dropped=0 | statement mean=9609us p99=53248us | request mean=9610us p99=53248us | hold~3635us
+2026-10-11T14:20:01.079Z info asyncdb: threads=68 cpu=775% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,14,13,13]% sleeps=70062/s preempted=8448/s faults=93199/s io_uring_workers=2
+2026-10-11T14:20:02.082Z info asyncdb: answered=69693/s inflight=638 (max 727) pool size=256 open=256 in_use=253.4 idle=2.6 missing=0 waited=69715 dropped=0 | statement mean=9544us p99=49152us | request mean=9545us p99=49152us | hold~3635us
+2026-10-11T14:20:02.082Z info asyncdb: threads=68 cpu=771% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,13,13,13]% sleeps=70033/s preempted=8725/s faults=93258/s io_uring_workers=2
+2026-10-11T14:20:03.086Z info asyncdb: answered=70212/s inflight=683 (max 723) pool size=256 open=256 in_use=253.6 idle=2.4 missing=0 waited=70167 dropped=0 | statement mean=9394us p99=53248us | request mean=9394us p99=53248us | hold~3612us
+2026-10-11T14:20:03.086Z info asyncdb: threads=68 cpu=781% hot(>=50%)=0 warm(>=10%)=64 top=[15,14,14,14,14,13]% sleeps=71836/s preempted=8280/s faults=94687/s io_uring_workers=2
+2026-10-11T14:20:04.090Z info asyncdb: answered=67809/s inflight=642 (max 718) pool size=256 open=256 in_use=254.8 idle=1.2 missing=0 waited=67773 dropped=0 | statement mean=9671us p99=53248us | request mean=9671us p99=53248us | hold~3758us
+2026-10-11T14:20:04.090Z info asyncdb: threads=68 cpu=748% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,13,13,13,13]% sleeps=70714/s preempted=8800/s faults=92401/s io_uring_workers=2
+2026-10-11T14:20:05.094Z info asyncdb: answered=31384/s inflight=0 (max 705) pool size=256 open=256 in_use=100.9 idle=155.1 missing=0 waited=30968 dropped=0 | statement mean=9159us p99=49152us | request mean=9159us p99=49152us | hold~3196us
+2026-10-11T14:20:05.094Z info asyncdb: threads=68 cpu=348% hot(>=50%)=0 warm(>=10%)=0 top=[7,7,6,6,6,6]% sleeps=32155/s preempted=3949/s faults=41266/s io_uring_workers=2
+2026-10-11T14:20:06.102Z info asyncdb: answered=0/s inflight=0 (max 0) pool size=256 open=256 in_use=0.0 idle=256.0 missing=0 waited=0 dropped=0 | statement mean=0us p99=0us | request mean=0us p99=0us | hold~0us
+2026-10-11T14:20:06.102Z info asyncdb: threads=68 cpu=1% hot(>=50%)=0 warm(>=10%)=0 top=[1,0,0,0,0,0]% sleeps=35/s preempted=1/s faults=2/s io_uring_workers=2
+2026-10-11T14:20:07.107Z info asyncdb: answered=26250/s inflight=726 (max 757) pool size=256 open=256 in_use=90.9 idle=165.1 missing=0 waited=19589 dropped=0 | statement mean=7516us p99=45056us | request mean=7518us p99=45056us | hold~3478us
+2026-10-11T14:20:07.107Z info asyncdb: threads=68 cpu=288% hot(>=50%)=0 warm(>=10%)=0 top=[6,6,6,6,5,5]% sleeps=24054/s preempted=4063/s faults=30483/s io_uring_workers=2
+2026-10-11T14:20:08.111Z info asyncdb: answered=65922/s inflight=695 (max 786) pool size=256 open=256 in_use=252.3 idle=3.7 missing=0 waited=65866 dropped=0 | statement mean=10864us p99=57344us | request mean=10865us p99=57344us | hold~3830us
+2026-10-11T14:20:08.111Z info asyncdb: threads=68 cpu=745% hot(>=50%)=0 warm(>=10%)=64 top=[14,13,13,13,13,13]% sleeps=67204/s preempted=8109/s faults=95881/s io_uring_workers=2
+2026-10-11T14:20:09.114Z info asyncdb: answered=69918/s inflight=706 (max 773) pool size=256 open=256 in_use=254.3 idle=1.7 missing=0 waited=69971 dropped=0 | statement mean=10224us p99=57344us | request mean=10225us p99=57344us | hold~3635us
+2026-10-11T14:20:09.114Z info asyncdb: threads=68 cpu=772% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,13,13,13]% sleeps=70464/s preempted=9503/s faults=90975/s io_uring_workers=2
+2026-10-11T14:20:10.118Z info asyncdb: answered=68458/s inflight=701 (max 763) pool size=256 open=256 in_use=254.4 idle=1.6 missing=0 waited=68422 dropped=0 | statement mean=10342us p99=53248us | request mean=10343us p99=53248us | hold~3714us
+2026-10-11T14:20:10.118Z info asyncdb: threads=68 cpu=751% hot(>=50%)=0 warm(>=10%)=64 top=[14,13,13,13,13,13]% sleeps=68029/s preempted=8715/s faults=91778/s io_uring_workers=2
+2026-10-11T14:20:11.121Z info asyncdb: answered=68342/s inflight=700 (max 754) pool size=256 open=256 in_use=255.4 idle=0.6 missing=0 waited=68341 dropped=0 | statement mean=10220us p99=53248us | request mean=10220us p99=53248us | hold~3736us
+2026-10-11T14:20:11.121Z info asyncdb: threads=68 cpu=761% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,13,13,13]% sleeps=68279/s preempted=8845/s faults=92372/s io_uring_workers=2
+2026-10-11T14:20:12.125Z info asyncdb: answered=68661/s inflight=680 (max 743) pool size=256 open=256 in_use=254.5 idle=1.5 missing=0 waited=68621 dropped=0 | statement mean=10064us p99=53248us | request mean=10065us p99=53248us | hold~3707us
+2026-10-11T14:20:12.125Z info asyncdb: threads=68 cpu=767% hot(>=50%)=0 warm(>=10%)=64 top=[14,13,13,13,13,13]% sleeps=72188/s preempted=8738/s faults=93095/s io_uring_workers=2
+2026-10-11T14:20:13.129Z info asyncdb: answered=68137/s inflight=699 (max 768) pool size=256 open=256 in_use=254.0 idle=2.0 missing=0 waited=68143 dropped=0 | statement mean=10154us p99=57344us | request mean=10154us p99=57344us | hold~3730us
+2026-10-11T14:20:13.129Z info asyncdb: threads=68 cpu=753% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,14,13,13]% sleeps=73365/s preempted=9073/s faults=92164/s io_uring_workers=2
+2026-10-11T14:20:14.132Z info asyncdb: answered=67693/s inflight=685 (max 753) pool size=256 open=256 in_use=254.5 idle=1.5 missing=0 waited=67627 dropped=0 | statement mean=10039us p99=53248us | request mean=10040us p99=53248us | hold~3760us
+2026-10-11T14:20:14.132Z info asyncdb: threads=68 cpu=760% hot(>=50%)=0 warm(>=10%)=64 top=[14,13,13,13,13,13]% sleeps=69513/s preempted=9347/s faults=90432/s io_uring_workers=2
+2026-10-11T14:20:15.136Z info asyncdb: answered=70130/s inflight=673 (max 734) pool size=256 open=256 in_use=255.0 idle=1.0 missing=0 waited=70173 dropped=0 | statement mean=9588us p99=53248us | request mean=9589us p99=53248us | hold~3635us
+2026-10-11T14:20:15.136Z info asyncdb: threads=68 cpu=775% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,14,13,13]% sleeps=71108/s preempted=8629/s faults=93709/s io_uring_workers=2
+2026-10-11T14:20:16.140Z info asyncdb: answered=68935/s inflight=703 (max 726) pool size=256 open=256 in_use=253.7 idle=2.3 missing=0 waited=69007 dropped=0 | statement mean=9648us p99=53248us | request mean=9649us p99=53248us | hold~3677us
+2026-10-11T14:20:16.140Z info asyncdb: threads=68 cpu=767% hot(>=50%)=0 warm(>=10%)=64 top=[14,14,14,14,14,13]% sleeps=71802/s preempted=8847/s faults=93139/s io_uring_workers=2
+2026-10-11T14:20:17.143Z info asyncdb: answered=49835/s inflight=0 (max 709) pool size=256 open=256 in_use=176.7 idle=79.3 missing=0 waited=49303 dropped=0 | statement mean=9543us p99=53248us | request mean=9544us p99=53248us | hold~3536us
+2026-10-11T14:20:17.143Z info asyncdb: threads=68 cpu=556% hot(>=50%)=0 warm(>=10%)=10 top=[10,10,10,10,10,10]% sleeps=53120/s preempted=6117/s faults=67606/s io_uring_workers=2
+2026-10-11T14:20:18.149Z info asyncdb: answered=0/s inflight=0 (max 0) pool size=256 open=256 in_use=0.0 idle=256.0 missing=0 waited=0 dropped=0 | statement mean=0us p99=0us | request mean=0us p99=0us | hold~0us
+2026-10-11T14:20:18.149Z info asyncdb: threads=68 cpu=0% hot(>=50%)=0 warm(>=10%)=0 top=[0,0,0,0,0,0]% sleeps=35/s preempted=1/s faults=0/s io_uring_workers=2

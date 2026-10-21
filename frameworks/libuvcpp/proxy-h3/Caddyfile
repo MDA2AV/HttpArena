@@ -1,0 +1,58 @@
+# libuvcpp gateway edge.
+#
+# Stock Caddy terminates TLS and speaks h1/h2/h3 on 8443. It serves /static/*
+# straight off the mounted disk with the precompressed sidecars the dataset
+# ships, and forwards every dynamic path over plain HTTP/1.1 to the libuvcpp
+# server on 127.0.0.1:8085.
+#
+# The upstream port is the compose `server` service's H1_PORT, not the 8080 the
+# entry uses when it runs alone: on the host network 8080 may already be taken,
+# and a backend that cannot bind exits. Both ends of the hop are set together --
+# this line and the server's environment in compose.gateway.yml.
+#
+# Why the proxy serves the static tree itself rather than passing it on: the
+# gateway profile's rules require it ("/static/* must be served by the proxy
+# from disk, not forwarded to the backend"), and it is also what the profile is
+# measuring -- a front door that does TLS, compression and file I/O, in front of
+# an application server that only answers the dynamic three.
+#
+# Why HTTP/1.1 and not h2 on the backend hop: many independent h2 streams
+# arriving from the client fan out across the server's per-core loops over a
+# pool of h1 keepalive connections. A single h2 connection to the backend would
+# re-serialize those streams behind one connection's flow control -- the
+# head-of-line blocking this deployment exists to avoid.
+#
+# The same file serves gateway-64 (h2 over TCP) and gateway-h3 (QUIC over UDP):
+# `protocols h1 h2 h3` binds 8443 on both, and only the load generator differs.
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1 h2 h3
+	}
+}
+
+https://localhost:8443 {
+	tls /certs/server.crt /certs/server.key
+
+	# /static/foo -> /data/static/foo. `precompressed br gzip` prefers the
+	# foo.br / foo.gz sidecar that matches the request's Accept-Encoding and
+	# falls back to the raw file when there is none.
+	handle /static/* {
+		root * /data
+		file_server {
+			precompressed br gzip
+		}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:8085 {
+			transport http {
+				versions 1.1
+				keepalive 5m
+				keepalive_idle_conns 2048
+				keepalive_idle_conns_per_host 2048
+			}
+		}
+	}
+}

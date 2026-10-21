@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-
+using System.Text;
 using ioxide;
 using ioxide.timer;
 using ioxide.tls;
@@ -62,6 +62,12 @@ internal static class Program
         var config = new ServerConfig
         {
             ReactorCount = reactors,
+            Incremental = null,
+            /*Incremental = new IncrementalOptions
+            {
+                RecvSlots = 16,
+                RecvBufferSize = 16 * 1024
+            },*/
             Tcp = new TcpOptions
             {
                 Port = port,
@@ -88,7 +94,9 @@ internal static class Program
         {
             CertificatePath = certPath,
             KeyPath = keyPath,
-            KernelTx = KernelTlsAvailable(),
+            //KernelTx = KernelTlsAvailable(),
+            KernelTx = true,
+            KernelRx = false
         };
 
         Console.WriteLine($"[edixoi] {reactors} reactors on :{port}"

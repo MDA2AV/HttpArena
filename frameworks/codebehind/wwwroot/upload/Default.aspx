@@ -1,0 +1,2 @@
+@page
+@controller await UploadController

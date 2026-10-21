@@ -647,13 +647,96 @@ def build_rounds():
     return {"name": CURRENT_ROUND, "ongoing": True, "archived": archived}
 
 
+ROUNDS_OUT = OUT.parent / "rounds"
+
+
+def _round_views(bundle):
+    """profiles/results/runmeta for one archived round, in data.js's shape.
+
+    Same transform main() applies to the current results, with one difference:
+    a round may come from another machine with its own connection counts (a
+    Raspberry Pi cannot hold 4096 connections), so the counts shown are the ones
+    the round measured rather than CATALOG's explorer list. A profile CATALOG
+    scores at all is scored at every count the round has.
+    """
+    profiles, results, runmeta = [], {}, {}
+    for category, entries in CATALOG:
+        for pid, label, blurb, _explorer, scored, s, es, isf in entries:
+            conns = sorted(int(k[len(pid) + 1:]) for k in bundle
+                           if k.startswith(pid + "-") and k[len(pid) + 1:].isdigit())
+            present = []
+            for c in conns:
+                rows = bundle.get(f"{pid}-{c}") or []
+                trimmed = []
+                for r in rows:
+                    fw = r.get("framework")
+                    if not fw:
+                        continue
+                    row = {"fw": fw, "lang": r.get("language", "")}
+                    for f in BASE_FIELDS:
+                        row[f] = r.get(f)
+                    for f in TPL_FIELDS:
+                        if r.get(f):
+                            row[f] = r.get(f)
+                    for f in EFF_FIELDS:
+                        if r.get(f) is not None:
+                            row[f] = r.get(f)
+                    trimmed.append(row)
+                if not trimmed:
+                    continue
+                results[f"{pid}-{c}"] = trimmed
+                for src in rows:
+                    rm = {f: src.get(f) for f in RUNMETA_FIELDS if src.get(f) is not None}
+                    if rm:
+                        runmeta[f"{pid}-{c}"] = rm
+                        break
+                present.append(c)
+            if present:
+                prof = {"id": pid, "label": label, "category": category, "blurb": blurb,
+                        "conns": present, "scoredConns": present if scored else [],
+                        "scored": s, "engineScored": es, "infraScored": isf}
+                if PROFILE_DOC.get(pid):
+                    prof["doc"] = PROFILE_DOC[pid]
+                profiles.append(prof)
+    return profiles, results, runmeta
+
+
+def write_round_payloads(archived):
+    """site/leaderboard/rounds/<id>.js for every archived round with a bundle.
+
+    The board loads one of these when it is opened with ?round=<id> and lays
+    it over LB_DATA, so an archived round is browsed with the same page as the
+    current one. Medals are left out: they belong to the current round.
+    """
+    ROUNDS_OUT.mkdir(parents=True, exist_ok=True)
+    keep = set()
+    for r in archived:
+        rid = str(r.get("id", ""))
+        bundle = load(f"rounds/{rid}.json") if rid else None
+        if not isinstance(bundle, dict):
+            continue
+        profiles, results, runmeta = _round_views(bundle)
+        current = bundle.get("current") or {k: r.get(k) for k in ("cpu", "cores", "threads", "ram", "os", "kernel")}
+        payload = {"id": r.get("id"), "name": r.get("name", rid), "current": current,
+                   "profiles": profiles, "results": results, "runmeta": runmeta,
+                   "achievements": {}}
+        out = ROUNDS_OUT / f"{rid}.js"
+        out.write_text(js_payload("LB_ROUND", payload))
+        keep.add(out.name)
+        print(f"wrote {out.relative_to(ROOT)} - round {rid}: {len(profiles)} profiles, "
+              f"{sum(len(v) for v in results.values())} rows")
+    for f in ROUNDS_OUT.glob("*.js"):
+        if f.name not in keep:
+            f.unlink()
+
+
 # ── Static docs site (SEO) ────────────────────────────────────────────────
 # The Knowledge Base is pre-rendered to real /docs/<id>/ pages so search engines
 # can index each doc — hash-routed SPA state (#doc=x) is invisible to crawlers, so
 # without this every doc collapses into the single "/" URL. Content is the exact
 # HTML build_docs() already produces; only the link scheme differs (#doc=x -> /docs/x/).
 
-SITE = "https://www.http-arena.com"
+SITE = "https://http-arena.com"
 GEN = ROOT / "site" / "generated"
 DOCS_OUT = GEN / "docs"
 
@@ -3353,7 +3436,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
             _og_card(dest / "og.png", "Head to head · " + SCOPE_NAME[DEFAULT_SCOPE],
                      lang + " web frameworks, compared",
                      [(r[0], "%.0f" % r[3]) for r in rows[:5]],
-                     "%d entries · %s · www.http-arena.com" % (len(members), round_name))
+                     "%d entries · %s · http-arena.com" % (len(members), round_name))
             cards += 1
         written.append((lang, len(members)))
 
@@ -3374,7 +3457,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
             _og_card(dest / "og.png", "Head to head · every language",
                      "Compare any two entries, whatever they are written in",
                      [(r[0], "%.0f" % r[3]) for r in all_rows[:5]],
-                     "%d entries · %s · www.http-arena.com" % (len(all_members), round_name))
+                     "%d entries · %s · http-arena.com" % (len(all_members), round_name))
             cards += 1
         written.insert(0, (None, len(all_members)))
 
@@ -3383,7 +3466,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
                  "Compare two web frameworks, profile by profile",
                  [(lang or "Every language", "%d entries" % n) for lang, n in
                   sorted(written, key=lambda x: -x[1])[:5]],
-                 "%d languages · %s · www.http-arena.com" % (len(written), round_name))
+                 "%d languages · %s · http-arena.com" % (len(written), round_name))
         cards += 1
     (COMPARE_OUT / "index.html").write_text(
         _compare_index_page(written, updated, "/compare/og.png" if with_og else ""),
@@ -3483,7 +3566,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
                      [(SCOPE_NAME[s], "#%d of %d" % (rank, field))
                       for s, rank, field, _, _link in ranks],
                      " · ".join(x for x in [lang, TYPE_LABEL.get(kind, kind),
-                                            round_name, "www.http-arena.com"] if x),
+                                            round_name, "http-arena.com"] if x),
                      blurb=m.get("desc", ""))
             cards += 1
         entries.append((fw, lang, kind))
@@ -3518,14 +3601,14 @@ def build_og_images(content, trails, rows, fw_lang, round_name):
              "Composite ranking · " + SCOPE_NAME[DEFAULT_SCOPE],
              "Which web framework is actually fastest?",
              top,
-             f"{len(rows)} entries · {round_name} · www.http-arena.com")
+             f"{len(rows)} entries · {round_name} · http-arena.com")
     written = 1
 
     for did, d in content.items():
         crumb = " › ".join(t for t, _ in trails.get(did, [])[:-1]) or "Knowledge Base"
         _og_card(DOCS_OUT / did / "og.png" if did else DOCS_OUT / "og.png",
                  crumb, d["t"] or "Knowledge Base", [],
-                 "HttpArena Knowledge Base · www.http-arena.com",
+                 "HttpArena Knowledge Base · http-arena.com",
                  blurb=d.get("d") or _meta_desc(d["html"]))
         written += 1
     return "/og.png", written
@@ -3626,6 +3709,7 @@ def main():
                "achievements": achievements, "rounds": build_rounds()}
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(js_payload("LB_DATA", payload))
+    write_round_payloads(payload["rounds"]["archived"])
 
     # Docs are pre-rendered to real /docs/<id>/ pages (SEO); the SPA links out to
     # them. LB_DATA still carries the docs *tree* for the sidebar labels, but the

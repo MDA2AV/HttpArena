@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="canonical" href="https://www.http-arena.com/">
+<link rel="canonical" href="https://http-arena.com/">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <title>HTTP Web Server Benchmarks – HttpArena</title>
@@ -700,9 +700,27 @@
      initNavSearch() fetches it the first time someone uses it. -->
 <script defer src="data.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function lbBoot(){
   "use strict";
+  // An archived round is the same board over another data set: ?round=<id>
+  // loads rounds/<id>.js (written by gen_leaderboard_data.py), whose results,
+  // profiles and hardware replace the current round's. Boot waits for it.
+  var ROUND_ID = (location.search.match(/[?&]round=([A-Za-z0-9_-]+)/)||[])[1] || '';
+  if(ROUND_ID && !lbBoot.waited){
+    lbBoot.waited=true;
+    var _rs=document.createElement('script'); _rs.src='rounds/'+ROUND_ID+'.js';
+    _rs.onload=_rs.onerror=function(){ lbBoot(); };
+    document.head.appendChild(_rs);
+    return;
+  }
   var D = window.LB_DATA;
+  if(D && ROUND_ID && window.LB_ROUND){
+    D = Object.assign({}, D, { current: window.LB_ROUND.current, profiles: window.LB_ROUND.profiles,
+      results: window.LB_ROUND.results, runmeta: window.LB_ROUND.runmeta, achievements: window.LB_ROUND.achievements||{} });
+  } else { ROUND_ID=''; }
+  // The copy under the board is pre-rendered from the current round, so it
+  // would describe the wrong machine and ranking under an archived one.
+  if(ROUND_ID){ var _seo=document.getElementById('boardSeo'); if(_seo) _seo.hidden=true; }
   var LB_DOCS = window.LB_DOCS || {};
   // Run-logs are deployed at /logs/ (the board is the root site). Locally,
   // serve site/ and open /leaderboard/ so ../static/logs/ reaches site/static/logs/.
@@ -1117,20 +1135,30 @@ document.addEventListener('DOMContentLoaded', function(){
     var el=document.getElementById('round'); if(!el) return;
     var r=(D.rounds)||{name:'Alpha Round', ongoing:true, archived:[]};
     var archived=r.archived||[];
+    var act=null; archived.forEach(function(a){ if(String(a.id)===ROUND_ID) act=a; });
+    var curName=act?(act.name||act.id):(r.name||'Current');
+    var curSub=act?(act.date||'archived'):(r.ongoing?'(ongoing)':'');
     el.innerHTML='<button class="round-btn" id="roundBtn" type="button">'
-      +'<span class="round-cur"><span class="round-name">'+esc(r.name||'Current')+'</span>'
-      +(r.ongoing?'<span class="round-sub">(ongoing)</span>':'')+'</span>'
+      +'<span class="round-cur"><span class="round-name">'+esc(curName)+'</span>'
+      +(curSub?'<span class="round-sub">'+esc(curSub)+'</span>':'')+'</span>'
       +'<svg class="round-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>'
       +'</button><div class="round-pop" id="roundPop" style="display:none"></div>';
     var pop=el.querySelector('#roundPop');
-    var html='<div class="round-opt active"><span>'+esc(r.name||'Current')+'</span>'+(r.ongoing?'<span class="round-badge">ongoing</span>':'')+'</div>';
-    if(archived.length){ archived.forEach(function(a){ html+='<div class="round-opt" data-round="'+esc(a.id||'')+'"><span>'+esc(a.name||a.id||'')+'</span></div>'; }); }
+    var html='<div class="round-opt'+(act?'':' active')+'" data-round=""><span>'+esc(r.name||'Current')+'</span>'+(r.ongoing?'<span class="round-badge">ongoing</span>':'')+'</div>';
+    if(archived.length){ archived.slice().reverse().forEach(function(a){ html+='<div class="round-opt'+(act===a?' active':'')+'" data-round="'+esc(a.id||'')+'"><span>'+esc(a.name||a.id||'')+'</span></div>'; }); }
     else { html+='<div class="round-empty">No archived rounds yet</div>'; }
     pop.innerHTML=html;
     var btn=el.querySelector('#roundBtn');
     function close(){ el.classList.remove('open'); pop.style.display='none'; }
     btn.onclick=function(e){ e.stopPropagation(); if(el.classList.contains('open')) close(); else { el.classList.add('open'); pop.style.display=''; } };
-    pop.addEventListener('click', function(){ close(); });
+    pop.addEventListener('click', function(e){
+      var o=e.target.closest('.round-opt'); close(); if(!o) return;
+      var id=o.getAttribute('data-round')||'';
+      if(id===ROUND_ID) return;
+      // A reload rather than an in-place swap: every view derives its maps from
+      // D once at boot, and the hash keeps the view the reader was on.
+      location.href=location.pathname+(id?'?round='+encodeURIComponent(id):'')+location.hash;
+    });
     document.addEventListener('click', function(e){ if(!el.contains(e.target)) close(); });
   }
   // Examples popover under the search input - appears on focus.
