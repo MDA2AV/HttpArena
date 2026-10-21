@@ -62,12 +62,16 @@ class App < Roda
     end
 
     r.is('baseline11') do
-      params = request.GET
-      total = params['a'].to_i + params['b'].to_i
-      if request.post?
-        total += request.body.read.to_i
+      r.get do
+        params = request.GET
+        total = params['a'].to_i + params['b'].to_i
+        render_plain total.to_s
       end
-      render_plain total.to_s
+
+      r.post do
+        total = request.body.read.to_i
+        render_plain total.to_s
+      end
     end
 
     r.is 'baseline2' do
