@@ -18,6 +18,8 @@ TLS is viltrum's own listener (`app.serve` with a `TlsOptions` listener), on the
 cleartext. The crypto is mbedtls 3.6, the TLS library that ships with V (`thirdparty/mbedtls`, behind
 `net.mbedtls`): TLS 1.3 preferred, 1.2 minimum, AEAD suites only, ALPN `http/1.1`. Certificates are picked per
 handshake and re-read when the files change, which is what `tls_check` exercises on port 9000.
+Once a TLS 1.3 handshake settles on an AES-GCM suite, the records (encryption, KeyUpdate, alerts) move to
+viltrum's own AES-NI/PCLMUL code; TLS 1.2, ChaCha20 and CPUs without AES-NI stay on mbedtls.
 
 The entry is typed `experimental`: viltrum's first commit is from July 2026, so it is new work
 that has not proved itself in production yet, which is what that tier is for.
