@@ -11,7 +11,10 @@
 # is not run again, so the script can be stopped and restarted at any time.
 # Delete its line to retry one.
 #
-# Images are removed after each framework so the disk does not fill up.
+# Images and the build cache are kept, so a later round rebuilds only what
+# changed. When free disk space drops below MIN_FREE_GB, the framework images
+# and the build cache are removed (the load generator images stay, so every
+# framework in a round is measured with the same build of them).
 set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -24,8 +27,9 @@ RUN_TIMEOUT="${RUN_TIMEOUT:-90m}"
 # Before each benchmark, wait for the board to cool below COOL_BELOW_C (at most
 # COOL_MAX_S seconds), so every framework starts from the same temperature
 # rather than from whatever the previous one left behind. Needs vcgencmd.
-COOL_BELOW_C="${COOL_BELOW_C:-60}"
+COOL_BELOW_C="${COOL_BELOW_C:-55}"
 COOL_MAX_S="${COOL_MAX_S:-600}"
+MIN_FREE_GB="${MIN_FREE_GB:-30}"
 
 cool_down() {
     command -v vcgencmd >/dev/null 2>&1 || return 0
@@ -125,10 +129,10 @@ print(("YES" if t else "no") + "/max%.0fC" % m)' "$thermal" 2>/dev/null)
         echo "[$(date +%H:%M:%S)] $fw: $state (saved $saved, not ready $failed)"
     fi
     docker rm -f "httparena-bench-$fw" >/dev/null 2>&1
-    docker rmi -f "httparena-$fw" >/dev/null 2>&1
-    # Keep the build cache unless the disk runs low; base images are shared.
-    if [ "$(df --output=avail -BG / | tail -1 | tr -dc 0-9)" -lt 30 ]; then
+    if [ "$(df --output=avail -BG /var/lib/docker | tail -1 | tr -dc 0-9)" -lt "$MIN_FREE_GB" ]; then
+        echo "[$(date +%H:%M:%S)] less than ${MIN_FREE_GB}G free: removing images and build cache"
+        docker images --format '{{.Repository}}' | grep '^httparena-' | sort -u | xargs -r docker rmi -f >/dev/null 2>&1
         docker builder prune -af >/dev/null 2>&1
-        docker image prune -f >/dev/null 2>&1
+        docker image prune -f >/dev/null 2>&1   # dangling only: keep the load generators
     fi
 done
