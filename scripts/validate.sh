@@ -2469,6 +2469,26 @@ if has_test "echo-ws" || has_test "echo-ws-pipeline" || has_test "echo-ws-limite
     fi
 fi
 
+# ───── Hand the host's ports to the compose stacks ─────
+#
+# Any compose profile puts the standalone container on --network host (see
+# docker_args above), and nothing stopped it before the stacks below came up.
+# It keeps 8080 and, for an entry with an h2 or h3 profile, 8443: the ports
+# the stack's server and edge bind. The edge then failed to bind, shared
+# localhost with the standalone server, or (with h3 enabled) exited on the
+# QUIC port, and the checks below described whichever process answered. The
+# gateway checks can pass against a server with no proxy in front of it, and
+# production-stack fails its auth wall, which the edge enforces and the
+# server does not. libuvcpp works around it in the entry (main.cc, near
+# init_database, and proxy-production/nginx.conf).
+#
+# Stopped rather than removed so the final dump_logs can still inspect it; the
+# EXIT trap removes it.
+if [ "$GATEWAY_ONLY" = "false" ] && { has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; }; then
+    echo "[compose] stopping $CONTAINER_NAME: the compose stacks bind the same host ports"
+    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+fi
+
 # ───── Gateway profiles (reverse proxy + server, shared validation flow) ─────
 #
 # Both gateway-64 (h2) and gateway-h3 (h3 at the edge) use the same endpoint
