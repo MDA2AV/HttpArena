@@ -12,6 +12,7 @@
   "engine": "genhttp-kt",
   "description": "Kotlin port of the GenHTTP web server on JDK 25, running on its own HTTP/1.1 engine (NIO channels, a coroutine per connection on virtual threads, TLS via the JDK SSLEngine). Implemented with web services and a layout router, JSON via Jackson, Postgres via HikariCP and JDBC.",
   "repo": "https://github.com/Kaliumhexacyanoferrat/genhttp-kt",
+  "website": "https://genhttp-kt.genhttp.run/",
   "enabled": true,
   "tests": [
     "baseline",
