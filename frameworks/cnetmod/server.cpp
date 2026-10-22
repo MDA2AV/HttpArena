@@ -20,6 +20,7 @@ import cnetmod.protocol.http.middleware.compress;
 import cnetmod.protocol.postgresql;
 import cnetmod.protocol.redis;
 import cnetmod.protocol.websocket;
+import cnetmod.utils.concurrent_containers.striped_hash_map;
 
 namespace cn = cnetmod;
 namespace grpc = cnetmod::grpc;
@@ -321,8 +322,30 @@ public:
       cn::spawn(*shard.context, shard.pool->async_run());
   }
 
+  // L1: process-wide, shared by every worker so a write on one worker is
+  // visible to all others as soon as it erases the entry.
+  [[nodiscard]] auto local(std::int64_t id, bool user) const
+      -> std::shared_ptr<const std::string> {
+    auto found = (user ? users_ : items_).find(id);
+    if (!found || std::chrono::steady_clock::now() >= found->expires)
+      return {};
+    return std::move(found->body);
+  }
+
+  void store_local(std::int64_t id, bool user, std::string body,
+                   std::chrono::steady_clock::duration ttl) {
+    (user ? users_ : items_)
+        .insert_or_assign(
+            id, local_entry{std::make_shared<const std::string>(std::move(body)),
+                            std::chrono::steady_clock::now() + ttl});
+  }
+
+  void erase_local(std::int64_t id) { (void)items_.erase(id); }
+
   auto get(cn::io_context &context, std::string_view key)
       -> cn::task<std::optional<std::string>> {
+    if (!l2_)
+      co_return std::nullopt;
     auto *pool = for_context(context);
     if (pool == nullptr)
       co_return std::nullopt;
@@ -338,6 +361,8 @@ public:
 
   auto set(cn::io_context &context, std::string_view key,
            std::string_view value, std::chrono::seconds ttl) -> cn::task<void> {
+    if (!l2_)
+      co_return;
     auto *pool = for_context(context);
     if (pool == nullptr)
       co_return;
@@ -349,6 +374,8 @@ public:
   }
 
   auto erase(cn::io_context &context, std::string_view key) -> cn::task<void> {
+    if (!l2_)
+      co_return;
     auto *pool = for_context(context);
     if (pool == nullptr)
       co_return;
@@ -363,6 +390,24 @@ private:
     cn::io_context *context{};
     std::unique_ptr<redis::connection_pool> pool;
   };
+
+  struct local_entry {
+    std::shared_ptr<const std::string> body;
+    std::chrono::steady_clock::time_point expires;
+  };
+
+  using local_map =
+      cn::concurrent_containers::striped_hash_map<std::int64_t, local_entry>;
+  local_map items_{16384U, 64U};
+  local_map users_{1024U, 16U};
+  // Redis as a second tier is opt-in (CACHE_L2=redis). The profile allows an
+  // in-process-only cache, and the shared cache container runs Redis with
+  // four I/O threads on a two-thread cpuset, which stalls replies for tens of
+  // milliseconds once eight clients are active.
+  bool l2_ = [] {
+    const auto *configured = std::getenv("CACHE_L2");
+    return configured != nullptr && std::string_view{configured} == "redis";
+  }();
 
   [[nodiscard]] auto for_context(cn::io_context &context) noexcept
       -> redis::connection_pool * {
@@ -473,10 +518,16 @@ auto api_item_get(http::request_context &request, postgres_shards &database,
     co_return;
   }
   const auto id = parse_integer(request.param("id"));
+  if (auto local = cache.local(id, false)) {
+    request.resp().set_header("X-Cache", "HIT");
+    request.json(http::status::ok, *local);
+    co_return;
+  }
   const auto key = std::format("httparena:item:{}", id);
   if (auto cached = co_await cache.get(request.io_ctx(), key)) {
     request.resp().set_header("X-Cache", "HIT");
     request.json(http::status::ok, *cached);
+    cache.store_local(id, false, std::move(*cached), std::chrono::seconds{1});
     co_return;
   }
 
@@ -509,6 +560,7 @@ auto api_item_get(http::request_context &request, postgres_shards &database,
   }
   co_await cache.set(request.io_ctx(), key, *encoded, std::chrono::seconds{1});
   request.json(http::status::ok, *encoded);
+  cache.store_local(id, false, std::move(*encoded), std::chrono::seconds{1});
 }
 
 auto api_item_update(http::request_context &request, postgres_shards &database,
@@ -536,7 +588,9 @@ auto api_item_update(http::request_context &request, postgres_shards &database,
            pg::param_value::from_int(id)}));
     }
   }
+  // Clear L2 first so a concurrent L1 miss cannot refill L1 from a stale L2.
   co_await cache.erase(request.io_ctx(), std::format("httparena:item:{}", id));
+  cache.erase_local(id);
   request.resp()
       .set_status(http::status::no_content)
       .set_body(std::string_view{});
@@ -550,10 +604,16 @@ auto api_me(http::request_context &request, postgres_shards &database,
     co_return;
   }
   const auto id = parse_integer(identity);
+  if (auto local = cache.local(id, true)) {
+    request.resp().set_header("X-Cache", "HIT");
+    request.json(http::status::ok, *local);
+    co_return;
+  }
   const auto key = std::format("httparena:user:{}", id);
   if (auto cached = co_await cache.get(request.io_ctx(), key)) {
     request.resp().set_header("X-Cache", "HIT");
     request.json(http::status::ok, *cached);
+    cache.store_local(id, true, std::move(*cached), std::chrono::seconds{30});
     co_return;
   }
 
@@ -587,6 +647,7 @@ auto api_me(http::request_context &request, postgres_shards &database,
   request.resp().set_header("X-Cache", "MISS");
   co_await cache.set(request.io_ctx(), key, *encoded, std::chrono::seconds{30});
   request.json(http::status::ok, *encoded);
+  cache.store_local(id, true, std::move(*encoded), std::chrono::seconds{30});
 }
 
 void respond_integer(http::request_context &request, std::int64_t value) {
@@ -702,7 +763,10 @@ auto make_router(grpc::service_router &grpc_service, bool websocket,
              });
 
   auto compression =
-      cn::compress({.min_size = 1, .level = 6, .max_concurrency = 256});
+      cn::compress({.min_size = 1,
+                    .level = 6,
+                    .brotli_quality = 2,
+                    .max_concurrency = 256});
   routes.get("/json/:count",
              [&dataset, compression = std::move(compression)](
                  http::request_context &request) mutable -> cn::task<void> {
