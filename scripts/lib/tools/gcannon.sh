@@ -98,7 +98,7 @@ gcannon_run() {
         timeout 45 taskset -c "$GCANNON_CPUS" \
             env LD_LIBRARY_PATH=/usr/lib "$GCANNON" "${args[@]}" 2>&1 || true
     else
-        timeout 45 docker run --rm --network host \
+        timeout 45 docker run --rm --init --network host \
             --cpuset-cpus="$GCANNON_CPUS" \
             --security-opt seccomp=unconfined \
             --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 \
