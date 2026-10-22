@@ -1289,7 +1289,7 @@
   },
   "micronaut-production": {
     "dir": "micronaut-production",
-    "description": "Micronaut 5.2 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
+    "description": "Micronaut on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",
@@ -1303,7 +1303,7 @@
   },
   "micronaut-tuned": {
     "dir": "micronaut-tuned",
-    "description": "Micronaut 5.2 on the Netty HTTP server with the epoll native transport, no idle handler, request header and URL validation off, Netty bounds and leak checks off and Parallel GC. Routing, injection and argument binding are still generated at compile time, JSON goes through Micronaut Serialization and gzip through the framework compression.",
+    "description": "Micronaut on the Netty HTTP server with the io_uring native transport (epoll or NIO when the kernel does not allow it), no idle handler, request header and URL validation off, Netty bounds and leak checks off and Parallel GC. Routing, injection and argument binding are still generated at compile time, JSON goes through Micronaut Serialization and gzip through the framework compression.",
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",

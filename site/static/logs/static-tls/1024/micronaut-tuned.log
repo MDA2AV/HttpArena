@@ -3,7 +3,4 @@
 | |\/| | |/ __| '__/ _ \| '_ \ / _` | | | | __|
 | |  | | | (__| | | (_) | | | | (_| | |_| | |_ 
 |_|  |_|_|\___|_|  \___/|_| |_|\__,_|\__,_|\__|
-11:52:22.885 INFO  io.micronaut.runtime.Micronaut - Startup completed in 776ms. Server Running: https://diogo:8443
-11:52:24.010 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
-io.netty.channel.StacklessClosedChannelException
-	at io.netty.channel.AbstractChannel$AbstractUnsafe.write(Object, ChannelPromise)(Unknown Source)
+10:41:35.536 INFO  io.micronaut.runtime.Micronaut - Startup completed in 928ms. Server Running: https://diogo:8443
