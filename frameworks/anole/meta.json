@@ -1,7 +1,7 @@
 {
   "display_name": "anole",
   "language": "Zig",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "completeness": {
     "routing": true,
