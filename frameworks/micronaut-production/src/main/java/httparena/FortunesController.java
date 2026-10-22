@@ -3,16 +3,14 @@ package httparena;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
-import io.micronaut.views.View;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 
-/** GET /fortunes: rendered by the Thymeleaf template views/fortunes.html, which escapes th:text. */
+/** GET /fortunes: rendered by the precompiled Rocker template views/fortunes.rocker.html, which escapes HTML by default. */
 @Controller("/fortunes")
 public class FortunesController {
 
@@ -25,12 +23,11 @@ public class FortunesController {
     public record Fortune(int id, String message) {
     }
 
-    @View("fortunes")
     @Get(produces = "text/html;charset=utf-8")
-    public CompletableFuture<Map<String, Object>> fortunes() {
-        CompletableFuture<Map<String, Object>> result = new CompletableFuture<>();
+    public CompletableFuture<String> fortunes() {
+        CompletableFuture<String> result = new CompletableFuture<>();
         if (pool == null) {
-            result.complete(Map.of("fortunes", List.of()));
+            result.complete(views.fortunes.template(List.of()).render().toString());
             return result;
         }
         pool.preparedQuery("SELECT id, message FROM fortune").execute().onComplete(ar -> {
@@ -44,7 +41,7 @@ public class FortunesController {
             }
             fortunes.add(new Fortune(0, "Additional fortune added at request time."));
             fortunes.sort(Comparator.comparing(Fortune::message));
-            result.complete(Map.of("fortunes", fortunes));
+            result.complete(views.fortunes.template(fortunes).render().toString());
         });
         return result;
     }

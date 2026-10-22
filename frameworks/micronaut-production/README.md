@@ -1,11 +1,11 @@
 # micronaut-production
 
-Micronaut 5.2 on the Netty HTTP server, default configuration, on the JVM. Standard mode.
+Micronaut on the Netty HTTP server, default configuration, on the JVM. Standard mode.
 
 ## Stack
 
 - **Language:** Java 27
-- **Framework:** Micronaut 5.2 (`micronaut-http-server-netty`, platform 5.2.3)
+- **Framework:** Micronaut (`micronaut-http-server-netty`)
 - **JSON:** Micronaut Serialization (`micronaut-serde-jackson`)
 - **Build:** Maven shade jar, `eclipse-temurin:27-jre` runtime
 

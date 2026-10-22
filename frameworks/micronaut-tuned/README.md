@@ -13,7 +13,7 @@ Same application as `micronaut-production`, with the server tuned. Tuned mode.
 | `-XX:+UseParallelGC` | `Dockerfile` | Throughput oriented garbage collector |
 | `/delay/{ms}` completes on the request's own event loop | `BenchmarkController` | The wait is scheduled on the Netty event loop that runs the request, so no other thread is involved |
 
-The acceptor group has to be set to epoll as well: the server channel type is derived from the worker configuration, and on Micronaut 5.2 the implicitly created acceptor group stays on NIO, which fails at startup with `incompatible event loop type`.
+The acceptor group has to be set to epoll as well: the server channel type is derived from the worker configuration, and on some Micronaut versions the implicitly created acceptor group stays on NIO, which fails at startup with `incompatible event loop type`.
 
 No response bodies are precomputed or cached and routing, binding and serialization are the framework's own.
 | `/baseline2?a=1&b=1` | GET | Sums the query parameters, used by the HTTP/2 profiles |

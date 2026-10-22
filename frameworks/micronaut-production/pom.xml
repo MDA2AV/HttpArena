@@ -16,6 +16,7 @@
   <packaging>jar</packaging>
 
   <properties>
+    <rocker.version>2.4.0</rocker.version>
     <jdk.version>27</jdk.version>
     <release.version>27</release.version>
     <micronaut.version>5.2.3</micronaut.version>
@@ -32,9 +33,9 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>io.micronaut.views</groupId>
-      <artifactId>micronaut-views-thymeleaf</artifactId>
-      <scope>compile</scope>
+      <groupId>com.fizzed</groupId>
+      <artifactId>rocker-runtime</artifactId>
+      <version>${rocker.version}</version>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -66,6 +67,22 @@
   <build>
     <finalName>micronaut-production-httparena</finalName>
     <plugins>
+      <!-- compiles src/main/rocker/**/*.rocker.html into plain Java classes at build time -->
+      <plugin>
+        <groupId>com.fizzed</groupId>
+        <artifactId>rocker-maven-plugin</artifactId>
+        <version>${rocker.version}</version>
+        <executions>
+          <execution>
+            <id>generate-rocker-templates</id>
+            <phase>generate-sources</phase>
+            <goals><goal>generate</goal></goals>
+            <configuration>
+              <templateDirectory>src/main/rocker</templateDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
