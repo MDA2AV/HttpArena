@@ -106,7 +106,7 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
     info "load generators: docker mode"
     GCANNON_MODE=docker
     DOCKER_FLAGS=(
-        --rm --network host
+        --rm --init --network host
         --cpuset-cpus="$GCANNON_CPUS"
         --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576
@@ -183,7 +183,7 @@ if { framework_subscribes_to "latency-1m" || framework_subscribes_to "latency-10
         info "building $ZRK_IMAGE from docker/zrk.Dockerfile (no native zrk on PATH)"
         docker build -t "$ZRK_IMAGE" -f "$ROOT_DIR/docker/zrk.Dockerfile" "$ROOT_DIR/docker"             || fail "$ZRK_IMAGE build failed — the fixed-rate profiles cannot run without it"
     fi
-    ZRK_CMD="docker run --rm --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
+    ZRK_CMD="docker run --rm --init --network host --cpuset-cpus=$GCANNON_CPUS --security-opt seccomp=unconfined --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 -v $REQUESTS_DIR:$REQUESTS_DIR:ro $ZRK_IMAGE"
     info "zrk: docker mode ($ZRK_IMAGE)"
 fi
 
