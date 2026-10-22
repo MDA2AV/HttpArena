@@ -72,19 +72,21 @@ struct item_view_list {
   std::size_t count{};
 };
 
+// One /async-db row, borrowed from the query result: the text columns are
+// views and the jsonb tags column is embedded as Postgres rendered it.
 struct database_item {
   std::int64_t id{};
-  std::string name;
-  std::string category;
+  std::string_view name;
+  std::string_view category;
   std::int64_t price{};
   std::int64_t quantity{};
   bool active{};
-  std::vector<std::string> tags;
+  cnetmod::json::raw_json tags{"[]"};
   rating rating_value;
 };
 
 struct database_item_list {
-  std::vector<database_item> items;
+  std::span<const database_item> items;
   std::size_t count{};
 };
 
@@ -461,7 +463,6 @@ private:
 
 void respond_database_result(http::request_context &request,
                              arena::database_item_list output = {}) {
-  output.count = output.items.size();
   auto encoded = cnetmod::json::write(output);
   if (!encoded) {
     request.text(http::status::internal_server_error, "serialization failed");
@@ -502,26 +503,25 @@ auto async_database(http::request_context &request, postgres_shards &database)
     co_return;
   }
 
-  arena::database_item_list output;
-  output.items.reserve(result.rows.size());
+  // LIMIT is clamped to 50, so the rows fit a fixed buffer.
+  std::array<arena::database_item, 50> items{};
+  std::size_t count = 0;
   for (const auto &row : result.rows) {
-    if (row.size() != 9)
+    if (row.size() != 9 || count == items.size())
       continue;
-    auto tags =
-        cnetmod::json::parse<std::vector<std::string>>(row[6].get_string());
-    if (!tags)
-      continue;
-    output.items.push_back({.id = row[0].get_int64(),
-                            .name = std::string{row[1].get_string()},
-                            .category = std::string{row[2].get_string()},
-                            .price = row[3].get_int64(),
-                            .quantity = row[4].get_int64(),
-                            .active = row[5].get_int64() != 0,
-                            .tags = std::move(*tags),
-                            .rating_value = {.score = row[7].get_int64(),
-                                             .count = row[8].get_int64()}});
+    items[count++] = {.id = row[0].get_int64(),
+                      .name = row[1].get_string(),
+                      .category = row[2].get_string(),
+                      .price = row[3].get_int64(),
+                      .quantity = row[4].get_int64(),
+                      .active = row[5].get_int64() != 0,
+                      // jsonb text from the server is always valid JSON.
+                      .tags = {row[6].get_string()},
+                      .rating_value = {.score = row[7].get_int64(),
+                                       .count = row[8].get_int64()}};
   }
-  respond_database_result(request, std::move(output));
+  respond_database_result(
+      request, {.items = std::span{items}.first(count), .count = count});
 }
 
 [[nodiscard]] auto database_item_from_row(const pg::row &row)
