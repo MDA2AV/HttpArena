@@ -10,6 +10,6 @@
     <RootNamespace>TouchSocketArena</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="TouchSocket.Http" Version="4.3.6" />
+    <PackageReference Include="TouchSocket.Http" Version="4.3.10" />
   </ItemGroup>
 </Project>
