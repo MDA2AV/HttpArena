@@ -53,6 +53,25 @@ struct item_list {
   std::size_t count{};
 };
 
+// Serialization view over a dataset item: the response is still serialized
+// per request, but without copying each item's strings and tags first.
+struct item_view {
+  std::int64_t id{};
+  std::string_view name;
+  std::string_view category;
+  std::int64_t price{};
+  std::int64_t quantity{};
+  bool active{};
+  std::span<const std::string> tags;
+  rating rating_value;
+  std::int64_t total{};
+};
+
+struct item_view_list {
+  std::span<const item_view> items;
+  std::size_t count{};
+};
+
 struct database_item {
   std::int64_t id{};
   std::string name;
@@ -105,6 +124,26 @@ template <> struct cnetmod::json::document_traits<arena::item> {
 };
 
 CNETMOD_JSON(arena::item_list, CNETMOD_JSON_FIELD(items),
+             CNETMOD_JSON_FIELD(count))
+
+template <> struct cnetmod::json::document_traits<arena::item_view> {
+  using _cnetmod_json_type = arena::item_view;
+
+  static constexpr auto fields() {
+    return std::tuple{
+        cnetmod::json::field("id", &_cnetmod_json_type::id),
+        cnetmod::json::field("name", &_cnetmod_json_type::name),
+        cnetmod::json::field("category", &_cnetmod_json_type::category),
+        cnetmod::json::field("price", &_cnetmod_json_type::price),
+        cnetmod::json::field("quantity", &_cnetmod_json_type::quantity),
+        cnetmod::json::field("active", &_cnetmod_json_type::active),
+        cnetmod::json::field("tags", &_cnetmod_json_type::tags),
+        cnetmod::json::field("rating", &_cnetmod_json_type::rating_value),
+        cnetmod::json::field("total", &_cnetmod_json_type::total)};
+  }
+};
+
+CNETMOD_JSON(arena::item_view_list, CNETMOD_JSON_FIELD(items),
              CNETMOD_JSON_FIELD(count))
 
 template <> struct cnetmod::json::document_traits<arena::database_item> {
@@ -690,21 +729,28 @@ void json_response(http::request_context &request,
   }
 
   const auto multiplier = query_integer(request.query_string(), "m", 1);
-  arena::item_list output;
-  output.count = static_cast<std::size_t>(requested);
-  output.items.reserve(output.count);
-  for (std::size_t index = 0; index < output.count; ++index) {
-    auto value = dataset[index];
-    value.total = value.price * value.quantity * multiplier;
-    output.items.push_back(std::move(value));
+  const auto count = static_cast<std::size_t>(requested);
+  std::array<arena::item_view, 50> views{};
+  for (std::size_t index = 0; index < count; ++index) {
+    const auto &source = dataset[index];
+    views[index] = {.id = source.id,
+                    .name = source.name,
+                    .category = source.category,
+                    .price = source.price,
+                    .quantity = source.quantity,
+                    .active = source.active,
+                    .tags = source.tags,
+                    .rating_value = source.rating_value,
+                    .total = source.price * source.quantity * multiplier};
   }
 
-  auto encoded = cnetmod::json::write(output);
+  auto encoded = cnetmod::json::write(arena::item_view_list{
+      .items = std::span{views.data(), count}, .count = count});
   if (!encoded) {
     request.text(http::status::internal_server_error, "serialization failed");
     return;
   }
-  request.json(http::status::ok, *encoded);
+  request.json(http::status::ok, std::move(*encoded));
 }
 
 auto get_sum(std::span<const std::byte> payload)
