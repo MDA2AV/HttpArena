@@ -11,6 +11,8 @@ Micronaut on the Netty HTTP server, default configuration, on the JVM. Standard 
 
 Query parameters are bound with `@QueryValue`, request bodies with `@Body`, and the response bodies are returned from the controller methods, so routing, request binding and response building are all done by the framework. No server settings are changed.
 
+Dataset loading, PostgreSQL JSON tags and JSON responses use Micronaut Serialization. The database query selects tags as text so the driver does not decode JSONB with its own codec. Jackson Databind is excluded; Jackson Core remains the streaming backend for Micronaut Serialization.
+
 ## Endpoints
 
 | Endpoint | Method | Description |
@@ -24,6 +26,8 @@ Query parameters are bound with `@QueryValue`, request bodies with `@Body`, and 
 | `/delay/{ms}` | GET | Answers after `ms` milliseconds without holding a request thread |
 | `/static/{name}` | GET | Files from `/data/static`; a `.br` or `.gz` twin is sent as is when the client accepts it |
 | `/ws` | WebSocket | Echoes every text and binary frame |
+| `/async-db?min=10&max=50&limit=20` | GET | Async PostgreSQL range query; limits are clamped to 1–50 |
+| `/fortunes` | GET | Queries, sorts and renders the rows with a precompiled Rocker template, returning its UTF-8 bytes directly |
 
 ## Ports
 
@@ -33,5 +37,8 @@ Query parameters are bound with `@QueryValue`, request bodies with `@Body`, and 
 | 8081 | HTTP/1.1 over TLS |
 | 8082 | Cleartext HTTP/2 (prior knowledge) |
 | 8443 | HTTP/2 over TLS |
+| 8443/UDP | HTTP/3 over QUIC |
 
 HTTP/2 is switched on for the whole server (`micronaut.server.http-version=2.0`), TLS key material comes from `/certs/server.crt` and `/certs/server.key`.
+
+Run `mvn verify` on JDK 27 for the serialization and template-output checks. The Docker build runs these tests too; the repository's `scripts/validate.sh micronaut-production` covers the HTTP contracts against PostgreSQL.

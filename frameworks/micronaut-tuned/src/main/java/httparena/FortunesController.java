@@ -55,18 +55,23 @@ public class FortunesController {
         return result;
     }
 
-    private static void escape(StringBuilder out, String text) {
+    static void escape(StringBuilder out, String text) {
+        int start = 0;
         for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            switch (c) {
-                case '<' -> out.append("&lt;");
-                case '>' -> out.append("&gt;");
-                case '&' -> out.append("&amp;");
-                case '"' -> out.append("&quot;");
-                case '\'' -> out.append("&#39;");
-                default -> out.append(c);
+            String replacement = switch (text.charAt(i)) {
+                case '<' -> "&lt;";
+                case '>' -> "&gt;";
+                case '&' -> "&amp;";
+                case '"' -> "&quot;";
+                case '\'' -> "&#39;";
+                default -> null;
+            };
+            if (replacement != null) {
+                out.append(text, start, i).append(replacement);
+                start = i + 1;
             }
         }
+        out.append(text, start, text.length());
     }
 
     private record Fortune(int id, String message) {

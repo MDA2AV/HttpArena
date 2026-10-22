@@ -35,6 +35,16 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-pg-client</artifactId>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>tools.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>io.micronaut</groupId>
@@ -55,6 +65,11 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
     </dependency>
     <!-- epoll native transport; Micronaut uses it when the event loop transport list asks for it.
          Both architectures so the same jar runs on the arm64 round. Versions come from the platform BOM. -->

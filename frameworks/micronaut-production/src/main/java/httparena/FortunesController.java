@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import com.fizzed.rocker.runtime.ArrayOfByteArraysOutput;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.vertx.sqlclient.Pool;
@@ -24,10 +25,10 @@ public class FortunesController {
     }
 
     @Get(produces = "text/html;charset=utf-8")
-    public CompletableFuture<String> fortunes() {
-        CompletableFuture<String> result = new CompletableFuture<>();
+    public CompletableFuture<byte[]> fortunes() {
+        CompletableFuture<byte[]> result = new CompletableFuture<>();
         if (pool == null) {
-            result.complete(views.fortunes.template(List.of()).render().toString());
+            result.complete(views.fortunes.template(List.of()).render(ArrayOfByteArraysOutput.FACTORY).toByteArray());
             return result;
         }
         pool.preparedQuery("SELECT id, message FROM fortune").execute().onComplete(ar -> {
@@ -41,7 +42,7 @@ public class FortunesController {
             }
             fortunes.add(new Fortune(0, "Additional fortune added at request time."));
             fortunes.sort(Comparator.comparing(Fortune::message));
-            result.complete(views.fortunes.template(fortunes).render().toString());
+            result.complete(views.fortunes.template(fortunes).render(ArrayOfByteArraysOutput.FACTORY).toByteArray());
         });
         return result;
     }
