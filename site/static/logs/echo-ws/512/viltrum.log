@@ -1,2 +1,2 @@
-[viltrum] epoll: upgrade/WS is handed off its own thread
-[viltrum] listening on http://0.0.0.0:8080 (epoll_cores=128)
+[viltrum] listening on http://0.0.0.0:8080 (64 workers)
+[viltrum] listening on https://0.0.0.0:8081 (64 workers)
