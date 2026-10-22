@@ -1,0 +1,55 @@
+# gateway-64: stock nginx (proxy/) terminating TLS + HTTP/2 on 8443 and
+# serving /static/* from disk, in front of Anole (src/main.zig, ANOLE_ROLE=
+# gateway), which answers /baseline2, /json[/{count}] and /async-db over pooled
+# HTTP/1.1 keep-alive on 127.0.0.1:8085. Exactly the two services the profile
+# allows; standard mode, so the upstream hop is plain HTTP/1.1.
+#
+# CPU split: proxy 14 physical cores (28 logical), server 18 (36). Chosen
+# from a sweep on a 7-core rig (i7-14700F P-cores, load generator on the
+# other cores), proxy cores / server cores, req/s at 512 and 1024 connections:
+#
+#   1/6   52,542  44,644      4/3  115,065 108,630
+#   2/5  107,157  97,492      5/2   80,886  78,195
+#   3/4  137,602 120,750  <- best
+#
+# Below 3/7 of the cores the edge (TLS + HTTP/2 for 16k concurrent streams)
+# is the bottleneck; above it Anole runs out for the JSON and Postgres work.
+# 3/7 of 32 cores is ~14. PROXY_CPUSET / SERVER_CPUSET override the defaults.
+services:
+  proxy:
+    build:
+      context: ./proxy
+    cpuset: "${PROXY_CPUSET:-0-13,64-77}"
+    network_mode: host
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    cpuset: "${SERVER_CPUSET:-14-31,78-95}"
+    network_mode: host
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - ANOLE_ROLE=gateway
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

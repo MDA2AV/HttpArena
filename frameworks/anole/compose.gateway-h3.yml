@@ -1,0 +1,55 @@
+# gateway-h3: stock nginx (proxy-h3/; the official image has
+# http_v3_module) terminating QUIC + HTTP/3 on UDP 8443 (and TLS + HTTP/2 on
+# TCP 8443) and serving /static/* from disk, in front of Anole on
+# 127.0.0.1:8085 over pooled HTTP/1.1 keep-alive, as in compose.gateway.yml.
+#
+# Edge choice: nginx and Caddy measured on the same 7-core rig (proxy cores,
+# req/s at 64 and 256 connections):
+#
+#   nginx  2: 128,586 119,410   3: 146,249 138,035   4: 114,648 110,242
+#   Caddy  2:  27,052  22,324   3:  40,038  32,950   4:  53,033  44,079
+#
+# HAProxy (QUIC in the official image) was not a candidate: it cannot serve
+# /static/* from disk without Lua, and the profile wants a stock edge.
+#
+# CPU split: proxy 14 physical cores (28 logical), server 18 (36), the
+# nginx 3/4 optimum above scaled to 32 cores, as for gateway-64.
+# PROXY_CPUSET / SERVER_CPUSET override the defaults.
+services:
+  proxy:
+    build:
+      context: ./proxy-h3
+    cpuset: "${PROXY_CPUSET:-0-13,64-77}"
+    network_mode: host
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    cpuset: "${SERVER_CPUSET:-14-31,78-95}"
+    network_mode: host
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - ANOLE_ROLE=gateway
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
