@@ -4,10 +4,10 @@ plugins {
 }
 
 dependencies {
-    implementation("org.genhttp:genhttp-core:11.1.0.0")
-    implementation("org.genhttp:genhttp-modules-files:11.1.0.0")
-    implementation("org.genhttp:genhttp-modules-webservices:11.1.0.0")
-    implementation("org.genhttp:genhttp-modules-websockets:11.1.0.0")
+    implementation("org.genhttp:genhttp-core:11.1.0.1")
+    implementation("org.genhttp:genhttp-modules-files:11.1.0.1")
+    implementation("org.genhttp:genhttp-modules-webservices:11.1.0.1")
+    implementation("org.genhttp:genhttp-modules-websockets:11.1.0.1")
 
     implementation("com.zaxxer:HikariCP:7.1.0")
     implementation("org.postgresql:postgresql:42.7.14")
