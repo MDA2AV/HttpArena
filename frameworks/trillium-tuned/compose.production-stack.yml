@@ -32,12 +32,13 @@ services:
       - appsock:/run/app
     # authsvc has to be answering, not merely started: the edge asks it about every /api
     # request, so a stack that comes up without it measures 5xx from the edge and never
-    # reaches the server at all.
+    # reaches the server at all. The server likewise: started is not listening, and until
+    # it binds the UDS every request the edge forwards comes back a 502.
     depends_on:
       authsvc:
         condition: service_healthy
       server:
-        condition: service_started
+        condition: service_healthy
 
   cache:
     image: redis:7-alpine
@@ -107,12 +108,25 @@ services:
       - REDIS_URL=redis://127.0.0.1:6379
       - DATASET_PATH=/data/dataset.json
       - RUST_LOG=info
+    # The edge serves /static/* itself, but the server builds its StaticFileHandler at startup
+    # either way and exits if the directory is missing, so it gets the mount too, as in the
+    # gateway stacks.
     volumes:
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+      - ${DATA_DIR}/static:/data/static:ro
       - appsock:/run/app
     depends_on:
       cache:
         condition: service_healthy
+    # The socket appears once main.rs has built its state, cleared any stale socket and bound
+    # it, so from then on the edge's connections are accepted.
+    healthcheck:
+      test: ["CMD", "test", "-S", "/run/app/app.sock"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
 # Shared rendezvous for the UDS. network_mode: host shares the net namespace but not the
 # filesystem, so the socket needs an explicit shared volume mounted into both at the same path.
