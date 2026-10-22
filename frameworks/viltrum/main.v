@@ -73,6 +73,17 @@ fn main() {
 	app.post('/echo', fn (mut c viltrum.Ctx) {
 		c.bytes(200, 'application/octet-stream', c.body())
 	})
+	// echo-ws: each message comes back as it came, text or binary, from the worker
+	// that owns the connection.
+	app.ws('/ws', viltrum.WsHandler{
+		on_message: fn (mut s viltrum.Ws, m viltrum.WsMessage) {
+			if m.binary {
+				s.send_binary(m.data)
+			} else {
+				s.send_text(m.text())
+			}
+		}
+	})
 	mut listeners := [viltrum.Listener{
 		addr: '0.0.0.0:8080'
 	}]
