@@ -1706,6 +1706,20 @@
     "type": "engine",
     "engine": "picoev"
   },
+  "plod": {
+    "dir": "plod",
+    "description": "Plod: a REST framework for Goose, a memory-safe systems language with no heap allocator or garbage collector, with routes, scopes, middleware, and extractors in the manner of Actix, over goose-http's io_uring loop, one worker per CPU. JSON is serialized per request with plod::format_fields and compressed through plod::compressed at default levels; static files come from disk through plod::files, with their .br and .gz siblings; /async-db runs on goose-postgres's async pool, and production-stack's cache-aside is in process. The gateway profiles put stock nginx in front of it, and gateway-h3 stock Caddy.",
+    "repo": "https://github.com/kaitk/plod",
+    "type": "experimental",
+    "engine": "goose-http",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "plug-cowboy": {
     "dir": "plug-cowboy",
     "description": "Plug on the Cowboy adapter without Phoenix. Routing through Plug.Router, Jason JSON encoding, gzip through the cowboy_compress_h stream handler.",
