@@ -732,7 +732,7 @@
     "repo": "https://github.com/ehsanmok/flare",
     "type": "emerging",
     "engine": "flare",
-    "mode": "tuned",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": true,
