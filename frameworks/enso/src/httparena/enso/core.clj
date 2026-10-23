@@ -14,6 +14,7 @@
    [java.security.cert Certificate CertificateFactory]
    [java.security.spec PKCS8EncodedKeySpec]
    [java.util Base64]
+   [java.util.concurrent CompletableFuture Executors ScheduledExecutorService ThreadLocalRandom TimeUnit]
    [java.util.zip GZIPOutputStream]
    [javax.net.ssl KeyManagerFactory SSLContext]))
 
@@ -140,10 +141,25 @@
                   (.readAllBytes stream))
                 (byte-array 0))}))
 
-(defn delay-response [ms]
-  ;; Enso invokes handlers on virtual threads, so sleep does not block an event loop.
+(def delay-schedulers
+  ;; A timed park of a virtual thread (Thread/sleep) goes through the JDK's
+  ;; virtual thread scheduler, whose single DelayScheduler thread holds every
+  ;; timer of the process and saturates at high request rates. Delays run on
+  ;; their own schedulers instead, one per four cores.
+  (let [factory (-> (Thread/ofPlatform) (.daemon true) (.name "delay-scheduler-" 0) (.factory))]
+    (vec (repeatedly (max 1 (quot (.availableProcessors (Runtime/getRuntime)) 4))
+                     #(Executors/newSingleThreadScheduledExecutor factory)))))
+
+(defn delay-response
+  "Responds once `ms` elapsed. The request's virtual thread waits untimed on a
+  future that a delay scheduler completes."
+  [ms]
   (when (pos? ms)
-    (Thread/sleep (long ms)))
+    (let [done (CompletableFuture.)
+          ^ScheduledExecutorService scheduler
+          (delay-schedulers (.nextInt (ThreadLocalRandom/current) (count delay-schedulers)))]
+      (.schedule scheduler ^Runnable (fn [] (.complete done nil)) (long ms) TimeUnit/MILLISECONDS)
+      (.join done)))
   (text-response 200 (str ms)))
 
 (defn gzip-bytes ^bytes [^bytes data]

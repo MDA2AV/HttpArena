@@ -72,8 +72,19 @@
   (doseq [[uri status body] [["/echo" 405 "method not allowed"]
                             ["/ws" 426 "websocket upgrade required"]
                             ["/missing" 404 "not found"]
-                            ["/pipeline" 200 "ok"]
-                            ["/delay/0" 200 "0"]]]
+                            ["/pipeline" 200 "ok"]]]
+    (is (= {:status status :headers {"content-type" "text/plain"} :body body}
+           (core/handler {:uri uri :request-method :get})))))
+
+(deftest delay-responds-after-its-delay
+  (let [start (System/nanoTime)
+        response (core/handler {:uri "/delay/50" :request-method :get})]
+    (is (= {:status 200 :headers {"content-type" "text/plain"} :body "50"} response))
+    (is (>= (/ (- (System/nanoTime) start) 1e6) 50))))
+
+(deftest delay-routes-answer-immediately-without-a-delay
+  (doseq [[uri status body] [["/delay/0" 200 "0"]
+                            ["/delay/abc" 404 "not found"]]]
     (is (= {:status status :headers {"content-type" "text/plain"} :body body}
            (core/handler {:uri uri :request-method :get})))))
 
