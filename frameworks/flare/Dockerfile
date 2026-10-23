@@ -42,5 +42,5 @@ WORKDIR /app
 COPY --from=build /out/bin/server /app/bin/server
 COPY --from=build /out/lib/ /app/lib/
 COPY start.sh /app/start.sh
-ENV LD_LIBRARY_PATH=/app/lib FLARE_LIB_DIR=/app/lib CONDA_PREFIX=/app MAX_KEEPALIVE=1000000
+ENV LD_LIBRARY_PATH=/app/lib FLARE_LIB_DIR=/app/lib CONDA_PREFIX=/app
 CMD ["/app/start.sh"]
