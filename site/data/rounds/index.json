@@ -3,25 +3,27 @@
     "id": "rpi-1",
     "name": "Raspberry Pi 4 (arm64)",
     "host": "rpi",
-    "date": "2026-10-19",
+    "date": "2026-10-23",
     "cpu": "Cortex-A72",
     "cores": "4",
     "threads": "4",
     "ram": "3.7Gi",
     "os": "Debian GNU/Linux 13 (trixie)",
     "kernel": "6.18.50+rpt-rpi-v8",
-    "docker": "29.9.1",
+    "docker": "29.9.2",
     "docker_runtime": "runc",
     "governor": "performance",
     "arch": "aarch64",
-    "cpu_max_mhz": "1200",
-    "commit": "4abec5df",
+    "cpu_max_mhz": "1800",
+    "commit": "11c32b3b2",
     "tcp": {
       "lo_mtu": "1500",
       "congestion": "cubic",
       "somaxconn": "65535",
       "rmem_max": "7500000",
       "wmem_max": "7500000"
-    }
+    },
+    "main_commit": "adda52630f03271e05fb0992a62ebab76ca58193",
+    "main_commit_date": "2026-10-22T11:08:07+01:00"
   }
 ]
