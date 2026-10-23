@@ -44,7 +44,7 @@ WORKER_COUNTS="${WORKER_COUNTS:-64 32 16 8}"
 parse_profile "${PROFILES[$PROFILE]}"
 CONNS="$PROF_CONNS"
 
-framework_load_meta libioxd
+framework_load_meta httparena-io_uring
 framework_build
 
 # The same host state a scored run measures under: governor on performance and

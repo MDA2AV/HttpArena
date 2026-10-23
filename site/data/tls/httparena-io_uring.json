@@ -1,5 +1,5 @@
 {
-  "framework": "libioxd",
+  "framework": "httparena-io_uring",
   "tls": "pass",
   "check": "none"
 }
