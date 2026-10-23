@@ -461,14 +461,21 @@ private:
   std::vector<shard> shards_;
 };
 
+template <typename Body>
+void respond_json(http::request_context &request, const Body &body) {
+  request.resp()
+      .set_status(http::status::ok)
+      .set_header("Content-Type", "application/json; charset=utf-8");
+  const auto encoded = request.resp().generate_body([&](std::string &output) {
+    return cnetmod::json::write_to(output, body);
+  });
+  if (!encoded)
+    request.text(http::status::internal_server_error, "serialization failed");
+}
+
 void respond_database_result(http::request_context &request,
                              arena::database_item_list output = {}) {
-  auto encoded = cnetmod::json::write(output);
-  if (!encoded) {
-    request.text(http::status::internal_server_error, "serialization failed");
-    return;
-  }
-  request.json(http::status::ok, *encoded);
+  respond_json(request, output);
 }
 
 auto async_database(http::request_context &request, postgres_shards &database)
