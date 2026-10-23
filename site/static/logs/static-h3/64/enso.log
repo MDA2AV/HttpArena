@@ -1,5 +1,5 @@
-Oct 21, 2026 11:18:45 AM com.s_exp.enso.http3.Http3Exchange
-WARNING: invalid response from handler, sending 500
+Oct 23, 2026 8:47:50 AM com.s_exp.enso.http3.Http3Exchange
+WARNING: invalid response from handler, sending 500 (1 similar records suppressed)
 java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
 	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
@@ -15,8 +15,8 @@ Caused by: java.nio.channels.ClosedByInterruptException
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:267)
 	... 6 more
 
-Oct 21, 2026 11:18:52 AM com.s_exp.enso.http3.Http3Exchange
-WARNING: invalid response from handler, sending 500 (2505 similar records suppressed)
+Oct 23, 2026 8:47:57 AM com.s_exp.enso.http3.Http3Exchange
+WARNING: invalid response from handler, sending 500 (3795 similar records suppressed)
 java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
 	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
@@ -32,8 +32,8 @@ Caused by: java.nio.channels.ClosedByInterruptException
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:267)
 	... 6 more
 
-Oct 21, 2026 11:18:59 AM com.s_exp.enso.http3.Http3Exchange
-WARNING: invalid response from handler, sending 500 (1471 similar records suppressed)
+Oct 23, 2026 8:48:04 AM com.s_exp.enso.http3.Http3Exchange
+WARNING: invalid response from handler, sending 500 (3788 similar records suppressed)
 java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
 	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
