@@ -80,6 +80,20 @@
     "engine": "netty",
     "mode": "standard"
   },
+  "anole": {
+    "dir": "anole",
+    "description": "Anole: HTTP/1.1, HTTP/2, HTTP/3, WebSocket, gRPC and WebTransport on the zio async runtime (io_uring where available, epoll fallback), BoringSSL. Documented APIs and default settings.",
+    "repo": "https://github.com/xuckless/anole",
+    "type": "experimental",
+    "engine": "zio",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "araara-standard": {
     "dir": "araara-standard",
     "description": "araara - an OCaml 5 web stack built on HCS, using HCS server defaults where possible for the HttpArena harness. Eio, radix-trie routing, Phoenix-style plugs, Postgres via repodb, gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
