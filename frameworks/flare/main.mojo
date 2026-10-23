@@ -59,13 +59,13 @@ def echo(req: Request) raises -> Response:
 
 
 @fieldwise_init
-struct Rating(Copyable, Movable):
+struct Rating(Copyable):
     var score: Int
     var count: Int
 
 
 @fieldwise_init
-struct Item(Copyable, Movable):
+struct Item(Copyable):
     var id: Int
     var name: String
     var category: String
@@ -77,7 +77,7 @@ struct Item(Copyable, Movable):
 
 
 @fieldwise_init
-struct ItemOut(Copyable, Movable):
+struct ItemOut(Copyable):
     var id: Int
     var name: String
     var category: String
