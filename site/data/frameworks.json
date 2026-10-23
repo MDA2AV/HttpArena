@@ -829,6 +829,21 @@
       "response": true
     }
   },
+  "genhttp-kt-netty": {
+    "dir": "genhttp-kt-netty",
+    "description": "Kotlin port of the GenHTTP web server on JDK 25, running on its Netty engine (the counterpart of GenHTTP's ioxide engine): one Netty event loop per core on the native epoll transport, every connection served by a coroutine on the loop that accepted it, TLS through OpenSSL (netty-tcnative). Implemented with web services and a layout router, JSON via Jackson, Postgres via HikariCP and JDBC on a dispatcher beside the event loops.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/genhttp-kt",
+    "type": "experimental",
+    "engine": "netty",
+    "mode": "standard",
+    "website": "https://genhttp-kt.genhttp.run/documentation/server/engines/netty/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "genhttp-kt": {
     "dir": "genhttp-kt",
     "description": "Kotlin port of the GenHTTP web server on JDK 25, running on its own HTTP/1.1 engine (NIO channels, a coroutine per connection on virtual threads, TLS via the JDK SSLEngine). Implemented with web services and a layout router, JSON via Jackson, Postgres via HikariCP and JDBC.",
