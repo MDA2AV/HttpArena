@@ -1,0 +1,41 @@
+# gateway-h3: compose.gateway.yml with stock Caddy (proxy-h3/) as the proxy,
+# which serves h3 on 8443/udp beside h1 and h2 on 8443/tcp. PROXY_CPUSET and
+# SERVER_CPUSET move the CPU split. Modelled on aspnet-minimal_caddy's
+# compose.gateway-h3.yml.
+services:
+  proxy:
+    build: ./proxy-h3
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - PROXY_PORT=8085
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
