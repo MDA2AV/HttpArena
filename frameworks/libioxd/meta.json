@@ -1,5 +1,5 @@
 {
-  "display_name": "libioxd",
+  "display_name": "httparena-io_uring",
   "language": "C",
   "type": "engine",
   "engine": "io_uring",
