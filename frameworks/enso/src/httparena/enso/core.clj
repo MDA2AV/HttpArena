@@ -1,17 +1,14 @@
 (ns httparena.enso.core
   (:gen-class)
   (:require
-   [clojure.data.json :as json]
+   [s-exp.oda :as oda]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [ring.middleware.gzip :as gzip]
-   [ring.middleware.params :as params]
    [ring.util.mime-type :as mime]
-   [ring.util.response :as response]
    [ring.websocket :as ws]
    [s-exp.enso :as enso])
   (:import
-   [java.io ByteArrayOutputStream FileInputStream InputStream]
+   [java.io ByteArrayOutputStream File FileInputStream InputStream]
    [java.nio.charset StandardCharsets]
    [java.security KeyFactory KeyStore]
    [java.security.cert Certificate CertificateFactory]
@@ -25,28 +22,107 @@
 (defn parse-long-safe
   ([value]
    (parse-long-safe value 0))
-  ([value default]
-   (or (some-> value str str/trim not-empty parse-long)
+  ([^String value default]
+   (or (when value
+         (let [trimmed (.trim value)]
+           (when-not (.isEmpty trimmed)
+             (parse-long trimmed))))
        default)))
+
+(defn query-param
+  "Raw value of parameter `k` in `query-string`, nil when absent. Not
+  URL-decoded: the benchmark only sends plain integers."
+  [^String query-string ^String k]
+  (when query-string
+    (let [n (.length query-string)
+          k-end (.length k)]
+      (loop [start 0]
+        (when (< start n)
+          (let [amp (.indexOf query-string (int \&) start)
+                end (if (neg? amp) n amp)]
+            (if (and (.startsWith query-string k start)
+                     (< (+ start k-end) end)
+                     (= \= (.charAt query-string (+ start k-end))))
+              (subs query-string (+ start k-end 1) end)
+              (recur (inc end)))))))))
+
+(defn path-number
+  "The unsigned integer following `prefix` in `uri`, nil when `uri` doesn't
+  start with `prefix` or the rest isn't digits."
+  [^String uri ^String prefix]
+  (let [start (.length prefix)]
+    (when (and (.startsWith uri prefix)
+               (< start (.length uri))
+               (Character/isDigit (.charAt uri start)))
+      (parse-long (subs uri start)))))
+
+(defn- quality
+  "q-value of coding parameters `params` (after the `;`), 1 when absent or
+  unreadable."
+  ^double [^String params]
+  (let [p (.trim params)]
+    (or (when (.regionMatches p true 0 "q=" 0 2)
+          (parse-double (.trim (subs p 2))))
+        1.0)))
+
+(defn encoding-quality
+  "q-value an Accept-Encoding value gives `coding`, 0 when refused. An
+  explicit entry for `coding` decides, else `*` does."
+  [^String accept-encoding ^String coding]
+  (if (nil? accept-encoding)
+    0.0
+    (let [n (.length accept-encoding)]
+      (loop [start 0
+             star 0.0]
+        (if (> start n)
+          star
+          (let [comma (.indexOf accept-encoding (int \,) start)
+                end (if (neg? comma) n comma)
+                semi (.indexOf accept-encoding (int \;) start)
+                coding-end (if (and (>= semi 0) (< semi end)) semi end)
+                entry (.trim (subs accept-encoding start coding-end))
+                q (if (= coding-end end)
+                    1.0
+                    (quality (subs accept-encoding (inc coding-end) end)))]
+            (cond
+              (.equalsIgnoreCase coding entry) q
+              (= "*" entry) (recur (inc end) q)
+              :else (recur (inc end) star))))))))
+
+(defn accepts-gzip? [accept-encoding]
+  (pos? (encoding-quality accept-encoding "gzip")))
+
+(defn accepted-encodings
+  "The precompressed codings an Accept-Encoding value allows, most preferred
+  first; br wins ties."
+  [accept-encoding]
+  (let [br (encoding-quality accept-encoding "br")
+        gzip (encoding-quality accept-encoding "gzip")]
+    (cond
+      (and (pos? br) (>= br gzip)) (if (pos? gzip) ["br" "gzip"] ["br"])
+      (pos? gzip) (if (pos? br) ["gzip" "br"] ["gzip"])
+      :else [])))
 
 (defn load-dataset [path]
   (when (.exists (io/file path))
-    (json/read-str (slurp path) :key-fn keyword)))
+    (with-open [in (io/input-stream path)]
+      (oda/parse in {:key-fn keyword}))))
 
 (defonce dataset
   (delay (load-dataset "/data/dataset.json")))
 
-(defn compute-json-items [items multiplier]
+(defn compute-json-items [items item-count multiplier]
   (mapv (fn [{:keys [price quantity] :as item}]
           (assoc item :total (* price quantity multiplier)))
-        items))
+        (subvec items 0 (min item-count (count items)))))
 
 (defn request-sum [request]
-  (let [params (:params request)
-        a      (parse-long-safe (get params "a"))
-        b      (parse-long-safe (get params "b"))
+  (let [query  (:query-string request)
+        a      (parse-long-safe (query-param query "a"))
+        b      (parse-long-safe (query-param query "b"))
         body   (if (= :post (:request-method request))
-                 (parse-long-safe (slurp (:body request)))
+                 (with-open [^InputStream in (:body request)]
+                   (parse-long-safe (String. (.readAllBytes in) StandardCharsets/UTF_8)))
                  0)]
     (+ a b body)))
 
@@ -64,22 +140,34 @@
                   (.readAllBytes stream))
                 (byte-array 0))}))
 
-(defn delay-response [request]
-  (let [ms (parse-long-safe (subs (:uri request) 7))]
-    ;; Enso invokes handlers on virtual threads, so sleep does not block an event loop.
-    (when (pos? ms)
-      (Thread/sleep (long ms)))
-    (text-response 200 (str ms))))
+(defn delay-response [ms]
+  ;; Enso invokes handlers on virtual threads, so sleep does not block an event loop.
+  (when (pos? ms)
+    (Thread/sleep (long ms)))
+  (text-response 200 (str ms)))
 
-(defn json-items-response [request]
+(defn gzip-bytes ^bytes [^bytes data]
+  ;; Compress on Enso's virtual thread, not wrap-gzip's piped stream backed by
+  ;; a platform-thread future per response.
+  (let [out (ByteArrayOutputStream. (alength data))]
+    (with-open [gzip-out (GZIPOutputStream. out)]
+      (.write gzip-out data))
+    (.toByteArray out)))
+
+(defn json-items-response [request item-count]
   (if-let [source @dataset]
-    (let [[_ path-count] (re-matches #"/json/([0-9]+)" (:uri request))
-          item-count     (parse-long-safe path-count)
-          multiplier     (parse-long-safe (get-in request [:params "m"]) 1)
-          items          (compute-json-items (take item-count source) multiplier)]
-      {:status  200
-       :headers {"content-type" "application/json"}
-       :body    (json/write-str {:items items :count (count items)})})
+    (let [multiplier (parse-long-safe (query-param (:query-string request) "m") 1)
+          items      (compute-json-items source item-count multiplier)
+          body       (oda/write-bytes {:items items :count (count items)})]
+      (if (accepts-gzip? (get-in request [:headers "accept-encoding"]))
+        {:status  200
+         :headers {"content-type" "application/json"
+                   "Content-Encoding" "gzip"
+                   "Vary" "Accept-Encoding"}
+         :body    (gzip-bytes body)}
+        {:status  200
+         :headers {"content-type" "application/json"}
+         :body    body}))
     (text-response 500 "dataset.json not available")))
 
 (defn websocket-echo [request]
@@ -90,15 +178,46 @@
 
 (def static-root "/data/static")
 
-(defn static-response [uri]
-  (if-let [file-response (response/file-response (subs uri (count "/static/"))
-                                                {:root static-root :index-files? false})]
-    (response/content-type file-response
-                           (or (mime/ext-mime-type uri {"js" "application/javascript"})
-                               "application/octet-stream"))
-    (text-response 404 "not found")))
+(def mime-types
+  (assoc mime/default-mime-types "js" "application/javascript"))
 
-(defn app [request]
+(def encoding-suffixes {"br" ".br" "gzip" ".gz"})
+
+(defn content-type [^String file-name]
+  (let [dot (.lastIndexOf file-name (int \.))]
+    (or (when (pos? dot)
+          (get mime-types (.toLowerCase (subs file-name (inc dot)))))
+        "application/octet-stream")))
+
+(defn static-response
+  "Serves `/static/<name>` from `static-root`, or its precompressed twin
+  (`<name>.br`, `<name>.gz`) when the request accepts that coding. Files are
+  read from disk per request, so replacing them takes effect at once. Names
+  with a `/` are refused: the directory is flat."
+  [request ^String uri]
+  (let [file-name (subs uri (count "/static/"))
+        file (File. ^String static-root file-name)]
+    (if (and (neg? (.indexOf file-name (int \/))) (.isFile file))
+      (let [content-type (content-type file-name)
+            twin (some (fn [coding]
+                         (let [twin-file (File. ^String static-root
+                                                (str file-name (encoding-suffixes coding)))]
+                           (when (.isFile twin-file)
+                             [coding twin-file])))
+                       (accepted-encodings (get-in request [:headers "accept-encoding"])))]
+        (if-let [[coding twin-file] twin]
+          {:status  200
+           :headers {"content-type" content-type
+                     "content-encoding" coding
+                     "vary" "Accept-Encoding"}
+           :body    twin-file}
+          {:status  200
+           :headers {"content-type" content-type
+                     "vary" "Accept-Encoding"}
+           :body    file}))
+      (text-response 404 "not found"))))
+
+(defn handler [request]
   (case (:uri request)
     ("/baseline11" "/baseline2") (text-response 200 (str (request-sum request)))
     "/pipeline" (text-response 200 "ok")
@@ -106,33 +225,14 @@
               (echo-response request)
               (text-response 405 "method not allowed"))
     "/ws" (websocket-echo request)
-    (cond
-      (re-matches #"/json/[0-9]+" (:uri request)) (json-items-response request)
-      (re-matches #"/delay/[0-9]+" (:uri request)) (delay-response request)
-      :else (text-response 404 "not found"))))
-
-(def compressed-handler
-  (let [handler (params/wrap-params app)]
-    (fn [request]
-      (let [response (handler request)]
-        (if (and (gzip/supported-response? response) (gzip/accepts-gzip? request))
-          ;; JSON is already materialized. Compress on Enso's virtual thread, not
-          ;; wrap-gzip's piped stream backed by a platform-thread future per response.
-          (let [out (ByteArrayOutputStream.)]
-            (with-open [gzip-out (GZIPOutputStream. out)]
-              (.write gzip-out (.getBytes ^String (:body response) StandardCharsets/UTF_8)))
-            (-> response
-                (update :headers gzip/set-response-headers)
-                (assoc-in [:headers "Vary"] "Accept-Encoding")
-                (assoc :body (.toByteArray out))))
-          response)))))
-
-(defn handler [request]
-  (cond
-    (= "/ws" (:uri request)) (app request)
-    (and (#{:get :head} (:request-method request))
-         (str/starts-with? (:uri request) "/static/")) (static-response (:uri request))
-    :else (compressed-handler request)))
+    (if-let [item-count (path-number (:uri request) "/json/")]
+      (json-items-response request item-count)
+      (if-let [ms (path-number (:uri request) "/delay/")]
+        (delay-response ms)
+        (if (and (#{:get :head} (:request-method request))
+                 (str/starts-with? (:uri request) "/static/"))
+          (static-response request (:uri request))
+          (text-response 404 "not found"))))))
 
 (defn pem->ssl-context ^SSLContext [^String cert-path ^String key-path]
   (let [certs (with-open [in (FileInputStream. cert-path)]
@@ -153,6 +253,13 @@
     (doto (SSLContext/getInstance "TLS")
       (.init (.getKeyManagers kmf) nil nil))))
 
+(def listener-defaults
+  ;; The async profile holds 32,000 connections; retain a finite cap with headroom.
+  ;; Load generators keep connections open for the whole run: a per-connection
+  ;; request cap only forces reconnect waves (and TLS handshakes) mid-run.
+  {:max-connections 40000
+   :max-keep-alive-requests 0})
+
 (defn -main [& _args]
   (when-not (vector? @dataset)
     (throw (ex-info "dataset.json must contain a JSON array"
@@ -165,8 +272,7 @@
                   ssl (into [{:port 8081 :ssl-context ssl}
                              {:port 8443 :ssl-context ssl :http2 true
                               :http3 true :http3-cert-path cert :http3-key-path key}]))
-        ;; The async profile holds 32,000 connections; retain a finite cap with headroom.
-        servers (mapv #(enso/run-server handler (assoc % :max-connections 40000)) options)]
+        servers (mapv #(enso/run-server handler (merge listener-defaults %)) options)]
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread. ^Runnable (fn []
                                           (doseq [server servers]
