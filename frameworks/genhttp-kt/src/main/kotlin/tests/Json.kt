@@ -19,7 +19,7 @@ class Json {
     fun compute(count: Int, m: Int = 1): ListWithCount<ProcessedItem> {
         val datasetItems = DatasetItems ?: throw ProviderException(ResponseStatus.InternalServerError, "No dataset")
 
-        val processed = datasetItems.take(count.coerceIn(0, datasetItems.size)).map { d ->
+        val processed = datasetItems.subList(0, count.coerceIn(0, datasetItems.size)).map { d ->
             ProcessedItem(
                 id = d.id, name = d.name, category = d.category,
                 price = d.price, quantity = d.quantity, active = d.active,
