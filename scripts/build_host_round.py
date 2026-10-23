@@ -107,6 +107,12 @@ def main() -> None:
 
     commit = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
                             capture_output=True, text=True).stdout.strip() or "unknown"
+    # The main commit this branch is based on: which version of each
+    # framework the round built.
+    def git(*a):
+        return subprocess.run(["git", "-C", str(ROOT), *a],
+                              capture_output=True, text=True).stdout.strip()
+    base = git("merge-base", "HEAD", "origin/main")
     entry.update({
         "name": args.name,
         "host": args.host,
@@ -124,6 +130,9 @@ def main() -> None:
         "cpu_max_mhz": current.get("cpu_max_mhz"),
         "commit": commit,
     })
+    if base:
+        entry["main_commit"] = base
+        entry["main_commit_date"] = git("show", "-s", "--format=%cI", base)
     if current.get("tcp"):
         entry["tcp"] = current["tcp"]
 
