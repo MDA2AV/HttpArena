@@ -4,7 +4,7 @@
 
 ## Stack
 
-- **Language:** Sober 0.6.0
+- **Language:** Sober 0.6.1
 - **Framework:** none beyond the standard library: `std/http` (server, router, middleware, gzip), `std/json`, `std/tls`
 - **Build:** the release tarball of the compiler (one static ELF, standard library built in) on `alpine`, static binary on `scratch`
 
