@@ -14,7 +14,7 @@ on arm64, which the release has no archive for.
 
 | Package | Tag | What for |
 |---|---|---|
-| [Plod](https://github.com/kaitk/plod) | `v0.5.5` | The framework, with `plod::try_reply` |
+| [Plod](https://github.com/kaitk/plod) | `v0.5.6` | The framework, with `plod::try_reply`, `plod::bytes`, and `plod::field` |
 | [goose-http](https://github.com/kaitk/goose-http) | `v0.5.9` | HTTP/1.1, h2, WebSocket, the loop, and mail between threads |
 | [goose-compress](https://github.com/kaitk/goose-compress) | `v0.1.4` | gzip, deflate, and zstd |
 | [goose-tls](https://github.com/kaitk/goose-tls) | `v0.0.5` | A TLS 1.3 server in Goose, over OpenSSL's libcrypto for the ciphers and keys |
@@ -32,7 +32,9 @@ on arm64, which the release has no archive for.
 The image holds two binaries: `server`, without TLS, and `server-tls`, which adds 8081
 and 8443 with goose-tls's server, its handshake and records in Goose and its ciphers
 from libcrypto. It starts `server-tls` where `/certs` holds the certificate and key,
-and `server` otherwise, so the plain profiles don't load libcrypto.
+and `server` otherwise. `benchmark.sh` mounts `/certs` for every profile, so there
+`server-tls` serves them all; `validate.sh` mounts it only for the profiles that use
+TLS, and the compose files not at all.
 
 Under compose, the server gets no `/certs`, so 8443 is the proxy's. It still opens 8080,
 where `benchmark.sh`'s readiness probe looks for every compose profile, as libuvcpp's
@@ -48,13 +50,13 @@ holds.
 | baseline, pipelined, limited-conn, latency-1m, latency-10k, latency-500k-8cpu | `/baseline11` from `plod::query_int` and `plod::body`; `/pipeline` with `plod::text` |
 | async | `/delay/:ms` with `plod::pause`, which answers from the worker's timer |
 | json-comp, json-tls, json-h2c | `/json/:count` serialized per request with `plod::format_fields`, inside `plod::compressed` |
-| 8gbit | `POST /echo` over TLS, the body sent back with `http::respond` |
+| 8gbit | `POST /echo` over TLS, the body sent back with `plod::bytes` |
 | static-tls, static-h2 | `/static/*name` from disk through `plod::files`, which sends a `.br` or `.gz` sibling where `Accept-Encoding` takes it |
 | baseline-h2, baseline-h2c | `/baseline2`, over goose-http's h2 |
 | async-db | `/async-db` on goose-postgres's async pool, the rows decoded into a struct and serialized with `plod::format_fields` |
 | echo-ws, echo-ws-pipeline, echo-ws-limited | `/ws` with `plod::ws_upgrade` and `plod::ws_read` |
 | gateway-64 | Stock nginx (`proxy/`) terminating TLS and h2, serving `/static/` from disk, and proxying the rest over HTTP/1.1 |
-| gateway-h3 | Stock Caddy (`proxy-h3/`), as gateway-64 with h3: the stock nginx image has no QUIC |
+| gateway-h3 | Stock nginx (`proxy-h3/`), as gateway-64, with the image's HTTP/3 on 8443 over UDP beside h2 |
 | production-stack | Stock nginx (`proxy-production/`) with HttpArena's authsvc on `/api/`; the server's cache-aside below |
 
 production-stack's cache is in process, which the profile allows, as tako's and
@@ -81,7 +83,7 @@ Each is documented configuration, set as the documentation says, not tuning.
   `max_conns`: one wait per connection.
 - production-stack's cache follows Plod's production guidance for lanes that every
   worker asks
-  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.5/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
+  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.6/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
   A worker admits at most 1,024 asks to the lanes at once, less its Postgres pool's
   hand-overs: 1,015 at 24 workers (`admission` in `app.goose`).
   The profile's load keeps about 16,000 requests in flight at the edge, 1,024 h2
@@ -108,11 +110,6 @@ Each is documented configuration, set as the documentation says, not tuning.
   names no flags, and `goose build` takes none, so the Dockerfile passes `--cc` a gcc
   wrapper that adds them.
 
-goose-http's head writers, `http::start`, `http::field`, and `http::finish`, are Plod's
-documented way to add a header, as `X-Cache` here
-([reference](https://github.com/kaitk/plod/blob/v0.5.5/docs/reference.md#12-cookies-out)),
-and `http::respond` its way to send bytes as they came, as `/echo` does.
-
 ## Completeness
 
 - Routing: `plod::routes`, `plod::scope`, and path parameters such as `/json/:count`
@@ -122,5 +119,7 @@ and `http::respond` its way to send bytes as they came, as `/echo` does.
 - Request: extractors read the query (`plod::query_int`), the path
   (`plod::param_int`), headers (`plod::header`), and a JSON body into a struct
   (`plod::take`).
-- Response: `plod::json` serializes a struct, `plod::text` and `plod::empty` answer
-  plain, and `plod::files` serves files.
+- Response: `plod::json` serializes a struct, through Goose's standard `json` writer,
+  with a field of the route's own where its block adds one (`X-Cache`);
+  `plod::text`, `plod::empty`, and `plod::bytes` answer plain; and `plod::files`
+  serves files.

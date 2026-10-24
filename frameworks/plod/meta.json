@@ -10,7 +10,7 @@
     "request": true,
     "response": true
   },
-  "description": "Plod: a REST framework for Goose, a memory-safe systems language with no heap allocator or garbage collector, with routes, scopes, middleware, and extractors in the manner of Actix, over goose-http's io_uring loop, one worker per CPU. JSON is serialized per request with plod::format_fields and compressed through plod::compressed at default levels; static files come from disk through plod::files, with their .br and .gz siblings; /async-db runs on goose-postgres's async pool, and production-stack's cache-aside is in process. The gateway profiles put stock nginx in front of it, and gateway-h3 stock Caddy.",
+  "description": "Plod: a REST framework for Goose, a memory-safe systems language with no heap allocator or garbage collector, with routes, scopes, middleware, and extractors in the manner of Actix, over goose-http's io_uring loop, one worker per CPU. JSON is serialized per request with plod::format_fields, through Goose's standard json writer, and compressed through plod::compressed at default levels; static files come from disk through plod::files, with their .br and .gz siblings; /async-db runs on goose-postgres's async pool, and production-stack's cache-aside is in process. The gateway profiles put stock nginx in front of it, with nginx's own HTTP/3 for gateway-h3.",
   "repo": "https://github.com/kaitk/plod",
   "enabled": true,
   "tests": ["baseline", "pipelined", "limited-conn", "latency-1m", "latency-10k", "latency-500k-8cpu", "async", "async-db", "json-comp", "json-tls", "8gbit", "static-tls", "baseline-h2", "static-h2", "baseline-h2c", "json-h2c", "echo-ws", "echo-ws-pipeline", "echo-ws-limited", "gateway-64", "gateway-h3", "production-stack"],

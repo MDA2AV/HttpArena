@@ -74,7 +74,7 @@ fn handle(cx) {
             guard ms >= 0 && ms <= 3600000 else { plod::fail(cx, 400, "invalid_delay"); }
             plod::pause(cx, ms, Use.Delay { ms: ms });
         };
-        plod::post(cx, "/echo") { http::respond(cx.out, 200, "application/octet-stream", plod::body(cx)); };
+        plod::post(cx, "/echo") { plod::bytes(cx, 200, "application/octet-stream", plod::body(cx)); };
         plod::get(cx, "/static/*name") { plod::files(cx, STATIC, "name", cx.state.file, Use.File); };
         plod::get(cx, "/ws") { plod::ws_upgrade(cx, cx.state.ws, Use.Echo); };
         plod::get(cx, "/async-db") { async_db(cx); };
@@ -283,11 +283,7 @@ fn resume(u: CacheJob.Update, cx) { plod::empty(cx, 204); }
 
 // Answers c's row as JSON, with X-Cache.
 fn cached(cx, c) {
-    var body: u8[>..] = [];
-    format(body, c.v);
-    http::start(cx.out, 200);
-    http::field(cx.out, "X-Cache", if c.hit { "HIT" } else { "MISS" });
-    http::finish(cx.out, http::JSON, body);
+    plod::json(cx, 200, c.v) { plod::field(cx, "X-Cache", if c.hit { "HIT" } else { "MISS" }); };
 }
 
 thread_fn cache(box: http::Box, jobs: plod::Jobs<CacheJob>) {

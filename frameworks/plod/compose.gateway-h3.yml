@@ -1,10 +1,10 @@
-# gateway-h3: compose.gateway.yml with stock Caddy (proxy-h3/) as the proxy,
-# which serves h3 on 8443/udp beside h1 and h2 on 8443/tcp. PROXY_CPUSET and
-# SERVER_CPUSET move the CPU split. Modelled on aspnet-minimal_caddy's
-# compose.gateway-h3.yml.
+# gateway-h3: compose.gateway.yml with stock nginx's HTTP/3 (proxy-h3/), on
+# 8443/udp beside h2 on 8443/tcp. PROXY_CPUSET and SERVER_CPUSET move the CPU
+# split. Modelled on anole's compose.gateway-h3.yml.
 services:
   proxy:
     build: ./proxy-h3
+    command: ["nginx", "-g", "daemon off; worker_processes 32;"]
     network_mode: host
     cpuset: "${PROXY_CPUSET:-0-15,64-79}"
     ulimits:
