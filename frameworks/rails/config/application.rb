@@ -19,22 +19,6 @@ class MarkEchoAsBinary
   end
 end
 
-# Threads marked as IO bound are allowed to go over Puma's max thread limit.
-class MarkAsIOBoundThreads
-  IOBoundPaths = %w[/baseline11 /baseline2 /async-db].map { [_1, nil] }.to_h.freeze
-
-  def initialize(app)
-    @app = app
-  end
-
-  def call(env)
-    if IOBoundPaths.has_key? env['PATH_INFO']
-      env["puma.mark_as_io_bound"].call
-    end
-    @app.call(env)
-  end
-end
-
 class BenchmarkApp < Rails::Application
   config.load_defaults Rails::VERSION::STRING.to_f
   config.eager_load = true
@@ -58,7 +42,6 @@ class BenchmarkApp < Rails::Application
   # Add gzip support
   config.middleware.insert 0, Rack::Deflater
   config.middleware.insert 0, MarkEchoAsBinary
-  config.middleware.insert 0, MarkAsIOBoundThreads
 
   # Silence logging
   config.logger = nil
