@@ -46,6 +46,7 @@ The four values the entry deliberately differs on are marked ¹.
 | var | default | |
 |---|---|---|
 | `IOXIDE_SQ_ENTRIES` | `8192` | io_uring SQ/CQ depth |
+| `IOXIDE_OP_SLOTS` | `4096` | starting size of each reactor's table of in-flight ring ops (timers, pg, file reads); it doubles when it runs out |
 | `IOXIDE_RECV_BUF_KB` | `16` ¹ | bytes per shared recv buffer (library: 32 KB) |
 | `IOXIDE_RECV_SLOTS` | `256` ¹ | shared recv buffer-ring depth (library: 4096) |
 | `IOXIDE_DUAL_STACK` | `0` | bind IPv6 sockets that also accept IPv4-mapped clients |
@@ -64,7 +65,9 @@ The four values the entry deliberately differs on are marked ¹.
 | `IOXIDE_POOL_MAX` | `1024` | pooled connection objects per reactor |
 | `IOXIDE_WRITE_OVERFLOW` | `grow` | `grow` reallocs one slab; `segmented` chains pooled slabs and flushes with one vectored `SENDMSG` |
 | `IOXIDE_ZERO_COPY` | `0` | `IORING_OP_SEND_ZC`: trades the in-kernel copy for page-pinning plus a second completion, so it only pays off on large responses |
-| `IOXIDE_RECV_QUEUE` | `64` | per-connection SPSC recv queue depth |
+| `IOXIDE_RECV_QUEUE` | `4096` | per-connection SPSC recv queue depth; an overflow closes the connection with an error |
+| `IOXIDE_TCP_READ_MS` | `60000` | close a connection whose read has waited this long for the peer, with nothing buffered |
+| `IOXIDE_TCP_SEND_MS` | `60000` | close a connection whose flush has been in flight this long (a peer that stopped reading) |
 
 ### UDP (`UdpOptions`, under QUIC)
 
@@ -82,8 +85,9 @@ The four values the entry deliberately differs on are marked ¹.
 | `IOXIDE_QUIC_CID_LEN` | `8` | connection-id length this endpoint mints; engine and listener are sourced from the same value so they cannot disagree |
 | `IOXIDE_QUIC_ROUTING` | `forward` | `forward` hands a misdirected datagram to its owner over the post queue (free until a client migrates); `kernelfilter` attaches a cBPF program so the kernel routes by connection id |
 | `IOXIDE_QUIC_PIN_MIGRATED` | `1` | claim a migrated peer's new address so forwarding stops |
-| `IOXIDE_QUIC_IDLE_MS` | `60000` | transport-level backstop for a connection gone quiet |
+| `IOXIDE_QUIC_READ_MS` | `60000` | close a connection whose peer has sent nothing for this long; while a response is owed, keep-alive PINGs keep the peer answering, so a slow handler is not timed out |
 | `IOXIDE_QUIC_RETENTION_BYTES` | `16777216` | per-connection send-retention high-water; past it a response streams paced by the peer's acks instead of buffering whole |
+| `IOXIDE_QUIC_RETENTION_CEILING_BYTES` | `33554432` | a connection that keeps sending past the high-water and reaches this is closed |
 
 ### TLS (`TlsOptions`)
 
