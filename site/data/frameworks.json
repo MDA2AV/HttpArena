@@ -1261,6 +1261,20 @@
       "response": true
     }
   },
+  "ktron": {
+    "dir": "ktron",
+    "description": "Ktron \u2014 a Kotlin web framework on the Kotlin port of the ioxide io_uring runtime. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, with the syscalls made straight through the Foreign Function & Memory API. Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and routed by a segment trie whose parameters are offsets into the request. Middleware are ordered before/after hooks that can short-circuit; handlers are plain functions, or suspend functions the reactor resumes inline on its own thread, with no dispatcher and no thread pool. JSON is serialized by Ghost's generated serializers straight into the connection's buffer, and compressed by the framework's gzip/brotli middleware. TLS on :8081 is the BoringSSL ioxide bundles over FFM, with kernel TX offload. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring.",
+    "repo": "https://github.com/MDA2AV/Ktron",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "lapis": {
     "dir": "lapis",
     "description": "Lapis on OpenResty with LuaJIT, one nginx worker per core. Routing and params through the Lapis application API, cjson serialization, gzip through the nginx gzip directive.",
