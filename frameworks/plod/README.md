@@ -5,7 +5,7 @@
 allocator, garbage collector, or lifetime annotations. Plod has routes, scopes,
 middleware, and extractors in the manner of Actix, and builds on
 [goose-http](https://github.com/kaitk/goose-http), its HTTP engine: HTTP/1.1, h2, TLS,
-and WebSocket over an io_uring loop per worker.
+WebSocket, and HTTP/3 over an io_uring loop per worker.
 
 The entry is `app.goose`, an application written as one on Plod is, and two root files
 that declare the packages and serve it. The Dockerfile builds both with Goose's
@@ -14,19 +14,19 @@ on arm64, which the release has no archive for.
 
 | Package | Tag | What for |
 |---|---|---|
-| [Plod](https://github.com/kaitk/plod) | `v0.5.6` | The framework, with `plod::try_reply`, `plod::bytes`, and `plod::field` |
-| [goose-http](https://github.com/kaitk/goose-http) | `v0.5.9` | HTTP/1.1, h2, WebSocket, the loop, and mail between threads |
+| [Plod](https://github.com/kaitk/plod) | `v0.5.7` | The framework, with `plod::try_reply`, `plod::bytes`, `plod::field`, and `plod.h3` |
+| [goose-http](https://github.com/kaitk/goose-http) | `v0.5.10` | HTTP/1.1, h2, HTTP/3, WebSocket, the loop, and mail between threads |
 | [goose-compress](https://github.com/kaitk/goose-compress) | `v0.1.4` | gzip, deflate, and zstd |
-| [goose-tls](https://github.com/kaitk/goose-tls) | `v0.0.5` | A TLS 1.3 server in Goose, over OpenSSL's libcrypto for the ciphers and keys |
+| [goose-tls](https://github.com/kaitk/goose-tls) | `v0.0.6` | A TLS 1.3 server in Goose, with QUIC's handshake and packet protection, over OpenSSL's libcrypto for the ciphers and keys |
 | [goose-hash](https://github.com/kaitk/goose-hash) | `v0.0.4` | SHA-1 for the WebSocket handshake, SHA-256 for SCRAM |
-| [goose-postgres](https://github.com/kaitk/goose-postgres) | `v0.0.7` | Goose's Postgres driver: the protocol, an async pool per worker, and a blocking connection |
+| [goose-postgres](https://github.com/kaitk/goose-postgres) | `v0.0.8` | Goose's Postgres driver: the protocol, an async pool per worker, and a blocking connection |
 
 ## Listeners
 
 - 8080: HTTP/1.1.
 - 8082: h2 with prior knowledge (h2c).
 - 8081 and 8443, where HttpArena mounts `/certs`: TLS 1.3, HTTP/1.1 on 8081, and h2 or
-  HTTP/1.1 by ALPN on 8443.
+  HTTP/1.1 by ALPN on 8443, with HTTP/3 on UDP 8443 too.
 - 8085, under the compose files only (`PROXY_PORT`): HTTP/1.1 for the proxy.
 
 The image holds two binaries: `server`, without TLS, and `server-tls`, which adds 8081
@@ -53,6 +53,7 @@ holds.
 | 8gbit | `POST /echo` over TLS, the body sent back with `plod::bytes` |
 | static-tls, static-h2 | `/static/*name` from disk through `plod::files`, which sends a `.br` or `.gz` sibling where `Accept-Encoding` takes it |
 | baseline-h2, baseline-h2c | `/baseline2`, over goose-http's h2 |
+| baseline-h3, static-h3 | `/baseline2` and `/static/*name`, the same routes, over goose-http's HTTP/3 on UDP 8443 (`plod.h3`): its QUIC is written in Goose, its handshake is goose-tls's server and its packet protection libcrypto's, and QPACK uses the static table only. The defaults are goose-http's |
 | async-db | `/async-db` on goose-postgres's async pool, the rows decoded into a struct and serialized with `plod::format_fields` |
 | echo-ws, echo-ws-pipeline, echo-ws-limited | `/ws` with `plod::ws_upgrade` and `plod::ws_read` |
 | gateway-64 | Stock nginx (`proxy/`) terminating TLS and h2, serving `/static/` from disk, and proxying the rest over HTTP/1.1 |
@@ -83,7 +84,7 @@ Each is documented configuration, set as the documentation says, not tuning.
   `max_conns`: one wait per connection.
 - production-stack's cache follows Plod's production guidance for lanes that every
   worker asks
-  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.6/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
+  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.7/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
   A worker admits at most 1,024 asks to the lanes at once, less its Postgres pool's
   hand-overs: 1,015 at 24 workers (`admission` in `app.goose`).
   The profile's load keeps about 16,000 requests in flight at the edge, 1,024 h2

@@ -48,7 +48,7 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=build /server /server
 COPY --from=build /server-tls /server-tls
-EXPOSE 8080 8081 8082 8443
+EXPOSE 8080 8081 8082 8443 8443/udp
 # The TLS build where HttpArena mounts the certificate at /certs, for the
 # profiles that use it; the other otherwise. One worker per CPU of the
 # container's cpuset, goose-http's default.
