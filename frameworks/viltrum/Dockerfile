@@ -9,7 +9,7 @@ RUN curl -fsSL -o /tmp/v.zip https://github.com/vlang/v/releases/download/0.5.2/
     unzip -q /tmp/v.zip -d /opt && rm /tmp/v.zip
 ENV PATH=/opt/v:$PATH
 
-ARG VILTRUM_REF=v1.7.0
+ARG VILTRUM_REF=v1.10.0
 RUN git clone --depth 1 --branch ${VILTRUM_REF} https://github.com/Tuntii/viltrum /root/.vmodules/viltrum
 
 WORKDIR /app
