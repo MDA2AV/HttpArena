@@ -10,7 +10,7 @@ WORKDIR /app
 # live in this entry. Fat LTO objects for the library and -flto on the handler link, so the
 # handlers inline into the engine. cJSON parses the dataset once at startup; brotli and zlib are
 # the codings of the library's compression middleware (json-comp).
-ARG LIBIOXD_VERSION=3e435f30b6d75b98586ea9e4d35be8c7b75ad6ec
+ARG LIBIOXD_VERSION=6e20d9f102a064a4182f60e3279a887d528fc467
 RUN mkdir -p /tmp/libioxd && \
     curl -LSs "https://github.com/MDA2AV/libioxd/archive/${LIBIOXD_VERSION}.tar.gz" \
       | tar --strip-components=1 -xz -C /tmp/libioxd && \
