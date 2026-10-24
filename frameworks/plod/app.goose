@@ -75,7 +75,7 @@ fn handle(cx) {
             plod::pause(cx, ms, Use.Delay { ms: ms });
         };
         plod::post(cx, "/echo") { plod::bytes(cx, 200, "application/octet-stream", plod::body(cx)); };
-        plod::get(cx, "/static/*name") { plod::files(cx, STATIC, "name", cx.state.file, Use.File); };
+        plod::get(cx, "/static/*name") { plod::cached_files(cx, STATIC, "name", STATIC_CACHE, cx.state.file, Use.File); };
         plod::get(cx, "/ws") { plod::ws_upgrade(cx, cx.state.ws, Use.Echo); };
         plod::get(cx, "/async-db") { async_db(cx); };
         plod::scope(cx, "/public") {
@@ -421,8 +421,10 @@ fn on_call(cx) {
     }
 }
 
-// Where HttpArena mounts the static profiles' files.
+// Where HttpArena mounts the static profiles' files, and the bytes of them
+// each worker keeps in memory: the 43 of up to 64 KB are 0.7 MB.
 let STATIC = "/data/static";
+let STATIC_CACHE = 1 << 20;
 
 // An item as the dataset and Postgres's items table hold it, which
 // /async-db and /api/items answer. The dataset's, which main loads before the

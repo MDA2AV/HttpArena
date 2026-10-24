@@ -14,8 +14,8 @@ on arm64, which the release has no archive for.
 
 | Package | Tag | What for |
 |---|---|---|
-| [Plod](https://github.com/kaitk/plod) | `v0.5.8` | The framework, with `plod::try_reply`, `plod::bytes`, `plod::field`, and `plod.h3` |
-| [goose-http](https://github.com/kaitk/goose-http) | `v0.5.11` | HTTP/1.1, h2, HTTP/3, WebSocket, the loop, and mail between threads |
+| [Plod](https://github.com/kaitk/plod) | `v0.5.9` | The framework, with `plod::try_reply`, `plod::bytes`, `plod::field`, `plod::cached_files`, and `plod.h3` |
+| [goose-http](https://github.com/kaitk/goose-http) | `v0.5.12` | HTTP/1.1, h2, HTTP/3, WebSocket, the loop, mail between threads, and the file cache |
 | [goose-compress](https://github.com/kaitk/goose-compress) | `v0.1.4` | gzip, deflate, and zstd |
 | [goose-tls](https://github.com/kaitk/goose-tls) | `v0.0.6` | A TLS 1.3 server in Goose, with QUIC's handshake and packet protection, over OpenSSL's libcrypto for the ciphers and keys |
 | [goose-hash](https://github.com/kaitk/goose-hash) | `v0.0.4` | SHA-1 for the WebSocket handshake, SHA-256 for SCRAM |
@@ -51,7 +51,7 @@ holds.
 | async | `/delay/:ms` with `plod::pause`, which answers from the worker's timer |
 | json-comp, json-tls, json-h2c | `/json/:count` serialized per request with `plod::format_fields`, inside `plod::compressed` |
 | 8gbit | `POST /echo` over TLS, the body sent back with `plod::bytes` |
-| static-tls, static-h2 | `/static/*name` from disk through `plod::files`, which sends a `.br` or `.gz` sibling where `Accept-Encoding` takes it |
+| static-tls, static-h2 | `/static/*name` through `plod::cached_files`, Plod's static handler with goose-http's file cache: a `.br` or `.gz` sibling where `Accept-Encoding` takes it, and each file of up to 64 KB kept in the worker's memory, 1 MiB at most, and checked against the disk with a `stat` on every request, so a replaced file's next answer carries its new bytes. Larger files are read from disk |
 | baseline-h2, baseline-h2c | `/baseline2`, over goose-http's h2 |
 | baseline-h3, static-h3 | `/baseline2` and `/static/*name`, the same routes, over goose-http's HTTP/3 on UDP 8443 (`plod.h3`): its QUIC is written in Goose, its handshake is goose-tls's server and its packet protection libcrypto's, and QPACK uses the static table only. The defaults are goose-http's |
 | async-db | `/async-db` on goose-postgres's async pool, the rows decoded into a struct and serialized with `plod::format_fields` |
@@ -84,7 +84,7 @@ Each is documented configuration, set as the documentation says, not tuning.
   `max_conns`: one wait per connection.
 - production-stack's cache follows Plod's production guidance for lanes that every
   worker asks
-  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.8/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
+  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.9/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
   A worker admits at most 1,024 asks to the lanes at once, less its Postgres pool's
   hand-overs: 1,015 at 24 workers (`admission` in `app.goose`).
   The profile's load keeps about 16,000 requests in flight at the edge, 1,024 h2
@@ -122,5 +122,5 @@ Each is documented configuration, set as the documentation says, not tuning.
   (`plod::take`).
 - Response: `plod::json` serializes a struct, through Goose's standard `json` writer,
   with a field of the route's own where its block adds one (`X-Cache`);
-  `plod::text`, `plod::empty`, and `plod::bytes` answer plain; and `plod::files`
-  serves files.
+  `plod::text`, `plod::empty`, and `plod::bytes` answer plain; and
+  `plod::cached_files` serves files.
