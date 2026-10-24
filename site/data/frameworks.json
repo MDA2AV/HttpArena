@@ -517,6 +517,13 @@
       "response": true
     }
   },
+  "edixoi-kt": {
+    "dir": "edixoi-kt",
+    "description": "edixoi-kt \u2014 edixoi on the JVM: the Kotlin port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, with the syscalls made straight through the Foreign Function & Memory API (no liburing, no JNI shim). Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with the BoringSSL ioxide bundles, called through FFM, with kernel TX offload and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to edixoi, which serves the same profiles in C#.",
+    "repo": "https://github.com/MDA2AV/ioxide",
+    "type": "engine",
+    "engine": "io_uring"
+  },
   "edixoi": {
     "dir": "edixoi",
     "description": "edixoi \u2014 the ioxide io_uring runtime on the raw recv/send API, and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, with continuations resuming inline on the reactor thread that took the request. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is hand-written against that API \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated ring-natively with kernel TX offload where the kernel offers the ULP (OpenSSL otherwise) and OpenSSL receive. The async profile's wait is an IORING_OP_TIMEOUT through ioxide.timer, so a held connection costs a kernel deadline rather than a thread. Companion to the ioxide-pipes entry, which serves the same profiles over System.IO.Pipelines.",
