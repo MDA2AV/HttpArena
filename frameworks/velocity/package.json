@@ -1,0 +1,9 @@
+{
+  "name": "httparena-velocity",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "velocity": "github:aneeshhmon-create/velocity"
+  }
+}
