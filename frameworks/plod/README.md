@@ -14,8 +14,8 @@ on arm64, which the release has no archive for.
 
 | Package | Tag | What for |
 |---|---|---|
-| [Plod](https://github.com/kaitk/plod) | `v0.5.7` | The framework, with `plod::try_reply`, `plod::bytes`, `plod::field`, and `plod.h3` |
-| [goose-http](https://github.com/kaitk/goose-http) | `v0.5.10` | HTTP/1.1, h2, HTTP/3, WebSocket, the loop, and mail between threads |
+| [Plod](https://github.com/kaitk/plod) | `v0.5.8` | The framework, with `plod::try_reply`, `plod::bytes`, `plod::field`, and `plod.h3` |
+| [goose-http](https://github.com/kaitk/goose-http) | `v0.5.11` | HTTP/1.1, h2, HTTP/3, WebSocket, the loop, and mail between threads |
 | [goose-compress](https://github.com/kaitk/goose-compress) | `v0.1.4` | gzip, deflate, and zstd |
 | [goose-tls](https://github.com/kaitk/goose-tls) | `v0.0.6` | A TLS 1.3 server in Goose, with QUIC's handshake and packet protection, over OpenSSL's libcrypto for the ciphers and keys |
 | [goose-hash](https://github.com/kaitk/goose-hash) | `v0.0.4` | SHA-1 for the WebSocket handshake, SHA-256 for SCRAM |
@@ -84,7 +84,7 @@ Each is documented configuration, set as the documentation says, not tuning.
   `max_conns`: one wait per connection.
 - production-stack's cache follows Plod's production guidance for lanes that every
   worker asks
-  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.7/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
+  ([sizing a lane's admissions and boxes](https://github.com/kaitk/plod/blob/v0.5.8/docs/best-practices/lanes.md#67-sizing-a-lanes-admissions-and-boxes)).
   A worker admits at most 1,024 asks to the lanes at once, less its Postgres pool's
   hand-overs: 1,015 at 24 workers (`admission` in `app.goose`).
   The profile's load keeps about 16,000 requests in flight at the edge, 1,024 h2

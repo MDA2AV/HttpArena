@@ -3,12 +3,12 @@
 // ALPN chooses, with HTTP/3 on UDP 8443 beside it.
 import std;
 import os;
-import http from "github.com/kaitk/goose-http@v0.5.10";
+import http from "github.com/kaitk/goose-http@v0.5.11";
 import compress from "github.com/kaitk/goose-compress@v0.1.4";
 import tls from "github.com/kaitk/goose-tls@v0.0.6";
 import hash from "github.com/kaitk/goose-hash@v0.0.4";
 import pg from "github.com/kaitk/goose-postgres@v0.0.8";
-import plod from "github.com/kaitk/plod@v0.5.7";
+import plod from "github.com/kaitk/plod@v0.5.8";
 import plod.h3;
 import app;
 
