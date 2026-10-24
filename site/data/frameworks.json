@@ -2518,6 +2518,20 @@
     "type": "engine",
     "engine": "veb"
   },
+  "velocity": {
+    "dir": "velocity",
+    "description": "Velocity, a lightweight Express.js alternative on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/aneeshhmon-create/velocity",
+    "type": "experimental",
+    "engine": "nodehttp",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "vertx": {
     "dir": "vertx",
     "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
