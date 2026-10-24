@@ -1,8 +1,8 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    iodine (0.7.58)
-    rack (3.2.6)
+    iodine (0.8.2)
+    rack (2.2.24)
 
 PLATFORMS
   arm64-darwin-24
@@ -10,11 +10,11 @@ PLATFORMS
 
 DEPENDENCIES
   iodine
-  rack (~> 3.0)
+  rack (~> 2.0)
 
 CHECKSUMS
-  iodine (0.7.58) sha256=d42f3a00bc35bf1a57aba942096df323d0c46b502cd58cde765cc40304f86b49
-  rack (3.2.6) sha256=5ed78e1f73b2e25679bec7d45ee2d4483cc4146eb1be0264fc4d94cb5ef212c2
+  iodine (0.8.2) sha256=e7113fa763859ea042726486f6f56ce85fc8c2e67a174e6803ea5d2e6a9ec282
+  rack (2.2.24) sha256=ef16526a0d871c43753452338c754040a664c8b41bf0dd7450b85f7772adca5f
 
 BUNDLED WITH
-  4.0.8
+  4.1.0.beta2
