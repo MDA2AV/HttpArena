@@ -784,7 +784,11 @@ auto get_sum(std::span<const std::byte> payload)
 }
 
 auto echo(ws::ws_context &connection) -> cn::task<void> {
-  (void)co_await connection.raw_connection().async_echo_messages();
+  (void)co_await connection.raw_connection().async_process_messages(
+      [](ws::opcode op, std::span<const std::byte> payload,
+         ws::message_writer &output) -> std::expected<void, std::error_code> {
+        return output.send(op, payload);
+      });
 }
 
 auto make_router(grpc::service_router &grpc_service, bool websocket,
