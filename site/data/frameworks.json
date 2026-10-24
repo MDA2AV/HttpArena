@@ -1722,7 +1722,7 @@
   },
   "plod": {
     "dir": "plod",
-    "description": "Plod: a REST framework for Goose, a memory-safe systems language with no heap allocator or garbage collector, with routes, scopes, middleware, and extractors in the manner of Actix, over goose-http's io_uring loop, one worker per CPU. JSON is serialized per request with plod::format_fields and compressed through plod::compressed at default levels; static files come from disk through plod::files, with their .br and .gz siblings; /async-db runs on goose-postgres's async pool, and production-stack's cache-aside is in process. The gateway profiles put stock nginx in front of it, and gateway-h3 stock Caddy.",
+    "description": "Plod: a REST framework for Goose, a memory-safe systems language with no heap allocator or garbage collector, with routes, scopes, middleware, and extractors in the manner of Actix, over goose-http's io_uring loop, one worker per CPU. JSON is serialized per request with plod::format_fields, through Goose's standard json writer, and compressed through plod::compressed at default levels; static files come from disk through plod::files, with their .br and .gz siblings; /async-db runs on goose-postgres's async pool, and production-stack's cache-aside is in process. HTTP/3 is goose-http's own QUIC, written in Goose over goose-tls's handshake and libcrypto's packet protection, with QPACK's static table, on UDP 8443 beside h2. The gateway profiles put stock nginx in front of it, with nginx's own HTTP/3 for gateway-h3.",
     "repo": "https://github.com/kaitk/plod",
     "type": "experimental",
     "engine": "goose-http",
