@@ -19,7 +19,7 @@ on arm64, which the release has no archive for.
 | [goose-compress](https://github.com/kaitk/goose-compress) | `v0.1.4` | gzip, deflate, and zstd |
 | [goose-tls](https://github.com/kaitk/goose-tls) | `v0.0.5` | A TLS 1.3 server in Goose, over OpenSSL's libcrypto for the ciphers and keys |
 | [goose-hash](https://github.com/kaitk/goose-hash) | `v0.0.4` | SHA-1 for the WebSocket handshake, SHA-256 for SCRAM |
-| [goose-postgres](https://github.com/kaitk/goose-postgres) | `v0.0.6` | Goose's Postgres driver: the protocol, an async pool per worker, and a blocking connection |
+| [goose-postgres](https://github.com/kaitk/goose-postgres) | `v0.0.7` | Goose's Postgres driver: the protocol, an async pool per worker, and a blocking connection |
 
 ## Listeners
 
