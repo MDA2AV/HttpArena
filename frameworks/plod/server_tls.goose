@@ -3,12 +3,12 @@
 // ALPN chooses.
 import std;
 import os;
-import http from "github.com/kaitk/goose-http@v0.5.8";
+import http from "github.com/kaitk/goose-http@v0.5.9";
 import compress from "github.com/kaitk/goose-compress@v0.1.4";
 import tls from "github.com/kaitk/goose-tls@v0.0.5";
 import hash from "github.com/kaitk/goose-hash@v0.0.4";
 import pg from "github.com/kaitk/goose-postgres@v0.0.6";
-import plod from "github.com/kaitk/plod@v0.5.4";
+import plod from "github.com/kaitk/plod@v0.5.5";
 import plod.tls;
 import app;
 

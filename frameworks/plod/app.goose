@@ -51,9 +51,6 @@ enum Use {
 struct St {
     use: Use = Use.None,
     file: http::FileBody = http::FileBody { .. },
-    // At goose-http's defaults, which the standard mode requires, a worker
-    // admits 1,021 WebSockets and answers more with 503: echo-ws's 16,384
-    // connections need 17 workers, so on fewer CPUs most of them reconnect.
     ws: http::WebSocket = http::WebSocket { .. },
     ticket: pg::Ticket = pg::Ticket { .. },
 }
