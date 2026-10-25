@@ -2,7 +2,7 @@
   "display_name": "wastnet",
   "language": "Java",
   "engine": "wastnet",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "completeness": {
     "routing": true,
