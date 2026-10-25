@@ -245,7 +245,10 @@ pub fn main(init: std.process.Init) !void {
         .{ .address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8080) } },
         .{
             .address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8081) },
-            .tls = .{ .cert_path = cert_path, .key_path = key_path },
+            .tls = .{
+                .certificate = .{ .file = .{ .cert_path = cert_path, .key_path = key_path } },
+                .alpn_protocols = &.{"http/1.1"},
+            },
         },
     };
     var server = http.Server(void).init(init.gpa, rt.io(), .{
