@@ -6,6 +6,7 @@
 start(_StartType, _StartArgs) ->
     {ok, SupPid} = roadrunner_httparena_sup:start_link(),
     ok = roadrunner_httparena_dataset:load(),
+    ok = roadrunner_httparena_cache:new(),
     _ = roadrunner_httparena_db:start_pool(),
     Routes = roadrunner_httparena_handler:routes(),
     HttpPort = application:get_env(roadrunner_httparena, http_port, 8080),
