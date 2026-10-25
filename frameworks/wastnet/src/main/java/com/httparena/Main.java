@@ -61,6 +61,8 @@ public final class Main {
     private static NioConfig config() {
         NioConfig nioConfig = new NioConfig().testMode(); // testMode includes HTTP/1.1 pipelining
         nioConfig.option(HttpOptions.GZIP, true);
+        nioConfig.option(SocketOptions.ENABLE_VIRTUAL_THREAD, true); // JDK >= 21   ← 新增
+        nioConfig.option(HttpOptions.HTTP2_EXPOSE_DATE_HEADER, false);
 
         // Clear text scenes, especially pipeline, improve performance
         nioConfig.setReadBufferSize(16384);
