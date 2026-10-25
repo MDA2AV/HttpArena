@@ -74,6 +74,7 @@ class App < Sinatra::Base
   # Rack serves this on a worker, so the wait holds one. That is what the profile is measuring
   # for a synchronous stack, so it is not worked around.
   get '/delay/:ms' do
+    env["puma.mark_as_io_bound"].call
     ms = params['ms'].to_i
     sleep(ms / 1000.0) if ms > 0
     render_plain ms.to_s
@@ -227,6 +228,7 @@ class App < Sinatra::Base
     }
     render_json JSON.generate(item)
   end
+
   private
 
   def render_json(json)
@@ -279,6 +281,6 @@ class App < Sinatra::Base
   end
 
   def self.pool_size
-    ENV.fetch('MAX_THREADS', 4).to_i + ENV.fetch("MAX_IO_THREADS", 10).to_i
+    ENV.fetch('MAX_THREADS', 4).to_i
   end
 end
