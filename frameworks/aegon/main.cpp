@@ -130,11 +130,12 @@ aegon::core::Task<void> handle_delay(Context& ctx) {
         std::from_chars(ms_str->data(), ms_str->data() + ms_str->size(), ms);
     }
     if (ms > 0) {
-        co_await aegon::core::EventLoop::current()->ring().timeout(ms * 1'000'000ULL);
+        co_await aegon::core::EventLoop::current()->engine().timeout(ms * 1'000'000ULL);
     }
     char buf[32];
     auto [p, _] = std::to_chars(buf, buf + sizeof(buf), ms);
     ctx.res().text(std::string_view(buf, p - buf));
+    co_return;
 }
 
 void register_routes(Router& router) {
@@ -196,7 +197,7 @@ void register_routes(Router& router) {
     // 6. Echo endpoint (8gbit)
     router.post("/echo", [](Context& ctx) {
         ctx.res().header("Content-Type", "application/octet-stream");
-        ctx.res().body(std::string(ctx.req().body()));
+        ctx.res().body_view(ctx.req().body());
     });
 
     // 7. Static file serving (static-h2, static-h3) - Aegon core static_files API
@@ -282,11 +283,11 @@ int main() {
 
     Server server;
     if (low_memlock) {
-        server.ring_entries(512);
+        server.ring_entries(256);
         server.buffer_pool_entries(256);
     } else {
-        server.ring_entries(8192);
-        server.buffer_pool_entries(16384);
+        server.ring_entries(2048);
+        server.buffer_pool_entries(2048);
     }
     register_routes(server.router());
 

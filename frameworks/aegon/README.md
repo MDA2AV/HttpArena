@@ -8,7 +8,7 @@
 - **Engine:** Linux `io_uring` multishot accept/recv, provided buffer rings
 - **Serialization:** Glaze (compile-time reflection, zero-copy JSON)
 - **Compression:** `libdeflate` gzip/deflate streaming middleware
-- **Crypto & TLS:** OpenSSL with ALPN (`h2`, `http/1.1`)
+- **Crypto & TLS:** Linux Kernel TLS (kTLS) TX offload with OpenSSL TLS 1.3 handshake and ALPN (`h2`, `http/1.1`)
 - **WebSocket:** RFC 6455 frame parser with AVX2 SIMD payload unmasking and fast-path batched echo engine
 - **Build:** CMake with Ninja on Arch Linux
 
