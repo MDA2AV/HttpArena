@@ -1,0 +1,40 @@
+{
+  "display_name": "wastnet",
+  "language": "Java",
+  "engine": "wastnet",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "wastnet 1.0.3 annotation MVC (wastnet-mvc: @RestController / @Endpoint / @PathParam / @WebSocket) on top of its own zero-dependency Java NIO engine. Standard configuration: a single AnnotationRouterHandler is shared by four listeners - :8080 plaintext HTTP/1.1 (carrying the WebSocket upgrade), :8081 HTTP/1.1 + TLS advertising ALPN http/1.1, :8082 h2c prior-knowledge, :8443 h2 over TLS with ALPN h2. Static files go through the framework's HttpResourceRoute (sendfile zero-copy, ETag/Last-Modified); dynamic JSON responses are compressed by the framework's built-in GZIP (HttpOptions.GZIP) and JSON is serialized per request by wast, the library wastnet's own MVC layer uses. Each listener gets a worker pool sized to the 64 available cores, and HTTP/1.1 pipelining is enabled through HttpOptions.PIPELINE_ENABLED (it is off by default). Both are documented production settings.",
+  "repo": "https://github.com/wycst02/wastnet",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "gateway-64"
+  ],
+  "maintainers": ["wycst02"]
+}
