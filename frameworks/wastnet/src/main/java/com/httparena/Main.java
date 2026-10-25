@@ -5,6 +5,7 @@ import io.github.wycst.wastnet.http.HttpOptions;
 import io.github.wycst.wastnet.http.annotation.AnnotationRouterHandler;
 import io.github.wycst.wastnet.http.handler.HttpResourceRoute;
 import io.github.wycst.wastnet.socket.tcp.NioConfig;
+import io.github.wycst.wastnet.socket.conf.SocketOptions;
 
 /**
  * HttpArena entry point.
