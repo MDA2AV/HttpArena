@@ -3,8 +3,6 @@
 const fs = require('fs');
 const zlib = require('zlib');
 const express = require('fulmine.js');
-const { Pool } = require('pg').native;
-const Redis = require('ioredis');
 
 // One worker per usable core (cgroup quota first), all on the same port with SO_REUSEPORT.
 // https://fulmine.sndesign.it/examples/cluster
@@ -23,9 +21,11 @@ configure(app);
 // Postgres allows DATABASE_MAX_CONN, 240 at most leaves a reserve.
 // https://fulmine.sndesign.it/examples/cluster-pool
 const connections = Math.min(parseInt(process.env.DATABASE_MAX_CONN, 10) || 256, 240);
-const pool = app.cluster.serves
-    ? new Pool({ connectionString: process.env.DATABASE_URL, max: app.cluster.share(connections) })
-    : null;
+// pg and ioredis load on first use: only the database and production-stack profiles need them,
+// and loaded up front they kept every worker over the heap size where V8 starts full collections
+let pool = null;
+const db = () =>
+    (pool ??= new (require('pg').native.Pool)({ connectionString: process.env.DATABASE_URL, max: app.cluster.share(connections) }));
 
 const dataset = JSON.parse(fs.readFileSync('/data/dataset.json', 'utf8'));
 
@@ -124,7 +124,7 @@ app.get('/async-db', async (req, res) => {
     const max = parseInt(req.query.max, 10) || 50;
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 50);
     // named, so pg prepares it once per connection
-    const { rows } = await pool.query({
+    const { rows } = await db().query({
         name: 'items-by-price',
         text: 'SELECT ' + ITEM_COLUMNS + ' FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
         values: [min, max, limit]
@@ -137,7 +137,7 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
 
 app.get('/fortunes', async (req, res) => {
-    const { rows } = await pool.query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' });
+    const { rows } = await db().query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' });
     rows.push({ id: 0, message: 'Additional fortune added at request time.' });
     // ordinal and not localeCompare: the rows carry em-dashes
     rows.sort((a, b) => (a.message < b.message ? -1 : a.message > b.message ? 1 : 0));
@@ -148,8 +148,15 @@ app.get('/fortunes', async (req, res) => {
 // every profile, as validate.sh keeps the plain container on the shared port during the stack, and
 // lazyConnect opens no connection until a request needs one.
 {
-    const redis = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', { enableAutoPipelining: true, lazyConnect: true });
-    redis.on('error', () => {});
+    let redis = null;
+    const cache = () => {
+        if (redis === null) {
+            const Redis = require('ioredis');
+            redis = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', { enableAutoPipelining: true, lazyConnect: true });
+            redis.on('error', () => {});
+        }
+        return redis;
+    };
     const CACHE_HIT = { 'x-cache': 'HIT' };
     const CACHE_MISS = { 'x-cache': 'MISS' };
 
@@ -161,16 +168,16 @@ app.get('/fortunes', async (req, res) => {
     app.get('/api/items/:id', async (req, res) => {
         const id = parseInt(req.params.id, 10);
         if (!Number.isFinite(id)) return res.status(404).end();
-        const cached = await redis.get('crud:' + id);
+        const cached = await cache().get('crud:' + id);
         if (cached) return res.set(CACHE_HIT).type('application/json').send(cached);
-        const { rows } = await pool.query({
+        const { rows } = await db().query({
             name: 'crud-read',
             text: 'SELECT ' + ITEM_COLUMNS + ' FROM items WHERE id = $1 LIMIT 1',
             values: [id]
         });
         if (rows.length === 0) return res.status(404).end();
         const json = JSON.stringify(itemShape(rows[0]));
-        redis.set('crud:' + id, json, 'PX', 200);
+        cache().set('crud:' + id, json, 'PX', 200);
         res.set(CACHE_MISS).type('application/json').send(json);
     });
 
@@ -179,29 +186,29 @@ app.get('/fortunes', async (req, res) => {
         const id = parseInt(req.params.id, 10);
         if (!Number.isFinite(id)) return res.status(404).end();
         const body = req.body;
-        const { rowCount } = await pool.query({
+        const { rowCount } = await db().query({
             name: 'crud-update',
             text: 'UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4',
             values: [body.name ?? 'Updated', body.price ?? 0, body.quantity ?? 0, id]
         });
         if (rowCount === 0) return res.status(404).end();
-        await redis.del('crud:' + id);
+        await cache().del('crud:' + id);
         res.status(204).end();
     });
 
     app.get('/api/me', async (req, res) => {
         const id = parseInt(req.headers['x-user-id'], 10);
         if (!Number.isFinite(id)) return res.status(401).end();
-        const cached = await redis.get('user:' + id);
+        const cached = await cache().get('user:' + id);
         if (cached) return res.set(CACHE_HIT).type('application/json').send(cached);
-        const { rows } = await pool.query({
+        const { rows } = await db().query({
             name: 'user-read',
             text: 'SELECT id, name, email, plan FROM users WHERE id = $1 LIMIT 1',
             values: [id]
         });
         if (rows.length === 0) return res.status(404).end();
         const json = JSON.stringify(rows[0]);
-        redis.set('user:' + id, json, 'PX', 30000);
+        cache().set('user:' + id, json, 'PX', 30000);
         res.set(CACHE_MISS).type('application/json').send(json);
     });
 }
