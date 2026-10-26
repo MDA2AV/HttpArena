@@ -39,7 +39,7 @@
   },
   "aegon": {
     "dir": "aegon",
-    "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, and Glaze JSON serialization.",
+    "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, Glaze JSON serialization, and native zero-overhead gRPC over HTTP/2 with kTLS TX offload.",
     "repo": "https://github.com/UdayKhare09/Aegon",
     "type": "experimental",
     "engine": "io_uring",
