@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'rack', '~> 2.0'
+gem 'puma', git: 'https://github.com/p8/puma.git', ref: 'performance/stringio-chunked-bodies'
+gem 'concurrent-ruby'
