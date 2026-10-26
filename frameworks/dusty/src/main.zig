@@ -1,7 +1,6 @@
 const std = @import("std");
 const zio = @import("zio");
 const http = @import("dusty");
-const json = @import("json");
 const pg = @import("pg");
 const templates = @import("templates/fortunes.zig");
 
@@ -39,8 +38,8 @@ fn loadDataset(allocator: std.mem.Allocator, io: std.Io) void {
 
     var read_buf: [8192]u8 = undefined;
     var reader = file.reader(io, &read_buf);
-    const decoded = json.decode([]const DatasetItem, allocator, &reader.interface, .{}) catch return;
-    dataset = decoded.value;
+    var json_reader: std.json.Reader = .init(allocator, &reader.interface);
+    dataset = std.json.parseFromTokenSourceLeaky([]const DatasetItem, allocator, &json_reader, .{ .allocate = .alloc_always }) catch return;
 }
 
 fn baseline(req: *http.Request, res: *http.Response) !void {
@@ -105,7 +104,7 @@ fn jsonItems(req: *http.Request, res: *http.Response) !void {
     const payload = .{ .items = resp_items, .count = count };
 
     res.compress = true;
-    try res.encode(.json, json.encode, payload);
+    try res.json(payload, .{});
 }
 
 const DbItem = struct {
@@ -127,7 +126,7 @@ const DbResponse = struct {
 const empty_db_response: DbResponse = .{ .items = &.{}, .count = 0 };
 
 fn asyncDb(req: *http.Request, res: *http.Response) !void {
-    const p = pool orelse return res.encode(.json, json.encode, empty_db_response);
+    const p = pool orelse return res.json(empty_db_response, .{});
 
     const min = req.query.getInt(i32, "min") orelse 10;
     const max = req.query.getInt(i32, "max") orelse 50;
@@ -137,13 +136,13 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
         "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
         .{ min, max, limit },
         .{ .cache_name = "async_db" },
-    ) catch return res.encode(.json, json.encode, empty_db_response);
+    ) catch return res.json(empty_db_response, .{});
     defer result.deinit();
 
     var items: std.ArrayList(DbItem) = .empty;
     while (try result.next()) |row| {
         const tags_json = try row.get([]const u8, 6);
-        const tags = json.decodeFromSliceLeaky([]const []const u8, req.arena, tags_json, .{}) catch &.{};
+        const tags = std.json.parseFromSliceLeaky([]const []const u8, req.arena, tags_json, .{ .allocate = .alloc_always }) catch &.{};
 
         try items.append(req.arena, DbItem{
             .id = try row.get(i32, 0),
@@ -160,7 +159,7 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
         });
     }
 
-    try res.encode(.json, json.encode, DbResponse{ .items = items.items, .count = items.items.len });
+    try res.json(DbResponse{ .items = items.items, .count = items.items.len }, .{});
 }
 
 const Fortune = templates.Fortune;
