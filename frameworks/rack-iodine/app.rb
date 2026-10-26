@@ -8,6 +8,7 @@ require 'uri'
 class App
   CONTENT_TYPE = 'Content-Type'
   PLAINTEXT_TYPE = 'text/plain'
+  DELAY_REGEXP = %r[\A/delay/(\d+)\z]
 
   def call(env)
     case env['PATH_INFO']
@@ -25,6 +26,10 @@ class App
       params = URI.decode_www_form(env['QUERY_STRING']).to_h
       total = params['a'].to_i + params['b'].to_i
       render_plain total.to_s
+    when DELAY_REGEXP
+      ms = $1.to_i
+      sleep(ms / 1000.0) if ms > 0
+      render_plain ms.to_s
     else
       [404, {CONTENT_TYPE => PLAINTEXT_TYPE}, ['Not found!']]
     end
@@ -36,4 +41,3 @@ class App
     [200, {CONTENT_TYPE => PLAINTEXT_TYPE}, [body]]
   end
 end
-
