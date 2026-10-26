@@ -1,8 +1,10 @@
 #include <sys/resource.h>
 #include <aegon/http/Server.h>
 #include <aegon/http/middleware/Compress.h>
+#include <aegon/http/grpc/GrpcService.h>
 #include <aegon/core/Task.h>
 #include <aegon/core/EventLoop.h>
+#include "benchmark.pb.h"
 #include <glaze/glaze.hpp>
 #include <iostream>
 #include <fstream>
@@ -130,11 +132,12 @@ aegon::core::Task<void> handle_delay(Context& ctx) {
         std::from_chars(ms_str->data(), ms_str->data() + ms_str->size(), ms);
     }
     if (ms > 0) {
-        co_await aegon::core::EventLoop::current()->ring().timeout(ms * 1'000'000ULL);
+        co_await aegon::core::EventLoop::current()->engine().timeout(ms * 1'000'000ULL);
     }
     char buf[32];
     auto [p, _] = std::to_chars(buf, buf + sizeof(buf), ms);
     ctx.res().text(std::string_view(buf, p - buf));
+    co_return;
 }
 
 void register_routes(Router& router) {
@@ -196,7 +199,7 @@ void register_routes(Router& router) {
     // 6. Echo endpoint (8gbit)
     router.post("/echo", [](Context& ctx) {
         ctx.res().header("Content-Type", "application/octet-stream");
-        ctx.res().body(std::string(ctx.req().body()));
+        ctx.res().body_view(ctx.req().body());
     });
 
     // 7. Static file serving (static-h2, static-h3) - Aegon core static_files API
@@ -205,6 +208,45 @@ void register_routes(Router& router) {
 
     // 8. WebSocket Echo endpoint
     router.ws("/ws");
+
+    // 9. gRPC BenchmarkService (unary-grpc, unary-grpc-tls)
+    auto grpc_svc = router.grpc_service("/benchmark.BenchmarkService");
+    grpc_svc.unary<benchmark::SumRequest, benchmark::SumReply>("GetSum", [](grpc::UnaryContext<benchmark::SumRequest, benchmark::SumReply>& ctx) {
+        benchmark::SumReply reply;
+        reply.set_result(ctx.req().a() + ctx.req().b());
+        ctx.reply(reply);
+    });
+
+    grpc_svc.server_streaming<benchmark::StreamRequest, benchmark::SumReply>("StreamSum", [](grpc::ServerStreamingContext<benchmark::StreamRequest, benchmark::SumReply>& ctx) -> aegon::core::Task<void> {
+        int32_t a = ctx.req().a();
+        int32_t b = ctx.req().b();
+        int32_t count = ctx.req().count();
+        for (int32_t i = 0; i < count; ++i) {
+            benchmark::SumReply reply;
+            reply.set_result(a + b + i);
+            co_await ctx.send(reply);
+        }
+    });
+
+    grpc_svc.client_streaming<benchmark::SumRequest, benchmark::SumReply>("CollectSum", [](grpc::ClientStreamingContext<benchmark::SumRequest, benchmark::SumReply>& ctx) -> aegon::core::Task<void> {
+        int32_t total = 0;
+        while (auto req = co_await ctx.read()) {
+            total += req->a() + req->b();
+        }
+        benchmark::SumReply reply;
+        reply.set_result(total);
+        co_await ctx.reply(reply);
+        co_return;
+    });
+
+    grpc_svc.bidi_streaming<benchmark::SumRequest, benchmark::SumReply>("EchoSum", [](grpc::BidiStreamingContext<benchmark::SumRequest, benchmark::SumReply>& ctx) -> aegon::core::Task<void> {
+        while (auto req = co_await ctx.read()) {
+            benchmark::SumReply reply;
+            reply.set_result(req->a() + req->b());
+            co_await ctx.send(reply);
+        }
+        co_return;
+    });
 }
 
 unsigned int cgroup_cpus() {
@@ -282,12 +324,15 @@ int main() {
 
     Server server;
     if (low_memlock) {
-        server.ring_entries(512);
+        server.ring_entries(256);
         server.buffer_pool_entries(256);
     } else {
-        server.ring_entries(8192);
-        server.buffer_pool_entries(16384);
+        server.ring_entries(2048);
+        server.buffer_pool_entries(2048);
     }
+    server.tcp_nodelay(true);
+    server.h2_max_concurrent_streams(2000);
+    server.h2_initial_window_size(1048576);
     register_routes(server.router());
 
     // Port 8080: Plaintext HTTP/1.1 (main benchmarks)

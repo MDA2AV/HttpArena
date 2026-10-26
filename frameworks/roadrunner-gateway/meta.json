@@ -1,0 +1,22 @@
+{
+  "display_name": "roadrunner",
+  "language": "Erlang",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "roadrunner",
+  "description": "The roadrunner server from frameworks/roadrunner behind stock reverse proxies. Gateway: nginx (h2) or Caddy (h3) terminates TLS on :8443, serves /static/* from disk with precompressed sidecars, and proxies the rest to roadrunner on :8080 over HTTP/1.1 keepalive. Production stack: nginx auth_request against the shared authsvc on every /api/* call; the server does cache-aside in process (ETS, 1 s item TTL, 30 s user TTL) over epgsql and invalidates on writes.",
+  "repo": "https://github.com/arizona-framework/roadrunner",
+  "enabled": true,
+  "tests": [
+    "gateway-64",
+    "gateway-h3",
+    "production-stack"
+  ],
+  "maintainers": ["williamthome"]
+}

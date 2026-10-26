@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "std/http",
-  "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection, io_uring with an acceptor per worker (epoll fallback). Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compress: option of the server. Static ELF with no libc, FROM scratch.",
+  "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection; one io_uring and one SO_REUSEPORT listener per worker — each worker accepts on its own ring and runs the connection itself (epoll fallback), with workers pinned one per CPU. Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compress: option of the server. Static ELF with no libc, FROM scratch.",
   "repo": "https://github.com/sober-lang/sober",
   "enabled": true,
   "tests": [
@@ -25,5 +25,7 @@
     "json-tls",
     "8gbit"
   ],
-  "maintainers": ["kr9ly"]
+  "maintainers": [
+    "kr9ly"
+  ]
 }

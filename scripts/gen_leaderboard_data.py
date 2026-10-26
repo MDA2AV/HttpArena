@@ -189,7 +189,7 @@ PROFILE_DOC = {
 RESULTS: dict[str, list] = {}
 
 
-def load_results():
+def load_results(data=None):
     """Index site/data/results/*.json as {"<profile>-<conns>": [row, ...]}.
 
     Results used to live in one array per profile-conns, which meant every
@@ -201,7 +201,7 @@ def load_results():
     were written in, and the emitted data.js must not churn.
     """
     idx: dict[str, list] = {}
-    rdir = DATA / "results"
+    rdir = (data or DATA) / "results"
     if not rdir.is_dir():
         return idx
     for f in sorted(rdir.glob("*.json")):
@@ -217,8 +217,8 @@ def load_results():
     return idx
 
 
-def load(name):
-    p = DATA / name
+def load(name, data=None):
+    p = (data or DATA) / name
     if not p.exists():
         return None
     try:
@@ -3614,27 +3614,10 @@ def build_og_images(content, trails, rows, fw_lang, round_name):
     return "/og.png", written
 
 
-def main():
-    global RESULTS
-    RESULTS = load_results()
-    frameworks = load("frameworks.json") or {}
-    langcolors = load("langcolors.json") or {}
-    current = load("current.json") or {}
-
-    # tls_check verdicts, written by validate.sh when an entry opts in. Keyed by directory name, which is what validate.sh is given;
-    # meta is keyed by display name, so the mapping goes through "dir".
-    tls_check = {}
-    tls_dir = ROOT / "site" / "data" / "tls"
-    if tls_dir.is_dir():
-        for f in sorted(tls_dir.glob("*.json")):
-            try:
-                v = json.loads(f.read_text())
-            except Exception:
-                continue
-            if v.get("check"):
-                tls_check[f.stem] = v["check"]
-
-    meta = {n: {"type": m.get("type", "emerging"),
+def build_meta(frameworks, tls_check=None):
+    """Display name -> the meta.json fields the board and the composite read."""
+    tls_check = tls_check or {}
+    return {n: {"type": m.get("type", "emerging"),
                 "mode": m.get("mode", "standard"),
                 "language": m.get("language", ""),
                 "repo": m.get("repo", ""),
@@ -3651,14 +3634,15 @@ def main():
                 # were clean. Absent for every entry that did not opt in.
                 "tlsCheck": tls_check.get(m.get("dir", ""))} for n, m in frameworks.items()}
 
-    docs_tree, docs_content = build_docs()
 
+def build_profiles(index, docs_content=None):
+    """The profiles that have results, and their rows trimmed to the fields the board reads."""
     profiles, results, runmeta = [], {}, {}
     for category, entries in CATALOG:
         for pid, label, blurb, explorer, scored, s, es, isf in entries:
             present = []
             for c in explorer:
-                rows = RESULTS.get(f"{pid}-{c}")
+                rows = index.get(f"{pid}-{c}")
                 if not rows:
                     continue
                 trimmed = []
@@ -3692,11 +3676,39 @@ def main():
                     "scored": s, "engineScored": es, "infraScored": isf,
                 }
                 docid = PROFILE_DOC.get(pid)
-                if docid and docid in docs_content:
+                if docid and docs_content is not None and docid in docs_content:
                     prof["doc"] = docid
-                elif docid:
+                elif docid and docs_content is not None:
                     print(f"[warn] profile '{pid}' -> implementation doc '{docid}' not found")
                 profiles.append(prof)
+    return profiles, results, runmeta
+
+
+def main():
+    global RESULTS
+    RESULTS = load_results()
+    frameworks = load("frameworks.json") or {}
+    langcolors = load("langcolors.json") or {}
+    current = load("current.json") or {}
+
+    # tls_check verdicts, written by validate.sh when an entry opts in. Keyed by directory name, which is what validate.sh is given;
+    # meta is keyed by display name, so the mapping goes through "dir".
+    tls_check = {}
+    tls_dir = ROOT / "site" / "data" / "tls"
+    if tls_dir.is_dir():
+        for f in sorted(tls_dir.glob("*.json")):
+            try:
+                v = json.loads(f.read_text())
+            except Exception:
+                continue
+            if v.get("check"):
+                tls_check[f.stem] = v["check"]
+
+    meta = build_meta(frameworks, tls_check)
+
+    docs_tree, docs_content = build_docs()
+
+    profiles, results, runmeta = build_profiles(RESULTS, docs_content)
 
     # Badges first: the medals are read out of the index it returns, and they
     # ship inside the board's own payload.

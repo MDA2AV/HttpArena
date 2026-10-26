@@ -27,6 +27,12 @@ struct Page {
 	count int
 }
 
+struct TlsPort {
+	dir   string
+	port  int
+	http2 bool
+}
+
 fn main() {
 	dataset := json.decode([]Item, os.read_file('/data/dataset.json') or { '[]' }) or { []Item{} }
 	mut app := viltrum.new()
@@ -38,6 +44,10 @@ fn main() {
 	}
 	app.get('/baseline11', baseline)
 	app.post('/baseline11', baseline)
+	// the HTTP/2 profiles' baseline, on 8082 (h2c) and 8443 (h2)
+	app.get('/baseline2', baseline)
+	// static-h2: the files from disk, their .br and .gz copies to clients that accept them
+	app.static_files('/static', '/data/static', precompressed: true)
 	app.get('/pipeline', fn (mut c viltrum.Ctx) {
 		c.text(200, 'ok')
 	})
@@ -84,21 +94,28 @@ fn main() {
 			}
 		}
 	})
-	mut listeners := [viltrum.Listener{
-		addr: '0.0.0.0:8080'
-	}]
-	// json-tls and 8gbit on 8081; the TLS hardening check on 9000 with its own pair,
-	// which it replaces on disk while the server runs.
-	for dir, port in {
-		'/certs':     8081
-		'/certs-tls': 9000
-	} {
-		if os.exists('${dir}/server.crt') {
+	mut listeners := [
+		viltrum.Listener{
+			addr: '0.0.0.0:8080'
+		},
+		// baseline-h2c and json-h2c: HTTP/2 with prior knowledge (and HTTP/1.1) on 8082
+		viltrum.Listener{
+			addr:  '0.0.0.0:8082'
+			http2: true
+		},
+	]
+	// json-tls and 8gbit on 8081; baseline-h2 and static-h2 on 8443, HTTP/2 chosen by
+	// ALPN; the TLS hardening check on 9000 with its own pair, which it replaces on disk
+	// while the server runs.
+	for l in [TlsPort{'/certs', 8081, false}, TlsPort{'/certs', 8443, true},
+		TlsPort{'/certs-tls', 9000, false}] {
+		if os.exists('${l.dir}/server.crt') {
 			listeners << viltrum.Listener{
-				addr: '0.0.0.0:${port}'
-				tls:  viltrum.TlsOptions{
-					cert_file: '${dir}/server.crt'
-					key_file:  '${dir}/server.key'
+				addr:  '0.0.0.0:${l.port}'
+				http2: l.http2
+				tls:   viltrum.TlsOptions{
+					cert_file: '${l.dir}/server.crt'
+					key_file:  '${l.dir}/server.key'
 				}
 			}
 		}

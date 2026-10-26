@@ -206,6 +206,8 @@ jobs:
           for fw in $LIST; do
             ./scripts/compare.sh "$fw" "$PROFILE" "${compare_args[@]}" > "/tmp/bench_logs/$fw.compare.md" 2>/dev/null || true
           done
+          # Composite score of each entry on main and after this run, written to <fw>.composite.md
+          python3 scripts/composite_delta.py /tmp/main_site_data /tmp/bench_site_data /tmp/bench_logs $LIST || true
           # Restore benchmark site/data (not original PR data)
           if [ -d /tmp/bench_site_data ]; then
             cp -r /tmp/bench_site_data/* site/data/ 2>/dev/null || true
@@ -373,6 +375,10 @@ jobs:
               with open(path, errors="replace") as f:
                   return "".join(f.readlines()[-n:])
 
+          def composite(fw):
+              text = tail(logs_dir + "/" + fw + ".composite.md", 50).strip()
+              return "\n\n" + text if text else ""
+
           def details(summary, text):
               return "<details><summary>" + summary + "</summary>\n\n```\n" + text + "\n```\n</details>"
 
@@ -380,7 +386,7 @@ jobs:
               fw = fws[0]
               rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
               deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
-              head = table(rows, deltas) if rows else "No results captured"
+              head = table(rows, deltas) + composite(fw) if rows else "No results captured"
               body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + ".log", 200))
           else:
               heads = []
@@ -390,7 +396,7 @@ jobs:
                   deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
                   mark = "❌" if fw in failed else "✅"
                   head = "### " + mark + " `" + fw + "`\n\n"
-                  head += table(rows, deltas) if rows else "_No results captured._"
+                  head += table(rows, deltas) + composite(fw) if rows else "_No results captured._"
                   extra = ""
                   if fw in failed:
                       extra = "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + ".log", 60))

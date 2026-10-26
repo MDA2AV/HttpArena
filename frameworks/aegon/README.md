@@ -6,9 +6,10 @@
 
 - **Language:** C++26 (GCC 14)
 - **Engine:** Linux `io_uring` multishot accept/recv, provided buffer rings
-- **Serialization:** Glaze (compile-time reflection, zero-copy JSON)
+- **Serialization:** Glaze (compile-time reflection, zero-copy JSON) & Google Protobuf
 - **Compression:** `libdeflate` gzip/deflate streaming middleware
-- **Crypto & TLS:** OpenSSL with ALPN (`h2`, `http/1.1`)
+- **Crypto & TLS:** Linux Kernel TLS (kTLS) TX offload with OpenSSL TLS 1.3 handshake and ALPN (`h2`, `http/1.1`)
+- **gRPC:** Native zero-overhead gRPC over HTTP/2 with direct wire framing, synchronous & asynchronous coroutine RPC dispatch, and kTLS TX offload
 - **WebSocket:** RFC 6455 frame parser with AVX2 SIMD payload unmasking and fast-path batched echo engine
 - **Build:** CMake with Ninja on Arch Linux
 
@@ -26,23 +27,24 @@
 | `/echo` | POST | TLS | 8Gbit verbatim binary stream echo |
 | `/static/*` | GET | TLS, HTTP/2 & HTTP/3 | High-throughput static file delivery via `router.static_files` |
 | `/ws` | Upgrade | HTTP/1.1 (RFC 6455) | Full-duplex WebSocket echo with SIMD unmasking and `io_uring` batching |
+| `/benchmark.BenchmarkService/GetSum` | POST | gRPC over h2c & h2+TLS | Native zero-overhead unary gRPC sum RPC (`unary-grpc`, `unary-grpc-tls`) |
 
 ## Ports & Protocols
 
 Aegon runs concurrent multi-port listeners with protocol multiplexing:
 
-- **Port 8080 (HTTP/1.1 Plaintext & WebSocket):** Primary plaintext and WebSocket benchmark port (`baseline`, `async`, `latency-*`, `pipelined`, `limited-conn`, `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`).
+- **Port 8080 (HTTP/1.1 Plaintext, HTTP/2 Prior Knowledge & WebSocket):** Primary plaintext, WebSocket, and unary gRPC (`unary-grpc` over h2c) benchmark port (`baseline`, `async`, `latency-*`, `pipelined`, `limited-conn`, `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`, `unary-grpc`).
 - **Port 8082 (HTTP/2 Cleartext / Prior Knowledge):** `h2c` benchmarking (`baseline-h2c`, `json-h2c`).
 - **Port 8081 (HTTP/1.1 TLS):** Secure HTTP/1.1 workloads (`json-tls`, `8gbit`).
-- **Port 8443 (HTTP/2 TLS & HTTP/3 QUIC / UDP):** Secure HTTP/2 and HTTP/3 workloads (`baseline-h2`, `static-h2`, `baseline-h3`, `static-h3`).
+- **Port 8443 (HTTP/2 TLS & HTTP/3 QUIC / UDP):** Secure HTTP/2, HTTP/3, and secure gRPC workloads (`baseline-h2`, `static-h2`, `baseline-h3`, `static-h3`, `unary-grpc-tls`).
 
 ## Completeness & Features
 
 Aegon qualifies for 4/4 Completeness (100%, multiplier ×1.00):
-- **Routing:** Parameterized path matching (`:ms`, `:count`), static prefix tree matching (`/static/*`), RFC 6455 WebSocket routes (`/ws`) with automatic `426 Upgrade Required` fallback.
+- **Routing:** Parameterized path matching (`:ms`, `:count`), static prefix tree matching (`/static/*`), RFC 6455 WebSocket routes (`/ws`), and native gRPC service RPC routing (`/benchmark.BenchmarkService/*`).
 - **Middleware:** Composable request/response middleware chain with streaming compression (`Compress`).
-- **Request:** Zero-copy URI decoding, query parsing, header lookup, route params, body handling.
-- **Response:** Fluent response builder, custom status codes, headers, streaming, and direct Glaze JSON serialization.
+- **Request:** Zero-copy URI decoding, query parsing, header lookup, route params, body handling, and binary gRPC frame decoding.
+- **Response:** Fluent response builder, custom status codes, headers, streaming, direct Glaze JSON serialization, and gRPC HEADERS/DATA/trailers framing.
 
 ## Concurrency & CPU Sizing
 
