@@ -1,5 +1,5 @@
-Oct 23, 2026 8:44:43 AM com.s_exp.enso.http2.Http2Exchange
-WARNING: invalid response from handler, sending 500
+Oct 26, 2026 9:41:56 AM com.s_exp.enso.http2.Http2Exchange
+WARNING: invalid response from handler, sending 500 (2 similar records suppressed)
 java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
 	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
@@ -7,7 +7,7 @@ java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseEmission.prepareMultiplexed(ResponseEmission.java:40)
 	at com.s_exp.enso.http2.Http2Exchange.respond(Http2Exchange.java:277)
 	at com.s_exp.enso.http2.Http2Exchange.serve(Http2Exchange.java:259)
-	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1838)
+	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1874)
 	at com.s_exp.enso.http2.Http2Stream.run(Http2Stream.java:255)
 	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
 Caused by: java.nio.channels.ClosedByInterruptException
@@ -17,8 +17,8 @@ Caused by: java.nio.channels.ClosedByInterruptException
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:267)
 	... 8 more
 
-Oct 23, 2026 8:44:44 AM com.s_exp.enso.http2.Http2Exchange
-WARNING: invalid response from handler, sending 500 (29044 similar records suppressed)
+Oct 26, 2026 9:42:03 AM com.s_exp.enso.http2.Http2Exchange
+WARNING: invalid response from handler, sending 500 (32486 similar records suppressed)
 java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
 	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
@@ -26,7 +26,7 @@ java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseEmission.prepareMultiplexed(ResponseEmission.java:40)
 	at com.s_exp.enso.http2.Http2Exchange.respond(Http2Exchange.java:277)
 	at com.s_exp.enso.http2.Http2Exchange.serve(Http2Exchange.java:259)
-	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1838)
+	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1874)
 	at com.s_exp.enso.http2.Http2Stream.run(Http2Stream.java:255)
 	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
 Caused by: java.nio.channels.ClosedByInterruptException
@@ -36,8 +36,8 @@ Caused by: java.nio.channels.ClosedByInterruptException
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:267)
 	... 8 more
 
-Oct 23, 2026 8:44:50 AM com.s_exp.enso.http2.Http2Exchange
-WARNING: invalid response from handler, sending 500 (3525 similar records suppressed)
+Oct 26, 2026 9:42:10 AM com.s_exp.enso.http2.Http2Exchange
+WARNING: invalid response from handler, sending 500 (32681 similar records suppressed)
 java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
 	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
@@ -45,26 +45,7 @@ java.io.UncheckedIOException: unreadable response body file
 	at com.s_exp.enso.core.ResponseEmission.prepareMultiplexed(ResponseEmission.java:40)
 	at com.s_exp.enso.http2.Http2Exchange.respond(Http2Exchange.java:277)
 	at com.s_exp.enso.http2.Http2Exchange.serve(Http2Exchange.java:259)
-	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1838)
-	at com.s_exp.enso.http2.Http2Stream.run(Http2Stream.java:255)
-	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
-Caused by: java.nio.channels.ClosedByInterruptException
-	at java.base/java.nio.channels.spi.AbstractInterruptibleChannel.end(AbstractInterruptibleChannel.java:214)
-	at java.base/sun.nio.ch.FileChannelImpl.endBlocking(FileChannelImpl.java:182)
-	at java.base/sun.nio.ch.FileChannelImpl.size(FileChannelImpl.java:505)
-	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:267)
-	... 8 more
-
-Oct 23, 2026 8:44:57 AM com.s_exp.enso.http2.Http2Exchange
-WARNING: invalid response from handler, sending 500 (32634 similar records suppressed)
-java.io.UncheckedIOException: unreadable response body file
-	at com.s_exp.enso.core.ResponseHead.knownLength(ResponseHead.java:269)
-	at com.s_exp.enso.core.ResponseHead.frame(ResponseHead.java:237)
-	at com.s_exp.enso.core.ResponseHead.prepare(ResponseHead.java:132)
-	at com.s_exp.enso.core.ResponseEmission.prepareMultiplexed(ResponseEmission.java:40)
-	at com.s_exp.enso.http2.Http2Exchange.respond(Http2Exchange.java:277)
-	at com.s_exp.enso.http2.Http2Exchange.serve(Http2Exchange.java:259)
-	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1838)
+	at com.s_exp.enso.http2.Http2Connection.serve(Http2Connection.java:1874)
 	at com.s_exp.enso.http2.Http2Stream.run(Http2Stream.java:255)
 	at java.base/java.lang.VirtualThread.run(VirtualThread.java:475)
 Caused by: java.nio.channels.ClosedByInterruptException
