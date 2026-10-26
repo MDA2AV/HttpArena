@@ -17,10 +17,8 @@ start(_StartType, _StartArgs) ->
         %% holds 32768 at once); size the cap above the largest profile plus
         %% churn headroom so the listener keeps every offered connection live
         %% instead of capping and forcing the load generator into a
-        %% reconnect storm, and widen the acceptor pool for the
-        %% connection-churn profiles.
+        %% reconnect storm.
         max_clients => 65536,
-        num_acceptors => 100,
         %% The async profile opens 32K connections at once; deepen the
         %% kernel accept queue past the storm size (the kernel clamps
         %% this to `net.core.somaxconn`), like the h2c listener below.
@@ -52,10 +50,8 @@ start(_StartType, _StartArgs) ->
         %% The connection-heavy profiles open thousands of connections at
         %% once while accepted ones already run compressed handlers, so
         %% deepen the kernel accept queue past the storm size (default
-        %% 1024 overflowed, black-holing connections) and widen the
-        %% acceptor pool like the h1 listeners above.
+        %% 1024 overflowed, black-holing connections).
         socket_backlog => 8192,
-        num_acceptors => 100,
         %% h2c prior-knowledge: `[http2]` on a plain-TCP listener
         %% serves h2 directly (client sends the h2 preface, no
         %% `Upgrade: h2c` negotiation).
@@ -68,7 +64,6 @@ start(_StartType, _StartArgs) ->
                 port => TlsPort,
                 routes => Routes,
                 max_clients => 65536,
-                num_acceptors => 100,
                 tls => TlsOpts
             }),
             H2Port = application:get_env(roadrunner_httparena, h2_port, 8443),
