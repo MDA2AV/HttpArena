@@ -1,7 +1,7 @@
 # The sober toolchain is pulled as an image (built by the release CI from the release tarball,
 # sha256-checked - alpine with the single static ELF compiler on PATH). A registry pull only:
 # nothing is downloaded from github.com at docker-build time.
-FROM ghcr.io/sober-lang/sober:0.6.3 AS build
+FROM ghcr.io/sober-lang/sober:0.6.4 AS build
 WORKDIR /app
 COPY main.sober ./
 RUN sober build main.sober -o server

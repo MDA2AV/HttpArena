@@ -129,7 +129,7 @@ func serveTls(ds []Item, cfg tls.Config, tport string) int {
 }
 
 func serveTlsConn(rs []http.Route, c tls.Conn) error? {
-    return http.ServeFlushed((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (b) => tls.Put(c, b), (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody)
+    return http.ServeWith((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, put: (b) => tls.Put(c, b))
 }
 
 func run(port string, tport string) int {
