@@ -1,8 +1,10 @@
 #include <sys/resource.h>
 #include <aegon/http/Server.h>
 #include <aegon/http/middleware/Compress.h>
+#include <aegon/http/grpc/GrpcService.h>
 #include <aegon/core/Task.h>
 #include <aegon/core/EventLoop.h>
+#include "benchmark.pb.h"
 #include <glaze/glaze.hpp>
 #include <iostream>
 #include <fstream>
@@ -206,6 +208,45 @@ void register_routes(Router& router) {
 
     // 8. WebSocket Echo endpoint
     router.ws("/ws");
+
+    // 9. gRPC BenchmarkService (unary-grpc, unary-grpc-tls)
+    auto grpc_svc = router.grpc_service("/benchmark.BenchmarkService");
+    grpc_svc.unary<benchmark::SumRequest, benchmark::SumReply>("GetSum", [](grpc::UnaryContext<benchmark::SumRequest, benchmark::SumReply>& ctx) {
+        benchmark::SumReply reply;
+        reply.set_result(ctx.req().a() + ctx.req().b());
+        ctx.reply(reply);
+    });
+
+    grpc_svc.server_streaming<benchmark::StreamRequest, benchmark::SumReply>("StreamSum", [](grpc::ServerStreamingContext<benchmark::StreamRequest, benchmark::SumReply>& ctx) -> aegon::core::Task<void> {
+        int32_t a = ctx.req().a();
+        int32_t b = ctx.req().b();
+        int32_t count = ctx.req().count();
+        for (int32_t i = 0; i < count; ++i) {
+            benchmark::SumReply reply;
+            reply.set_result(a + b + i);
+            co_await ctx.send(reply);
+        }
+    });
+
+    grpc_svc.client_streaming<benchmark::SumRequest, benchmark::SumReply>("CollectSum", [](grpc::ClientStreamingContext<benchmark::SumRequest, benchmark::SumReply>& ctx) -> aegon::core::Task<void> {
+        int32_t total = 0;
+        while (auto req = co_await ctx.read()) {
+            total += req->a() + req->b();
+        }
+        benchmark::SumReply reply;
+        reply.set_result(total);
+        co_await ctx.reply(reply);
+        co_return;
+    });
+
+    grpc_svc.bidi_streaming<benchmark::SumRequest, benchmark::SumReply>("EchoSum", [](grpc::BidiStreamingContext<benchmark::SumRequest, benchmark::SumReply>& ctx) -> aegon::core::Task<void> {
+        while (auto req = co_await ctx.read()) {
+            benchmark::SumReply reply;
+            reply.set_result(req->a() + req->b());
+            co_await ctx.send(reply);
+        }
+        co_return;
+    });
 }
 
 unsigned int cgroup_cpus() {
@@ -289,6 +330,9 @@ int main() {
         server.ring_entries(2048);
         server.buffer_pool_entries(2048);
     }
+    server.tcp_nodelay(true);
+    server.h2_max_concurrent_streams(2000);
+    server.h2_initial_window_size(1048576);
     register_routes(server.router());
 
     // Port 8080: Plaintext HTTP/1.1 (main benchmarks)

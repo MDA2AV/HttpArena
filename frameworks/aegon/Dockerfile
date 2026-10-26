@@ -10,11 +10,12 @@ RUN pacman -Syu --noconfirm --needed \
     openssl \
     libdeflate \
     sqlite \
-    postgresql-libs
+    postgresql-libs \
+    protobuf
 
 ARG AEGON_REPO=https://github.com/UdayKhare09/Aegon.git
 ARG AEGON_REF=main
-ARG AEGON_COMMIT=1ca6702
+ARG AEGON_COMMIT=ec6afdb
 
 WORKDIR /src
 RUN echo "Building Aegon commit: ${AEGON_COMMIT}" && \
@@ -34,6 +35,7 @@ RUN cmake -B build -G Ninja \
 
 WORKDIR /app
 COPY CMakeLists.txt main.cpp ./
+COPY proto/ ./proto/
 RUN cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release && \
     cmake --build build -j$(nproc)
@@ -46,7 +48,8 @@ RUN pacman -Syu --noconfirm --needed \
     libdeflate \
     sqlite \
     postgresql-libs \
-    jemalloc && \
+    jemalloc \
+    protobuf && \
     pacman -Scc --noconfirm
 
 ENV LD_PRELOAD=/usr/lib/libjemalloc.so
