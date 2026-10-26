@@ -1,9 +1,9 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.13.0-alpha10"}
         com.s-exp/oda {:mvn/version "1.0.0-alpha47"}
-        com.s-exp/enso {:mvn/version "1.0.0-beta105"}
-        com.s-exp/enso$linux-amd64 {:mvn/version "1.0.0-beta105"}
-        com.s-exp/enso$linux-arm64 {:mvn/version "1.0.0-beta105"}
+        com.s-exp/enso {:mvn/version "1.0.0-beta107"}
+        com.s-exp/enso$linux-amd64 {:mvn/version "1.0.0-beta107"}
+        com.s-exp/enso$linux-arm64 {:mvn/version "1.0.0-beta107"}
         ring/ring-core {:mvn/version "1.15.5"}}
 
  :aliases {:test {:extra-paths ["test"]
