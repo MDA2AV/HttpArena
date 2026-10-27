@@ -22,6 +22,7 @@ EXPOSE 8080
 # Netty safety checks off and Parallel GC, the same trade-offs the other tuned entries make
 ENTRYPOINT ["java", \
   "-XX:+UseParallelGC", \
+  "-Dio.netty.allocator.type=pooled", \
   "--enable-native-access=ALL-UNNAMED", \
   "-Dio.netty.buffer.checkBounds=false", \
   "-Dio.netty.buffer.checkAccessible=false", \

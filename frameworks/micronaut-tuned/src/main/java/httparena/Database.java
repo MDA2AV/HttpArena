@@ -30,7 +30,7 @@ public class Database {
         }
         vertx = Vertx.vertx();
         pool = PgBuilder.pool()
-                .connectingTo(PgConnectOptions.fromUri(url))
+                .connectingTo(PgConnectOptions.fromUri(url).setCachePreparedStatements(true))
                 .with(new PoolOptions().setMaxSize(maxConn))
                 .using(vertx)
                 .build();
