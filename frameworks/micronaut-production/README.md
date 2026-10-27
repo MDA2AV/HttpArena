@@ -14,6 +14,8 @@ Query parameters are bound with `@QueryValue`, request bodies with `@Body`, and 
 
 Dataset loading, PostgreSQL JSON tags and JSON responses use Micronaut Serialization. The database query selects tags as text so the driver does not decode JSONB with its own codec. Jackson Databind is excluded; Jackson Core remains the streaming backend for Micronaut Serialization.
 
+Rocker's documented [`plainTextStrategy=STATIC_STRINGS` build option](https://github.com/fizzed/rocker#integrate-parsergenerator-in-build-tool) matches Micronaut Views' character writer: static template text stays as strings instead of being decoded from byte arrays on every render. HTML escaping and per-request rendering remain enabled.
+
 ## Endpoints
 
 | Endpoint | Method | Description |

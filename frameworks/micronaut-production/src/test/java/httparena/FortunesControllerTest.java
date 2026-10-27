@@ -1,6 +1,7 @@
 package httparena;
 
 import io.micronaut.views.rocker.RockerWritable;
+import io.micronaut.views.rocker.RockerWriterOutput;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.runtime.server.EmbeddedServer;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FortunesControllerTest {
+    @Test
+    void rendersTemplateTextWithoutDecodingByteFragments() {
+        StringWriter output = new StringWriter();
+        views.fortunes.template(List.of(new FortunesController.Fortune(1, "<日本語 & 😀>")))
+                .render((type, charset) -> new RockerWriterOutput(output, type, charset) {
+                    @Override
+                    public RockerWriterOutput w(byte[] bytes) {
+                        throw new AssertionError("The Views writer should receive character fragments");
+                    }
+                });
+        assertTrue(output.toString().contains("&lt;日本語 &amp; 😀&gt;"));
+    }
+
     @Test
     void rendersThroughMicronautViewsWithHtmlEscaping() throws Exception {
         List<FortunesController.Fortune> rows = List.of(
