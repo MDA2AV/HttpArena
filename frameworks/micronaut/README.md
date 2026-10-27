@@ -23,7 +23,8 @@ Micronaut on the Netty HTTP server, default configuration, on the JVM.
 - Routing and path parameters through the `@Controller` annotations, all resolved
   at compile time by the Micronaut annotation processor, so there is no
   reflection and no classpath scanning at startup
-- JSON serialized by Jackson from Java records
+- JSON read and written by Micronaut Serialization from compile-time generated
+  serializers for Java records, using Jackson Core without Jackson Databind
 - Compression is the Netty server compression that Micronaut turns on by itself,
   over its default 1 KB threshold
 - No cluster of processes: the JVM is one process and Netty sizes its event loop
