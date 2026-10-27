@@ -783,6 +783,14 @@
       "response": true
     }
   },
+  "fnet-h1": {
+    "dir": "fnet-h1",
+    "description": "fnet v1.0.0's fhttp HTTP/1.1 server: fnet's epoll event loops find where each request message ends and enqueue it, then the standard library parses it and runs an http.Handler on a task-pool worker, so there is no goroutine per connection. Responses are buffered whole. A request whose body is not buffered (larger than 1MB, chunked, or framed unusually) is handed to an internal net/http server, which closes that connection after the one request. fnet's ReusePort option is on: on Linux every sub-reactor listens on :8080 with a socket of its own, sharing the port through SO_REUSEPORT so the kernel spreads the connections over the loops.",
+    "repo": "https://github.com/linfeip/fnet",
+    "type": "experimental",
+    "engine": "fnet",
+    "mode": "standard"
+  },
   "fnet-ws": {
     "dir": "fnet-ws",
     "description": "fnet v1.0.0's websocket package on fhttp: the upgrade is answered on fnet's epoll event loops, then frames are parsed in the connection's own task on fnet's executor, so an unfragmented message is echoed straight from the read buffer it arrived in, with no goroutine per connection; replies written while a batch of frames is processed are coalesced into one write. fnet's ReusePort option is on: on Linux every sub-reactor listens on :8080 with a socket of its own, sharing the port through SO_REUSEPORT so the kernel spreads the connections over the loops.",
