@@ -1,0 +1,8 @@
+github.com/andybalholm/brotli v1.2.2 h1:HzTuoo2ErYQqf5qvcJInB8uvqSVxRttzkFexPWtnceM=
+github.com/andybalholm/brotli v1.2.2/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
+github.com/linfeip/fnet v1.0.1-0.20261027085849-17a26d185a7a h1:FuEZwF6FEpnKS/qqxa1U4xk6iDgQPyJPCU3jTQZv91s=
+github.com/linfeip/fnet v1.0.1-0.20261027085849-17a26d185a7a/go.mod h1:/youPy1U2FM3bGN/znfhmmaAaE91dzqt4o+8aDbcHjw=
+github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
+github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
+golang.org/x/sys v0.33.0 h1:q3i8TbbEz+JRD9ywIRlyRAQbM0qF7hu24q3teo2hbuw=
+golang.org/x/sys v0.33.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
