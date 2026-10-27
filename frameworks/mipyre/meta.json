@@ -1,7 +1,7 @@
 {
   "display_name": "mipyre",
   "language": "Python",
-  "type": "production",
+  "type": "emerging",
   "mode": "tuned",
   "completeness": {
     "routing": true,
