@@ -1,0 +1,18 @@
+{
+  "display_name": "rack-kino",
+  "language": "Ruby",
+  "type": "engine",
+  "engine": "kino",
+  "description": "Kino is a high-performance Ractor HTTP server for Ruby",
+  "repo": "https://github.com/yaroslav/kino",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "limited-conn",
+    "pipelined"
+  ],
+  "maintainers": ["p8"]
+}
