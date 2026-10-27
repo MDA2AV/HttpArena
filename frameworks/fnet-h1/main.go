@@ -240,14 +240,18 @@ var (
 	gzipWriters = sync.Pool{New: func() any { return gzip.NewWriter(io.Discard) }}
 )
 
-// acceptedEncoding returns the best encoding out of "br" and "gzip" the
-// request accepts, or "" when it accepts neither.
+// acceptedEncoding returns the encoding to answer with: "gzip" or "br", or ""
+// when the request accepts neither. At equal q values gzip wins, because the
+// two produce nearly identical bodies on these payloads (1490 vs 1519 bytes
+// for /json/50?m=6) while brotli quality 4 costs several times gzip's CPU - on
+// json-comp it is 76% of the server's samples against flate's 31% on the
+// gzip-only entries. A client that asks for brotli by q value still gets it.
 func acceptedEncoding(r *http.Request) string {
 	header := r.Header.Get("Accept-Encoding")
 	if header == "" {
 		return ""
 	}
-	best := ""
+	var gzipQ, brotliQ float64
 	for header != "" {
 		var part string
 		part, header, _ = strings.Cut(header, ",")
@@ -267,21 +271,20 @@ func acceptedEncoding(r *http.Request) string {
 				}
 			}
 		}
-		if q == 0 {
-			continue
-		}
 		switch strings.ToLower(name) {
-		case "br":
-			if best != "br" {
-				best = "br"
-			}
 		case "gzip":
-			if best == "" {
-				best = "gzip"
-			}
+			gzipQ = q
+		case "br":
+			brotliQ = q
 		}
 	}
-	return best
+	switch {
+	case gzipQ > 0 && gzipQ >= brotliQ:
+		return "gzip"
+	case brotliQ > 0:
+		return "br"
+	}
+	return ""
 }
 
 func echoBody(w http.ResponseWriter, r *http.Request) {
