@@ -1828,6 +1828,13 @@
     "type": "engine",
     "engine": "iodine"
   },
+  "rack-puma": {
+    "dir": "rack-puma",
+    "description": "Puma is a fast, multi-threaded HTTP server for Ruby",
+    "repo": "https://github.com/puma/puma",
+    "type": "engine",
+    "engine": "puma"
+  },
   "rage": {
     "dir": "rage",
     "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
