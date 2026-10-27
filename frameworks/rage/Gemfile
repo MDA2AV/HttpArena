@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'rage-rb', '~> 1.22'
+gem 'rage-rb'
 gem 'pg', '~> 1.5'
 gem 'redis'
 gem 'concurrent-ruby'
