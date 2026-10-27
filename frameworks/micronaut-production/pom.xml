@@ -33,9 +33,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.fizzed</groupId>
-      <artifactId>rocker-runtime</artifactId>
-      <version>${rocker.version}</version>
+      <groupId>io.micronaut.views</groupId>
+      <artifactId>micronaut-views-rocker</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
