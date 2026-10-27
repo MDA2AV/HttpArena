@@ -1,0 +1,31 @@
+{
+  "display_name": "velocity",
+  "language": "JS",
+  "type": "experimental",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "nodehttp",
+  "description": "Velocity, a lightweight Express.js alternative on node:http with the cluster module for multi-core scaling.",
+  "repo": "https://github.com/aneeshhmon-create/velocity",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit"
+  ],
+  "maintainers": [
+    "aneeshhmon-create"
+  ]
+}

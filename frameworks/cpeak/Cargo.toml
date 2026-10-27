@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cpeak = "0.3.0"
+cpeak = "0.4.0"
+mimalloc = { version = "0.1", default-features = false, features = ["v2"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Only for GET /async-db
@@ -13,4 +14,4 @@ deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
 
 [profile.release]
 codegen-units = 1
-lto = "thin"
+lto = "fat"

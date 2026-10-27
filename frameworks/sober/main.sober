@@ -1,0 +1,162 @@
+package main
+
+// HttpArena entry for Sober, on std/http + std/json + std/tls alone.
+// Plain HTTP/1.1 on 0.0.0.0:8080 and, when /certs/server.{crt,key} (or TLS_CERT / TLS_KEY)
+// can be read, the same routes over TLS 1.3 on 0.0.0.0:8081 (ports overridable by argv).
+// Prints "ready <port>" / "tls-ready <port>" once listening.
+// Dataset for /json/{count}?m= comes from DATASET_PATH (default /data/dataset.json).
+
+import "std/compress/flate"
+import "std/convert"
+import "std/http"
+import "std/io"
+import "std/json"
+import "std/net"
+import "std/os"
+import "std/task"
+import "std/iter"
+import "std/tls"
+
+func num(s string?) int {
+    if s == nil {
+        return 0
+    }
+    v, e := convert.ParseInt(s)
+    return if e != nil { 0 } else { v }
+}
+
+type Rating struct {
+    score int
+    count int
+}
+
+type Item struct {
+    id int
+    name string
+    category string
+    price int
+    quantity int
+    active bool
+    tags []string
+    rating Rating
+}
+
+type Processed struct {
+    id int
+    name string
+    category string
+    price int
+    quantity int
+    active bool
+    tags []string
+    rating Rating
+    total int
+}
+
+type Body struct {
+    items []Processed
+    count int
+}
+
+func load() []Item {
+    p := os.Getenv("DATASET_PATH") catch nil
+    b := io.ReadFile(if p != nil { p } else { "/data/dataset.json" }) catch return []Item{}
+    d := json.Parse(b) catch return []Item{}
+    ns := json.Items(d, json.Root(d)) catch return []Item{}
+    mut xs := mut []Item{}
+    for i <- iter.Range(0, len(ns)) {
+        xs = append(xs, json.Decode[Item](d, ns[i]) catch return []Item{})
+    }
+    return freeze(xs)
+}
+
+func items(ds []Item, r http.Request) http.Response {
+    c := num(http.Param(r, "count"))
+    n := if c < 0 { 0 } else if c > len(ds) { len(ds) } else { c }
+    m0 := num(http.Query(r, "m"))
+    m := if m0 == 0 { 1 } else { m0 }
+    mut out := mut []Processed{}
+    for i <- iter.Range(0, n) {
+        d := ds[i]
+        out = append(out, Processed{id: d.id, name: d.name, category: d.category, price: d.price, quantity: d.quantity, active: d.active, tags: d.tags, rating: d.rating, total: d.price * d.quantity * m})
+    }
+    return http.Json(json.Encode[Body](Body{items: freeze(out), count: n}))
+}
+
+func baseline(r http.Request) http.Response {
+    body := if r.method == "POST" { num(string(r.body) catch "") } else { 0 }
+    return http.Text(convert.FormatInt(num(http.Query(r, "a")) + num(http.Query(r, "b")) + body))
+}
+
+func echo(r http.Request) http.Response {
+    return http.Response{status: 200, contentType: "application/octet-stream", body: r.body}
+}
+
+const maxBody = 131072
+
+func delay(r http.Request) http.Response {
+    ms := num(http.Param(r, "ms"))
+    os.Sleep(ms)
+    return http.Text(convert.FormatInt(ms))
+}
+
+func routes(ds []Item) []http.Route {
+    none := []http.Middleware{}
+    return []http.Route{
+        http.Route{method: "GET", path: "/pipeline", handler: (r) => http.Text("ok"), middleware: none},
+        http.Route{method: "GET", path: "/baseline11", handler: baseline, middleware: none},
+        http.Route{method: "POST", path: "/baseline11", handler: baseline, middleware: none},
+        http.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
+        http.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none},
+        http.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
+    }
+}
+
+func certs() tls.Config? {
+    c, _ := os.Getenv("TLS_CERT")
+    k, _ := os.Getenv("TLS_KEY")
+    cfg, e := tls.Load(if c != nil { c } else { "/certs/server.crt" }, if k != nil { k } else { "/certs/server.key" })
+    if e != nil {
+        return nil
+    }
+    return cfg
+}
+
+func serveTls(ds []Item, cfg tls.Config, tport string) int {
+    _ = io.WriteStdout(bytes("tls-ready ${tport}\n"))
+    e := tls.Serve("0.0.0.0:${tport}", cfg, (c tls.Conn) => serveTlsConn(routes(ds), c))
+    return if e != nil { 1 } else { 0 }
+}
+
+func serveTlsConn(rs []http.Route, c tls.Conn) error? {
+    return http.ServeWith((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, put: (b) => tls.Put(c, b))
+}
+
+func run(port string, tport string) int {
+    ds := load()
+    gzw := task.NewLocal((w mut flate.Work) => flate.Prepare(mut w))
+    cfg := certs()
+    pe, se := task.Run((s task.Scope) => {
+        if cfg != nil {
+            _ = task.Spawn(s, () => serveTls(ds, cfg, tport))
+        }
+        plain(routes(ds), gzw, port)
+    })
+    return if se != nil || pe != nil { 1 } else { 0 }
+}
+
+func plain(rs []http.Route, gzw task.Local, port string) error? {
+    for l <- net.Listen("0.0.0.0:${port}")? {
+        io.WriteStdout(bytes("ready ${net.Port(l)}\n"))?
+        net.Serve(l, (c net.Conn) => http.ServeConn(c, (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, compress: http.Gzip{}, work: gzw), conns: 40000)?
+    }
+    return nil
+}
+
+func main() int {
+    args := os.Args() catch return 2
+    if len(args) > 3 {
+        return 2
+    }
+    return run(if len(args) >= 2 { args[1] } else { "8080" }, if len(args) == 3 { args[2] } else { "8081" })
+}

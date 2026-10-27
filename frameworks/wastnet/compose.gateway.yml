@@ -1,0 +1,49 @@
+# gateway-64 — wastnet acts as its own edge proxy (h2/TLS on :8443) that
+# serves /static/* from local disk and reverse-proxies the remaining dynamic
+# requests to a wastnet backend on 127.0.0.1:8082 over h2c. Both containers
+# build from the same framework image; the entrypoint selects the role
+# (GatewayProxy / GatewayServer).
+#
+# CPU split: TLS-terminating edge is the usual bottleneck under multiplexed h2,
+# so it gets the larger share.
+services:
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-19,64-83}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    entrypoint: ["java", "-cp", "app.jar", "com.httparena.GatewayProxy"]
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/static:/data/static:ro
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    entrypoint: ["java", "-cp", "app.jar", "com.httparena.GatewayServer"]

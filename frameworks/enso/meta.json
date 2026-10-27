@@ -1,0 +1,17 @@
+{
+  "display_name": "Enso",
+  "language": "Clojure",
+  "type": "engine",
+  "engine": "Enso",
+  "description": "Minimal Enso engine benchmark with virtual-thread Ring handlers, HTTP/1.1, TLS, HTTP/2, H2C, HTTP/3, static files, and WebSocket echo.",
+  "repo": "https://github.com/mpenet/enso",
+  "enabled": true,
+  "tests": [
+    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "pipelined", "limited-conn", "json-comp", "json-tls", "8gbit",
+    "baseline-h2", "baseline-h2c", "json-h2c", "baseline-h3",
+    "static-tls", "static-h2", "static-h3",
+    "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
+  ],
+  "maintainers": []
+}

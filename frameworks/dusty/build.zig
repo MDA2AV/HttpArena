@@ -19,11 +19,6 @@ pub fn build(b: *std.Build) void {
 
     dusty_mod.addImport("zio", zio_mod);
 
-    const json_dep = b.dependency("json", .{
-        .target = target,
-        .optimize = optimize,
-    });
-
     const pg_dep = b.dependency("pg", .{
         .target = target,
         .optimize = optimize,
@@ -48,7 +43,6 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("dusty", dusty_mod);
     exe.root_module.addImport("zio", zio_mod);
-    exe.root_module.addImport("json", json_dep.module("json"));
     exe.root_module.addImport("pg", pg_dep.module("pg"));
     exe.root_module.addImport("zt", zt_dep.module("zt"));
     exe.step.dependOn(templates);
@@ -56,6 +50,6 @@ pub fn build(b: *std.Build) void {
 
     const run_step = b.step("run", "Run the server");
     const run_cmd = b.addRunArtifact(exe);
-    if (b.args) |args| run_cmd.addArgs(args);
+    run_cmd.addPassthruArgs();
     run_step.dependOn(&run_cmd.step);
 }

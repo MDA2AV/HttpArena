@@ -10,10 +10,12 @@ import java.util.Map;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.Future;
 import io.vertx.core.VerticleBase;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -114,7 +116,8 @@ public class ServerVerticle extends VerticleBase {
         // deployed once per core, so every instance binds both ports and the listener is
         // spread across all the event loops rather than parked on one. ALPN is off: the
         // two profiles want HTTP/1.1 negotiated and no h2 offered. The harness only mounts
-        // /certs for the TLS profiles.
+        // /certs for the TLS profiles. OpenSSL (BoringSSL through netty-tcnative) rather than
+        // the JDK's SSLEngine, which Vert.x falls back to when no engine is set.
         if (new File(CERT).isFile() && new File(KEY).isFile()) {
             HttpServerOptions tls = new HttpServerOptions()
                     .setHost("0.0.0.0")
@@ -122,6 +125,7 @@ public class ServerVerticle extends VerticleBase {
                     .setCompressionSupported(true)
                     .setSsl(true)
                     .setUseAlpn(false)
+                    .setSslEngineOptions(new OpenSSLEngineOptions())
                     .setKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
             return Future.all(plain, vertx.createHttpServer(tls).requestHandler(router).listen());
         }
@@ -143,6 +147,17 @@ public class ServerVerticle extends VerticleBase {
     }
 
     private long querySum(RoutingContext ctx) {
+        var query = ctx.request().query();
+        if (query != null && query.startsWith("a=")) {
+            var b = query.indexOf("&b=", 2);
+            if (b >= 2 && query.indexOf('&', b + 3) < 0) {
+                try {
+                    return Long.parseLong(query, 2, b, 10) + Long.parseLong(query, b + 3, query.length(), 10);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
         long sum = 0;
         for (Map.Entry<String, String> entry : ctx.queryParams()) {
             try {
@@ -442,12 +457,10 @@ public class ServerVerticle extends VerticleBase {
     }
 
     private void echo(RoutingContext ctx) {
-        HttpServerRequest request = ctx.request();
-        Buffer body = Buffer.buffer();
-        request.handler(body::appendBuffer);
-        request.endHandler(v -> ctx.response()
-                .putHeader("content-type", "application/octet-stream")
-                .end(body));
-        request.resume();
+        var req = ctx.request();
+        var res = ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_OCTET_STREAM);
+        var cl = req.getHeader(HttpHeaders.CONTENT_LENGTH);
+        if (cl != null) { res.putHeader(HttpHeaders.CONTENT_LENGTH, cl); } else { res.setChunked(true); }
+        res.send(req);
     }
 }
