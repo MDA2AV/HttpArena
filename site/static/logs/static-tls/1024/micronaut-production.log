@@ -8,7 +8,4 @@ WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
 WARNING: Restricted methods will be blocked in a future release unless native access is enabled
 
-10:23:38.071 INFO  io.micronaut.runtime.Micronaut - Startup completed in 822ms. Server Running: https://diogo:8443
-10:23:39.198 WARN  i.n.channel.DefaultChannelPipeline - An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
-io.netty.channel.StacklessClosedChannelException
-	at io.netty.channel.AbstractChannel$AbstractUnsafe.write(Object, ChannelPromise)(Unknown Source)
+10:35:08.048 INFO  io.micronaut.runtime.Micronaut - Startup completed in 818ms. Server Running: https://diogo:8443

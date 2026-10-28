@@ -3,4 +3,4 @@
 | |\/| | |/ __| '__/ _ \| '_ \ / _` | | | | __|
 | |  | | | (__| | | (_) | | | | (_| | |_| | |_ 
 |_|  |_|_|\___|_|  \___/|_| |_|\__,_|\__,_|\__|
-10:47:00.407 INFO  io.micronaut.runtime.Micronaut - Startup completed in 953ms. Server Running: https://diogo:8443
+10:58:40.099 INFO  io.micronaut.runtime.Micronaut - Startup completed in 959ms. Server Running: https://diogo:8443
