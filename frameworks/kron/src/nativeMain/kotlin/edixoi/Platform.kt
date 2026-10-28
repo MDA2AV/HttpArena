@@ -4,10 +4,15 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
+import platform.posix.AF_INET
 import platform.posix.EINTR
+import platform.posix.ENOTCONN
 import platform.posix.F_OK
+import platform.posix.IPPROTO_TCP
 import platform.posix.O_CLOEXEC
 import platform.posix.O_RDONLY
+import platform.posix.SOCK_CLOEXEC
+import platform.posix.SOCK_STREAM
 import platform.posix._SC_NPROCESSORS_ONLN
 import platform.posix.access
 import platform.posix.close
@@ -16,6 +21,8 @@ import platform.posix.fputs
 import platform.posix.getenv
 import platform.posix.open
 import platform.posix.read
+import platform.posix.setsockopt
+import platform.posix.socket
 import platform.posix.stderr
 import platform.posix.sysconf
 
@@ -51,10 +58,27 @@ fun availableProcessors(): Int {
     return if (count > 0) count else sysconf(_SC_NPROCESSORS_ONLN).toInt()
 }
 
-/** Whether the kernel can take TLS records: its `tls` ULP is registered once the module is loaded. */
+// From linux/tcp.h: the toolchain's glibc 2.19 headers predate it.
+private const val TCP_ULP = 31
+
+/**
+ * Whether the kernel can take TLS records. Setting the tls ULP on a socket that is not connected asks the kernel
+ * itself: ENOTCONN once the module is in, ENOENT when it is not. The ULP list under /proc/sys/net cannot answer it,
+ * as it exists only in the host's network namespace and a container on its own network does not see it.
+ */
 fun kernelTlsAvailable(): Boolean {
-    val ulps = readFile("/proc/sys/net/ipv4/tcp_available_ulp") ?: return false
-    return ulps.decodeToString().split(' ', '\n').contains("tls")
+    val fd = socket(AF_INET, SOCK_STREAM or SOCK_CLOEXEC, 0)
+    if (fd < 0) {
+        return false
+    }
+
+    try {
+        val ulp = "tls".encodeToByteArray()
+        val rc = ulp.usePinned { setsockopt(fd, IPPROTO_TCP, TCP_ULP, it.addressOf(0), ulp.size.convert()) }
+        return rc == 0 || errno == ENOTCONN
+    } finally {
+        close(fd)
+    }
 }
 
 /** The whole file at [path], or null when it cannot be opened or read. */
