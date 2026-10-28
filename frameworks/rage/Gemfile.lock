@@ -24,13 +24,13 @@ GEM
     rack (3.2.6)
     rack-test (2.2.0)
       rack (>= 1.3)
-    rage-iodine (5.2.1)
-    rage-rb (1.23.0)
+    rage-iodine (6.4.0)
+    rage-rb (1.29.0)
       irb
       logger
       rack (< 4)
       rack-test (~> 2.1)
-      rage-iodine (~> 5.2)
+      rage-iodine (~> 6.3)
       rake (>= 12.0)
       thor (~> 1.0)
       zeitwerk (~> 2.6)
@@ -58,6 +58,7 @@ DEPENDENCIES
   concurrent-ruby
   connection_pool
   pg (~> 1.5)
+  rage-iodine
   rage-rb (~> 1.22)
   redis
 
@@ -77,8 +78,8 @@ CHECKSUMS
   psych (5.3.1) sha256=eb7a57cef10c9d70173ff74e739d843ac3b2c019a003de48447b2963d81b1974
   rack (3.2.6) sha256=5ed78e1f73b2e25679bec7d45ee2d4483cc4146eb1be0264fc4d94cb5ef212c2
   rack-test (2.2.0) sha256=005a36692c306ac0b4a9350355ee080fd09ddef1148a5f8b2ac636c720f5c463
-  rage-iodine (5.2.1) sha256=ea8e5a5d1b7910c2a81d925073b1f6047764db89ed78d59db3a56a5a2df6331e
-  rage-rb (1.23.0) sha256=33d2256062a2a10968dc8ba218791ffafe3c8376ddc9f67ee430cfaabb6f5ae2
+  rage-iodine (6.4.0) sha256=63e0623bd1a61c5f26004a1714168eebf2899ad2be77012cfd743ba84afd9382
+  rage-rb (1.29.0) sha256=d61fd52f8d47423191729e12f8bbcac7090a9f5c958c2ee1e7ae77c757f08d3e
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   rdoc (7.2.0) sha256=8650f76cd4009c3b54955eb5d7e3a075c60a57276766ebf36f9085e8c9f23192
   redis (5.4.1) sha256=b5e675b57ad22b15c9bcc765d5ac26f60b675408af916d31527af9bd5a81faae
