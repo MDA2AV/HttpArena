@@ -82,3 +82,18 @@ LOADGEN_DOCKER=true
 READY_TIMEOUT=120
 # Stop a framework at the first profile its server does not come up for.
 FAIL_FAST=true
+
+# JVM heap ceiling as a share of RAM. Containers run without a memory limit, so
+# a JVM sizes its default max heap at 25% of RAM: effectively unbounded on the
+# bench host, but only ~950 MB on this 4 GB board. 50% (~1.9 GB) brings the Pi
+# closer to the bench host's "heap is not the limit". In an A/B on jooby,
+# hirundo, ktor-tuned and vertx it was never clearly slower, and jooby (the one
+# server that grows its heap past 1 GB under async load) gained ~10%.
+# Passed as JDK_JAVA_OPTIONS (read by the java launcher, JDK 9+), which leaves an
+# image's own JAVA_TOOL_OPTIONS alone and loses to explicit -Xmx/-XX flags in
+# its command. Set RPI_JVM_HEAP_PCT= (empty) for the JVM default.
+RPI_JVM_HEAP_PCT="${RPI_JVM_HEAP_PCT-50}"
+SERVER_ENV=()
+if [ -n "$RPI_JVM_HEAP_PCT" ]; then
+    SERVER_ENV+=("JDK_JAVA_OPTIONS=-XX:MaxRAMPercentage=$RPI_JVM_HEAP_PCT")
+fi

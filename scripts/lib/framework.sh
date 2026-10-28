@@ -130,6 +130,13 @@ framework_start() {
         fi
     fi
 
+    # A host profile may hand the server extra environment (SERVER_ENV, an
+    # array of NAME=value), e.g. JVM heap sizing on a small-memory board.
+    local _env
+    for _env in "${SERVER_ENV[@]+"${SERVER_ENV[@]}"}"; do
+        args+=(-e "$_env")
+    done
+
     # A diagnostic may hand the image a command of its own — an explicit worker
     # count, say — to run the same profile at several settings. Unset is the
     # normal path, and then the image's own CMD runs untouched.
