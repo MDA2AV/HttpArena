@@ -2,7 +2,7 @@
 # libraries, linked into the binary). To build a tree that is not pushed, replace the kron stage with a checkout:
 #   docker build --build-context kron=<kron checkout> -t httparena-kron frameworks/kron
 FROM gradle:9.8.2-jdk25 AS kron-fetch
-ARG KRON_COMMIT=d07e1a689aff07c4e9159f0f0cab3a48e0240fcf
+ARG KRON_COMMIT=f7588c6b06158abd5f7cf2f55e29c111e0c5edd3
 WORKDIR /kron
 RUN git init -q \
  && git remote add origin https://github.com/MDA2AV/kron.git \

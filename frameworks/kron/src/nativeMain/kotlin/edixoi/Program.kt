@@ -12,6 +12,8 @@ import kron.TcpOptions
 import kron.tls.TlsOptions
 import kron.tls.TlsService
 import kron.tls.TlsSession
+import kotlin.native.runtime.GC
+import kotlin.native.runtime.NativeRuntimeApi
 
 /**
  * kron - edixoi on Kotlin/Native: the arena's HTTP/1.1 profiles on kron, the native port of ioxide, hand-written on its
@@ -26,7 +28,13 @@ import kron.tls.TlsSession
  * One handler serves both doors: a connection carries the port it arrived on, and the only difference is whether
  * a [TlsSession] sits in front of the bytes. See [Http1] for the parsing and the routing; this file is the transport.
  */
+@OptIn(NativeRuntimeApi::class)
 fun main() {
+    // Kotlin/Native's collector starts from a heap sized for a phone and runs every few megabytes allocated, each
+    // run stopping every reactor at a safepoint. From a 64 MiB floor it runs far less often; the JVM entries start
+    // from a much larger heap anyway.
+    GC.minHeapBytes = intEnv("EDIXOI_GC_MIN_HEAP_MB", 64).toLong() shl 20
+
     val port = intEnv("EDIXOI_PORT", 8080)
     val tlsPort = intEnv("EDIXOI_TLS_PORT", 8081)
     // availableProcessors counts logical CPUs within the container's cpuset, as edixoi's ProcessorCount does.
@@ -40,9 +48,12 @@ fun main() {
 
     val dataset = Dataset.load(env("EDIXOI_DATASET") ?: "/data/dataset.json")
 
-    // One handler, two doors. Everything else is left at kron's own defaults, as on edixoi.
+    // One handler, two doors, and each reactor on a CPU of its own: unpinned, the scheduler at times stacks two
+    // reactors on one CPU and leaves another idle. Everything else is left at kron's own defaults, as on edixoi.
+    val pinned = boolEnv("EDIXOI_PIN_REACTORS", true)
     val config = ServerConfig(
         reactorCount = reactors,
+        pinReactors = pinned,
         tcp = TcpOptions(port = port, extraPorts = if (tls) intArrayOf(tlsPort) else IntArray(0)),
     )
 
@@ -61,7 +72,7 @@ fun main() {
 
     val tx = if (tlsOptions.kernelTx) "kernel tx" else "boringssl tx"
     println(
-        "[kron] $reactors reactors on :$port" +
+        "[kron] $reactors reactors${if (pinned) " (pinned)" else ""} on :$port" +
             (if (tls) " + :$tlsPort tls ($tx)" else " (no tls: certificate not mounted)") +
             ", dataset=${dataset.count} items (availableProcessors=${availableProcessors()})",
     )
@@ -162,18 +173,31 @@ private class Session(private val conn: TcpConnection, private val http: Http1, 
     /**
      * Answers everything held, waiting on the ring for any request that asked to be delayed. True when something
      * was written and the caller owes a flush.
+     *
+     * Its one suspend call is a tail call, so it needs no coroutine frame: only a delayed request, which waits
+     * anyway, pays for one. Kotlin/Native would otherwise allocate a frame per request, and collect each one.
      */
     suspend fun pump(): Boolean {
-        var answered = false
-        while (true) {
-            val consumed = http.serve(this, carry.buffer, carry.length, close)
-            close = http.close
-            val delayMs = http.delayMs
-            carry.consume(consumed)
-            if (consumed > 0) answered = true
+        answered = false
+        if (serveReady() == Http1.NO_DELAY) return answered || close
+        return waitAndServe()
+    }
 
-            if (delayMs == Http1.NO_DELAY) return answered || close
+    // Set by serveReady, read by pump and waitAndServe.
+    private var answered = false
 
+    /** Answers what needs no waiting: the delay the next request asked for, or [Http1.NO_DELAY]. */
+    private fun serveReady(): Int {
+        val consumed = http.serve(this, carry.buffer, carry.length, close)
+        close = http.close
+        carry.consume(consumed)
+        if (consumed > 0) answered = true
+        return http.delayMs
+    }
+
+    private suspend fun waitAndServe(): Boolean {
+        var delayMs = http.delayMs
+        while (delayMs != Http1.NO_DELAY) {
             // The wait rides this reactor's ring: the deadline goes to the kernel with the submission and the
             // completion resumes this on the same thread, so a held connection costs a deadline, not a thread. One
             // timer per connection, re-armed - a connection only ever waits on one request at a time.
@@ -182,7 +206,10 @@ private class Session(private val conn: TcpConnection, private val http: Http1, 
 
             http.writeDelayed(this, delayMs, close)
             answered = true
+            delayMs = serveReady()
         }
+
+        return answered || close
     }
 }
 
