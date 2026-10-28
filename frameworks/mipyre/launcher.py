@@ -40,6 +40,9 @@ def server_env(threads: int, port: int, tls: TlsFiles | None) -> dict[str, str]:
         "MIPYRE_HOST": "0.0.0.0",
         "MIPYRE_PORT": str(port),
         "MIPYRE_EXTRA_PLAIN_PORTS": str(H2C_PORT),
+        # The async profile holds up to 32000 requests at once; the default
+        # queue (128 per async worker) answers the rest 503.
+        "MIPYRE_ASYNC_QUEUE_CAPACITY": "40000",
     }
     if tls is None:
         return env

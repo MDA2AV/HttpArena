@@ -5,7 +5,7 @@
 FROM python:3.14-slim
 WORKDIR /app
 
-ARG MIPYRE_VERSION=3.0.0
+ARG MIPYRE_VERSION=3.0.1
 COPY . ./
 RUN pip install --no-cache-dir --find-links ./wheels "mipyre==${MIPYRE_VERSION}"
 

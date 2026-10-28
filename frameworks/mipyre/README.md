@@ -25,7 +25,7 @@ special harness-only glue.
 
 ## Build (local)
 
-The image installs the released wheel from PyPI (`mipyre==3.0.0`, cp314
+The image installs the released wheel from PyPI (`mipyre==3.0.1`, cp314
 manylinux x86_64); there is no source tree or Rust toolchain in the build.
 
 ```bash
