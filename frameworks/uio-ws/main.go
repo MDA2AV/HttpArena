@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/urpc/uio"
 	"github.com/urpc/uio/uws"
 )
 
@@ -22,21 +21,28 @@ func (echoHandler) OnOpen(*uws.Conn) {}
 func (echoHandler) OnMessage(conn *uws.Conn, message uws.Message) {
 	switch message.Type {
 	case uws.TextMessage:
-		_ = conn.SendText(message.Payload)
+		_ = conn.SendText(message.Text())
 	case uws.BinaryMessage:
-		_ = conn.SendBinary(message.Payload)
+		_ = conn.SendBinary(message.Bytes())
 	}
 }
 
 func (echoHandler) OnClose(*uws.Conn, uws.CloseEvent) {}
 
 func main() {
-	server := uws.NewServer(echoHandler{})
 	// One event loop per CPU: uio's default is four pollers, which leaves the
 	// cores of a benchmark host idle. A read round's replies leave coalesced
 	// in one sendmsg, and a send the socket refuses is finished by the next
 	// write turn without pausing the read.
-	server.Events = &uio.Events{Pollers: runtime.NumCPU()}
+	server := uws.NewServer(uws.Options{
+		Handler: echoHandler{},
+		Pollers: runtime.NumCPU(),
+		// One listening socket per poller, spread by the kernel's SO_REUSEPORT
+		// hash: upgrades arrive on the same socket their connection's loop
+		// accepts from, which short-lived connections — every upgrade here is
+		// one — feel as one less cross-loop handoff.
+		ReusePort: true,
+	})
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
