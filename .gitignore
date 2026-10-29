@@ -1,6 +1,7 @@
 # Raw benchmark output at the repo root. Anchored: site/data/results/ holds
 # the published per-framework result files and must stay tracked.
 /results/
+/results-hosts/
 site/public/
 site/generated/
 site/resources/

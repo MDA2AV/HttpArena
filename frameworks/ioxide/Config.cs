@@ -1,4 +1,5 @@
 using System.Net;
+using System.Runtime.InteropServices;
 
 using ioxide;
 using ioxide.http2;
@@ -110,7 +111,9 @@ internal sealed class Config : IDisposable
 
         // ── QUIC engine (per-endpoint QUIC/TLS state, shared by every connection) ─────────────
         uint cidLength = Env.UInt("IOXIDE_QUIC_CID_LEN", (uint)quicDefault.LocalCidLength);
-        QuicEngine? quic = tls
+        // ioxide.ngtcp2 / ioxide.nghttp3 ship their native libraries for linux-x64 only; on other
+        // architectures (an arm64 host) HTTP/3 stays off and :8443 serves h2 over TLS alone.
+        QuicEngine? quic = tls && RuntimeInformation.ProcessArchitecture == Architecture.X64
             ? new QuicEngine(certPath, keyPath, cidLength, alpn: ["h3"],
                              // Per-connection send-retention high-water: a response larger than
                              // this streams out paced by the peer's acks instead of buffering
@@ -278,7 +281,7 @@ internal sealed class Config : IDisposable
                         + $"(ProcessorCount={Environment.ProcessorCount}, dataset={datasetCount} items, "
                         + $"static={staticCount} files ({precompressedCount} precompressed), "
                         + $"pg={(Pg != null ? $"{Pg.Host}:{Pg.Port}/{Pg.Database} pool={Pg.PoolSize}" : "off")}, "
-                        + $"tls={(Tls ? $"h1 :{TlsPort}, h2 :{H2Port}, h3 udp:{Server.Quic!.Port}" : "off")})");
+                        + $"tls={(Tls ? $"h1 :{TlsPort}, h2 :{H2Port}, h3 {(Server.Quic != null ? $"udp:{Server.Quic.Port}" : "off")}" : "off")})");
 
         Console.WriteLine($"[cfg] engine: sqEntries={Server.RingEntries} recvBuf={Server.RecvBufferSize} "
                         + $"recvSlots={Server.RecvSlots} dualStack={Server.DualStack} "
