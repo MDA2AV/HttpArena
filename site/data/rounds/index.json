@@ -3,7 +3,7 @@
     "id": "rpi-1",
     "name": "Raspberry Pi 4 (arm64)",
     "host": "rpi",
-    "date": "2026-10-23",
+    "date": "2026-10-29",
     "cpu": "Cortex-A72",
     "cores": "4",
     "threads": "4",
@@ -15,7 +15,7 @@
     "governor": "performance",
     "arch": "aarch64",
     "cpu_max_mhz": "1800",
-    "commit": "11c32b3b2",
+    "commit": "835de7952",
     "tcp": {
       "lo_mtu": "1500",
       "congestion": "cubic",
@@ -23,7 +23,7 @@
       "rmem_max": "7500000",
       "wmem_max": "7500000"
     },
-    "main_commit": "adda52630f03271e05fb0992a62ebab76ca58193",
-    "main_commit_date": "2026-10-22T11:08:07+01:00"
+    "main_commit": "c9ae248b7026d4811aa6e4c65c59f1973a1ea3c9",
+    "main_commit_date": "2026-10-26T18:45:01Z"
   }
 ]
