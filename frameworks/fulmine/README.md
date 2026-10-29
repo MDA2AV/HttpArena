@@ -46,3 +46,5 @@ and why they are there are in the framework's
 - HTTP/2 (`baseline-h2`, `static-h2` on :8443, `baseline-h2c`, `json-h2c` on :8082): uWS has no
   HTTP/2, so the same app is handed to `node:http2` with its defaults, one socket per worker with
   `SO_REUSEPORT`: [node:http2](https://fulmine.sndesign.it/examples/node-http#http-2).
+- `/json` on the TLS listener has no `compression()`: json-tls never sends `Accept-Encoding`.
+  The production-stack item cache lives one second, the profile's limit.

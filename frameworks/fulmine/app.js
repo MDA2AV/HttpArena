@@ -85,7 +85,8 @@ app.get('/delay/:ms', (req, res) => {
     setTimeout(() => res.type('text/plain').send(String(ms)), ms);
 });
 
-const registerJsonRoute = (target, path = '/json/:count') => target.get(path, compress, (req, res) => {
+// json-tls never sends Accept-Encoding, so the TLS listener registers it without compress.
+const registerJsonRoute = (target, path = '/json/:count', ...before) => target.get(path, ...before, (req, res) => {
     const count = Math.min(Math.max(parseInt(req.params.count, 10) || 0, 0), dataset.length);
     const m = parseInt(req.query.m, 10) || 1;
     const items = new Array(count);
@@ -114,7 +115,7 @@ const registerStaticRoute = (target) => target.use('/static', express.static('/d
     fallthrough: false
 }));
 
-registerJsonRoute(app);
+registerJsonRoute(app, '/json/:count', compress);
 registerEchoRoute(app);
 registerStaticRoute(app);
 
@@ -163,7 +164,7 @@ app.get('/fortunes', async (req, res) => {
     app.get('/public/baseline', (req, res) => {
         res.type('text/plain').send(String(sumQuery(req.query)));
     });
-    registerJsonRoute(app, '/public/json/:count');
+    registerJsonRoute(app, '/public/json/:count', compress);
 
     app.get('/api/items/:id', async (req, res) => {
         const id = parseInt(req.params.id, 10);
@@ -177,7 +178,8 @@ app.get('/fortunes', async (req, res) => {
         });
         if (rows.length === 0) return res.status(404).end();
         const json = JSON.stringify(itemShape(rows[0]));
-        cache().set('crud:' + id, json, 'PX', 200);
+        // the profile allows a TTL up to one second
+        cache().set('crud:' + id, json, 'PX', 1000);
         res.set(CACHE_MISS).type('application/json').send(json);
     });
 
