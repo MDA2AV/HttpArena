@@ -20,7 +20,19 @@
     "pipelined",
     "limited-conn",
     "json-comp",
-    "json-tls"
+    "json-tls",
+    "8gbit",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "async",
+    "static-tls",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h2",
+    "static-h2",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
   "maintainers": [
     "COCPORN"

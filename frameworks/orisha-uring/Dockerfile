@@ -55,5 +55,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /out/orisha-httparena-uring /orisha-httparena
 ENV DATASET_PATH=/data/dataset.json
-EXPOSE 8080 8081
+ENV H2C_PORT=8082
+ENV H2_TLS_PORT=8443
+EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["/orisha-httparena"]
