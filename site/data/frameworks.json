@@ -2470,7 +2470,7 @@
   },
   "uio-ws": {
     "dir": "uio-ws",
-    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. Default configuration otherwise.",
+    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. A SO_REUSEPORT listener group puts each upgrade on the loop that runs its connection. uio defaults otherwise.",
     "repo": "https://github.com/urpc/uio",
     "type": "experimental",
     "engine": "uio",
