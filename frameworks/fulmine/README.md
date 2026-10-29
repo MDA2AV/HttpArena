@@ -43,3 +43,6 @@ and why they are there are in the framework's
 - `tls_check`: the listener on :9000 reads `/certs-tls`, and a rotation is a new listener on the
   shared port followed by `close()` on the old one, since uWS reads the pair only when it builds
   the SSL context.
+- HTTP/2 (`baseline-h2`, `static-h2` on :8443, `baseline-h2c`, `json-h2c` on :8082): uWS has no
+  HTTP/2, so the same app is handed to `node:http2` with its defaults, one socket per worker with
+  `SO_REUSEPORT`: [node:http2](https://fulmine.sndesign.it/examples/node-http#http-2).

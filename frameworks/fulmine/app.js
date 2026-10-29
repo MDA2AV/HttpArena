@@ -238,6 +238,19 @@ const hasPair = (dir) => fs.existsSync(dir + '/server.key') && fs.existsSync(dir
 
 if (hasPair('/certs')) tlsApp('/certs').listen(8081);
 
+// HTTP/2: µWS has none, so the same app goes to node:http2 with its defaults, h2 with TLS on 8443
+// and h2c on 8082. Every worker binds its own socket with SO_REUSEPORT, as the uWS listeners do.
+// https://fulmine.sndesign.it/examples/node-http#http-2
+if (require('cluster').isWorker) {
+    const http2 = require('http2');
+    const own = { reusePort: true, exclusive: true };
+    http2.createServer(app).listen({ port: 8082, ...own });
+    if (hasPair('/certs')) {
+        const pair = { key: fs.readFileSync('/certs/server.key'), cert: fs.readFileSync('/certs/server.crt') };
+        http2.createSecureServer(pair, app).listen({ port: 8443, ...own });
+    }
+}
+
 // tls_check, mounted only by validate.sh. uWS reads the pair once per SSL context, so a rotation
 // is a new listener on the shared port, then close() on the old one, which drains it.
 if (hasPair('/certs-tls')) {
