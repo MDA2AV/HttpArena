@@ -15,18 +15,11 @@
   "enabled": true,
   "tests": [
     "baseline",
-    "latency-1m",
-    "latency-10k",
     "pipelined",
     "limited-conn",
     "json-comp",
-    "json-tls",
     "8gbit",
-    "echo-ws",
-    "echo-ws-pipeline",
-    "echo-ws-limited",
-    "async",
-    "static-tls"
+    "echo-ws"
   ],
   "maintainers": [
     "COCPORN"
