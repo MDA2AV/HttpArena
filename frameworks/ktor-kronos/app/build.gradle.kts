@@ -2,6 +2,7 @@
 // :httparena-ktor-kronos, so the engine and Ktor come in as the fork's projects, at the fork's commit.
 plugins {
     id("ktorbuild.project.internal")
+    id("kotlinx-serialization")
 }
 
 kotlin {
@@ -16,6 +17,9 @@ kotlin {
         linuxMain.dependencies {
             implementation(projects.ktorServerKron)
             implementation(projects.ktorServerWebsockets)
+            implementation(projects.ktorServerCompression)
+            implementation(projects.ktorServerContentNegotiation)
+            implementation(projects.ktorSerializationKotlinxJson)
         }
     }
 }
