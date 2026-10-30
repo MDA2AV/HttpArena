@@ -23,8 +23,10 @@ kotlin {
             implementation(projects.ktorServerContentNegotiation)
             implementation(projects.ktorSerializationKotlinxJson)
         }
-        // Ktor logs through SLF4J on the JVM: the simple provider prints what the native build prints
         jvmMain.dependencies {
+            // Ktor's Compression, for json-comp: it exists only on the JVM
+            implementation(projects.ktorServerCompression)
+            // Ktor logs through SLF4J on the JVM: the simple provider prints what the native build prints
             implementation(libs.slf4j.simple)
         }
     }

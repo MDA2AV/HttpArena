@@ -1,5 +1,6 @@
 package httparena
 
+import io.ktor.server.routing.Route
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
 
@@ -13,3 +14,6 @@ fun main() = serve { reactors ->
     GC.minHeapBytes = heapMb.toLong() shl 20
     "Kotlin/Native, GC heap floor $heapMb MiB"
 }
+
+// Ktor's Compression plugin is JVM-only: natively the JSON goes out as it is.
+actual fun Route.installCompression() {}

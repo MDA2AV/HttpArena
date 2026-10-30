@@ -18,6 +18,7 @@ import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -36,6 +37,7 @@ import kron.tls.TlsOptions
  *     :8080  baseline, limited-conn, latency-1m, latency-10k   GET|POST /baseline11?a=&b=
  *            pipelined                                        GET      /pipeline
  *            async                                            GET      /delay/{ms}
+ *            json-comp (JVM only)                             GET      /json/{count}?m=
  *            echo-ws, echo-ws-pipeline                        GET      /ws
  *     :8081  json-tls (TLS)                                   GET      /json/{count}?m=
  *            8gbit (TLS)                                      POST     /echo
@@ -90,6 +92,9 @@ private fun loadDataset(path: String): List<DatasetItem> {
     return json.decodeFromString<List<DatasetItem>>(bytes.decodeToString())
 }
 
+/** Ktor's Compression plugin with gzip, where Ktor has it: on the JVM. */
+expect fun Route.installCompression()
+
 fun Application.module(dataset: List<DatasetItem>) {
     install(WebSockets)
 
@@ -117,9 +122,10 @@ fun Application.module(dataset: List<DatasetItem>) {
             call.respond(TextContent(ms, ContentType.Text.Plain))
         }
 
-        // The ktor entry's JSON route, less its gzip, which Ktor has only on the JVM: Ktor's ContentNegotiation
-        // serializes.
+        // The ktor entry's JSON route, as it is there: Ktor's ContentNegotiation serializes, and Ktor's Compression
+        // gzips the result for a client that accepts gzip - on the JVM, as Ktor has no gzip on Kotlin/Native.
         route("/json/{count}") {
+            installCompression()
             install(ContentNegotiation) {
                 json(json)
             }

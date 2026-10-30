@@ -1,11 +1,12 @@
 # ktor-kronos: Ktor with the kron engine (ktor-server-kron), which lives in the MDA2AV/ktor fork, on either runtime:
 #   KRONOS_RUNTIME=native  one Kotlin/Native binary
 #   KRONOS_RUNTIME=jvm     the same app as a jar on the JVM, kron reaching io_uring and BoringSSL through FFM
-# The knob is the ARG below, or `docker build --build-arg KRONOS_RUNTIME=jvm`. The fork and kron are published
-# nowhere yet: they come in at pinned commits and are built from source. To build trees that are not pushed, replace
-# either fetch with a checkout:
+# The knob is the ARG below, or `docker build --build-arg KRONOS_RUNTIME=...`. json-comp needs the JVM, as Ktor has no
+# gzip on Kotlin/Native: for native, take it out of meta.json. The fork and kron are published nowhere yet: they come
+# in at pinned commits and are built from source. To build trees that are not pushed, replace either fetch with a
+# checkout:
 #   docker build --build-context kron=<kron tree> --build-context ktor=<fork tree> -t httparena-ktor-kronos frameworks/ktor-kronos
-ARG KRONOS_RUNTIME=native
+ARG KRONOS_RUNTIME=jvm
 
 # One fetch per tree, so that a --build-context in place of either skips its clone.
 FROM gradle:9.8.2-jdk25 AS fetch-kron
