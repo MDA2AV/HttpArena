@@ -11,8 +11,6 @@ import io.ktor.server.application.install
 import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.kron.Kron
-import io.ktor.server.plugins.compression.Compression
-import io.ktor.server.plugins.compression.gzip
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveText
@@ -29,35 +27,28 @@ import io.ktor.server.websocket.webSocket
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kron.tls.TlsOptions
-import kotlin.native.runtime.GC
-import kotlin.native.runtime.NativeRuntimeApi
 
 /**
- * ktor-kronos: Ktor on kron, the Kotlin/Native port of the ioxide io_uring runtime, through the engine of the
- * MDA2AV/ktor fork (ktor-server-kron). The routes are the ktor entry's, answered the same way; only the engine and the
- * platform differ.
+ * ktor-kronos: Ktor on kron, the ioxide io_uring runtime's Kotlin port, through the engine of the MDA2AV/ktor fork
+ * (ktor-server-kron), natively or on the JVM: the same app either way, the Dockerfile's KRONOS_RUNTIME picks which.
+ * The routes are the ktor entry's, answered the same way; only the engine and the platform differ.
  *
  *     :8080  baseline, limited-conn, latency-1m, latency-10k   GET|POST /baseline11?a=&b=
  *            pipelined                                        GET      /pipeline
  *            async                                            GET      /delay/{ms}
- *            json-comp                                        GET      /json/{count}?m=
  *            echo-ws, echo-ws-pipeline                        GET      /ws
  *     :8081  json-tls (TLS)                                   GET      /json/{count}?m=
  *            8gbit (TLS)                                      POST     /echo
+ *
+ * [runtime] readies the runtime for that many reactors, and names it for the log.
  */
-@OptIn(NativeRuntimeApi::class)
-fun main() {
+fun serve(runtime: (reactors: Int) -> String) {
     // A reactor per CPU of the container's cpuset, each pinned to its own: unpinned, the scheduler at times stacks
     // two reactors on one CPU and leaves another idle.
     val reactors = intEnv("KRONOS_REACTORS", availableProcessors())
     val pinned = env("KRONOS_PIN_REACTORS") != "0"
 
-    // Kotlin/Native's collector is not generational: it marks everything live on every run, stops every reactor to do
-    // it, and puts allocating threads to sleep when it falls behind. Ktor allocates some sixty objects a request, and
-    // a WebSocket connection keeps some 260 live, so a heap floor sized for a phone has it running back to back, the
-    // reactors idle. 512 MiB per reactor keeps the runs few even with tens of thousands of connections held.
-    val heapMb = intEnv("KRONOS_GC_MIN_HEAP_MB", 512 * reactors)
-    GC.minHeapBytes = heapMb.toLong() shl 20
+    val runtimeNote = runtime(reactors)
 
     // The harness mounts the certificate for the TLS profiles. Without it the TLS port does not open, and the
     // plaintext profiles still run.
@@ -77,7 +68,7 @@ fun main() {
         else -> "tls on :8081, boringssl tx"
     }
     val pinNote = if (pinned) " (pinned)" else ""
-    println("[ktor-kronos] $reactors reactors$pinNote on :8080, $tlsNote, GC heap floor $heapMb MiB")
+    println("[ktor-kronos] $reactors reactors$pinNote on :8080, $tlsNote, $runtimeNote")
 
     embeddedServer(Kron, configure = {
         connector { port = 8080 }
@@ -126,12 +117,9 @@ fun Application.module(dataset: List<DatasetItem>) {
             call.respond(TextContent(ms, ContentType.Text.Plain))
         }
 
-        // The ktor entry's JSON route, as it is there: Ktor's ContentNegotiation serializes, and Ktor's Compression
-        // gzips the result for a client that accepts gzip.
+        // The ktor entry's JSON route, less its gzip, which Ktor has only on the JVM: Ktor's ContentNegotiation
+        // serializes.
         route("/json/{count}") {
-            install(Compression) {
-                gzip()
-            }
             install(ContentNegotiation) {
                 json(json)
             }
