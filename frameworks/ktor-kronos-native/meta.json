@@ -1,0 +1,31 @@
+{
+  "display_name": "ktor-kronos-native",
+  "language": "Kotlin",
+  "type": "experimental",
+  "mode": "standard",
+  "engine": "io_uring",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "description": "ktor-kronos-native — JetBrains Ktor on Kotlin/Native with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of CIO; the ktor-kronos entry runs the same app on the JVM. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, driven from Kotlin over the kernel's own io_uring header (no liburing, no JVM: one native binary). Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection in the async profile costs a kernel deadline rather than a timer thread. WebSockets are Ktor's own, over the upgraded connection. The routes are the ktor entry's, answered the same way; only the engine and the platform differ. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite). TLS on :8081 is the engine's own connector on kron's BoringSSL, the kernel encrypting the records (kTLS TX) where it has the tls module. JSON is Ktor's ContentNegotiation with kotlinx.serialization; json-comp is left out, as Ktor has no gzip on Kotlin/Native.",
+  "repo": "https://github.com/MDA2AV/ktor",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "latency-1m",
+    "latency-10k",
+    "async",
+    "json-tls",
+    "8gbit",
+    "echo-ws",
+    "echo-ws-pipeline"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}
