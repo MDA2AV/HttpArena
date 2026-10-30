@@ -19,7 +19,11 @@
     "limited-conn",
     "json-comp",
     "8gbit",
-    "echo-ws"
+    "echo-ws",
+    "baseline-h2",
+    "static-h2",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
   "maintainers": [
     "COCPORN"
