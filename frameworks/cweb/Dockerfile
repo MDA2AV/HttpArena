@@ -1,7 +1,7 @@
 # -------------------------------------------------------------
 # Stage 1: Clone & Build CWEB + Benchmark App from Source
 # -------------------------------------------------------------
-FROM mirror.gcr.io/library/ubuntu:24.04 AS builder
+FROM ubuntu:24.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
