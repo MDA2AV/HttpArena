@@ -4,7 +4,7 @@
 #   docker build --build-context kron=<kron tree> --build-context ktor=<fork tree> -t httparena-ktor-kronos frameworks/ktor-kronos
 FROM gradle:9.8.2-jdk25 AS fetch
 ARG KRON_COMMIT=ec56ef3f0523f95f54f121bbfcb4ecbcb5bb392e
-ARG KTOR_COMMIT=5533ebb8a49b74d340761e502ed55ce8e298c481
+ARG KTOR_COMMIT=3ec29a1868a93936301ba90f3bc271a8af569c2d
 WORKDIR /src
 RUN git init -q kron && cd kron \
  && git remote add origin https://github.com/MDA2AV/kron.git \

@@ -33,15 +33,18 @@ import kotlin.native.runtime.NativeRuntimeApi
  */
 @OptIn(NativeRuntimeApi::class)
 fun main() {
-    // Kotlin/Native's collector starts from a heap sized for a phone and runs every few megabytes allocated, each
-    // run stopping every reactor at a safepoint; from a 64 MiB floor it runs far less often.
-    GC.minHeapBytes = intEnv("KRONOS_GC_MIN_HEAP_MB", 64).toLong() shl 20
-
     // A reactor per CPU of the container's cpuset, each pinned to its own: unpinned, the scheduler at times stacks
     // two reactors on one CPU and leaves another idle.
     val reactors = intEnv("KRONOS_REACTORS", availableProcessors())
     val pinned = env("KRONOS_PIN_REACTORS") != "0"
-    println("[ktor-kronos] $reactors reactors${if (pinned) " (pinned)" else ""} on :8080")
+
+    // Kotlin/Native's collector is not generational: it marks everything live on every run, stops every reactor to do
+    // it, and puts allocating threads to sleep when it falls behind. Ktor allocates some sixty objects a request, so
+    // a heap floor sized for a phone has it running back to back, the reactors idle. 64 MiB per reactor keeps it to a
+    // few runs a second at full load.
+    val heapMb = intEnv("KRONOS_GC_MIN_HEAP_MB", 64 * reactors)
+    GC.minHeapBytes = heapMb.toLong() shl 20
+    println("[ktor-kronos] $reactors reactors${if (pinned) " (pinned)" else ""} on :8080, GC heap floor $heapMb MiB")
 
     embeddedServer(Kron, configure = {
         connector { port = 8080 }
