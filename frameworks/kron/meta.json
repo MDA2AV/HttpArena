@@ -1,0 +1,21 @@
+{
+  "display_name": "kron",
+  "language": "Kotlin",
+  "type": "engine",
+  "engine": "io_uring",
+  "description": "kron — edixoi on Kotlin/Native: kron, the native port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the ring driven by hand from Kotlin over the kernel's own io_uring header through cinterop (no liburing, no JVM, no JIT: one native binary). Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin — no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with BoringSSL linked statically into the binary, with kernel TX offload where the kernel has the tls module and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to edixoi (C#) and edixoi-kt (the JVM port), which serve the same profiles.",
+  "repo": "https://github.com/MDA2AV/kron",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "latency-1m",
+    "latency-10k",
+    "async",
+    "json-tls",
+    "8gbit"
+  ],
+  "maintainers": [
+    "MDA2AV"
+  ]
+}
