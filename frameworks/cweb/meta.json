@@ -1,0 +1,21 @@
+{
+  "display_name": "cweb",
+  "language": "C",
+  "type": "emerging",
+  "description": "Zero-copy asynchronous HTTP/1.1 & WebSocket framework in C using io_uring and splice.",
+  "repo": "https://bitbucket.org/saadalabeed/cweb/src/main/",
+  "enabled": true,
+  "maintainers": ["Saad-al-abeed"],
+  "tests": [
+    "baseline",
+    "latency-10k",
+    "latency-1m",
+    "latency-500k-8cpu",
+    "echo-ws",
+    "echo-ws-limited",
+    "echo-ws-pipeline",
+    "pipelined",
+    "limited-conn",
+    "async-db"
+  ]
+}
