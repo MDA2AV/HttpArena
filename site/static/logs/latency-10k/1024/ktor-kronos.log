@@ -1,70 +1,130 @@
-[0.001s][warning][os] NUMA support disabled: Failed to initialize libnuma
+[0.001s][os] NUMA support disabled: Failed to initialize libnuma
+[0.014s][gc,init] CardTable entry size: 512
+[0.014s][gc     ] Using G1
+[0.109s][gc,init] Version: 25.0.5+8-LTS (release)
+[0.109s][gc,init] CPUs: 128 total, 64 available
+[0.109s][gc,init] Memory: 251G
+[0.109s][gc,init] Large Page Support: Disabled
+[0.109s][gc,init] NUMA Support: Disabled
+[0.109s][gc,init] Compressed Oops: Enabled (Zero based)
+[0.109s][gc,init] Heap Region Size: 16M
+[0.109s][gc,init] Heap Min Capacity: 16M
+[0.109s][gc,init] Heap Initial Capacity: 2G
+[0.109s][gc,init] Heap Max Capacity: 30688M
+[0.109s][gc,init] Pre-touch: Enabled
+[0.109s][gc,init] Parallel Workers: 43
+[0.109s][gc,init] Concurrent Workers: 11
+[0.109s][gc,init] Concurrent Refinement Workers: 43
+[0.109s][gc,init] Periodic GC: Disabled
 [ktor-kronos] 64 reactors (pinned) on :8080, tls on :8081, kernel tx, JVM 25.0.5+8-LTS
 [main] INFO io.ktor.server.Application - Autoreload is disabled because the development mode is off.
-[main] INFO io.ktor.server.Application - Application started in 0.276 seconds.
-[r7] listening on 0.0.0.0:8080,8081
-[r29] listening on 0.0.0.0:8080,8081
-[r20] listening on 0.0.0.0:8080,8081
+[main] INFO io.ktor.server.Application - Application started in 0.285 seconds.
+[0.646s][gc     ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 97M->25M(2064M) 4.290ms
+[0.646s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 520895243 ns, Reaching safepoint: 88767 ns, At safepoint: 4317991 ns, Leaving safepoint: 16100 ns, Total: 4422858 ns, Threads: 8 runnable, 43 total
 [r23] listening on 0.0.0.0:8080,8081
-[r56] listening on 0.0.0.0:8080,8081
-[r36] listening on 0.0.0.0:8080,8081
-[r52] listening on 0.0.0.0:8080,8081
-[r49] listening on 0.0.0.0:8080,8081
-[r31] listening on 0.0.0.0:8080,8081
-[r53] listening on 0.0.0.0:8080,8081
-[r5] listening on 0.0.0.0:8080,8081
-[r63] listening on 0.0.0.0:8080,8081
-[r0] listening on 0.0.0.0:8080,8081
 [r46] listening on 0.0.0.0:8080,8081
-[r62] listening on 0.0.0.0:8080,8081
-[r24] listening on 0.0.0.0:8080,8081
-[r42] listening on 0.0.0.0:8080,8081
-[r18] listening on 0.0.0.0:8080,8081
-[r26] listening on 0.0.0.0:8080,8081
-[r51] listening on 0.0.0.0:8080,8081
-[r16] listening on 0.0.0.0:8080,8081
-[r19] listening on 0.0.0.0:8080,8081
-[r3] listening on 0.0.0.0:8080,8081
-[r14] listening on 0.0.0.0:8080,8081
+[r44] listening on 0.0.0.0:8080,8081
+[r39] listening on 0.0.0.0:8080,8081
+[r10] listening on 0.0.0.0:8080,8081
+[r55] listening on 0.0.0.0:8080,8081
+[r54] listening on 0.0.0.0:8080,8081
+[r32] listening on 0.0.0.0:8080,8081
+[r33] listening on 0.0.0.0:8080,8081
+[r61] listening on 0.0.0.0:8080,8081
+[r60] listening on 0.0.0.0:8080,8081
+[r37] listening on 0.0.0.0:8080,8081
+[r25] listening on 0.0.0.0:8080,8081
+[r20] listening on 0.0.0.0:8080,8081
+[r47] listening on 0.0.0.0:8080,8081
+[r30] listening on 0.0.0.0:8080,8081
+[r45] listening on 0.0.0.0:8080,8081
+[r35] listening on 0.0.0.0:8080,8081
+[r38] listening on 0.0.0.0:8080,8081
+[r1] listening on 0.0.0.0:8080,8081
 [r28] listening on 0.0.0.0:8080,8081
+[r53] listening on 0.0.0.0:8080,8081
+[r26] listening on 0.0.0.0:8080,8081
+[r24] listening on 0.0.0.0:8080,8081
+[r41] listening on 0.0.0.0:8080,8081
+[r42] listening on 0.0.0.0:8080,8081
+[r4] listening on 0.0.0.0:8080,8081
+[r5] listening on 0.0.0.0:8080,8081
+[r17] listening on 0.0.0.0:8080,8081
+[r34] listening on 0.0.0.0:8080,8081
+[r14] listening on 0.0.0.0:8080,8081
+[r62] listening on 0.0.0.0:8080,8081
+[r56] listening on 0.0.0.0:8080,8081
+[r7] listening on 0.0.0.0:8080,8081
+[r2] listening on 0.0.0.0:8080,8081
+[r0] listening on 0.0.0.0:8080,8081
 [r13] listening on 0.0.0.0:8080,8081
 [r12] listening on 0.0.0.0:8080,8081
-[r40] listening on 0.0.0.0:8080,8081
+[r19] listening on 0.0.0.0:8080,8081
+[r8] listening on 0.0.0.0:8080,8081
+[r52] listening on 0.0.0.0:8080,8081
+[r31] listening on 0.0.0.0:8080,8081
+[r29] listening on 0.0.0.0:8080,8081
+[r16] listening on 0.0.0.0:8080,8081
+[r11] listening on 0.0.0.0:8080,8081
 [r50] listening on 0.0.0.0:8080,8081
+[r36] listening on 0.0.0.0:8080,8081
+[r22] listening on 0.0.0.0:8080,8081
+[r27] listening on 0.0.0.0:8080,8081
+[r18] listening on 0.0.0.0:8080,8081
+[r58] listening on 0.0.0.0:8080,8081
+[r51] listening on 0.0.0.0:8080,8081
+[r9] listening on 0.0.0.0:8080,8081
+[r3] listening on 0.0.0.0:8080,8081
+[r57] listening on 0.0.0.0:8080,8081
+[r6] listening on 0.0.0.0:8080,8081
+[r49] listening on 0.0.0.0:8080,8081
+[r63] listening on 0.0.0.0:8080,8081
+[r15] listening on 0.0.0.0:8080,8081
+[r40] listening on 0.0.0.0:8080,8081
+[r43] listening on 0.0.0.0:8080,8081
+[r59] listening on 0.0.0.0:8080,8081
 [r48] listening on 0.0.0.0:8080,8081
 [r21] listening on 0.0.0.0:8080,8081
-[r34] listening on 0.0.0.0:8080,8081
-[r59] listening on 0.0.0.0:8080,8081
-[r60] listening on 0.0.0.0:8080,8081
-[r25] listening on 0.0.0.0:8080,8081
-[r33] listening on 0.0.0.0:8080,8081
-[r43] listening on 0.0.0.0:8080,8081
-[r57] listening on 0.0.0.0:8080,8081
-[r38] listening on 0.0.0.0:8080,8081
-[r45] listening on 0.0.0.0:8080,8081
-[r30] listening on 0.0.0.0:8080,8081
-[r2] listening on 0.0.0.0:8080,8081
-[r8] listening on 0.0.0.0:8080,8081
-[r27] listening on 0.0.0.0:8080,8081
-[r41] listening on 0.0.0.0:8080,8081
-[r9] listening on 0.0.0.0:8080,8081
-[r11] listening on 0.0.0.0:8080,8081
-[r1] listening on 0.0.0.0:8080,8081
-[r32] listening on 0.0.0.0:8080,8081
-[r37] listening on 0.0.0.0:8080,8081
-[r4] listening on 0.0.0.0:8080,8081
-[r22] listening on 0.0.0.0:8080,8081
-[r44] listening on 0.0.0.0:8080,8081
-[r35] listening on 0.0.0.0:8080,8081
-[r55] listening on 0.0.0.0:8080,8081
-[r39] listening on 0.0.0.0:8080,8081
-[r47] listening on 0.0.0.0:8080,8081
-[r6] listening on 0.0.0.0:8080,8081
-[r58] listening on 0.0.0.0:8080,8081
-[r10] listening on 0.0.0.0:8080,8081
-[r54] listening on 0.0.0.0:8080,8081
-[r61] listening on 0.0.0.0:8080,8081
-[r15] listening on 0.0.0.0:8080,8081
-[r17] listening on 0.0.0.0:8080,8081
 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application - Responding at http://0.0.0.0:8080
 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application - Responding at https://0.0.0.0:8081
+[1.599s][gc       ] GC(1) Pause Young (Concurrent Start) (Metadata GC Threshold) 159M->30M(2064M) 5.125ms
+[1.599s][gc       ] GC(2) Concurrent Mark Cycle
+[1.599s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 946992557 ns, Reaching safepoint: 198182 ns, At safepoint: 5197820 ns, Leaving safepoint: 131907 ns, Total: 5527909 ns, Threads: 54 runnable, 83 total
+[1.628s][gc       ] GC(2) Pause Remark 266M->266M(304M) 1.598ms
+[1.628s][safepoint] Safepoint "G1PauseRemark", Time since last: 7510855 ns, Reaching safepoint: 20041886 ns, At safepoint: 1611790 ns, Leaving safepoint: 126637 ns, Total: 21780313 ns, Threads: 7 runnable, 83 total
+[1.646s][gc       ] GC(2) Pause Cleanup 270M->270M(304M) 0.015ms
+[1.647s][safepoint] Safepoint "G1PauseCleanup", Time since last: 1958901 ns, Reaching safepoint: 15580927 ns, At safepoint: 53770 ns, Leaving safepoint: 667601 ns, Total: 16302298 ns, Threads: 3 runnable, 87 total
+[1.647s][gc       ] GC(2) Concurrent Mark Cycle 48.377ms
+[1.671s][gc       ] GC(3) Pause Young (Prepare Mixed) (G1 Evacuation Pause) 270M->37M(336M) 20.965ms
+[1.671s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 3502985 ns, Reaching safepoint: 173094 ns, At safepoint: 20982248 ns, Leaving safepoint: 193663 ns, Total: 21349005 ns, Threads: 45 runnable, 87 total
+[1.695s][gc       ] GC(4) Pause Young (Mixed) (G1 Evacuation Pause) 197M->37M(336M) 6.215ms
+[1.695s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 513112 ns, Reaching safepoint: 16486082 ns, At safepoint: 6230636 ns, Leaving safepoint: 82895 ns, Total: 22799613 ns, Threads: 25 runnable, 87 total
+[5.099s][gc       ] GC(5) Pause Young (Normal) (G1 Evacuation Pause) 213M->36M(336M) 2.670ms
+[5.099s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 3401642424 ns, Reaching safepoint: 12413 ns, At safepoint: 2691844 ns, Leaving safepoint: 20519 ns, Total: 2724776 ns, Threads: 0 runnable, 79 total
+[cpu] reactor 237% | java 9% | C2 CompilerThre 8% | GC Thread 5% | G1 Service 3% | C1 CompilerThre 3% || gc 7x 40 ms, heap 78/336 MiB
+[cpu] reactor 33% | C2 CompilerThre 0% | C1 CompilerThre 0% | cpu-report 0% || gc 0x 0 ms, heap 182/336 MiB
+[11.633s][gc       ] GC(6) Pause Young (Normal) (G1 Evacuation Pause) 212M->36M(336M) 2.627ms
+[11.633s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 6531641772 ns, Reaching safepoint: 12103 ns, At safepoint: 2649114 ns, Leaving safepoint: 32812 ns, Total: 2694029 ns, Threads: 0 runnable, 78 total
+[cpu] reactor 30% | GC Thread 0% | cpu-report 0% | java 0% | C2 CompilerThre 0% || gc 1x 2 ms, heap 135/336 MiB
+[18.736s][gc       ] GC(7) Pause Young (Normal) (G1 Evacuation Pause) 212M->37M(336M) 2.672ms
+[18.736s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 7099451842 ns, Reaching safepoint: 12533 ns, At safepoint: 2693949 ns, Leaving safepoint: 37991 ns, Total: 2744473 ns, Threads: 0 runnable, 82 total
+[cpu] reactor 33% | C1 CompilerThre 0% || gc 1x 3 ms, heap 83/336 MiB
+[cpu] reactor 30% | C2 CompilerThre 3% | C1 CompilerThre 0% | G1 Service 0% | cpu-report 0% || gc 0x 0 ms, heap 146/336 MiB
+[28.280s][gc       ] GC(8) Pause Young (Normal) (G1 Evacuation Pause) 213M->37M(336M) 2.688ms
+[28.280s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 9541250866 ns, Reaching safepoint: 31258 ns, At safepoint: 2716691 ns, Leaving safepoint: 46768 ns, Total: 2794717 ns, Threads: 0 runnable, 77 total
+[cpu] reactor 33% | C2 CompilerThre 0% | GC Thread 0% | cpu-report 0% || gc 1x 3 ms, heap 92/336 MiB
+[cpu] reactor 26% | C2 CompilerThre 0% || gc 0x 0 ms, heap 207/336 MiB
+[35.502s][gc       ] GC(9) Pause Young (Normal) (G1 Evacuation Pause) 213M->37M(336M) 2.604ms
+[35.502s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 7219625109 ns, Reaching safepoint: 10970 ns, At safepoint: 2626582 ns, Leaving safepoint: 64952 ns, Total: 2702504 ns, Threads: 0 runnable, 77 total
+[cpu] reactor 29% | GC Thread 0% | cpu-report 0% || gc 1x 2 ms, heap 153/336 MiB
+[42.936s][gc       ] GC(10) Pause Young (Normal) (G1 Evacuation Pause) 213M->36M(336M) 2.770ms
+[42.936s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 7431134128 ns, Reaching safepoint: 12684 ns, At safepoint: 2792563 ns, Leaving safepoint: 27792 ns, Total: 2833039 ns, Threads: 0 runnable, 77 total
+[cpu] reactor 25% | GC Thread 0% || gc 1x 3 ms, heap 78/336 MiB
+[cpu] reactor 31% | C2 CompilerThre 0% | java 0% | cpu-report 0% || gc 0x 0 ms, heap 155/336 MiB
+[52.827s][gc       ] GC(11) Pause Young (Normal) (G1 Evacuation Pause) 212M->37M(336M) 2.751ms
+[52.827s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 9888489290 ns, Reaching safepoint: 24375 ns, At safepoint: 2771935 ns, Leaving safepoint: 26459 ns, Total: 2822769 ns, Threads: 1 runnable, 77 total
+[cpu] reactor 37% | GC Thread 0% | cpu-report 0% || gc 1x 3 ms, heap 99/336 MiB
+[60.259s][gc       ] GC(12) Pause Young (Normal) (G1 Evacuation Pause) 213M->37M(336M) 2.614ms
+[60.259s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 7428610456 ns, Reaching safepoint: 7815 ns, At safepoint: 2637142 ns, Leaving safepoint: 42179 ns, Total: 2687136 ns, Threads: 0 runnable, 77 total
+[cpu] reactor 37% | GC Thread 0% || gc 1x 2 ms, heap 44/336 MiB
+[cpu] reactor 34% || gc 0x 0 ms, heap 160/336 MiB
