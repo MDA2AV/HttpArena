@@ -83,7 +83,7 @@ internal class Dataset private constructor(private val items: Array<Item>) {
     // A field in whole words: up to seven bytes land past it, and the next write covers them.
     private fun put(out: ByteArray, at: Int, field: Words): Int {
         val words = field.words
-        for (i in words.indices) out.setLongAt(at + 8 * i, words[i])
+        for (i in words.indices) out.putLong(at + 8 * i, words[i])
         return at + field.size
     }
 
@@ -212,19 +212,19 @@ internal object Ascii {
             return at + 1
         }
         if (value < 100) {
-            destination.setShortAt(at, PAIRS16[value])
+            destination.putShort(at, PAIRS16[value])
             return at + 2
         }
         if (value < 1_000) {
             val high = value / 100
             destination[at] = ('0'.code + high).toByte()
-            destination.setShortAt(at + 1, PAIRS16[value - high * 100])
+            destination.putShort(at + 1, PAIRS16[value - high * 100])
             return at + 3
         }
         if (value < 10_000) {
             val high = value / 100
-            destination.setShortAt(at, PAIRS16[high])
-            destination.setShortAt(at + 2, PAIRS16[value - high * 100])
+            destination.putShort(at, PAIRS16[high])
+            destination.putShort(at + 2, PAIRS16[value - high * 100])
             return at + 4
         }
         val end = at + digits(value)
@@ -233,10 +233,10 @@ internal object Ascii {
         while (v >= 100) {
             val q = v / 100
             pos -= 2
-            destination.setShortAt(pos, PAIRS16[v - q * 100])
+            destination.putShort(pos, PAIRS16[v - q * 100])
             v = q
         }
-        if (v >= 10) destination.setShortAt(pos - 2, PAIRS16[v]) else destination[pos - 1] = ('0'.code + v).toByte()
+        if (v >= 10) destination.putShort(pos - 2, PAIRS16[v]) else destination[pos - 1] = ('0'.code + v).toByte()
         return end
     }
 
