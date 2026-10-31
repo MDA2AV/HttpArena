@@ -4,9 +4,9 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 
 ## Stack
 
-- **Language:** Java 21
+- **Language:** Java 25
 - **Framework:** Vert.x 5.1 (vertx-core + vertx-web)
-- **Build:** Maven shade jar, `eclipse-temurin:21-jre` runtime
+- **Build:** Maven shade jar, `eclipse-temurin:27-jre` runtime
 
 ## Endpoints
 
