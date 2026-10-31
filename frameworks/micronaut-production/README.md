@@ -7,11 +7,14 @@ Micronaut on the Netty HTTP server, default configuration, on the JVM. Standard 
 - **Language:** Java 27
 - **Framework:** Micronaut (`micronaut-http-server-netty`)
 - **JSON:** Micronaut Serialization (`micronaut-serde-jackson`)
+- **Views:** Micronaut Views Rocker (`micronaut-views-rocker`)
 - **Build:** Maven shade jar, `eclipse-temurin:27-jre` runtime
 
 Query parameters are bound with `@QueryValue`, request bodies with `@Body`, and the response bodies are returned from the controller methods, so routing, request binding and response building are all done by the framework. No server settings are changed.
 
 Dataset loading, PostgreSQL JSON tags and JSON responses use Micronaut Serialization. The database query selects tags as text so the driver does not decode JSONB with its own codec. Jackson Databind is excluded; Jackson Core remains the streaming backend for Micronaut Serialization.
+
+Rocker's documented [`plainTextStrategy=STATIC_STRINGS` build option](https://github.com/fizzed/rocker#integrate-parsergenerator-in-build-tool) matches Micronaut Views' character writer: static template text stays as strings instead of being decoded from byte arrays on every render. HTML escaping and per-request rendering remain enabled.
 
 ## Endpoints
 
@@ -27,7 +30,7 @@ Dataset loading, PostgreSQL JSON tags and JSON responses use Micronaut Serializa
 | `/static/{name}` | GET | Files from `/data/static`; a `.br` or `.gz` twin is sent as is when the client accepts it |
 | `/ws` | WebSocket | Echoes every text and binary frame |
 | `/async-db?min=10&max=50&limit=20` | GET | Async PostgreSQL range query; limits are clamped to 1–50 |
-| `/fortunes` | GET | Queries, sorts and renders the rows with a precompiled Rocker template, returning its UTF-8 bytes directly |
+| `/fortunes` | GET | Queries and sorts the rows, then returns a `RockerWritable` so Micronaut Views renders the precompiled, HTML-escaping template |
 
 ## Ports
 

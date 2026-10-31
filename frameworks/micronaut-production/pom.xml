@@ -33,9 +33,8 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.fizzed</groupId>
-      <artifactId>rocker-runtime</artifactId>
-      <version>${rocker.version}</version>
+      <groupId>io.micronaut.views</groupId>
+      <artifactId>micronaut-views-rocker</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
@@ -94,6 +93,8 @@
             <goals><goal>generate</goal></goals>
             <configuration>
               <templateDirectory>src/main/rocker</templateDirectory>
+              <!-- Micronaut Views renders to a Writer, so keep static text as characters. -->
+              <plainTextStrategy>STATIC_STRINGS</plainTextStrategy>
             </configuration>
           </execution>
         </executions>

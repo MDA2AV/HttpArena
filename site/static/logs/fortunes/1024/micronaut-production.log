@@ -8,6 +8,6 @@ WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
 WARNING: Restricted methods will be blocked in a future release unless native access is enabled
 
-10:24:47.037 INFO  io.micronaut.runtime.Micronaut - Startup completed in 825ms. Server Running: https://diogo:8443
-10:24:48.525 INFO  c.f.rocker.runtime.RockerRuntime - Rocker version 2.4.0
-10:24:48.528 INFO  c.f.rocker.runtime.RockerRuntime - Rocker template reloading not activated
+10:36:17.092 INFO  io.micronaut.runtime.Micronaut - Startup completed in 838ms. Server Running: https://diogo:8443
+10:36:18.539 INFO  c.f.rocker.runtime.RockerRuntime - Rocker version 2.4.0
+10:36:18.540 INFO  c.f.rocker.runtime.RockerRuntime - Rocker template reloading not activated
