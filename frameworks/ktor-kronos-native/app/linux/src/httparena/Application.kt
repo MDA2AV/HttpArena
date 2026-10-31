@@ -88,6 +88,7 @@ fun main() {
     }
     val pinNote = if (pinned) " (pinned)" else ""
     println("[ktor-kronos-native] $reactors reactors$pinNote on :8080, $tlsNote, GC heap floor $heapMb MiB")
+    startDiagnostics()
 
     embeddedServer(Kron, configure = {
         connector { port = 8080 }
