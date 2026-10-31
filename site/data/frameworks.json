@@ -489,6 +489,20 @@
       "response": true
     }
   },
+  "dusty-tuned": {
+    "dir": "dusty-tuned",
+    "description": "Dusty HTTP framework on the zio async runtime, the dusty entry with two changes: JSON through json.zig instead of std.json, and no request or keep-alive timeouts. Same routes, static and TLS paths as dusty.",
+    "repo": "https://github.com/lalinsky/dusty",
+    "type": "emerging",
+    "engine": "zio",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "dusty": {
     "dir": "dusty",
     "description": "Dusty HTTP framework on the zio async runtime (io_uring where available, epoll fallback). Router with params/wildcards, JSON, gzip, WebSocket. Standard configuration, no tuning.",
