@@ -1,7 +1,7 @@
 {
   "actix": {
     "dir": "actix",
-    "description": "Actix-web 4 with rustls for TLS. Standard configuration: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update \u2014 no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Pinned to actix git main for try_compressed() (unreleased in actix-files 0.6.10). Compiled with -O3 and thin LTO.",
+    "description": "Actix-web 4 with rustls for TLS. Standard configuration with TCP_NODELAY enabled: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update \u2014 no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Compiled with -O3 and thin LTO.",
     "repo": "https://github.com/actix/actix-web",
     "type": "flagship",
     "engine": "actix",
@@ -15,7 +15,7 @@
     "variants": [
       {
         "dir": "actix-h2c",
-        "description": "Actix-web 4 h2c-only listener on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
+        "description": "Actix-web 4 h2c-only listener with TCP_NODELAY enabled on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
@@ -29,7 +29,7 @@
       },
       {
         "dir": "actix-websocket",
-        "description": "Actix-web WebSocket echo server",
+        "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled",
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
@@ -1486,6 +1486,20 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "mipyre": {
+    "dir": "mipyre",
+    "description": "mipyre \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc): one pinned thread per physical core, each with its own PEP 684 sub-interpreter, so Python handlers run on every core at once. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, precompressed static files, async Postgres via sqlx. Handlers are standard Python functions routed via decorators.",
+    "repo": "https://github.com/leocaolab/mipyre",
+    "type": "experimental",
+    "engine": "mipyre",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "mojolicious": {
     "dir": "mojolicious",
     "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
@@ -1804,20 +1818,6 @@
     "repo": "https://github.com/facebook/proxygen",
     "type": "engine",
     "engine": "proxygen"
-  },
-  "pyronova": {
-    "dir": "pyronova",
-    "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
-    "repo": "https://github.com/leocaolab/pyronova",
-    "type": "experimental",
-    "engine": "pyronova",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
