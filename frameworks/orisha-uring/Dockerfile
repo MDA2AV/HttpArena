@@ -8,9 +8,9 @@
 # All three repos build from main: koru@main carries the full arc (2120/2120
 # board), and the pump rewrite + kTLS helpers merged to their mains.
 
-FROM ubuntu:24.04 AS build
+FROM debian:trixie AS build
 ARG KORU_REF=main
-ARG ORISHA_REF=main
+ARG ORISHA_REF=h3/quic
 ARG KORU_LIBS_REF=main
 ARG ZIG_VERSION=0.15.2
 ENV DEBIAN_FRONTEND=noninteractive
@@ -49,13 +49,14 @@ RUN mkdir -p /out /usr/local \
     && DATASET_PATH=./data/dataset.json koruc main.k --release=fast --build=io-uring \
     && install -m755 a.out /out/orisha-httparena-uring
 
-FROM ubuntu:24.04
+FROM debian:trixie
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates libssl3 zlib1g \
+        ca-certificates libssl3t64 zlib1g \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /out/orisha-httparena-uring /orisha-httparena
 ENV DATASET_PATH=/data/dataset.json
 ENV H2C_PORT=8082
 ENV H2_TLS_PORT=8443
+ENV H3_PORT=8443
 EXPOSE 8080 8081 8082 8443
 ENTRYPOINT ["/orisha-httparena"]
