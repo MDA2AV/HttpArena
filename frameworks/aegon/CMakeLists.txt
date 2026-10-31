@@ -29,6 +29,7 @@ target_link_libraries(aegon-arena PRIVATE
     Aegon::net
     Aegon::core
     Aegon::config
+    Aegon::storage
     glaze::glaze
     Threads::Threads
     ${Protobuf_LIBRARIES}
