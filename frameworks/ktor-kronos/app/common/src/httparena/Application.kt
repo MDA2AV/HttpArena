@@ -3,8 +3,12 @@ package httparena
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.ByteArrayContent
+import io.ktor.http.content.OutgoingContent
 import io.ktor.http.content.TextContent
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.http.withCharsetIfNeeded
+import io.ktor.serialization.ContentConverter
+import io.ktor.serialization.kotlinx.KotlinxSerializationConverter
+import io.ktor.serialization.kotlinx.serializerForTypeInfo
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.install
@@ -25,8 +29,16 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.webSocket
+import io.ktor.util.reflect.TypeInfo
+import io.ktor.utils.io.charsets.Charset
 import kotlinx.coroutines.delay
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.internal.ESCAPE_STRINGS
+import kotlinx.serialization.json.internal.InternalJsonWriter
+import kotlinx.serialization.json.internal.encodeByWriter
 import kron.tls.TlsOptions
 
 /**
@@ -86,6 +98,131 @@ fun serve(runtime: (reactors: Int) -> String) {
 
 private val json = Json { ignoreUnknownKeys = true }
 
+/**
+ * ContentNegotiation's JSON as Ktor's own converter makes it - kotlinx.serialization's encoder and escaping - written
+ * straight to UTF-8 bytes: encodeToString takes its buffer from one process-wide pool, under a lock every reactor
+ * queues on.
+ */
+private class JsonBytesConverter(private val json: Json) : ContentConverter by KotlinxSerializationConverter(json) {
+    @OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
+    override suspend fun serialize(
+        contentType: ContentType,
+        charset: Charset,
+        typeInfo: TypeInfo,
+        value: Any?,
+    ): OutgoingContent {
+        @Suppress("UNCHECKED_CAST")
+        val serializer = json.serializersModule.serializerForTypeInfo(typeInfo) as KSerializer<Any?>
+        val writer = Utf8JsonWriter()
+        encodeByWriter(json, writer, serializer, value)
+        return ByteArrayContent(writer.bytes.copyOf(writer.size), contentType.withCharsetIfNeeded(charset))
+    }
+}
+
+/** kotlinx.serialization's JSON writer interface over a byte array of the call's own. */
+@OptIn(InternalSerializationApi::class)
+private class Utf8JsonWriter : InternalJsonWriter {
+    var bytes = ByteArray(8192)
+    var size = 0
+
+    private fun ensure(extra: Int) {
+        if (size + extra > bytes.size) {
+            bytes = bytes.copyOf(maxOf(size + extra, bytes.size * 2))
+        }
+    }
+
+    override fun writeLong(value: Long) {
+        if (value == Long.MIN_VALUE) {
+            return write(value.toString())
+        }
+
+        ensure(20)
+        var v = value
+        if (v < 0) {
+            bytes[size++] = '-'.code.toByte()
+            v = -v
+        }
+
+        val end = size + digits(v)
+        var at = end
+        do {
+            bytes[--at] = ('0'.code + (v % 10).toInt()).toByte()
+            v /= 10
+        } while (v != 0L)
+        size = end
+    }
+
+    override fun writeChar(char: Char) {
+        ensure(4)
+        putChar(char.code)
+    }
+
+    override fun write(text: String) {
+        ensure(text.length * 3)
+        putString(text)
+    }
+
+    // As kotlinx's own writer escapes, from its table: the quote, the backslash and the control characters.
+    override fun writeQuoted(text: String) {
+        ensure(text.length * 6 + 2)
+        bytes[size++] = '"'.code.toByte()
+        putString(text)
+        bytes[size++] = '"'.code.toByte()
+    }
+
+    override fun release() {}
+
+    private fun putString(text: String) {
+        var i = 0
+        while (i < text.length) {
+            val c = text[i].code
+            if (c < ESCAPE_STRINGS.size && ESCAPE_STRINGS[c] != null) {
+                val escape = ESCAPE_STRINGS[c]!!
+                for (e in escape) {
+                    bytes[size++] = e.code.toByte()
+                }
+            } else if (c in 0xD800..0xDBFF && i + 1 < text.length && text[i + 1].code in 0xDC00..0xDFFF) {
+                val codePoint = 0x10000 + ((c - 0xD800) shl 10) + (text[i + 1].code - 0xDC00)
+                bytes[size++] = (0xF0 or (codePoint shr 18)).toByte()
+                bytes[size++] = (0x80 or ((codePoint shr 12) and 0x3F)).toByte()
+                bytes[size++] = (0x80 or ((codePoint shr 6) and 0x3F)).toByte()
+                bytes[size++] = (0x80 or (codePoint and 0x3F)).toByte()
+                i++
+            } else {
+                putChar(c)
+            }
+            i++
+        }
+    }
+
+    // One UTF-16 unit; a lone surrogate becomes '?', as String.encodeToByteArray makes it.
+    private fun putChar(c: Int) {
+        when {
+            c < 0x80 -> bytes[size++] = c.toByte()
+            c < 0x800 -> {
+                bytes[size++] = (0xC0 or (c shr 6)).toByte()
+                bytes[size++] = (0x80 or (c and 0x3F)).toByte()
+            }
+            c in 0xD800..0xDFFF -> bytes[size++] = '?'.code.toByte()
+            else -> {
+                bytes[size++] = (0xE0 or (c shr 12)).toByte()
+                bytes[size++] = (0x80 or ((c shr 6) and 0x3F)).toByte()
+                bytes[size++] = (0x80 or (c and 0x3F)).toByte()
+            }
+        }
+    }
+
+    private fun digits(v: Long): Int {
+        var n = 1
+        var x = v
+        while (x >= 10) {
+            x /= 10
+            n++
+        }
+        return n
+    }
+}
+
 // The 50 items the JSON profiles serve, read once; none when the dataset is not mounted.
 private fun loadDataset(path: String): List<DatasetItem> {
     val bytes = readFile(path) ?: return emptyList()
@@ -127,7 +264,7 @@ fun Application.module(dataset: List<DatasetItem>) {
         route("/json/{count}") {
             installCompression()
             install(ContentNegotiation) {
-                json(json)
+                register(ContentType.Application.Json, JsonBytesConverter(json))
             }
             get {
                 if (dataset.isEmpty()) {
