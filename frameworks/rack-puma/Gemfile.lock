@@ -1,0 +1,32 @@
+GIT
+  remote: https://github.com/p8/puma.git
+  revision: 2f67132c93ac3279491b030fe837c344ebaa1554
+  ref: performance/stringio-chunked-bodies
+  specs:
+    puma (8.0.2)
+      nio4r (~> 2.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    concurrent-ruby (1.3.8)
+    nio4r (2.7.5)
+    rack (2.2.24)
+
+PLATFORMS
+  arm64-darwin-24
+  ruby
+
+DEPENDENCIES
+  concurrent-ruby
+  puma!
+  rack (~> 2.0)
+
+CHECKSUMS
+  concurrent-ruby (1.3.8) sha256=b2f1be836e968ccc78ccfce277ea79c72a88633f22306782c16ff23fb415d1e1
+  nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
+  puma (8.0.2)
+  rack (2.2.24) sha256=ef16526a0d871c43753452338c754040a664c8b41bf0dd7450b85f7772adca5f
+
+BUNDLED WITH
+  4.1.0.beta2
