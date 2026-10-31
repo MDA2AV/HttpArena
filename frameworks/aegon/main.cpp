@@ -202,9 +202,12 @@ void register_routes(Router& router) {
         ctx.res().body_view(ctx.req().body());
     });
 
-    // 7. Static file serving (static-h2, static-h3) - Aegon core static_files API
+    // 7. Static file serving (static-tls, static-h2, static-h3) - Aegon core static_files API
     const char* static_dir = std::filesystem::exists("/data/static") ? "/data/static" : "data/static";
-    router.static_files("/static", static_dir);
+    StaticFilesOptions static_opts;
+    static_opts.precompressed = true;
+    static_opts.cache_in_memory = false;
+    router.static_files("/static", static_dir, static_opts);
 
     // 8. WebSocket Echo endpoint
     router.ws("/ws");

@@ -11,11 +11,13 @@ RUN pacman -Syu --noconfirm --needed \
     libdeflate \
     sqlite \
     postgresql-libs \
+    libngtcp2 \
+    libnghttp3 \
     protobuf
 
 ARG AEGON_REPO=https://github.com/UdayKhare09/Aegon.git
 ARG AEGON_REF=main
-ARG AEGON_COMMIT=ec6afdb
+ARG AEGON_COMMIT=74ef26e
 
 WORKDIR /src
 RUN echo "Building Aegon commit: ${AEGON_COMMIT}" && \
@@ -49,6 +51,8 @@ RUN pacman -Syu --noconfirm --needed \
     sqlite \
     postgresql-libs \
     jemalloc \
+    libngtcp2 \
+    libnghttp3 \
     protobuf && \
     pacman -Scc --noconfirm
 

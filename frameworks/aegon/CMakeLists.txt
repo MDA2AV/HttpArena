@@ -26,8 +26,10 @@ target_include_directories(aegon-arena PRIVATE
 
 target_link_libraries(aegon-arena PRIVATE
     Aegon::http
+    Aegon::net
     Aegon::core
     Aegon::config
+    Aegon::storage
     glaze::glaze
     Threads::Threads
     ${Protobuf_LIBRARIES}
