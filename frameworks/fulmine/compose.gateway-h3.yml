@@ -1,11 +1,10 @@
 # gateway-h3 - the same two services as compose.gateway.yml, reached over QUIC
-# instead. Stock Caddy already binds 8443 on tcp and udp with `protocols h1 h2
-# h3`, so the proxy config is identical and only the load generator differs.
-# The proxy to server hop stays loopback h1 either way.
+# instead. Stock nginx with http3 on udp 8443, the same edge as ./proxy-nginx
+# plus the quic listen. The proxy to server hop stays loopback h1.
 services:
   proxy:
     build:
-      context: ./proxy
+      context: ./proxy-h3
     network_mode: host
     cpuset: "${PROXY_CPUSET:-0-15,64-79}"
     ulimits:
