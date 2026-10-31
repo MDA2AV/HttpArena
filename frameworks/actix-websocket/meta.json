@@ -4,7 +4,7 @@
   "type": "flagship",
   "mode": "standard",
   "engine": "actix",
-  "description": "Actix-web WebSocket echo server",
+  "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled",
   "repo": "https://github.com/actix/actix-web",
   "enabled": true,
   "tests": [

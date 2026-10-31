@@ -162,6 +162,7 @@ async fn main() -> io::Result<()> {
             .route("/json/{count}", web::get().to(json_endpoint))
     })
     .workers(workers)
+    .tcp_nodelay(true)
     .bind_auto_h2c("0.0.0.0:8082")?
     .run()
     .await
