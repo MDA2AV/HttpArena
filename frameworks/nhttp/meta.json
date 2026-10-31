@@ -1,0 +1,39 @@
+{
+  "display_name": "nhttp",
+  "language": "Erlang",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": false,
+    "middleware": false,
+    "request": false,
+    "response": true
+  },
+  "engine": "nhttp",
+  "description": "nhttp: pure-Erlang HTTP/1.1, HTTP/2 and HTTP/3 server. One TLS listener serves h1 and h2 by ALPN and h3 over QUIC on the same port number. A cleartext listener serves h2c with prior knowledge.",
+  "repo": "https://github.com/nomasystems/nhttp",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "baseline-h2",
+    "baseline-h2c",
+    "baseline-h3",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "json-h2c",
+    "8gbit",
+    "async",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited",
+    "static-tls",
+    "static-h2",
+    "static-h3"
+  ],
+  "maintainers": ["Alberdi", "javiergarea", "josecriane", "mrrubinos", "yagogarea"]
+}
