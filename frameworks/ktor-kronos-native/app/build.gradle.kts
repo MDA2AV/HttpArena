@@ -15,6 +15,10 @@ kotlin {
     }
 
     sourceSets {
+        // The JSON converter writes through kotlinx.serialization's writer interface, which its own json-io module uses
+        all {
+            languageSettings.optIn("kotlinx.serialization.json.internal.JsonFriendModuleApi")
+        }
         linuxMain.dependencies {
             implementation(projects.ktorServerKron)
             implementation(projects.ktorServerWebsockets)
