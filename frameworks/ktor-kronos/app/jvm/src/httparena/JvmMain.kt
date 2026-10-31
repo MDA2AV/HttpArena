@@ -59,11 +59,16 @@ private fun cpuReport() {
     Thread({
         val collectors = ManagementFactory.getGarbageCollectorMXBeans()
         var last = sample()
+        var pooled = false
         var lastAt = System.nanoTime()
         var lastGcCount = collectors.sumOf { it.collectionCount }
         var lastGcMs = collectors.sumOf { it.collectionTime }
         while (true) {
             Thread.sleep(5_000)
+            if (!pooled) {
+                pooled = true
+                poolReport()
+            }
             val now = sample()
             val at = System.nanoTime()
             val seconds = (at - lastAt) / 1e9
@@ -84,6 +89,21 @@ private fun cpuReport() {
             lastGcMs = gcMs
         }
     }, "cpu-report").apply { isDaemon = true }.start()
+}
+
+// DIAGNOSTICS, temporary: kotlinx-io's segment pool, sized by availableProcessors() when first used - on a pinned
+// reactor that counts 1 CPU, and every reactor shares one slot - and the slots the reactors' thread ids pick.
+private fun poolReport() {
+    try {
+        val field = Class.forName("kotlinx.io.SegmentPool").getDeclaredField("HASH_BUCKET_COUNT")
+        field.isAccessible = true
+        val buckets = field.getInt(null)
+        val ids = Thread.getAllStackTraces().keys.filter { it.name.startsWith("reactor-") }.map { it.threadId() }.sorted()
+        val used = ids.map { it and (buckets - 1).toLong() }.toSet().size
+        println("[pool] kotlinx-io buckets $buckets, ${ids.size} reactors (ids ${ids.firstOrNull()}..${ids.lastOrNull()}) on $used of them")
+    } catch (e: Exception) {
+        println("[pool] failed: $e")
+    }
 }
 
 // DIAGNOSTICS, temporary: what the threads run, from Flight Recorder, every 10 s - samples in Java and in native
@@ -115,6 +135,7 @@ private fun jfrReport() {
 
 private fun summarize(file: Path) {
     val methods = HashMap<String, Int>()
+    val stacks = HashMap<String, Int>()
     val packages = HashMap<String, Int>()
     val monitors = HashMap<String, LongArray>()
     val parks = HashMap<String, Int>()
@@ -126,15 +147,21 @@ private fun summarize(file: Path) {
             when (event.eventType.name) {
                 "jdk.ExecutionSample" -> {
                     java++
-                    val frame = event.stackTrace?.frames?.firstOrNull() ?: continue
+                    val frames = event.stackTrace?.frames ?: continue
+                    val frame = frames.firstOrNull() ?: continue
                     val type = frame.method.type.name
                     methods.merge("$type.${frame.method.name}", 1, Int::plus)
+                    stacks.merge(frames.take(5).joinToString(" < ") { it.method.type.name.substringAfterLast('.') + "." + it.method.name }, 1, Int::plus)
                     val parts = type.split('.')
                     packages.merge(parts.take(if (type.startsWith("io.ktor.")) 3 else 2).joinToString("."), 1, Int::plus)
                 }
                 "jdk.NativeMethodSample" -> native++
                 "jdk.JavaMonitorEnter" -> {
-                    val totals = monitors.getOrPut(event.getClass("monitorClass")?.name ?: "?") { LongArray(2) }
+                    // The lock's class, and who takes it: the first frames past the JDK's own.
+                    val site = event.stackTrace?.frames?.dropWhile {
+                        it.method.type.name.startsWith("java.") || it.method.type.name.startsWith("jdk.")
+                    }?.take(2)?.joinToString(" < ") { it.method.type.name.substringAfterLast('.') + "." + it.method.name }
+                    val totals = monitors.getOrPut("${event.getClass("monitorClass")?.name ?: "?"} @ $site") { LongArray(2) }
                     totals[0]++
                     totals[1] += event.duration.toNanos()
                 }
@@ -151,6 +178,7 @@ private fun summarize(file: Path) {
     println("[jfr] java $java, native $native || " +
         packages.entries.sortedByDescending { it.value }.take(10).joinToString(" | ") { "${it.key} ${share(it.value)}" })
     println("[jfr] hot " + methods.entries.sortedByDescending { it.value }.take(15).joinToString(" | ") { "${share(it.value)} ${it.key}" })
+    println("[jfr] stacks " + stacks.entries.sortedByDescending { it.value }.take(6).joinToString(" || ") { "${share(it.value)} ${it.key}" })
     if (monitors.isNotEmpty()) {
         println("[jfr] contended " + monitors.entries.sortedByDescending { it.value[1] }.take(5)
             .joinToString(" | ") { "${it.key} ${it.value[0]}x ${it.value[1] / 1_000_000} ms" })

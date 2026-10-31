@@ -19,7 +19,7 @@ RUN git init -q kron && cd kron \
  && rm -rf .git
 
 FROM gradle:9.8.2-jdk25 AS fetch-ktor
-ARG KTOR_COMMIT=9b2b6ff5d29ecacd2c82894a824828b7490153e1
+ARG KTOR_COMMIT=033263e0c5e832051b69e1f084207ce44488e8d0
 WORKDIR /src
 RUN git init -q ktor && cd ktor \
  && git remote add origin https://github.com/MDA2AV/ktor.git \
