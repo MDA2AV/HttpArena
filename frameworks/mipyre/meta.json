@@ -1,0 +1,38 @@
+{
+  "display_name": "mipyre",
+  "language": "Python",
+  "type": "experimental",
+  "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "mipyre",
+  "description": "mipyre — Python web framework with a Rust core (hyper + tokio + rustls + mimalloc): one pinned thread per physical core, each with its own PEP 684 sub-interpreter, so Python handlers run on every core at once. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, precompressed static files, async Postgres via sqlx. Handlers are standard Python functions routed via decorators.",
+  "repo": "https://github.com/leocaolab/mipyre",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "async",
+    "async-db",
+    "fortunes",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "unary-grpc",
+    "unary-grpc-tls"
+  ],
+  "maintainers": []
+}
