@@ -1,187 +1,167 @@
-[0.002s][os] NUMA support disabled: Failed to initialize libnuma
+[0.001s][os] NUMA support disabled: Failed to initialize libnuma
 [0.013s][gc,init] CardTable entry size: 512
-[0.014s][gc     ] Using G1
-[0.109s][gc,init] Version: 25.0.5+8-LTS (release)
-[0.109s][gc,init] CPUs: 128 total, 64 available
-[0.109s][gc,init] Memory: 251G
-[0.109s][gc,init] Large Page Support: Disabled
-[0.109s][gc,init] NUMA Support: Disabled
-[0.109s][gc,init] Compressed Oops: Enabled (Zero based)
-[0.109s][gc,init] Heap Region Size: 16M
-[0.109s][gc,init] Heap Min Capacity: 16M
-[0.109s][gc,init] Heap Initial Capacity: 2G
-[0.109s][gc,init] Heap Max Capacity: 30688M
-[0.109s][gc,init] Pre-touch: Enabled
-[0.109s][gc,init] Parallel Workers: 43
-[0.109s][gc,init] Concurrent Workers: 11
-[0.109s][gc,init] Concurrent Refinement Workers: 43
-[0.109s][gc,init] Periodic GC: Disabled
-[0.160s][safepoint] Safepoint "SetNotifyJvmtiEventsMode", Time since last: 39823474 ns, Reaching safepoint: 3296 ns, At safepoint: 5701 ns, Leaving safepoint: 2916 ns, Total: 11913 ns, Threads: 0 runnable, 16 total
+[0.013s][gc     ] Using G1
+[0.838s][gc,init] Version: 25.0.5+8-LTS (release)
+[0.838s][gc,init] CPUs: 128 total, 64 available
+[0.838s][gc,init] Memory: 251G
+[0.838s][gc,init] Large Page Support: Disabled
+[0.838s][gc,init] NUMA Support: Disabled
+[0.838s][gc,init] Compressed Oops: Disabled
+[0.838s][gc,init] Heap Region Size: 32M
+[0.838s][gc,init] Heap Min Capacity: 32M
+[0.838s][gc,init] Heap Initial Capacity: 20608M
+[0.838s][gc,init] Heap Max Capacity: 64384M
+[0.838s][gc,init] Pre-touch: Enabled
+[0.838s][gc,init] Parallel Workers: 43
+[0.838s][gc,init] Concurrent Workers: 11
+[0.838s][gc,init] Concurrent Refinement Workers: 43
+[0.838s][gc,init] Periodic GC: Disabled
+[0.889s][safepoint] Safepoint "SetNotifyJvmtiEventsMode", Time since last: 39758558 ns, Reaching safepoint: 70592 ns, At safepoint: 6572 ns, Leaving safepoint: 3747 ns, Total: 80911 ns, Threads: 2 runnable, 16 total
 [ktor-kronos] 64 reactors (pinned) on :8080, tls on :8081, kernel tx, JVM 25.0.5+8-LTS
-[0.287s][safepoint] Safepoint "JFRSafepointClear", Time since last: 126334073 ns, Reaching safepoint: 71294 ns, At safepoint: 11561 ns, Leaving safepoint: 4920 ns, Total: 87775 ns, Threads: 1 runnable, 23 total
+[1.017s][safepoint] Safepoint "JFRSafepointClear", Time since last: 127133240 ns, Reaching safepoint: 74399 ns, At safepoint: 13716 ns, Leaving safepoint: 4879 ns, Total: 92994 ns, Threads: 1 runnable, 22 total
 [main] INFO io.ktor.server.Application - Autoreload is disabled because the development mode is off.
-[main] INFO io.ktor.server.Application - Application started in 0.258 seconds.
-[0.618s][gc       ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 97M->26M(2064M) 4.822ms
-[0.618s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 326482303 ns, Reaching safepoint: 3637 ns, At safepoint: 4850263 ns, Leaving safepoint: 5550 ns, Total: 4859450 ns, Threads: 0 runnable, 26 total
-[0.832s][gc       ] GC(1) Pause Young (Concurrent Start) (Metadata GC Threshold) 186M->29M(2064M) 5.021ms
-[0.832s][gc       ] GC(2) Concurrent Mark Cycle
-[0.832s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 209214654 ns, Reaching safepoint: 90430 ns, At safepoint: 5113698 ns, Leaving safepoint: 82806 ns, Total: 5286934 ns, Threads: 6 runnable, 92 total
-[0.833s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 120346 ns, Reaching safepoint: 828689 ns, At safepoint: 4729 ns, Leaving safepoint: 21390 ns, Total: 854808 ns, Threads: 4 runnable, 92 total
-[0.834s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 167916 ns, Reaching safepoint: 78177 ns, At safepoint: 7013 ns, Leaving safepoint: 17593 ns, Total: 102783 ns, Threads: 1 runnable, 92 total
-[0.836s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 2638744 ns, Reaching safepoint: 80491 ns, At safepoint: 4959 ns, Leaving safepoint: 6042 ns, Total: 91492 ns, Threads: 2 runnable, 92 total
-[r39] listening on 0.0.0.0:8080,8081
-[r60] listening on 0.0.0.0:8080,8081
-[0.837s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 608304 ns, Reaching safepoint: 77135 ns, At safepoint: 7574 ns, Leaving safepoint: 6823 ns, Total: 91532 ns, Threads: 1 runnable, 92 total
-[r6] listening on 0.0.0.0:8080,8081
-[0.841s][gc       ] GC(2) Pause Remark 37M->37M(224M) 1.963ms
-[0.841s][safepoint] Safepoint "G1PauseRemark", Time since last: 2185962 ns, Reaching safepoint: 5410 ns, At safepoint: 1987278 ns, Leaving safepoint: 11752 ns, Total: 2004440 ns, Threads: 0 runnable, 92 total
-[0.856s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 71274 ns, Reaching safepoint: 14835284 ns, At safepoint: 8916 ns, Leaving safepoint: 6533 ns, Total: 14850733 ns, Threads: 0 runnable, 92 total
-[0.856s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 61676 ns, Reaching safepoint: 112261 ns, At safepoint: 8706 ns, Leaving safepoint: 5040 ns, Total: 126007 ns, Threads: 0 runnable, 92 total
-[0.857s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 97734 ns, Reaching safepoint: 99016 ns, At safepoint: 2665 ns, Leaving safepoint: 9047 ns, Total: 110728 ns, Threads: 2 runnable, 92 total
-[r18] listening on 0.0.0.0:8080,8081
-[0.857s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 64902 ns, Reaching safepoint: 34855 ns, At safepoint: 4419 ns, Leaving safepoint: 49433 ns, Total: 88707 ns, Threads: 0 runnable, 92 total
-[r52] listening on 0.0.0.0:8080,8081
-[r19] listening on 0.0.0.0:8080,8081
-[r17] listening on 0.0.0.0:8080,8081
-[r5] listening on 0.0.0.0:8080,8081
-[r20] listening on 0.0.0.0:8080,8081
-[0.857s][gc       ] GC(2) Pause Cleanup 55M->55M(224M) 0.025ms
-[0.857s][safepoint] Safepoint "G1PauseCleanup", Time since last: 503918 ns, Reaching safepoint: 27682 ns, At safepoint: 36308 ns, Leaving safepoint: 4058 ns, Total: 68048 ns, Threads: 0 runnable, 92 total
-[r22] listening on 0.0.0.0:8080,8081
-[r36] listening on 0.0.0.0:8080,8081
-[r50] listening on 0.0.0.0:8080,8081
-[0.858s][gc       ] GC(2) Concurrent Mark Cycle 25.643ms
-[r9] listening on 0.0.0.0:8080,8081
-[r32] listening on 0.0.0.0:8080,8081
-[r0] listening on 0.0.0.0:8080,8081
-[r27] listening on 0.0.0.0:8080,8081
-[r33] listening on 0.0.0.0:8080,8081
-[r55] listening on 0.0.0.0:8080,8081
-[r37] listening on 0.0.0.0:8080,8081
-[r38] listening on 0.0.0.0:8080,8081
-[r62] listening on 0.0.0.0:8080,8081
-[r40] listening on 0.0.0.0:8080,8081
-[r12] listening on 0.0.0.0:8080,8081
-[r28] listening on 0.0.0.0:8080,8081
-[0.859s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 1297951 ns, Reaching safepoint: 22061 ns, At safepoint: 28835 ns, Leaving safepoint: 20368 ns, Total: 71264 ns, Threads: 0 runnable, 92 total
-[r7] listening on 0.0.0.0:8080,8081
-[r15] listening on 0.0.0.0:8080,8081
-[0.859s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 57117 ns, Reaching safepoint: 143881 ns, At safepoint: 3467 ns, Leaving safepoint: 17963 ns, Total: 165311 ns, Threads: 3 runnable, 92 total
-[r21] listening on 0.0.0.0:8080,8081
-[r45] listening on 0.0.0.0:8080,8081
-[r35] listening on 0.0.0.0:8080,8081
-[0.859s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 121669 ns, Reaching safepoint: 16461 ns, At safepoint: 41809 ns, Leaving safepoint: 35036 ns, Total: 93306 ns, Threads: 1 runnable, 92 total
+[main] INFO io.ktor.server.Application - Application started in 0.263 seconds.
+[1.523s][gc       ] GC(0) Pause Young (Concurrent Start) (Metadata GC Threshold) 1313M->34M(20640M) 7.386ms
+[1.523s][gc       ] GC(1) Concurrent Mark Cycle
+[1.523s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 498275058 ns, Reaching safepoint: 215993 ns, At safepoint: 7479150 ns, Leaving safepoint: 162703 ns, Total: 7857846 ns, Threads: 4 runnable, 96 total
+[1.523s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 68348 ns, Reaching safepoint: 217656 ns, At safepoint: 4889 ns, Leaving safepoint: 18575 ns, Total: 241120 ns, Threads: 3 runnable, 96 total
+[1.524s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 73267 ns, Reaching safepoint: 369980 ns, At safepoint: 8446 ns, Leaving safepoint: 41557 ns, Total: 419983 ns, Threads: 4 runnable, 96 total
+[1.525s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 1365509 ns, Reaching safepoint: 9578 ns, At safepoint: 4859 ns, Leaving safepoint: 5771 ns, Total: 20208 ns, Threads: 1 runnable, 96 total
+[1.527s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 1446480 ns, Reaching safepoint: 98203 ns, At safepoint: 4929 ns, Leaving safepoint: 40816 ns, Total: 143948 ns, Threads: 1 runnable, 96 total
+[1.527s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 61255 ns, Reaching safepoint: 139590 ns, At safepoint: 2645 ns, Leaving safepoint: 30798 ns, Total: 173033 ns, Threads: 8 runnable, 96 total
+[1.527s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 188962 ns, Reaching safepoint: 95879 ns, At safepoint: 3998 ns, Leaving safepoint: 23954 ns, Total: 123831 ns, Threads: 3 runnable, 96 total
+[1.527s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 128490 ns, Reaching safepoint: 40576 ns, At safepoint: 7454 ns, Leaving safepoint: 23654 ns, Total: 71684 ns, Threads: 0 runnable, 96 total
+[1.528s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 792389 ns, Reaching safepoint: 85470 ns, At safepoint: 3696 ns, Leaving safepoint: 80661 ns, Total: 169827 ns, Threads: 22 runnable, 96 total
+[1.529s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 228577 ns, Reaching safepoint: 214660 ns, At safepoint: 4108 ns, Leaving safepoint: 84548 ns, Total: 303316 ns, Threads: 29 runnable, 96 total
 [r63] listening on 0.0.0.0:8080,8081
-[0.859s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 112241 ns, Reaching safepoint: 136777 ns, At safepoint: 6172 ns, Leaving safepoint: 18304 ns, Total: 161253 ns, Threads: 2 runnable, 92 total
-[0.860s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 60053 ns, Reaching safepoint: 11572 ns, At safepoint: 7915 ns, Leaving safepoint: 39755 ns, Total: 59242 ns, Threads: 1 runnable, 92 total
-[r10] listening on 0.0.0.0:8080,8081
-[r31] listening on 0.0.0.0:8080,8081
-[r3] listening on 0.0.0.0:8080,8081
-[r2] listening on 0.0.0.0:8080,8081
-[r34] listening on 0.0.0.0:8080,8081
-[0.860s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 141486 ns, Reaching safepoint: 9117 ns, At safepoint: 4438 ns, Leaving safepoint: 7745 ns, Total: 21300 ns, Threads: 0 runnable, 92 total
-[0.860s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 88326 ns, Reaching safepoint: 8195 ns, At safepoint: 4589 ns, Leaving safepoint: 7724 ns, Total: 20508 ns, Threads: 2 runnable, 92 total
-[r24] listening on 0.0.0.0:8080,8081
-[r26] listening on 0.0.0.0:8080,8081
-[0.860s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 56517 ns, Reaching safepoint: 79319 ns, At safepoint: 33212 ns, Leaving safepoint: 18976 ns, Total: 131507 ns, Threads: 2 runnable, 92 total
-[r57] listening on 0.0.0.0:8080,8081
-[0.861s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 156925 ns, Reaching safepoint: 892268 ns, At safepoint: 4399 ns, Leaving safepoint: 19717 ns, Total: 916384 ns, Threads: 2 runnable, 92 total
-[r46] listening on 0.0.0.0:8080,8081
-[0.861s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 63820 ns, Reaching safepoint: 77556 ns, At safepoint: 3747 ns, Leaving safepoint: 12153 ns, Total: 93456 ns, Threads: 3 runnable, 92 total
-[r54] listening on 0.0.0.0:8080,8081
-[r47] listening on 0.0.0.0:8080,8081
-[0.862s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 104125 ns, Reaching safepoint: 77356 ns, At safepoint: 65673 ns, Leaving safepoint: 16251 ns, Total: 159280 ns, Threads: 1 runnable, 92 total
-[r41] listening on 0.0.0.0:8080,8081
-[0.862s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 298652 ns, Reaching safepoint: 7905 ns, At safepoint: 4739 ns, Leaving safepoint: 5249 ns, Total: 17893 ns, Threads: 0 runnable, 92 total
-[0.882s][gc       ] GC(3) Pause Young (Prepare Mixed) (G1 Evacuation Pause) 189M->29M(256M) 19.744ms
-[0.882s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 59242 ns, Reaching safepoint: 138751 ns, At safepoint: 19766829 ns, Leaving safepoint: 26240 ns, Total: 19931820 ns, Threads: 1 runnable, 92 total
-[r44] listening on 0.0.0.0:8080,8081
-[r53] listening on 0.0.0.0:8080,8081
 [r14] listening on 0.0.0.0:8080,8081
-[r11] listening on 0.0.0.0:8080,8081
-[r51] listening on 0.0.0.0:8080,8081
-[r16] listening on 0.0.0.0:8080,8081
-[r48] listening on 0.0.0.0:8080,8081
-[r49] listening on 0.0.0.0:8080,8081
-[r58] listening on 0.0.0.0:8080,8081
-[r59] listening on 0.0.0.0:8080,8081
-[r23] listening on 0.0.0.0:8080,8081
-[r29] listening on 0.0.0.0:8080,8081
-[r1] listening on 0.0.0.0:8080,8081
-[r56] listening on 0.0.0.0:8080,8081
-[r42] listening on 0.0.0.0:8080,8081
-[r25] listening on 0.0.0.0:8080,8081
-[r4] listening on 0.0.0.0:8080,8081
-[r61] listening on 0.0.0.0:8080,8081
-[r8] listening on 0.0.0.0:8080,8081
-[r30] listening on 0.0.0.0:8080,8081
-[r43] listening on 0.0.0.0:8080,8081
+[r28] listening on 0.0.0.0:8080,8081
 [r13] listening on 0.0.0.0:8080,8081
+[r45] listening on 0.0.0.0:8080,8081
+[r30] listening on 0.0.0.0:8080,8081
+[r34] listening on 0.0.0.0:8080,8081
+[r53] listening on 0.0.0.0:8080,8081
+[r0] listening on 0.0.0.0:8080,8081
+[r29] listening on 0.0.0.0:8080,8081
+[r62] listening on 0.0.0.0:8080,8081
+[r7] listening on 0.0.0.0:8080,8081
+[r43] listening on 0.0.0.0:8080,8081
+[r24] listening on 0.0.0.0:8080,8081
+[r18] listening on 0.0.0.0:8080,8081
+[r11] listening on 0.0.0.0:8080,8081
+[r6] listening on 0.0.0.0:8080,8081
+[r4] listening on 0.0.0.0:8080,8081
+[1.533s][gc       ] GC(1) Pause Remark 930M->930M(992M) 2.233ms
+[1.533s][safepoint] Safepoint "G1PauseRemark", Time since last: 2150333 ns, Reaching safepoint: 83707 ns, At safepoint: 2251753 ns, Leaving safepoint: 62296 ns, Total: 2397756 ns, Threads: 13 runnable, 96 total
+[r27] listening on 0.0.0.0:8080,8081
+[r39] listening on 0.0.0.0:8080,8081
+[r44] listening on 0.0.0.0:8080,8081
+[r15] listening on 0.0.0.0:8080,8081
+[r33] listening on 0.0.0.0:8080,8081
+[r10] listening on 0.0.0.0:8080,8081
+[r19] listening on 0.0.0.0:8080,8081
+[r61] listening on 0.0.0.0:8080,8081
+[r37] listening on 0.0.0.0:8080,8081
+[r1] listening on 0.0.0.0:8080,8081
+[r46] listening on 0.0.0.0:8080,8081
+[r55] listening on 0.0.0.0:8080,8081
+[1.547s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 48190 ns, Reaching safepoint: 13054957 ns, At safepoint: 53720 ns, Leaving safepoint: 31539 ns, Total: 13140216 ns, Threads: 4 runnable, 96 total
+[r50] listening on 0.0.0.0:8080,8081
+[r59] listening on 0.0.0.0:8080,8081
+[r56] listening on 0.0.0.0:8080,8081
+[r49] listening on 0.0.0.0:8080,8081
+[r35] listening on 0.0.0.0:8080,8081
+[1.548s][gc       ] GC(1) Pause Cleanup 930M->930M(992M) 0.023ms
+[1.548s][safepoint] Safepoint "G1PauseCleanup", Time since last: 997291 ns, Reaching safepoint: 12714 ns, At safepoint: 40035 ns, Leaving safepoint: 17242 ns, Total: 69991 ns, Threads: 0 runnable, 96 total
+[r5] listening on 0.0.0.0:8080,8081
+[r32] listening on 0.0.0.0:8080,8081
+[r23] listening on 0.0.0.0:8080,8081
+[r52] listening on 0.0.0.0:8080,8081
+[r54] listening on 0.0.0.0:8080,8081
+[r58] listening on 0.0.0.0:8080,8081
+[r8] listening on 0.0.0.0:8080,8081
+[r57] listening on 0.0.0.0:8080,8081
+[1.548s][gc       ] GC(1) Concurrent Mark Cycle 25.618ms
+[r12] listening on 0.0.0.0:8080,8081
+[r38] listening on 0.0.0.0:8080,8081
+[r48] listening on 0.0.0.0:8080,8081
+[r16] listening on 0.0.0.0:8080,8081
+[r41] listening on 0.0.0.0:8080,8081
+[r9] listening on 0.0.0.0:8080,8081
+[r3] listening on 0.0.0.0:8080,8081
+[r36] listening on 0.0.0.0:8080,8081
+[r60] listening on 0.0.0.0:8080,8081
+[r20] listening on 0.0.0.0:8080,8081
+[r51] listening on 0.0.0.0:8080,8081
+[r31] listening on 0.0.0.0:8080,8081
+[r40] listening on 0.0.0.0:8080,8081
+[r47] listening on 0.0.0.0:8080,8081
+[r25] listening on 0.0.0.0:8080,8081
+[r26] listening on 0.0.0.0:8080,8081
+[r42] listening on 0.0.0.0:8080,8081
+[r21] listening on 0.0.0.0:8080,8081
+[r2] listening on 0.0.0.0:8080,8081
+[r17] listening on 0.0.0.0:8080,8081
+[r22] listening on 0.0.0.0:8080,8081
 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application - Responding at http://0.0.0.0:8080
 [DefaultDispatcher-worker-1] INFO io.ktor.server.Application - Responding at https://0.0.0.0:8081
-[1.119s][gc       ] GC(4) Pause Young (Mixed) (G1 Evacuation Pause) 141M->29M(256M) 5.403ms
-[1.119s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 227019332 ns, Reaching safepoint: 4860893 ns, At safepoint: 5427007 ns, Leaving safepoint: 12995 ns, Total: 10300895 ns, Threads: 1 runnable, 91 total
-[1.594s][gc       ] GC(5) Pause Young (Normal) (G1 Evacuation Pause) 157M->30M(256M) 2.182ms
-[1.594s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 472232792 ns, Reaching safepoint: 87354 ns, At safepoint: 2202933 ns, Leaving safepoint: 36048 ns, Total: 2326335 ns, Threads: 2 runnable, 85 total
-[cpu] reactor 133% | C2 CompilerThre 12% | java 9% | GC Thread 4% | G1 Service 3% | C1 CompilerThre 3% | jfr-report 2% | cpu-report 0% || gc 7x 38 ms, heap 140/256 MiB
-[6.003s][gc       ] GC(6) Pause Young (Normal) (G1 Evacuation Pause) 158M->38M(256M) 2.904ms
-[6.003s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 4406268935 ns, Reaching safepoint: 18835 ns, At safepoint: 2926505 ns, Leaving safepoint: 354436 ns, Total: 3299776 ns, Threads: 0 runnable, 82 total
-[cpu] reactor 33% | C2 CompilerThre 0% | C1 CompilerThre 0% | JFR Sampler Thr 0% | cpu-report 0% || gc 1x 3 ms, heap 144/256 MiB
-[10.290s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 4286736591 ns, Reaching safepoint: 11491 ns, At safepoint: 52940 ns, Leaving safepoint: 1212 ns, Total: 65643 ns, Threads: 0 runnable, 82 total
-[jfr] java 114, native 475 || jdk.internal 24.5% | io.ktor.server 14.0% | java.lang 12.2% | kron.Sys 11.4% | java.util 8.7% | io.ktor.util 5.2% | io.ktor.http 5.2% | kron.TcpTransport 4.3% | kotlin.jvm 2.6% | kron.BufferRing 2.6%
-[jfr] hot 11.4% kron.Sys.shutdown | 4.3% kron.TcpTransport.sweep | 3.5% jdk.internal.misc.ScopedMemoryAccess.getLongUnalignedInternal | 3.5% jdk.internal.foreign.AbstractMemorySegmentImpl.checkEnclosingLayout | 2.6% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 2.6% io.ktor.http.HttpHeaders.checkHeaderValue | 2.6% io.ktor.http.AsciiBitSet.contains | 2.6% jdk.internal.misc.ScopedMemoryAccess.putIntUnalignedInternal | 2.6% java.util.Objects.requireNonNull | 2.6% kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE | 1.7% java.lang.invoke.VarHandleByteArrayAsLongs$ArrayHandle.get | 1.7% kron.Reactor.loop | 1.7% jdk.internal.constant.MethodTypeDescImpl.buildDescriptorString | 1.7% io.ktor.server.engine.BaseApplicationResponse.respondOutgoingContent$suspendImpl | 1.7% io.ktor.server.kron.Http1SessionKt.putAscii
-[jfr] contended java.io.PrintStream 41x 415 ms | java.lang.Object 269x 310 ms | java.util.concurrent.ConcurrentHashMap$ReservationNode 49x 46 ms | [I 105x 39 ms | java.lang.invoke.MethodTypeForm 2x 0 ms
+[2.039s][gc       ] GC(2) Pause Young (Prepare Mixed) (G1 Evacuation Pause) 930M->34M(1056M) 36.560ms
+[2.039s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 454452647 ns, Reaching safepoint: 15378 ns, At safepoint: 36587009 ns, Leaving safepoint: 37520 ns, Total: 36639907 ns, Threads: 0 runnable, 93 total
+[2.060s][gc       ] GC(3) Pause Young (Mixed) (G1 Evacuation Pause) 482M->34M(1056M) 8.188ms
+[2.060s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 11583942 ns, Reaching safepoint: 1321236 ns, At safepoint: 8208531 ns, Leaving safepoint: 76943 ns, Total: 9606710 ns, Threads: 25 runnable, 92 total
+[5.905s][safepoint] Safepoint "ThreadDump", Time since last: 3844400835 ns, Reaching safepoint: 8456 ns, At safepoint: 413442 ns, Leaving safepoint: 7654 ns, Total: 429552 ns, Threads: 0 runnable, 81 total
+[pool] kotlinx-io buckets 64, 64 reactors (ids 94..157) on 64 of them
+[cpu] reactor 170% | G1 Service 37% | C2 CompilerThre 13% | GC Thread 11% | java 9% | C1 CompilerThre 3% | jfr-report 2% | JFR Recorder Th 0% | cpu-report 0% || gc 5x 54 ms, heap 321/1056 MiB
+[cpu] reactor 33% | C2 CompilerThre 1% | JFR Sampler Thr 0% | C1 CompilerThre 0% | cpu-report 0% || gc 0x 0 ms, heap 466/1056 MiB
+[11.020s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 5115508214 ns, Reaching safepoint: 9879 ns, At safepoint: 95378 ns, Leaving safepoint: 1242 ns, Total: 106499 ns, Threads: 0 runnable, 82 total
+[jfr] java 118, native 477 || jdk.internal 21.1% | kron.TcpTransport 20.3% | io.ktor.server 13.5% | java.util 7.6% | java.lang 7.6% | kron.Sys 7.6% | kron.BufferRing 5.0% | io.ktor.util 3.3% | io.ktor.http 3.3% | kotlin.text 2.5%
+[jfr] hot 20.3% kron.TcpTransport.sweep | 7.6% kron.Sys.shutdown | 4.2% jdk.internal.misc.ScopedMemoryAccess.getLongUnalignedInternal | 4.2% kron.BufferRing.register | 4.2% io.ktor.server.kron.Http1SessionKt.sameName | 3.3% jdk.internal.misc.ScopedMemoryAccess.putIntUnalignedInternal | 2.5% jdk.internal.misc.ScopedMemoryAccess.putShortUnalignedInternal | 2.5% io.ktor.http.HttpHeaders.checkHeaderValue | 1.6% io.ktor.server.kron.KronApplicationRequest.nameEquals | 1.6% jdk.internal.classfile.impl.StackMapGenerator.processBlock | 1.6% java.util.Arrays.copyOf | 1.6% io.ktor.util.pipeline.SuspendFunctionGun.loop | 1.6% io.ktor.server.kron.Http1SessionKt.putAscii | 1.6% java.util.Objects.requireNonNull | 1.6% jdk.internal.classfile.impl.StackMapGenerator.processMethod
+[jfr] stacks 20.3% TcpTransport.sweep < Reactor.run$lambda$0 < 0x000000008c396d00.invoke < Reactor.runDueTickers < Reactor.loop || 7.6% Sys.shutdown < Native.shutdown < TcpTransport.sweepClose < TcpTransport.sweep < Reactor.run$lambda$0 || 4.2% BufferRing.register < TcpTransport.initBufferRing < Reactor.run < ReactorThread.run || 4.2% ScopedMemoryAccess.getLongUnalignedInternal < ScopedMemoryAccess.getLongUnaligned < VarHandleSegmentAsLongs.get < VarHandleSegmentAsLongs.get < VarHandleGuards.guard_LJ_J || 3.3% ScopedMemoryAccess.putIntUnalignedInternal < ScopedMemoryAccess.putIntUnaligned < VarHandleSegmentAsInts.set < VarHandleSegmentAsInts.set < VarHandleGuards.guard_LJI_V || 2.5% HttpHeaders.checkHeaderValue < ResponseHeaders.append < BaseApplicationResponse.commitHeaders < BaseApplicationResponse.respondOutgoingContent$suspendImpl < BaseApplicationResponse.respondOutgoingContent
+[jfr] contended java.lang.Object @ TcpTransport.initBufferRing < Reactor.run 61x 333 ms | java.lang.ref.ReferenceQueue$Lock @ Reactor.announceListening < Reactor.run 31x 297 ms | java.lang.Object @ TlsService$Companion.newContext < TlsService$Companion.start 56x 118 ms | java.io.PrintStream @ Platform_jvmKt.printErr < Reactor.announceListening 49x 89 ms | java.lang.ref.ReferenceQueue$Lock @ TlsService$Companion.start < KronApplicationEngine.start$lambda$6 27x 74 ms
 [jfr] parks kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.park 1x
-[10.348s][safepoint] Safepoint "JFRSafepointClear", Time since last: 57496420 ns, Reaching safepoint: 12433 ns, At safepoint: 37822 ns, Leaving safepoint: 1442 ns, Total: 51697 ns, Threads: 0 runnable, 88 total
-[10.808s][gc       ] GC(7) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.887ms
-[10.808s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 457067827 ns, Reaching safepoint: 12924 ns, At safepoint: 2908681 ns, Leaving safepoint: 38543 ns, Total: 2960148 ns, Threads: 0 runnable, 87 total
-[cpu] reactor 33% | C2 CompilerThre 3% | C1 CompilerThre 0% | jfr-report 0% || gc 1x 2 ms, heap 148/256 MiB
-[15.991s][gc       ] GC(8) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.715ms
-[15.991s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 5180336562 ns, Reaching safepoint: 11832 ns, At safepoint: 2738681 ns, Leaving safepoint: 25518 ns, Total: 2776031 ns, Threads: 0 runnable, 85 total
-[cpu] reactor 32% | GC Thread 0% | JFR Sampler Thr 0% | cpu-report 0% || gc 1x 3 ms, heap 142/256 MiB
-[20.350s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 4358904373 ns, Reaching safepoint: 11302 ns, At safepoint: 56646 ns, Leaving safepoint: 1192 ns, Total: 69140 ns, Threads: 0 runnable, 82 total
-[jfr] java 17, native 498 || io.ktor.server 29.4% | java.lang 17.6% | io.ktor.util 17.6% | kotlin.text 17.6% | kotlin.coroutines 11.7% | java.util 5.8%
-[jfr] hot 11.7% kotlin.text.StringsKt__StringsKt.indexOf$StringsKt__StringsKt | 11.7% java.lang.invoke.LambdaForm$MH.0x00000000082e9000.invoke | 11.7% io.ktor.server.engine.BaseApplicationResponse.respondOutgoingContent$suspendImpl | 11.7% io.ktor.util.pipeline.SuspendFunctionGun.loop | 5.8% java.util.HashMap.putVal | 5.8% kotlin.text.StringsKt__StringNumberConversionsKt.toLongOrNull | 5.8% io.ktor.server.kron.KronApplicationResponse.stage | 5.8% kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith | 5.8% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core | 5.8% java.lang.String.equalsIgnoreCase | 5.8% kotlin.coroutines.jvm.internal.ContinuationImpl.<init> | 5.8% io.ktor.server.kron.Http1SessionKt.putAscii | 5.8% io.ktor.util.pipeline.Pipeline.execute
+[11.080s][safepoint] Safepoint "JFRSafepointClear", Time since last: 59343550 ns, Reaching safepoint: 21661 ns, At safepoint: 38421 ns, Leaving safepoint: 5711 ns, Total: 65793 ns, Threads: 0 runnable, 88 total
+[11.142s][gc       ] GC(4) Pause Young (Normal) (G1 Evacuation Pause) 482M->44M(1056M) 7.198ms
+[11.142s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 55291246 ns, Reaching safepoint: 38302 ns, At safepoint: 7227751 ns, Leaving safepoint: 77034 ns, Total: 7343087 ns, Threads: 0 runnable, 88 total
+[cpu] reactor 33% | GC Thread 1% | jfr-report 1% | C2 CompilerThre 0% | C1 CompilerThre 0% | cpu-report 0% || gc 1x 7 ms, heap 217/1056 MiB
+[cpu] reactor 33% | JFR Sampler Thr 0% | C2 CompilerThre 0% | C1 CompilerThre 0% || gc 0x 0 ms, heap 385/1056 MiB
+[21.082s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 9939078813 ns, Reaching safepoint: 12403 ns, At safepoint: 56516 ns, Leaving safepoint: 3316 ns, Total: 72235 ns, Threads: 0 runnable, 82 total
+[jfr] java 14, native 497 || io.ktor.server 35.7% | io.ktor.util 14.2% | kron.Reactor 7.1% | java.util 7.1% | java.lang 7.1% | jdk.internal 7.1% | io.ktor.events 7.1% | kotlin.jvm 7.1% | httparena.JvmMainKt 7.1%
+[jfr] hot 14.2% io.ktor.server.kron.Http1SessionKt.putAscii | 7.1% java.lang.CharacterDataLatin1.equalsIgnoreCase | 7.1% io.ktor.server.kron.KronApplicationResponse.stage | 7.1% httparena.JvmMainKt.cpuReport$sample | 7.1% kron.Reactor.clearWakePending$kron | 7.1% java.util.HashMap.getNode | 7.1% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 7.1% io.ktor.server.kron.Http1Session.run | 7.1% io.ktor.server.kron.KronApplicationResponse$headers$1.get | 7.1% io.ktor.util.pipeline.SuspendFunctionGun.loop | 7.1% jdk.internal.misc.ScopedMemoryAccess.getIntUnalignedInternal | 7.1% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 7.1% io.ktor.events.Events.raise
+[jfr] stacks 14.2% Http1SessionKt.putAscii < Http1SessionKt.access$putAscii < Http1Session.writeHead$ktor_server_kron < KronApplicationResponse.stage < KronApplicationResponse.respondFromBytes || 7.1% TypeIntrinsics.getFunctionArity < TypeIntrinsics.isFunctionOfArity < TypeIntrinsics.beforeCheckcastToFunctionOfArity < PipelineJvmKt.pipelineStartCoroutineUninterceptedOrReturn < SuspendFunctionGun.loop || 7.1% HashMap.getNode < HashMap.get < AttributesJvmBase.getOrNull < OriginConnectionPointKt.getOrigin < ApplicationRequestPropertiesKt.getUri || 7.1% KronApplicationResponse.stage < KronApplicationResponse.respondFromBytes < BaseApplicationResponse.respondOutgoingContent$suspendImpl < BaseApplicationResponse.respondOutgoingContent < BaseApplicationResponse$Companion$setupSendPipeline$1.invokeSuspend || 7.1% SuspendFunctionGun.loop < SuspendFunctionGun.proceed < SuspendFunctionGun.execute$ktor_utils < Pipeline.execute < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invokeSuspend || 7.1% KronApplicationResponse$headers$1.get < KronApplicationResponse.respondFromBytes < BaseApplicationResponse.respondOutgoingContent$suspendImpl < BaseApplicationResponse.respondOutgoingContent < BaseApplicationResponse$Companion$setupSendPipeline$1.invokeSuspend
 [jfr] parks kotlinx.coroutines.DefaultExecutor.run 2x
-[20.379s][safepoint] Safepoint "JFRSafepointClear", Time since last: 28775889 ns, Reaching safepoint: 9418 ns, At safepoint: 26400 ns, Leaving safepoint: 5220 ns, Total: 41038 ns, Threads: 0 runnable, 86 total
-[21.057s][gc       ] GC(9) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.971ms
-[21.057s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 675063658 ns, Reaching safepoint: 11862 ns, At safepoint: 2993520 ns, Leaving safepoint: 65574 ns, Total: 3070956 ns, Threads: 0 runnable, 86 total
-[cpu] reactor 23% | C2 CompilerThre 2% | C1 CompilerThre 0% | JFR Sampler Thr 0% | java 0% | GC Thread 0% | jfr-report 0% || gc 1x 3 ms, heap 81/256 MiB
-[28.888s][gc       ] GC(10) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.911ms
-[28.888s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 7828693440 ns, Reaching safepoint: 20528 ns, At safepoint: 2968924 ns, Leaving safepoint: 38362 ns, Total: 3027814 ns, Threads: 0 runnable, 80 total
-[cpu] reactor 45% | C2 CompilerThre 0% | GC Thread 0% | JFR Sampler Thr 0% | cpu-report 0% || gc 1x 3 ms, heap 75/256 MiB
-[30.380s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 1491506669 ns, Reaching safepoint: 76985 ns, At safepoint: 20819 ns, Leaving safepoint: 4368 ns, Total: 102172 ns, Threads: 1 runnable, 80 total
-[jfr] java 37, native 497 || io.ktor.server 35.1% | java.util 16.2% | kotlin.jvm 10.8% | kotlinx.coroutines 8.1% | java.lang 8.1% | io.ktor.util 8.1% | httparena.ApplicationKt 2.7% | io.ktor.http 2.7% | kotlin.coroutines 2.7% | kotlin.text 2.7%
-[jfr] hot 8.1% kotlin.jvm.internal.Intrinsics.checkNotNull | 8.1% java.util.concurrent.atomic.AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl.accessCheck | 5.4% kotlinx.coroutines.internal.LockFreeLinkedListNode.addNext | 5.4% io.ktor.server.kron.Http1Session.run | 5.4% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core | 5.4% io.ktor.server.kron.KronApplicationRequest.indexOf | 5.4% java.util.HashMap.getNode | 2.7% io.ktor.http.HttpHeaders.checkHeaderValue | 2.7% kron.glyph11.Glyph11.parse | 2.7% java.lang.invoke.LambdaForm$MH.0x00000000080c2c00.invokeExact_MT | 2.7% io.ktor.server.routing.RoutingRoot.interceptor | 2.7% httparena.ApplicationKt.sumQueryParams | 2.7% io.ktor.util.pipeline.PipelineContextKt.pipelineContextFor | 2.7% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 2.7% io.ktor.server.kron.Http1Session$fill$1.invokeSuspend
-[30.393s][safepoint] Safepoint "JFRSafepointClear", Time since last: 12962668 ns, Reaching safepoint: 5921 ns, At safepoint: 9388 ns, Leaving safepoint: 3947 ns, Total: 19256 ns, Threads: 1 runnable, 81 total
-[33.993s][gc       ] GC(11) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.676ms
-[33.993s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 3597154679 ns, Reaching safepoint: 10881 ns, At safepoint: 2699887 ns, Leaving safepoint: 46939 ns, Total: 2757707 ns, Threads: 0 runnable, 81 total
-[cpu] reactor 34% | C2 CompilerThre 1% | JFR Sampler Thr 0% | GC Thread 0% | jfr-report 0% | cpu-report 0% || gc 1x 3 ms, heap 73/256 MiB
-[39.286s][gc       ] GC(12) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.936ms
-[39.286s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 5289722272 ns, Reaching safepoint: 11491 ns, At safepoint: 2958374 ns, Leaving safepoint: 54332 ns, Total: 3024197 ns, Threads: 0 runnable, 81 total
-[cpu] reactor 33% | JFR Sampler Thr 0% | GC Thread 0% || gc 1x 3 ms, heap 66/256 MiB
-[40.394s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 1108698575 ns, Reaching safepoint: 28273 ns, At safepoint: 58319 ns, Leaving safepoint: 2245 ns, Total: 88837 ns, Threads: 0 runnable, 80 total
-[jfr] java 32, native 498 || io.ktor.server 34.3% | io.ktor.util 21.8% | java.lang 15.6% | java.util 9.3% | kotlin.ResultKt 6.2% | kron.Reactor 3.1% | kotlin.text 3.1% | kotlin.jvm 3.1% | httparena.JvmMainKt 3.1%
-[jfr] hot 12.5% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 6.2% io.ktor.util.pipeline.Pipeline.createContext | 6.2% java.util.HashMap.getNode | 6.2% kotlin.ResultKt.throwOnFailure | 6.2% io.ktor.server.kron.KronApplicationResponse$headers$1.get | 3.1% io.ktor.server.engine.BaseApplicationResponse$Companion$setupFallbackResponse$1.invoke | 3.1% kron.Reactor.loop | 3.1% java.lang.CharacterDataLatin1.equalsIgnoreCase | 3.1% kotlin.text.StringsKt__StringNumberConversionsKt.toLongOrNull | 3.1% io.ktor.server.kron.KronApplicationResponse.stage | 3.1% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core | 3.1% io.ktor.server.routing.RoutingRoot$Plugin$install$1.invokeSuspend | 3.1% java.lang.String.equalsIgnoreCase | 3.1% io.ktor.server.routing.RoutingRoot.interceptor | 3.1% httparena.JvmMainKt.cpuReport$sample
-[40.410s][safepoint] Safepoint "JFRSafepointClear", Time since last: 15843433 ns, Reaching safepoint: 7344 ns, At safepoint: 17673 ns, Leaving safepoint: 4549 ns, Total: 29566 ns, Threads: 1 runnable, 82 total
-[44.411s][gc       ] GC(13) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.756ms
-[44.411s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 3997741335 ns, Reaching safepoint: 8666 ns, At safepoint: 2777844 ns, Leaving safepoint: 22693 ns, Total: 2809203 ns, Threads: 0 runnable, 80 total
-[cpu] reactor 29% | C2 CompilerThre 0% | GC Thread 0% | JFR Recorder Th 0% | jfr-report 0% || gc 1x 2 ms, heap 45/256 MiB
-[cpu] reactor 24% | JFR Sampler Thr 0% | C2 CompilerThre 0% | cpu-report 0% || gc 0x 0 ms, heap 123/256 MiB
-[50.412s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 6000775152 ns, Reaching safepoint: 19357 ns, At safepoint: 45616 ns, Leaving safepoint: 1252 ns, Total: 66225 ns, Threads: 0 runnable, 80 total
-[jfr] java 25, native 497 || io.ktor.server 36.0% | io.ktor.util 20.0% | java.lang 16.0% | kotlin.jvm 16.0% | java.util 8.0% | io.ktor.events 4.0%
-[jfr] hot 16.0% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 8.0% kotlin.jvm.internal.Intrinsics.checkNotNull | 8.0% io.ktor.server.kron.KronApplicationResponse.stage | 8.0% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 4.0% io.ktor.server.routing.RoutingNode$buildPipeline$1$1.invokeSuspend | 4.0% java.lang.CharacterDataLatin1.equalsIgnoreCase | 4.0% io.ktor.server.kron.ReactorDispatcher$$Lambda.0x00000000082fb1c8.invoke | 4.0% io.ktor.server.kron.Http1SessionKt.sameName | 4.0% java.util.ArrayList.grow | 4.0% io.ktor.server.routing.RoutingCall.getRequest | 4.0% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core | 4.0% java.lang.String.equalsIgnoreCase | 4.0% io.ktor.util.AttributesJvmBase.put | 4.0% java.util.HashMap.getNode | 4.0% java.lang.invoke.LambdaForm$MH.0x00000000082e9000.invoke
-[50.423s][safepoint] Safepoint "JFRSafepointClear", Time since last: 11492400 ns, Reaching safepoint: 7404 ns, At safepoint: 12013 ns, Leaving safepoint: 1112 ns, Total: 20529 ns, Threads: 0 runnable, 80 total
-[51.969s][gc       ] GC(14) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.961ms
-[51.969s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 1542742263 ns, Reaching safepoint: 11922 ns, At safepoint: 2985214 ns, Leaving safepoint: 44944 ns, Total: 3042080 ns, Threads: 0 runnable, 80 total
-[cpu] reactor 33% | C2 CompilerThre 0% | JFR Sampler Thr 0% | java 0% | GC Thread 0% | jfr-report 0% | cpu-report 0% || gc 1x 3 ms, heap 120/256 MiB
-[57.258s][gc       ] GC(15) Pause Young (Normal) (G1 Evacuation Pause) 166M->38M(256M) 2.708ms
-[57.258s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 5286356460 ns, Reaching safepoint: 9207 ns, At safepoint: 2728691 ns, Leaving safepoint: 33283 ns, Total: 2771181 ns, Threads: 1 runnable, 80 total
-[cpu] reactor 33% || gc 1x 3 ms, heap 113/256 MiB
-[60.425s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 3166456474 ns, Reaching safepoint: 7875 ns, At safepoint: 46978 ns, Leaving safepoint: 1423 ns, Total: 56276 ns, Threads: 0 runnable, 80 total
-[jfr] java 22, native 498 || io.ktor.server 45.4% | io.ktor.util 13.6% | kotlin.jvm 13.6% | io.ktor.http 9.0% | java.lang 9.0% | java.util 4.5% | kotlin.text 4.5%
-[jfr] hot 13.6% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 9.0% io.ktor.http.HttpHeaders.checkHeaderValue | 9.0% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 9.0% io.ktor.server.kron.Http1SessionKt.putAscii | 4.5% io.ktor.server.kron.ReactorDispatcher$$Lambda.0x00000000082fb1c8.invoke | 4.5% kotlin.text.StringsKt__StringNumberConversionsKt.toLongOrNull | 4.5% io.ktor.server.kron.KronApplicationResponse.stage | 4.5% java.util.ArrayList.grow | 4.5% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core | 4.5% java.lang.String.equalsIgnoreCase | 4.5% io.ktor.server.engine.BaseApplicationResponse.respondOutgoingContent$suspendImpl | 4.5% io.ktor.util.AttributesJvmBase.put | 4.5% io.ktor.server.response.ResponseHeaders.contains | 4.5% io.ktor.server.kron.KronApplicationRequest.indexOf | 4.5% java.lang.invoke.LambdaForm$MH.0x00000000082e9000.invoke
-[60.436s][safepoint] Safepoint "JFRSafepointClear", Time since last: 11321678 ns, Reaching safepoint: 7614 ns, At safepoint: 11893 ns, Leaving safepoint: 2765 ns, Total: 22272 ns, Threads: 0 runnable, 81 total
-[62.387s][gc       ] GC(16) Pause Young (Normal) (G1 Evacuation Pause) 166M->39M(256M) 2.751ms
-[62.387s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 1947885951 ns, Reaching safepoint: 10780 ns, At safepoint: 2771331 ns, Leaving safepoint: 19667 ns, Total: 2801778 ns, Threads: 0 runnable, 81 total
-[cpu] reactor 32% | JFR Sampler Thr 0% | VM Thread 0% | C2 CompilerThre 0% | GC Thread 0% | C1 CompilerThre 0% | cpu-report 0% || gc 1x 3 ms, heap 111/256 MiB
+[21.109s][safepoint] Safepoint "JFRSafepointClear", Time since last: 27099857 ns, Reaching safepoint: 8116 ns, At safepoint: 14356 ns, Leaving safepoint: 2224 ns, Total: 24696 ns, Threads: 0 runnable, 85 total
+[cpu] reactor 20% | C2 CompilerThre 2% | JFR Sampler Thr 0% | C1 CompilerThre 0% | jfr-report 0% | cpu-report 0% || gc 0x 0 ms, heap 473/1056 MiB
+[26.544s][gc       ] GC(5) Pause Young (Normal) (G1 Evacuation Pause) 492M->45M(1056M) 6.336ms
+[26.545s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 5429372047 ns, Reaching safepoint: 32671 ns, At safepoint: 6360043 ns, Leaving safepoint: 61354 ns, Total: 6454068 ns, Threads: 0 runnable, 80 total
+[cpu] reactor 42% | GC Thread 1% | C2 CompilerThre 0% | cpu-report 0% || gc 1x 6 ms, heap 204/1056 MiB
+[31.110s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 4565660032 ns, Reaching safepoint: 11201 ns, At safepoint: 57457 ns, Leaving safepoint: 2856 ns, Total: 71514 ns, Threads: 0 runnable, 80 total
+[jfr] java 34, native 497 || io.ktor.server 26.4% | kotlin.jvm 26.4% | io.ktor.util 14.7% | kron.TcpTransport 11.7% | java.lang 5.8% | kron.Reactor 2.9% | java.util 2.9% | httparena.ApplicationKt 2.9% | kotlin.text 2.9% | kron.glyph11 2.9%
+[jfr] hot 8.8% kotlin.jvm.internal.Intrinsics.checkNotNull | 8.8% kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE | 8.8% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 5.8% kron.TcpTransport.sweep | 5.8% io.ktor.util.pipeline.SuspendFunctionGun.loop | 5.8% io.ktor.server.kron.Http1SessionKt.putAscii | 2.9% io.ktor.server.engine.BaseApplicationResponse$Companion$setupFallbackResponse$1.invoke | 2.9% kron.Reactor.loop | 2.9% java.lang.CharacterDataLatin1.equalsIgnoreCase | 2.9% io.ktor.server.routing.RoutingRequest.getLocal | 2.9% io.ktor.util.pipeline.Pipeline.createContext | 2.9% kotlin.text.StringsKt__StringNumberConversionsKt.toLongOrNull | 2.9% io.ktor.server.kron.KronApplicationResponse.stage | 2.9% kron.glyph11.FastParser.parse | 2.9% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core
+[jfr] stacks 8.8% TypeIntrinsics.getFunctionArity < TypeIntrinsics.isFunctionOfArity < TypeIntrinsics.beforeCheckcastToFunctionOfArity < PipelineJvmKt.pipelineStartCoroutineUninterceptedOrReturn < SuspendFunctionGun.loop || 5.8% Http1SessionKt.putAscii < Http1SessionKt.access$putAscii < Http1Session.writeHead$ktor_server_kron < KronApplicationResponse.stage < KronApplicationResponse.respondFromBytes || 5.8% Intrinsics.checkNotNull < ContinuationImpl.getContext < SuspendFunctionGun$continuation$1.getContext < ContinuationImpl.<init> < SuspendLambda.<init> || 5.8% TcpTransport.sweep < Reactor.run$lambda$0 < 0x000000008c396d00.invoke < Reactor.runDueTickers < Reactor.loop || 2.9% BaseApplicationResponse$Companion$setupFallbackResponse$1.invoke < BaseApplicationResponse$Companion$setupFallbackResponse$1.invoke < PipelineJvmKt.pipelineStartCoroutineUninterceptedOrReturn < SuspendFunctionGun.loop < SuspendFunctionGun.proceed || 2.9% Reactor.loop < Reactor.run < ReactorThread.run
+[31.125s][safepoint] Safepoint "JFRSafepointClear", Time since last: 15042261 ns, Reaching safepoint: 7023 ns, At safepoint: 14768 ns, Leaving safepoint: 3126 ns, Total: 24917 ns, Threads: 0 runnable, 81 total
+[cpu] reactor 33% | C2 CompilerThre 2% | JFR Sampler Thr 0% | JFR Recorder Th 0% | java 0% | jfr-report 0% || gc 0x 0 ms, heap 379/1056 MiB
+[40.398s][gc       ] GC(6) Pause Young (Normal) (G1 Evacuation Pause) 525M->44M(1056M) 1.832ms
+[40.398s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 9270796833 ns, Reaching safepoint: 9478 ns, At safepoint: 1855504 ns, Leaving safepoint: 18895 ns, Total: 1883877 ns, Threads: 0 runnable, 81 total
+[cpu] reactor 33% | GC Thread 0% | cpu-report 0% || gc 1x 2 ms, heap 75/1056 MiB
+[41.127s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 728953834 ns, Reaching safepoint: 11692 ns, At safepoint: 26159 ns, Leaving safepoint: 1763 ns, Total: 39614 ns, Threads: 0 runnable, 80 total
+[jfr] java 26, native 498 || io.ktor.server 42.3% | io.ktor.util 30.7% | java.util 11.5% | kotlin.jvm 11.5% | io.ktor.events 3.8%
+[jfr] hot 11.5% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 11.5% io.ktor.util.pipeline.SuspendFunctionGun.loop | 7.6% io.ktor.server.kron.KronApplicationResponse.stage | 7.6% kotlin.jvm.internal.Intrinsics.checkNotNull | 7.6% java.util.HashMap.put | 7.6% io.ktor.server.engine.DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.create | 3.8% io.ktor.util.pipeline.Pipeline.createContext | 3.8% io.ktor.server.kron.Http1SessionKt.sameName | 3.8% io.ktor.server.kron.KronApplicationRequest.nameEquals | 3.8% io.ktor.server.routing.RoutingPathTree.tryResolve | 3.8% io.ktor.util.pipeline.Pipeline.execute | 3.8% java.util.HashMap.putVal | 3.8% io.ktor.server.kron.Http1Session.fill$ktor_server_kron | 3.8% io.ktor.server.kron.Http1Session.run | 3.8% io.ktor.server.kron.Http1SessionKt.statusLine
+[jfr] stacks 7.6% KronApplicationResponse.stage < KronApplicationResponse.respondFromBytes < BaseApplicationResponse.respondOutgoingContent$suspendImpl < BaseApplicationResponse.respondOutgoingContent < BaseApplicationResponse$Companion$setupSendPipeline$1.invokeSuspend || 7.6% SuspendFunctionGun.loop < SuspendFunctionGun.proceed < SuspendFunctionGun.execute$ktor_utils < Pipeline.execute < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invokeSuspend || 7.6% DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.create < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invoke < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invoke < ContextUtilsKt.initContextInDebugMode < DefaultEnginePipelineKt$defaultEnginePipeline$1.invokeSuspend || 7.6% SuspendFunctionGun$continuation$1.getContext < ContinuationImpl.<init> < SuspendLambda.<init> < DefaultTransformKt$installDefaultTransformations$1.<init> < DefaultTransformKt$installDefaultTransformations$1.invoke || 3.8% TypeIntrinsics.getFunctionArity < TypeIntrinsics.isFunctionOfArity < TypeIntrinsics.beforeCheckcastToFunctionOfArity < PipelineJvmKt.pipelineStartCoroutineUninterceptedOrReturn < SuspendFunctionGun.loop || 3.8% KronApplicationRequest.nameEquals < KronApplicationRequest.indexOf < KronApplicationRequest.getAll < DelegateHeaders.getAll < BaseApplicationEngineKt.verifyHostHeader
+[41.162s][safepoint] Safepoint "JFRSafepointClear", Time since last: 34639740 ns, Reaching safepoint: 6292 ns, At safepoint: 10580 ns, Leaving safepoint: 921 ns, Total: 17793 ns, Threads: 0 runnable, 81 total
+[cpu] reactor 32% | JFR Sampler Thr 0% | C2 CompilerThre 0% || gc 0x 0 ms, heap 235/1056 MiB
+[cpu] reactor 24% | JFR Sampler Thr 0% | cpu-report 0% || gc 0x 0 ms, heap 330/1056 MiB
+[51.163s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 10001417109 ns, Reaching safepoint: 25157 ns, At safepoint: 25697 ns, Leaving safepoint: 1924 ns, Total: 52778 ns, Threads: 0 runnable, 80 total
+[jfr] java 37, native 496 || io.ktor.server 32.4% | java.util 16.2% | io.ktor.util 16.2% | java.lang 8.1% | kotlin.jvm 8.1% | io.ktor.http 5.4% | kron.Reactor 2.7% | kron.TcpTransport 2.7% | kotlin.coroutines 2.7% | kotlin.text 2.7%
+[jfr] hot 10.8% java.util.concurrent.atomic.AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl.accessCheck | 10.8% io.ktor.util.pipeline.SuspendFunctionGun.loop | 8.1% io.ktor.server.kron.Http1Session.fill$ktor_server_kron | 5.4% io.ktor.http.HttpHeaders.checkHeaderValue | 5.4% io.ktor.server.kron.KronApplicationResponse.stage | 5.4% io.ktor.server.response.ResponseHeaders.contains | 5.4% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 5.4% java.lang.String.<init> | 5.4% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 2.7% kotlin.text.StringsKt__StringsKt.indexOf$StringsKt__StringsKt | 2.7% kron.Reactor.loop | 2.7% kron.TcpTransport.sweep | 2.7% io.ktor.server.kron.ReactorDispatcher$$Lambda.0x000000008c3995e0.invoke | 2.7% kotlin.jvm.internal.Intrinsics.checkNotNull | 2.7% kron.glyph11.FastParser.parse
+[jfr] stacks 8.1% Http1Session.fill$ktor_server_kron < Http1Session.run < Http1Session$run$1.invokeSuspend < BaseContinuationImpl.resumeWith < TcpConnection.signalRead || 5.4% AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl.accessCheck < AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl.get < LockFreeLinkedListNode.correctPrev < LockFreeLinkedListNode.removeOrNext < LockFreeLinkedListNode.remove || 5.4% HttpHeaders.checkHeaderValue < ResponseHeaders.append < BaseApplicationResponse.commitHeaders < BaseApplicationResponse.respondOutgoingContent$suspendImpl < BaseApplicationResponse.respondOutgoingContent || 5.4% TypeIntrinsics.getFunctionArity < TypeIntrinsics.isFunctionOfArity < TypeIntrinsics.beforeCheckcastToFunctionOfArity < PipelineJvmKt.pipelineStartCoroutineUninterceptedOrReturn < SuspendFunctionGun.loop || 5.4% KronApplicationResponse.stage < KronApplicationResponse.respondFromBytes < BaseApplicationResponse.respondOutgoingContent$suspendImpl < BaseApplicationResponse.respondOutgoingContent < BaseApplicationResponse$Companion$setupSendPipeline$1.invokeSuspend || 5.4% SuspendFunctionGun.loop < SuspendFunctionGun.proceed < SuspendFunctionGun.execute$ktor_utils < Pipeline.execute < Http1Session$serve$$inlined$execute$1.invokeSuspend
+[51.175s][safepoint] Safepoint "JFRSafepointClear", Time since last: 11471959 ns, Reaching safepoint: 72104 ns, At safepoint: 9348 ns, Leaving safepoint: 4017 ns, Total: 85469 ns, Threads: 1 runnable, 81 total
+[cpu] reactor 39% | JFR Sampler Thr 0% | C2 CompilerThre 0% | C1 CompilerThre 0% | jfr-report 0% || gc 0x 0 ms, heap 505/1056 MiB
+[56.558s][gc       ] GC(7) Pause Young (Normal) (G1 Evacuation Pause) 524M->44M(1056M) 1.946ms
+[56.558s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 5381062270 ns, Reaching safepoint: 11050 ns, At safepoint: 1966151 ns, Leaving safepoint: 100428 ns, Total: 2077629 ns, Threads: 0 runnable, 80 total
+[cpu] reactor 35% | JFR Sampler Thr 0% | cpu-report 0% || gc 1x 2 ms, heap 200/1056 MiB
+[61.176s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 4618252830 ns, Reaching safepoint: 10750 ns, At safepoint: 53640 ns, Leaving safepoint: 3005 ns, Total: 67395 ns, Threads: 0 runnable, 80 total
+[jfr] java 40, native 498 || io.ktor.util 37.5% | io.ktor.server 30.0% | kotlin.jvm 17.5% | java.lang 7.5% | java.util 5.0% | io.ktor.http 2.5%
+[jfr] hot 15.0% io.ktor.util.pipeline.SuspendFunctionGun.loop | 12.5% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 12.5% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 7.5% io.ktor.util.pipeline.Pipeline.createContext | 7.5% io.ktor.server.kron.Http1SessionKt.putAscii | 5.0% kotlin.jvm.internal.Intrinsics.checkNotNull | 5.0% io.ktor.server.kron.Http1SessionKt.sameName | 5.0% io.ktor.server.routing.RoutingPipelineCall.getRoutingCall$ktor_server_core | 5.0% java.util.HashMap.put | 5.0% io.ktor.server.kron.Http1Session.fill$ktor_server_kron | 2.5% io.ktor.http.HttpHeaders.checkHeaderValue | 2.5% java.lang.CharacterDataLatin1.equalsIgnoreCase | 2.5% io.ktor.server.kron.ReactorDispatcher$$Lambda.0x000000008c3995e0.invoke | 2.5% java.lang.StringLatin1.regionMatchesCI | 2.5% io.ktor.server.routing.RoutingPathTree.tryResolve
+[jfr] stacks 12.5% TypeIntrinsics.getFunctionArity < TypeIntrinsics.isFunctionOfArity < TypeIntrinsics.beforeCheckcastToFunctionOfArity < PipelineJvmKt.pipelineStartCoroutineUninterceptedOrReturn < SuspendFunctionGun.loop || 7.5% Pipeline.createContext < Pipeline.execute < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invokeSuspend < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invoke < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invoke || 7.5% Http1SessionKt.putAscii < Http1SessionKt.access$putAscii < Http1Session.writeHead$ktor_server_kron < KronApplicationResponse.stage < KronApplicationResponse.respondFromBytes || 5.0% SuspendFunctionGun.loop < SuspendFunctionGun.proceed < SuspendFunctionGun.execute$ktor_utils < Pipeline.execute < PipelineCall.respond$suspendImpl || 5.0% SuspendFunctionGun.loop < SuspendFunctionGun.proceed < SuspendFunctionGun.execute$ktor_utils < Pipeline.execute < DefaultEnginePipelineKt$defaultEnginePipeline$1$invokeSuspend$$inlined$execute$1.invokeSuspend || 5.0% SuspendFunctionGun.loop < SuspendFunctionGun.proceed < SuspendFunctionGun.proceedWith < DefaultTransformKt$installDefaultTransformations$1.invokeSuspend < DefaultTransformKt$installDefaultTransformations$1.invoke
+[61.188s][safepoint] Safepoint "JFRSafepointClear", Time since last: 11352447 ns, Reaching safepoint: 6492 ns, At safepoint: 13886 ns, Leaving safepoint: 2435 ns, Total: 22813 ns, Threads: 0 runnable, 81 total
+[cpu] reactor 34% | JFR Sampler Thr 0% | JFR Recorder Th 0% | C2 CompilerThre 0% | jfr-report 0% | cpu-report 0% || gc 0x 0 ms, heap 374/1056 MiB
