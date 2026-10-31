@@ -69,8 +69,11 @@ FROM eclipse-temurin:25-jre AS runtime-jvm
 WORKDIR /app
 COPY --from=build-jvm /ktor/ktor-httparena-kronos/build/libs/ktor-kronos.jar ./ktor-kronos.jar
 EXPOSE 8080 8081
+# The heap starts at 8% of RAM, half of it young: G1 started at 2 GiB and every young collection copies each call in
+# flight - 32000 at once in async - so the fewer of them the better (async +15% locally).
 # DIAGNOSTICS, temporary: GC pauses, the GC's sizing at start, and each safepoint's time to reach, to stdout.
 ENTRYPOINT ["java", "-server", "-XX:+UseG1GC", "-XX:+UseNUMA", "-XX:+AlwaysPreTouch", \
+    "-XX:InitialRAMPercentage=8", "-XX:NewRatio=1", \
     "-Xlog:gc,gc+init,safepoint:stdout:uptime,tags", \
     "--enable-native-access=ALL-UNNAMED", "-jar", "/app/ktor-kronos.jar"]
 
