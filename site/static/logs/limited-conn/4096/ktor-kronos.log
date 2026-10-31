@@ -1,167 +1,253 @@
 [0.001s][os] NUMA support disabled: Failed to initialize libnuma
 [0.013s][gc,init] CardTable entry size: 512
 [0.014s][gc     ] Using G1
-[0.105s][gc,init] Version: 25.0.5+8-LTS (release)
-[0.105s][gc,init] CPUs: 128 total, 64 available
-[0.106s][gc,init] Memory: 251G
-[0.106s][gc,init] Large Page Support: Disabled
-[0.106s][gc,init] NUMA Support: Disabled
-[0.106s][gc,init] Compressed Oops: Enabled (Zero based)
-[0.106s][gc,init] Heap Region Size: 16M
-[0.106s][gc,init] Heap Min Capacity: 16M
-[0.106s][gc,init] Heap Initial Capacity: 2G
-[0.106s][gc,init] Heap Max Capacity: 30688M
-[0.106s][gc,init] Pre-touch: Enabled
-[0.106s][gc,init] Parallel Workers: 43
-[0.106s][gc,init] Concurrent Workers: 11
-[0.106s][gc,init] Concurrent Refinement Workers: 43
-[0.106s][gc,init] Periodic GC: Disabled
+[0.106s][gc,init] Version: 25.0.5+8-LTS (release)
+[0.106s][gc,init] CPUs: 128 total, 64 available
+[0.107s][gc,init] Memory: 251G
+[0.107s][gc,init] Large Page Support: Disabled
+[0.107s][gc,init] NUMA Support: Disabled
+[0.107s][gc,init] Compressed Oops: Enabled (Zero based)
+[0.107s][gc,init] Heap Region Size: 16M
+[0.107s][gc,init] Heap Min Capacity: 16M
+[0.107s][gc,init] Heap Initial Capacity: 2G
+[0.107s][gc,init] Heap Max Capacity: 30688M
+[0.107s][gc,init] Pre-touch: Enabled
+[0.107s][gc,init] Parallel Workers: 43
+[0.107s][gc,init] Concurrent Workers: 11
+[0.107s][gc,init] Concurrent Refinement Workers: 43
+[0.107s][gc,init] Periodic GC: Disabled
+[0.157s][safepoint] Safepoint "SetNotifyJvmtiEventsMode", Time since last: 39149519 ns, Reaching safepoint: 195749 ns, At safepoint: 4488 ns, Leaving safepoint: 3226 ns, Total: 203463 ns, Threads: 2 runnable, 15 total
 [ktor-kronos] 64 reactors (pinned) on :8080, tls on :8081, kernel tx, JVM 25.0.5+8-LTS
+[0.287s][safepoint] Safepoint "JFRSafepointClear", Time since last: 129777215 ns, Reaching safepoint: 71405 ns, At safepoint: 10830 ns, Leaving safepoint: 3417 ns, Total: 85652 ns, Threads: 2 runnable, 22 total
 [main] INFO io.ktor.server.Application - Autoreload is disabled because the development mode is off.
-[main] INFO io.ktor.server.Application - Application started in 0.282 seconds.
-[0.630s][gc     ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 97M->25M(2064M) 4.484ms
-[0.630s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 508584403 ns, Reaching safepoint: 160501 ns, At safepoint: 4514919 ns, Leaving safepoint: 14547 ns, Total: 4689967 ns, Threads: 5 runnable, 45 total
-[r5] listening on 0.0.0.0:8080,8081
-[r43] listening on 0.0.0.0:8080,8081
-[r61] listening on 0.0.0.0:8080,8081
-[r55] listening on 0.0.0.0:8080,8081
-[r30] listening on 0.0.0.0:8080,8081
-[r63] listening on 0.0.0.0:8080,8081
-[r39] listening on 0.0.0.0:8080,8081
-[r50] listening on 0.0.0.0:8080,8081
-[r60] listening on 0.0.0.0:8080,8081
-[r62] listening on 0.0.0.0:8080,8081
+[main] INFO io.ktor.server.Application - Application started in 0.257 seconds.
+[0.613s][gc       ] GC(0) Pause Young (Normal) (G1 Evacuation Pause) 97M->26M(2064M) 4.386ms
+[0.613s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 321829910 ns, Reaching safepoint: 3126 ns, At safepoint: 4415025 ns, Leaving safepoint: 7685 ns, Total: 4425836 ns, Threads: 0 runnable, 25 total
+[0.796s][gc       ] GC(1) Pause Young (Concurrent Start) (Metadata GC Threshold) 189M->30M(2064M) 5.279ms
+[0.796s][gc       ] GC(2) Concurrent Mark Cycle
+[0.797s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 177474303 ns, Reaching safepoint: 152687 ns, At safepoint: 5357373 ns, Leaving safepoint: 74731 ns, Total: 5584791 ns, Threads: 23 runnable, 97 total
+[0.797s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 148941 ns, Reaching safepoint: 75693 ns, At safepoint: 3086 ns, Leaving safepoint: 19627 ns, Total: 98406 ns, Threads: 4 runnable, 97 total
+[0.797s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 61806 ns, Reaching safepoint: 86133 ns, At safepoint: 10890 ns, Leaving safepoint: 25729 ns, Total: 122752 ns, Threads: 2 runnable, 97 total
+[0.797s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 91032 ns, Reaching safepoint: 148790 ns, At safepoint: 8065 ns, Leaving safepoint: 31780 ns, Total: 188635 ns, Threads: 4 runnable, 97 total
+[0.797s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 62859 ns, Reaching safepoint: 128532 ns, At safepoint: 7895 ns, Leaving safepoint: 25849 ns, Total: 162276 ns, Threads: 5 runnable, 97 total
+[0.798s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 83597 ns, Reaching safepoint: 76986 ns, At safepoint: 4668 ns, Leaving safepoint: 27693 ns, Total: 109347 ns, Threads: 4 runnable, 97 total
+[0.798s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 77346 ns, Reaching safepoint: 72266 ns, At safepoint: 2835 ns, Leaving safepoint: 38373 ns, Total: 113474 ns, Threads: 6 runnable, 97 total
+[0.798s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 223681 ns, Reaching safepoint: 210658 ns, At safepoint: 3787 ns, Leaving safepoint: 22793 ns, Total: 237238 ns, Threads: 10 runnable, 97 total
+[0.798s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 61406 ns, Reaching safepoint: 80942 ns, At safepoint: 4439 ns, Leaving safepoint: 24366 ns, Total: 109747 ns, Threads: 10 runnable, 97 total
+[0.799s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 232207 ns, Reaching safepoint: 214775 ns, At safepoint: 4679 ns, Leaving safepoint: 124495 ns, Total: 343949 ns, Threads: 3 runnable, 97 total
+[0.800s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 663571 ns, Reaching safepoint: 164350 ns, At safepoint: 8286 ns, Leaving safepoint: 67147 ns, Total: 239783 ns, Threads: 36 runnable, 97 total
+[0.800s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 100469 ns, Reaching safepoint: 82305 ns, At safepoint: 4399 ns, Leaving safepoint: 42229 ns, Total: 128933 ns, Threads: 6 runnable, 97 total
+[0.801s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 267655 ns, Reaching safepoint: 723645 ns, At safepoint: 48441 ns, Leaving safepoint: 48231 ns, Total: 820317 ns, Threads: 2 runnable, 97 total
+[0.805s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 1502994 ns, Reaching safepoint: 2131380 ns, At safepoint: 6261 ns, Leaving safepoint: 97985 ns, Total: 2235626 ns, Threads: 10 runnable, 97 total
+[0.806s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 173247 ns, Reaching safepoint: 1162653 ns, At safepoint: 28654 ns, Leaving safepoint: 105488 ns, Total: 1296795 ns, Threads: 14 runnable, 97 total
+[0.808s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 204937 ns, Reaching safepoint: 1150439 ns, At safepoint: 71856 ns, Leaving safepoint: 41348 ns, Total: 1263643 ns, Threads: 14 runnable, 97 total
+[r2] listening on 0.0.0.0:8080,8081
+[r46] listening on 0.0.0.0:8080,8081
 [r1] listening on 0.0.0.0:8080,8081
-[r4] listening on 0.0.0.0:8080,8081
-[r38] listening on 0.0.0.0:8080,8081
+[r39] listening on 0.0.0.0:8080,8081
+[0.809s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 85140 ns, Reaching safepoint: 1109843 ns, At safepoint: 4779 ns, Leaving safepoint: 22763 ns, Total: 1137385 ns, Threads: 2 runnable, 97 total
+[r6] listening on 0.0.0.0:8080,8081
+[r21] listening on 0.0.0.0:8080,8081
+[0.810s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 57839 ns, Reaching safepoint: 1070058 ns, At safepoint: 3427 ns, Leaving safepoint: 14687 ns, Total: 1088172 ns, Threads: 2 runnable, 97 total
+[r30] listening on 0.0.0.0:8080,8081
+[0.811s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 47210 ns, Reaching safepoint: 1022358 ns, At safepoint: 3296 ns, Leaving safepoint: 18104 ns, Total: 1043758 ns, Threads: 0 runnable, 97 total
+[r51] listening on 0.0.0.0:8080,8081
+[0.813s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 952466 ns, Reaching safepoint: 1012509 ns, At safepoint: 4078 ns, Leaving safepoint: 12474 ns, Total: 1029061 ns, Threads: 1 runnable, 97 total
+[0.814s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 41658 ns, Reaching safepoint: 166494 ns, At safepoint: 8146 ns, Leaving safepoint: 46457 ns, Total: 221097 ns, Threads: 2 runnable, 97 total
+[0.814s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 98847 ns, Reaching safepoint: 43241 ns, At safepoint: 4188 ns, Leaving safepoint: 13936 ns, Total: 61365 ns, Threads: 1 runnable, 97 total
+[0.814s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 208053 ns, Reaching safepoint: 4779 ns, At safepoint: 4278 ns, Leaving safepoint: 2705 ns, Total: 11762 ns, Threads: 1 runnable, 97 total
+[0.814s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 127180 ns, Reaching safepoint: 9217 ns, At safepoint: 22342 ns, Leaving safepoint: 30407 ns, Total: 61966 ns, Threads: 1 runnable, 97 total
+[r62] listening on 0.0.0.0:8080,8081
+[r42] listening on 0.0.0.0:8080,8081
+[r54] listening on 0.0.0.0:8080,8081
+[r56] listening on 0.0.0.0:8080,8081
+[r44] listening on 0.0.0.0:8080,8081
+[0.816s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 2139034 ns, Reaching safepoint: 7394 ns, At safepoint: 23194 ns, Leaving safepoint: 5721 ns, Total: 36309 ns, Threads: 0 runnable, 97 total
+[0.817s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 136006 ns, Reaching safepoint: 24506 ns, At safepoint: 6062 ns, Leaving safepoint: 2905 ns, Total: 33473 ns, Threads: 0 runnable, 97 total
+[r8] listening on 0.0.0.0:8080,8081
+[0.817s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 95050 ns, Reaching safepoint: 73117 ns, At safepoint: 2405 ns, Leaving safepoint: 3046 ns, Total: 78568 ns, Threads: 3 runnable, 97 total
+[0.817s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 44313 ns, Reaching safepoint: 69962 ns, At safepoint: 2405 ns, Leaving safepoint: 3937 ns, Total: 76304 ns, Threads: 1 runnable, 97 total
+[0.817s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 43031 ns, Reaching safepoint: 69441 ns, At safepoint: 2455 ns, Leaving safepoint: 4028 ns, Total: 75924 ns, Threads: 1 runnable, 97 total
+[r53] listening on 0.0.0.0:8080,8081
+[0.817s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 42770 ns, Reaching safepoint: 69772 ns, At safepoint: 2374 ns, Leaving safepoint: 5380 ns, Total: 77526 ns, Threads: 2 runnable, 97 total
+[r24] listening on 0.0.0.0:8080,8081
+[r25] listening on 0.0.0.0:8080,8081
+[r61] listening on 0.0.0.0:8080,8081
+[0.817s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 252847 ns, Reaching safepoint: 25669 ns, At safepoint: 4057 ns, Leaving safepoint: 6633 ns, Total: 36359 ns, Threads: 1 runnable, 97 total
+[r13] listening on 0.0.0.0:8080,8081
+[0.818s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 97093 ns, Reaching safepoint: 74330 ns, At safepoint: 4238 ns, Leaving safepoint: 11291 ns, Total: 89859 ns, Threads: 3 runnable, 97 total
+[r9] listening on 0.0.0.0:8080,8081
+[0.818s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 102063 ns, Reaching safepoint: 7314 ns, At safepoint: 4077 ns, Leaving safepoint: 9608 ns, Total: 20999 ns, Threads: 1 runnable, 97 total
+[0.818s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 47781 ns, Reaching safepoint: 72005 ns, At safepoint: 3808 ns, Leaving safepoint: 10569 ns, Total: 86382 ns, Threads: 1 runnable, 97 total
+[0.818s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 44955 ns, Reaching safepoint: 72687 ns, At safepoint: 2906 ns, Leaving safepoint: 20689 ns, Total: 96282 ns, Threads: 4 runnable, 97 total
+[r29] listening on 0.0.0.0:8080,8081
+[r17] listening on 0.0.0.0:8080,8081
+[r43] listening on 0.0.0.0:8080,8081
+[0.818s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 137900 ns, Reaching safepoint: 72346 ns, At safepoint: 3817 ns, Leaving safepoint: 8717 ns, Total: 84880 ns, Threads: 1 runnable, 97 total
+[0.818s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 50175 ns, Reaching safepoint: 71885 ns, At safepoint: 2795 ns, Leaving safepoint: 5210 ns, Total: 79890 ns, Threads: 2 runnable, 97 total
+[0.819s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 46117 ns, Reaching safepoint: 270711 ns, At safepoint: 4478 ns, Leaving safepoint: 12514 ns, Total: 287703 ns, Threads: 3 runnable, 97 total
+[r49] listening on 0.0.0.0:8080,8081
+[r28] listening on 0.0.0.0:8080,8081
+[r18] listening on 0.0.0.0:8080,8081
+[r32] listening on 0.0.0.0:8080,8081
+[0.819s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 159000 ns, Reaching safepoint: 74390 ns, At safepoint: 4949 ns, Leaving safepoint: 5891 ns, Total: 85230 ns, Threads: 1 runnable, 97 total
+[0.819s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 68079 ns, Reaching safepoint: 12573 ns, At safepoint: 9057 ns, Leaving safepoint: 25809 ns, Total: 47439 ns, Threads: 0 runnable, 97 total
+[0.819s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 47239 ns, Reaching safepoint: 78108 ns, At safepoint: 6612 ns, Leaving safepoint: 13415 ns, Total: 98135 ns, Threads: 1 runnable, 97 total
+[0.819s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 110208 ns, Reaching safepoint: 66235 ns, At safepoint: 2996 ns, Leaving safepoint: 8806 ns, Total: 78037 ns, Threads: 2 runnable, 97 total
+[r55] listening on 0.0.0.0:8080,8081
+[0.819s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 39014 ns, Reaching safepoint: 71545 ns, At safepoint: 2545 ns, Leaving safepoint: 7985 ns, Total: 82075 ns, Threads: 5 runnable, 97 total
+[0.820s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 39083 ns, Reaching safepoint: 199917 ns, At safepoint: 4549 ns, Leaving safepoint: 9508 ns, Total: 213974 ns, Threads: 3 runnable, 97 total
 [r12] listening on 0.0.0.0:8080,8081
 [r59] listening on 0.0.0.0:8080,8081
-[r21] listening on 0.0.0.0:8080,8081
-[r22] listening on 0.0.0.0:8080,8081
-[r53] listening on 0.0.0.0:8080,8081
-[r19] listening on 0.0.0.0:8080,8081
-[r17] listening on 0.0.0.0:8080,8081
-[r49] listening on 0.0.0.0:8080,8081
-[r36] listening on 0.0.0.0:8080,8081
-[r51] listening on 0.0.0.0:8080,8081
-[r37] listening on 0.0.0.0:8080,8081
-[r48] listening on 0.0.0.0:8080,8081
-[r8] listening on 0.0.0.0:8080,8081
-[r3] listening on 0.0.0.0:8080,8081
-[r42] listening on 0.0.0.0:8080,8081
-[r0] listening on 0.0.0.0:8080,8081
-[r9] listening on 0.0.0.0:8080,8081
-[r31] listening on 0.0.0.0:8080,8081
-[r40] listening on 0.0.0.0:8080,8081
-[r32] listening on 0.0.0.0:8080,8081
-[r52] listening on 0.0.0.0:8080,8081
-[r13] listening on 0.0.0.0:8080,8081
-[r16] listening on 0.0.0.0:8080,8081
-[r56] listening on 0.0.0.0:8080,8081
-[r10] listening on 0.0.0.0:8080,8081
-[r35] listening on 0.0.0.0:8080,8081
-[DefaultDispatcher-worker-1] INFO io.ktor.server.Application - Responding at http://0.0.0.0:8080
-[r15] listening on 0.0.0.0:8080,8081
-[r27] listening on 0.0.0.0:8080,8081
-[r33] listening on 0.0.0.0:8080,8081
-[r14] listening on 0.0.0.0:8080,8081
-[r2] listening on 0.0.0.0:8080,8081
-[r47] listening on 0.0.0.0:8080,8081
-[r11] listening on 0.0.0.0:8080,8081
-[r58] listening on 0.0.0.0:8080,8081
-[r29] listening on 0.0.0.0:8080,8081
-[r18] listening on 0.0.0.0:8080,8081
-[r24] listening on 0.0.0.0:8080,8081
+[r4] listening on 0.0.0.0:8080,8081
 [r34] listening on 0.0.0.0:8080,8081
-[r20] listening on 0.0.0.0:8080,8081
-[r7] listening on 0.0.0.0:8080,8081
-[r41] listening on 0.0.0.0:8080,8081
-[r25] listening on 0.0.0.0:8080,8081
-[r26] listening on 0.0.0.0:8080,8081
-[r23] listening on 0.0.0.0:8080,8081
-[r28] listening on 0.0.0.0:8080,8081
+[0.820s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 561609 ns, Reaching safepoint: 49794 ns, At safepoint: 4358 ns, Leaving safepoint: 5781 ns, Total: 59933 ns, Threads: 1 runnable, 97 total
+[0.824s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 63239 ns, Reaching safepoint: 3159498 ns, At safepoint: 4258 ns, Leaving safepoint: 17153 ns, Total: 3180909 ns, Threads: 4 runnable, 97 total
+[0.824s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 85271 ns, Reaching safepoint: 71795 ns, At safepoint: 2956 ns, Leaving safepoint: 9858 ns, Total: 84609 ns, Threads: 4 runnable, 97 total
+[0.826s][gc       ] GC(2) Pause Remark 190M->190M(224M) 2.111ms
+[0.826s][safepoint] Safepoint "G1PauseRemark", Time since last: 41278 ns, Reaching safepoint: 75041 ns, At safepoint: 2122844 ns, Leaving safepoint: 23574 ns, Total: 2221459 ns, Threads: 5 runnable, 97 total
 [r45] listening on 0.0.0.0:8080,8081
-[r46] listening on 0.0.0.0:8080,8081
-[r54] listening on 0.0.0.0:8080,8081
-[r6] listening on 0.0.0.0:8080,8081
+[r41] listening on 0.0.0.0:8080,8081
+[r10] listening on 0.0.0.0:8080,8081
+[r38] listening on 0.0.0.0:8080,8081
+[r20] listening on 0.0.0.0:8080,8081
+[0.840s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 41539 ns, Reaching safepoint: 14235335 ns, At safepoint: 4268 ns, Leaving safepoint: 18535 ns, Total: 14258138 ns, Threads: 0 runnable, 97 total
+[r58] listening on 0.0.0.0:8080,8081
+[r60] listening on 0.0.0.0:8080,8081
+[0.841s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 435240 ns, Reaching safepoint: 485436 ns, At safepoint: 2655 ns, Leaving safepoint: 12924 ns, Total: 501015 ns, Threads: 3 runnable, 97 total
+[r14] listening on 0.0.0.0:8080,8081
+[r27] listening on 0.0.0.0:8080,8081
+[0.842s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 37000 ns, Reaching safepoint: 217320 ns, At safepoint: 24526 ns, Leaving safepoint: 31950 ns, Total: 273796 ns, Threads: 1 runnable, 97 total
+[0.842s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 66165 ns, Reaching safepoint: 85962 ns, At safepoint: 7775 ns, Leaving safepoint: 10710 ns, Total: 104447 ns, Threads: 1 runnable, 97 total
+[r23] listening on 0.0.0.0:8080,8081
+[r31] listening on 0.0.0.0:8080,8081
+[0.842s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 213713 ns, Reaching safepoint: 71425 ns, At safepoint: 3647 ns, Leaving safepoint: 2374 ns, Total: 77446 ns, Threads: 1 runnable, 97 total
+[0.842s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 37501 ns, Reaching safepoint: 68309 ns, At safepoint: 2244 ns, Leaving safepoint: 17333 ns, Total: 87886 ns, Threads: 1 runnable, 97 total
+[0.842s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 39795 ns, Reaching safepoint: 73829 ns, At safepoint: 3597 ns, Leaving safepoint: 5680 ns, Total: 83106 ns, Threads: 1 runnable, 97 total
+[0.842s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 41318 ns, Reaching safepoint: 80572 ns, At safepoint: 2184 ns, Leaving safepoint: 4990 ns, Total: 87746 ns, Threads: 1 runnable, 97 total
+[r37] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 41408 ns, Reaching safepoint: 69411 ns, At safepoint: 2715 ns, Leaving safepoint: 6632 ns, Total: 78758 ns, Threads: 4 runnable, 97 total
+[r63] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 33514 ns, Reaching safepoint: 68990 ns, At safepoint: 2555 ns, Leaving safepoint: 7293 ns, Total: 78838 ns, Threads: 3 runnable, 97 total
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 30378 ns, Reaching safepoint: 198835 ns, At safepoint: 2364 ns, Leaving safepoint: 8466 ns, Total: 209665 ns, Threads: 5 runnable, 97 total
+[r50] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 34265 ns, Reaching safepoint: 71595 ns, At safepoint: 2474 ns, Leaving safepoint: 7444 ns, Total: 81513 ns, Threads: 1 runnable, 97 total
+[r3] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 33333 ns, Reaching safepoint: 71455 ns, At safepoint: 2404 ns, Leaving safepoint: 6873 ns, Total: 80732 ns, Threads: 1 runnable, 97 total
+[r7] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 32622 ns, Reaching safepoint: 71375 ns, At safepoint: 2815 ns, Leaving safepoint: 6923 ns, Total: 81113 ns, Threads: 2 runnable, 97 total
+[r5] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 34375 ns, Reaching safepoint: 78488 ns, At safepoint: 2835 ns, Leaving safepoint: 20138 ns, Total: 101461 ns, Threads: 4 runnable, 97 total
+[r52] listening on 0.0.0.0:8080,8081
+[0.843s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 36809 ns, Reaching safepoint: 74070 ns, At safepoint: 3006 ns, Leaving safepoint: 8065 ns, Total: 85141 ns, Threads: 1 runnable, 97 total
+[r15] listening on 0.0.0.0:8080,8081
+[r19] listening on 0.0.0.0:8080,8081
+[r16] listening on 0.0.0.0:8080,8081
+[0.844s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 131779 ns, Reaching safepoint: 71214 ns, At safepoint: 2394 ns, Leaving safepoint: 4068 ns, Total: 77676 ns, Threads: 1 runnable, 97 total
+[r33] listening on 0.0.0.0:8080,8081
+[r26] listening on 0.0.0.0:8080,8081
+[r0] listening on 0.0.0.0:8080,8081
+[0.844s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 219253 ns, Reaching safepoint: 69762 ns, At safepoint: 3467 ns, Leaving safepoint: 2805 ns, Total: 76034 ns, Threads: 1 runnable, 97 total
+[0.844s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 36378 ns, Reaching safepoint: 67257 ns, At safepoint: 2204 ns, Leaving safepoint: 4810 ns, Total: 74271 ns, Threads: 1 runnable, 97 total
+[0.844s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 35557 ns, Reaching safepoint: 67657 ns, At safepoint: 2435 ns, Leaving safepoint: 3196 ns, Total: 73288 ns, Threads: 1 runnable, 97 total
+[0.844s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 29475 ns, Reaching safepoint: 68019 ns, At safepoint: 1993 ns, Leaving safepoint: 4018 ns, Total: 74030 ns, Threads: 1 runnable, 97 total
+[0.845s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 47770 ns, Reaching safepoint: 135987 ns, At safepoint: 2444 ns, Leaving safepoint: 14397 ns, Total: 152828 ns, Threads: 3 runnable, 97 total
+[0.865s][gc       ] GC(3) Pause Young (Normal) (G1 Evacuation Pause) 190M->29M(256M) 20.809ms
+[0.866s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 34525 ns, Reaching safepoint: 71094 ns, At safepoint: 20833719 ns, Leaving safepoint: 55054 ns, Total: 20959867 ns, Threads: 5 runnable, 97 total
+[r36] listening on 0.0.0.0:8080,8081
+[r47] listening on 0.0.0.0:8080,8081
+[r35] listening on 0.0.0.0:8080,8081
+[0.880s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 146486 ns, Reaching safepoint: 14403763 ns, At safepoint: 9197 ns, Leaving safepoint: 8366 ns, Total: 14421326 ns, Threads: 1 runnable, 97 total
+[0.880s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 243770 ns, Reaching safepoint: 6842 ns, At safepoint: 30879 ns, Leaving safepoint: 61566 ns, Total: 99287 ns, Threads: 2 runnable, 97 total
+[r48] listening on 0.0.0.0:8080,8081
+[r11] listening on 0.0.0.0:8080,8081
+[0.881s][gc       ] GC(2) Pause Cleanup 61M->61M(256M) 0.041ms
+[0.881s][safepoint] Safepoint "G1PauseCleanup", Time since last: 74260 ns, Reaching safepoint: 173958 ns, At safepoint: 56206 ns, Leaving safepoint: 18004 ns, Total: 248168 ns, Threads: 1 runnable, 97 total
+[r40] listening on 0.0.0.0:8080,8081
 [r57] listening on 0.0.0.0:8080,8081
-[r44] listening on 0.0.0.0:8080,8081
-[DefaultDispatcher-worker-1] INFO io.ktor.server.Application - Responding at https://0.0.0.0:8081
-[1.043s][gc       ] GC(1) Pause Young (Concurrent Start) (Metadata GC Threshold) 168M->27M(2064M) 5.405ms
-[1.043s][gc       ] GC(2) Concurrent Mark Cycle
-[1.043s][safepoint] Safepoint "CollectForMetadataAllocation", Time since last: 407571279 ns, Reaching safepoint: 12343 ns, At safepoint: 5482863 ns, Leaving safepoint: 8756 ns, Total: 5503962 ns, Threads: 0 runnable, 91 total
-[1.051s][gc       ] GC(2) Pause Remark 38M->38M(224M) 1.723ms
-[1.051s][safepoint] Safepoint "G1PauseRemark", Time since last: 5701252 ns, Reaching safepoint: 76253 ns, At safepoint: 1742484 ns, Leaving safepoint: 23264 ns, Total: 1842001 ns, Threads: 3 runnable, 91 total
-[1.064s][gc       ] GC(2) Pause Cleanup 38M->38M(224M) 0.013ms
-[1.064s][safepoint] Safepoint "G1PauseCleanup", Time since last: 558216 ns, Reaching safepoint: 12285488 ns, At safepoint: 24866 ns, Leaving safepoint: 4839 ns, Total: 12315193 ns, Threads: 2 runnable, 91 total
-[1.064s][gc       ] GC(2) Concurrent Mark Cycle 20.816ms
-[1.089s][gc       ] GC(3) Pause Young (Prepare Mixed) (G1 Evacuation Pause) 187M->28M(256M) 19.523ms
-[1.090s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 6106601 ns, Reaching safepoint: 81723 ns, At safepoint: 19545019 ns, Leaving safepoint: 83917 ns, Total: 19710659 ns, Threads: 2 runnable, 91 total
-[1.108s][gc       ] GC(4) Pause Young (Mixed) (G1 Evacuation Pause) 140M->28M(256M) 4.816ms
-[1.108s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 151454 ns, Reaching safepoint: 13750112 ns, At safepoint: 4844025 ns, Leaving safepoint: 10580 ns, Total: 18604717 ns, Threads: 1 runnable, 91 total
-[1.158s][gc       ] GC(5) Pause Young (Normal) (G1 Evacuation Pause) 156M->28M(256M) 2.373ms
-[1.158s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 46304364 ns, Reaching safepoint: 731220 ns, At safepoint: 2389096 ns, Leaving safepoint: 73248 ns, Total: 3193564 ns, Threads: 1 runnable, 91 total
-[1.555s][gc       ] GC(6) Pause Young (Normal) (G1 Evacuation Pause) 156M->63M(256M) 4.140ms
-[1.555s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 393112239 ns, Reaching safepoint: 155923 ns, At safepoint: 4160494 ns, Leaving safepoint: 148509 ns, Total: 4464926 ns, Threads: 8 runnable, 94 total
-[1.721s][gc       ] GC(7) Pause Young (Normal) (G1 Evacuation Pause) 175M->72M(1152M) 47.790ms
-[1.723s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 117375700 ns, Reaching safepoint: 129082 ns, At safepoint: 47821657 ns, Leaving safepoint: 1914717 ns, Total: 49865456 ns, Threads: 34 runnable, 94 total
-[2.305s][gc       ] GC(8) Pause Young (Normal) (G1 Evacuation Pause) 728M->88M(1152M) 2.716ms
-[2.305s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 579826611 ns, Reaching safepoint: 36258 ns, At safepoint: 2745574 ns, Leaving safepoint: 67206 ns, Total: 2849038 ns, Threads: 16 runnable, 89 total
-[2.624s][gc       ] GC(9) Pause Young (Normal) (G1 Evacuation Pause) 728M->91M(1152M) 2.455ms
-[2.624s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 315715353 ns, Reaching safepoint: 84658 ns, At safepoint: 2486178 ns, Leaving safepoint: 62046 ns, Total: 2632882 ns, Threads: 17 runnable, 84 total
-[2.800s][gc       ] GC(10) Pause Young (Normal) (G1 Evacuation Pause) 731M->95M(1152M) 2.601ms
-[2.800s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 173941381 ns, Reaching safepoint: 89257 ns, At safepoint: 2625349 ns, Leaving safepoint: 69460 ns, Total: 2784066 ns, Threads: 13 runnable, 84 total
-[2.962s][gc       ] GC(11) Pause Young (Normal) (G1 Evacuation Pause) 735M->99M(1152M) 2.821ms
-[2.962s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 158326204 ns, Reaching safepoint: 92744 ns, At safepoint: 2846843 ns, Leaving safepoint: 104987 ns, Total: 3044574 ns, Threads: 14 runnable, 82 total
-[3.137s][gc       ] GC(12) Pause Young (Normal) (G1 Evacuation Pause) 723M->98M(1152M) 3.054ms
-[3.138s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 172427233 ns, Reaching safepoint: 229400 ns, At safepoint: 3105589 ns, Leaving safepoint: 87664 ns, Total: 3422653 ns, Threads: 52 runnable, 82 total
-[3.377s][gc       ] GC(13) Pause Young (Normal) (G1 Evacuation Pause) 738M->99M(2272M) 59.310ms
-[3.377s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 179736828 ns, Reaching safepoint: 167023 ns, At safepoint: 59342973 ns, Leaving safepoint: 93986 ns, Total: 59603982 ns, Threads: 38 runnable, 82 total
-[3.750s][gc       ] GC(14) Pause Young (Normal) (G1 Evacuation Pause) 1395M->104M(2272M) 4.626ms
-[3.750s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 367817209 ns, Reaching safepoint: 163336 ns, At safepoint: 4654681 ns, Leaving safepoint: 89007 ns, Total: 4907024 ns, Threads: 49 runnable, 82 total
-[4.120s][gc       ] GC(15) Pause Young (Normal) (G1 Evacuation Pause) 1400M->104M(2272M) 3.558ms
-[4.120s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 366296800 ns, Reaching safepoint: 164849 ns, At safepoint: 3587121 ns, Leaving safepoint: 84137 ns, Total: 3836107 ns, Threads: 35 runnable, 82 total
-[4.490s][gc       ] GC(16) Pause Young (Normal) (G1 Evacuation Pause) 1400M->107M(2272M) 3.822ms
-[4.490s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 366071539 ns, Reaching safepoint: 163426 ns, At safepoint: 3852749 ns, Leaving safepoint: 113242 ns, Total: 4129417 ns, Threads: 43 runnable, 82 total
-[4.860s][gc       ] GC(17) Pause Young (Normal) (G1 Evacuation Pause) 1403M->108M(2272M) 3.904ms
-[4.860s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 366272546 ns, Reaching safepoint: 93254 ns, At safepoint: 3930304 ns, Leaving safepoint: 79609 ns, Total: 4103167 ns, Threads: 13 runnable, 82 total
-[cpu] reactor 4028% | GC Thread 79% | C1 CompilerThre 14% | java 9% | C2 CompilerThre 8% | G1 Service 3% | VM Thread 0% | cpu-report 0% || gc 19x 178 ms, heap 1351/2272 MiB
-[5.229s][gc       ] GC(18) Pause Young (Normal) (G1 Evacuation Pause) 1404M->110M(2272M) 4.343ms
-[5.229s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 364494685 ns, Reaching safepoint: 163636 ns, At safepoint: 4369908 ns, Leaving safepoint: 103353 ns, Total: 4636897 ns, Threads: 43 runnable, 81 total
-[5.600s][gc       ] GC(19) Pause Young (Normal) (G1 Evacuation Pause) 1406M->110M(2272M) 4.216ms
-[5.600s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 366430642 ns, Reaching safepoint: 159569 ns, At safepoint: 4245976 ns, Leaving safepoint: 85700 ns, Total: 4491245 ns, Threads: 33 runnable, 81 total
-[5.970s][gc       ] GC(20) Pause Young (Normal) (G1 Evacuation Pause) 1406M->112M(2272M) 4.562ms
-[5.970s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 364966449 ns, Reaching safepoint: 167113 ns, At safepoint: 4590761 ns, Leaving safepoint: 87985 ns, Total: 4845859 ns, Threads: 35 runnable, 81 total
-[8.703s][gc       ] GC(21) Pause Young (Normal) (G1 Evacuation Pause) 1408M->112M(4032M) 85.768ms
-[8.704s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 2647200282 ns, Reaching safepoint: 191969 ns, At safepoint: 85800774 ns, Leaving safepoint: 127960 ns, Total: 86120703 ns, Threads: 38 runnable, 80 total
-[9.374s][gc       ] GC(22) Pause Young (Normal) (G1 Evacuation Pause) 2464M->117M(4032M) 4.815ms
-[9.374s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 665248470 ns, Reaching safepoint: 159619 ns, At safepoint: 4844316 ns, Leaving safepoint: 104486 ns, Total: 5108421 ns, Threads: 40 runnable, 78 total
-[10.041s][gc       ] GC(23) Pause Young (Normal) (G1 Evacuation Pause) 2469M->121M(4032M) 4.910ms
-[10.042s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 662467330 ns, Reaching safepoint: 162033 ns, At safepoint: 4948612 ns, Leaving safepoint: 118953 ns, Total: 5229598 ns, Threads: 33 runnable, 78 total
-[cpu] reactor 3291% | GC Thread 70% | C2 CompilerThre 0% | cpu-report 0% | VM Thread 0% | C1 CompilerThre 0% || gc 6x 108 ms, heap 879/4032 MiB
-[10.710s][gc       ] GC(24) Pause Young (Normal) (G1 Evacuation Pause) 2473M->122M(4032M) 5.406ms
-[10.710s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 663080689 ns, Reaching safepoint: 159990 ns, At safepoint: 5432027 ns, Leaving safepoint: 105869 ns, Total: 5697886 ns, Threads: 33 runnable, 80 total
-[11.381s][gc       ] GC(25) Pause Young (Normal) (G1 Evacuation Pause) 2474M->127M(4032M) 6.040ms
-[11.381s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 664140215 ns, Reaching safepoint: 165430 ns, At safepoint: 6068861 ns, Leaving safepoint: 72696 ns, Total: 6306987 ns, Threads: 44 runnable, 80 total
-[12.058s][gc       ] GC(26) Pause Young (Normal) (G1 Evacuation Pause) 2479M->129M(4032M) 6.484ms
-[12.058s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 670200780 ns, Reaching safepoint: 161533 ns, At safepoint: 6512742 ns, Leaving safepoint: 92994 ns, Total: 6767269 ns, Threads: 44 runnable, 79 total
-[12.733s][gc       ] GC(27) Pause Young (Normal) (G1 Evacuation Pause) 2481M->132M(4032M) 6.966ms
-[12.734s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 668544308 ns, Reaching safepoint: 147016 ns, At safepoint: 7017227 ns, Leaving safepoint: 78698 ns, Total: 7242941 ns, Threads: 32 runnable, 79 total
-[13.404s][gc       ] GC(28) Pause Young (Normal) (G1 Evacuation Pause) 2468M->135M(4032M) 6.605ms
-[13.404s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 663739125 ns, Reaching safepoint: 162705 ns, At safepoint: 6630944 ns, Leaving safepoint: 79859 ns, Total: 6873508 ns, Threads: 44 runnable, 79 total
-[cpu] reactor 4119% | GC Thread 11% | C2 CompilerThre 0% | C1 CompilerThre 0% | cpu-report 0% || gc 5x 32 ms, heap 727/4032 MiB
-[16.417s][gc       ] GC(29) Pause Young (Normal) (G1 Evacuation Pause) 2471M->139M(4032M) 6.621ms
-[16.417s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 3005940805 ns, Reaching safepoint: 159509 ns, At safepoint: 6651382 ns, Leaving safepoint: 82434 ns, Total: 6893325 ns, Threads: 46 runnable, 80 total
-[17.086s][gc       ] GC(30) Pause Young (Normal) (G1 Evacuation Pause) 2475M->142M(4032M) 6.922ms
-[17.086s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 662228388 ns, Reaching safepoint: 162695 ns, At safepoint: 6948649 ns, Leaving safepoint: 83977 ns, Total: 7195321 ns, Threads: 40 runnable, 80 total
-[17.758s][gc       ] GC(31) Pause Young (Normal) (G1 Evacuation Pause) 2478M->144M(4032M) 5.902ms
-[17.759s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 665907281 ns, Reaching safepoint: 191750 ns, At safepoint: 5961760 ns, Leaving safepoint: 104085 ns, Total: 6257595 ns, Threads: 34 runnable, 80 total
-[18.428s][gc       ] GC(32) Pause Young (Normal) (G1 Evacuation Pause) 2480M->148M(4032M) 6.617ms
-[18.428s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 662637104 ns, Reaching safepoint: 164709 ns, At safepoint: 6642435 ns, Leaving safepoint: 96120 ns, Total: 6903264 ns, Threads: 42 runnable, 80 total
-[19.101s][gc       ] GC(33) Pause Young (Normal) (G1 Evacuation Pause) 2484M->151M(4032M) 7.220ms
-[19.101s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 665759476 ns, Reaching safepoint: 158697 ns, At safepoint: 7249092 ns, Leaving safepoint: 88025 ns, Total: 7495814 ns, Threads: 26 runnable, 80 total
-[19.774s][gc       ] GC(34) Pause Young (Normal) (G1 Evacuation Pause) 2487M->152M(4032M) 7.710ms
-[19.774s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 664285264 ns, Reaching safepoint: 162745 ns, At safepoint: 7738939 ns, Leaving safepoint: 98635 ns, Total: 8000319 ns, Threads: 32 runnable, 80 total
-[cpu] reactor 5383% | GC Thread 17% | C2 CompilerThre 0% | VM Thread 0% | cpu-report 0% || gc 6x 41 ms, heap 1923/4032 MiB
-[20.445s][gc       ] GC(35) Pause Young (Normal) (G1 Evacuation Pause) 2488M->154M(4032M) 7.996ms
-[20.445s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 662863771 ns, Reaching safepoint: 160451 ns, At safepoint: 8030556 ns, Leaving safepoint: 90810 ns, Total: 8281817 ns, Threads: 35 runnable, 79 total
+[0.881s][gc       ] GC(2) Concurrent Mark Cycle 84.912ms
+[r22] listening on 0.0.0.0:8080,8081
+[DefaultDispatcher-worker-2] INFO io.ktor.server.Application - Responding at http://0.0.0.0:8080
+[DefaultDispatcher-worker-2] INFO io.ktor.server.Application - Responding at https://0.0.0.0:8081
+[1.082s][gc       ] GC(4) Pause Young (Prepare Mixed) (G1 Evacuation Pause) 141M->29M(256M) 4.846ms
+[1.082s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 190172118 ns, Reaching safepoint: 5753891 ns, At safepoint: 4893097 ns, Leaving safepoint: 40627 ns, Total: 10687615 ns, Threads: 1 runnable, 94 total
+[1.467s][gc       ] GC(5) Pause Young (Mixed) (G1 Evacuation Pause) 157M->64M(256M) 4.355ms
+[1.467s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 380752680 ns, Reaching safepoint: 169479 ns, At safepoint: 4379088 ns, Leaving safepoint: 184959 ns, Total: 4733526 ns, Threads: 14 runnable, 97 total
+[1.612s][gc       ] GC(6) Pause Young (Normal) (G1 Evacuation Pause) 160M->72M(256M) 4.046ms
+[1.612s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 140758831 ns, Reaching safepoint: 81133 ns, At safepoint: 4069575 ns, Leaving safepoint: 102243 ns, Total: 4252951 ns, Threads: 1 runnable, 97 total
+[1.786s][gc       ] GC(7) Pause Young (Normal) (G1 Evacuation Pause) 184M->86M(1152M) 44.090ms
+[1.786s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 129502624 ns, Reaching safepoint: 23765 ns, At safepoint: 44124399 ns, Leaving safepoint: 230014 ns, Total: 44378178 ns, Threads: 1 runnable, 97 total
+[2.399s][gc       ] GC(8) Pause Young (Normal) (G1 Evacuation Pause) 758M->104M(1152M) 2.477ms
+[2.399s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 610068004 ns, Reaching safepoint: 24045 ns, At safepoint: 2504994 ns, Leaving safepoint: 114095 ns, Total: 2643134 ns, Threads: 2 runnable, 90 total
+[2.736s][gc       ] GC(9) Pause Young (Normal) (G1 Evacuation Pause) 744M->108M(1152M) 2.352ms
+[2.736s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 334798112 ns, Reaching safepoint: 83738 ns, At safepoint: 2378465 ns, Leaving safepoint: 46949 ns, Total: 2509152 ns, Threads: 18 runnable, 90 total
+[2.903s][gc       ] GC(10) Pause Young (Normal) (G1 Evacuation Pause) 748M->112M(1152M) 2.661ms
+[2.903s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 164416201 ns, Reaching safepoint: 87465 ns, At safepoint: 2687628 ns, Leaving safepoint: 105259 ns, Total: 2880352 ns, Threads: 17 runnable, 85 total
+[3.075s][gc       ] GC(11) Pause Young (Normal) (G1 Evacuation Pause) 752M->113M(1152M) 2.791ms
+[3.075s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 168294965 ns, Reaching safepoint: 162417 ns, At safepoint: 2818875 ns, Leaving safepoint: 120448 ns, Total: 3101740 ns, Threads: 44 runnable, 85 total
+[3.251s][gc       ] GC(12) Pause Young (Normal) (G1 Evacuation Pause) 753M->115M(1152M) 2.773ms
+[3.251s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 172867324 ns, Reaching safepoint: 163819 ns, At safepoint: 2801483 ns, Leaving safepoint: 84169 ns, Total: 3049471 ns, Threads: 29 runnable, 85 total
+[3.475s][gc       ] GC(13) Pause Young (Normal) (G1 Evacuation Pause) 755M->115M(2128M) 52.490ms
+[3.475s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 171285652 ns, Reaching safepoint: 152728 ns, At safepoint: 52522775 ns, Leaving safepoint: 169259 ns, Total: 52844762 ns, Threads: 45 runnable, 85 total
+[3.806s][gc       ] GC(14) Pause Young (Normal) (G1 Evacuation Pause) 1331M->118M(2128M) 3.207ms
+[3.806s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 327935504 ns, Reaching safepoint: 163158 ns, At safepoint: 3234109 ns, Leaving safepoint: 104617 ns, Total: 3501884 ns, Threads: 36 runnable, 85 total
+[4.138s][gc       ] GC(15) Pause Young (Normal) (G1 Evacuation Pause) 1334M->119M(2128M) 3.726ms
+[4.138s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 328086007 ns, Reaching safepoint: 150484 ns, At safepoint: 3754149 ns, Leaving safepoint: 95340 ns, Total: 3999973 ns, Threads: 20 runnable, 82 total
+[4.468s][gc       ] GC(16) Pause Young (Normal) (G1 Evacuation Pause) 1319M->122M(2128M) 3.592ms
+[4.468s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 326091621 ns, Reaching safepoint: 159361 ns, At safepoint: 3618553 ns, Leaving safepoint: 108615 ns, Total: 3886529 ns, Threads: 28 runnable, 81 total
+[4.798s][gc       ] GC(17) Pause Young (Normal) (G1 Evacuation Pause) 1322M->124M(2128M) 3.787ms
+[4.798s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 325899659 ns, Reaching safepoint: 157477 ns, At safepoint: 3828419 ns, Leaving safepoint: 101331 ns, Total: 4087227 ns, Threads: 41 runnable, 81 total
+[5.126s][gc       ] GC(18) Pause Young (Normal) (G1 Evacuation Pause) 1324M->125M(2128M) 3.711ms
+[5.126s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 324133598 ns, Reaching safepoint: 162968 ns, At safepoint: 3740673 ns, Leaving safepoint: 133372 ns, Total: 4037013 ns, Threads: 33 runnable, 81 total
+[cpu] reactor 4170% | GC Thread 79% | java 8% | C2 CompilerThre 6% | C1 CompilerThre 5% | G1 Service 3% | jfr-report 2% | JFR Sampler Thr 0% | VM Thread 0% | cpu-report 0% || gc 20x 173 ms, heap 473/2128 MiB
+[5.525s][gc       ] GC(19) Pause Young (Normal) (G1 Evacuation Pause) 1325M->125M(3680M) 77.716ms
+[5.525s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 320837867 ns, Reaching safepoint: 186722 ns, At safepoint: 77748902 ns, Leaving safepoint: 142720 ns, Total: 78078344 ns, Threads: 38 runnable, 82 total
+[6.114s][gc       ] GC(20) Pause Young (Normal) (G1 Evacuation Pause) 2269M->130M(3680M) 5.127ms
+[6.114s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 582800462 ns, Reaching safepoint: 462252 ns, At safepoint: 5154380 ns, Leaving safepoint: 109656 ns, Total: 5726288 ns, Threads: 52 runnable, 82 total
+[8.980s][gc       ] GC(21) Pause Young (Normal) (G1 Evacuation Pause) 2274M->132M(3680M) 5.094ms
+[8.980s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 2860547045 ns, Reaching safepoint: 159972 ns, At safepoint: 5122229 ns, Leaving safepoint: 103725 ns, Total: 5385926 ns, Threads: 43 runnable, 81 total
+[9.567s][gc       ] GC(22) Pause Young (Normal) (G1 Evacuation Pause) 2276M->135M(3680M) 4.974ms
+[9.567s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 581990924 ns, Reaching safepoint: 157517 ns, At safepoint: 5001491 ns, Leaving safepoint: 94147 ns, Total: 5253155 ns, Threads: 31 runnable, 81 total
+[10.155s][gc       ] GC(23) Pause Young (Normal) (G1 Evacuation Pause) 2279M->137M(3680M) 5.974ms
+[10.155s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 581707336 ns, Reaching safepoint: 163278 ns, At safepoint: 6003440 ns, Leaving safepoint: 131127 ns, Total: 6297845 ns, Threads: 42 runnable, 81 total
+[cpu] reactor 3301% | GC Thread 50% | JFR Sampler Thr 1% | C2 CompilerThre 1% | C1 CompilerThre 0% | cpu-report 0% | VM Thread 0% || gc 5x 98 ms, heap 514/3680 MiB
+[10.293s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 136895071 ns, Reaching safepoint: 160784 ns, At safepoint: 61916 ns, Leaving safepoint: 607947 ns, Total: 830647 ns, Threads: 42 runnable, 82 total
+[jfr] java 3030, native 459 || kotlinx.io 66.2% | jdk.internal 16.9% | io.ktor.server 4.2% | java.lang 2.1% | io.ktor.util 2.0% | java.util 1.8% | kotlin.jvm 1.7% | kotlin.coroutines 1.0% | kotlin.text 0.8% | kron.glyph11 0.6%
+[jfr] hot 40.5% kotlinx.io.SegmentPool.recycle | 12.0% jdk.internal.misc.ScopedMemoryAccess.getIntUnalignedInternal | 10.9% kotlinx.io.Buffer.write | 9.9% kotlinx.io.Buffer.skip | 4.0% jdk.internal.misc.ScopedMemoryAccess.getLongUnalignedInternal | 2.4% kotlinx.io.SegmentPool.recycleL2 | 1.9% kotlinx.io.SegmentPool.take | 0.8% kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith | 0.8% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 0.7% kotlin.text.StringsKt__StringNumberConversionsKt.toLongOrNull | 0.6% java.util.concurrent.locks.AbstractQueuedLongSynchronizer.releaseShared | 0.5% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 0.5% kron.glyph11.FastParser.parse | 0.5% kotlin.jvm.internal.Intrinsics.throwParameterIsNullNPE | 0.5% java.lang.ThreadLocal$ThreadLocalMap.expungeStaleEntry
+[jfr] contended java.lang.Object 373x 381 ms | [I 227x 104 ms | jdk.internal.ref.CleanerImpl$CleanableList 23x 65 ms | java.util.concurrent.ConcurrentHashMap$ReservationNode 41x 21 ms | java.io.PrintStream 19x 2 ms
+[jfr] parks kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.park 1x
+[10.509s][safepoint] Safepoint "JFRSafepointClear", Time since last: 215707080 ns, Reaching safepoint: 165833 ns, At safepoint: 41107 ns, Leaving safepoint: 73749 ns, Total: 280689 ns, Threads: 33 runnable, 88 total
+[10.749s][gc       ] GC(24) Pause Young (Normal) (G1 Evacuation Pause) 2281M->141M(3680M) 5.391ms
+[10.749s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 234628278 ns, Reaching safepoint: 96573 ns, At safepoint: 5417405 ns, Leaving safepoint: 85030 ns, Total: 5599008 ns, Threads: 23 runnable, 88 total
+[11.336s][gc       ] GC(25) Pause Young (Normal) (G1 Evacuation Pause) 2285M->143M(3680M) 5.434ms
+[11.336s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 581277069 ns, Reaching safepoint: 173868 ns, At safepoint: 5461879 ns, Leaving safepoint: 82616 ns, Total: 5718363 ns, Threads: 44 runnable, 88 total
+[11.922s][gc       ] GC(26) Pause Young (Normal) (G1 Evacuation Pause) 2287M->146M(3680M) 5.465ms
+[11.922s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 580045340 ns, Reaching safepoint: 163779 ns, At safepoint: 5490603 ns, Leaving safepoint: 112692 ns, Total: 5767074 ns, Threads: 30 runnable, 87 total
+[12.516s][gc       ] GC(27) Pause Young (Normal) (G1 Evacuation Pause) 2290M->149M(3680M) 5.760ms
+[12.516s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 588368747 ns, Reaching safepoint: 165452 ns, At safepoint: 5789216 ns, Leaving safepoint: 99488 ns, Total: 6054156 ns, Threads: 37 runnable, 87 total
+[13.099s][gc       ] GC(28) Pause Young (Normal) (G1 Evacuation Pause) 2277M->152M(3680M) 5.430ms
+[13.099s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 577107058 ns, Reaching safepoint: 143451 ns, At safepoint: 5460516 ns, Leaving safepoint: 83968 ns, Total: 5687935 ns, Threads: 43 runnable, 87 total
+[cpu] reactor 4123% | GC Thread 10% | jfr-report 2% | C2 CompilerThre 1% | C1 CompilerThre 1% | JFR Sampler Thr 0% | JFR Recorder Th 0% | java 0% | VM Thread 0% | cpu-report 0% || gc 5x 28 ms, heap 1872/3680 MiB
+[16.013s][gc       ] GC(29) Pause Young (Normal) (G1 Evacuation Pause) 2280M->156M(3680M) 6.423ms
+[16.013s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 2907121064 ns, Reaching safepoint: 156205 ns, At safepoint: 6452516 ns, Leaving safepoint: 107132 ns, Total: 6715853 ns, Threads: 37 runnable, 83 total
+[16.596s][gc       ] GC(30) Pause Young (Normal) (G1 Evacuation Pause) 2284M->158M(3680M) 6.688ms
+[16.596s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 576415472 ns, Reaching safepoint: 165402 ns, At safepoint: 6713848 ns, Leaving safepoint: 88668 ns, Total: 6967918 ns, Threads: 33 runnable, 83 total
+[17.180s][gc       ] GC(31) Pause Young (Normal) (G1 Evacuation Pause) 2286M->160M(3680M) 6.540ms
+[17.180s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 577028164 ns, Reaching safepoint: 196590 ns, At safepoint: 6569427 ns, Leaving safepoint: 97794 ns, Total: 6863811 ns, Threads: 42 runnable, 83 total
+[17.766s][gc       ] GC(32) Pause Young (Normal) (G1 Evacuation Pause) 2288M->163M(3680M) 8.176ms
+[17.767s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 577754054 ns, Reaching safepoint: 157597 ns, At safepoint: 8203798 ns, Leaving safepoint: 268546 ns, Total: 8629941 ns, Threads: 37 runnable, 83 total
+[18.351s][gc       ] GC(33) Pause Young (Normal) (G1 Evacuation Pause) 2291M->165M(3680M) 6.782ms
+[18.351s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 577867572 ns, Reaching safepoint: 150113 ns, At safepoint: 6808858 ns, Leaving safepoint: 106902 ns, Total: 7065873 ns, Threads: 31 runnable, 83 total
+[18.944s][gc       ] GC(34) Pause Young (Normal) (G1 Evacuation Pause) 2293M->168M(3680M) 6.561ms
+[18.944s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 585595697 ns, Reaching safepoint: 162687 ns, At safepoint: 6591197 ns, Leaving safepoint: 113675 ns, Total: 6867559 ns, Threads: 44 runnable, 83 total
+[19.532s][gc       ] GC(35) Pause Young (Normal) (G1 Evacuation Pause) 2296M->170M(3680M) 7.172ms
+[19.532s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 580867083 ns, Reaching safepoint: 159291 ns, At safepoint: 7203321 ns, Leaving safepoint: 109627 ns, Total: 7472239 ns, Threads: 31 runnable, 83 total
+[20.118s][gc       ] GC(36) Pause Young (Normal) (G1 Evacuation Pause) 2298M->172M(3680M) 6.481ms
+[20.118s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 579142158 ns, Reaching safepoint: 162566 ns, At safepoint: 6511728 ns, Leaving safepoint: 114816 ns, Total: 6789110 ns, Threads: 39 runnable, 83 total
+[cpu] reactor 5412% | GC Thread 21% | JFR Sampler Thr 1% | C2 CompilerThre 0% | VM Thread 0% | C1 CompilerThre 0% | cpu-report 0% || gc 8x 55 ms, heap 768/3680 MiB
+[20.515s][safepoint] Safepoint "JFRSafepointWrite", Time since last: 396467529 ns, Reaching safepoint: 153028 ns, At safepoint: 69131 ns, Leaving safepoint: 106981 ns, Total: 329140 ns, Threads: 43 runnable, 83 total
+[jfr] java 3487, native 489 || kotlinx.io 85.9% | io.ktor.server 3.2% | io.ktor.util 2.4% | java.util 2.0% | kotlin.jvm 1.5% | java.lang 0.9% | kotlin.coroutines 0.7% | kron.glyph11 0.6% | kotlin.text 0.6% | kotlinx.coroutines 0.6%
+[jfr] hot 53.8% kotlinx.io.SegmentPool.recycle | 13.5% kotlinx.io.Buffer.write | 13.0% kotlinx.io.Buffer.skip | 2.6% kotlinx.io.SegmentPool.recycleL2 | 2.6% kotlinx.io.SegmentPool.take | 1.0% kotlin.jvm.internal.TypeIntrinsics.getFunctionArity | 0.8% java.util.concurrent.locks.AbstractQueuedLongSynchronizer.releaseShared | 0.7% io.ktor.util.pipeline.SuspendFunctionGun.loop | 0.6% io.ktor.util.pipeline.SuspendFunctionGun$continuation$1.getContext | 0.5% java.util.HashMap.getNode | 0.5% kotlin.text.StringsKt__StringNumberConversionsKt.toLongOrNull | 0.5% kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith | 0.4% kron.glyph11.FastParser.parse | 0.4% io.ktor.server.kron.Http1Session.fill$ktor_server_kron | 0.4% io.ktor.util.AttributesJvmBase.put
+[20.623s][safepoint] Safepoint "JFRSafepointClear", Time since last: 107427346 ns, Reaching safepoint: 232569 ns, At safepoint: 38432 ns, Leaving safepoint: 74821 ns, Total: 345822 ns, Threads: 44 runnable, 86 total
+[20.701s][gc       ] GC(37) Pause Young (Normal) (G1 Evacuation Pause) 2300M->175M(3680M) 6.146ms
+[20.701s][safepoint] Safepoint "G1CollectForAllocation", Time since last: 71680729 ns, Reaching safepoint: 161143 ns, At safepoint: 6175524 ns, Leaving safepoint: 113063 ns, Total: 6449730 ns, Threads: 32 runnable, 86 total
