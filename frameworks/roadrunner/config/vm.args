@@ -1,0 +1,8 @@
+-sname roadrunner_httparena
+-setcookie roadrunner_httparena
++C multi_time_warp
+
+## One I/O poll thread and pollset per eight schedulers, as roadrunner's
+## docs/resource_limits.md recommends for many-core servers.
++IOPt 13
++IOPp 100
