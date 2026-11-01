@@ -159,6 +159,7 @@ void register_routes(Router& router) {
 
     // 5. JSON serialization & compression endpoint (zero-copy view)
     router.get("/json/:count", {aegon::http::middleware::Compress({
+        .level = 5,
         .min_size = 64,
         .gzip = true,
         .deflate = true,
