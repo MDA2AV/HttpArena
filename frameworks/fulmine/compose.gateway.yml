@@ -1,7 +1,6 @@
 # gateway-64 - stock nginx (TLS + h2 on 8443) in front of the fulmine server,
 # forwarding the dynamic endpoints over loopback h1 with keepalive. The server
-# gets no certs here, so it comes up cleartext on 8080 only. Caddy stays on
-# the h3 profile only: here the edge is what saturates, and the Caddy one
+# gets no certs here, so it comes up cleartext on 8080 only. The Caddy edge
 # topped out near a third of what nginx moves on the same split.
 #
 # The CPU split is the knob worth sweeping, via PROXY_CPUSET / SERVER_CPUSET.

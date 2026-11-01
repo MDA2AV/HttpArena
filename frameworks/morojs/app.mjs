@@ -11,6 +11,7 @@ import { availableParallelism } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainThread } from 'node:worker_threads';
+import { constants as zlibConstants } from 'node:zlib';
 import { createApp, middleware, MemoryCacheAdapter, RedisCacheAdapter } from '@morojs/moro';
 import ejs from 'ejs';
 import pg from 'pg';
@@ -18,17 +19,28 @@ import pg from 'pg';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FORTUNES_VIEW = join(HERE, 'views', 'fortunes.ejs');
 const DATASET_PATH = process.env.DATASET_PATH || '/data/dataset.json';
-const STATIC_ROOT = '/data/static';
+const STATIC_ROOT = process.env.STATIC_ROOT || '/data/static';
+// The harness mounts the pair at /certs; the override is for running the
+// entry outside the container.
+const CERTS_DIR = process.env.CERTS_DIR || '/certs';
 
 // One process per listener, because Moro locks one configuration per
 // process. 'plain' serves :8080; 'tls' serves json-tls, static-tls and 8gbit
 // on :8081 from /certs; 'tlscheck' serves the opt-in TLS hardening section on
-// :9000 from /certs-tls, reloading the pair whenever the files change.
+// :9000 from /certs-tls, reloading the pair whenever the files change. The
+// two HTTP/2 listeners run on Moro's own HTTP/2 server (Node's http2 module,
+// `engine: 'node'` with `http2: true`): the native engine speaks HTTP/1.1
+// only. 'h2' is TLS with ALPN h2 on :8443 for baseline-h2 and static-h2;
+// 'h2c' is cleartext prior-knowledge HTTP/2 on :8082 for baseline-h2c and
+// json-h2c. Both cluster as node:cluster processes, Moro's transport for the
+// Node servers.
 const ROLE = process.env.MORO_ROLE || 'plain';
 const LISTENERS = {
     plain: { port: 8080 },
-    tls: { port: 8081, certs: '/certs' },
+    tls: { port: 8081, certs: CERTS_DIR },
     tlscheck: { port: 9000, certs: '/certs-tls', watch: true },
+    h2: { port: 8443, certs: CERTS_DIR, http2: true },
+    h2c: { port: 8082, http2: true },
 };
 const pairIn = dir => ({ keyFile: join(dir, 'server.key'), certFile: join(dir, 'server.crt') });
 const hasPair = dir => existsSync(pairIn(dir).keyFile) && existsSync(pairIn(dir).certFile);
@@ -47,7 +59,8 @@ function cpuCount() {
     } catch {}
     return availableParallelism();
 }
-const workers = cpuCount();
+// WORKERS overrides the count, for running the entry outside the container.
+const workers = parseInt(process.env.WORKERS, 10) || cpuCount();
 
 // A worker thread on the native engine, a node:cluster process on the
 // fallback transport. The primary serves nothing, so it loads no dataset and
@@ -55,11 +68,12 @@ const workers = cpuCount();
 const isWorker = !isMainThread || cluster.isWorker;
 const isPrimary = !isWorker;
 
-// The harness mounts /certs for the TLS profiles and /certs-tls for the
-// tls_check section only; a listener whose pair is absent is not started.
+// The harness mounts /certs for the TLS and HTTP/2 profiles and /certs-tls
+// for the tls_check section only; a listener whose pair is absent is not
+// started. h2c needs no material and always starts.
 if (ROLE === 'plain' && isPrimary) {
-    for (const role of ['tls', 'tlscheck']) {
-        if (!hasPair(LISTENERS[role].certs)) continue;
+    for (const role of ['tls', 'tlscheck', 'h2', 'h2c']) {
+        if (LISTENERS[role].certs && !hasPair(LISTENERS[role].certs)) continue;
         const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
             stdio: 'inherit',
             env: { ...process.env, MORO_ROLE: role },
@@ -84,16 +98,24 @@ if (isWorker) {
 
 // Postgres for /async-db, /fortunes and the production-stack api, all served
 // on :8080. The pool is sized from DATABASE_MAX_CONN across the workers, so
-// the cluster as a whole stays inside what Postgres allows.
+// the cluster as a whole stays inside what Postgres allows; 240 at most
+// leaves the server's own reserve (DATABASE_MAX_CONN is its max_connections,
+// and a cluster sitting exactly on it is refused its last connections).
 let pool = null;
 if (isWorker && ROLE === 'plain' && process.env.DATABASE_URL) {
-    const maxConn = parseInt(process.env.DATABASE_MAX_CONN, 10) || 256;
+    const maxConn = Math.min(parseInt(process.env.DATABASE_MAX_CONN, 10) || 256, 240);
     pool = new pg.Pool({
         connectionString: process.env.DATABASE_URL,
         max: Math.max(1, Math.floor(maxConn / workers)),
     });
     pool.on('error', () => {});
 }
+
+// The fortunes template, compiled once per worker: EJS escapes every
+// interpolated value, so the row carrying a <script> tag renders as text.
+const renderFortunes = isWorker
+    ? ejs.compile(readFileSync(FORTUNES_VIEW, 'utf8'), { filename: FORTUNES_VIEW })
+    : null;
 
 // The production-stack cache-aside goes through the framework's own cache
 // adapters: Redis when the stack provides one, shared across the cluster so
@@ -170,46 +192,82 @@ function defineRoutes(app) {
     app.post('/baseline11').handler(baseline11);
 
     // Behind the gateway proxies, which terminate TLS and h2 and forward this
-    // over loopback h1.
+    // over loopback h1, and directly on the HTTP/2 listeners. On the native
+    // engine a bare number sent as a string is text/plain through the
+    // framework's prepared reply; on the HTTP/2 server the type is set by
+    // hand so it is text/plain there too, whatever a content sniff would make
+    // of it.
+    const textPlain = listener.http2 === true;
     app.get('/baseline2').handler((req, res) => {
+        if (textPlain) res.setHeader('Content-Type', 'text/plain');
         res.send(String(sumQuery(req.query)));
     });
 
-    // An awaited timer suspends the request and frees the thread, so the
-    // waits in flight are bounded by memory. The delay is read from the path
+    // The reply is sent from a timer callback, so the request is a pending
+    // timer and nothing else while it waits: the handler returns at once and
+    // the response object answers when the timer fires, the same way an
+    // Express handler would. An async handler awaiting the timer did the same
+    // work through three promise hops per request (the handler's own, the
+    // router's, the server's), which at two million requests a second was a
+    // measurable share of the worker's time. The delay is read from the path
     // on every request.
-    app.get('/delay/:ms').handler(async (req, res) => {
+    app.get('/delay/:ms').handler((req, res) => {
         const ms = Number.parseInt(req.params.ms, 10);
         if (!Number.isInteger(ms) || ms < 0) {
             res.status(404).send('Not found');
             return;
         }
-        if (ms > 0) await new Promise(resolve => setTimeout(resolve, ms));
-        res.send(String(ms));
+        if (ms === 0) {
+            res.send('0');
+            return;
+        }
+        setTimeout(() => res.send(String(ms)), ms);
     });
 
     // json-comp: the framework's compression middleware on this route alone,
     // so no other endpoint pays for the encoder. It negotiates off
-    // Accept-Encoding per request and sends the body as is when none is sent,
-    // which is what json-tls on :8081 gets. gzip is preferred over brotli:
-    // at the middleware's default level it costs about half the CPU of
-    // brotli at the default quality for a body one tenth larger, and the
-    // profile prices bytes squared against rate. brotli stays available for
-    // a client that accepts nothing else.
-    app.get('/json/:count')
-        .before(middleware.compression({ encodings: ['gzip', 'br'] }))
-        .handler((req, res) => {
-            res.json(jsonItems(req));
-        });
+    // Accept-Encoding per request and sends the body as is when none is sent.
+    // brotli at quality 3 is preferred, with the encoder's window fitted to
+    // the body by the framework: the profile prices bytes squared against
+    // rate, and measured on the board gzip at level 3 ran 7% more requests
+    // than brotli 3 but sent 10% more bytes per reply, which the square turns
+    // into a 9% lower score. gzip at level 3 stays available for a client
+    // that accepts nothing else; the middleware keeps one gzip encoder per
+    // worker and resets it between bodies (brotli's encoder forgets its
+    // quality on reset, so it is built per body). The TLS listener (json-tls)
+    // is never asked for an encoding, so its route carries no middleware and
+    // stays on the router's fast path.
+    const json = (req, res) => {
+        res.json(jsonItems(req));
+    };
+    if (ROLE === 'plain') {
+        app.get('/json/:count')
+            .before(
+                middleware.compression({
+                    encodings: ['br', 'gzip'],
+                    brotli: { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 3 } },
+                    gzip: { level: 3 },
+                })
+            )
+            .handler(json);
+    } else {
+        app.get('/json/:count').handler(json);
+    }
 
     // 8gbit: the body exactly as it arrived, Content-Length or chunked, sent
-    // back as the same bytes. req.rawBody is the framework's undecoded copy.
+    // back as the same bytes. req.rawBody is the framework's undecoded copy,
+    // and a Buffer sent as is goes out application/octet-stream through the
+    // framework's prepared reply.
     app.post('/echo').handler((req, res) => {
-        res.setHeader('Content-Type', 'application/octet-stream');
         res.send(req.rawBody ?? Buffer.alloc(0));
     });
 
-    app.get('/async-db').handler(async (req, res) => {
+    // The driver hands the rows to its callback and the callback answers:
+    // the request is one prepared-statement round trip and nothing else. An
+    // async handler awaiting the same query added three promise hops per
+    // request (the handler's, the router's, the server's), which is what
+    // the delay route gave up for a fifth more throughput.
+    app.get('/async-db').handler((req, res) => {
         if (!pool) {
             res.json(EMPTY);
             return;
@@ -219,34 +277,45 @@ function defineRoutes(app) {
         let limit = parseInt(req.query.limit, 10) || 50;
         if (limit < 1) limit = 1;
         if (limit > 50) limit = 50;
-        try {
-            const { rows } = await pool.query({ name: 'async-db', text: ASYNC_DB_SQL, values: [min, max, limit] });
+        pool.query({ name: 'async-db', text: ASYNC_DB_SQL, values: [min, max, limit] }, (err, result) => {
+            if (err) {
+                res.json(EMPTY);
+                return;
+            }
+            const rows = result.rows;
             res.json({ items: rows.map(itemShape), count: rows.length });
-        } catch {
-            res.json(EMPTY);
-        }
+        });
     });
 
     // fortunes: Moro has no view layer of its own, so the page goes through
-    // EJS directly, a real template engine rendering a separate template file
-    // per request, with <%= %> escaping the row that carries a <script> tag.
-    app.get('/fortunes').handler(async (req, res) => {
+    // EJS directly, a real template engine with the template file compiled
+    // once per worker and rendered per request, <%= %> escaping the row that
+    // carries a <script> tag. Same callback shape as /async-db.
+    app.get('/fortunes').handler((req, res) => {
         if (!pool) {
             res.status(500).send('DB not available');
             return;
         }
-        try {
-            const { rows } = await pool.query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' });
+        pool.query({ name: 'fortunes', text: 'SELECT id, message FROM fortune' }, (err, result) => {
+            if (err) {
+                res.status(500).send('query failed');
+                return;
+            }
+            const rows = result.rows;
             rows.push({ id: 0, message: RUNTIME_FORTUNE });
             // Ordinal, not locale aware: the seed carries em-dashes and collation
             // rules would order them in a way the profile does not ask for.
             rows.sort((a, b) => (a.message < b.message ? -1 : a.message > b.message ? 1 : 0));
-            const html = await ejs.renderFile(FORTUNES_VIEW, { fortunes: rows }, { cache: true });
+            let html;
+            try {
+                html = renderFortunes({ fortunes: rows });
+            } catch {
+                res.status(500).send('render failed');
+                return;
+            }
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.send(html);
-        } catch {
-            res.status(500).send('query failed');
-        }
+        });
     });
 
     // production-stack: the edge serves /static/* itself and sends /api/* past
@@ -372,6 +441,10 @@ const server = { port: listener.port };
 if (listener.certs) {
     server.ssl = { ...pairIn(listener.certs), ...(listener.watch ? { watch: true } : {}) };
 }
+if (listener.http2) {
+    server.engine = 'node';
+    server.http2 = true;
+}
 
 const app = await createApp({
     server: {
@@ -381,6 +454,15 @@ const app = await createApp({
         engine: 'moro',
         requestTracking: { enabled: false },
         requestLogging: { enabled: false },
+        // The listen backlog. The edges in front of the gateway and
+        // production-stack profiles keep an idle pool of 2048 upstream
+        // connections under tens of thousands of requests in flight, so they
+        // dial and drop thousands of connections per wave; at the engine's
+        // default of 512 a wave overflows a worker's accept queue, the
+        // kernel drops the SYN and the proxy retries it a second later. That
+        // second was the profile's tail (p99 of 0.8 s on gateway-h3, 3.8 s on
+        // production-stack). The harness raises somaxconn to 65535 for this.
+        backlog: 16384,
         ...server,
     },
     performance: { clustering: { enabled: true, workers } },
@@ -408,12 +490,24 @@ if (ROLE === 'plain') {
     );
 }
 
-if (ROLE === 'tls') {
-    // Static files through the framework's own handler, which stats and
-    // reads the file on every request and serves the .br or .gz sidecar on
-    // disk when the client accepts it. Behind a path check so the JSON route
-    // on this port does not pay for the file lookup.
-    const serveStatic = middleware.staticFiles({ root: STATIC_ROOT, prefix: '/static', precompressed: true });
+if (ROLE === 'tls' || ROLE === 'h2') {
+    // Static files through the framework's own handler with its in-memory
+    // cache: a file and its .br and .gz sidecars are read once and served
+    // from memory with their validators, the sidecar negotiated per request
+    // off Accept-Encoding. The disk is looked at again once a second at
+    // most, or as soon as the directory reports a change, so a replaced file
+    // is served promptly; the uncached handler stats, resolves and reads the
+    // file and its sidecars on every request, and every one of those is a
+    // threadpool round trip shared by all the worker threads of the process.
+    // Behind a path check so the JSON route on this port does not pay for the
+    // lookup; the check calls next() synchronously, so the route stays on
+    // the server's synchronous dispatch.
+    const serveStatic = middleware.staticFiles({
+        root: STATIC_ROOT,
+        prefix: '/static',
+        precompressed: true,
+        cache: true,
+    });
     await app.use((req, res, next) =>
         req.path.startsWith('/static/') ? serveStatic(req, res, next) : next()
     );

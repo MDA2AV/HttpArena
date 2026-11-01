@@ -1,0 +1,18 @@
+{
+  "display_name": "rack-puma",
+  "language": "Ruby",
+  "type": "engine",
+  "engine": "puma",
+  "description": "Puma is a fast, multi-threaded HTTP server for Ruby",
+  "repo": "https://github.com/puma/puma",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "limited-conn",
+    "pipelined"
+  ],
+  "maintainers": ["p8"]
+}

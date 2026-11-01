@@ -63,7 +63,7 @@ def cell(entry):
     if not entry:
         return "-"
     score, rank, field = entry
-    return f"{score:.1f} (#{rank} of {field})"
+    return f"{score:.1f} ({rank} of {field})"
 
 
 def table(before, after):

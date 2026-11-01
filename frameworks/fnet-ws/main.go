@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 
 	"github.com/gobwas/ws"
@@ -29,6 +30,15 @@ func (echoHandler) OnMessage(c *websocket.Conn, op ws.OpCode, data []byte) {
 
 func (echoHandler) OnClose(*websocket.Conn, error) {}
 
+// inlineExecutor runs a connection's task on the event loop worker that found
+// the connection ready, instead of handing it to a worker of its own: reading,
+// the callbacks and the write all happen on that worker's stack, with no
+// hand-off and no wakeup in between. Like fnet's default executor it recovers a
+// panicking callback, which would otherwise take the process down.
+func inlineExecutor(key int, task func()) {
+	task()
+}
+
 func main() {
 	mux := http.NewServeMux()
 	// A request that is not an upgrade is answered with 400 by Upgrade itself.
@@ -40,7 +50,15 @@ func main() {
 		// ReusePort gives every loop a listening socket of its own, sharing
 		// :8080 through SO_REUSEPORT, so on Linux the kernel spreads the
 		// connections over the loops instead of feeding them from one listener.
-		Engine: fnet.Options{ReusePort: true},
+		Engine: fnet.Options{
+			ReusePort: true,
+			Executor:  inlineExecutor,
+			// A loop has one worker, and with the tasks run on it that worker is the
+			// only goroutine that can use a P for them, so there is one loop per P:
+			// with the default loop count (GOMAXPROCS/8) the server would leave all
+			// but NumLoops CPUs idle.
+			NumLoops: runtime.GOMAXPROCS(0),
+		},
 	})
 	if err != nil {
 		log.Fatal(err)

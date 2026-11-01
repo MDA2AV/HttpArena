@@ -11,12 +11,15 @@ import java.util.concurrent.CompletableFuture;
 import io.micronaut.core.annotation.Nullable;
 import io.micronaut.http.HttpRequest;
 import io.micronaut.http.MediaType;
+import io.micronaut.http.ServerHttpRequest;
+import io.micronaut.http.body.ByteBody;
 import io.micronaut.http.annotation.Body;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
 import io.micronaut.http.annotation.PathVariable;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.QueryValue;
+import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.internal.ThreadExecutorMap;
 
@@ -94,10 +97,23 @@ public class BenchmarkController {
         return new ItemsResponse(items, n);
     }
 
-    /** The framework aggregates the body, which also covers a chunked request, and the echo returns it. */
+    /** Buffer before responding so both request and buffer limits can still produce a 413. */
     @Post(value = "/echo", consumes = MediaType.ALL, produces = MediaType.APPLICATION_OCTET_STREAM)
-    public byte[] echoBody(@Body @Nullable byte[] body) {
-        return body == null ? new byte[0] : body;
+    public CompletableFuture<ByteBuf> echoBody(ServerHttpRequest<?> request) {
+        CompletableFuture<ByteBuf> response = new CompletableFuture<>();
+        request.byteBody().split(ByteBody.SplitBackpressureMode.FASTEST).buffer().whenComplete((body, error) -> {
+            if (error != null) {
+                response.completeExceptionally(error);
+            } else {
+                // The Netty response writer takes ownership of this split's native buffer.
+                ByteBuf bytes = (ByteBuf) body.toByteBuffer().asNativeBuffer();
+                if (!response.complete(bytes)) {
+                    // A cancelled response cannot take ownership of the buffered body.
+                    bytes.release();
+                }
+            }
+        });
+        return response;
     }
 
     private static long querySum(HttpRequest<?> request) {

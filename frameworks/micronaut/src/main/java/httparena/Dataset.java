@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import io.micronaut.core.type.Argument;
-import io.micronaut.json.JsonMapper;
+import io.micronaut.serde.ObjectMapper;
 
 import jakarta.inject.Singleton;
 
@@ -18,7 +18,7 @@ public class Dataset {
 
     private final List<Item> items;
 
-    Dataset(JsonMapper jsonMapper) {
+    Dataset(ObjectMapper jsonMapper) {
         String path = System.getenv().getOrDefault("DATASET_PATH", "/data/dataset.json");
         List<Item> loaded = List.of();
         try {

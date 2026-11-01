@@ -11,6 +11,10 @@ Same application as `micronaut-production`, with the server tuned. Tuned mode.
 | `micronaut.server.netty.validate-headers=false` | `application.properties` | Skips request header validation |
 | `-Dio.netty.buffer.checkBounds=false`, `-Dio.netty.buffer.checkAccessible=false`, `-Dio.netty.leakDetection.level=disabled` | `Dockerfile` | Netty buffer safety checks off |
 | `-XX:+UseParallelGC` | `Dockerfile` | Throughput oriented garbage collector |
+| `-Dio.netty.allocator.type=pooled` | `Dockerfile` | Reuses Netty buffers across requests |
+| Prepared-statement cache | `Database` | Reuses driver query metadata; each request still queries fresh rows |
+| Native echo buffers | `BenchmarkController` | Buffers the request, then forwards its native bytes through Micronaut's response writer |
+| Direct UTF-8 fortunes rendering | `FortunesController` | Escapes and renders every fresh result without constructing a whole-page String |
 | `/delay/{ms}` completes on the request's own event loop | `BenchmarkController` | The wait is scheduled on the Netty event loop that runs the request, so no other thread is involved |
 
 The acceptor and worker groups use the same transport preference: the server channel type is derived from the worker configuration, and an incompatible acceptor transport fails at startup.
@@ -24,7 +28,7 @@ Dataset loading, PostgreSQL JSON tags and JSON responses use Micronaut Serializa
 | `/static/{name}` | GET | Files from `/data/static`; a `.br` or `.gz` twin is sent as is when the client accepts it |
 | `/ws` | WebSocket | Echoes every text and binary frame |
 | `/async-db?min=10&max=50&limit=20` | GET | Async PostgreSQL range query; limits are clamped to 1–50 |
-| `/fortunes` | GET | Queries and sorts the rows, then emits escaped HTML with bulk appends of unchanged text |
+| `/fortunes` | GET | Queries and sorts the rows, then emits escaped HTML directly as UTF-8 |
 
 ## Ports
 
