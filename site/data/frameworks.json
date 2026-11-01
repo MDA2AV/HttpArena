@@ -1486,6 +1486,20 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "mipyre": {
+    "dir": "mipyre",
+    "description": "mipyre \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc): one pinned thread per physical core, each with its own PEP 684 sub-interpreter, so Python handlers run on every core at once. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, precompressed static files, async Postgres via sqlx. Handlers are standard Python functions routed via decorators.",
+    "repo": "https://github.com/leocaolab/mipyre",
+    "type": "experimental",
+    "engine": "mipyre",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "mojolicious": {
     "dir": "mojolicious",
     "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
@@ -1667,7 +1681,7 @@
   },
   "ntex": {
     "dir": "ntex",
-    "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+    "description": "ntex 4 on its native runtime with default worker and HTTP settings, 4-64 KiB read pages, 32 KiB write pages, and 64 KiB write backpressure. Routing and extractors through ntex::web, JSON through HttpResponse::json, compression through Compress middleware, TLS on 8081 through rustls.",
     "repo": "https://github.com/ntex-rs/ntex",
     "type": "flagship",
     "engine": "ntex",
@@ -1804,20 +1818,6 @@
     "repo": "https://github.com/facebook/proxygen",
     "type": "engine",
     "engine": "proxygen"
-  },
-  "pyronova": {
-    "dir": "pyronova",
-    "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
-    "repo": "https://github.com/leocaolab/pyronova",
-    "type": "experimental",
-    "engine": "pyronova",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
