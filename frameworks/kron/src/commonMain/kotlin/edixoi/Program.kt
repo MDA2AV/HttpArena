@@ -12,12 +12,10 @@ import kron.TcpOptions
 import kron.tls.TlsOptions
 import kron.tls.TlsService
 import kron.tls.TlsSession
-import kotlin.native.runtime.GC
-import kotlin.native.runtime.NativeRuntimeApi
 
 /**
- * kron - edixoi on Kotlin/Native: the arena's HTTP/1.1 profiles on kron, the native port of ioxide, hand-written on its
- * raw recv/send API. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; no
+ * kron - edixoi on kron: the arena's HTTP/1.1 profiles on kron, the Kotlin port of ioxide, hand-written on its raw
+ * recv/send API, natively or on the JVM (the Dockerfile's KRON_RUNTIME picks). One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; no
  * framework sits between the socket and the answer.
  *
  *     :8080  baseline, limited-conn, latency-1m, latency-10k   GET|POST /baseline11?a=&b=
@@ -28,13 +26,7 @@ import kotlin.native.runtime.NativeRuntimeApi
  * One handler serves both doors: a connection carries the port it arrived on, and the only difference is whether
  * a [TlsSession] sits in front of the bytes. See [Http1] for the parsing and the routing; this file is the transport.
  */
-@OptIn(NativeRuntimeApi::class)
-fun main() {
-    // Kotlin/Native's collector starts from a heap sized for a phone and runs every few megabytes allocated, each
-    // run stopping every reactor at a safepoint. From a 64 MiB floor it runs far less often; the JVM entries start
-    // from a much larger heap anyway.
-    GC.minHeapBytes = intEnv("EDIXOI_GC_MIN_HEAP_MB", 64).toLong() shl 20
-
+fun serve(runtime: String) {
     val port = intEnv("EDIXOI_PORT", 8080)
     val tlsPort = intEnv("EDIXOI_TLS_PORT", 8081)
     // availableProcessors counts logical CPUs within the container's cpuset, as edixoi's ProcessorCount does.
@@ -74,7 +66,7 @@ fun main() {
     println(
         "[kron] $reactors reactors${if (pinned) " (pinned)" else ""} on :$port" +
             (if (tls) " + :$tlsPort tls ($tx)" else " (no tls: certificate not mounted)") +
-            ", dataset=${dataset.count} items (availableProcessors=${availableProcessors()})",
+            ", dataset=${dataset.count} items (availableProcessors=${availableProcessors()}), $runtime",
     )
 
     KronServer(config, onStart = server::start, handler = server::serve).start().join()
@@ -241,7 +233,7 @@ private class Carry {
     }
 }
 
-private fun intEnv(name: String, fallback: Int): Int = env(name)?.toIntOrNull() ?: fallback
+internal fun intEnv(name: String, fallback: Int): Int = env(name)?.toIntOrNull() ?: fallback
 
 private fun boolEnv(name: String, fallback: Boolean): Boolean = when (env(name)?.lowercase()) {
     "1", "true", "yes" -> true
