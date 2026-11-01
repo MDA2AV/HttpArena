@@ -1,7 +1,7 @@
 # ktor-kronos: Ktor on the JVM with the kron engine (ktor-server-kron), from the MDA2AV/ktor fork. Neither the fork nor
 # kron is published, so both are built here at pinned commits.
 FROM gradle:9.8.2-jdk25 AS build
-ARG KRON_COMMIT=e595febb71cde64e39a86b01bebb4343249d515a
+ARG KRON_COMMIT=3ac38fe3378a8a82049796483942e0ce64af6c9e
 ARG KTOR_COMMIT=38ad0b8cf084443d686b9e0c6c2f07460a6d1f19
 WORKDIR /src
 RUN git init -q kron && cd kron && git remote add origin https://github.com/MDA2AV/kron.git \
