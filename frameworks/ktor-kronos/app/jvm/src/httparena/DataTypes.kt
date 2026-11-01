@@ -2,8 +2,6 @@ package httparena
 
 import kotlinx.serialization.Serializable
 
-// The ktor entry's JSON types, serialized by kotlinx.serialization as there.
-
 @Serializable
 data class DatasetItem(
     val id: Int,
