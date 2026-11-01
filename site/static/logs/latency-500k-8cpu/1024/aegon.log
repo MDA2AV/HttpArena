@@ -1,4 +1,4 @@
-[2026-10-26 16:21:37.267] [INFO ] [Server.cpp:432] Aegon HTTP listening on 0.0.0.0:8080 [workers=8]
-[2026-10-26 16:21:37.267] [INFO ] [Server.cpp:432] Aegon HTTP listening on 0.0.0.0:8082 [workers=8]
-[2026-10-26 16:21:37.267] [INFO ] [Server.cpp:432] Aegon HTTPS listening on 0.0.0.0:8081 [workers=8]
-[2026-10-26 16:21:37.267] [INFO ] [Server.cpp:432] Aegon HTTPS listening on 0.0.0.0:8443 [workers=8]
+[2026-11-01 21:39:25.927] [INFO ] [Server.cpp:442] Aegon HTTP listening on 0.0.0.0:8080 [workers=8]
+[2026-11-01 21:39:25.927] [INFO ] [Server.cpp:442] Aegon HTTP listening on 0.0.0.0:8082 [workers=8]
+[2026-11-01 21:39:25.927] [INFO ] [Server.cpp:442] Aegon HTTPS listening on 0.0.0.0:8081 [workers=8]
+[2026-11-01 21:39:25.927] [INFO ] [Server.cpp:442] Aegon HTTPS listening on 0.0.0.0:8443 [workers=8]
