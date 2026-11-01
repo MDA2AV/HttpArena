@@ -7,7 +7,7 @@ Actix-web 4 HTTP server with rustls for TLS/HTTP/2 support, compiled with thin L
 - **Language:** Rust 1.88
 - **Framework:** Actix-web 4
 - **TLS:** rustls
-- **Build:** Multi-stage, `debian:bookworm-slim` runtime
+- **Build:** Multi-stage, `debian:trixie-slim` runtime
 
 ## Endpoints
 
