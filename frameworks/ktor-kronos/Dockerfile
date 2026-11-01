@@ -2,7 +2,7 @@
 # kron is published, so both are built here at pinned commits.
 FROM gradle:9.8.2-jdk25 AS build
 ARG KRON_COMMIT=e595febb71cde64e39a86b01bebb4343249d515a
-ARG KTOR_COMMIT=033263e0c5e832051b69e1f084207ce44488e8d0
+ARG KTOR_COMMIT=106893873e36efcd937f69281dc2135e73d78368
 WORKDIR /src
 RUN git init -q kron && cd kron && git remote add origin https://github.com/MDA2AV/kron.git \
  && git fetch -q --depth 1 origin ${KRON_COMMIT} && git checkout -q FETCH_HEAD
