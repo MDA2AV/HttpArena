@@ -16,6 +16,7 @@
     "echo-ws-pipeline",
     "pipelined",
     "limited-conn",
-    "async-db"
+    "async-db",
+    "json-comp"
   ]
 }
