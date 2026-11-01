@@ -489,6 +489,20 @@
       "response": true
     }
   },
+  "dusty-tuned": {
+    "dir": "dusty-tuned",
+    "description": "Dusty HTTP framework on the zio async runtime, the dusty entry with two changes: JSON through json.zig instead of std.json, and no request or keep-alive timeouts. Same routes, static and TLS paths as dusty.",
+    "repo": "https://github.com/lalinsky/dusty",
+    "type": "emerging",
+    "engine": "zio",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "dusty": {
     "dir": "dusty",
     "description": "Dusty HTTP framework on the zio async runtime (io_uring where available, epoll fallback). Router with params/wildcards, JSON, gzip, WebSocket. Standard configuration, no tuning.",
@@ -782,6 +796,14 @@
       "request": true,
       "response": true
     }
+  },
+  "fnet-h1": {
+    "dir": "fnet-h1",
+    "description": "fnet v1.0.0's fhttp HTTP/1.1 server: fnet's epoll event loops find where each request message ends and enqueue it, then the standard library parses it and runs an http.Handler on a task-pool worker, so there is no goroutine per connection. Responses are buffered whole. A request whose body is not buffered (larger than 1MB, chunked, or framed unusually) is handed to an internal net/http server, which closes that connection after the one request. fnet's ReusePort option is on: on Linux every sub-reactor listens on :8080 with a socket of its own, sharing the port through SO_REUSEPORT so the kernel spreads the connections over the loops. A second fhttp.Server on :8081 speaks HTTPS through fnet's ftls (crypto/tls inside the connection callbacks, ALPN http/1.1) for the TLS profiles. Static files are read per request from the mounted directory, serving the pre-compressed .br/.gz siblings when the client accepts them; /async-db and the crud routes use pgx's pool sized from DATABASE_MAX_CONN, with Redis as a cache-aside store for item reads where REDIS_URL is provided.",
+    "repo": "https://github.com/linfeip/fnet",
+    "type": "experimental",
+    "engine": "fnet",
+    "mode": "standard"
   },
   "fnet-ws": {
     "dir": "fnet-ws",
@@ -1240,6 +1262,20 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "ktor-kronos": {
+    "dir": "ktor-kronos",
+    "description": "ktor-kronos \u2014 JetBrains Ktor with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of CIO, on Kotlin/Native or on the JVM: the Dockerfile's KRONOS_RUNTIME build arg picks, the JVM at present. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, driven from Kotlin over the kernel's own io_uring header (no liburing): natively one binary, on the JVM the same code reaching the kernel and BoringSSL through the FFM API, as a jar on JDK 25. Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection in the async profile costs a kernel deadline rather than a timer thread. WebSockets are Ktor's own, over the upgraded connection. The routes are the ktor entry's, answered the same way; only the engine and the platform differ. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite). TLS on :8081 is the engine's own connector on kron's BoringSSL, the kernel encrypting the records (kTLS TX) where it has the tls module. JSON is Ktor's ContentNegotiation with kotlinx.serialization, gzipped by Ktor's own Compression plugin on the JVM; json-comp needs the JVM runtime, as Ktor has no gzip on Kotlin/Native.",
+    "repo": "https://github.com/MDA2AV/ktor",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "ktor-tuned": {
     "dir": "ktor-tuned",
     "description": "JetBrains Ktor 3.x on Netty with Ghost Serializer, JDK 25.",
@@ -1417,7 +1453,7 @@
   },
   "micronaut": {
     "dir": "micronaut",
-    "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Jackson, gzip through the Netty server compression the framework enables by itself.",
+    "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Micronaut Serialization with Jackson Core and no Jackson Databind, gzip through the Netty server compression the framework enables by itself.",
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",
@@ -1473,7 +1509,7 @@
   },
   "morojs": {
     "dir": "morojs",
-    "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), default configuration, clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression, static files and the cache-aside through the built-in middleware and cache adapters, WebSockets through the engine's own RFC 6455 support.",
+    "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), default configuration, clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression (gzip level 3, one reused encoder per worker), static files from the built-in middleware's in-memory cache and the cache-aside through the built-in cache adapters, WebSockets through the engine's own RFC 6455 support, upgrades included, HTTP/2 through Moro's HTTP/2 server on Node's http2 module.",
     "repo": "https://github.com/Moro-JS/moro",
     "type": "emerging",
     "engine": "@morojs/engine",
@@ -1834,6 +1870,13 @@
     "repo": "https://github.com/boazsegev/iodine",
     "type": "engine",
     "engine": "iodine"
+  },
+  "rack-puma": {
+    "dir": "rack-puma",
+    "description": "Puma is a fast, multi-threaded HTTP server for Ruby",
+    "repo": "https://github.com/puma/puma",
+    "type": "engine",
+    "engine": "puma"
   },
   "rage": {
     "dir": "rage",
@@ -2470,7 +2513,7 @@
   },
   "uio-ws": {
     "dir": "uio-ws",
-    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. Default configuration otherwise.",
+    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. A SO_REUSEPORT listener group puts each upgrade on the loop that runs its connection. uio defaults otherwise.",
     "repo": "https://github.com/urpc/uio",
     "type": "experimental",
     "engine": "uio",

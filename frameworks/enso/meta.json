@@ -13,5 +13,5 @@
     "static-tls", "static-h2", "static-h3",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
-  "maintainers": []
+  "maintainers": ["mpenet"]
 }

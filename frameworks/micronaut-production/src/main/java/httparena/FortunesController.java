@@ -5,13 +5,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import com.fizzed.rocker.runtime.ArrayOfByteArraysOutput;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
+import io.micronaut.views.rocker.RockerWritable;
 import io.vertx.sqlclient.Pool;
 import io.vertx.sqlclient.Row;
 
-/** GET /fortunes: rendered by the precompiled Rocker template views/fortunes.rocker.html, which escapes HTML by default. */
+/** GET /fortunes: Micronaut Views writes the precompiled Rocker template, with HTML escaping enabled. */
 @Controller("/fortunes")
 public class FortunesController {
 
@@ -25,10 +25,10 @@ public class FortunesController {
     }
 
     @Get(produces = "text/html;charset=utf-8")
-    public CompletableFuture<byte[]> fortunes() {
-        CompletableFuture<byte[]> result = new CompletableFuture<>();
+    public CompletableFuture<RockerWritable> fortunes() {
+        CompletableFuture<RockerWritable> result = new CompletableFuture<>();
         if (pool == null) {
-            result.complete(views.fortunes.template(List.of()).render(ArrayOfByteArraysOutput.FACTORY).toByteArray());
+            result.complete(new RockerWritable(views.fortunes.template(List.of())));
             return result;
         }
         pool.preparedQuery("SELECT id, message FROM fortune").execute().onComplete(ar -> {
@@ -42,7 +42,7 @@ public class FortunesController {
             }
             fortunes.add(new Fortune(0, "Additional fortune added at request time."));
             fortunes.sort(Comparator.comparing(Fortune::message));
-            result.complete(views.fortunes.template(fortunes).render(ArrayOfByteArraysOutput.FACTORY).toByteArray());
+            result.complete(new RockerWritable(views.fortunes.template(fortunes)));
         });
         return result;
     }
