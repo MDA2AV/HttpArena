@@ -1,11 +1,10 @@
-
-use std::io::Write;
-
-use ntex::util::Bytes;
-use ntex::web::{self, middleware, App, HttpRequest, HttpResponse, HttpServer};
+use ntex::io::IoConfig;
+use ntex::util::{BytePageSize, Bytes};
+use ntex::web::{self, App, HttpResponse, HttpServer, middleware};
 use serde::{Deserialize, Serialize};
 
 const MAX_BODY: usize = 64 * 1024 * 1024;
+type QueryParams = web::types::Query<Vec<(String, String)>>;
 
 #[derive(Deserialize)]
 struct Rating {
@@ -61,21 +60,13 @@ fn load_dataset() -> Vec<DatasetItem> {
 
 /// Sum of every query parameter whose value parses as an integer; a
 /// non-numeric one is skipped rather than failing the request.
-fn sum_query(query: &str) -> i64 {
-    let mut total = 0i64;
-    for pair in query.split('&') {
-        if let Some((_, value)) = pair.split_once('=') {
-            if let Ok(n) = value.trim().parse::<i64>() {
-                total += n;
-            }
-        }
-    }
-    total
+fn sum_query(query: &[(String, String)]) -> i64 {
+    query
+        .iter()
+        .filter_map(|(_, value)| value.trim().parse::<i64>().ok())
+        .sum()
 }
 
-// ntex re-exports its runtime, so the sleep comes from there rather than a direct tokio
-// dependency. It parks the task rather than the thread, so the waits in flight are bounded by
-// memory rather than by the worker count.
 async fn delay(path: web::types::Path<u64>) -> HttpResponse {
     let ms = path.into_inner();
     if ms > 0 {
@@ -86,19 +77,19 @@ async fn delay(path: web::types::Path<u64>) -> HttpResponse {
         .body(ms.to_string())
 }
 
-async fn baseline11(req: HttpRequest, body: Bytes) -> HttpResponse {
-    let mut total = sum_query(req.query_string());
-    if let Ok(text) = std::str::from_utf8(&body) {
-        if let Ok(n) = text.trim().parse::<i64>() {
-            total += n;
-        }
+async fn baseline11(query: QueryParams, body: Bytes) -> HttpResponse {
+    let mut total = sum_query(&query);
+    if let Ok(text) = std::str::from_utf8(&body)
+        && let Ok(n) = text.trim().parse::<i64>()
+    {
+        total += n;
     }
     HttpResponse::Ok()
         .content_type("text/plain")
         .body(total.to_string())
 }
 
-fn build_json(dataset: &[DatasetItem], count: usize, m: i64) -> Vec<u8> {
+fn build_json(dataset: &[DatasetItem], count: usize, m: i64) -> OutList<'_> {
     let n = count.min(dataset.len());
     let items = dataset[..n]
         .iter()
@@ -110,50 +101,29 @@ fn build_json(dataset: &[DatasetItem], count: usize, m: i64) -> Vec<u8> {
             quantity: d.quantity,
             active: d.active,
             tags: &d.tags,
-            rating: OutRating { score: d.rating.score, count: d.rating.count },
+            rating: OutRating {
+                score: d.rating.score,
+                count: d.rating.count,
+            },
             total: d.price * d.quantity * m,
         })
         .collect();
-    serde_json::to_vec(&OutList { items, count: n }).unwrap_or_default()
-}
-
-fn accepts(req: &HttpRequest, token: &str) -> bool {
-    req.headers()
-        .get("accept-encoding")
-        .and_then(|v| v.to_str().ok())
-        .map(|v| v.to_ascii_lowercase().contains(token))
-        .unwrap_or(false)
+    OutList { items, count: n }
 }
 
 async fn json_items(
-    req: HttpRequest,
+    query: QueryParams,
     path: web::types::Path<usize>,
-    dataset: web::types::State<&'static [DatasetItem]>,
+    dataset: &[DatasetItem],
 ) -> HttpResponse {
-    let m = req
-        .query_string()
-        .split('&')
-        .find_map(|p| p.strip_prefix("m="))
+    let m = query
+        .iter()
+        .find_map(|(key, value)| (key == "m").then_some(value))
         .and_then(|v| v.parse::<i64>().ok())
         .unwrap_or(1);
-    let body = build_json(&dataset, path.into_inner(), m);
-
-    // json-comp negotiates by hand: ntex's Compress middleware would also cover
-    // it, but it re-compresses per request at a fixed level and the profile
-    // asks for level 1, so the encoder is driven directly here.
-    if accepts(&req, "gzip") {
-        let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::new(1));
-        if enc.write_all(&body).is_ok() {
-            if let Ok(compressed) = enc.finish() {
-                return HttpResponse::Ok()
-                    .content_type("application/json")
-                    .header("Content-Encoding", "gzip")
-                    .header("Vary", "Accept-Encoding")
-                    .body(compressed);
-            }
-        }
-    }
-    HttpResponse::Ok().content_type("application/json").body(body)
+    HttpResponse::Ok()
+        .header("Vary", "Accept-Encoding")
+        .json(&build_json(dataset, path.into_inner(), m))
 }
 
 // Echo: ntex has already collected the body (chunked or not) into Bytes, so
@@ -164,17 +134,52 @@ async fn echo_body(body: Bytes) -> HttpResponse {
         .body(body)
 }
 
-fn routes(cfg: &mut web::ServiceConfig, dataset: &'static [DatasetItem]) {
-    cfg.state(dataset)
-        .state(web::types::PayloadConfig::new(MAX_BODY))
-        .service(
-            web::resource("/baseline11")
-                .route(web::get().to(baseline11))
-                .route(web::post().to(baseline11)),
+fn routes(cfg: &mut web::ServiceConfig<()>, dataset: &'static [DatasetItem]) {
+    cfg.service(
+        web::resource("/baseline11")
+            .route(web::get().to(baseline11))
+            .route(web::post().to(baseline11)),
+    )
+    .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
+    .service(
+        web::resource("/json/{count}")
+            .middleware(middleware::Compress::default())
+            .route(web::get().to(async move |query, path| json_items(query, path, dataset).await)),
+    )
+    .service(web::resource("/echo").route(web::post().to(echo_body)));
+}
+
+fn app_config() -> web::WebAppConfig {
+    web::WebAppConfig::new().set_state(web::types::PayloadConfig::new(MAX_BODY))
+}
+
+fn server_config() -> ntex::SharedCfg {
+    ntex::SharedCfg::new("HTTPARENA")
+        .add(
+            IoConfig::new()
+                .set_read_size(BytePageSize::Size8, BytePageSize::Size64)
+                .set_write_size(BytePageSize::Size32)
+                .set_write_backpressure(256 * 1024),
         )
-        .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
-        .service(web::resource("/json/{count}").route(web::get().to(json_items)))
-        .service(web::resource("/echo").route(web::post().to(echo_body)));
+        .into()
+}
+
+fn load_tls_config(
+    cert: impl std::io::Read,
+    key: impl std::io::Read,
+) -> std::io::Result<rustls::ServerConfig> {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+    let certs =
+        rustls_pemfile::certs(&mut std::io::BufReader::new(cert)).collect::<Result<_, _>>()?;
+    let private = rustls_pemfile::private_key(&mut std::io::BufReader::new(key))?
+        .expect("no private key in server.key");
+    let mut tls = rustls::ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(certs, private)
+        .expect("bad certificate/key pair");
+    // Port 8081 is exclusively HTTP/1.1.
+    tls.alpn_protocols = vec![b"http/1.1".to_vec()];
+    Ok(tls)
 }
 
 #[ntex::main]
@@ -183,37 +188,173 @@ async fn main() -> std::io::Result<()> {
     // every string into each response.
     let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
 
-    let mut server = HttpServer::new(move || {
+    let mut server = HttpServer::new(async move |_| {
         App::new()
-            .wrap(middleware::Logger::default().exclude("/"))
+            .with_config(app_config())
             .configure(|cfg| routes(cfg, dataset))
     })
-    .backlog(4096)
-    .bind("0.0.0.0:8080")?;
+    .bind("0.0.0.0:8080", server_config())?;
 
     // json-tls on 8081. The harness mounts /certs only for the TLS profiles,
     // so a missing pair leaves the listener down rather than aborting startup.
     let cert = std::path::Path::new("/certs/server.crt");
     let key = std::path::Path::new("/certs/server.key");
     if cert.exists() && key.exists() {
-        // ring rather than aws-lc-rs: same TLS, no C toolchain in the build image
-        let _ = rustls::crypto::ring::default_provider().install_default();
-        let certs: Vec<_> = rustls_pemfile::certs(&mut std::io::BufReader::new(
-            std::fs::File::open(cert)?,
-        ))
-        .collect::<Result<_, _>>()?;
-        let private = rustls_pemfile::private_key(&mut std::io::BufReader::new(
-            std::fs::File::open(key)?,
-        ))?
-        .expect("no private key in /certs/server.key");
-        let mut tls = rustls::ServerConfig::builder()
-            .with_no_client_auth()
-            .with_single_cert(certs, private)
-            .expect("bad certificate/key pair");
-        // 8081 is the HTTP/1.1 port; h2 lives on 8443, so never offer it here.
-        tls.alpn_protocols = vec![b"http/1.1".to_vec()];
-        server = server.bind_rustls("0.0.0.0:8081", tls)?;
+        let tls = load_tls_config(std::fs::File::open(cert)?, std::fs::File::open(key)?)?;
+        server = server.bind_rustls("0.0.0.0:8081", &tls, server_config())?;
     }
 
     server.run().await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ntex::http::StatusCode;
+    use ntex::web::test::{self, TestRequest};
+    use std::io::Read;
+
+    #[ntex::test]
+    async fn baseline_query_and_body() {
+        let app = test::init_service(App::new().configure(|cfg| routes(cfg, &[]))).await;
+
+        for (uri, body, expected) in [
+            ("/baseline11?a=13&b=42", "20", "75"),
+            ("/baseline11?a=%31%33&b=%2B42&a=-1&ignored=no", " 20 ", "74"),
+            ("/baseline11", "", "0"),
+        ] {
+            let response = app
+                .call(TestRequest::post().uri(uri).payload(body).to_request())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(test::read_body(response).await, expected);
+        }
+    }
+
+    #[ntex::test]
+    async fn json_serialization_and_compression() {
+        let dataset: &'static [DatasetItem] = Box::leak(
+            (1..=50)
+                .map(|id| DatasetItem {
+                    id,
+                    name: format!("Item {id}"),
+                    category: "test".into(),
+                    price: id * 3,
+                    quantity: 2,
+                    active: true,
+                    tags: vec!["tag".into()],
+                    rating: Rating { score: 4, count: 7 },
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        );
+        let server = test::server_with(
+            test::config().server_cfg(server_config()),
+            async move |_| {
+                App::new()
+                    .with_config(app_config())
+                    .configure(|cfg| routes(cfg, dataset))
+            },
+        );
+
+        for (count, multiplier, accept, compressed) in [
+            (25, 4, "gzip, br", true),
+            (40, 8, "identity", false),
+            (50, 6, "gzip;q=0", false),
+            (60, 1, "gzip", true),
+        ] {
+            let response = server
+                .get(format!("/json/{count}?m={multiplier}"))
+                .header("Accept-Encoding", accept)
+                .no_decompress()
+                .send()
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(
+                response
+                    .headers()
+                    .get("Content-Encoding")
+                    .map(|v| v.as_bytes()),
+                compressed.then_some(b"gzip".as_slice())
+            );
+            let bytes = response.body().await.unwrap();
+            let bytes = if compressed {
+                let mut decoded = Vec::new();
+                flate2::read::GzDecoder::new(bytes.as_ref())
+                    .read_to_end(&mut decoded)
+                    .unwrap();
+                decoded
+            } else {
+                bytes.to_vec()
+            };
+            let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(body["count"], count.min(50));
+            let items = body["items"].as_array().unwrap();
+            assert_eq!(items.len(), count.min(50) as usize);
+            for (index, item) in items.iter().enumerate() {
+                let id = index + 1;
+                assert_eq!(
+                    item,
+                    &serde_json::json!({
+                        "id": id, "name": format!("Item {id}"), "category": "test",
+                        "price": id * 3, "quantity": 2, "active": true,
+                        "tags": ["tag"], "rating": {"score": 4, "count": 7},
+                        "total": id * 6 * multiplier
+                    })
+                );
+            }
+        }
+        server.stop().await;
+    }
+
+    #[ntex::test]
+    async fn native_tls_echo_and_delay() {
+        let rcgen::CertifiedKey { cert, signing_key } =
+            rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
+        let tls = load_tls_config(
+            cert.pem().as_bytes(),
+            signing_key.serialize_pem().as_bytes(),
+        )
+        .unwrap();
+        let mut roots = rustls::RootCertStore::empty();
+        roots.add(cert.der().clone()).unwrap();
+        let mut client_tls = rustls::ClientConfig::builder()
+            .with_root_certificates(roots)
+            .with_no_client_auth();
+        client_tls.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+        let client = ntex::client::Client::builder()
+            .rustls(client_tls)
+            .build(ntex::SharedCfg::default());
+        let server = test::server_with(
+            test::config().rustls(tls).server_cfg(server_config()),
+            async |_| {
+                App::new()
+                    .with_config(app_config())
+                    .configure(|cfg| routes(cfg, &[]))
+            },
+        );
+
+        for size in [10 * 1024, 20 * 1024 * 1024] {
+            let payload = Bytes::from(vec![b'x'; size]);
+            let response = client
+                .post(server.url("/echo"))
+                .header("Accept-Encoding", "gzip")
+                .send_body(payload.clone())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(response.version(), ntex::http::Version::HTTP_11);
+            assert!(!response.headers().contains_key("Content-Encoding"));
+            assert_eq!(response.body().limit(MAX_BODY).await.unwrap(), payload);
+        }
+
+        let start = std::time::Instant::now();
+        let response = client.get(server.url("/delay/40")).send().await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.body().await.unwrap(), "40");
+        assert!(start.elapsed() >= std::time::Duration::from_millis(40));
+        server.stop().await;
+    }
 }

@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "ntex",
-  "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+  "description": "ntex 4 on its native runtime with default worker and HTTP settings, 4-64 KiB read pages, 32 KiB write pages, and 64 KiB write backpressure. Routing and extractors through ntex::web, JSON through HttpResponse::json, compression through Compress middleware, TLS on 8081 through rustls.",
   "repo": "https://github.com/ntex-rs/ntex",
   "enabled": true,
   "tests": [

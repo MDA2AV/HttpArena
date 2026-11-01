@@ -1,15 +1,15 @@
-FROM rust:1.94 AS build
+FROM rust:1.97-bookworm AS build
 WORKDIR /app
-COPY Cargo.toml .
-RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release \
-    && rm -rf src/ target/release/httparena-ntex* target/release/deps/httparena_ntex*
+# Build on the benchmark host, or a CPU with compatible instruction sets.
+ENV RUSTFLAGS="-C target-cpu=native" \
+    CARGO_PROFILE_RELEASE_LTO=thin
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked \
+    && rm src/main.rs && cargo clean --release -p httparena-ntex
 COPY src ./src
-# No target-cpu=native and no LTO: this entry has a history of tripping a rustc
-# SIGSEGV and a GCC ICE with both enabled, and neither is needed for the
-# workload here.
-RUN cargo build --release
+RUN cargo build --release --locked
 
 FROM debian:bookworm-slim
 COPY --from=build /app/target/release/httparena-ntex /server
-EXPOSE 8080
+EXPOSE 8080 8081
 CMD ["/server"]
