@@ -328,7 +328,7 @@ int main() {
         server.buffer_pool_entries(256);
     } else {
         server.ring_entries(2048);
-        server.buffer_pool_entries(2048);
+        server.buffer_pool_entries(512);
     }
     server.tcp_nodelay(true);
     server.h2_max_concurrent_streams(2000);
