@@ -21,7 +21,8 @@ import kotlin.time.TimeSource
 
 // DIAGNOSTICS, temporary: where the CPU goes on the arena box. Every 5 s, each thread group's share of a CPU (from
 // /proc/self/task; the reactors are the binary's own name), and the collector's runs in that window - how long they
-// held the reactors stopped, the longest such pause, and the heap they left.
+// held the reactors stopped, the longest such pause, and the heap they left - and where the reactors were each 50 ms:
+// running, waiting on their ring, or asleep on a futex, as the collector puts them.
 @OptIn(ExperimentalForeignApi::class)
 fun startDiagnostics() {
     memScoped {
@@ -43,8 +44,20 @@ private fun diagnosticsLoop() {
     var maxPauseNs = 0L
     var runningNs = 0L
     var heapAfter = 0L
+    var reactorTids = last.filterValues { it.first.startsWith("reactor") }.keys.toList()
+    val waits = HashMap<String, Int>()
+    var tick = 0
     while (true) {
         usleep(10_000u)
+        if (++tick % 5 == 0) {
+            for (tid in reactorTids) {
+                val stat = readFile("/proc/self/task/$tid/stat")?.decodeToString() ?: continue
+                val state = stat.substring(stat.lastIndexOf(')') + 2, stat.lastIndexOf(')') + 3)
+                val key = if (state == "R") "run" else readFile("/proc/self/task/$tid/wchan")?.decodeToString() ?: "?"
+                waits[key] = (waits[key] ?: 0) + 1
+            }
+        }
+
         val info = GC.lastGCInfo
         if (info != null && info.epoch != seenEpoch) {
             seenEpoch = info.epoch
@@ -70,11 +83,17 @@ private fun diagnosticsLoop() {
         }
         val cpu = groups.entries.filter { it.value > 0 }.sortedByDescending { it.value }
             .joinToString(" | ") { "${it.key} ${(it.value / seconds).toInt()}%" }
+        val samples = waits.values.sum().coerceAtLeast(1)
+        val where = waits.entries.sortedByDescending { it.value }.take(5)
+            .joinToString(" | ") { "${it.key} ${it.value * 100 / samples}%" }
         println(
             "[cpu] $cpu || gc ${seenEpoch - windowEpoch}x ($seen seen), paused ${pausedNs / 1_000_000} ms " +
-                "(max ${maxPauseNs / 1_000_000}), running ${runningNs / 1_000_000} ms, heap after ${heapAfter shr 20} MiB"
+                "(max ${maxPauseNs / 1_000_000}), running ${runningNs / 1_000_000} ms, heap after ${heapAfter shr 20} MiB" +
+                " || reactors $where"
         )
         last = now
+        reactorTids = now.filterValues { it.first.startsWith("reactor") }.keys.toList()
+        waits.clear()
         lastAt = clock.markNow()
         windowEpoch = seenEpoch
         seen = 0
