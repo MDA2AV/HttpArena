@@ -204,10 +204,7 @@ void register_routes(Router& router) {
 
     // 7. Static file serving (static-tls, static-h2, static-h3) - Aegon core static_files API
     const char* static_dir = std::filesystem::exists("/data/static") ? "/data/static" : "data/static";
-    StaticFilesOptions static_opts;
-    static_opts.precompressed = true;
-    static_opts.cache_in_memory = false;
-    router.static_files("/static", static_dir, static_opts);
+    router.static_files("/static", static_dir);
 
     // 8. WebSocket Echo endpoint
     router.ws("/ws");
