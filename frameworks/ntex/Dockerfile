@@ -5,7 +5,7 @@ ENV RUSTFLAGS="-C target-cpu=native" \
     CARGO_PROFILE_RELEASE_LTO=thin
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked \
-    && rm src/main.rs && cargo clean --release -p httparena-ntex
+    && cargo clean --release -p httparena-ntex && rm src/main.rs
 COPY src ./src
 RUN cargo build --release --locked
 
