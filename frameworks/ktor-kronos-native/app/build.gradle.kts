@@ -1,6 +1,5 @@
-// The arena app, built inside the Ktor fork's own build: the Dockerfile puts this directory at the fork's root as
-// :ktor-httparena-kronos, so the engine and Ktor come in as the fork's projects, at the fork's commit. Its sources are
-// all under linux/, so Ktor's build gives it the Linux targets only.
+// The arena app, built as a project of the Ktor fork's own build (the Dockerfile adds it as :ktor-httparena-kronos), so
+// the engine and Ktor come in at the fork's commit. Its sources are under linux/ only, which makes it a Linux-only project.
 plugins {
     id("ktorbuild.project.internal")
     id("kotlinx-serialization")
