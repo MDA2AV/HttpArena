@@ -1,7 +1,7 @@
 # gateway-64 - stock nginx (TLS + h2 on 8443) in front of the morojs server,
 # forwarding the dynamic endpoints over loopback h1 with keepalive. The server
 # gets no certs here, so it comes up cleartext on 8080 only and starts no TLS
-# process. Caddy stays on the h3 profile only, where QUIC is required.
+# process. gateway-h3 uses the same edge with QUIC, in ./proxy-h3.
 #
 # The CPU split is the knob worth sweeping, via PROXY_CPUSET / SERVER_CPUSET.
 # Terminating TLS under multiplexed h2 is the heavier half even for nginx, so
@@ -41,14 +41,6 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=256
-      # The engine's epoll transport serves each loop turn's sockets grouped by
-      # the CPU their peer sends from, which its design notes measured to lose
-      # about a quarter at 256 connections against arrival order when every
-      # request enters JavaScript under a peer that oversubscribes its cores -
-      # the shape of an edge proxy. 'auto' has each loop measure both orders
-      # and keep the faster one, re-probing when the load moves. Standard
-      # outside the proxied stacks, where the grouped default wins.
-      - MORO_ENGINE_SERVE_ORDER=auto
       - DATASET_PATH=/data/dataset.json
     volumes:
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

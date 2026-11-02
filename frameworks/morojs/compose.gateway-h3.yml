@@ -1,11 +1,10 @@
 # gateway-h3 - the same two services as compose.gateway.yml, reached over QUIC
-# instead. Stock Caddy already binds 8443 on tcp and udp with `protocols h1 h2
-# h3`, so the proxy config is identical and only the load generator differs.
-# The proxy to server hop stays loopback h1 either way.
+# instead. Stock nginx with http3 on udp 8443, the same edge as ./proxy-nginx
+# plus the quic listen, in ./proxy-h3. The proxy to server hop stays loopback h1.
 services:
   proxy:
     build:
-      context: ./proxy
+      context: ./proxy-h3
     network_mode: host
     cpuset: "${PROXY_CPUSET:-0-15,64-79}"
     ulimits:
@@ -37,14 +36,6 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_MAX_CONN=256
-      # The engine's epoll transport serves each loop turn's sockets grouped by
-      # the CPU their peer sends from, which its design notes measured to lose
-      # about a quarter at 256 connections against arrival order when every
-      # request enters JavaScript under a peer that oversubscribes its cores -
-      # the shape of an edge proxy. 'auto' has each loop measure both orders
-      # and keep the faster one, re-probing when the load moves. Standard
-      # outside the proxied stacks, where the grouped default wins.
-      - MORO_ENGINE_SERVE_ORDER=auto
       - DATASET_PATH=/data/dataset.json
     volumes:
       - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

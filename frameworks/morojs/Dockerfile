@@ -1,10 +1,14 @@
-FROM node:26-trixie-slim AS build
+# 26.13 by minor, not the floating 26 tag: the bench host builds against whatever node:26 it has
+# cached, and the compression middleware's reused brotli encoder needs Node 26.11 or later, where an
+# encoder reset keeps its parameters (before that it reverts to the default quality and the
+# framework falls back to building an encoder per reply).
+FROM node:26.13-trixie-slim AS build
 WORKDIR /app
 COPY package.json .
 # @morojs/engine ships prebuilt binaries, so no toolchain is needed here
 RUN npm install --omit=dev --no-audit --no-fund
 
-FROM node:26-trixie-slim
+FROM node:26.13-trixie-slim
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY app.mjs .
