@@ -142,6 +142,6 @@ pub async fn json_handler(conn: Conn) -> Conn {
         })
         .collect::<Vec<_>>();
 
-    let body = sonic_rs::to_vec(&Resp { items, count: take }).unwrap_or_default();
+    let body = serde_json::to_vec(&Resp { items, count: take }).unwrap_or_default();
     json_response(conn, body)
 }

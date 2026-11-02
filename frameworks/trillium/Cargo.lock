@@ -1078,7 +1078,6 @@ dependencies = [
  "querystrong",
  "serde",
  "serde_json",
- "sonic-rs",
  "swansong",
  "tokio-postgres",
  "trillium",
