@@ -12,6 +12,7 @@ const app = express({ cluster: 'auto' });
 const configure = (target) => {
     target.disable('x-powered-by');
     target.set('etag', false);
+    target.set('conditional get', false);
     target.set('connection headers', false);
     return target;
 };
