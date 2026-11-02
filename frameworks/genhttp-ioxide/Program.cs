@@ -9,7 +9,7 @@ using GenHTTP.Api.Infrastructure;
 using GenHTTP.Engine.Ioxide;
 
 using ioxide;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // Reactor count follows the available CPUs (api-4 / api-16 control this via cpuset pinning);
 // override with IOXIDE_REACTORS.
@@ -44,12 +44,6 @@ var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
 var hasCert = File.Exists(certPath) && File.Exists(keyPath);
 
-// Temporary: diagnoses kernel TLS on the CI runners.
-if (hasCert && kernelTls)
-{
-    KtlsDiagnostics.Run();
-}
-
 var options = new EngineOptions
 {
     Reactor = new ReactorOptions
@@ -83,7 +77,7 @@ var options = new EngineOptions
 
 // Compression is attached per route in Project.cs, not to the host.
 var host = Host.Create(onReactorStart: onReactorStart, options: options)
-               .Logging(LoggerFactory.Create(b => b.AddConsole()), false)
+               .Logging(NullLoggerFactory.Instance, false)
                .Handler(Project.Create());
 
 //   :8080  HTTP/1.1 plaintext          baseline, pipelined, limited-conn, async, json-comp, async-db, ws
