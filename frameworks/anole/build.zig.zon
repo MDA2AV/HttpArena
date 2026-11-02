@@ -6,8 +6,8 @@
     .paths = .{ "build.zig", "build.zig.zon", "src", "proto" },
     .dependencies = .{
         .anole = .{
-            .url = "git+https://github.com/xuckless/anole?ref=v0.1.2#b0f2eb0c257a885f626189eab758cb31afa66da6",
-            .hash = "anole-0.1.2-WO_-F19VYgBmLKH0ibJxywZYNKvBZ9Cv5KHLWDPwi5vt",
+            .url = "git+https://github.com/xuckless/anole?ref=v0.5.0#eb3650ec06bb1fd5ba05fa1a75b441cd8f26bb0e",
+            .hash = "anole-0.5.0-WO_-FzUb5gD6t9iQFzG2LYA6oUt_Oz2exPhaJpeEjpk5",
         },
     },
 }

@@ -1,4 +1,4 @@
-FROM rust:1.94-bookworm AS build
+FROM rust:1.94-trixie AS build
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock* ./
@@ -6,7 +6,7 @@ COPY src/ src/
 
 RUN cargo build --release
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 WORKDIR /app
 
 COPY --from=build /app/target/release/actix-websocket .

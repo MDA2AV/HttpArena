@@ -1,7 +1,7 @@
 {
   "actix": {
     "dir": "actix",
-    "description": "Actix-web 4 with rustls for TLS. Standard configuration: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update \u2014 no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Pinned to actix git main for try_compressed() (unreleased in actix-files 0.6.10). Compiled with -O3 and thin LTO.",
+    "description": "Actix-web 4 with rustls for TLS. Standard configuration with TCP_NODELAY enabled: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update \u2014 no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Compiled with -O3 and thin LTO.",
     "repo": "https://github.com/actix/actix-web",
     "type": "flagship",
     "engine": "actix",
@@ -15,7 +15,7 @@
     "variants": [
       {
         "dir": "actix-h2c",
-        "description": "Actix-web 4 h2c-only listener on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
+        "description": "Actix-web 4 h2c-only listener with TCP_NODELAY enabled on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
@@ -29,7 +29,7 @@
       },
       {
         "dir": "actix-websocket",
-        "description": "Actix-web WebSocket echo server",
+        "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled",
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
@@ -1257,14 +1257,28 @@
   },
   "kron": {
     "dir": "kron",
-    "description": "kron \u2014 edixoi on Kotlin/Native: kron, the native port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the ring driven by hand from Kotlin over the kernel's own io_uring header through cinterop (no liburing, no JVM, no JIT: one native binary). Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with BoringSSL linked statically into the binary, with kernel TX offload where the kernel has the tls module and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to edixoi (C#) and edixoi-kt (the JVM port), which serve the same profiles.",
+    "description": "kron \u2014 edixoi on kron, the Kotlin port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it, natively or on the JVM: the Dockerfile's KRON_RUNTIME build arg picks, the JVM at present. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the ring driven by hand from Kotlin over the kernel's own io_uring header (no liburing): natively through cinterop, one binary; on the JVM through the FFM API, as a jar on JDK 25. Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with BoringSSL (linked into the native binary, carried in the jar on the JVM), with kernel TX offload where the kernel has the tls module and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to edixoi (C#) and edixoi-kt (the JVM port), which serve the same profiles.",
     "repo": "https://github.com/MDA2AV/kron",
     "type": "engine",
     "engine": "io_uring"
   },
+  "ktor-kronos-native": {
+    "dir": "ktor-kronos-native",
+    "description": "ktor-kronos-native, JetBrains Ktor on Kotlin/Native with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of CIO: one native binary, no JVM; the ktor-kronos entry runs the same routes on the JVM. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, driven from Kotlin over the kernel's own io_uring header (no liburing). Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring. The routes are the ktor entry's, answered the same way: JSON through Ktor's ContentNegotiation with kotlinx.serialization, and Ktor's own WebSockets; json-comp is left out, as Ktor's Compression plugin is JVM-only. TLS on :8081 is the engine's own connector on kron's BoringSSL. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite).",
+    "repo": "https://github.com/MDA2AV/ktor",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "ktor-kronos": {
     "dir": "ktor-kronos",
-    "description": "ktor-kronos \u2014 JetBrains Ktor with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of CIO, on Kotlin/Native or on the JVM: the Dockerfile's KRONOS_RUNTIME build arg picks, the JVM at present. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, driven from Kotlin over the kernel's own io_uring header (no liburing): natively one binary, on the JVM the same code reaching the kernel and BoringSSL through the FFM API, as a jar on JDK 25. Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection in the async profile costs a kernel deadline rather than a timer thread. WebSockets are Ktor's own, over the upgraded connection. The routes are the ktor entry's, answered the same way; only the engine and the platform differ. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite). TLS on :8081 is the engine's own connector on kron's BoringSSL, the kernel encrypting the records (kTLS TX) where it has the tls module. JSON is Ktor's ContentNegotiation with kotlinx.serialization, gzipped by Ktor's own Compression plugin on the JVM; json-comp needs the JVM runtime, as Ktor has no gzip on Kotlin/Native.",
+    "description": "ktor-kronos, JetBrains Ktor on the JVM with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of Netty or CIO. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the kernel and BoringSSL reached through the FFM API on JDK 25. Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring. The routes are the ktor entry's, answered the same way: JSON through Ktor's ContentNegotiation with kotlinx.serialization, gzipped by Ktor's Compression plugin, and Ktor's own WebSockets. TLS on :8081 is the engine's own connector on kron's BoringSSL. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite).",
     "repo": "https://github.com/MDA2AV/ktor",
     "type": "experimental",
     "engine": "io_uring",
@@ -1681,7 +1695,7 @@
   },
   "ntex": {
     "dir": "ntex",
-    "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+    "description": "ntex 4 on its native runtime with default worker and HTTP settings, 4-64 KiB read pages, 32 KiB write pages, and 64 KiB write backpressure. Routing and extractors through ntex::web, JSON through HttpResponse::json, compression through Compress middleware, TLS on 8081 through rustls.",
     "repo": "https://github.com/ntex-rs/ntex",
     "type": "flagship",
     "engine": "ntex",

@@ -612,6 +612,7 @@ async fn main() -> io::Result<()> {
         }
     })
     .workers(workers)
+    .tcp_nodelay(true)
     .bind("0.0.0.0:8080")?;
 
     // TLS listeners. :8443 carries h2 (baseline-h2/static-h2); :8081 carries

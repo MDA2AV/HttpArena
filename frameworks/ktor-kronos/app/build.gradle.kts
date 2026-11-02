@@ -1,53 +1,37 @@
-// The arena app, built inside the Ktor fork's own build: the Dockerfile puts this directory at the fork's root as
-// :ktor-httparena-kronos, so the engine and Ktor come in as the fork's projects, at the fork's commit. It builds two
-// ways from one source: the Kotlin/Native binary, and a jar for the JVM, where kron runs through FFM.
+// The arena app, built as a project of the Ktor fork's own build (the Dockerfile adds it as :ktor-httparena-kronos), so
+// the engine and Ktor come in at the fork's commit. Its sources are under jvm/ only, which makes it a JVM-only project.
 plugins {
     id("ktorbuild.project.internal")
     id("kotlinx-serialization")
 }
 
 kotlin {
+    // kron's jar is built for JDK 25
     jvmToolchain(25)
 
-    linuxX64 {
-        binaries.executable {
-            baseName = "ktor-kronos"
-            entryPoint = "httparena.main"
-        }
-    }
-
     sourceSets {
-        // The JSON converter writes through kotlinx.serialization's writer interface, which its own json-io module uses
-        all {
-            languageSettings.optIn("kotlinx.serialization.json.internal.JsonFriendModuleApi")
-        }
-        commonMain.dependencies {
+        jvmMain.dependencies {
             implementation(projects.ktorServerKron)
             implementation(projects.ktorServerWebsockets)
             implementation(projects.ktorServerContentNegotiation)
-            implementation(projects.ktorSerializationKotlinxJson)
-        }
-        jvmMain.dependencies {
-            // Ktor's Compression, for json-comp: it exists only on the JVM
             implementation(projects.ktorServerCompression)
-            // Ktor logs through SLF4J on the JVM: the simple provider prints what the native build prints
+            implementation(projects.ktorSerializationKotlinxJson)
             implementation(libs.slf4j.simple)
         }
     }
 }
 
-// Nothing here uses atomicfu, and the transform would read kron's classes (JDK 25) on the build's own JVM (21).
+// The transform would read kron's classes (JDK 25) on the build's own JVM (21); nothing here uses atomicfu.
 atomicfu {
     transformJvm = false
 }
 
-// The JVM build: the app and everything it runs on in one jar.
+// The app and everything it runs on in one jar.
 tasks.register<Jar>("jvmFatJar") {
-    group = "build"
     archiveBaseName.set("ktor-kronos")
     archiveVersion.set("")
     manifest {
-        attributes("Main-Class" to "httparena.JvmMainKt", "Enable-Native-Access" to "ALL-UNNAMED")
+        attributes("Main-Class" to "httparena.MainKt", "Enable-Native-Access" to "ALL-UNNAMED")
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     val jvmJar = tasks.named<Jar>("jvmJar")
