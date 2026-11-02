@@ -17,7 +17,7 @@ RUN pacman -Syu --noconfirm --needed \
 
 ARG AEGON_REPO=https://github.com/UdayKhare09/Aegon.git
 ARG AEGON_REF=main
-ARG AEGON_COMMIT=8b0319e
+ARG AEGON_COMMIT=2ba8fd9
 
 WORKDIR /src
 RUN echo "Building Aegon commit: ${AEGON_COMMIT}" && \
