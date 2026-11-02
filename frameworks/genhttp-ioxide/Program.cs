@@ -9,7 +9,7 @@ using GenHTTP.Api.Infrastructure;
 using GenHTTP.Engine.Ioxide;
 
 using ioxide;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 
 // Reactor count follows the available CPUs (api-4 / api-16 control this via cpuset pinning);
 // override with IOXIDE_REACTORS.
@@ -37,12 +37,18 @@ if (Directory.Exists(staticRoot))
 
 // The harness mounts a certificate pair; without it only the plaintext listeners come up.
 // kTLS derives its keys from one TLS 1.3 ciphersuite, so it pins the floor to 1.3 as well.
-var kernelTls = false;
+var kernelTls = true;
 var tlsFloor = kernelTls ? SslProtocols.Tls13 : SslProtocols.Tls12 | SslProtocols.Tls13;
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
 var hasCert = File.Exists(certPath) && File.Exists(keyPath);
+
+// Temporary: diagnoses kernel TLS on the CI runners.
+if (hasCert && kernelTls)
+{
+    KtlsDiagnostics.Run();
+}
 
 var options = new EngineOptions
 {
@@ -77,7 +83,7 @@ var options = new EngineOptions
 
 // Compression is attached per route in Project.cs, not to the host.
 var host = Host.Create(onReactorStart: onReactorStart, options: options)
-               .Logging(NullLoggerFactory.Instance, false)
+               .Logging(LoggerFactory.Create(b => b.AddConsole()), false)
                .Handler(Project.Create());
 
 //   :8080  HTTP/1.1 plaintext          baseline, pipelined, limited-conn, async, json-comp, async-db, ws
