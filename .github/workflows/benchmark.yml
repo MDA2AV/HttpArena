@@ -14,7 +14,7 @@ on:
         description: 'Framework(s): one directory name, a comma-separated list, or "all" for every enabled framework subscribed to the profile'
         required: true
       profile:
-        description: 'Profile (e.g. baseline, static-tls). Leave empty to run every profile the framework subscribes to — required when framework is "all"'
+        description: 'Profile, or a comma-separated list of profiles (e.g. baseline, or gateway-h3,gateway-64). Leave empty to run every profile the framework subscribes to — required when framework is "all"'
         required: false
         default: ''
       save:
@@ -71,12 +71,12 @@ jobs:
         run: |
           if [ "$FRAMEWORK" = "all" ]; then
             if [ -z "$PROFILE" ]; then
-              echo "::error::framework=all requires a profile"
+              echo "::error::framework=all requires a profile (one, or a comma-separated list)"
               exit 1
             fi
             LIST=$(python3 -c '
           import json, pathlib, re, sys
-          profile = sys.argv[1]
+          profiles = {p for p in sys.argv[1].split(",") if p}
           names = []
           for meta in sorted(pathlib.Path("frameworks").glob("*/meta.json")):
               name = meta.parent.name
@@ -88,7 +88,7 @@ jobs:
                   continue
               if not m.get("enabled", True):
                   continue
-              if profile in (m.get("tests") or []):
+              if profiles & set(m.get("tests") or []):
                   names.append(name)
           print(" ".join(names))
           ' "$PROFILE")

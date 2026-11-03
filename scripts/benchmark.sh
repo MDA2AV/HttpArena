@@ -7,7 +7,7 @@
 # scripts/old/benchmark-old.sh for reference.
 #
 # Usage:
-#   ./scripts/benchmark.sh <framework> [profile]
+#   ./scripts/benchmark.sh <framework> [profile[,profile...]]
 #   ./scripts/benchmark.sh <framework> --save
 #
 # Environment overrides — see scripts/lib/common.sh for the full list.
@@ -46,7 +46,28 @@ done
 FRAMEWORK_ARG="${POSITIONAL[0]:-}"
 PROFILE_FILTER="${POSITIONAL[1]:-}"
 
-[ -n "$FRAMEWORK_ARG" ] || fail "usage: benchmark.sh <framework> [profile] [--save]"
+[ -n "$FRAMEWORK_ARG" ] || fail "usage: benchmark.sh <framework> [profile[,profile...]] [--save]"
+
+# The profile filter is one profile or a comma-separated list (`-t a,b` from a
+# PR comment lands here as "a,b"), run in the order given, duplicates dropped.
+# A name that is not a profile fails now, before any image is built or the
+# host is tuned: an explicit typo would otherwise be warned past and the run
+# would measure nothing while looking like a run.
+profiles_to_run=()
+if [ -n "$PROFILE_FILTER" ]; then
+    IFS=',' read -ra _wanted <<< "$PROFILE_FILTER"
+    for _p in "${_wanted[@]}"; do
+        [ -n "$_p" ] || continue
+        [ -n "${PROFILES[$_p]+x}" ] || fail "unknown profile: $_p (see PROFILE_ORDER in scripts/lib/profiles.sh)"
+        case ",$(IFS=,; echo "${profiles_to_run[*]}")," in
+            *",$_p,"*) ;;
+            *) profiles_to_run+=("$_p") ;;
+        esac
+    done
+    [ "${#profiles_to_run[@]}" -gt 0 ] || fail "no profile named in: $PROFILE_FILTER"
+else
+    profiles_to_run=("${PROFILE_ORDER[@]}")
+fi
 
 # ── Cleanup + tuning ────────────────────────────────────────────────────────
 
@@ -192,12 +213,8 @@ if $need_pg; then postgres_start; fi
 
 # ── Main benchmark loop ─────────────────────────────────────────────────────
 
-# Pick the profiles to run.
-if [ -n "$PROFILE_FILTER" ]; then
-    profiles_to_run=("$PROFILE_FILTER")
-else
-    profiles_to_run=("${PROFILE_ORDER[@]}")
-fi
+# profiles_to_run was fixed at argument parsing, so a bad name failed before
+# the builds and tuning above.
 
 # run_one — single (profile, conns) iteration. Returns non-zero if the
 # server failed to start; main loop skips to the next profile in that case.
