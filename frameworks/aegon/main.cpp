@@ -202,7 +202,7 @@ void register_routes(Router& router) {
         ctx.res().body_view(ctx.req().body());
     });
 
-    // 7. Static file serving (static-h2, static-h3) - Aegon core static_files API
+    // 7. Static file serving (static-tls, static-h2, static-h3) - Aegon core static_files API
     const char* static_dir = std::filesystem::exists("/data/static") ? "/data/static" : "data/static";
     router.static_files("/static", static_dir);
 
@@ -328,7 +328,7 @@ int main() {
         server.buffer_pool_entries(256);
     } else {
         server.ring_entries(2048);
-        server.buffer_pool_entries(2048);
+        server.buffer_pool_entries(512);
     }
     server.tcp_nodelay(true);
     server.h2_max_concurrent_streams(2000);
