@@ -21,7 +21,6 @@
     "latency-500k-8cpu",
     "pipelined",
     "limited-conn",
-    "json-comp",
     "json-tls",
     "8gbit",
     "async-db",
