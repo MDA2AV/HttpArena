@@ -66,7 +66,7 @@ jobs:
           # Frameworks this PR touches — the auto-detect fallback when -f is omitted.
           CHANGED=$(gh api "/repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep '^frameworks/' | cut -d'/' -f2 | sort -u || true)
 
-          # Shared flags: -t <test>, --save
+          # Shared flags: -t <test>[,<test>...], --save
           EXPLICIT_TEST=$(echo "$COMMENT_BODY" | grep -oP '/benchmark[a-z-]*\s+.*-t\s+\K\S+' || echo "")
           SAVE_FLAG=""
           if echo "$COMMENT_BODY" | grep -q '\-\-save'; then
@@ -79,7 +79,30 @@ jobs:
           # crafted comment cannot smuggle shell syntax through
           # (e.g. `--compare a";touch${IFS}/tmp/x;#`). Anything else becomes empty.
           safe() { printf '%s' "$1" | grep -oP '^[A-Za-z0-9._-]{1,64}$' || true; }
-          EXPLICIT_TEST=$(safe "$EXPLICIT_TEST")
+
+          # -t is one test or a comma-separated list; every name passes the same
+          # check, duplicates are dropped and the order is kept. A list with a
+          # name that fails the check is rejected outright instead of being
+          # reduced to "all tests": combined with --save that would dispatch a
+          # full run nobody asked for.
+          RAW_TEST="$EXPLICIT_TEST"
+          EXPLICIT_TEST=""
+          BAD_TEST=false
+          IFS=',' read -ra _tests <<< "$RAW_TEST"
+          for t in "${_tests[@]}"; do
+            [ -n "$t" ] || continue
+            s=$(safe "$t")
+            if [ -z "$s" ]; then BAD_TEST=true; continue; fi
+            case ",$EXPLICIT_TEST," in
+              *",$s,"*) ;;
+              *) EXPLICIT_TEST="${EXPLICIT_TEST:+$EXPLICIT_TEST,}$s" ;;
+            esac
+          done
+          if $BAD_TEST; then
+            gh pr comment "$PR" --repo "$REPO" \
+              --body "⚠️ \`-t\` names a test that is not a valid profile name (letters, digits, \`.\`, \`_\`, \`-\`; several separated by commas). Nothing was run."
+            exit 1
+          fi
 
           COMPARE_FW=""
           case "$COMMAND" in

@@ -10,7 +10,7 @@ on:
         description: 'Framework(s) to benchmark — one name, a comma-separated list, or "all" for every enabled framework subscribed to the profile'
         required: true
       profile:
-        description: 'Profile (e.g. baseline, baseline-h2, leave empty for all — required when framework is "all")'
+        description: 'Profile, or a comma-separated list of profiles (e.g. baseline, or gateway-h3,gateway-64). Leave empty for all — required when framework is "all"'
         required: false
         default: ''
       save:
@@ -29,8 +29,8 @@ permissions:
 # Queue runs on the same PR instead of cancelling the one in flight — a second
 # /benchmark comment used to abort the first run mid-benchmark and silently
 # discard its --save results (#1084). GitHub keeps at most one *pending* run
-# per group, so batches beyond two should use /benchmark-multiple, which runs
-# everything in a single job.
+# per group, so batches beyond two should go in one job: /benchmark-multiple
+# for several frameworks, a comma-separated -t list for several profiles.
 concurrency:
   group: benchmark-pr-${{ inputs.pr }}
   cancel-in-progress: false
@@ -77,12 +77,12 @@ jobs:
           fi
           if [ "$FRAMEWORK" = "all" ]; then
             if [ -z "$PROFILE" ]; then
-              echo "Error: framework=all requires a profile (-t <test>)"
+              echo "Error: framework=all requires a profile (-t <test>[,<test>...])"
               exit 1
             fi
             LIST=$(python3 -c '
           import json, pathlib, re, sys
-          profile = sys.argv[1]
+          profiles = {p for p in sys.argv[1].split(",") if p}
           names = []
           for meta in sorted(pathlib.Path("frameworks").glob("*/meta.json")):
               name = meta.parent.name
@@ -94,7 +94,7 @@ jobs:
                   continue
               if not m.get("enabled", True):
                   continue
-              if profile in (m.get("tests") or []):
+              if profiles & set(m.get("tests") or []):
                   names.append(name)
           print(" ".join(names))
           ' "$PROFILE")

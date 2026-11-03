@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Compare benchmark results for a framework against published data on main.
 #
-# Usage: ./scripts/compare.sh <framework> [profile] [--compare <framework>]
+# Usage: ./scripts/compare.sh <framework> [profile[,profile...]] [--compare <framework>]
 #
 # By default the baseline is the same framework's own published results, which
 # answers "did my change help?". --compare swaps in another framework's
@@ -32,7 +32,7 @@ FRAMEWORK="${POSITIONAL[0]:-}"
 PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 if [ -z "$FRAMEWORK" ]; then
-    echo "Usage: $0 <framework> [profile] [--compare <framework>]" >&2
+    echo "Usage: $0 <framework> [profile[,profile...]] [--compare <framework>]" >&2
     exit 1
 fi
 
@@ -70,7 +70,8 @@ framework = sys.argv[1]
 display_name = sys.argv[2]
 results_dir = sys.argv[3]
 site_data = sys.argv[4]
-profile_filter = sys.argv[5] if len(sys.argv) > 5 else ''
+# One profile or a comma-separated list; empty means every profile with results.
+profile_filter = {p for p in sys.argv[5].split(',') if p} if len(sys.argv) > 5 else set()
 compare_display = sys.argv[6] if len(sys.argv) > 6 else ''
 
 # Baseline: this framework's own published results by default, another
@@ -91,7 +92,7 @@ for result_file in sorted(glob.glob(f'{results_dir}/*/{framework}.json') + glob.
     else:
         continue
 
-    if profile_filter and profile != profile_filter:
+    if profile_filter and profile not in profile_filter:
         continue
 
     try:

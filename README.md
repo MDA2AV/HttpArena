@@ -19,6 +19,7 @@ HTTP framework benchmark platform.
 |---------|-------------|
 | `/benchmark -f <framework>` | Run every test the framework subscribes to |
 | `/benchmark -f <framework> -t <test>` | Run one test only |
+| `/benchmark -f <framework> -t <t1>,<t2>,...` | Run several tests in one job: one approval, one results commit, untouched tests keep their numbers |
 | `/benchmark -f <framework> --save` | Run and save results (updates the leaderboard on merge) |
 | `/benchmark -f <framework> -t <test> --save` | Run one test and save results |
 | `/benchmark -f <framework> --compare <other>` | Measure the deltas against another framework instead of this one |
@@ -64,6 +65,7 @@ cd HttpArena
 ./scripts/validate.sh <framework>            # correctness check
 ./scripts/benchmark.sh <framework>           # all profiles
 ./scripts/benchmark.sh <framework> baseline  # specific profile
+./scripts/benchmark.sh <framework> gateway-h3,gateway-64  # several profiles, in that order
 ./scripts/benchmark.sh <framework> --save    # save results
 ```
 

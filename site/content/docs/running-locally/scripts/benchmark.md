@@ -12,13 +12,13 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
 ## Synopsis
 
 ```bash
-./scripts/benchmark.sh <framework> [profile] [--save]
+./scripts/benchmark.sh <framework> [profile[,profile...]] [--save]
 ```
 
 | Argument | Description |
 |---|---|
 | `<framework>` | Name of the framework directory under `frameworks/`. Required. |
-| `[profile]` | Optional - run only this profile (e.g. `baseline`, `async-db`, `echo-ws`). If omitted, runs every profile the framework subscribes to. |
+| `[profile]` | Optional - run only this profile (e.g. `baseline`, `async-db`, `echo-ws`), or a comma-separated list run in the order given (e.g. `gateway-h3,gateway-64`). A name that is not a profile fails before anything is built. If omitted, runs every profile the framework subscribes to. |
 | `--save` | Persist results. Without it, you get a dry run - numbers printed, nothing written. |
 
 `--save` can appear in any position. There is no other positional argument.
