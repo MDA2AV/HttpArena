@@ -428,7 +428,7 @@
     "dir": "cweb",
     "description": "Zero-copy asynchronous HTTP/1.1 & WebSocket framework in C using io_uring and splice.",
     "repo": "https://bitbucket.org/saadalabeed/cweb/src/main/",
-    "type": "emerging",
+    "type": "experimental",
     "engine": ""
   },
   "dart-io": {
