@@ -225,17 +225,17 @@ function defineRoutes(app) {
     });
 
     // json-comp: the framework's compression middleware on this route alone,
-    // so no other endpoint pays for the encoder. It negotiates off
-    // Accept-Encoding per request and sends the body as is when none is sent.
-    // brotli at quality 3 is preferred, with the encoder's window fitted to
-    // the body by the framework: the profile prices bytes squared against
-    // rate, and measured on the board gzip at level 3 ran 7% more requests
-    // than brotli 3 but sent 10% more bytes per reply, which the square turns
-    // into a 9% lower score. gzip at level 3 stays available for a client
-    // that accepts nothing else; the middleware keeps one gzip encoder per
-    // worker and resets it between bodies (brotli's encoder forgets its
-    // quality on reset, so it is built per body). The TLS listener (json-tls)
-    // is never asked for an encoding, so its route carries no middleware and
+    // so no other endpoint pays for the encoder. On the native engine the
+    // middleware does not wrap the response: it hands its settings to the
+    // engine's own reply path, which negotiates off Accept-Encoding, sends
+    // the body as is when no encoding is accepted, and otherwise compresses
+    // with one kept encoder per setting per worker, reset between bodies.
+    // brotli at quality 3 is preferred: the profile prices bytes squared
+    // against rate, and measured on the board gzip at level 3 ran 7% more
+    // requests than brotli 3 but sent 10% more bytes per reply, which the
+    // square turns into a 9% lower score. gzip at level 3 stays available
+    // for a client that accepts nothing else. The TLS listener (json-tls) is
+    // never asked for an encoding, so its route carries no middleware and
     // stays on the router's fast path.
     const json = (req, res) => {
         res.json(jsonItems(req));

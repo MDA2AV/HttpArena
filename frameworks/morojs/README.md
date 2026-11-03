@@ -41,16 +41,18 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   in explicitly from the cgroup quota, because Moro's `auto` counts every host core even under
   `--cpuset-cpus`.
 - `json-comp` is the framework's `compression()` middleware attached to the `/json` route alone,
-  so no other endpoint pays for the encoder. It negotiates off `Accept-Encoding` per request and
-  leaves the body alone when the header is absent. brotli at quality 3 is preferred, through the
-  middleware's `encodings` and `brotli` options, with the encoder's window fitted to the body by
-  the framework: the profile scores bytes squared against rate, and measured on the board gzip at
-  level 3 ran 7% more requests than brotli 3 but sent 10% more bytes per reply, a 9% lower score.
-  gzip at level 3 remains available to a client that accepts nothing else. The middleware keeps one
-  encoder per setting per worker and resets it between bodies (`reuseEncoders`, the default): on the
-  Node 26 the image ships, brotli's reset keeps its quality, so a reply costs the compression alone
-  and not an encoder built and torn down around it (measured on these bodies: 30 us against 45 or
-  more per body).
+  so no other endpoint pays for the encoder. On the native engine the middleware does not wrap
+  `res.json`: it hands its settings to the engine's own reply path (MoroJS 1.8.20), which
+  negotiates off `Accept-Encoding`, leaves the body alone when the header is absent, and otherwise
+  compresses on the calling thread and answers in the one native call an uncompressed reply takes.
+  brotli at quality 3 is preferred, through the middleware's `encodings` and `brotli` options: the
+  profile scores bytes squared against rate, and measured on the board gzip at level 3 ran 7% more
+  requests than brotli 3 but sent 10% more bytes per reply, a 9% lower score. gzip at level 3
+  remains available to a client that accepts nothing else. One encoder per setting per worker is
+  kept and reset between bodies (`reuseEncoders`, the default): on the Node 26 the image ships,
+  brotli's reset keeps its quality, so a reply costs the compression alone and not an encoder
+  built and torn down around it. Measured at one worker on the profile's request mix, the hand-off
+  alone was worth 9 to 12% more requests per second over the wrapping middleware of 1.8.19.
 - `server.backlog: 16384`: the edges in front of the gateway and production-stack profiles keep an
   idle pool of 2048 upstream connections under tens of thousands of requests in flight, so they
   dial and drop thousands of connections per wave. At the engine's default backlog of 512 a wave
