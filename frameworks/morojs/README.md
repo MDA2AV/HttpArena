@@ -7,7 +7,9 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
 - **Language:** JavaScript
 - **Runtime:** Node.js 26
 - **Framework:** [MoroJS 1.8](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.1.16, its own native HTTP engine
-- **Build:** Multi-stage on `node:26-trixie-slim`; the engine ships prebuilt binaries, so no toolchain
+- **Build:** Multi-stage on `node:26.13-trixie-slim` (pinned by minor: the compression middleware's reused
+  brotli encoder needs Node 26.11 or later, and the bench host builds against whatever `node:26` it
+  has cached); the engine ships prebuilt binaries, so no toolchain
 
 ## Endpoints
 
@@ -39,22 +41,18 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   in explicitly from the cgroup quota, because Moro's `auto` counts every host core even under
   `--cpuset-cpus`.
 - `json-comp` is the framework's `compression()` middleware attached to the `/json` route alone,
-  so no other endpoint pays for the encoder. It negotiates off `Accept-Encoding` per request and
-  leaves the body alone when the header is absent. brotli at quality 3 is preferred, through the
-  middleware's `encodings` and `brotli` options, with the encoder's window fitted to the body by
-  the framework: the profile scores bytes squared against rate, and measured on the board gzip at
-  level 3 ran 7% more requests than brotli 3 but sent 10% more bytes per reply, a 9% lower score.
-  gzip at level 3 remains available to a client that accepts nothing else. The middleware keeps one
-  encoder per setting per worker and resets it between bodies (`reuseEncoders`, the default): on the
-  Node 26 the image ships, brotli's reset keeps its quality, so a reply costs the compression alone
-  and not an encoder built and torn down around it (measured on these bodies: 30 us against 45 or
-  more per body).
-- The proxied stacks (`compose.gateway.yml`, `compose.gateway-h3.yml`, `compose.production-stack.yml`)
-  run the server with `MORO_ENGINE_SERVE_ORDER=auto`: the engine's epoll transport serves a loop
-  turn's sockets grouped by the CPU their peer sends from, an order its design notes measured to lose
-  about a quarter at 256 connections against arrival order when every request enters JavaScript under
-  a peer that oversubscribes its cores, which is what an edge proxy is. `auto` has each loop measure
-  both orders and keep the faster one. The standalone container keeps the engine's default.
+  so no other endpoint pays for the encoder. On the native engine the middleware does not wrap
+  `res.json`: it hands its settings to the engine's own reply path (MoroJS 1.8.20), which
+  negotiates off `Accept-Encoding`, leaves the body alone when the header is absent, and otherwise
+  compresses on the calling thread and answers in the one native call an uncompressed reply takes.
+  brotli at quality 3 is preferred, through the middleware's `encodings` and `brotli` options: the
+  profile scores bytes squared against rate, and measured on the board gzip at level 3 ran 7% more
+  requests than brotli 3 but sent 10% more bytes per reply, a 9% lower score. gzip at level 3
+  remains available to a client that accepts nothing else. One encoder per setting per worker is
+  kept and reset between bodies (`reuseEncoders`, the default): on the Node 26 the image ships,
+  brotli's reset keeps its quality, so a reply costs the compression alone and not an encoder
+  built and torn down around it. Measured at one worker on the profile's request mix, the hand-off
+  alone was worth 9 to 12% more requests per second over the wrapping middleware of 1.8.19.
 - `server.backlog: 16384`: the edges in front of the gateway and production-stack profiles keep an
   idle pool of 2048 upstream connections under tens of thousands of requests in flight, so they
   dial and drop thousands of connections per wave. At the engine's default backlog of 512 a wave
@@ -106,9 +104,13 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   the reply is the same, and the request stops paying three promise hops (the handler's, the
   router's, the server's). `pg-native`, which the uWebSockets-based entries use, loads its libpq
   addon once per process and refuses the second worker thread, so it cannot serve a thread cluster.
-- The gateway and production-stack edges are stock nginx and Caddy, configured as the fulmine
-  entry configures them: `/static/*` off disk at the edge, everything else forwarded over
-  loopback h1 with a keepalive pool, and `/api/*` past the shared JWT verifier first.
+- The gateway and production-stack edges are stock nginx (`nginx:1.27-alpine`, whose official build
+  carries `http_v3_module`): `/static/*` off disk at the edge, everything else forwarded over loopback
+  h1 with a keepalive pool, `/api/*` past the shared JWT verifier first, and on `gateway-h3` the same
+  edge with a QUIC listen (`proxy-h3/`). Caddy fronted `gateway-h3` before: every entry behind it
+  lands at 56-63K at 256 connections with a p99 near 800 ms, whatever the backend, while the entries
+  on an nginx QUIC edge run at 175-200K. The TLS listens are on loopback with `reuseport`, since the
+  validator keeps the standalone container, whose HTTP/2 listener holds `*:8443`, up beside the stack.
 - The production-stack cache-aside goes through the framework's cache adapters:
   `RedisCacheAdapter` on the stack's `REDIS_URL`, one connection per worker so an update on any
   worker invalidates what every other one reads, and `MemoryCacheAdapter` otherwise. Items live
