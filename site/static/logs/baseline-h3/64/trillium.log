@@ -1,1 +1,10 @@
-[2026-10-23T06:35:28Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-11-02T22:37:10Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-11-02T22:37:15Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error

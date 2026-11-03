@@ -118,7 +118,7 @@ pub async fn api_item_read(conn: Conn) -> Conn {
         }
     };
 
-    let body: Arc<[u8]> = sonic_rs::to_vec(&item).unwrap_or_default().into();
+    let body: Arc<[u8]> = serde_json::to_vec(&item).unwrap_or_default().into();
     state.items_l1.insert(id, Arc::clone(&body)).await;
     if let Some(redis) = &state.redis {
         l2_set(redis, &key, &body, ITEM_TTL).await;
@@ -169,7 +169,7 @@ pub async fn api_item_write(mut conn: Conn) -> Conn {
     let Ok(body) = conn.request_body_string().await else {
         return conn.with_status(Status::BadRequest).halt();
     };
-    let Ok(input) = sonic_rs::from_str::<ApiItemWrite>(&body) else {
+    let Ok(input) = serde_json::from_str::<ApiItemWrite>(&body) else {
         return conn.with_status(Status::UnprocessableEntity).halt();
     };
 
@@ -251,7 +251,7 @@ pub async fn api_me(conn: Conn) -> Conn {
         }
     };
 
-    let body: Arc<[u8]> = sonic_rs::to_vec(&user).unwrap_or_default().into();
+    let body: Arc<[u8]> = serde_json::to_vec(&user).unwrap_or_default().into();
     state.users_l1.insert(id, Arc::clone(&body)).await;
     if let Some(redis) = &state.redis {
         l2_set(redis, &key, &body, USER_TTL).await;

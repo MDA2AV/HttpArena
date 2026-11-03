@@ -61,7 +61,7 @@ pub async fn crud_list(conn: Conn) -> Conn {
     };
 
     let total = items.len();
-    let body = sonic_rs::to_vec(&CrudListResponse {
+    let body = serde_json::to_vec(&CrudListResponse {
         items,
         total,
         page,
@@ -136,7 +136,7 @@ pub async fn crud_read(conn: Conn) -> Conn {
         }
     };
 
-    let body: Arc<[u8]> = sonic_rs::to_vec(&row).unwrap_or_default().into();
+    let body: Arc<[u8]> = serde_json::to_vec(&row).unwrap_or_default().into();
     state.crud_cache.insert(
         id,
         CacheEntry {
@@ -189,7 +189,7 @@ struct CrudCreate {
     #[serde(default)]
     active: bool,
     #[serde(default)]
-    tags: sonic_rs::Value,
+    tags: serde_json::Value,
 }
 
 #[derive(Serialize)]
@@ -204,7 +204,7 @@ pub async fn crud_create(mut conn: Conn) -> Conn {
         Ok(b) => b,
         Err(_) => return conn.with_status(Status::BadRequest).halt(),
     };
-    let input: CrudCreate = match sonic_rs::from_str(&body) {
+    let input: CrudCreate = match serde_json::from_str(&body) {
         Ok(x) => x,
         Err(_) => return conn.with_status(Status::UnprocessableEntity).halt(),
     };
@@ -225,7 +225,7 @@ pub async fn crud_create(mut conn: Conn) -> Conn {
         input: &input,
         rating: Rating { score: 0, count: 0 },
     };
-    let out = sonic_rs::to_vec(&resp).unwrap_or_default();
+    let out = serde_json::to_vec(&resp).unwrap_or_default();
     conn.with_status(Status::Created)
         .with_response_header(KnownHeaderName::ContentType, APPLICATION_JSON)
         .with_body(out)
@@ -246,7 +246,7 @@ async fn upsert_crud(
              EXCLUDED.tags",
         )
         .await?;
-    let tags = sonic_rs::to_string(&item.tags).unwrap_or_else(|_| "[]".into());
+    let tags = serde_json::to_string(&item.tags).unwrap_or_else(|_| "[]".into());
     client
         .execute(
             &stmt,
@@ -280,7 +280,7 @@ pub async fn crud_update(mut conn: Conn) -> Conn {
         Ok(b) => b,
         Err(_) => return conn.with_status(Status::BadRequest).halt(),
     };
-    let input: CrudUpdate = match sonic_rs::from_str(&body) {
+    let input: CrudUpdate = match serde_json::from_str(&body) {
         Ok(x) => x,
         Err(_) => return conn.with_status(Status::UnprocessableEntity).halt(),
     };
@@ -301,7 +301,7 @@ pub async fn crud_update(mut conn: Conn) -> Conn {
 
     state.crud_cache.remove(&id);
 
-    let out = sonic_rs::to_vec(&updated).unwrap_or_default();
+    let out = serde_json::to_vec(&updated).unwrap_or_default();
     conn.with_status(Status::Ok)
         .with_response_header(KnownHeaderName::ContentType, APPLICATION_JSON)
         .with_body(out)
