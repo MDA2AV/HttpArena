@@ -21,7 +21,7 @@ use trillium_router::Router;
 use trillium_rustls::RustlsAcceptor;
 use trillium_static::StaticFileHandler;
 use trillium_tokio::config;
-use trillium_websockets::websocket;
+use trillium_websockets::{WebSocketConfig, websocket};
 
 fn tuned_http_config() -> HttpConfig {
     HttpConfig::default()
@@ -72,7 +72,13 @@ fn build_handler(static_dir: String) -> impl Handler {
             .get("/api/items/:id", api_item_read)
             .post("/api/items/:id", api_item_write)
             .get("/api/me", api_me)
-            .get("/ws", websocket(ws_echo)),
+            .get(
+                "/ws",
+                // tungstenite zero-fills the spare read buffer before every socket read, so its
+                // 128 KiB default costs a 128 KiB memset per message.
+                websocket(ws_echo)
+                    .with_protocol_config(WebSocketConfig::default().read_buffer_size(4 * 1024)),
+            ),
     )
 }
 

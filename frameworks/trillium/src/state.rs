@@ -100,7 +100,7 @@ impl AppState {
         let dataset_path = env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".into());
         let dataset = fs::read(&dataset_path)
             .ok()
-            .and_then(|bytes| sonic_rs::from_slice(&bytes).ok())
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
             .unwrap_or_default();
 
         let pg = env::var("DATABASE_URL").ok().and_then(|url| {

@@ -1,10 +1,24 @@
-[2026-10-23T06:54:41Z INFO  httparena_trillium_tuned] starting trillium-tuned via server(): 64 reuseport worker(s) + shared runtime for h3
-[2026-10-23T06:54:41Z INFO  trillium_static::handler] serving files within "/data/static"
-[2026-10-23T06:54:41Z INFO  trillium_server_common::listener_config::reuseport] reuseport: 64 per-core worker(s) across 4 listener(s)
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
-[2026-10-23T06:54:46Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:25Z INFO  httparena_trillium_tuned] starting trillium-tuned via server(): 64 reuseport worker(s) + shared runtime for h3
+[2026-10-24T22:20:25Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-10-24T22:20:25Z INFO  trillium_server_common::listener_config::reuseport] reuseport: 64 per-core worker(s) across 4 listener(s)
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:31Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error
+[2026-10-24T22:20:38Z ERROR trillium_quinn::config] QUIC accept failed: aborted by peer: the connection is being closed abruptly in the absence of any error

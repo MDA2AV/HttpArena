@@ -54,7 +54,7 @@ pub async fn async_db(conn: Conn) -> Conn {
     };
 
     let count = items.len();
-    let body = sonic_rs::to_vec(&DbResponse { items, count }).unwrap_or_default();
+    let body = serde_json::to_vec(&DbResponse { items, count }).unwrap_or_default();
     json_response(conn, body)
 }
 
