@@ -41,7 +41,7 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
    - Waits up to 30s for the right endpoint to respond.
    - Builds the tool-specific argument vector.
    - Warms the server up: one `$WARMUP` run of the same tool and arguments (default 15s), discarded and outside every measurement.
-   - Runs the profile's measured rounds (`PROFILE_PLAN` in `scripts/lib/profiles.sh`: 2 x 15s for `baseline`, `limited-conn`, `json-tls` and the HTTP/2 and HTTP/3 baseline, static and JSON profiles; 3 rounds otherwise), keeps the best by rps. `$COOLDOWN` seconds of idle (default 15) separate each of these runs, the warm-up included, and `$PROFILE_COOLDOWN` seconds (default 45) separate one profile from the next.
+   - Runs the profile's measured rounds (`PROFILE_PLAN` in `scripts/lib/profiles.sh`: 2 x 15s for `baseline`, `limited-conn`, `json-tls` and the HTTP/2 and HTTP/3 baseline, static and JSON profiles; 3 rounds otherwise), keeps the best by rps. `$COOLDOWN` seconds of idle (default 15) separate each of these runs, the warm-up included, and `$TEST_COOLDOWN` seconds (default 45) separate one (profile, connection count) from the next.
    - Each iteration: starts `docker stats` polling, runs the load generator (`timeout 45s`), stops polling, parses output.
    - Raw load-generator output from every run is written to `site/static/logs/<profile>/<conns>/<framework>.<tool>.run<N>.txt` - useful when a parser misbehaves.
 7. **Save** (`--save` only) - writes `results/<profile>/<conns>/<framework>.json` + framework `docker logs` to `site/static/logs/<profile>/<conns>/<framework>.log`.
@@ -68,7 +68,7 @@ Set via `VAR=value ./scripts/benchmark.sh ...` or `export VAR=value`.
 | `RUNS` | `3` | Measured rounds per (profile, conns), under the same rules. Best result wins. |
 | `WARMUP` | `15s` | Discarded run of the profile's own workload before the first measured round. `0` turns it off. |
 | `COOLDOWN` | `15` | Seconds of idle between load-generator runs, the warm-up included. |
-| `PROFILE_COOLDOWN` | `45` | Seconds of idle between profiles within one `benchmark.sh` run. |
+| `TEST_COOLDOWN` | `45` | Seconds of idle between any two tests of an entry: another profile, or another connection count of the same one. |
 | `THREADS` | `64` | Load-generator threads for gcannon, wrk, and the default path. |
 | `H2THREADS` | `64` | h2load worker threads (h2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |

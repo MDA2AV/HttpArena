@@ -662,7 +662,7 @@ EOF
 
 # Iterate profiles × conns.
 declare -A BEST_M
-_ran_profile=false
+_ran_test=false
 for profile in "${profiles_to_run[@]}"; do
     if [ -z "${PROFILES[$profile]+x}" ]; then
         warn "unknown profile: $profile"
@@ -670,19 +670,18 @@ for profile in "${profiles_to_run[@]}"; do
     fi
     framework_subscribes_to "$profile" || { info "skip: $FRAMEWORK does not subscribe to $profile"; continue; }
 
-    # Only after a profile that put load on the box: one that was skipped, or
-    # whose server never came up, has nothing to cool down from.
-    if $_ran_profile; then
-        info "cool-down: ${PROFILE_COOLDOWN}s before $profile"
-        sleep "$PROFILE_COOLDOWN"
-        _ran_profile=false
-    fi
-
     parse_profile "${PROFILES[$profile]}"
     IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
     for CONNS in "${CONN_COUNTS[@]}"; do
+        # Only after a test that put load on the box: one whose server never came
+        # up has nothing to cool down from.
+        if $_ran_test; then
+            info "cool-down: ${TEST_COOLDOWN}s before $profile / ${CONNS}c"
+            sleep "$TEST_COOLDOWN"
+            _ran_test=false
+        fi
         run_one "$profile" "$CONNS" || continue
-        _ran_profile=true
+        _ran_test=true
     done
 done
 

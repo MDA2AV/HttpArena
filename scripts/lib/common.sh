@@ -32,8 +32,9 @@ RUNS="${RUNS:-3}"
 WARMUP="${WARMUP:-15s}"
 # Seconds of idle between load-generator runs, the warm-up included.
 COOLDOWN="${COOLDOWN:-15}"
-# Seconds of idle between profiles within one benchmark.sh run, on top of that.
-PROFILE_COOLDOWN="${PROFILE_COOLDOWN:-45}"
+# Seconds of idle between any two tests of an entry: another profile, or another
+# connection count of the same one. The workflows pause as long between entries.
+TEST_COOLDOWN="${TEST_COOLDOWN:-45}"
 THREADS="${THREADS:-64}"
 # The async profile's generator thread count, separately settable. It gets its own
 # knob because the profile is closed-loop - every connection holds one request for
