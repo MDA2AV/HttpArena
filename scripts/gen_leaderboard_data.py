@@ -107,8 +107,10 @@ CATALOG = [
         # more than the framework does, which is the case #1310 makes: that rules
         # them out of a ranking of HTTP paths, and it is what this one ranks. They
         # run over HTTP/1.1 with the box split three ways, see DB_* in profiles.sh.
+        # Only async-db counts for now: 63 of the 101 entries running it have no
+        # Fortunes, and scoring it would cap all of them at half the board.
         ("async-db",  "Async DB",  "Async Postgres sequential scan.",                 [1024],     [1024],  True,True,False),
-        ("fortunes",  "Fortunes",  "DB query + HTML template render.",                [1024],     [1024],  True,False,False),
+        ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("HTTP/2", [
         ("baseline-h2",  "Baseline",       "Baseline over h2 (TLS, ALPN).",          [256,1024],     [256,1024],     True,True,True),

@@ -47,7 +47,7 @@ The reply states which baseline it used, and profiles the other framework does n
 | Concurrency | `async` | `GET /delay/{ms}` with the wait named in the route, 32K held connections. Isolates what a framework does while a request is pending, with no database or I/O in the way. Scored for frameworks and engines, not for infrastructure, since the spec settled at a flat 10 ms over 32K connections |
 | Efficiency | `latency-1m`, `latency-10k`, `latency-500k-8cpu` * | One million req/s offered at a fixed rate with zrk; the metric is CPU spent per request, read exactly from the container's cgroup rather than sampled. Everyone who finishes serves the same million, so what separates them is the bill. Scored on its own 0-100 formula rather than on rps, since the rate is pinned. `latency-10k` is the identical setup - same cores, connections and endpoint - at a near-idle 10K req/s, so what it reports is the standing cost of being a running server rather than of serving load, and it is scored the same way. Both score CPU at 0.50, p99 at 0.25 and mean latency at 0.25, the mean being the queueing signal: ten times the best mean is worth nothing. `latency-500k-8cpu` pins 500K req/s with the server on four cores plus their SMT siblings, so the load sits near saturation and the queue a server builds shows in its mean; reference-only while the first entries are measured |
 | Workload | `json-comp`, `json-tls`, `8gbit`, `static-tls` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, a 10 KB body echoed over TLS at a pinned 50K req/s so ingest and egress load together - scored on the same 0-100 formula as the latency profiles, since its rate is pinned too, 20-file static asset serving over TLS |
-| Database | `async-db`, `fortunes` | Postgres-backed HTTP/1.1, on their own board: an async range query, and a DB query + HTML template render (TechEmpower-style Fortunes). The server gets 32 logical CPUs, the load generator 32 and Postgres the rest |
+| Database | `async-db`, `fortunes` * | Postgres-backed HTTP/1.1, on their own board: an async range query, and a DB query + HTML template render (TechEmpower-style Fortunes, reference-only). The server gets 32 logical CPUs, the load generator 32 and Postgres the rest |
 | H/2 | `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c` | Baseline + static over TLS with h2 stream multiplexing; baseline + JSON over cleartext h2 (prior-knowledge, port 8082) |
 | H/3 | `baseline-h3`, `static-h3` | Baseline and static over QUIC with TLS 1.3 |
 | gRPC | `unary-grpc`, `unary-grpc-tls` | Unary gRPC over plaintext HTTP/2 and TLS |
@@ -104,7 +104,7 @@ Swap `actix` for your entry and `h1` for the family you want:
 | Gateway | `gw` | reverse-proxy and production-stack profiles |
 | gRPC | `grpc` | unary and streaming, plaintext and TLS |
 | WebSocket | `ws` | the echo profiles |
-| Database | `db` | the Postgres-backed profiles |
+| Database | `db` | the Async DB profile |
 
 `<framework>` is your entry's name on the board, lowercased, with anything
 outside `A-Z a-z 0-9 . _ -` turned into `-`, the same name as your file in

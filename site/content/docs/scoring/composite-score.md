@@ -118,11 +118,11 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Profile | Scored | Workload |
 |---|---|---|
 | Async DB | Yes | Async Postgres query with connection pooling |
-| Fortunes | Yes for frameworks, not for engines | DB query + HTML template render |
+| Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
 
-These two rank on their own board and count toward no other composite. The database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which rules it out of a ranking of HTTP paths and is what this board ranks instead.
+Async DB ranks on its own board and counts toward no other composite. The database and its driver dominate it far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which rules it out of a ranking of HTTP paths and is what this board ranks instead.
 
-Pipelined and Static TLS are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Fortunes, Pipelined and Static TLS are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 ## Memory efficiency bonus
 
