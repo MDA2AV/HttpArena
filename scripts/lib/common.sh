@@ -30,6 +30,8 @@ RUNS="${RUNS:-3}"
 # One discarded run of the profile's own workload before the measured rounds, on
 # every fresh container. 0 turns it off. See run_one() in benchmark.sh.
 WARMUP="${WARMUP:-15s}"
+# Seconds of idle between load-generator runs, the warm-up included.
+COOLDOWN="${COOLDOWN:-30}"
 THREADS="${THREADS:-64}"
 # The async profile's generator thread count, separately settable. It gets its own
 # knob because the profile is closed-loop - every connection holds one request for

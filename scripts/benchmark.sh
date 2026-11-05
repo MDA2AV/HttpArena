@@ -216,14 +216,15 @@ if $need_pg; then postgres_start; fi
 # profiles_to_run was fixed at argument parsing, so a bad name failed before
 # the builds and tuning above.
 
-# Cool-down between load-generator runs. gcannon closes every connection when it
-# exits and the active closer holds the port for the kernel's fixed ~60s
-# TIME_WAIT, so a profile running tens of thousands of connections hands the next
-# run a port table that is already mostly spoken for. tcp_tw_reuse lets those be
-# recycled, but at 48K of a 64.5K-port range the connect path starts scanning and
-# the ramp lands inside the measured window. Two seconds is plenty below that.
+# Cool-down between load-generator runs, so that one run's teardown stays out of
+# the next one's window. gcannon closes every connection when it exits and the
+# active closer holds the port for the kernel's fixed ~60s TIME_WAIT, so a profile
+# running tens of thousands of connections hands the next run a port table that is
+# already mostly spoken for. tcp_tw_reuse lets those be recycled, but at 48K of a
+# 64.5K-port range the connect path starts scanning and the ramp lands inside the
+# measured window.
 round_cooldown() {
-    if [ "$1" -ge 32768 ]; then sleep 15; else sleep 2; fi
+    sleep "$COOLDOWN"
 }
 
 # run_one — single (profile, conns) iteration. Returns non-zero if the
@@ -309,7 +310,7 @@ run_one() {
         warm_output=$("${tool//-/_}_run" "${warm_args[@]}")
         warm_rps=$("${tool//-/_}_parse" "$endpoint" "$warm_output" | sed -n 's/^rps=//p') || true
         info "warm-up: ${warm_rps:-0} req/s"
-        round_cooldown "$CONNS"
+        round_cooldown
     fi
 
     # ── Best-of-N runs ──────────────────────────────────────────────────
@@ -399,7 +400,8 @@ run_one() {
             for k in "${!m[@]}"; do BEST_M[$k]="${m[$k]}"; done
         fi
 
-        round_cooldown "$CONNS"
+        # Not after the last run: a new container and its warm-up come next.
+        if [ "$run" -lt "$PLAN_RUNS" ]; then round_cooldown; fi
     done
 
     # ── Latency-1M: pick the run by score, not by any single metric ─────
