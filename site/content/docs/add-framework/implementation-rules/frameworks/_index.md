@@ -47,5 +47,5 @@ A **variant** is the same framework on another runtime or with another documente
 
 - A framework has **at most two** variants, because every entry runs on the same hardware. Subscribe a variant only to the tests where it is different.
 - A variant has its own row, with a pill that says which variant it is, and it is scored like any other entry.
-- With `"default_visible": false` a variant is listed only when the Variants filter is on, and it has no badges or medals. Like a tuned entry that is filtered out, it still counts for the leader of each profile.
+- A variant is listed only when the Variants filter is on, and it has no badges or medals, unless it sets `"default_visible": true`. Like a tuned entry that is filtered out, it still counts for the leader of each profile.
 - Each variant has its own badge URL, under its own entry name.

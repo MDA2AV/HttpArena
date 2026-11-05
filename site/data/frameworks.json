@@ -1069,6 +1069,7 @@
   "hono-bun": {
     "framework": "hono",
     "variant": "bun",
+    "default_visible": true,
     "dir": "hono-bun",
     "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
     "repo": "https://github.com/honojs/hono",
@@ -1085,6 +1086,7 @@
   "hono-node": {
     "framework": "hono",
     "variant": "node",
+    "default_visible": true,
     "dir": "hono-node",
     "description": "Hono on node:http through @hono/node-server, with the cluster module for multi-core scaling.",
     "repo": "https://github.com/honojs/node-server",

@@ -2,6 +2,7 @@
   "display_name": "hono-node",
   "framework": "hono",
   "variant": "node",
+  "default_visible": true,
   "language": "TS",
   "type": "flagship",
   "mode": "standard",

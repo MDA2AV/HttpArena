@@ -2,6 +2,7 @@
   "display_name": "hono-bun",
   "framework": "hono",
   "variant": "bun",
+  "default_visible": true,
   "language": "TS",
   "type": "flagship",
   "mode": "standard",

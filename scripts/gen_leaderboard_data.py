@@ -3628,7 +3628,8 @@ def build_meta(frameworks, tls_check=None):
                 **({"website": m["website"]} if m.get("website") else {}),
                 **({"framework": m["framework"], "variant": m["variant"]}
                    if m.get("variant") else {}),
-                **({"hidden": True} if m.get("default_visible") is False else {}),
+                **({"hidden": True}
+                   if m.get("variant") and m.get("default_visible") is not True else {}),
                 "dir": m.get("dir", ""),
                 "engine": m.get("engine", ""),
                 "cmp": m.get("completeness"),
