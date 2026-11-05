@@ -64,8 +64,6 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
 | Async Delay | Yes | `GET /delay/10` over 32,000 held connections - what the framework does while a request waits. Scored for frameworks and engines, not for infrastructure |
-| Async DB | No (*) | Async Postgres query with connection pooling. Reference-only since #1331 - the driver dominates the result more than the framework does |
-| Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
 
 ### H/1.1 Workload
 
@@ -115,9 +113,16 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static TLS and Async DB are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+### Database
 
-The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
+| Profile | Scored | Workload |
+|---|---|---|
+| Async DB | Yes | Async Postgres query with connection pooling |
+| Fortunes | Yes for frameworks, not for engines | DB query + HTML template render |
+
+These two rank on their own board and count toward no other composite. The database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which rules it out of a ranking of HTTP paths and is what this board ranks instead.
+
+Pipelined and Static TLS are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 ## Memory efficiency bonus
 
@@ -171,7 +176,7 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
-- **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
+- **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, WebSocket and Database.
 - **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (compression negotiation, the TLS echo).
 - **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
 

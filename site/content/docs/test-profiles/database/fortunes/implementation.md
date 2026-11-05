@@ -9,9 +9,11 @@ The Fortunes profile measures template-engine throughput on a realistic page-ren
 
 **Diverges from TechEmpower Fortunes (12-row spec) by design.** With only 12 rows the per-request render time is dwarfed by the PG round-trip, so the profile ends up measuring the database driver more than the template engine. Bumping the seed to 200 rows scales render cost linearly while leaving query cost effectively constant (still one round-trip, still single-page table read), shifting the bottleneck from PG-throughput to framework-CPU - which is what the profile name actually claims to measure.
 
-**This test is reference-only - it does not contribute to the composite score.** It exists for engine-to-engine comparison (Razor vs Jinja2 vs ERB vs Askama, etc.), not framework ranking. Frameworks without a template engine should leave it out of `meta.json.tests`.
+**This test is scored on the Database board for frameworks, not for engines, and is not part of the HTTP/1.1 composite.** Frameworks without a template engine should leave it out of `meta.json.tests`, and score 0 for it on that board.
 
 **Connections:** 1,024
+
+**CPUs:** 32 for the server, 32 for the load generator and the rest for Postgres - see the [CPU layout](../#cpu-layout).
 
 ## How it works
 

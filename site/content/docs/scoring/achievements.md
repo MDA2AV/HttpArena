@@ -21,7 +21,7 @@ Nothing is scored again to award them. A medal is a place in a field the site al
 
 Every field is the entry's own league. Frameworks, engines and reverse proxies are three separate competitions, and a framework never places against an engine.
 
-A profile only awards a medal to an entry that is scored on it. Reference-only profiles, Pipelined and Fortunes, award nothing to frameworks, and an engine holds no medal on a profile outside the engine set.
+A profile only awards a medal to an entry that is scored on it. Reference-only profiles such as Pipelined award nothing to frameworks, and an engine holds no medal on a profile outside the engine set.
 
 Tuned entries follow the badge rule: a standard entry is placed in the field without tuned entries, a tuned entry in the field with them. It is always the smallest published field the entry belongs to.
 

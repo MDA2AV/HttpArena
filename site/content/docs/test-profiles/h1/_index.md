@@ -2,7 +2,7 @@
 weight: 1
 title: H/1.1
 seo_title: "HTTP/1.1 Test Profiles"
-description: "Single-endpoint HTTP/1.1 benchmarks, each isolating one dimension: throughput, JSON, TLS echo, static files, concurrency, CPU cost and database access."
+description: "Single-endpoint HTTP/1.1 benchmarks, each isolating one dimension: throughput, JSON, TLS echo, static files, concurrency and CPU cost."
 ---
 
 Every HTTP/1.1 profile measures one thing at a time, so a number can be attributed to a single part of the framework rather than to a mix.
@@ -17,8 +17,6 @@ Every HTTP/1.1 profile measures one thing at a time, so a number can be attribut
   {{< card link="latency-10k" title="Latency-10K" subtitle="Latency-1M's setup at a near-idle 10K req/s; the metric is the CPU and latency of a server with almost nothing to do." icon="chip" >}}
   {{< card link="latency-1m" title="Latency-1M" subtitle="One million req/s offered at a fixed rate; the metric is the CPU each framework spends to serve it, read exactly from its cgroup." icon="chip" >}}
   {{< card link="latency-500k-8cpu" title="Latency-500K/8 *" subtitle="500K req/s pinned with the server on four cores plus their SMT siblings - near saturation, so the queue a server builds shows in its mean latency. Reference-only while the first entries are measured." icon="chip" >}}
-  {{< card link="async-database" title="Async Database (Postgres)" subtitle="Async Postgres range query over 100K rows, connection pooling, and JSON serialization. Framework-only benchmark." icon="database" >}}
   {{< card link="static-tls" title="Static Files over TLS" subtitle="Same 20-file static workload transported over HTTP/1.1 + TLS on port 8081 - measures the cost of encryption on bulk file serving." icon="lock-closed" >}}
   {{< card link="pipelined" title="Pipelined (16x) *" subtitle="16 requests sent back-to-back per connection, testing raw I/O and pipeline batching. Reference-only - not part of the composite score." icon="fast-forward" >}}
-  {{< card link="fortunes" title="Fortunes (Templates) *" subtitle="DB query + HTML template rendering with auto-escape. Reference-only - measures template-engine throughput, not part of the composite score." icon="document-text" >}}
 {{< /cards >}}
