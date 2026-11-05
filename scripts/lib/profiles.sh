@@ -114,11 +114,10 @@ declare -A PROFILES=(
 # the RUNS x DURATION defaults from common.sh. Its own table rather than two more
 # fields on PROFILES, because benchmark-lite.sh carries a PROFILES of its own and
 # runs on its own defaults.
-#
-# Two longer rounds instead of three short ones. The warm-up now takes what the
-# first round used to absorb, so a third round buys little, and a 5s window is
-# short enough that best-of-N mostly picks the luckiest few seconds.
 declare -A PROFILE_PLAN=(
+    # Two longer rounds instead of three short ones. The warm-up now takes what the
+    # first round used to absorb, so a third round buys little, and a 5s window is
+    # short enough that best-of-N mostly picks the luckiest few seconds.
     [baseline]="2|15s"
     [limited-conn]="2|15s"
     [json-tls]="2|15s"
@@ -128,6 +127,13 @@ declare -A PROFILE_PLAN=(
     [json-h2c]="2|15s"
     [baseline-h3]="2|15s"
     [static-h3]="2|15s"
+    # Long enough that establishing the connections is a small share of the window.
+    [async]="3|10s"
+    [async-db]="3|10s"
+    # The fixed-rate tail needs the extra samples.
+    [latency-1m]="3|20s"
+    [latency-10k]="3|20s"
+    [latency-500k-8cpu]="3|20s"
 )
 
 PROFILE_ORDER=(

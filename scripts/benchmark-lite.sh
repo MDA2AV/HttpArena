@@ -273,8 +273,12 @@ run_one() {
         return 1
     fi
 
+    # async-db keeps the 10s window it has in benchmark.sh.
+    local duration="$DURATION"
+    [ "$endpoint" = "async-db" ] && duration="10s"
+
     local -a gc_args
-    mapfile -t gc_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$DURATION" "$PROF_REQ")
+    mapfile -t gc_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$duration" "$PROF_REQ")
 
 
     # Start at -1 so the first measurement always seeds BEST_M, even for
@@ -291,7 +295,7 @@ run_one() {
         output=$("${tool//-/_}_run" "${gc_args[@]}")
         stats_stop
 
-        echo "$output" | grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' || true
+        print_run_output "$tool" "$output"
         info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"
 

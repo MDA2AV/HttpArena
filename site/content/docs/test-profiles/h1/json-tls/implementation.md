@@ -92,7 +92,7 @@ Body (the shared `/json` response shape):
 | Count × multiplier pairs | `(1,3)`, `(5,7)`, `(10,2)`, `(15,5)`, `(25,4)`, `(40,8)`, `(50,6)` (round-robin) |
 | Connections | 4,096 |
 | Pipeline | 1 |
-| Warm-up | 15s, discarded |
+| Warm-up | 3 x 15s, discarded |
 | Duration | 15s |
 | Runs | 2 (best taken) |
 | Load generator | wrk + `requests/json-tls-rotate.lua` |

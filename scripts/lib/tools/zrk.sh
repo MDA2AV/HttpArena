@@ -98,7 +98,7 @@ zrk_build_args() {
             local _rate="$ZRK_RATE_LATENCY_1M"
             [ "$endpoint" = "latency-10k" ] && _rate="$ZRK_RATE_LATENCY_10K"
             [ "$endpoint" = "latency-500k-8cpu" ] && _rate="$ZRK_RATE_LATENCY_500K"
-            cmd+=(-t "$THREADS" -c "$conns" -d 20s -R "$_rate"
+            cmd+=(-t "$THREADS" -c "$conns" -d "$duration" -R "$_rate"
                   --format json --plain
                   "http://localhost:$PORT/baseline11?a=1&b=2")
             ;;
@@ -185,10 +185,8 @@ for k in ("1xx", "2xx", "3xx", "4xx", "5xx"):
 # number is not comparable with anyone else's. Carried through to the result
 # row so the reason is visible rather than inferred from a low rps.
 print("rate_ratio=%.4f" % (d.get("rate_ratio") or 0))
-# The adapters that hardcode their own -d have always let the result row
-# inherit the global DURATION, which is wrong for all of them. It matters
-# here because cpu_usec is only readable against the window it was taken
-# over, so this one reports the duration it actually ran.
+# cpu_usec is only readable against the window it was taken over, so report
+# the duration zrk actually ran rather than the one it was asked for.
 print("duration=%.0fs" % (d.get("duration_s") or 0))
 print("target_rate=%d" % (d.get("target_rate") or 0))
 print("max_schedule_lag_us=%d" % (d.get("max_schedule_lag_us") or 0))

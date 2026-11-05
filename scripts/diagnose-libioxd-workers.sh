@@ -61,7 +61,8 @@ for W in $WORKER_COUNTS; do
     unset FRAMEWORK_CMD_ARGS
     framework_wait_ready "$PROF_ENDPOINT"
 
-    mapfile -t cmd < <(zrk_build_args "$PROF_ENDPOINT" "$CONNS" "$PROF_PIPELINE" "$DURATION")
+    profile_plan "$PROFILE"
+    mapfile -t cmd < <(zrk_build_args "$PROF_ENDPOINT" "$CONNS" "$PROF_PIPELINE" "$PLAN_DURATION")
     cpu_acct_start "$CONTAINER_NAME"
     output=$(zrk_run "${cmd[@]}")
     cpu_acct_stop

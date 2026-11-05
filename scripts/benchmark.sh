@@ -227,6 +227,19 @@ round_cooldown() {
     sleep "$COOLDOWN"
 }
 
+# Mean and sample standard deviation of the measured rounds' throughput.
+rps_spread() {
+    awk -v vals="$*" 'BEGIN {
+        n = split(vals, x, " ")
+        for (i = 1; i <= n; i++) sum += x[i]
+        mean = sum / n
+        if (n < 2) { printf "mean %.0f | stddev n/a", mean; exit }
+        for (i = 1; i <= n; i++) sq += (x[i] - mean) ^ 2
+        sd = sqrt(sq / (n - 1))
+        printf "mean %.0f | stddev %.0f (%.2f%%)", mean, sd, (mean > 0 ? sd / mean * 100 : 0)
+    }'
+}
+
 # run_one — single (profile, conns) iteration. Returns non-zero if the
 # server failed to start; main loop skips to the next profile in that case.
 run_one() {
@@ -288,7 +301,7 @@ run_one() {
 
     # ── Warm-up ─────────────────────────────────────────────────────────
     #
-    # One discarded run before anything is measured. Every iteration gets a fresh
+    # Discarded runs before anything is measured. Every iteration gets a fresh
     # container and so starts cold, which used to make the first measured round
     # the warm-up: on a JIT or a garbage-collected heap, best-of-three was really
     # best-of-two, and how much so depended on the runtime (#1417).
@@ -300,17 +313,18 @@ run_one() {
     # Nothing but the profile's own generator sends every profile's own shape.
     #
     # Outside every measurement: no stats window and no cgroup CPU read, so it
-    # counts towards no number that gets published. The adapters that fix their
-    # own -d (async, async-db, latency-*) warm up for that long instead of $WARMUP.
-    if [ "$WARMUP" != "0" ] && [ "$WARMUP" != "0s" ]; then
+    # counts towards no number that gets published.
+    if [ "$WARMUP_RUNS" -gt 0 ] && [ "$WARMUP" != "0" ] && [ "$WARMUP" != "0s" ]; then
         local -a warm_args
         mapfile -t warm_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$WARMUP" "$PROF_REQ")
-        echo ""; echo "[warm-up, discarded]"
-        local warm_output warm_rps
-        warm_output=$("${tool//-/_}_run" "${warm_args[@]}")
-        warm_rps=$("${tool//-/_}_parse" "$endpoint" "$warm_output" | sed -n 's/^rps=//p') || true
-        info "warm-up: ${warm_rps:-0} req/s"
-        round_cooldown
+        local warm warm_output warm_rps
+        for warm in $(seq 1 "$WARMUP_RUNS"); do
+            echo ""; echo "[warm-up $warm/$WARMUP_RUNS, discarded]"
+            warm_output=$("${tool//-/_}_run" "${warm_args[@]}")
+            warm_rps=$("${tool//-/_}_parse" "$endpoint" "$warm_output" | sed -n 's/^rps=//p') || true
+            info "warm-up: ${warm_rps:-0} req/s"
+            round_cooldown
+        done
     fi
 
     # ── Best-of-N runs ──────────────────────────────────────────────────
@@ -330,6 +344,7 @@ run_one() {
 
     BEST_M=()
     local run
+    local -a run_rps=()
 
     for run in $(seq 1 "$PLAN_RUNS"); do
         echo ""; echo "[run $run/$PLAN_RUNS]"
@@ -350,8 +365,7 @@ run_one() {
         cpu_acct_stop
         stats_stop
 
-        # Print trimmed output (drop h2load-h3 per-thread spawn chatter).
-        echo "$output" | grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' || true
+        print_run_output "$tool" "$output"
         info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"
 
@@ -363,6 +377,7 @@ run_one() {
         done < <("${tool//-/_}_parse" "$endpoint" "$output")
 
         local rps_int=${m[rps]:-0}
+        run_rps+=("$rps_int")
 
         # Best-of-N keeps the fastest run — except on a fixed-rate profile,
         # where every run delivers the same rps by construction, so picking on
@@ -435,6 +450,9 @@ run_one() {
     fi
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
+    # How far apart the measured rounds were. Parsed by
+    # .github/workflows/benchmark-pr.yml - keep the shape stable.
+    echo "=== Runs: ${run_rps[*]} | $(rps_spread "${run_rps[@]}") ==="
 
     # The fixed-rate profiles' headline number, and the check that it counts.
     if [ "$endpoint" = "latency-1m" ] || [ "$endpoint" = "latency-10k" ] || [ "$endpoint" = "latency-500k-8cpu" ] || [ "$endpoint" = "8gbit" ]; then
