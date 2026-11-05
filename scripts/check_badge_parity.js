@@ -76,9 +76,10 @@ const stubs = `
   Object.keys(D.results).forEach(function(k){ D.results[k].forEach(function(r){ if(r.lang) FWLANG[r.fw]=r.lang; }); });
   function typeOf(fw){ return (D.meta[fw] && D.meta[fw].type) || 'emerging'; }
   function modeOf(fw){ return (D.meta[fw] && D.meta[fw].mode) || 'standard'; }
+  function isHiddenVariant(fw){ return !!(D.meta[fw] && D.meta[fw].hidden); }
   function langOf(fw){ return FWLANG[fw] || ''; }
   function matchQ(fw){ return true; }              // state.q is '' — no search filter
-  var state = { useMem:false, rescale:false, showTuned:true, q:'', lang:'', scope:'h1', types:[] };
+  var state = { useMem:false, rescale:false, showTuned:true, showVariants:false, q:'', lang:'', scope:'h1', types:[] };
 `;
 const run = new Function('D', `
   ${stubs}

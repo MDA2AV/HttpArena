@@ -330,6 +330,8 @@
      sits snug against the square; empty on standard rows. */
   .tndslot{width:2.75rem; flex:none; display:flex; justify-content:flex-end; align-items:center}
   .b-tuned{background:rgba(200,154,60,.16); color:#8a6414}
+  .b-variant{background:rgba(79,120,200,.16); color:#2f5597; margin-left:.35rem}
+  html[data-theme="dark"] .b-variant{background:rgba(79,120,200,.26); color:#9dbcf0}
   html[data-theme="dark"] .b-tuned{background:rgba(200,154,60,.2); color:#e0b45e}
   /* medals - how many golds/silvers/bronzes the entry holds. Dropped below 820px,
      where the name column halves and the count is not worth what it would cost. */
@@ -636,6 +638,7 @@
       <button data-type="infrastructure" data-tip="Reverse proxies and static-file servers (e.g. nginx, h2o) run without an application framework layer. Ranked separately.">Infra</button>
       <span class="tf-div" aria-hidden="true"></span>
       <button id="tunedToggle" type="button" class="on" data-tip="Show tuned entries - non-default configuration / optimizations (marked with a yellow TUNED pill).">Tuned</button>
+      <button id="variantsToggle" type="button" data-tip="Show the variants their authors keep out of the default view. The other variants are always listed.">Variants</button>
     </div>
     <div class="round" id="round"></div>
     <a class="fw-btn" href="/frameworks/" data-tip="A results page for every entry, grouped by language, plus a summary comparing the entries of each language."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Frameworks</span></a>
@@ -757,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // useless as an addressable filter - q=C matches 73 of 78 entries, q=V matches
   // 33. The language rank badges link here, so the field they claim has to be
   // the field the page shows.
-  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, rescale:false, compactFw:false, heat:false };
+  var state = { view:'composite', profile:null, conns:null, sortKey:'rps', sortDir:-1, types:['flagship','emerging'], q:'', lang:'', useMem:false, scope:'h1', showTuned:true, showVariants:false, rescale:false, compactFw:false, heat:false };
 
   // ── parsing helpers ──────────────────────────────────────
   function lat(s){ if(!s) return Infinity; var m=String(s).match(/([\d.]+)\s*(us|ms|s)/); if(!m) return Infinity; var v=parseFloat(m[1]); return m[2]==='us'?v:m[2]==='ms'?v*1e3:v*1e6; }
@@ -777,6 +780,16 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     return modeOf(fw)==='tuned'
       ? '<span class="'+(cls||'badge')+' b-tuned" data-tip="'+esc(TUNED_TIP)+'">tuned</span>' : '';
   }
+  // Same framework, another runtime or API: every variant is a legitimate way to run it, so this
+  // only names which one a row is and which others exist.
+  function variantPill(fw, cls){
+    var m=D.meta[fw];
+    if(!m || !m.variant) return '';
+    var others=Object.keys(D.meta).filter(function(o){ return o!==fw && D.meta[o].framework===m.framework; });
+    return '<span class="'+(cls||'badge')+' b-variant" data-tip="'+esc('Variant of '+m.framework+': '+m.variant
+      +(others.length?'. Also listed: '+others.join(', '):'')+'.')+'">'+esc(m.variant)+'</span>';
+  }
+  function isHiddenVariant(fw){ return !!(D.meta[fw] && D.meta[fw].hidden); }
   // A shield beside the name for an entry whose TLS was probed and came back
   // clean: the mounted certificate, TLS 1.3, an AEAD cipher, and no obsolete
   // protocol or weak cipher accepted. Absent means unverified, not failed --
@@ -987,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var impl='https://github.com/MDA2AV/HttpArena/tree/main/frameworks/'+encodeURIComponent(dir);
     var h='<div class="modal-card">'
       + '<button class="modal-x" data-close aria-label="Close">×</button>'
-      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3>'+tlsCheckBadge(fw)+'<span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
+      + '<div class="modal-h"><span class="dot" style="background:'+c.accent+'"></span><h3>'+esc(fw)+'</h3>'+tlsCheckBadge(fw)+variantPill(fw)+'<span class="badge b-'+t+'" data-tip="'+esc(typeTip(t))+'">'+typeAbbr(t)+'</span>'+tunedPill(fw)+'</div>'
       + '<div class="modal-meta">'+esc([lang, m.engine, typeAbbr(t), modeOf(fw)==='tuned'?'tuned':'',
           cmpDecl(fw)&&CMP_TYPES.indexOf(t)>=0 ? 'completeness '+(4-cmpMissing(fw).length)+'/4' : ''].filter(Boolean).join(' · '))+'</div>';
     if(m.desc) h+='<p class="modal-desc">'+esc(m.desc)+'</p>';
@@ -1474,9 +1487,11 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var tf=document.getElementById('typeFilter');
     Array.prototype.forEach.call(tf.querySelectorAll('button[data-type]'), function(b){ b.classList.toggle('on', state.types.indexOf(b.getAttribute('data-type'))>=0); });
     var tb=document.getElementById('tunedToggle'); if(tb) tb.classList.toggle('on', state.showTuned);
+    var vb=document.getElementById('variantsToggle'); if(vb) vb.classList.toggle('on', state.showVariants);
   }
   function saveTypes(){ try{ localStorage.setItem('lb-types', JSON.stringify(state.types)); }catch(e){} }
   function saveTuned(){ try{ localStorage.setItem('lb-showtuned', state.showTuned?'1':'0'); }catch(e){} }
+  function saveVariants(){ try{ localStorage.setItem('lb-showvariants', state.showVariants?'1':'0'); }catch(e){} }
   function saveCompactFw(){ try{ localStorage.setItem('lb-fwcompact', state.compactFw?'1':'0'); }catch(e){} }
   function toggleCompactFw(){ state.compactFw=!state.compactFw; saveCompactFw(); render(); scheduleHash(); }
   // flagship/emerging/experimental combine (one framework pool); engine and
@@ -1614,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     // once filtered to Ruby). The `rescale` toggle restores that behaviour for
     // when comparing a subset against itself is the point.
     function outOfLeague(fw){ return state.types.indexOf(typeOf(fw))<0; }
-    function hidden(fw){ if(!state.showTuned && modeOf(fw)==='tuned') return true; if(state.lang && langOf(fw)!==state.lang) return true; return !matchQ(fw); }
+    function hidden(fw){ if(!state.showVariants && isHiddenVariant(fw)) return true; if(!state.showTuned && modeOf(fw)==='tuned') return true; if(state.lang && langOf(fw)!==state.lang) return true; return !matchQ(fw); }
     function excl(fw){ return outOfLeague(fw) || hidden(fw); }
     var exclFromScale = state.rescale ? excl : outOfLeague;
     var minBpr=null;
@@ -1784,6 +1799,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(!defSort) p.push('sort='+state.sortKey+':'+state.sortDir);
     var ts=state.types.slice().sort().join(','); if(ts!=='emerging,flagship') p.push('type='+ts);
     if(!state.showTuned) p.push('tuned=0');
+    if(state.showVariants) p.push('variants=1');
     if(state.compactFw) p.push('fw=compact');
     if(state.lang) p.push('lang='+encodeURIComponent(state.lang));
     if(state.q) p.push('q='+encodeURIComponent(state.q));
@@ -1797,6 +1813,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     if(p.doc){ location.replace(docUrl(p.doc)); return; }   // legacy #doc=x bookmark -> /docs/x/
     if(p.type){ var ts=p.type.split(',').filter(Boolean); if(ts.length) state.types=ts; }
     if(p.hasOwnProperty('tuned')) state.showTuned = p.tuned!=='0';
+    if(p.hasOwnProperty('variants')) state.showVariants = p.variants==='1';
     if(p.hasOwnProperty('fw')) state.compactFw = p.fw==='compact';
     state.lang = p.lang || '';
     state.q = p.q || '';
@@ -1903,7 +1920,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
               ? '<span class="tsq tsq-'+t+(modeOf(r.fw)==='tuned'?' tuned':'')+'" data-tip="'
                 + esc(typeTip(t)+(modeOf(r.fw)==='tuned'?'  ·  '+TUNED_TIP:''))+'"></span>'
                 + '<span class="nm">'+nm+'</span>'
-              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+medalChips(r.fw))
+              : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+variantPill(r.fw,'tnd')+tlsCheckBadge(r.fw)+medalChips(r.fw))
         +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
       pids.forEach(function(pid){
@@ -2051,7 +2068,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   }
   function profileCell(k, r, x){
     if(k==='rank') return '<div class="c rank'+(x.rank<=3?' r'+x.rank:'')+'">'+x.rank+'</div>';
-    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+'</div>'; }
+    if(k==='fw'){ var nm=esc(r.fw); return '<div class="c fw">'+starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+x.t+'" data-tip="'+esc(typeTip(x.t))+'"></span><span class="lang" style="color:'+(x.dark?x.lc.textDark:x.lc.text)+'">'+esc(r.lang||'')+'</span><span class="nm">'+nm+'</span>'+variantPill(r.fw,'tnd')+tlsCheckBadge(r.fw)+'</div>'; }
     if(k==='rps'){ var pct=x.maxRps>0?Math.max((r.rps||0)/x.maxRps*100,(r.rps>0?1.5:0)):0; return '<div class="c meter"><span class="mtop"><span class="v'+(r.rps>0?'':' zero')+'">'+fmt(r.rps||0)+'</span>'+statusHtml(r)+'</span><span class="bar"><i style="width:'+pct.toFixed(1)+'%;background:rgba('+x.lc.rgb+','+(x.dark?0.55:0.42)+')"></i></span></div>'; }
     if(k==='bw') return '<div class="c num sub">'+esc(r.bandwidth||'-')+'</div>';
     if(k==='bwreq'){ var b=bw(r.bandwidth), q=r.rps||0; return '<div class="c num sub">'+(b>0&&q>0?fmtBytes(b/q):'-')+'</div>'; }
@@ -2078,6 +2095,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     renderTypes();
     var rows=all.filter(function(r){
       if(state.types.indexOf(typeOf(r.fw))<0) return false;
+      if(!state.showVariants && isHiddenVariant(r.fw)) return false;
       if(!state.showTuned && modeOf(r.fw)==='tuned') return false;
       if(!matchQ(r.fw, r.lang)) return false;
       return true;
@@ -2130,8 +2148,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   try{ var _vt=['flagship','emerging','experimental','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
   document.getElementById('typeFilter').addEventListener('click', function(e){ var b=e.target.closest('button[data-type]'); if(!b) return; toggleType(b.getAttribute('data-type')); });
   try{ var _st=localStorage.getItem('lb-showtuned'); if(_st!==null) state.showTuned=_st==='1'; }catch(e){}
+  try{ var _sv=localStorage.getItem('lb-showvariants'); if(_sv!==null) state.showVariants=_sv==='1'; }catch(e){}
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
+  document.getElementById('variantsToggle').addEventListener('click', function(){ state.showVariants=!state.showVariants; saveVariants(); render(); });
   restoreFromHash();
   initTips(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();

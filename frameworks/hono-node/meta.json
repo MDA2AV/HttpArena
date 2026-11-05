@@ -1,5 +1,7 @@
 {
   "display_name": "hono-node",
+  "framework": "hono",
+  "variant": "node",
   "language": "TS",
   "type": "flagship",
   "mode": "standard",

@@ -120,6 +120,7 @@ if [ ! -f "$META_FILE" ]; then
     echo "SKIP: meta.json not found (framework removed)"
     exit 0
 fi
+python3 "$SCRIPT_DIR/check_variants.py" "$ROOT_DIR/frameworks" || exit 1
 TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['tests']))")
 # The TLS section is a capability an entry opts into, not a profile it is
 # measured on, so it is its own field rather than an entry in "tests".

@@ -1,5 +1,7 @@
 {
   "display_name": "hono-bun",
+  "framework": "hono",
+  "variant": "bun",
   "language": "TS",
   "type": "flagship",
   "mode": "standard",

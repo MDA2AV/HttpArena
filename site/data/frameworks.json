@@ -1067,6 +1067,8 @@
     "engine": "helidon-nima"
   },
   "hono-bun": {
+    "framework": "hono",
+    "variant": "bun",
     "dir": "hono-bun",
     "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
     "repo": "https://github.com/honojs/hono",
@@ -1081,6 +1083,8 @@
     }
   },
   "hono-node": {
+    "framework": "hono",
+    "variant": "node",
     "dir": "hono-node",
     "description": "Hono on node:http through @hono/node-server, with the cluster module for multi-core scaling.",
     "repo": "https://github.com/honojs/node-server",
