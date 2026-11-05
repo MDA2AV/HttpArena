@@ -34,7 +34,7 @@ Five load generators are dispatched per profile - each one is built for a specif
 | Warm-up | One discarded run of the profile's own workload before the first measured round, on every fresh container: 15s, or the profile's own duration where it fixes one (`async`, `async-db`, `latency-*`) |
 | Duration | 15s for `baseline`, `limited-conn`, `json-tls` and the HTTP/2 and HTTP/3 baseline, static and JSON profiles; `async` and `async-db` 10s; `latency-*` 20s; 5s otherwise |
 | Runs | 2 for the 15s profiles, 3 otherwise, per (profile, connection count) - best RPS wins |
-| Cool-down | 15s between runs, the warm-up included |
+| Cool-down | 15s between runs, the warm-up included; 45s between profiles |
 | Networking | Docker `--network host` for all containers (server + load generator + Postgres + Redis sidecars) |
 
 ## Data mounts

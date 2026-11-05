@@ -17,6 +17,7 @@ Defined in `scripts/lib/common.sh`. Override by exporting before you run the scr
 | `RUNS` | `3` | Measured rounds per (profile, connection count), under the same rules. Best wins. |
 | `WARMUP` | `15s` | Discarded run of the profile's own workload before the first measured round. `0` turns it off. |
 | `COOLDOWN` | `15` | Seconds of idle between load-generator runs, the warm-up included. |
+| `PROFILE_COOLDOWN` | `45` | Seconds of idle between profiles within one `benchmark.sh` run. |
 | `THREADS` | `64` | gcannon / wrk worker threads. |
 | `H2THREADS` | `64` | h2load worker threads (HTTP/2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
