@@ -40,7 +40,8 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
    - Starts the framework container (or `docker compose up` for gateway profiles).
    - Waits up to 30s for the right endpoint to respond.
    - Builds the tool-specific argument vector.
-   - Runs `$RUNS` measurement iterations (default 3), keeps the best by rps.
+   - Warms the server up: one `$WARMUP` run of the same tool and arguments (default 15s), discarded and outside every measurement.
+   - Runs the profile's measured rounds (`PROFILE_PLAN` in `scripts/lib/profiles.sh`: 2 x 15s for `baseline`, `limited-conn`, `json-tls` and the HTTP/2 and HTTP/3 baseline, static and JSON profiles; 3 rounds otherwise), keeps the best by rps.
    - Each iteration: starts `docker stats` polling, runs the load generator (`timeout 45s`), stops polling, parses output.
    - Raw load-generator output from every run is written to `site/static/logs/<profile>/<conns>/<framework>.<tool>.run<N>.txt` - useful when a parser misbehaves.
 7. **Save** (`--save` only) - writes `results/<profile>/<conns>/<framework>.json` + framework `docker logs` to `site/static/logs/<profile>/<conns>/<framework>.log`.
@@ -63,8 +64,9 @@ Set via `VAR=value ./scripts/benchmark.sh ...` or `export VAR=value`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `DURATION` | `5s` | `-d`/`-D` value passed to each load generator. |
-| `RUNS` | `3` | Measurement iterations per (profile, conns). Best result wins. |
+| `DURATION` | `5s` | `-d`/`-D` value passed to each load generator, for profiles with no line in `PROFILE_PLAN`. Set explicitly, it overrides that table too. |
+| `RUNS` | `3` | Measured rounds per (profile, conns), under the same rules. Best result wins. |
+| `WARMUP` | `15s` | Discarded run of the profile's own workload before the first measured round. `0` turns it off. |
 | `THREADS` | `64` | Load-generator threads for gcannon, wrk, and the default path. |
 | `H2THREADS` | `64` | h2load worker threads (h2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |

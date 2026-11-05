@@ -37,7 +37,7 @@ h2load-h3 --alpn-list=h3 -i requests/static-h2-uris.txt \
 | `-c` | Number of QUIC connections | 64 |
 | `-m` | Max concurrent streams per connection | 64 |
 | `-t` | Worker threads | 64 |
-| `-D` | Duration | 5s |
+| `-D` | Duration | 15s; 5s on gateway-h3 |
 | `-i` | URI list file (multi-URL rotation) | - |
 
 ## Why h2load-h3 instead of oha?

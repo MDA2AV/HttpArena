@@ -76,6 +76,7 @@ Content-Type: application/javascript
 | Endpoint | 20 URIs under `/static/*` |
 | Connections | 256, 1,024 |
 | Streams per connection | 32 (`-m 32`) |
-| Duration | 5s |
-| Runs | 3 (best taken) |
+| Warm-up | 15s, discarded |
+| Duration | 15s |
+| Runs | 2 (best taken) |
 | Load generator | h2load with `-i` (multi-URI) |

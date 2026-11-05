@@ -19,8 +19,17 @@ H1TLS_PORT=8081   # h1 + TLS (json-tls profile)
 H2C_PORT=8082     # h2c prior-knowledge (baseline-h2c, json-h2c profiles)
 
 # Run settings — can be overridden via env vars at invocation time.
+#
+# RUNS and DURATION are the defaults for a profile with no line in PROFILE_PLAN
+# (scripts/lib/profiles.sh). Set in the environment they beat that table too, so
+# a smoke test stays one: RUNS=1 DURATION=2s WARMUP=0 ./scripts/benchmark.sh ...
+RUNS_FROM_ENV="${RUNS:-}"
+DURATION_FROM_ENV="${DURATION:-}"
 DURATION="${DURATION:-5s}"
 RUNS="${RUNS:-3}"
+# One discarded run of the profile's own workload before the measured rounds, on
+# every fresh container. 0 turns it off. See run_one() in benchmark.sh.
+WARMUP="${WARMUP:-15s}"
 THREADS="${THREADS:-64}"
 # The async profile's generator thread count, separately settable. It gets its own
 # knob because the profile is closed-loop - every connection holds one request for

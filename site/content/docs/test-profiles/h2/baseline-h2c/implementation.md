@@ -57,6 +57,7 @@ Content-Type: text/plain
 | Endpoint | `GET /baseline2?a=1&b=1` |
 | Connections | 256, 1,024, 4,096 |
 | Streams per connection | 100 (`-m 100`) |
-| Duration | 5s |
-| Runs | 3 (best taken) |
+| Warm-up | 15s, discarded |
+| Duration | 15s |
+| Runs | 2 (best taken) |
 | Load generator | h2load with `-p h2c` |

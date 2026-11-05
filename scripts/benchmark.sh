@@ -216,6 +216,16 @@ if $need_pg; then postgres_start; fi
 # profiles_to_run was fixed at argument parsing, so a bad name failed before
 # the builds and tuning above.
 
+# Cool-down between load-generator runs. gcannon closes every connection when it
+# exits and the active closer holds the port for the kernel's fixed ~60s
+# TIME_WAIT, so a profile running tens of thousands of connections hands the next
+# run a port table that is already mostly spoken for. tcp_tw_reuse lets those be
+# recycled, but at 48K of a 64.5K-port range the connect path starts scanning and
+# the ramp lands inside the measured window. Two seconds is plenty below that.
+round_cooldown() {
+    if [ "$1" -ge 32768 ]; then sleep 15; else sleep 2; fi
+}
+
 # run_one — single (profile, conns) iteration. Returns non-zero if the
 # server failed to start; main loop skips to the next profile in that case.
 run_one() {
@@ -271,8 +281,36 @@ run_one() {
     # Build the load-generator argument vector once up front. PROF_REQ is
     # only meaningful for gcannon baseline/limited-conn and ws-echo; other
     # tools ignore the extra positional argument.
+    profile_plan "$profile"
     local -a gc_args
-    mapfile -t gc_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$DURATION" "$PROF_REQ")
+    mapfile -t gc_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$PLAN_DURATION" "$PROF_REQ")
+
+    # ── Warm-up ─────────────────────────────────────────────────────────
+    #
+    # One discarded run before anything is measured. Every iteration gets a fresh
+    # container and so starts cold, which used to make the first measured round
+    # the warm-up: on a JIT or a garbage-collected heap, best-of-three was really
+    # best-of-two, and how much so depended on the runtime (#1417).
+    #
+    # The profile's own tool and arguments, with only the duration changed, and
+    # that is the point of it. What a warm-up leaves behind is specific to the
+    # code it ran: HTTP/1 traffic does nothing for an HTTP/2 stack, and a GET
+    # leaves the chunked POST path cold for the first measured round to find.
+    # Nothing but the profile's own generator sends every profile's own shape.
+    #
+    # Outside every measurement: no stats window and no cgroup CPU read, so it
+    # counts towards no number that gets published. The adapters that fix their
+    # own -d (async, async-db, latency-*) warm up for that long instead of $WARMUP.
+    if [ "$WARMUP" != "0" ] && [ "$WARMUP" != "0s" ]; then
+        local -a warm_args
+        mapfile -t warm_args < <("${tool//-/_}_build_args" "$endpoint" "$CONNS" "$PROF_PIPELINE" "$WARMUP" "$PROF_REQ")
+        echo ""; echo "[warm-up, discarded]"
+        local warm_output warm_rps
+        warm_output=$("${tool//-/_}_run" "${warm_args[@]}")
+        warm_rps=$("${tool//-/_}_parse" "$endpoint" "$warm_output" | sed -n 's/^rps=//p') || true
+        info "warm-up: ${warm_rps:-0} req/s"
+        round_cooldown "$CONNS"
+    fi
 
     # ── Best-of-N runs ──────────────────────────────────────────────────
     #
@@ -284,7 +322,7 @@ run_one() {
 
     # Latency-1M picks its winner after the loop instead of during it: the run
     # score normalises each metric against the best of this framework's own
-    # three runs, which is not known until all three have happened. Every run is
+    # runs, which is not known until they have all happened. Every run is
     # recorded here and the choice is made below.
     local _mdir=""
     case "$endpoint" in latency-1m|latency-10k|latency-500k-8cpu|8gbit) _mdir=$(mktemp -d) ;; esac
@@ -292,8 +330,8 @@ run_one() {
     BEST_M=()
     local run
 
-    for run in $(seq 1 "$RUNS"); do
-        echo ""; echo "[run $run/$RUNS]"
+    for run in $(seq 1 "$PLAN_RUNS"); do
+        echo ""; echo "[run $run/$PLAN_RUNS]"
 
         if $is_gateway; then
             # shellcheck disable=SC2086
@@ -328,8 +366,7 @@ run_one() {
         # Best-of-N keeps the fastest run — except on a fixed-rate profile,
         # where every run delivers the same rps by construction, so picking on
         # rps is a coin flip between them. There the run to keep is the cheapest
-        # one, which also discards the warm-up for free: an unsettled JIT or GC
-        # heap shows up as CPU, and run 1 is the one carrying it.
+        # one: an unsettled JIT or GC heap shows up as CPU.
         local better=false
         if [ -n "$_mdir" ] && [ -n "${CPU_ACCT_USEC:-}" ]; then
             if [ -z "$best_cpu_usec" ] || [ "$CPU_ACCT_USEC" -lt "$best_cpu_usec" ]; then
@@ -362,14 +399,7 @@ run_one() {
             for k in "${!m[@]}"; do BEST_M[$k]="${m[$k]}"; done
         fi
 
-        # Cool-down between iterations. gcannon closes every connection when it
-        # exits and the active closer holds the port for the kernel's fixed
-        # ~60s TIME_WAIT, so a profile running tens of thousands of connections
-        # hands the next iteration a port table that is already mostly spoken
-        # for. tcp_tw_reuse lets those be recycled, but at 48K of a 64.5K-port
-        # range the connect path starts scanning and the ramp lands inside the
-        # measured window. Two seconds is plenty below that.
-        if [ "$CONNS" -ge 32768 ]; then sleep 15; else sleep 2; fi
+        round_cooldown "$CONNS"
     done
 
     # ── Latency-1M: pick the run by score, not by any single metric ─────
@@ -588,7 +618,7 @@ save_result() {
   "memory": "$best_mem",
   "connections": $CONNS,
   "threads": $THREADS,
-  "duration": "${BEST_M[duration]:-$DURATION}",
+  "duration": "${BEST_M[duration]:-$PLAN_DURATION}",
   "pipeline": $PROF_PIPELINE,
   "bandwidth": "${BEST_M[bandwidth]:-0}",$([ -n "${BEST_M[input_bw]:-}" ] && printf '\n  "input_bw": "%s",' "${BEST_M[input_bw]}")
   "reconnects": ${BEST_M[reconnects]:-0},

@@ -92,8 +92,9 @@ Body (the shared `/json` response shape):
 | Count × multiplier pairs | `(1,3)`, `(5,7)`, `(10,2)`, `(15,5)`, `(25,4)`, `(40,8)`, `(50,6)` (round-robin) |
 | Connections | 4,096 |
 | Pipeline | 1 |
-| Duration | 5s |
-| Runs | 3 (best taken) |
+| Warm-up | 15s, discarded |
+| Duration | 15s |
+| Runs | 2 (best taken) |
 | Load generator | wrk + `requests/json-tls-rotate.lua` |
 | Certificates | mounted at `/certs/server.crt` + `/certs/server.key` |
 | Dataset | 50 items, mounted at `/data/dataset.json` |
