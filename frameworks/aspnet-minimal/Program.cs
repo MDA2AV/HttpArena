@@ -116,6 +116,7 @@ app.MapGet("/baseline2", Handlers.Sum);
 
 app.MapPost("/echo", Handlers.EchoBody);
 app.MapGet("/delay/{ms:int}", Handlers.Delay);
+app.MapGet("/rendezvous/{key}", Handlers.Rendezvous);
 app.MapGet("/json/{count}", Handlers.Json);
 app.MapGet("/async-db", Handlers.AsyncDatabase);
 

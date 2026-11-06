@@ -29,7 +29,7 @@ Five load generators are dispatched per profile - each one is built for a specif
 
 | Parameter | Value |
 |-----------|-------|
-| Load generators | `gcannon` (HTTP/1.1, WebSocket), `wrk` (static, json-tls and 8gbit rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `zrk` (fixed-rate) |
+| Load generators | `gcannon` (HTTP/1.1, WebSocket), `wrk` (static, json-tls, 8gbit and rendezvous rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `zrk` (fixed-rate) |
 | Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`) |
 | Duration | 5s default; `async-db` 10s (hardcoded in the profile dispatcher) |
 | Runs | 3 per (profile, connection count) - best RPS wins |
@@ -63,4 +63,5 @@ Gateway and `production-stack` profiles are compose-orchestrated, so their servi
   {{< card link="h3" title="H/3" subtitle="Baseline and static file benchmarks over QUIC for frameworks with native H/3 support." icon="globe-alt" >}}
   {{< card link="grpc" title="gRPC" subtitle="Unary RPC throughput over cleartext HTTP/2 using Protocol Buffers serialization." icon="globe-alt" >}}
   {{< card link="ws" title="WebSocket" subtitle="WebSocket echo throughput measuring frame processing performance." icon="globe-alt" >}}
+  {{< card link="interaction" title="Interaction" subtitle="Connections that depend on each other: no request can be answered from that request alone, so work has to cross between workers." icon="switch-horizontal" >}}
 {{< /cards >}}

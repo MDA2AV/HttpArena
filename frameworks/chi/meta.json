@@ -24,7 +24,8 @@
     "json-tls",
     "8gbit",
     "static-tls",
-    "async-db"
+    "async-db",
+    "rendezvous"
   ],
   "maintainers": []
 }

@@ -31,7 +31,8 @@
     "echo-ws-limited",
     "unary-grpc",
     "unary-grpc-tls",
-    "async-db"
+    "async-db",
+    "rendezvous"
   ],
   "maintainers": [
     "tomas-langer"

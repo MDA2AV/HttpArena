@@ -13,6 +13,7 @@ chi router on the Go `net/http` server, default configuration.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/pipeline` | GET | Returns `ok` (plain text) |
+| `/rendezvous/{key}` | GET | Waits for a second request on the same key, answers each with the other's `v` |
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/json/{count}?m=N` | GET | First `count` dataset items with `total = price * quantity * m` |

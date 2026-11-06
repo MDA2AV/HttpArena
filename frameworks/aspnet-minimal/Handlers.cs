@@ -2,6 +2,7 @@
 using HttpArena.Services;
 using HttpArena.Types;
 using System.Buffers;
+using System.Collections.Concurrent;
 
 static class Handlers
 {
@@ -15,6 +16,35 @@ static class Handlers
     }
 
     public static string Text() => "ok";
+
+    // GET /rendezvous/{key}?v= - the first request for a key waits on a completion
+    // source; the second takes it out of the map, completes it with its own value and
+    // answers with the one the first left behind.
+    sealed class RendezvousWaiter(string value)
+    {
+        public readonly string Value = value;
+        public readonly TaskCompletionSource<string> Reply = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
+
+    static readonly ConcurrentDictionary<string, RendezvousWaiter> RendezvousWaiting = new();
+
+    public static ValueTask<string> Rendezvous(string key, string v)
+    {
+        RendezvousWaiter? mine = null;
+        while (true)
+        {
+            if (RendezvousWaiting.TryRemove(key, out var peer))
+            {
+                peer.Reply.TrySetResult(v);
+                return new ValueTask<string>(peer.Value);
+            }
+            mine ??= new RendezvousWaiter(v);
+            if (RendezvousWaiting.TryAdd(key, mine))
+            {
+                return new ValueTask<string>(mine.Reply.Task);
+            }
+        }
+    }
 
     // GET /delay/{ms} - answer after ms milliseconds. Task.Delay registers a
     // timer and yields; the thread goes back to the pool instead of sitting on

@@ -140,6 +140,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `unary-grpc-tls` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | same, TLS |
 | `gateway-64` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | 20-URI mix behind nginx via `docker compose` |
 | `echo-ws` | 1 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon `--ws` | `/ws` |
+| `rendezvous` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/rendezvous/{key}?v=` via `rendezvous.lua` |
 
 **Subscription:** a framework only runs profiles listed in its `meta.json` `tests` array. Profiles it's not subscribed to are silently skipped.
 

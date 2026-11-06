@@ -6,7 +6,9 @@ import java.io.File;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.Future;
 import io.vertx.core.VerticleBase;
@@ -92,6 +94,7 @@ public class ServerVerticle extends VerticleBase {
                 vertx.setTimer(ms, id -> text(ctx, Long.toString(ms)));
             }
         });
+        router.get("/rendezvous/:key").handler(this::rendezvous);
         router.get("/json/:count").handler(this::jsonItems);
         router.get("/async-db").handler(this::asyncDb);
         router.get("/static/:filename").handler(this::staticFile);
@@ -130,6 +133,37 @@ public class ServerVerticle extends VerticleBase {
             return Future.all(plain, vertx.createHttpServer(tls).requestHandler(router).listen());
         }
         return plain;
+    }
+
+    private record RendezvousWaiter(String value, RoutingContext ctx, Context owner) {}
+
+    // Shared by every verticle: there is one per core, and the two sides of a key
+    // usually sit on different event loops.
+    private static final ConcurrentHashMap<String, RendezvousWaiter> RENDEZVOUS = new ConcurrentHashMap<>();
+
+    private void rendezvous(RoutingContext ctx) {
+        String key = ctx.pathParam("key");
+        String value = ctx.queryParams().get("v");
+        RendezvousWaiter mine = null;
+        while (true) {
+            RendezvousWaiter peer = RENDEZVOUS.remove(key);
+            if (peer != null) {
+                // The parked response belongs to its own event loop, so it is answered there.
+                peer.owner().runOnContext(v -> {
+                    if (!peer.ctx().response().closed()) {
+                        text(peer.ctx(), value);
+                    }
+                });
+                text(ctx, peer.value());
+                return;
+            }
+            if (mine == null) {
+                mine = new RendezvousWaiter(value, ctx, vertx.getOrCreateContext());
+            }
+            if (RENDEZVOUS.putIfAbsent(key, mine) == null) {
+                return;
+            }
+        }
     }
 
     private void text(RoutingContext ctx, String body) {

@@ -2469,6 +2469,23 @@ if has_test "echo-ws" || has_test "echo-ws-pipeline" || has_test "echo-ws-limite
     fi
 fi
 
+if has_test "rendezvous"; then
+    RENDEZVOUS_DOCS="$DOCS_BASE/interaction/rendezvous/validation"
+    echo "[test] rendezvous endpoint"
+    RV_OUTPUT=$(python3 "$SCRIPT_DIR/validate-rendezvous.py" localhost "$PORT" 2>&1) || true
+    echo "$RV_OUTPUT"
+
+    RV_PASS=$(grep -oP '(\d+) passed' <<< "$RV_OUTPUT" | grep -oP '\d+' || true)
+    RV_FAIL=$(grep -oP '(\d+) failed' <<< "$RV_OUTPUT" | grep -oP '\d+' || true)
+    # No summary line means the script itself died, which must not read as a pass.
+    if [ -z "$RV_PASS$RV_FAIL" ]; then RV_FAIL=1; fi
+    PASS=$((PASS + ${RV_PASS:-0}))
+    FAIL=$((FAIL + ${RV_FAIL:-0}))
+    if [ "${RV_FAIL:-0}" -gt 0 ]; then
+        echo "        → $RENDEZVOUS_DOCS"
+    fi
+fi
+
 # ───── Gateway profiles (reverse proxy + server, shared validation flow) ─────
 #
 # Both gateway-64 (h2) and gateway-h3 (h3 at the edge) use the same endpoint
