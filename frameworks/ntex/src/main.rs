@@ -1,7 +1,13 @@
+use std::path::Path;
+
+use ntex::http::header::{self, ContentEncoding};
 use ntex::io::IoConfig;
 use ntex::util::{BytePageSize, Bytes};
-use ntex::web::{self, App, HttpResponse, HttpServer, middleware};
+use ntex::web::{self, App, HttpRequest, HttpResponse, HttpServer, middleware};
+use ntex_files::NamedFile;
 use serde::{Deserialize, Serialize};
+
+mod db;
 
 const MAX_BODY: usize = 64 * 1024 * 1024;
 type QueryParams = web::types::Query<Vec<(String, String)>>;
@@ -134,11 +140,127 @@ async fn echo_body(body: Bytes) -> HttpResponse {
         .body(body)
 }
 
-fn routes(cfg: &mut web::ServiceConfig<()>, dataset: &'static [DatasetItem]) {
+async fn pipeline() -> HttpResponse {
+    HttpResponse::Ok().content_type("text/plain").body("ok")
+}
+
+async fn baseline2(query: QueryParams) -> HttpResponse {
+    HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(sum_query(&query).to_string())
+}
+
+/// Encodings acceptable to the client in preference order, best first.
+///
+/// Only the precompressed `br` and `gzip` siblings exist on disk; a coding
+/// with `q=0` is refused, and `br` wins ties.
+fn accepted_encodings(accept: &str) -> Vec<ContentEncoding> {
+    let (mut br, mut gzip, mut any) = (None, None, None);
+    for entry in accept.split(',') {
+        let mut parts = entry.split(';');
+        let coding = parts.next().unwrap_or("").trim();
+        let q = parts
+            .find_map(|p| p.trim().strip_prefix("q=").or(p.trim().strip_prefix("Q=")))
+            .map_or(Some(1.0), |q| q.trim().parse::<f32>().ok())
+            .unwrap_or(0.0);
+        if coding.eq_ignore_ascii_case("br") {
+            br = Some(q);
+        } else if coding.eq_ignore_ascii_case("gzip") || coding.eq_ignore_ascii_case("x-gzip") {
+            gzip = Some(q);
+        } else if coding == "*" {
+            any = Some(q);
+        }
+    }
+    let br = br.or(any).unwrap_or(0.0);
+    let gzip = gzip.or(any).unwrap_or(0.0);
+    let mut out = Vec::with_capacity(2);
+    for (q, encoding) in [(br, ContentEncoding::Br), (gzip, ContentEncoding::Gzip)] {
+        if q > 0.0 {
+            out.push((q, encoding));
+        }
+    }
+    out.sort_by(|a, b| b.0.total_cmp(&a.0));
+    out.into_iter().map(|(_, encoding)| encoding).collect()
+}
+
+/// Opens `path` as a regular file, typed and named after `original`.
+fn open_file(path: &Path, original: &Path) -> Option<NamedFile> {
+    let file = std::fs::File::open(path).ok()?;
+    if !file.metadata().ok()?.is_file() {
+        return None;
+    }
+    NamedFile::from_file(file, original).ok()
+}
+
+/// Serves `/static/{name}` straight from disk on every request. A `.br` or
+/// `.gz` sibling is sent when the client accepts it, with the original file's
+/// Content-Type and the matching Content-Encoding.
+async fn static_file(req: HttpRequest, dir: &Path) -> HttpResponse {
+    let name = req.match_info().get("name").unwrap_or_default();
+    if name.is_empty() || name.starts_with('.') || name.contains(['/', '\\']) {
+        return HttpResponse::NotFound().build();
+    }
+    let path = dir.join(name);
+    let accept = req
+        .headers()
+        .get(header::ACCEPT_ENCODING)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    let mut selected = None;
+    for encoding in accepted_encodings(accept) {
+        let suffix = if encoding == ContentEncoding::Br {
+            "br"
+        } else {
+            "gz"
+        };
+        let mut variant = path.clone().into_os_string();
+        variant.push(".");
+        variant.push(suffix);
+        if let Some(file) = open_file(Path::new(&variant), &path) {
+            selected = Some((file, encoding));
+            break;
+        }
+    }
+    let (file, encoding) = match selected {
+        Some(selected) => selected,
+        None => match open_file(&path, &path) {
+            Some(file) => (file, ContentEncoding::Identity),
+            None => return HttpResponse::NotFound().build(),
+        },
+    };
+
+    let mut response = file.disable_content_disposition().into_response(&req);
+    let headers = response.headers_mut();
+    if encoding != ContentEncoding::Identity {
+        headers.insert(
+            header::CONTENT_ENCODING,
+            header::HeaderValue::from_static(encoding.as_str()),
+        );
+    }
+    headers.insert(
+        header::VARY,
+        header::HeaderValue::from_static("accept-encoding"),
+    );
+    response
+}
+
+fn routes(
+    cfg: &mut web::ServiceConfig<()>,
+    dataset: &'static [DatasetItem],
+    static_dir: &'static Path,
+) {
     cfg.service(
         web::resource("/baseline11")
             .route(web::get().to(baseline11))
             .route(web::post().to(baseline11)),
+    )
+    .service(web::resource("/baseline2").route(web::get().to(baseline2)))
+    .service(web::resource("/pipeline").route(web::get().to(pipeline)))
+    .service(web::resource("/async-db").route(web::get().to(db::async_db)))
+    .service(
+        web::resource("/static/{name}")
+            .route(web::get().to(async move |req| static_file(req, static_dir).await)),
     )
     .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
     .service(
@@ -167,6 +289,7 @@ fn server_config() -> ntex::SharedCfg {
 fn load_tls_config(
     cert: impl std::io::Read,
     key: impl std::io::Read,
+    alpn: &[&[u8]],
 ) -> std::io::Result<rustls::ServerConfig> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     let certs =
@@ -177,31 +300,47 @@ fn load_tls_config(
         .with_no_client_auth()
         .with_single_cert(certs, private)
         .expect("bad certificate/key pair");
-    // Port 8081 is exclusively HTTP/1.1.
-    tls.alpn_protocols = vec![b"http/1.1".to_vec()];
+    tls.alpn_protocols = alpn.iter().map(|p| p.to_vec()).collect();
     Ok(tls)
 }
+
+const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
+const ALPN_H2: &[&[u8]] = &[b"h2", b"http/1.1"];
 
 #[ntex::main]
 async fn main() -> std::io::Result<()> {
     // Leaked once at startup so handlers borrow the items instead of cloning
     // every string into each response.
     let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
+    let static_dir: &'static Path = Path::new("/data/static");
 
     let mut server = HttpServer::new(async move |_| {
+        db::init();
         App::new()
             .with_config(app_config())
-            .configure(|cfg| routes(cfg, dataset))
+            .configure(|cfg| routes(cfg, dataset, static_dir))
     })
     .bind("0.0.0.0:8080", server_config())?;
 
-    // json-tls on 8081. The harness mounts /certs only for the TLS profiles,
-    // so a missing pair leaves the listener down rather than aborting startup.
-    let cert = std::path::Path::new("/certs/server.crt");
-    let key = std::path::Path::new("/certs/server.key");
+    // The harness mounts /certs only for the TLS profiles, so a missing pair
+    // leaves the TLS listeners down rather than aborting startup.
+    let cert = Path::new("/certs/server.crt");
+    let key = Path::new("/certs/server.key");
     if cert.exists() && key.exists() {
-        let tls = load_tls_config(std::fs::File::open(cert)?, std::fs::File::open(key)?)?;
+        // json-tls and static-tls on 8081 are exclusively HTTP/1.1.
+        let tls = load_tls_config(
+            std::fs::File::open(cert)?,
+            std::fs::File::open(key)?,
+            ALPN_H1,
+        )?;
         server = server.bind_rustls("0.0.0.0:8081", &tls, server_config())?;
+        // baseline-h2 and static-h2 negotiate h2 on 8443.
+        let tls = load_tls_config(
+            std::fs::File::open(cert)?,
+            std::fs::File::open(key)?,
+            ALPN_H2,
+        )?;
+        server = server.bind_rustls("0.0.0.0:8443", &tls, server_config())?;
     }
 
     server.run().await
@@ -214,9 +353,14 @@ mod tests {
     use ntex::web::test::{self, TestRequest};
     use std::io::Read;
 
+    fn static_dir() -> &'static Path {
+        Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../data/static"))
+    }
+
     #[ntex::test]
     async fn baseline_query_and_body() {
-        let app = test::init_service(App::new().configure(|cfg| routes(cfg, &[]))).await;
+        let app =
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
 
         for (uri, body, expected) in [
             ("/baseline11?a=13&b=42", "20", "75"),
@@ -254,7 +398,7 @@ mod tests {
             async move |_| {
                 App::new()
                     .with_config(app_config())
-                    .configure(|cfg| routes(cfg, dataset))
+                    .configure(|cfg| routes(cfg, dataset, static_dir()))
             },
         );
 
@@ -316,6 +460,7 @@ mod tests {
         let tls = load_tls_config(
             cert.pem().as_bytes(),
             signing_key.serialize_pem().as_bytes(),
+            ALPN_H1,
         )
         .unwrap();
         let mut roots = rustls::RootCertStore::empty();
@@ -332,7 +477,7 @@ mod tests {
             async |_| {
                 App::new()
                     .with_config(app_config())
-                    .configure(|cfg| routes(cfg, &[]))
+                    .configure(|cfg| routes(cfg, &[], static_dir()))
             },
         );
 
@@ -355,6 +500,198 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(response.body().await.unwrap(), "40");
         assert!(start.elapsed() >= std::time::Duration::from_millis(40));
+        server.stop().await;
+    }
+
+    /// STATEMENT: `/pipeline` and `/baseline2` answer with plain-text bodies.
+    ///
+    /// HOW:
+    /// - Call `/pipeline` and `/baseline2?a=13&b=42&a=x` on the test service.
+    /// - Confirm both are `200 OK` `text/plain` with bodies `ok` and `55`,
+    ///   ignoring the non-numeric parameter.
+    #[ntex::test]
+    async fn pipeline_and_baseline2() {
+        let app =
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+
+        for (uri, expected) in [("/pipeline", "ok"), ("/baseline2?a=13&b=42&a=x", "55")] {
+            let response = app
+                .call(TestRequest::get().uri(uri).to_request())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            assert_eq!(
+                response.headers().get(header::CONTENT_TYPE).unwrap(),
+                "text/plain"
+            );
+            assert_eq!(test::read_body(response).await, expected);
+        }
+    }
+
+    /// STATEMENT: `accepted_encodings` orders `br` and `gzip` by q-value and
+    /// drops refused codings.
+    ///
+    /// HOW:
+    /// - Parse headers covering ties, explicit q-values, `x-gzip`, `*`,
+    ///   `q=0`, malformed q-values and unsupported codings.
+    /// - Compare each result with the expected preference list.
+    #[test]
+    fn accept_encoding_preference() {
+        use ContentEncoding::{Br, Gzip};
+        for (accept, expected) in [
+            ("", vec![]),
+            ("identity, deflate", vec![]),
+            ("gzip, br", vec![Br, Gzip]),
+            ("gzip;q=1.0, br;q=0.5", vec![Gzip, Br]),
+            ("BR; Q=0.2, x-gzip;q=0.3", vec![Gzip, Br]),
+            ("br;q=0, gzip", vec![Gzip]),
+            ("*;q=0.5, gzip;q=0", vec![Br]),
+            ("*", vec![Br, Gzip]),
+            ("br;q=bogus, gzip", vec![Gzip]),
+        ] {
+            assert_eq!(accepted_encodings(accept), expected, "{accept}");
+        }
+    }
+
+    /// STATEMENT: `/static/{name}` serves the best precompressed sibling with
+    /// the original Content-Type, and falls back to the identity file.
+    ///
+    /// HOW:
+    /// - Request `app.js`, `reset.css` and `hero.webp` with `br`, `gzip`
+    ///   and no `Accept-Encoding`.
+    /// - Confirm Content-Type follows the original name, Content-Encoding
+    ///   names the sibling sent, `Vary` is set, and the body equals the
+    ///   matching file on disk (`hero.webp` has no siblings, so it is always
+    ///   sent unencoded).
+    #[ntex::test]
+    async fn static_files_select_precompressed_siblings() {
+        let app =
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+
+        for (name, accept, encoding, suffix, content_type) in [
+            ("app.js", "gzip, br", Some("br"), ".br", "javascript"),
+            (
+                "app.js",
+                "br;q=0.1, gzip",
+                Some("gzip"),
+                ".gz",
+                "javascript",
+            ),
+            ("reset.css", "", None, "", "text/css"),
+            ("reset.css", "br;q=0, gzip;q=0", None, "", "text/css"),
+            ("hero.webp", "br, gzip", None, "", "image/webp"),
+        ] {
+            let response = app
+                .call(
+                    TestRequest::get()
+                        .uri(&format!("/static/{name}"))
+                        .header(header::ACCEPT_ENCODING, accept)
+                        .to_request(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK, "{name} {accept}");
+            let headers = response.headers();
+            let ctype = headers.get(header::CONTENT_TYPE).unwrap().to_str().unwrap();
+            assert!(ctype.contains(content_type), "{name}: {ctype}");
+            assert_eq!(
+                headers
+                    .get(header::CONTENT_ENCODING)
+                    .map(|v| v.to_str().unwrap()),
+                encoding,
+                "{name} {accept}"
+            );
+            assert_eq!(headers.get(header::VARY).unwrap(), "accept-encoding");
+            assert!(!headers.contains_key(header::CONTENT_DISPOSITION));
+            let expected = std::fs::read(static_dir().join(format!("{name}{suffix}"))).unwrap();
+            assert_eq!(test::read_body(response).await, expected);
+        }
+    }
+
+    /// STATEMENT: `/static/{name}` rejects missing files, directories and
+    /// names that could escape the static directory.
+    ///
+    /// HOW:
+    /// - Request a missing file, a dot file, encoded traversal and encoded
+    ///   separators.
+    /// - Confirm every request is `404 Not Found`.
+    #[ntex::test]
+    async fn static_files_reject_missing_and_traversal() {
+        let app =
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+
+        for uri in [
+            "/static/nonexistent.txt",
+            "/static/..",
+            "/static/.hidden",
+            "/static/..%2Fdataset.json",
+            "/static/..%2F..%2Fframeworks%2Fntex%2FCargo.toml",
+            "/static/..%5C..%5Cframeworks%5Cntex%5CCargo.toml",
+        ] {
+            let response = app
+                .call(TestRequest::get().uri(uri).to_request())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
+        }
+    }
+
+    /// STATEMENT: The 8443 TLS configuration negotiates HTTP/2 and serves the
+    /// h2 profiles.
+    ///
+    /// HOW:
+    /// - Start a rustls test server with `ALPN_H2` and a client offering `h2`.
+    /// - Confirm `/baseline2` returns `55` and `/static/app.js` returns the
+    ///   brotli sibling, both over `Version::HTTP_2`.
+    #[ntex::test]
+    async fn h2_tls_baseline_and_static() {
+        let rcgen::CertifiedKey { cert, signing_key } =
+            rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
+        let tls = load_tls_config(
+            cert.pem().as_bytes(),
+            signing_key.serialize_pem().as_bytes(),
+            ALPN_H2,
+        )
+        .unwrap();
+        let mut roots = rustls::RootCertStore::empty();
+        roots.add(cert.der().clone()).unwrap();
+        let mut client_tls = rustls::ClientConfig::builder()
+            .with_root_certificates(roots)
+            .with_no_client_auth();
+        client_tls.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
+        let client = ntex::client::Client::builder()
+            .rustls(client_tls)
+            .build(ntex::SharedCfg::default());
+        let server = test::server_with(
+            test::config().rustls(tls).server_cfg(server_config()),
+            async |_| {
+                App::new()
+                    .with_config(app_config())
+                    .configure(|cfg| routes(cfg, &[], static_dir()))
+            },
+        );
+
+        let response = client
+            .get(server.url("/baseline2?a=13&b=42"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.version(), ntex::http::Version::HTTP_2);
+        assert_eq!(response.body().await.unwrap(), "55");
+
+        let response = client
+            .get(server.url("/static/app.js"))
+            .header("Accept-Encoding", "br")
+            .no_decompress()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.version(), ntex::http::Version::HTTP_2);
+        assert_eq!(response.headers().get("Content-Encoding").unwrap(), "br");
+        let expected = std::fs::read(static_dir().join("app.js.br")).unwrap();
+        assert_eq!(response.body().limit(MAX_BODY).await.unwrap(), expected);
         server.stop().await;
     }
 }
