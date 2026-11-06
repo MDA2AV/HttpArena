@@ -23,5 +23,7 @@ ENV NODE_ENV=production
 # already initialised it; an environment variable at process start is what
 # Node reads. 64 matches the benchmark cpuset.
 ENV UV_THREADPOOL_SIZE=64
+# EXPERIMENT (not for merge): the TLS role as one process per core
+ENV MORO_TLS_PROCS=1
 EXPOSE 8080
 CMD ["node", "app.mjs"]

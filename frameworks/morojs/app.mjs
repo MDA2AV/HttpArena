@@ -87,6 +87,30 @@ if (ROLE === 'plain' && isPrimary) {
     }
 }
 
+// EXPERIMENT (json-tls, not for merge): the TLS role as one process per core
+// instead of one process with a worker thread per core. MORO_TLS_PROCS=1
+// makes this role's first process a supervisor that starts `workers`
+// children, each running the same file with one worker; every child binds
+// :8081 through SO_REUSEPORT exactly as the worker threads did. Everything
+// else about the role is unchanged, so a json-tls run with and without the
+// switch isolates what sharing one process between 64 workers costs.
+if (ROLE === 'tls' && process.env.MORO_TLS_PROCS === '1' && isPrimary && !process.env.MORO_PROC_CHILD) {
+    for (let i = 0; i < workers; i++) {
+        const child = spawn(process.execPath, [fileURLToPath(import.meta.url)], {
+            stdio: 'inherit',
+            env: { ...process.env, MORO_PROC_CHILD: '1', WORKERS: '1' },
+        });
+        child.on('exit', (code, signal) => {
+            console.error(`morojs: tls worker process exited (${signal ?? code})`);
+        });
+        for (const signal of ['SIGTERM', 'SIGINT']) {
+            process.on(signal, () => child.kill(signal));
+        }
+    }
+    // The supervisor serves nothing; its children keep the event loop alive.
+    await new Promise(() => {});
+}
+
 // Dataset for /json; a missing file serves an empty list instead of taking
 // the worker down.
 let dataset = [];
