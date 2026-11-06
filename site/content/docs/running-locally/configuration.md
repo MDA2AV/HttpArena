@@ -40,6 +40,10 @@ Every framework `Dockerfile` reads the same defaults from its env, so you rarely
 | `LOADGEN_DOCKER` | `false` | When `true`, every load generator runs from its Docker image instead of the host binary. Builds missing images automatically from `docker/*.Dockerfile`. Forced `true` by `benchmark-lite.sh`. |
 | `GCANNON_MODE` | `native` | `native` or `docker`. Implied by `LOADGEN_DOCKER`. |
 | `GCANNON_CPUS` | dynamic | CPU list the load generators run on. Native mode wraps calls in `taskset -c $GCANNON_CPUS`; docker mode passes it via `--cpuset-cpus`. Defaults to the upper half of available cores on smaller machines to avoid resource contention with the server. |
+| `DB_SERVER_CPUS` | `0-15,64-79` | Server cpuset on the database profiles. |
+| `DB_LOADGEN_CPUS` | `16-31,80-95` | Load-generator cpuset on the database profiles. Replaces `GCANNON_CPUS` there. |
+| `DB_POSTGRES_CPUS` | `32-63,96-127` | Postgres cpuset on the database profiles. On a box too small for these three, the generator and Postgres stay where they are. |
+| `DB_THREADS` | `32` | Load-generator threads on the database profiles. Replaces `THREADS` there. |
 
 ## Tool binaries and images
 

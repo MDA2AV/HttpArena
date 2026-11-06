@@ -42,7 +42,7 @@ See the individual test profile docs for each endpoint's exact request/response 
 - [`/static/*`](/docs/test-profiles/h1/static-tls/implementation/)
 - [`/baseline2`](/docs/test-profiles/h2/baseline-h2/implementation/)
 - [`/json`](/docs/test-profiles/h1/json-tls/implementation/)
-- [`/async-db`](/docs/test-profiles/h1/async-database/implementation/)
+- [`/async-db`](/docs/test-profiles/database/async-database/implementation/)
 
 ## Docker Compose
 

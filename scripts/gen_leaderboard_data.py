@@ -103,11 +103,13 @@ CATALOG = [
         ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024],              [1024],          False,False,True),
     ]),
     ("Database", [
-        # Reference-only. The database and its driver dominate these two far
-        # more than the framework does, which is the case #1310 makes: they
-        # measure the connector, not the HTTP path. Still measured and shown,
-        # just no longer deciding the ranking.
-        ("async-db",  "Async DB",  "Async Postgres sequential scan (reference).",     [1024],     [1024],  False,True,False),
+        # Their own family. The database and its driver dominate these two far
+        # more than the framework does, which is the case #1310 makes: that rules
+        # them out of a ranking of HTTP paths, and it is what this one ranks. They
+        # run over HTTP/1.1 with the box split three ways, see DB_* in profiles.sh.
+        # Only async-db counts for now: 63 of the 101 entries running it have no
+        # Fortunes, and scoring it would cap all of them at half the board.
+        ("async-db",  "Async DB",  "Async Postgres sequential scan.",                 [1024],     [1024],  True,True,False),
         ("fortunes",  "Fortunes",  "DB query + HTML template render (reference).",    [1024],     [1024],  False,False,False),
     ]),
     ("HTTP/2", [
@@ -167,8 +169,8 @@ PROFILE_DOC = {
     "latency-1m":      "test-profiles/h1/latency-1m/implementation",
     "latency-10k":     "test-profiles/h1/latency-10k/implementation",
     "latency-500k-8cpu": "test-profiles/h1/latency-500k-8cpu/implementation",
-    "async-db":         "test-profiles/h1/async-database/implementation",
-    "fortunes":         "test-profiles/h1/fortunes/implementation",
+    "async-db":         "test-profiles/database/async-database/implementation",
+    "fortunes":         "test-profiles/database/fortunes/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
     "static-h2":        "test-profiles/h2/static-h2/implementation",
     "baseline-h2c":     "test-profiles/h2/baseline-h2c/implementation",
@@ -1250,11 +1252,11 @@ def _slug(name):
     return (re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "unnamed").lower()
 
 # category -> family key. Mirrors familyOf() in index.html; anything unlisted is
-# HTTP/1.1 (Connection, Workload, Database, Multi-endpoint).
+# HTTP/1.1 (Connection, Concurrency, Efficiency, Workload).
 FAMILY_OF_CAT = {"Gateway": "gw", "HTTP/2": "h2", "HTTP/3": "h3",
-                 "gRPC": "grpc", "WebSocket": "ws"}
+                 "gRPC": "grpc", "WebSocket": "ws", "Database": "db"}
 FAMILY_LABEL = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3",
-                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "db": "Database"}
 
 # Leagues are the board's type filter. flagship+emerging is its default view and
 # ranks as one field; engine and infrastructure entries are each scored on their
@@ -1846,16 +1848,18 @@ OG_TEXT = (232, 234, 237)
 OG_MUTED = (154, 160, 166)
 
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
-              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "db": "Database"}
 # The board's <h1> per family. renderHead() writes the same strings, so the
 # pre-rendered heading and the rendered one match.
 SCOPE_H1 = {"h1": "HTTP/1.1 web server benchmarks", "h2": "HTTP/2 web server benchmarks",
             "h3": "HTTP/3 web server benchmarks",
             "gw": "Gateway and production stack benchmarks",
-            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks"}
+            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks",
+            "db": "Database-backed web server benchmarks"}
 SCOPE_BLURB = {"h1": "all HTTP/1.1 profiles", "h2": "all HTTP/2 profiles",
                "h3": "all HTTP/3 profiles", "gw": "the gateway & production-stack profiles",
-               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles"}
+               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles",
+               "db": "the database profiles"}
 # The board's own default: view=composite, scope=h1, flagship+emerging, tuned
 # shown, useMem and rescale off. Prerendering anything else would show a crawler
 # a page no visitor lands on.
@@ -2760,7 +2764,8 @@ def _lang_faq(lang, scopes, n_entries, round_name):
             continue
         fw, _k, _t, score, rank, of, _l, _lr, _lo = rows[0]
         qa.append((
-            f"What is the fastest {lang} {SCOPE_NAME[scope]} server?",
+            f"What is the fastest {lang} "
+            f"{'database-backed' if scope == 'db' else SCOPE_NAME[scope]} server?",
             f"{fw}, with a composite of {score:.0f} on {SCOPE_NAME[scope]} and "
             f"{rank} of {of} against all languages in its league."))
     qa.append((

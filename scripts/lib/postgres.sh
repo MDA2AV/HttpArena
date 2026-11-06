@@ -56,6 +56,14 @@ postgres_start() {
     fail "postgres sidecar did not become ready within 60s"
 }
 
+# Move the running sidecar onto these CPUs. With no argument it goes back to where
+# postgres_start() puts it: PG_CPUSET if set, otherwise anywhere.
+postgres_pin() {
+    local cpus="${1:-${PG_CPUSET:-0-$(( $(nproc) - 1 ))}}"
+    docker update --cpuset-cpus="$cpus" "$PG_CONTAINER" >/dev/null \
+        || warn "could not pin postgres to cpuset=$cpus"
+}
+
 postgres_stop() {
     # -v for the same reason as postgres_start: nuke any attached
     # anonymous volumes along with the container.

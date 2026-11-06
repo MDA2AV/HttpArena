@@ -744,13 +744,13 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   Object.keys(D.results).forEach(function(k){ D.results[k].forEach(function(r){ if(r.lang) FWLANG[r.fw]=r.lang; }); });
 
   var COMPOSITE = '__composite__';
-  var SCOPES = [{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'}];
-  function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws'}[p.category]||'h1'; }
+  var SCOPES = [{k:'h1',label:'H/1.1'},{k:'h2',label:'H/2'},{k:'h3',label:'H/3'},{k:'gw',label:'Gateway'},{k:'grpc',label:'gRPC'},{k:'ws',label:'WebSocket'},{k:'db',label:'Database'}];
+  function familyOf(p){ return {'Gateway':'gw','HTTP/2':'h2','HTTP/3':'h3','gRPC':'grpc','WebSocket':'ws','Database':'db'}[p.category]||'h1'; }
   // cats must list every CATALOG category that belongs to the family. This is
   // the nav's only source of profiles, so a category missing here disappears
   // from Detailed Views entirely while still ranking on the composite --
   // which is how async and latency-1m went missing when they were added.
-  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload','Database']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']}];
+  var FAMILIES=[{k:'h1',label:'HTTP/1.1',cats:['Connection','Concurrency','Efficiency','Workload']},{k:'h2',label:'HTTP/2',cats:['HTTP/2']},{k:'h3',label:'HTTP/3',cats:['HTTP/3']},{k:'gw',label:'Gateway',cats:['Gateway']},{k:'grpc',label:'gRPC',cats:['gRPC']},{k:'ws',label:'WebSocket',cats:['WebSocket']},{k:'db',label:'Database',cats:['Database']}];
   var expanded=new Set(['composite']);
   // state.lang is an exact language filter, distinct from the q search box: q
   // matches substrings across name/language/engine, which is fine for typing but
@@ -1389,10 +1389,10 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     var cat=document.getElementById('pcat'), title=document.getElementById('ptitle'),
         blurb=document.getElementById('pblurb'), ctl=document.getElementById('headctl');
     if(state.view==='composite'){
-      var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles'}[state.scope];
+      var sLabel={h1:'all HTTP/1.1 profiles',h2:'all HTTP/2 profiles',h3:'all HTTP/3 profiles',gw:'the gateway & production-stack profiles',grpc:'all gRPC profiles',ws:'all WebSocket profiles',db:'the database profiles'}[state.scope];
       // The heading is the page's <h1>. "HTTP/1.1" alone said nothing about
       // what is on the page, so every view names its subject.
-      var sName={h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks'}[state.scope];
+      var sName={h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks',db:'Database-backed web server benchmarks'}[state.scope];
       cat.textContent='Composite ranking'; title.textContent=sName;
       blurb.innerHTML='Normalized score summed across '+sLabel+' (each profile worth 100 to its leader'
         +(state.rescale?' among the frameworks shown':' in the full field, so filtering does not change the numbers')

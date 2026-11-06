@@ -66,7 +66,7 @@ Sends `GET /async-db?min=10&max=50` over HTTP/2 and validates:
 - Every item has a `tags` array
 - Every item's `active` field is a boolean (not a string or integer)
 
-This is the same validation as the [Async Database test](../../h1/async-database/validation), but routed through the proxy.
+This is the same validation as the [Async Database test](../../database/async-database/validation), but routed through the proxy.
 
 ### Content-Type header
 
@@ -92,7 +92,7 @@ The gateway-64 test relies on endpoint implementations that are validated indivi
 
 - `/json` - [JSON Compressed validation](/docs/test-profiles/h1/json-compressed/validation)
 - `/static/*` - [Static Files validation](/docs/test-profiles/h1/static-tls/validation)
-- `/async-db` - [Async Database validation](/docs/test-profiles/h1/async-database/validation)
+- `/async-db` - [Async Database validation](/docs/test-profiles/database/async-database/validation)
 - `/baseline2` - [Baseline H2 validation](/docs/test-profiles/h2/baseline-h2/validation)
 
 Frameworks subscribing to `gateway-64` should also subscribe to these individual tests to ensure each endpoint passes validation independently before testing through the proxy.

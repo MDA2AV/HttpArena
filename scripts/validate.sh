@@ -2180,7 +2180,7 @@ fi
 # ───── Async Database (GET /async-db) ─────
 
 if has_test "async-db"; then
-    ASYNCDB_DOCS="$DOCS_BASE/h1/async-database/validation"
+    ASYNCDB_DOCS="$DOCS_BASE/database/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false
     # ranges and limits drawn per run
@@ -2242,7 +2242,7 @@ fi
 # content, and is sized like a real page (not stripped to win the bench).
 
 if has_test "fortunes"; then
-    FORTUNES_DOCS="$DOCS_BASE/h1/fortunes/validation"
+    FORTUNES_DOCS="$DOCS_BASE/database/fortunes/validation"
     echo "[test] fortunes endpoint"
 
     body=$(curl -s --max-time 30 "http://localhost:$PORT/fortunes" || true)

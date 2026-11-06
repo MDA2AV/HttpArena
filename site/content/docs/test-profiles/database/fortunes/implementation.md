@@ -13,6 +13,8 @@ The Fortunes profile measures template-engine throughput on a realistic page-ren
 
 **Connections:** 1,024
 
+**CPUs:** 32 for the server, 32 for the load generator and the rest for Postgres - see the [CPU layout](../#cpu-layout).
+
 ## How it works
 
 1. A Postgres container runs alongside the framework container on the same host, listening on `localhost:5432`. The same connection pool used by `async-db` is shared.

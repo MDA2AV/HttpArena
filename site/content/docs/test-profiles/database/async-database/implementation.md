@@ -10,14 +10,14 @@ The Async Database profile measures how efficiently a framework handles concurre
 
 **This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
 
-> **Reference-only.** This profile is measured and published but does not contribute to the
-> composite score. The database and its driver dominate the result far more than the framework
-> does, so the number mostly reports which Postgres driver a language has rather than anything
-> about the HTTP path this board sets out to compare. It is still worth having, it just no
-> longer decides the ranking.
+> **Scored on the Database board only.** The database and its driver dominate the result far
+> more than the framework does, so the number mostly reports which Postgres driver a language
+> has. That rules it out of the HTTP/1.1 composite, and it is what the Database board ranks.
 
 
 **Connections:** 1,024
+
+**CPUs:** 32 for the server, 32 for the load generator and the rest for Postgres - see the [CPU layout](../#cpu-layout).
 
 ## How it works
 
