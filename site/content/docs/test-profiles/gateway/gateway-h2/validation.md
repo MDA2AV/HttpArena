@@ -33,7 +33,7 @@ Note: `text/javascript` is accepted as equivalent to `application/javascript` pe
 
 ### Response size
 
-Requests `GET /static/app.js` over HTTP/2 and verifies the response size is greater than 0 bytes. This confirms the proxy is correctly forwarding to the server and the server is returning file content.
+Requests `GET /static/app.js` over HTTP/2 and verifies the response size is greater than 0 bytes. This confirms the stack is actually serving file content, not empty responses.
 
 ### 404 for nonexistent file
 
@@ -43,13 +43,13 @@ Sends `GET /static/nonexistent.txt` over HTTP/2 and verifies the response is **H
 
 ### Response structure
 
-Sends `GET /json` over HTTP/2 and validates:
+Sends `GET /json/50` over HTTP/2 - without the `m` multiplier, like the benchmark - and validates:
 
-- Response contains exactly **50 items**
-- Every item carries the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
-- Each `total` is correctly computed as `price * quantity` (rounded to 2 decimal places)
+- `count` is **50**
+- Every item carries the full schema - `id`, `name`, `category`, `price`, `quantity`, `active` (boolean), `tags` (array), `rating` (object with `score` and `count`), and `total`
+- Each `total` equals `price * quantity`, since a missing `m` means a multiplier of 1
 
-This is the same validation as the [JSON Compressed test](../../h1/json-compressed/validation), but routed through the proxy.
+This is a lighter form of the [JSON TLS checks](../../h1/json-tls/validation), routed through the proxy.
 
 ### Content-Type header
 
@@ -59,7 +59,7 @@ Verifies the response has `Content-Type: application/json`.
 
 ### Response structure
 
-Sends `GET /async-db?min=10&max=50` over HTTP/2 and validates:
+Sends `GET /async-db?min=10&max=50&limit=50` over HTTP/2 and validates:
 
 - Response count is between 1 and 50
 - Every item has a nested `rating` object with a `score` field
@@ -74,7 +74,7 @@ Verifies the response has `Content-Type: application/json`.
 
 ### Anti-cheat: empty range
 
-Sends `GET /async-db?min=9999&max=9999` and verifies the response returns `count: 0`. This detects hardcoded or cached responses that don't actually query the database.
+Sends `GET /async-db?min=9999&max=9999&limit=50` and verifies the response returns `count: 0`. This detects hardcoded or cached responses that don't actually query the database.
 
 ## Baseline endpoint checks
 
@@ -90,8 +90,8 @@ Sends `GET /baseline2?a=<random>&b=<random>` with random values and verifies the
 
 The gateway-64 test relies on endpoint implementations that are validated individually in other test profiles:
 
-- `/json` - [JSON Compressed validation](/docs/test-profiles/h1/json-compressed/validation)
-- `/static/*` - [Static Files validation](/docs/test-profiles/h1/static-tls/validation)
+- `/json/{count}` - [JSON TLS validation](/docs/test-profiles/h1/json-tls/validation)
+- `/static/*` - [Static Files (TLS) validation](/docs/test-profiles/h1/static-tls/validation)
 - `/async-db` - [Async Database validation](/docs/test-profiles/h1/async-database/validation)
 - `/baseline2` - [Baseline H2 validation](/docs/test-profiles/h2/baseline-h2/validation)
 

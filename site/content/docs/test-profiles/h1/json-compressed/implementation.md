@@ -9,7 +9,7 @@ The JSON Compressed profile is the same workload as [JSON TLS](../json-tls/imple
 
 ## How it works
 
-1. Server reads `/data/dataset.json` at startup (same 50-item dataset as JSON Processing)
+1. Server reads `/data/dataset.json` at startup (the same 50-item dataset as JSON TLS)
 2. On each `GET /json/{count}?m={multiplier}` request, the server:
    - Takes the first `count` items from the dataset (1–50)
    - Computes `total = price × quantity × m` per item
@@ -101,16 +101,16 @@ On the JSON Compressed tab of the main leaderboard, the Score column is computed
 
 On the [composite leaderboard](https://http-arena.com/), the JSON Compressed column follows a different aggregation path:
 
-1. Average `rps` and `bandwidth` across the 3 conn counts (arithmetic mean, equal weight).
+1. Average `rps` and `bandwidth` across both conn counts (arithmetic mean, equal weight).
 2. Compute `myBpr = avgBw / avgRps` from those averages.
 3. Apply the same `effectiveRps = avgRps × (minBpr / myBpr)²` formula.
-4. Normalize to 0–100.
+4. Normalize against the field leader, like every other profile column (0–1,000).
 
-The resulting per-profile score feeds into the composite like every other profile - averaged across all scored profiles for that framework's type.
+The resulting per-profile score feeds into the composite like every other profile - summed with the other scored profiles of the family for that framework's type.
 
 ### Consequences
 
 - **A framework that picks brotli can dominate even at lower rps**, provided the smaller bytes-per-response wins back more score than the rps gap costs. This reflects real-world bandwidth-constrained serving.
 - **Gzip-only frameworks are competitive when their compression level is aggressive enough** to keep `myBpr` near the brotli leader. The formula rewards ratio, not the specific encoding chosen.
-- **Pre-computed compressed payloads are out of the question for `production` type** - the type rules require the response pipeline to actually compress per-request. See [type rules](/docs/add-framework/meta-json/#type-rules).
+- **Pre-computed compressed payloads are out of the question in every mode** - the type rules at the top of this page require the response to be serialized and compressed per request. See [Standard](/docs/add-framework/implementation-rules/frameworks/standard/) and [Tuned](/docs/add-framework/implementation-rules/frameworks/tuned/).
 - **The best-conn-count panel on the profile tab can rank differently from the composite column**, because one picks the highest-scoring conn count and the other averages. Both are intentional: the profile tab answers "which framework wins at its best setting?"; the composite answers "which framework is most consistent across loads?".

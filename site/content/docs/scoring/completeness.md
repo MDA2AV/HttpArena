@@ -65,7 +65,7 @@ An entry that runs **only** WebSocket or gRPC profiles does not declare the fiel
 
 ## Why a multiplier on the total
 
-Completeness is a property of the entry, not of a workload. It does not change per profile the way throughput or memory does, so it is applied once, to the finished sum, rather than folded into each profile's 0-100 score. It lands after the memory-efficiency bonus, on whatever total the current toggles produce.
+Completeness is a property of the entry, not of a workload. It does not change per profile the way throughput or memory does, so it is applied once, to the finished sum, rather than folded into each profile's 0-1,000 score. It lands after the memory-efficiency bonus, on whatever total the current toggles produce.
 
 It is also the only part of the composite that is not read off a benchmark, so the board never hides it. A graded entry shows its adjusted score with the points it cost beside it:
 

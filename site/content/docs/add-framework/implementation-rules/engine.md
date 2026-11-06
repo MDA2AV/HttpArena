@@ -25,4 +25,4 @@ Having no router, no middleware stack and no ecosystem does not make something a
 - Must pass the validation suite
 - No restrictions on implementation approach, with one exception: on the static profiles, file contents may be served from memory only through the engine's own static file handling, not a cache assembled in the entry, and that cache must follow the disk - replacing a file must change the next response
 - Ranked separately from framework entries (flagship and emerging)
-- Only participates in connection-level tests (baseline, pipelined, limited-conn) and protocol tests (H2, H3, gRPC, WebSocket) by default
+- Scored on the engine subset of the profiles - everything frameworks are scored on except JSON Compressed and JSON h2c. See [Composite Score](/docs/scoring/composite-score/#type-specific-scoring)

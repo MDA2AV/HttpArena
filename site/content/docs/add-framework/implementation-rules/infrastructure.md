@@ -20,19 +20,19 @@ Something that embeds one of these servers but ships application code on top of 
 - Must implement the endpoint spec correctly and pass the validation suite
 - No restrictions on configuration
 - Ranked separately from framework entries: its own composite, its own normalization pool
-- A handler module written specifically for the benchmark is allowed - that is how a server without an application layer answers `/baseline11` and `/json` at all - but it must be a module loaded by the server, not a replacement for it
+- A handler module written specifically for the benchmark is allowed - that is how a server without an application layer answers `/baseline11` and `/json/{count}` at all - but it must be a module loaded by the server, not a replacement for it
 
 ## Scored profiles
 
-Infrastructure is scored on the eleven profiles a server can answer without an application framework behind it:
+Infrastructure is scored on the nine profiles a server can answer without an application framework behind it:
 
 | Category | Profiles |
 |---|---|
 | Connection | Baseline, Pipelined, Short-lived |
-| Workload | JSON, JSON TLS, Static, Static TLS |
+| Workload | JSON TLS, Static TLS |
 | HTTP/2 | Baseline, Static |
 | HTTP/3 | Baseline, Static |
 
-Everything else - 8gbit, the database profiles, gRPC, WebSocket and the gateway stacks - is displayed as reference data where an entry has it, but does not count toward the infrastructure composite.
+Everything else - async, the latency profiles, 8gbit, the database profiles, h2c, gRPC, WebSocket and the gateway stacks - is displayed as reference data where an entry has it, but does not count toward the infrastructure composite.
 
-Pipelined is the one profile scored here and nowhere else. It stopped counting for frameworks in [#1058](https://github.com/MDA2AV/HttpArena/pull/1058) because it measures batching behaviour more than framework throughput; for a proxy that behaviour *is* the thing being compared, so it stays in.
+Pipelined and Static TLS are scored here and nowhere else. Pipelined stopped counting for frameworks in [#1058](https://github.com/MDA2AV/HttpArena/pull/1058) because it measures batching behaviour more than framework throughput; for a proxy that behaviour *is* the thing being compared, so it stays in. Static TLS is reference-only for frameworks and engines, but serving files is exactly what a static-file server is for.
