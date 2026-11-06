@@ -11,9 +11,9 @@ The Static Files over TLS profile is the [Static Files](../static/implementation
 
 ## How it works
 
-1. The framework serves the same 20 files from `/data/static/` as the plain `static` profile
+1. The framework serves the same 21 files from `/data/static/` as the plain `static` profile
 2. The framework listens on **port 8081** with HTTPS, serving HTTP/1.1 only (ALPN advertises `http/1.1`)
-3. The load generator ([wrk](https://github.com/wg/wrk)) requests the 20 files in a round-robin pattern using the same Lua rotation script as `static` (`requests/static-rotate.lua`), over `https://`
+3. The load generator ([wrk](https://github.com/wg/wrk)) requests the 21 files in a round-robin pattern using the same Lua rotation script as `static` (`requests/static-rotate.lua`), over `https://`
 4. All requests include `Accept-Encoding: br;q=1, gzip;q=0.8`
 
 - **CSS** (5 files, 8–200 KB): `reset.css`, `layout.css`, `theme.css`, `components.css`, `utilities.css`
@@ -23,10 +23,28 @@ The Static Files over TLS profile is the [Static Files](../static/implementation
 - **SVG** (2 files, 15–70 KB): `logo.svg`, `icon-sprite.svg`
 - **Images** (3 files, 6–45 KB): `hero.webp`, `thumb1.webp`, `thumb2.webp`
 - **JSON** (1 file, 3 KB): `manifest.json`
+- **Text** (1 file, 16 KB): `~@file name.txt`, requested as `/static/%7E%40file%20name.txt` - see [Percent-encoded paths](#percent-encoded-paths)
 
-Total payload: ~1242 KB across 20 files (~1143 KB compressible text + ~99 KB binary). Brotli-compressed total: ~219 KB for the text; ~318 KB across all 20 files, since the five binary ones ship no pre-compressed twin.
+Total payload: ~1258 KB across 21 files (~1159 KB compressible text + ~99 KB binary). Brotli-compressed total: ~223 KB for the text; ~322 KB across all 21 files, since the five binary ones ship no pre-compressed twin.
 
 Pre-compressed versions of all text files (`.gz` at level 9, `.br` at level 11) are available in the `data/static/` directory alongside the originals.
+
+## Percent-encoded paths
+
+One file in the set, `~@file name.txt`, has a name that cannot be sent in a URI as it is: the space has to be percent-encoded. The load generator sends all three special characters encoded, so the request is
+
+```
+GET /static/%7E%40file%20name.txt HTTP/1.1
+```
+
+and the server only finds the file if it percent-decodes the path ([RFC 3986, section 2.1](https://www.rfc-editor.org/rfc/rfc3986#section-2.1)) before looking it up. It is one request in 21 (~5%), so the cost of decoding shows up in the result without the profile becoming about it.
+
+- Decode exactly once. `%2520` is a literal `%20` in the file name, not a space.
+- Hex digits are case-insensitive: `%7e` and `%7E` are the same character.
+- Any character may arrive encoded, including ones that do not need it (`%66` is `f`), and the same name may arrive with some characters encoded and others not.
+- The response is `Content-Type: text/plain` (a `; charset=...` parameter is fine). Like the other text files, it has `.br` and `.gz` twins on disk, named `~@file name.txt.br` and `~@file name.txt.gz`.
+
+Registering a route for the literal string `%7E%40file%20name.txt`, or keying a lookup on it, is not decoding. Validation asks for the file under spellings drawn per run, so it fails.
 
 ## Compression
 
@@ -41,6 +59,7 @@ Identical to the plain [`static` profile](../static/implementation/#compression)
 ## What it measures
 
 - Everything [Static Files](../static/implementation/#what-it-measures) measures
+- **Path decoding** - one request in 21 names its file with percent-encoded characters
 - **TLS handshake cost amortized over keep-alive** - connections are long-lived at 1,024 concurrent
 - **Record framing overhead on large payloads** - multi-hundred-KB responses span many TLS records, unlike the small JSON bodies of `json-tls`
 - **Symmetric cipher throughput** - AES-GCM / ChaCha20-Poly1305 on the hot path, dominated by bulk encryption of file bodies
@@ -74,7 +93,7 @@ Content-Type: text/css
 
 | Parameter | Value |
 |-----------|-------|
-| Endpoint | 20 URIs under `/static/*` |
+| Endpoint | 21 URIs under `/static/*` (one percent-encoded) |
 | Transport | HTTP/1.1 over TLS |
 | Port | 8081 |
 | ALPN | `http/1.1` |

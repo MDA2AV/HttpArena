@@ -100,7 +100,7 @@ CATALOG = [
         # measured on this profile.
         ("8gbit",  "8Gbit", "Score out of 100: CPU, mean and p99 latency at a pinned 50K req/s, 10 KB echoed both ways.",
                                                     [512],               [512],           True,True,False),
-        ("static-tls","Static TLS",      "20-file static serving over TLS (reference for frameworks).", [1024],              [1024],          False,False,True),
+        ("static-tls","Static TLS",      "21-file static serving over TLS, one name percent-encoded (reference for frameworks).", [1024],              [1024],          False,False,True),
     ]),
     ("Database", [
         # Reference-only. The database and its driver dominate these two far

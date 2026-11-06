@@ -130,7 +130,7 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |
 | `api-4` | 1 | 5 | `0-3` | 256 | gcannon | 8-template mix (baseline / json / async-db) |
 | `api-16` | 1 | 5 | `0-7,64-71` | 1024 | gcannon | 8-template mix |
-| `static` | 1 | 200 | `0-31,64-95` | 1024, 4096, 6800 | wrk | 20 files via `static-rotate.lua` |
+| `static` | 1 | 200 | `0-31,64-95` | 1024, 4096, 6800 | wrk | 21 files via `static-rotate.lua` |
 | `async-db` | 1 | ∞ | `0-31,64-95` | 1024 | gcannon | 5 limit variants (5/10/20/35/50), `-r 25` |
 | `baseline-h2` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `/baseline2` on `H2PORT` TLS |
 | `static-h2` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `/static/*` on `H2PORT` TLS |
