@@ -11,5 +11,5 @@ RUN cargo build --release --locked
 
 FROM debian:bookworm-slim
 COPY --from=build /app/target/release/httparena-ntex /server
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8443
 CMD ["/server"]
