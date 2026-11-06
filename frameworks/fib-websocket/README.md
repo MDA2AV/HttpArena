@@ -5,9 +5,9 @@ side of the [`fib`](../fib) entry.
 
 ## Stack
 
-- **Language:** Go 1.27 (fib's own `go.mod` requires it)
+- **Language:** Go 1.27.3 (fib's own `go.mod` requires it)
 - **Framework:** fib `websocket` package, no dependencies beyond the standard library
-- **Build:** `golang:1.27-alpine`, static binary on `scratch`
+- **Build:** `golang:1.27.3-alpine`, static binary on `scratch`
 
 ## Endpoint
 

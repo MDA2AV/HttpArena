@@ -24,9 +24,7 @@ func run(ctx context.Context) error {
 		},
 	})
 
-	config := fib.DefaultConfig()
-	config.Addr = ":8080"
-	engine, err := fib.Bind(config, handler)
+	engine, err := fib.New(fib.DefaultConfig(), fib.Binding{Addr: ":8080", Handler: handler})
 	if err != nil {
 		return err
 	}
