@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <Nullable>enable</Nullable>
+    <AssemblyName>genhttp-handlers</AssemblyName>
+    <RootNamespace>genhttp</RootNamespace>
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <PackageReference Include="GenHTTP.Core" Version="11.2.0" />
+    <PackageReference Include="GenHTTP.Modules.Files" Version="11.2.0" />
+    <PackageReference Include="GenHTTP.Modules.Websockets" Version="11.2.0" />
+
+    <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.14" />
+
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+
+  </ItemGroup>
+
+</Project>
