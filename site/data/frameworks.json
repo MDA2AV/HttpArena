@@ -834,6 +834,21 @@
       "response": false
     }
   },
+  "fulmine.js - uwsLite": {
+    "dir": "fulmine-uwslite",
+    "description": "fulmine.js routes written with app.uwsLite: (req, res) handlers on uWebSockets.js over two small objects, with route middleware and streams.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "standard",
+    "website": "https://fulmine.sndesign.it/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "fulmine.js": {
     "dir": "fulmine",
     "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
