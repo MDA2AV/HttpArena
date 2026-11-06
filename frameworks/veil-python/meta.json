@@ -1,0 +1,41 @@
+{
+  "display_name": "veil-python",
+  "language": "Python",
+  "type": "experimental",
+  "mode": "standard",
+  "completeness": {
+    "middleware": false
+  },
+  "engine": "veil",
+  "description": "veil-api 0.10 from PyPI (Python bindings of the veil server; Linux wheels use the epoll readiness reactor). @app.get/@app.post handlers with path/query binding, dict responses serialized to JSON, async def handlers on veil's persistent asyncio event loop, @app.websocket for /ws, gRPC through the grpcio-generated servicer on veil.grpc.Server, /static/* through app.serve_dir, compression through [api] compression. One process with four listeners from the configuration file.",
+  "repo": "https://github.com/aofusa/veil-proxy",
+  "website": "https://github.com/aofusa/veil-proxy",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3",
+    "unary-grpc",
+    "unary-grpc-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": [
+    "aofusa"
+  ]
+}
