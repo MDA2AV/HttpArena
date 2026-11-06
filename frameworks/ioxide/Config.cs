@@ -112,12 +112,6 @@ internal sealed class Config : IDisposable
         uint cidLength = Env.UInt("IOXIDE_QUIC_CID_LEN", (uint)quicDefault.LocalCidLength);
         QuicEngine? quic = tls
             ? new QuicEngine(certPath, keyPath, cidLength, alpn: ["h3"],
-                             // Per-connection send-retention high-water: a response larger than
-                             // this streams out paced by the peer's acks instead of buffering
-                             // whole, so memory stays ~this per connection whatever static-h3 is
-                             // serving. 16 MiB is the library's own value, restated rather than
-                             // read off an instance because it is a constructor argument.
-                             maxSendRetentionBytes: Env.Long("IOXIDE_QUIC_RETENTION_BYTES", 16L << 20),
                              handshakeTimeoutMs: Env.Int("IOXIDE_TLS_HANDSHAKE_MS", tlsDefault.HandshakeTimeoutMs))
             : null;
 
@@ -126,6 +120,7 @@ internal sealed class Config : IDisposable
         {
             ReactorCount = reactors,
             RingEntries  = Env.UInt("IOXIDE_SQ_ENTRIES", srvDefault.RingEntries),
+            OpSlots      = Env.Int("IOXIDE_OP_SLOTS", srvDefault.OpSlots),
             DualStack    = Env.Bool("IOXIDE_DUAL_STACK", srvDefault.DualStack),
 
             // ENTRY DEFAULTS. The upload profile moves large bodies and each recv slice is capped
@@ -162,6 +157,10 @@ internal sealed class Config : IDisposable
                 WriteOverflow    = Env.Enum("IOXIDE_WRITE_OVERFLOW", tcpDefault.WriteOverflow),
                 ZeroCopySend     = Env.Bool("IOXIDE_ZERO_COPY", tcpDefault.ZeroCopySend),
                 RecvQueueEntries = Env.Int("IOXIDE_RECV_QUEUE", tcpDefault.RecvQueueEntries),
+                // Both clocks run only while the connection waits on its peer: a read parked with
+                // nothing buffered, or a flush in flight.
+                ReadTimeoutMs    = Env.Int("IOXIDE_TCP_READ_MS", tcpDefault.ReadTimeoutMs),
+                SendTimeoutMs    = Env.Int("IOXIDE_TCP_SEND_MS", tcpDefault.SendTimeoutMs),
             },
 
             // QUIC binds its own port; this is the tunable set it shares. SocketBufferBytes is a
@@ -178,12 +177,17 @@ internal sealed class Config : IDisposable
 
             Quic = quic == null ? null : new QuicOptions
             {
-                Port              = Env.Port("IOXIDE_QUIC_PORT", h2Port),
-                LocalCidLength    = (int)cidLength,   // must match the engine's cidLength
-                Routing           = Env.Enum("IOXIDE_QUIC_ROUTING", quicDefault.Routing),
-                PinMigratedPeers  = Env.Bool("IOXIDE_QUIC_PIN_MIGRATED", quicDefault.PinMigratedPeers),
-                IdleTimeoutMs     = Env.Int("IOXIDE_QUIC_IDLE_MS", quicDefault.IdleTimeoutMs),
-                ConnectionFactory = quic.CreateFactory(),
+                Port                      = Env.Port("IOXIDE_QUIC_PORT", h2Port),
+                LocalCidLength            = (int)cidLength,   // must match the engine's cidLength
+                Routing                   = Env.Enum("IOXIDE_QUIC_ROUTING", quicDefault.Routing),
+                PinMigratedPeers          = Env.Bool("IOXIDE_QUIC_PIN_MIGRATED", quicDefault.PinMigratedPeers),
+                ReadTimeoutMs             = Env.Int("IOXIDE_QUIC_READ_MS", quicDefault.ReadTimeoutMs),
+                // Per-connection send retention: past the high-water a response waits for the
+                // peer's acks instead of buffering whole, so memory stays ~this per connection
+                // whatever static-h3 is serving; a connection that reaches the ceiling is closed.
+                SendRetentionBytes        = Env.Long("IOXIDE_QUIC_RETENTION_BYTES", quicDefault.SendRetentionBytes),
+                SendRetentionCeilingBytes = Env.Long("IOXIDE_QUIC_RETENTION_CEILING_BYTES", quicDefault.SendRetentionCeilingBytes),
+                ConnectionFactory         = quic.CreateFactory(),
             },
         };
 
@@ -280,19 +284,21 @@ internal sealed class Config : IDisposable
                         + $"pg={(Pg != null ? $"{Pg.Host}:{Pg.Port}/{Pg.Database} pool={Pg.PoolSize}" : "off")}, "
                         + $"tls={(Tls ? $"h1 :{TlsPort}, h2 :{H2Port}, h3 udp:{Server.Quic!.Port}" : "off")})");
 
-        Console.WriteLine($"[cfg] engine: sqEntries={Server.RingEntries} recvBuf={Server.RecvBufferSize} "
+        Console.WriteLine($"[cfg] engine: sqEntries={Server.RingEntries} opSlots={Server.OpSlots} recvBuf={Server.RecvBufferSize} "
                         + $"recvSlots={Server.RecvSlots} dualStack={Server.DualStack} "
                         + $"incremental={(Server.Incremental is { } inc ? $"conns={inc.MaxConnections} slots={inc.RecvSlots} buf={inc.RecvBufferSize}" : "off")}");
 
         Console.WriteLine($"[cfg] tcp: extraPorts=[{string.Join(',', tcp.ExtraPorts)}] backlog={tcp.ListenBacklog} "
                         + $"writeSlab={tcp.WriteSlabSize} poolMax={tcp.PoolMax} overflow={tcp.WriteOverflow} "
-                        + $"zeroCopy={tcp.ZeroCopySend} recvQueue={tcp.RecvQueueEntries}");
+                        + $"zeroCopy={tcp.ZeroCopySend} recvQueue={tcp.RecvQueueEntries} "
+                        + $"readMs={tcp.ReadTimeoutMs} sendMs={tcp.SendTimeoutMs}");
 
         if (Server.Quic is { } q)
         {
             Console.WriteLine($"[cfg] udp: slots={udp.RecvSlots} sockBuf={udp.SocketBufferBytes} gro={udp.Gro}");
             Console.WriteLine($"[cfg] quic: port={q.Port} cidLen={q.LocalCidLength} routing={q.Routing} "
-                            + $"pinMigrated={q.PinMigratedPeers} idleMs={q.IdleTimeoutMs}");
+                            + $"pinMigrated={q.PinMigratedPeers} readMs={q.ReadTimeoutMs} "
+                            + $"retention={q.SendRetentionBytes} ceiling={q.SendRetentionCeilingBytes}");
             Console.WriteLine($"[cfg] h3: qpackCapacity={Http3.QpackDynamicTableCapacity} "
                             + $"qpackBlockedStreams={Http3.QpackBlockedStreams}");
         }
