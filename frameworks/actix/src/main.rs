@@ -18,6 +18,7 @@ use actix_web::http::header;
 use actix_web::http::header::{ContentType, HeaderValue, SERVER};
 use actix_web::middleware::Compress;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
+use dashmap::mapref::entry::Entry;
 use dashmap::DashMap;
 use deadpool_postgres::{Manager, ManagerConfig, Pool as PgPool, RecyclingMethod};
 use futures_util::StreamExt;
@@ -156,6 +157,46 @@ fn load_dataset() -> Vec<DatasetItem> {
 // actix-web re-exports its runtime, so the sleep comes from there rather than from a direct
 // tokio dependency the entry does not have. It parks the task rather than the thread, so the
 // waits in flight are bounded by memory rather than by the worker count.
+#[derive(Deserialize)]
+struct RendezvousQuery {
+    v: String,
+}
+
+// Actix runs one worker per core and a handler stays on the worker that accepted its
+// connection, so the two sides of a key usually sit on different workers. The first
+// parks on a oneshot, and the second wakes it across workers.
+static RENDEZVOUS: std::sync::LazyLock<DashMap<String, (String, tokio::sync::oneshot::Sender<String>)>> =
+    std::sync::LazyLock::new(DashMap::new);
+
+async fn rendezvous(path: web::Path<String>, query: web::Query<RendezvousQuery>) -> HttpResponse {
+    let key = path.into_inner();
+    let mut value = query.into_inner().v;
+    let other = loop {
+        match RENDEZVOUS.entry(key.clone()) {
+            Entry::Occupied(waiting) => {
+                let (peer_value, reply) = waiting.remove();
+                match reply.send(value) {
+                    Ok(()) => break peer_value,
+                    // That client left while it waited: nobody to meet, so wait instead.
+                    Err(returned) => value = returned,
+                }
+            }
+            Entry::Vacant(free) => {
+                let (reply, wait) = tokio::sync::oneshot::channel();
+                free.insert((value, reply));
+                match wait.await {
+                    Ok(peer_value) => break peer_value,
+                    Err(_) => return HttpResponse::InternalServerError().finish(),
+                }
+            }
+        }
+    };
+    HttpResponse::Ok()
+        .insert_header((SERVER, SERVER_HDR.clone()))
+        .content_type(ContentType::plaintext())
+        .body(other)
+}
+
 async fn delay(path: web::Path<u64>) -> HttpResponse {
     let ms = path.into_inner();
     if ms > 0 {
@@ -591,6 +632,7 @@ async fn main() -> io::Result<()> {
                 .app_data(crud_cache.clone())
                 .route("/pipeline", web::get().to(pipeline))
                 .route("/delay/{ms}", web::get().to(delay))
+                .route("/rendezvous/{key}", web::get().to(rendezvous))
                 .route("/baseline11", web::get().to(baseline11_get))
                 .route("/baseline11", web::post().to(baseline11_post))
                 .route("/baseline2", web::get().to(baseline2))

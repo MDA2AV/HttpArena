@@ -33,6 +33,13 @@ wrk_build_args() {
                   -s "$REQUESTS_DIR/json-tls-rotate.lua"
                   "https://localhost:$H1TLS_PORT")
             ;;
+        rendezvous)
+            # Plain HTTP/1.1. The script hands out the keys that pair requests up,
+            # which is why this is wrk: the pairing has to be chosen per request.
+            cmd+=(-t "$THREADS" -c "$conns" -d "$duration"
+                  -s "$REQUESTS_DIR/rendezvous.lua"
+                  "http://localhost:$PORT")
+            ;;
         8gbit)
             # POST /echo, 100 KB in and the same 100 KB back. wrk reports only
             # the bytes it READ, so the Transfer/sec it prints is the download

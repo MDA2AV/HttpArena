@@ -15,7 +15,8 @@
     "8gbit",
     "static-tls",
     "async-db",
-    "fortunes"
+    "fortunes",
+    "rendezvous"
   ],
   "maintainers": []
 }

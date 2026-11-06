@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -78,6 +79,45 @@ func delay(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte(strconv.Itoa(ms)))
+}
+
+type rendezvousWaiter struct {
+	value string
+	reply chan string
+}
+
+var rendezvousWaiters sync.Map
+
+// The first request for a key parks its goroutine on a channel; the second finds it,
+// hands over its own value and answers with the one the first left behind.
+func rendezvous(w http.ResponseWriter, r *http.Request) {
+	key := chi.URLParam(r, "key")
+	value := r.URL.Query().Get("v")
+	other := ""
+	var mine *rendezvousWaiter
+	for {
+		if found, ok := rendezvousWaiters.LoadAndDelete(key); ok {
+			peer := found.(*rendezvousWaiter)
+			peer.reply <- value
+			other = peer.value
+			break
+		}
+		if mine == nil {
+			// Buffered, so the side completing the pair never blocks on this one.
+			mine = &rendezvousWaiter{value: value, reply: make(chan string, 1)}
+		}
+		if _, loaded := rendezvousWaiters.LoadOrStore(key, mine); !loaded {
+			select {
+			case other = <-mine.reply:
+			case <-r.Context().Done():
+				rendezvousWaiters.CompareAndDelete(key, mine)
+				return
+			}
+			break
+		}
+	}
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(other))
 }
 
 func baseline11(w http.ResponseWriter, r *http.Request) {
@@ -463,6 +503,7 @@ func main() {
 
 	r.Get("/pipeline", pipeline)
 	r.Get("/delay/{ms}", delay)
+	r.Get("/rendezvous/{key}", rendezvous)
 	r.Get("/baseline11", baseline11)
 	r.Post("/baseline11", baseline11)
 	r.Get("/json/{count}", jsonItems)

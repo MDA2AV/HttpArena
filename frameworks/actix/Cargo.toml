@@ -17,6 +17,7 @@ num_cpus = "1"
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 deadpool-postgres = { version = "0.14", features = ["rt_tokio_1"] }
 futures-util = "0.3"
+tokio = { version = "1", features = ["sync"] }
 
 [profile.release]
 opt-level = 3

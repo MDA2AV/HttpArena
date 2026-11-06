@@ -29,7 +29,25 @@ function getCPUCount() {
 
 if (cluster.isPrimary) {
     const numCPUs = getCPUCount();
-    for (let i = 0; i < numCPUs; i++) cluster.fork();
+
+    // rendezvous: the workers are separate processes and the two sides of a key usually
+    // land on different ones, so the pairing lives here and every request crosses IPC.
+    const waiting = new Map();
+    const onRendezvous = (worker, m) => {
+        const peer = waiting.get(m.key);
+        if (!peer) {
+            waiting.set(m.key, { worker, id: m.id, value: m.value });
+            return;
+        }
+        waiting.delete(m.key);
+        peer.worker.send({ id: peer.id, value: m.value });
+        worker.send({ id: m.id, value: peer.value });
+    };
+
+    for (let i = 0; i < numCPUs; i++) {
+        const worker = cluster.fork();
+        worker.on('message', (m) => onRendezvous(worker, m));
+    }
 } else {
     // A missing dataset serves an empty list instead of taking the worker down
     let datasetItems = [];
@@ -337,6 +355,15 @@ if (cluster.isPrimary) {
         }
     }
 
+    // The primary answers a rendezvous by the id it was sent with.
+    const parked = new Map();
+    let nextParked = 0;
+    process.on('message', (m) => {
+        const res = parked.get(m.id);
+        parked.delete(m.id);
+        if (res) sendText(res, m.value);
+    });
+
     const handle = (req, res) => {
         // req.url is the request target, so the path is everything before the "?"
         const url = req.url;
@@ -345,6 +372,13 @@ if (cluster.isPrimary) {
         const query = mark < 0 ? '' : url.slice(mark + 1);
 
         if (path === '/pipeline') return sendText(res, 'ok');
+
+        if (path.startsWith('/rendezvous/')) {
+            const id = nextParked++;
+            parked.set(id, res);
+            process.send({ id, key: path.slice(12), value: queryValue(query, 'v') });
+            return;
+        }
 
         if (path === '/baseline11') {
             const querySum = sumQuery(query);

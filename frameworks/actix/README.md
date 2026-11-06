@@ -14,6 +14,7 @@ Actix-web 4 HTTP server with rustls for TLS/HTTP/2 support, compiled with thin L
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/pipeline` | GET | Returns `ok` (plain text) |
+| `/rendezvous/{key}` | GET | Waits for a second request on the same key, answers each with the other's `v` |
 | `/baseline11` | GET | Sums query parameter values |
 | `/baseline11` | POST | Sums query parameters + request body |
 | `/baseline2` | GET | Sums query parameter values (HTTP/2 variant) |

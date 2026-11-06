@@ -14,6 +14,7 @@ Node's own HTTP server, `node:http`, with no framework on top and no dependencie
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/pipeline` | GET | Returns `ok` (plain text) |
+| `/rendezvous/{key}` | GET | Waits for a second request on the same key, answers each with the other's `v` |
 | `/baseline11` | GET/POST | Sums query parameter values, plus the body for POST |
 | `/baseline2` | GET | Sums query parameter values |
 | `/json/:count` | GET | Serializes a slice of the dataset, gzipped when the client accepts it |

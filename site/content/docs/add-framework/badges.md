@@ -32,6 +32,7 @@ under `scopes.<family>.default.markdown`.
 | Gateway | `gw` | reverse-proxy and production-stack profiles |
 | gRPC | `grpc` | unary and streaming, plaintext and TLS |
 | WebSocket | `ws` | the echo profiles |
+| Interaction | `ix` | the Rendezvous profile |
 
 `<framework>` is your entry's board name, lowercased, with anything outside
 `A-Z a-z 0-9 . _ -` replaced by `-`. It is the same name as your file under

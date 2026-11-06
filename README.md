@@ -55,6 +55,7 @@ The reply states which baseline it used, and profiles the other framework does n
 | Gateway | `gateway-64`, `gateway-h3` | Reverse proxy + server stack over HTTP/2 and HTTP/3 with mixed workload |
 | Production Stack | `production-stack` | Four-service architecture: edge + Redis + JWT auth sidecar + server, 10K-item cache-aside, concurrent reads + writes |
 | WebSocket | `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` | Echo throughput across connection counts; 16x batched echo; echo with each connection closed after 10 messages (upgrade-handshake cost) |
+| Interaction | `rendezvous` | `GET /rendezvous/{key}?v={value}`: two connections meet on a key, neither gets an answer until both have arrived, and each is answered with the other's value. Measures what crossing between workers costs, on its own board |
 
 ## Run Locally
 
@@ -105,6 +106,7 @@ Swap `actix` for your entry and `h1` for the family you want:
 | Gateway | `gw` | reverse-proxy and production-stack profiles |
 | gRPC | `grpc` | unary and streaming, plaintext and TLS |
 | WebSocket | `ws` | the echo profiles |
+| Interaction | `ix` | the Rendezvous profile |
 
 `<framework>` is your entry's name on the board, lowercased, with anything
 outside `A-Z a-z 0-9 . _ -` turned into `-`, the same name as your file in
