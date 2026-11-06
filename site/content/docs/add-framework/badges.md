@@ -26,11 +26,11 @@ under `scopes.<family>.default.markdown`.
 
 | Family | `<family>` | What the composite covers |
 |---|---|---|
-| HTTP/1.1 | `h1` | Connection, Workload, Database and Multi-endpoint profiles |
+| HTTP/1.1 | `h1` | Connection, Concurrency, Efficiency, Workload and Database profiles |
 | HTTP/2 | `h2` | the HTTP/2 profiles |
 | HTTP/3 | `h3` | the HTTP/3 profiles |
 | Gateway | `gw` | reverse-proxy and production-stack profiles |
-| gRPC | `grpc` | unary and streaming, plaintext and TLS |
+| gRPC | `grpc` | unary, plaintext and TLS |
 | WebSocket | `ws` | the echo profiles |
 
 `<framework>` is your entry's board name, lowercased, with anything outside
@@ -92,7 +92,7 @@ the field the badge claims.
 
 The two halves are read separately. The **right** half is placement: gold for
 first, then shading down by how far into the field the entry sits. The **left**
-half is the tier it competed in, in the same four colours the board uses for the
+half is the tier it competed in, in the same colours the board uses for the
 type swatch beside every framework name:
 
 | | Tier | Ranked against |
@@ -101,6 +101,7 @@ type swatch beside every framework name:
 | 🟦 | `emerging` | flagship + emerging, as one field |
 | 🟧 | `experimental` | other experimental entries |
 | 🟥 | `engine` | other engines, on the profiles engines are scored on |
+| 🟦 (teal) | `infrastructure` | other proxies / static-file servers, on the profiles infrastructure is scored on |
 
 The tier is also in [`/badge/index.json`](https://http-arena.com/badge/index.json)
 as `type`, next to each entry's ranks.
@@ -127,8 +128,8 @@ nothing, because a rank is only worth showing once there was somebody to beat.
 **The field is every row the board lists.** `#1 of 31` is the number you get
 counting rows in that league on the linked page. That includes entries sitting
 at 0 because nothing they ran counts for their tier. An engine whose only
-HTTP/1.1 results are `json-tls` and `pipelined`
-(reference-only) still holds a place in the field. Those entries are counted,
+HTTP/1.1 results are `pipelined` and `static-tls`
+(both reference-only for engines) still holds a place in the field. Those entries are counted,
 but get no badge of their own: there is no placing to claim.
 
 ## Freshness

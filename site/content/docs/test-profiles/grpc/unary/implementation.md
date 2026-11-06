@@ -6,7 +6,12 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 {{< type-rules standard="Must use the standard gRPC library for the language with default configuration. No custom protobuf serialization." tuned="May optimize gRPC channel settings, thread pools, and use custom protobuf serialization." engine="No specific rules. Ranked separately from frameworks." >}}
 
 
-Measures unary gRPC call throughput over cleartext HTTP/2 (h2c). The server implements a simple `GetSum` RPC that adds two integers.
+Measures unary gRPC call throughput. The server implements a simple `GetSum` RPC that adds two integers. There are two profiles with the same RPC and the same load:
+
+| Profile | Transport | Port |
+|---|---|---|
+| `unary-grpc` | cleartext HTTP/2 (h2c, prior-knowledge) | 8080 |
+| `unary-grpc-tls` | HTTP/2 over TLS (ALPN `h2`) | 8443 |
 
 **Connections:** 256, 1,024
 **Concurrent streams per connection:** 100
@@ -33,7 +38,7 @@ message SumReply {
 
 ## Workload
 
-`POST /benchmark.BenchmarkService/GetSum` sent as a gRPC unary call over h2c. The load generator ([h2load](https://nghttp2.org/documentation/h2load-howto.html)) sends pre-encoded protobuf frames with gRPC headers (`content-type: application/grpc`, `te: trailers`).
+`POST /benchmark.BenchmarkService/GetSum` sent as a gRPC unary call over h2c (or over TLS for `unary-grpc-tls`). The load generator ([h2load](https://nghttp2.org/documentation/h2load-howto.html)) sends pre-encoded protobuf frames with gRPC headers (`content-type: application/grpc`, `te: trailers`).
 
 The request payload is a 9-byte gRPC frame: 5-byte frame header + 4-byte protobuf-encoded `SumRequest{a=1, b=2}`.
 
@@ -67,9 +72,9 @@ grpc-status: 0
 
 | | Baseline (HTTP/2) | Unary (gRPC) |
 |---|---|---|
-| Protocol | HTTP/2 over TLS | gRPC over h2c |
+| Protocol | HTTP/2 over TLS | gRPC over h2c (or TLS) |
 | Serialization | Plain text | Protocol Buffers |
-| Port | 8443 | 8080 |
+| Port | 8443 | 8080 (8443 for TLS) |
 | Request method | GET | POST |
 | Load generator | h2load | h2load (raw gRPC frames) |
 

@@ -4,7 +4,7 @@ seo_title: "Static File Serving Benchmark (HTTP/1.1 + TLS): Validation Checks"
 description: "The correctness checks validate.sh runs against the HTTP/1.1 + TLS static file benchmark before a framework's results are accepted."
 ---
 
-The following checks are executed by `validate.sh` for every framework subscribed to the `static-tls` test. They mirror the [`static` checks](../../static/validation/), performed over HTTPS on port 8081.
+The following checks are executed by `validate.sh` for every framework subscribed to the `static-tls` test. All of them go over HTTPS on port 8081.
 
 ## ALPN negotiates HTTP/1.1
 
@@ -43,6 +43,17 @@ Requests all 20 static files **with** `Accept-Encoding: br;q=1, gzip;q=0.8` and 
 
 Sends `GET /static/nonexistent.txt` and verifies the server returns **HTTP 404**.
 
+## Files follow the disk
+
+While the server is running, a file in the mounted static directory is replaced with different bytes of exactly the same length, and the server must serve the new bytes within 2 seconds. This runs twice:
+
+- `hero.webp`, requested without compression
+- `app.js`, requested with `Accept-Encoding: br;q=1, gzip;q=0.8` - its `.br` and `.gz` twins are replaced as well, so a cache of pre-compressed variants cannot hide the change
+
+Afterwards the original file is put back and must be served again. This is the check a copy taken at startup cannot pass: reading the files once and answering from memory satisfies every size and content-type check above, but not this one. Because the replacement has the same length, a cache that only compares file sizes does not pass either.
+
+Infrastructure entries get 30 seconds instead of 2, since their rules explicitly allow a tuned file cache.
+
 ## TLS checks
 
-This profile's TLS listener on port 8081 also goes through the shared TLS checks. The certificate must be the one the harness mounted, the connection must negotiate TLS 1.3 with an AEAD cipher, ALPN must not name a protocol the client did not offer, and the server must accept no obsolete protocol or weak cipher. They are documented once, under [json-tls validation](../json-tls/validation/#tls-checks).
+This profile's TLS listener on port 8081 also goes through the shared TLS checks. The certificate must be the one the harness mounted, the connection must negotiate TLS 1.3 with an AEAD cipher, and ALPN must not name a protocol the client did not offer. They are documented once, under [json-tls validation](../json-tls/validation/#tls-checks).
