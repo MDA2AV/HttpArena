@@ -2,7 +2,7 @@
   "display_name": "iyi-web",
   "language": "iyi",
   "engine": "iyi-web",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "completeness": { "routing": true, "middleware": true, "request": true, "response": true },
   "description": "iyi-web is the web framework for the iyi language (https://iyi-lang.com): a Kemal-style DSL of route blocks over its own HTTP/1.1 server, compiled to a native binary. Each connection is a parallel task on a pool of one worker thread per core (spawn_parallel), and the compiler refuses a route that captures state not safe to share across them. Routes use the DSL with the framework's params tables; json-comp serialises with std/json (derive serializable) and compresses through iyi-web's own CompressHandler (`gzip true`, gzip/deflate); /delay parks the request's fiber with sleep. Built with `iyi build --release` on iyi 0.20.1, iyi-web 0.5.1, default settings except request logging and the static handler turned off.",
