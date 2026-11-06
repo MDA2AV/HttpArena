@@ -1,20 +1,20 @@
 ---
 title: wrk
 seo_title: "wrk: Static File Load Generator"
-description: "HttpArena uses wrk with a Lua script to rotate across 20 URIs for the static file profile, measuring realistic multi-asset page loads."
+description: "HttpArena uses wrk with a Lua script to rotate across 21 URIs for the static file profile, measuring realistic multi-asset page loads."
 ---
 
 [wrk](https://github.com/wg/wrk) is a multi-threaded HTTP benchmarking tool used for the **static file serving** test profile.
 
 ## Why wrk for static files?
 
-The static file test serves 20 files with response sizes ranging from 3 KB to 67 KB (brotli-compressed). At these sizes, gcannon's io_uring provided buffer ring path introduces per-completion overhead that limits throughput to ~14 GB/s on loopback. wrk's simpler epoll + `read()` approach achieves ~19 GB/s on the same workload, ensuring the load generator is never the bottleneck.
+The static file test serves 21 files with response sizes ranging from 3 KB to 67 KB (brotli-compressed). At these sizes, gcannon's io_uring provided buffer ring path introduces per-completion overhead that limits throughput to ~14 GB/s on loopback. wrk's simpler epoll + `read()` approach achieves ~19 GB/s on the same workload, ensuring the load generator is never the bottleneck.
 
 For small-response tests (baseline, JSON, pipelined), gcannon's io_uring batched submission is faster than wrk. The tools complement each other.
 
 ## Lua rotation script
 
-wrk uses a Lua script (`requests/static-rotate.lua`) to cycle through all 20 static file paths. Each request includes `Accept-Encoding: br;q=1, gzip;q=0.8` to test compressed file serving.
+wrk uses a Lua script (`requests/static-rotate.lua`) to cycle through all 21 static file paths. Each request includes `Accept-Encoding: br;q=1, gzip;q=0.8` to test compressed file serving. One of the paths, `/static/%7E%40file%20name.txt`, is percent-encoded, so one request in 21 only finds its file if the server decodes the path.
 
 ```lua
 request = function()
