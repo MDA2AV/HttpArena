@@ -22,14 +22,21 @@ ntex 4 on its native runtime.
 | `/echo` | POST | Returns the request body back verbatim |
 | `/static/{name}` | GET | Serves `/data/static/{name}` from disk, preferring a `.br`/`.gz` sibling |
 | `/async-db?min=&max=&limit=` | GET | Items with `price` in range from Postgres, up to `limit` (1-50) |
+| `/fortunes` | GET | Fortune rows from Postgres plus a runtime row, sorted and rendered as HTML |
 
 The same routes are served over TLS with HTTP/1.1 on port 8081 (`json-tls`,
 `static-tls`, `8gbit`) and with h2 on port 8443 (`baseline-h2`, `static-h2`).
 
 ## Notes
 
-- Default worker count, CPU affinity, connection distribution, backlog, and HTTP
-  settings
+- Default worker count and HTTP settings; backlog 1024 and 8 accept threads,
+  each with its own `SO_REUSEPORT` listener. The server is assembled with
+  `ntex::server::build()` because `web::HttpServer` does not expose the accept
+  thread count
+- Timer resolution is 2 ms instead of the default 16 ms
+- Write buffers use 4 KiB pages on 8080, where responses are small and larger
+  bodies are appended as separate pages without copying, and 16 KiB pages on
+  the TLS ports to match rustls record sizes
 - On Linux the native runtime selects io-uring when available and falls back to
   polling; other Unix platforms use polling
 - Routing and extraction through `ntex::web` resources and the `Query`, `Path`,
@@ -61,6 +68,12 @@ The same routes are served over TLS with HTTP/1.1 on port 8081 (`json-tls`,
   ready, or if `DATABASE_URL` is unset, the endpoint returns
   `{"items":[],"count":0}`. A closed connection is dropped from the pool and
   reopened
+- `/fortunes` runs `SELECT id, message FROM fortune` on a statement prepared
+  once per connection, appends the runtime row, sorts by message in byte order
+  and renders the Askama template `templates/fortunes.html` into a
+  pre-sized buffer. `askama.toml` registers an escaper that writes named
+  entities (`&lt;`) instead of Askama's numeric ones. Without a database the
+  page holds only the runtime row
 - A missing `/certs` leaves the TLS listeners down instead of aborting startup:
   `validate.sh` mounts the directory only for entries subscribed to a TLS test
 - Docker release builds use `target-cpu=native` and ThinLTO, together with the

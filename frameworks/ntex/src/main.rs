@@ -1,13 +1,15 @@
 use std::path::Path;
 
 use ntex::http::header::{self, ContentEncoding};
+use ntex::http::{self, HttpService};
 use ntex::io::IoConfig;
 use ntex::util::{BytePageSize, Bytes};
-use ntex::web::{self, App, HttpRequest, HttpResponse, HttpServer, middleware};
+use ntex::web::{self, App, HttpRequest, HttpResponse, middleware};
 use ntex_files::NamedFile;
 use serde::{Deserialize, Serialize};
 
 mod db;
+mod fortunes;
 
 const MAX_BODY: usize = 64 * 1024 * 1024;
 type QueryParams = web::types::Query<Vec<(String, String)>>;
@@ -258,6 +260,7 @@ fn routes(
     .service(web::resource("/baseline2").route(web::get().to(baseline2)))
     .service(web::resource("/pipeline").route(web::get().to(pipeline)))
     .service(web::resource("/async-db").route(web::get().to(db::async_db)))
+    .service(web::resource("/fortunes").route(web::get().to(fortunes::fortunes)))
     .service(
         web::resource("/static/{name}")
             .route(web::get().to(async move |req| static_file(req, static_dir).await)),
@@ -275,12 +278,12 @@ fn app_config() -> web::WebAppConfig {
     web::WebAppConfig::new().set_state(web::types::PayloadConfig::new(MAX_BODY))
 }
 
-fn server_config() -> ntex::SharedCfg {
+fn server_config(write_page: BytePageSize) -> ntex::SharedCfg {
     ntex::SharedCfg::new("HTTPARENA")
         .add(
             IoConfig::new()
                 .set_read_size(BytePageSize::Size8, BytePageSize::Size64)
-                .set_write_size(BytePageSize::Size32)
+                .set_write_size(write_page)
                 .set_write_backpressure(256 * 1024),
         )
         .into()
@@ -307,20 +310,34 @@ fn load_tls_config(
 const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
 const ALPN_H2: &[&[u8]] = &[b"h2", b"http/1.1"];
 
-#[ntex::main]
+/// Threads accepting connections, each with its own `SO_REUSEPORT` listener.
+const ACCEPTORS: usize = 8;
+
+#[ntex::main(timer_resolution = 2)]
 async fn main() -> std::io::Result<()> {
     // Leaked once at startup so handlers borrow the items instead of cloning
     // every string into each response.
     let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
     let static_dir: &'static Path = Path::new("/data/static");
 
-    let mut server = HttpServer::new(async move |_| {
+    let app = async move |_: &()| {
         db::init();
         App::new()
             .with_config(app_config())
             .configure(|cfg| routes(cfg, dataset, static_dir))
-    })
-    .bind("0.0.0.0:8080", server_config())?;
+    };
+
+    // `web::HttpServer` does not expose the number of accept threads, so the
+    // server is assembled from the http service directly.
+    let mut server = ntex::server::build()
+        .backlog(1024)
+        .acceptors(ACCEPTORS)
+        .bind(
+            "http",
+            "0.0.0.0:8080",
+            server_config(BytePageSize::Size4),
+            async move |st| HttpService::new(app(st).await),
+        )?;
 
     // The harness mounts /certs only for the TLS profiles, so a missing pair
     // leaves the TLS listeners down rather than aborting startup.
@@ -333,14 +350,24 @@ async fn main() -> std::io::Result<()> {
             std::fs::File::open(key)?,
             ALPN_H1,
         )?;
-        server = server.bind_rustls("0.0.0.0:8081", &tls, server_config())?;
+        server = server.bind(
+            "tls-h1",
+            "0.0.0.0:8081",
+            server_config(BytePageSize::Size16),
+            async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
+        )?;
         // baseline-h2 and static-h2 negotiate h2 on 8443.
         let tls = load_tls_config(
             std::fs::File::open(cert)?,
             std::fs::File::open(key)?,
             ALPN_H2,
         )?;
-        server = server.bind_rustls("0.0.0.0:8443", &tls, server_config())?;
+        server = server.bind(
+            "tls-h2",
+            "0.0.0.0:8443",
+            server_config(BytePageSize::Size16),
+            async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
+        )?;
     }
 
     server.run().await
@@ -394,7 +421,7 @@ mod tests {
                 .into_boxed_slice(),
         );
         let server = test::server_with(
-            test::config().server_cfg(server_config()),
+            test::config().server_cfg(server_config(BytePageSize::Size4)),
             async move |_| {
                 App::new()
                     .with_config(app_config())
@@ -473,7 +500,9 @@ mod tests {
             .rustls(client_tls)
             .build(ntex::SharedCfg::default());
         let server = test::server_with(
-            test::config().rustls(tls).server_cfg(server_config()),
+            test::config()
+                .rustls(tls)
+                .server_cfg(server_config(BytePageSize::Size16)),
             async |_| {
                 App::new()
                     .with_config(app_config())
@@ -663,7 +692,9 @@ mod tests {
             .rustls(client_tls)
             .build(ntex::SharedCfg::default());
         let server = test::server_with(
-            test::config().rustls(tls).server_cfg(server_config()),
+            test::config()
+                .rustls(tls)
+                .server_cfg(server_config(BytePageSize::Size16)),
             async |_| {
                 App::new()
                     .with_config(app_config())

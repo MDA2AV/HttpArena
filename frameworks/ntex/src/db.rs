@@ -1,16 +1,17 @@
-//! `/async-db`: tokio-postgres driven over ntex `Io` (through ntex-io's tokio
-//! `AsyncRead`/`AsyncWrite` impls) on the native runtime, pooled per worker
-//! with deadpool's unmanaged pool.
+//! `/async-db` and the `/fortunes` query: tokio-postgres driven over ntex
+//! `Io` (through ntex-io's tokio `AsyncRead`/`AsyncWrite` impls) on the native
+//! runtime, pooled per worker with deadpool's unmanaged pool.
 
 use std::{cell::OnceCell, str::FromStr, time::Duration};
 
 use deadpool::unmanaged::{Object, Pool};
 use ntex::web::{self, HttpResponse};
 use serde::Serialize;
-use tokio_postgres::{Client, Config, NoTls, Row, Statement, config::Host};
+use tokio_postgres::{Client, Config, NoTls, Row, Statement, config::Host, types::ToSql};
 
 const QUERY: &str = "SELECT id, name, category, price, quantity, active, tags, rating_score, \
                      rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
+const FORTUNES: &str = "SELECT id, message FROM fortune";
 const RECONNECT_DELAY: Duration = Duration::from_secs(1);
 const CHECKOUT_TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -23,6 +24,7 @@ thread_local! {
 struct Conn {
     client: Client,
     query: Statement,
+    fortunes: Statement,
 }
 
 #[derive(Clone)]
@@ -94,7 +96,12 @@ impl Db {
         }
     }
 
-    async fn query(&self, min: i32, max: i32, limit: i64) -> Option<Vec<Row>> {
+    /// Runs the statement `stmt` picks from a pooled connection.
+    async fn query(
+        &self,
+        stmt: fn(&Conn) -> &Statement,
+        params: &[&(dyn ToSql + Sync)],
+    ) -> Option<Vec<Row>> {
         // Nothing is connected yet: answer with the fallback instead of waiting.
         if self.pool.status().size == 0 {
             return None;
@@ -103,7 +110,7 @@ impl Db {
             .await
             .ok()?
             .ok()?;
-        match conn.client.query(&conn.query, &[&min, &max, &limit]).await {
+        match conn.client.query(stmt(&conn), params).await {
             Ok(rows) => Some(rows),
             Err(_) => {
                 if conn.client.is_closed() {
@@ -129,7 +136,12 @@ async fn connect(config: &Config) -> Result<Conn, Box<dyn std::error::Error>> {
     // The connection future drives the socket for every query on this client.
     ntex::rt::spawn(connection);
     let query = client.prepare(QUERY).await?;
-    Ok(Conn { client, query })
+    let fortunes = client.prepare(FORTUNES).await?;
+    Ok(Conn {
+        client,
+        query,
+        fortunes,
+    })
 }
 
 fn item(row: &Row) -> DbItem<'_> {
@@ -167,11 +179,22 @@ fn params(query: &[(String, String)]) -> (i32, i32, i64) {
     )
 }
 
+fn current() -> Option<Db> {
+    DB.with(|db| db.get().cloned().flatten())
+}
+
+/// All `fortune` rows as `(id, message)`, or `None` without a database.
+pub async fn fortunes() -> Option<Vec<Row>> {
+    current()?.query(|conn| &conn.fortunes, &[]).await
+}
+
 pub async fn async_db(query: web::types::Query<Vec<(String, String)>>) -> HttpResponse {
     let (min, max, limit) = params(&query);
-    let db = DB.with(|db| db.get().cloned().flatten());
-    let rows = match db {
-        Some(db) => db.query(min, max, limit).await.unwrap_or_default(),
+    let rows = match current() {
+        Some(db) => db
+            .query(|conn| &conn.query, &[&min, &max, &limit])
+            .await
+            .unwrap_or_default(),
         None => Vec::new(),
     };
     let items: Vec<_> = rows.iter().map(item).collect();
@@ -257,9 +280,7 @@ mod tests {
     #[ignore = "needs Postgres with the HttpArena seed at DATABASE_URL"]
     async fn queries_postgres() {
         init();
-        let db = DB
-            .with(|db| db.get().cloned().flatten())
-            .expect("DATABASE_URL");
+        let db = current().expect("DATABASE_URL");
         for _ in 0..100 {
             if db.pool.status().size > 0 {
                 break;

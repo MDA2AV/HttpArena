@@ -7,6 +7,8 @@ COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked \
     && cargo clean --release -p httparena-ntex && rm src/main.rs
 COPY src ./src
+COPY askama.toml ./
+COPY templates ./templates
 RUN cargo build --release --locked
 
 FROM debian:bookworm-slim
