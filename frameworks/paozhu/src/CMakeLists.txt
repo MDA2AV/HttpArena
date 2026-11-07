@@ -1,0 +1,812 @@
+# Pinned build definition for the HttpArena paozhu entry.
+# Snapshot of upstream CMakeLists.txt at 903cbd82c795330fd53f81a59305ef3c0feec240.
+# Local changes: ENABLE_BENCHMARK defaults to ON, and both build configs compile
+# startup/main_docker.cpp (foreground Docker entry) instead of the forking
+# main_daemon.cpp / interactive main_dev.cpp.
+# Keep in sync with PAOZHU_REF when bumping the upstream revision.
+
+cmake_minimum_required(VERSION 3.21)
+
+# ---- Policies ----
+cmake_policy(SET CMP0048 NEW)
+if(POLICY CMP0077)
+  cmake_policy(SET CMP0077 NEW)
+endif()
+
+if(POLICY CMP0092)
+  cmake_policy(SET CMP0092 NEW)
+endif()
+
+# ---- Project ----
+project(Paozhu_web_framework
+  VERSION 1.0.0
+  LANGUAGES CXX
+)
+
+# ---- Set the default build type to Debug ----
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+  message(STATUS "No build type specified, defaulting to Debug")
+endif()
+
+# ---- Options ----
+option(ENABLE_VCPKG "Use vcpkg toolchain" OFF)
+option(ENABLE_VIEWSO "Enable view-template .so loading (dlopen/LoadLibrary)" OFF)
+option(ENABLE_MODELSO "Enable controller .so loading (dlopen/LoadLibrary)" OFF)
+option(ENABLE_GD "Enable GD graphics and QR" OFF)
+option(ENABLE_BENCHMARK "Enable benchmarks" ON)
+option(ENABLE_OFFICE "Enable pzexcel pzword support" OFF)
+option(ENABLE_IMAGE "Enable image support" OFF)
+option(ENABLE_PDF "Enable pz::webpdf support" OFF)
+option(ENABLE_SMS "Enable SMS support" OFF)
+option(ENABLE_WEBPAY "Enable webpay support (alipay/wxpay)" OFF)
+option(ENABLE_CHART "Enable chart support" OFF)
+option(ENABLE_ZIP "Enable pzzip support" OFF)
+option(ENABLE_SQLITE "Enable SQLite database support" OFF)
+option(ENABLE_FASTCGI "Enable FastCGI (PHP) support" OFF)
+option(ENABLE_REDIS "Enable pzredis (Redis client) support" OFF)
+option(ENABLE_REDIS_CLIENT "Enable framework Redis pub/sub long-connect client support" OFF)
+if(ENABLE_REDIS_CLIENT AND NOT ENABLE_REDIS)
+  message(FATAL_ERROR "ENABLE_REDIS_CLIENT=ON requires ENABLE_REDIS=ON")
+endif()
+option(ENABLE_WEBSOCKETS_CLIENT "Enable framework WebSocket long-connect client support" ON)
+option(ENABLE_SOCKETS_CLIENT "Enable framework bare TCP Socket long-connect client support" ON)
+option(ENABLE_MQTT_CLIENT "Enable framework MQTT broker long-connect client support" ON)
+option(ENABLE_TESTS "Build test executables in tests/" OFF)
+
+
+# Sanitizer switches. ASan is enabled automatically for Debug builds (see target_compile_options below), so:
+#   ENABLE_TSAN  cannot be combined with ASan => requires a non-Debug CMAKE_BUILD_TYPE (e.g. RelWithDebInfo)
+#   ENABLE_UBSAN can be used together with ASan
+# Applies only to the paozhu target; asio is header-only, so nothing extra is compiled for it.
+option(ENABLE_TSAN "Build paozhu with ThreadSanitizer (needs a non-Debug CMAKE_BUILD_TYPE)" OFF)
+option(ENABLE_UBSAN "Build paozhu with UndefinedBehaviorSanitizer" OFF)
+if(ENABLE_TSAN AND ENABLE_UBSAN)
+  message(FATAL_ERROR "ENABLE_TSAN and ENABLE_UBSAN are mutually exclusive")
+endif()
+if(ENABLE_TSAN AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(FATAL_ERROR "Debug already forces ASan; ENABLE_TSAN needs a non-Debug build type (e.g. RelWithDebInfo)")
+endif()
+if((ENABLE_TSAN OR ENABLE_UBSAN) AND MSVC)
+  message(FATAL_ERROR "ENABLE_TSAN/ENABLE_UBSAN are only wired for GNU/Clang/AppleClang")
+endif()
+
+if(ENABLE_SQLITE)
+  message(STATUS "ENABLE_SQLITE = ${ENABLE_SQLITE}")
+else()
+  message(STATUS "SQLite support disabled (ENABLE_SQLITE=OFF)")
+endif()
+
+# ---- Feature dependencies ----
+# pzword(docx) relies on pz::zip for packaging. When ENABLE_OFFICE is enabled, ENABLE_ZIP is automatically enabled
+if(ENABLE_OFFICE AND NOT ENABLE_ZIP)
+  set(ENABLE_ZIP ON)
+  message(STATUS "ENABLE_OFFICE requires ENABLE_ZIP: auto-enabled")
+endif()
+
+# ---- Vcpkg toolchain ----
+if(ENABLE_VCPKG)
+  if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    if(DEFINED ENV{VCPKG_ROOT})
+      set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+          CACHE STRING "Vcpkg toolchain file")
+    else()
+      message(FATAL_ERROR "ENABLE_VCPKG is ON but VCPKG_ROOT environment variable is not set")
+    endif()
+  endif()
+
+  macro(auto_enable_vcpkg_feature opt feature)
+    if(${opt})
+      if(NOT ";${VCPKG_MANIFEST_FEATURES};" MATCHES ";${feature};")
+        message(STATUS "Auto append vcpkg feature: ${feature}")
+        list(APPEND VCPKG_MANIFEST_FEATURES ${feature})
+      endif()
+    endif()
+  endmacro()
+
+  auto_enable_vcpkg_feature(ENABLE_GD "gd")
+  auto_enable_vcpkg_feature(ENABLE_OFFICE "pzexcel pzword")
+  auto_enable_vcpkg_feature(ENABLE_IMAGE "image")
+  auto_enable_vcpkg_feature(ENABLE_PDF "webpdf")
+  auto_enable_vcpkg_feature(ENABLE_ZIP "zipfile")
+endif()
+
+# ---- C++ standard ----
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ---- Common compiler options (interface library) ----
+add_library(project_warnings INTERFACE)
+if(MSVC)
+  target_compile_options(project_warnings INTERFACE /W4 /utf-8 /EHsc)
+else()
+  target_compile_options(project_warnings INTERFACE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wshadow
+    -Wnon-virtual-dtor
+    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-gnu-anonymous-struct>
+    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wno-nested-anon-types>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-misleading-indentation>
+    $<$<CXX_COMPILER_ID:GNU>:-flarge-source-files>
+  )
+endif()
+
+# ---- Output directories ----
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
+# Sanitizer builds output to a separate bin_san dir: relinking would clobber an instance running from bin/paozhu
+if(ENABLE_TSAN OR ENABLE_UBSAN)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin_san")
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin_san")
+endif()
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/temp")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/log")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cache")
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/orm")
+
+# ---- Export compile commands ----
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# ---- Helper: recursive include directories (kept for compatibility) ----
+# For system/third-party library directories (internal warnings suppressed)
+function(include_system_dirs_recursively root_dir)
+  if(IS_DIRECTORY ${root_dir})
+    message(STATUS "include dir (system): ${root_dir}")
+    include_directories(SYSTEM ${root_dir})
+  endif()
+  file(GLOB_RECURSE subdirs LIST_DIRECTORIES true RELATIVE ${root_dir} ${root_dir}/*)
+  foreach(sub IN LISTS subdirs)
+    if(IS_DIRECTORY ${root_dir}/${sub})
+      include_system_dirs_recursively(${root_dir}/${sub})
+    endif()
+  endforeach()
+endfunction()
+
+# For project business code (strict warnings kept)
+function(include_project_dirs_recursively root_dir)
+  if(IS_DIRECTORY ${root_dir})
+    message(STATUS "include dir (project): ${root_dir}")
+    include_directories(${root_dir})   # without SYSTEM
+  endif()
+  file(GLOB_RECURSE subdirs LIST_DIRECTORIES true RELATIVE ${root_dir} ${root_dir}/*)
+  foreach(sub IN LISTS subdirs)
+    if(IS_DIRECTORY ${root_dir}/${sub})
+      include_project_dirs_recursively(${root_dir}/${sub})
+    endif()
+  endforeach()
+endfunction()
+
+# ---- Source files (with CONFIGURE_DEPENDS for automatic update) ----
+file(GLOB_RECURSE orm_list        CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/orm/*.cpp")
+file(GLOB_RECURSE source_list     CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/models/*.cpp")
+file(GLOB_RECURSE framework_cpps  CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/*.cpp")
+file(GLOB_RECURSE common_list     CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/common/*.cpp")
+file(GLOB_RECURSE controller_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/controller/src/*.cpp")
+file(GLOB_RECURSE viewsrc_list    CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/viewsrc/view/*.cpp")
+file(GLOB_RECURSE reflect_list    CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/libs/*.cpp")
+file(GLOB_RECURSE src_list        CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+
+if(ENABLE_OFFICE)
+  file(GLOB_RECURSE pzexcel_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzexcel/src/*.cpp")
+  file(GLOB_RECURSE pzword_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzword/src/*.cpp")
+endif()
+
+if(ENABLE_IMAGE)
+  file(GLOB_RECURSE pzimage_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzimage/src/*.cpp")
+endif()
+
+if(ENABLE_PDF)
+  file(GLOB_RECURSE webpdf_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/webpdf/src/*.cpp")
+endif()
+
+if(ENABLE_SMS)
+  file(GLOB_RECURSE sms_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/sms/src/*.cpp")
+endif()
+
+if(ENABLE_CHART)
+  file(GLOB_RECURSE charts_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzcharts/src/*.cpp")
+endif()
+
+if(ENABLE_WEBPAY)
+  file(GLOB_RECURSE webpay_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/webpay/src/*.cpp")
+endif()
+
+if(ENABLE_ZIP)
+  file(GLOB_RECURSE pzzip_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzzip/src/*.cpp")
+endif()
+
+if(ENABLE_REDIS)
+  file(GLOB_RECURSE pzredis_list CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzredis/src/*.cpp")
+endif()
+
+# Auto-generate missing header stubs for controllers
+foreach(cppfile IN LISTS controller_list)
+  string(REGEX REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/controller/src/" "" rel_path "${cppfile}")
+  string(FIND "${rel_path}" "/" pos)
+  if(pos GREATER_EQUAL 0)
+    string(REGEX MATCHALL "([A-Za-z0-9._-]+)/" dirs "${rel_path}")
+    set(fullpath "${CMAKE_CURRENT_SOURCE_DIR}/controller/include/")
+    foreach(dir IN LISTS dirs)
+      string(REPLACE "/" "" dirname "${dir}")
+      string(APPEND fullpath "${dirname}")
+      if(NOT IS_DIRECTORY "${fullpath}")
+        file(MAKE_DIRECTORY "${fullpath}")
+      endif()
+      string(APPEND fullpath "/")
+    endforeach()
+  endif()
+  string(REGEX REPLACE ".cpp$" "" basename "${rel_path}")
+  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/controller/include/${basename}.h")
+    file(TOUCH "${CMAKE_CURRENT_SOURCE_DIR}/controller/include/${basename}.h")
+  endif()
+endforeach()
+
+
+# ---- pgconnect sources (shared between MySQL and PostgreSQL) ----
+set(PGCONN_SRCS
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/orm_common.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/pg_conn.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/mysql_conn.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/orm_conn_pool.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/orm_connect_mar.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/orm_query.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/clientdatacache.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/unicode.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/sqlite_conn_stub.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/parse_ini.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/request.cpp"
+)
+
+# SQLite connection sources (always compile; sqlite_conn.cpp has #ifdef ENABLE_SQLITE guard)
+set(SQLITE_CONN_SRCS
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/sqlite_conn.cpp"
+)
+
+# CLI tool
+add_executable(paozhu_cli
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpcli/http_cli.cpp"
+  ${PGCONN_SRCS}
+  ${ORM_CMS_MODEL_SRCS}
+  ${ORM_PG_MODEL_SRCS}
+)
+if(ENABLE_SQLITE)
+  target_sources(paozhu_cli PRIVATE ${SQLITE_CONN_SRCS})
+endif()
+target_include_directories(paozhu_cli PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/orm"
+  "${CMAKE_CURRENT_SOURCE_DIR}/models"
+)
+
+# Main target
+set(paozhu_srcs
+  ${common_list}
+  ${viewsrc_list}
+  ${framework_cpps}
+  ${orm_list}
+  ${reflect_list}
+  ${src_list}
+  ${source_list}
+  ${controller_list}
+)
+
+if(ENABLE_OFFICE)
+  list(APPEND paozhu_srcs ${pzexcel_list})
+  list(APPEND paozhu_srcs ${pzword_list})
+endif()
+
+if(ENABLE_IMAGE)
+  list(APPEND paozhu_srcs ${pzimage_list})
+endif()
+
+if(ENABLE_PDF)
+  list(APPEND paozhu_srcs ${webpdf_list})
+endif()
+
+if(ENABLE_SMS)
+  list(APPEND paozhu_srcs ${sms_list})
+endif()
+
+if(ENABLE_CHART)
+  list(APPEND paozhu_srcs ${charts_list})
+endif()
+
+if(ENABLE_WEBPAY)
+  list(APPEND paozhu_srcs ${webpay_list})
+endif()
+
+if(ENABLE_ZIP)
+  list(APPEND paozhu_srcs ${pzzip_list})
+endif()
+
+if(ENABLE_REDIS)
+  list(APPEND paozhu_srcs ${pzredis_list})
+endif()
+
+add_executable(paozhu
+  $<IF:$<CONFIG:Release>,
+    ${CMAKE_CURRENT_SOURCE_DIR}/startup/main_docker.cpp,
+    ${CMAKE_CURRENT_SOURCE_DIR}/startup/main_docker.cpp>
+  ${paozhu_srcs}
+)
+
+# ---- Compile definitions & common options ----
+target_compile_definitions(paozhu PRIVATE ASIO_STANDALONE)
+if(ENABLE_BENCHMARK)
+  target_compile_definitions(paozhu PRIVATE BENCHMARK)
+endif()
+if(ENABLE_OFFICE)
+  target_compile_definitions(paozhu PRIVATE ENABLE_OFFICE)
+endif()
+
+if(ENABLE_IMAGE)
+  target_compile_definitions(paozhu PRIVATE ENABLE_IMAGE)
+endif()
+
+if(ENABLE_PDF)
+  target_compile_definitions(paozhu PRIVATE ENABLE_PDF)
+endif()
+
+if(ENABLE_SMS)
+  target_compile_definitions(paozhu PRIVATE ENABLE_SMS)
+endif()
+
+if(ENABLE_CHART)
+  target_compile_definitions(paozhu PRIVATE ENABLE_CHART)
+endif()
+
+if(ENABLE_WEBPAY)
+  target_compile_definitions(paozhu PRIVATE ENABLE_WEBPAY)
+endif()
+
+if(ENABLE_ZIP)
+  target_compile_definitions(paozhu PRIVATE ENABLE_ZIP)
+endif()
+
+if(ENABLE_FASTCGI)
+  target_compile_definitions(paozhu PRIVATE ENABLE_FASTCGI)
+endif()
+
+if(ENABLE_REDIS)
+  target_compile_definitions(paozhu PRIVATE ENABLE_REDIS)
+endif()
+
+if(ENABLE_REDIS_CLIENT)
+  target_compile_definitions(paozhu PRIVATE ENABLE_REDIS_CLIENT)
+endif()
+
+if(ENABLE_WEBSOCKETS_CLIENT)
+  target_compile_definitions(paozhu PRIVATE ENABLE_WEBSOCKETS_CLIENT)
+endif()
+
+if(ENABLE_SOCKETS_CLIENT)
+  target_compile_definitions(paozhu PRIVATE ENABLE_SOCKETS_CLIENT)
+endif()
+
+if(ENABLE_MQTT_CLIENT)
+  target_compile_definitions(paozhu PRIVATE ENABLE_MQTT_CLIENT)
+endif()
+
+if(ENABLE_SQLITE)
+  target_compile_definitions(paozhu PUBLIC ENABLE_SQLITE)
+  target_compile_definitions(paozhu_cli PUBLIC ENABLE_SQLITE)
+endif()
+
+target_link_libraries(paozhu PRIVATE project_warnings)
+target_link_libraries(paozhu_cli PRIVATE project_warnings)
+
+# Debug options
+target_compile_options(paozhu PRIVATE
+  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-g -fsanitize=address -fno-omit-frame-pointer>
+  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:MSVC>>:/fsanitize=address>
+)
+target_link_options(paozhu PRIVATE
+  $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-fsanitize=address>
+)
+
+# Sanitizer builds: applied only to the paozhu target; paozhu_cli keeps its default build.
+# TSan uses -O1: -fsanitize=thread with -O2 inlines away stack frames, so reported stacks lose the call chain.
+if(ENABLE_TSAN)
+  target_compile_options(paozhu PRIVATE -g -O1 -fsanitize=thread -fno-omit-frame-pointer)
+  target_link_options(paozhu PRIVATE -fsanitize=thread)
+endif()
+if(ENABLE_UBSAN)
+  target_compile_options(paozhu PRIVATE -g -fsanitize=undefined -fno-omit-frame-pointer)
+  target_link_options(paozhu PRIVATE -fsanitize=undefined)
+endif()
+
+target_compile_definitions(paozhu PRIVATE
+  $<$<CONFIG:Debug>:DEBUG>
+)
+
+# ---- Include directories (recursive legacy includes) ----
+include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver")
+include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/orm")
+include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/models")
+
+include_project_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/controller/include")
+include_project_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/libs")
+include_project_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_project_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/common")
+
+if(ENABLE_OFFICE)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzexcel/include")
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzword/include")
+endif()
+
+if(ENABLE_IMAGE)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzimage/include")
+endif()
+
+if(ENABLE_SMS)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/sms/include")
+endif()
+
+if(ENABLE_CHART)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzcharts/include")
+endif()
+
+if(ENABLE_WEBPAY)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/webpay/include")
+endif()
+
+if(ENABLE_PDF)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/webpdf/include")
+endif()
+
+if(ENABLE_ZIP)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzzip/include")
+endif()
+
+if(ENABLE_REDIS)
+  include_system_dirs_recursively("${CMAKE_CURRENT_SOURCE_DIR}/vendor/pzredis/include")
+endif()
+
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bin/paozhu_pre)
+  file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/bin/paozhu_pre)
+endif()
+set(PAOZHU_PRE paozhu_pre)
+add_executable(${PAOZHU_PRE} ${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpcli/autopickmethod.cpp ${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpserver/src/md5.cpp)
+
+
+# Non-recursive include directories from original script
+target_include_directories(paozhu PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/viewsrc/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/viewsrc"
+  "${CMAKE_CURRENT_SOURCE_DIR}/websockets"
+  "${CMAKE_CURRENT_SOURCE_DIR}/sockets"
+  "${CMAKE_CURRENT_SOURCE_DIR}/mqtt"
+)
+
+# Additional global includes from original script
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/httpcli")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/controller")
+
+# ===== Code generation: paozhu_pre (runs on every build) =====
+add_custom_target(paozhu_codegen ALL
+    COMMAND $<TARGET_FILE:paozhu_pre> "${CMAKE_CURRENT_SOURCE_DIR}"
+    DEPENDS paozhu_pre
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Running paozhu_pre to generate controller stubs..."
+)
+
+# ===== Make the main paozhu target wait until code generation finishes =====
+add_dependencies(paozhu paozhu_codegen)
+
+# ---- Platform specific settings ----
+if(WIN32)
+  target_compile_definitions(paozhu PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX _WIN32_WINNT=0x0601)
+  target_link_libraries(paozhu PRIVATE ws2_32 psapi)
+  target_link_libraries(paozhu_cli PRIVATE ws2_32)
+endif()
+
+# ---- ASAN runtime DLL auto-copy for MSVC Debug (64-bit only) ----
+if(MSVC AND WIN32)
+  # Get the directory of cl.exe (compiler), ASAN DLL typically lives next to it
+  get_filename_component(CL_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+
+  # Try to find the ASAN dynamic runtime (64-bit)
+  find_file(ASAN_DLL_SOURCE
+    NAMES clang_rt.asan_dynamic-x86_64.dll
+    PATHS "${CL_DIR}"
+    NO_DEFAULT_PATH
+  )
+
+  if(NOT ASAN_DLL_SOURCE)
+    set(ASAN_DLL_SOURCE "" CACHE FILEPATH "Full path to clang_rt.asan_dynamic-x86_64.dll (set manually if needed)")
+    if(NOT ASAN_DLL_SOURCE)
+      message(WARNING
+        "ASAN runtime DLL not found automatically.\n"
+        "  Please locate clang_rt.asan_dynamic-x86_64.dll (typically in your Visual Studio installation,\n"
+        "  e.g., VC/Tools/MSVC/<version>/bin/Hostx64/x64/) and set ASAN_DLL_SOURCE to its full path:\n"
+        "    cmake -DASAN_DLL_SOURCE=\"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.40.33807/bin/Hostx64/x64/clang_rt.asan_dynamic-x86_64.dll\" ..\n"
+        "  The DLL will then be automatically copied to the executable directory (e.g., bin/Debug/)."
+      )
+    endif()
+  endif()
+
+  # Only copy in Debug mode (ASAN is usually enabled there)
+  if(ASAN_DLL_SOURCE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_custom_command(TARGET paozhu POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+              "${ASAN_DLL_SOURCE}"
+              "$<TARGET_FILE_DIR:paozhu>"
+      COMMENT "Copying ASAN runtime DLL to output directory"
+    )
+  endif()
+endif()
+
+# ============================================================================
+#  Dependency handling
+# ============================================================================
+
+if(ENABLE_VCPKG)
+  # ---- Using vcpkg ----
+  target_compile_definitions(paozhu PRIVATE ENABLE_VCPKG)
+
+  find_package(asio CONFIG REQUIRED)
+  target_link_libraries(paozhu PRIVATE asio::asio)
+  target_link_libraries(paozhu_cli PRIVATE asio::asio)
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(paozhu PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+  target_link_libraries(paozhu_cli PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+
+  find_package(ZLIB REQUIRED)
+  target_link_libraries(paozhu PRIVATE ZLIB::ZLIB)
+
+  find_package(unofficial-brotli CONFIG REQUIRED)
+  target_link_libraries(paozhu PRIVATE unofficial::brotli::brotlidec unofficial::brotli::brotlienc)
+
+  if(ENABLE_GD)
+    find_package(PkgConfig)
+    pkg_check_modules(LIBGD REQUIRED IMPORTED_TARGET gdlib)
+    target_link_libraries(paozhu PRIVATE PkgConfig::LIBGD)
+
+    find_path(QRENCODE_INCLUDE_DIR NAMES qrencode.h)
+    find_library(QRENCODE_LIBRARY_RELEASE qrencode)
+    target_include_directories(paozhu PRIVATE ${QRENCODE_INCLUDE_DIR})
+    target_link_libraries(paozhu PRIVATE ${QRENCODE_LIBRARY_RELEASE})
+
+    find_package(PNG REQUIRED)
+    target_link_libraries(paozhu PRIVATE PNG::PNG)
+
+    find_package(Freetype REQUIRED)
+    target_link_libraries(paozhu PRIVATE Freetype::Freetype)
+
+    if(WIN32)
+      # Copy qrencode.dll to bin
+      if(MSVC)
+        set(qrencode_dll "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/qrencode.dll")
+      elseif(MINGW)
+        set(qrencode_dll "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/libqrencode.dll")
+      endif()
+      add_custom_command(TARGET paozhu POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${qrencode_dll}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+      )
+    endif()
+  endif()
+
+  if(ENABLE_SQLITE)
+    find_package(SQLite3 REQUIRED)
+    target_link_libraries(paozhu PRIVATE SQLite::SQLite3)
+    target_link_libraries(paozhu_cli PRIVATE SQLite::SQLite3)
+  endif()
+
+else()
+  # ---- Not using vcpkg: system libraries ----
+  # On Windows, we highly recommend using vcpkg; exit with a helpful message if not.
+  if(WIN32)
+    message(FATAL_ERROR
+      "On Windows, ENABLE_VCPKG must be ON. "
+      "Please install vcpkg and set VCPKG_ROOT, or enable ENABLE_VCPKG."
+    )
+  endif()
+
+  # ASIO —— 如果 asio/ 目录缺失但 asio.zip 在，自动解压
+  # Auto-extract asio.zip if the asio/ directory is missing.
+  if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/asio/asio.hpp"
+     AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/asio.zip")
+    message(STATUS "asio/ not found, extracting asio.zip ...")
+    file(ARCHIVE_EXTRACT
+      INPUT      "${CMAKE_CURRENT_SOURCE_DIR}/asio.zip"
+      DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+
+  add_library(asio INTERFACE)
+  target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
+  if(APPLE)
+    find_path(ASIO_INCLUDE_DIR asio.hpp
+      PATHS /usr/local/opt/asio/include /usr/local/include /opt/homebrew/opt/asio
+            "${CMAKE_CURRENT_SOURCE_DIR}/asio"
+    )
+  else()
+    find_path(ASIO_INCLUDE_DIR asio.hpp
+      PATHS "${CMAKE_CURRENT_SOURCE_DIR}/asio" /usr/include
+    )
+  endif()
+  if(NOT ASIO_INCLUDE_DIR)
+    message(FATAL_ERROR "Standalone Asio not found")
+  endif()
+  target_include_directories(asio INTERFACE ${ASIO_INCLUDE_DIR})
+  target_link_libraries(paozhu PRIVATE asio)
+  target_link_libraries(paozhu_cli PRIVATE asio)
+
+  # OpenSSL
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(paozhu PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+  target_link_libraries(paozhu_cli PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+
+  # ZLIB
+  find_package(ZLIB REQUIRED)
+  target_link_libraries(paozhu PRIVATE ZLIB::ZLIB)
+
+  # Module loading (.so/.dylib/.dll) uses pz_dll (dlopen/LoadLibrary).
+
+  # GD, qrencode, PNG, Freetype
+  if(ENABLE_GD)
+    target_compile_definitions(paozhu PRIVATE ENABLE_GD)
+
+    # ---- GD (library + header) ----
+    find_library(GD_LIBRARY gd
+      PATHS /usr/local/opt/gd/lib /opt/homebrew/opt/gd/lib
+            /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib
+    )
+    if(NOT GD_LIBRARY)
+      message(FATAL_ERROR "GD library not found")
+    endif()
+    find_path(GD_INCLUDE_DIR gd.h
+      PATHS /usr/local/opt/gd/include /opt/homebrew/opt/gd/include
+            /usr/include /usr/local/include
+    )
+    if(NOT GD_INCLUDE_DIR)
+      message(FATAL_ERROR "GD header not found")
+    endif()
+    target_link_libraries(paozhu PRIVATE ${GD_LIBRARY})
+    target_include_directories(paozhu PRIVATE ${GD_INCLUDE_DIR})
+    message(STATUS "Found GD: ${GD_LIBRARY} (include: ${GD_INCLUDE_DIR})")
+
+    # ---- qrencode (library + header) ----
+    find_library(QRENCODE_LIBRARY qrencode
+      PATHS /usr/local/opt/qrencode/lib /opt/homebrew/opt/qrencode/lib
+            /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib
+    )
+    if(NOT QRENCODE_LIBRARY)
+      message(FATAL_ERROR "qrencode library not found")
+    endif()
+    find_path(QRENCODE_INCLUDE_DIR qrencode.h
+      PATHS /usr/local/opt/qrencode/include /opt/homebrew/opt/qrencode/include
+            /usr/include /usr/local/include
+    )
+    if(NOT QRENCODE_INCLUDE_DIR)
+      message(FATAL_ERROR "qrencode header not found")
+    endif()
+    target_link_libraries(paozhu PRIVATE ${QRENCODE_LIBRARY})
+    target_include_directories(paozhu PRIVATE ${QRENCODE_INCLUDE_DIR})
+    message(STATUS "Found qrencode: ${QRENCODE_LIBRARY} (include: ${QRENCODE_INCLUDE_DIR})")
+
+    # ---- PNG and Freetype via CMake modules ----
+    find_package(PNG REQUIRED)
+    target_link_libraries(paozhu PRIVATE PNG::PNG)
+
+    find_package(Freetype REQUIRED)
+    target_link_libraries(paozhu PRIVATE Freetype::Freetype)
+  endif()
+
+  
+
+  # Brotli
+  find_library(BROTLI_ENC brotlienc
+    PATHS /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib
+          /usr/local/opt/brotli/lib /opt/homebrew/opt/brotli/lib
+  )
+  find_library(BROTLI_DEC brotlidec
+    PATHS /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib
+          /usr/local/opt/brotli/lib /opt/homebrew/opt/brotli/lib
+  )
+  if(NOT BROTLI_ENC OR NOT BROTLI_DEC)
+    message(FATAL_ERROR "Brotli libraries not found")
+  endif()
+  message(STATUS "Found Brotli encoder: ${BROTLI_ENC}")
+  message(STATUS "Found Brotli decoder: ${BROTLI_DEC}")
+  target_link_libraries(paozhu PRIVATE ${BROTLI_ENC} ${BROTLI_DEC})
+  if(APPLE)
+    foreach(prefix /usr/local/opt /opt/homebrew/opt)
+      if(IS_DIRECTORY "${prefix}/brotli/include")
+        target_include_directories(paozhu PRIVATE "${prefix}/brotli/include")
+      endif()
+    endforeach()
+  endif()
+
+  # SQLite3
+  if(ENABLE_SQLITE)
+    find_path(SQLITE3_INCLUDE_DIR sqlite3.h
+      PATHS /usr/include /usr/local/include /opt/homebrew/include
+    )
+    find_library(SQLITE3_LIBRARY NAMES sqlite3
+      PATHS /usr/lib /usr/local/lib /opt/homebrew/lib
+    )
+    if(NOT SQLITE3_LIBRARY)
+      message(FATAL_ERROR "ENABLE_SQLITE=ON but SQLite3 not found. Install via: brew install sqlite3")
+    endif()
+    if(SQLITE3_INCLUDE_DIR)
+      message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY} (${SQLITE3_INCLUDE_DIR})")
+    else()
+      message(STATUS "Found SQLite3: ${SQLITE3_LIBRARY} (system default include)")
+    endif()
+    target_link_libraries(paozhu PRIVATE ${SQLITE3_LIBRARY})
+    target_link_libraries(paozhu_cli PRIVATE ${SQLITE3_LIBRARY})
+    if(SQLITE3_INCLUDE_DIR)
+      target_include_directories(paozhu PRIVATE ${SQLITE3_INCLUDE_DIR})
+      target_include_directories(paozhu_cli PRIVATE ${SQLITE3_INCLUDE_DIR})
+    endif()
+  endif()
+endif()
+
+# ---- Module .so loading (dlopen/LoadLibrary) ----
+if(ENABLE_VIEWSO)
+  target_compile_definitions(paozhu PRIVATE ENABLE_VIEWSO)
+endif()
+if(ENABLE_MODELSO)
+  target_compile_definitions(paozhu PRIVATE ENABLE_MODELSO)
+endif()
+
+if(ENABLE_VIEWSO OR ENABLE_MODELSO)
+  target_link_libraries(paozhu PRIVATE ${CMAKE_DL_LIBS})
+  # 模块 .so 自带框架源码副本，唯一带不进去的 http::get_server_app() 由宿主解析，故宿主需导出符号
+  set_target_properties(paozhu PROPERTIES ENABLE_EXPORTS ON)
+endif()
+
+# ---- Final common libraries ----
+if(UNIX)
+  find_package(Threads REQUIRED)
+  target_link_libraries(paozhu PRIVATE Threads::Threads)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(paozhu PRIVATE m dl)
+  endif()
+  target_link_libraries(paozhu_cli PRIVATE Threads::Threads)
+endif()
+
+# ---- Install config files (Unix only, opt-in) ----
+# Only executed during make install, not during configure: otherwise, anyone running cmake once will
+# replace the content currently being read by the deployed instance at /usr/local/etc/paozhu
+# (the second fallback candidate for serverconfig::init_path) with the repository content.
+# Measured with cmake 4.2: file(COPY) will overwrite the target file when the content differs,
+# regardless of timestamps — this is an explicitly noted behavior, with no protection added.
+option(ENABLE_CONF_INSTALL "Copy the whole conf/ dir to PAOZHU_CONF_DIR during 'make install'" OFF)
+set(PAOZHU_CONF_DIR "/usr/local/etc/paozhu" CACHE PATH "Target dir for conf during 'make install'")
+
+if(ENABLE_CONF_INSTALL AND UNIX)
+  install(CODE "
+    # —— 先尝试创建目录，失败（无权限）则跳过 conf 拷贝 ——
+    # Try mkdir first; skip conf copy if permission denied.
+    set(_paozhu_confdir [=[${PAOZHU_CONF_DIR}]=])
+    set(_paozhu_confsrc [=[${CMAKE_CURRENT_SOURCE_DIR}/conf/]=])
+
+    if(NOT IS_DIRECTORY \"\${_paozhu_confdir}\")
+      file(MAKE_DIRECTORY \"\${_paozhu_confdir}\")
+    endif()
+    if(IS_DIRECTORY \"\${_paozhu_confdir}\")
+      file(COPY \"\${_paozhu_confsrc}\" DESTINATION \"\${_paozhu_confdir}\")
+      message(STATUS \"paozhu: conf/ copied to \${_paozhu_confdir}\")
+    else()
+      get_filename_component(_paozhu_parent \"\${_paozhu_confdir}\" DIRECTORY)
+      message(WARNING \"paozhu: no write permission to \${_paozhu_parent}, skipped conf/ install\")
+    endif()
+  ")
+  message(STATUS "paozhu: 'make install' will copy conf/ to ${PAOZHU_CONF_DIR}")
+endif()
+
+# ---- Tests (cmake -DENABLE_TESTS=ON) ----
+# 放在依赖处理之后：tests 目标要复用 asio / OpenSSL / Threads / SQLite 等依赖目标
+if(ENABLE_TESTS)
+  include(CTest)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
