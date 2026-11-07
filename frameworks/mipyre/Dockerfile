@@ -7,7 +7,7 @@ WORKDIR /app
 
 ARG MIPYRE_VERSION=3.0.1
 COPY . ./
-RUN pip install --no-cache-dir --find-links ./wheels "mipyre==${MIPYRE_VERSION}"
+RUN pip install --no-cache-dir --find-links ./wheels "mipyre==${MIPYRE_VERSION}" "jinja2==3.1.6"
 
 # Arena harness expectations:
 #   - 8080 plaintext HTTP/1.1
