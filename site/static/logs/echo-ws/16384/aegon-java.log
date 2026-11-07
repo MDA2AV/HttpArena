@@ -1,0 +1,10 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.alibaba.fastjson2.util.JDKUtils (file:/app/lib/fastjson2-2.0.53.jar)
+WARNING: Please consider reporting this to the maintainers of class com.alibaba.fastjson2.util.JDKUtils
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+[aegon-java] Loaded dataset with 50 items from /data/dataset.json
+[aegon-java] Starting server on 64 thread(s) (lowMem=false, TLS=true)
+[2026-11-05 17:20:21.447] [INFO ] [Server.cpp:436] Aegon HTTP listening on 0.0.0.0:8080 [workers=64]
+[2026-11-05 17:20:21.447] [INFO ] [Server.cpp:436] Aegon HTTP listening on 0.0.0.0:8082 [workers=64]
+[2026-11-05 17:20:21.447] [INFO ] [Server.cpp:436] Aegon HTTPS listening on 0.0.0.0:8081 [workers=64]
+[2026-11-05 17:20:21.447] [INFO ] [Server.cpp:436] Aegon HTTPS listening on 0.0.0.0:8443 [workers=64]
