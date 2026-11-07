@@ -1709,7 +1709,7 @@
   },
   "ntex": {
     "dir": "ntex",
-    "description": "ntex 4 on its native runtime with default worker and HTTP settings, 4-64 KiB read pages, 32 KiB write pages, and 64 KiB write backpressure. Routing and extractors through ntex::web, JSON through HttpResponse::json, compression through Compress middleware, TLS on 8081 through rustls.",
+    "description": "ntex 4 on its native runtime with default worker and HTTP settings, 4-64 KiB read pages, 32 KiB write pages, and 64 KiB write backpressure. Routing and extractors through ntex::web, JSON through HttpResponse::json, compression through Compress middleware. Static files served from disk per request through ntex-files NamedFile, choosing a pre-compressed .br/.gz sibling off Accept-Encoding (ntex-files has no precompressed API). async-db through tokio-postgres driven over ntex Io via ntex-io's tokio AsyncRead/AsyncWrite impls, pooled per worker with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). json-tls and static-tls over HTTP/1.1 with rustls on 8081; baseline-h2 and static-h2 over h2 on 8443.",
     "repo": "https://github.com/ntex-rs/ntex",
     "type": "flagship",
     "engine": "ntex",
