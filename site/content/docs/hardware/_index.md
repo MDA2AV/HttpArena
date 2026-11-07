@@ -124,7 +124,7 @@ Redis sharing a CCX with a few server cores is *beneficial* - data the server ju
 | server (framework) | `0-3,20-31,64-67,84-95` (16 phys) |
 | gcannon | `32-63,96-127` (32 phys) |
 
-This split is empirically tuned - see the CHANGELOG entry for 2026-04-16 for the calibration history and why an edge-heavy allocation works at the given rps.
+This split is empirically tuned.
 
 ## Kernel tuning applied per run
 

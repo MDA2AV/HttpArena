@@ -6,14 +6,14 @@ the same as there; see its README.
 
 ## Stack
 
-- **Language:** Go 1.27 (fib's own `go.mod` requires it)
-- **Framework:** fib `http`, `http3`, `grpc`, `tls` and `middleware` packages
+- **Language:** Go 1.27.3 (fib's own `go.mod` requires it)
+- **Framework:** fib v1.7.2: `http`, `http3`, `grpc`, `tls` and `middleware` packages
 - **Compression:** `andybalholm/brotli`, `klauspost/compress` (zstd, gzip, deflate)
 - **JSON:** `bytedance/sonic`, as fiber-tuned uses, for the `/json` and `/async-db` responses,
   which answer through `Context.JSON` as in `fib`, with sonic set as fib's `JSONEncoder`:
   json-tls served 1.06M requests a second with it against 747k through `encoding/json` on 64
   CPUs, with the same bytes out
-- **Build:** `golang:1.27-alpine`, static binary on `scratch`
+- **Build:** `golang:1.27.3-alpine`, static binary on `scratch`
 
 ## Why tuned
 
@@ -35,7 +35,7 @@ keeps anything live, so a higher target trades memory for the collector's share 
 200 keeps most of 400's throughput where the collector is what limits it, at about half the
 memory.
 
-fib's configuration is its defaults, and the entry is served through fib's `prefork` package, as
+fib's configuration is `fib`'s, its defaults with fit's request-body streaming, and the entry is served through fib's `prefork` package, as
 in `fib`: a child process for every two CPUs, each with its own heap, and so its own `GOGC=200`
 target. fib's defaults recycle each request's `*http.Request`, `Header`, `URL` and `*Context`
 once its response is finished; no handler here keeps any of them past its response.
@@ -49,24 +49,16 @@ variants are already on disk.
 
 - **Codings:** `br`, `zstd`, `gzip`, `deflate`. The one `Accept-Encoding` gives the highest q
   wins; `*` stands for any not named; `q=0` refuses.
-- **Between equal q values** (`gzip, br`, which is what `json-comp` sends) the server picks
-  gzip, then zstd, brotli and deflate (`CompressConfig.Prefer`). On the 25/40/50-item bodies of
-  that profile, 6.4 KB on average, measured on linux/arm64:
+- **Settings are fiber-tuned's**, `compress.LevelBestSpeed` on fasthttp, set explicitly in
+  `newRouter`:
+  - between equal q values (`gzip, br`, which is what `json-comp` sends) the server picks
+    brotli, then zstd, gzip and deflate (`CompressConfig.Prefer`), fiber's order;
+  - levels: brotli quality 0, zstd fastest, gzip and deflate 1;
+  - bodies under 200 bytes (fasthttp's floor) are left alone.
 
-  | coding | average body | CPU per body |
-  |---|---|---|
-  | gzip 6 (klauspost) | 1254 B | 17 us |
-  | zstd default | 1288 B | 14 us |
-  | brotli 4 | 1225 B | 69 us |
-  | brotli 5 | 1130 B | 66 us |
-  | brotli 11 | 963 B | 5.1 ms |
-
-  The profile scores throughput times the square of the smallest bytes-per-response over the
-  entry's own, so brotli 5 would need to lose less than about a fifth of the rate to come out
-  ahead, against four times the CPU of gzip. Brotli below quality 5 is no smaller than gzip at
-  all. A client that prefers brotli by q value (`br;q=1, gzip;q=0.8`) gets brotli at quality 5.
-- Levels: brotli 5, zstd default, gzip and deflate 6. Bodies under 256 bytes are left alone,
-  a coded body that is no shorter is sent as it was, and every response that could have been
+  fiber-tuned measured the brotli step for the 8.4 KB `/json/50` body at ~107 us at fasthttp's
+  default quality 4 and ~26 us at quality 0, for 1489 -> 1944 bytes on the wire.
+- A coded body that is no shorter is sent as it was, and every response that could have been
   coded carries `Vary: Accept-Encoding`.
 - Writers are recycled through `sync.Pool`, and the coded body is copied out of a pooled buffer
   at its exact length; one zstd encoder serves every request through `EncodeAll`.
