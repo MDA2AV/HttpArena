@@ -34,5 +34,5 @@
     "unary-grpc",
     "unary-grpc-tls"
   ],
-  "maintainers": []
+  "maintainers": ["ddxd"]
 }
