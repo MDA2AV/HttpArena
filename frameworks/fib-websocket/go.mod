@@ -1,5 +1,5 @@
 module httparena/fib-websocket
 
-go 1.27
+go 1.27.3
 
-require github.com/lesismal/fib v1.0.1-0.20261007162414-12c8367fcc93
+require github.com/lesismal/fib v1.7.2

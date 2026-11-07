@@ -19,6 +19,7 @@ import (
 	"github.com/lesismal/fib/http3"
 	"github.com/lesismal/fib/middleware/compress"
 	"github.com/lesismal/fib/prefork"
+	"github.com/lesismal/fib/taskpool"
 	fibtls "github.com/lesismal/fib/tls"
 	"google.golang.org/protobuf/proto"
 
@@ -75,17 +76,23 @@ const (
 // serves every response.
 var okBody = []byte("ok")
 
+// fasthttpMinCompressLen is the shortest body fasthttp, under fiber's compress
+// middleware, compresses (fasthttp's minCompressLen).
+const fasthttpMinCompressLen = 200
+
 // newRouter routes the entry's requests through fib's Router, whose API is
 // chi's with fib's handlers. The same router answers HTTP/1.1, HTTP/2 and
 // HTTP/3: fib hands each of them a *http.Request and a Context to respond
 // through, and the Context the route's parameters. Anything else is
 // answered 404, or 405 on a path served for other methods.
 //
-// fib's compression middleware, with its defaults, is around the routes
-// whose bodies are JSON: it gzips a body of a kilobyte or more when
-// Accept-Encoding takes it, and leaves it alone otherwise. It sees each
-// response whole, which on HTTP/1 would keep a file off sendfile, so
-// /static, whose compressed variants are already on disk, is left outside it.
+// fib's compression middleware is around the routes whose bodies are JSON:
+// it gzips a body when Accept-Encoding takes it, and leaves it alone
+// otherwise. Its settings are the ones fiber's compress.New() runs with:
+// the default level, which for gzip is level 6 in both, and fasthttp's
+// 200-byte floor in place of fib's own kilobyte. It sees each response
+// whole, which on HTTP/1 would keep a file off sendfile, so /static, whose
+// compressed variants are already on disk, is left outside it.
 func newRouter() *fibhttp.Router {
 	r := fibhttp.NewRouter()
 	r.Get("/baseline11", baseline)
@@ -95,7 +102,10 @@ func newRouter() *fibhttp.Router {
 	r.Post("/echo", echo)
 	r.Get("/delay/{ms}", delay)
 	r.Get("/static/*", staticFile)
-	compressed := r.With(compress.New())
+	compressed := r.With(compress.New(compress.Config{
+		Level:     compress.LevelDefault,
+		MinLength: fasthttpMinCompressLen,
+	}))
 	compressed.Get("/json/{count}", jsonItems)
 	compressed.Get("/async-db", asyncDB)
 	r.Handle("/benchmark.BenchmarkService/*", newGRPCServer())
@@ -132,7 +142,7 @@ func (protoCodec) Unmarshal(b []byte, v any) error { return proto.Unmarshal(b, v
 
 func init() { grpc.RegisterCodec(protoCodec{}) }
 
-func pipeline(c *fibhttp.Context, r *stdhttp.Request) {
+func pipeline(c *fibhttp.Context) {
 	c.Respond(stdhttp.StatusOK, textPlain, okBody)
 }
 
@@ -140,9 +150,9 @@ func pipeline(c *fibhttp.Context, r *stdhttp.Request) {
 // reads a parameter without building URL.Query's map, and fib reads the body
 // whole, Content-Length or chunked, before the handler runs, which
 // Context.Body hands over as it is rather than copied out through io.ReadAll.
-func baseline(c *fibhttp.Context, r *stdhttp.Request) {
+func baseline(c *fibhttp.Context) {
 	sum := queryInt(c.Query("a"), 0) + queryInt(c.Query("b"), 0)
-	if r.Method == stdhttp.MethodPost {
+	if c.Request.Method == stdhttp.MethodPost {
 		if n, err := strconv.Atoi(strings.TrimSpace(string(c.Body()))); err == nil {
 			sum += n
 		}
@@ -150,7 +160,7 @@ func baseline(c *fibhttp.Context, r *stdhttp.Request) {
 	c.Respond(stdhttp.StatusOK, textPlain, strconv.AppendInt(nil, int64(sum), 10))
 }
 
-func jsonItems(c *fibhttp.Context, r *stdhttp.Request) {
+func jsonItems(c *fibhttp.Context) {
 	count, err := strconv.Atoi(c.Param("count"))
 	if err != nil {
 		c.Respond(stdhttp.StatusBadRequest, textPlain, nil)
@@ -168,29 +178,81 @@ func jsonItems(c *fibhttp.Context, r *stdhttp.Request) {
 	}
 }
 
-// The body arrives already read off the connection, decoded from whichever
-// framing the client used, so the echo is the bytes that came in: Context.Body
-// is them, and Respond copies them out before they go back to the pool.
-func echo(c *fibhttp.Context, r *stdhttp.Request) {
-	c.Respond(stdhttp.StatusOK, "application/octet-stream", c.Body())
+const octetStream = "application/octet-stream"
+
+// echo answers with the request's body. One of up to streamThreshold arrives
+// whole before the handler runs, decoded from whichever framing the client
+// used: Context.Body is it, and Respond copies it out before it goes back to
+// the pool.
+//
+// A larger one streams, as fit takes an upload it proxies: Context.OnBody
+// hands it over as it arrives, on the worker reading the connection, and
+// each piece goes straight back out with WriteNoWait, so the body is never
+// held whole and no goroutine waits on either side. Once more than the
+// response's limit is queued for a client that is behind, the request body
+// is held with HoldBody, which stops the connection's reads once
+// streamBuffer of it waits, until OnWritable says the client has taken half
+// of what was queued. Each such wait is bounded by echoStall: a client that
+// stops reading loses its connection, and OnWritable hears of it.
+func echo(c *fibhttp.Context) {
+	if c.RequestBody() == nil {
+		c.Respond(stdhttp.StatusOK, octetStream, c.Body())
+		return
+	}
+	h := c.Header()
+	h["Content-Type"] = []string{octetStream}
+	if n := c.Request.ContentLength; n >= 0 {
+		h["Content-Length"] = []string{strconv.FormatInt(n, 10)}
+	}
+	// OnBody retains the request until its last call, after which the
+	// response is finished, so the handler returns at once.
+	c.OnBody(func(data []byte, fin bool, err error) {
+		if err != nil || len(data) == 0 {
+			return
+		}
+		above, werr := c.WriteNoWait(data)
+		if werr != nil || !above || fin {
+			return
+		}
+		c.HoldBody(true)
+		_ = c.SetWriteDeadline(time.Now().Add(echoStall))
+		if !c.OnWritable(resumeEcho(c)) {
+			// Room already, or nothing more will be written.
+			resumeEcho(c)(nil)
+		}
+	})
 }
 
-// The handler waits out the delay itself, as fiber's does in its connection's
-// goroutine: fib's worker pool grows for handlers that block, so a waiting
-// request holds a worker the way it holds a goroutine there. Retaining the
-// request and answering it from time.AfterFunc instead started a goroutine
-// per request for the timer's callback, and on 64 CPUs served 1.40M requests
-// a second against 1.63M waiting in the handler.
-func delay(c *fibhttp.Context, r *stdhttp.Request) {
+// echoStall bounds each wait for a client that is behind with its echo.
+const echoStall = 10 * time.Second
+
+// resumeEcho lifts the stall deadline and lets the held body go on; after an
+// error, so that the request can see its end.
+func resumeEcho(c *fibhttp.Context) func(error) {
+	return func(error) {
+		_ = c.SetWriteDeadline(time.Time{})
+		c.HoldBody(false)
+	}
+}
+
+// delay never waits on fib's worker: the request is retained through
+// Context.Async, as fit hands blocking work off its workers, and answered
+// from a timer once the delay has passed, so the worker goes straight back
+// to the connections that have something to read.
+func delay(c *fibhttp.Context) {
 	ms, err := strconv.Atoi(c.Param("ms"))
 	if err != nil || ms < 0 {
 		c.Respond(stdhttp.StatusBadRequest, textPlain, nil)
 		return
 	}
-	if ms > 0 {
-		time.Sleep(time.Duration(ms) * time.Millisecond)
+	body := strconv.AppendInt(nil, int64(ms), 10)
+	if ms == 0 {
+		c.Respond(stdhttp.StatusOK, textPlain, body)
+		return
 	}
-	c.Respond(stdhttp.StatusOK, textPlain, strconv.AppendInt(nil, int64(ms), 10))
+	time.AfterFunc(time.Duration(ms)*time.Millisecond, c.Async(func() {
+		c.Respond(stdhttp.StatusOK, textPlain, body)
+	}))
 }
 
 // staticFiles serves /static from memory through fib's FileCache, which
@@ -202,15 +264,25 @@ func delay(c *fibhttp.Context, r *stdhttp.Request) {
 // says none, as ServeContent does. Each prefork child has its own.
 var staticFiles *fibhttp.FileCache
 
-func staticFile(c *fibhttp.Context, r *stdhttp.Request) {
+func staticFile(c *fibhttp.Context) {
 	if staticFiles == nil {
 		c.Respond(stdhttp.StatusNotFound, textPlain, nil)
 		return
 	}
-	staticFiles.ServeFile(c, r, c.Param("*"))
+	staticFiles.ServeFile(c, c.Param("*"))
 }
 
 var pgPool *pgxpool.Pool
+
+// dbTasks runs /async-db's queries off fib's workers: a pool of as many
+// workers as the database pool has connections, so that a query never waits
+// on a goroutine of its own for a connection, and the requests past them
+// wait in its queue rather than each on a goroutine.
+var dbTasks *taskpool.TaskPool
+
+// dbQueue is how many queries may wait for a worker; past it a query runs on
+// a goroutine of its own rather than holding a fib worker up.
+const dbQueue = 16 << 10
 
 const itemColumns = "id, name, category, price, quantity, active, tags, rating_score, rating_count"
 
@@ -242,11 +314,15 @@ func loadPgPool() {
 		return
 	}
 	pgPool = pool
+	dbTasks = taskpool.New("async-db", int(cfg.MaxConns), dbQueue)
 }
 
-// The query blocks, so it runs on a goroutine of its own and answers the
-// retained request from there, leaving fib's worker free for other connections.
-func asyncDB(c *fibhttp.Context, r *stdhttp.Request) {
+// The query blocks, so the request is retained through Context.Async and
+// the query handed to dbTasks, as fit hands blocking work to a pool of its
+// own, leaving fib's worker free for other connections. It runs under the
+// request's Context, which is cancelled once the client has gone, so an
+// abandoned query gives its connection back.
+func asyncDB(c *fibhttp.Context) {
 	if pgPool == nil {
 		c.Respond(stdhttp.StatusOK, appJSON, []byte(emptyItems))
 		return
@@ -254,10 +330,8 @@ func asyncDB(c *fibhttp.Context, r *stdhttp.Request) {
 	minPrice := queryInt(c.Query("min"), 10)
 	maxPrice := queryInt(c.Query("max"), 50)
 	limit := clamp(queryInt(c.Query("limit"), 50), 1, 50)
-	c.Retain()
-	go func() {
-		defer c.Release()
-		items, err := queryItems(context.Background(),
+	run := c.Async(func() {
+		items, err := queryItems(c.Context(),
 			"SELECT "+itemColumns+" FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
 			minPrice, maxPrice, limit)
 		if err != nil {
@@ -270,7 +344,10 @@ func asyncDB(c *fibhttp.Context, r *stdhttp.Request) {
 		}{items, len(items)}); err != nil {
 			c.Respond(stdhttp.StatusInternalServerError, textPlain, nil)
 		}
-	}()
+	})
+	if !dbTasks.TryGo(run) {
+		go run()
+	}
 }
 
 // tags is a JSONB column, so it comes back as bytes rather than a Go slice.
@@ -371,20 +448,50 @@ func statFile(name string) fileStamp {
 	return fileStamp{info.ModTime(), info.Size()}
 }
 
-func bind(network string, addrs []string, handler fib.Handler) *fib.Engine {
-	config := fib.DefaultConfig()
-	config.Network = network
-	config.Addrs = addrs
-	engine, err := fib.Bind(config, handler)
-	if err != nil {
-		log.Fatalf("fib: bind %s %v: %v", network, addrs, err)
-	}
-	return engine
+// streamThreshold is the body size past which a request body streams to its
+// handler rather than being read whole first, and streamBuffer how much of a
+// streamed HTTP/1 body waits unread before the connection stops reading the
+// client: fit's figures, one 64 KiB read each, rather than fib's 256 KiB
+// buffer, so that a large body waits in the client's TCP rather than in the
+// server's memory.
+const (
+	streamThreshold = 64 << 10
+	streamBuffer    = 64 << 10
+)
+
+// httpConfig is fib's default HTTP config with request bodies past
+// streamThreshold streamed to their handlers, as fit configures its
+// listeners, and a streamed body bounded as one read whole is. h1Only serves
+// HTTP/1.1 alone. gRPC calls stream past the threshold too, which fib's grpc
+// package reads as they arrive; they are not streamed from their headers, as
+// fit's proxy does for clients that wait on a reply mid-call, since
+// BenchmarkService's calls are unary.
+func httpConfig(h1Only bool) fibhttp.Config {
+	c := fibhttp.DefaultConfig()
+	c.DisableHTTP2 = h1Only
+	c.StreamRequestBody = true
+	c.StreamRequestBodyThreshold = streamThreshold
+	c.StreamRequestBodyBuffer = streamBuffer
+	c.MaxStreamedBodyBytes = c.MaxBodyBytes
+	return c
 }
 
-// run binds the entry's engines and serves until ctx is done. It runs in
+// http3Config is httpConfig for HTTP/3.
+func http3Config(tlsConfig *tls.Config) http3.Config {
+	c := http3.DefaultConfig()
+	c.TLSConfig = tlsConfig
+	c.StreamRequestBody = true
+	c.StreamRequestBodyThreshold = streamThreshold
+	c.MaxStreamedBodyBytes = c.MaxBodyBytes
+	return c
+}
+
+// run binds the entry's listeners and serves until ctx is done. It runs in
 // each of the processes main starts through fib's prefork, so the dataset,
-// the database pool and the engines are each child's own.
+// the database pool and the engine are each child's own.
+//
+// Every listener is a fib.Binding of one engine, which serves each with the
+// binding's own handler on a single event loop, task pool and buffer pool.
 func run(ctx context.Context) error {
 	if fc, err := fibhttp.NewFileCache(fibhttp.FileCacheConfig{Root: "/data/static", Precompressed: true}); err == nil {
 		staticFiles = fc
@@ -396,27 +503,25 @@ func run(ctx context.Context) error {
 
 	// Plaintext: HTTP/1.1 on 8080 and HTTP/2 with prior knowledge on 8082.
 	// fib's HTTP handler tells the two apart by the connection preface, so one
-	// engine listens on both ports.
-	engines := []*fib.Engine{bind("tcp", []string{":8080", ":8082"}, fibhttp.NewHandler(handler))}
+	// binding listens on both ports.
+	plain := fibhttp.NewHandlerWithConfig(httpConfig(false), handler)
+	bindings := []fib.Binding{{Addrs: []string{":8080", ":8082"}, Handler: plain}}
 
 	// The HTTP/1.1-only listeners over TLS offer http/1.1 alone through ALPN.
-	h1Config := fibhttp.DefaultConfig()
-	h1Config.DisableHTTP2 = true
-	h1Handler := fibhttp.NewHandlerWithConfig(h1Config, handler)
+	h1Handler := fibhttp.NewHandlerWithConfig(httpConfig(true), handler)
 
 	if tlsConfig := loadTLS(); tlsConfig != nil {
 		// 8081: HTTP/1.1 over TLS (json-tls, static-tls, 8gbit).
 		h1TLS := tlsConfig.Clone()
 		h1TLS.NextProtos = []string{"http/1.1"}
-		engines = append(engines, bind("tcp", []string{":8081"}, fibtls.NewServer(h1TLS, h1Handler)))
-
-		// 8443/tcp: HTTP/2 through ALPN, HTTP/1.1 for clients that do not
-		// choose it.
-		engines = append(engines, bind("tcp", []string{":8443"},
-			fibtls.NewServer(fibhttp.ConfigureTLS(tlsConfig), fibhttp.NewHandler(handler))))
-
-		// 8443/udp: HTTP/3 over fib's own QUIC.
-		engines = append(engines, bind("udp", []string{":8443"}, http3.NewHandler(tlsConfig, handler)))
+		bindings = append(bindings,
+			fib.Binding{Addr: ":8081", Handler: fibtls.NewServer(h1TLS, h1Handler)},
+			// 8443/tcp: HTTP/2 through ALPN, HTTP/1.1 for clients that do not
+			// choose it.
+			fib.Binding{Addr: ":8443", Handler: fibtls.NewServer(fibhttp.ConfigureTLS(tlsConfig), fibhttp.NewHandlerWithConfig(httpConfig(false), handler))},
+			// 8443/udp: HTTP/3 over fib's own QUIC.
+			fib.Binding{Network: "udp", Addr: ":8443", Handler: http3.NewHandlerWithConfig(http3Config(tlsConfig), handler)},
+		)
 	}
 
 	// 9000: the opt-in TLS hardening section, HTTP/1.1 over TLS with its own
@@ -425,28 +530,20 @@ func run(ctx context.Context) error {
 	// served without a restart.
 	if certs := newCertReloader("/certs-tls/server.crt", "/certs-tls/server.key"); certs != nil {
 		hardened := &tls.Config{GetCertificate: certs.GetCertificate, NextProtos: []string{"http/1.1"}}
-		engines = append(engines, bind("tcp", []string{":9000"}, fibtls.NewServer(hardened, h1Handler)))
+		bindings = append(bindings, fib.Binding{Addr: ":9000", Handler: fibtls.NewServer(hardened, h1Handler)})
 	}
 
+	engine, err := fib.New(fib.DefaultConfig(), bindings...)
+	if err != nil {
+		log.Fatalf("fib: listen: %v", err)
+	}
 	go func() {
 		<-ctx.Done()
-		for _, e := range engines {
-			e.Stop()
-		}
+		engine.Stop()
 	}()
-
-	errs := make(chan error, len(engines))
-	for _, e := range engines {
-		go func() { errs <- e.Run() }()
-	}
 	// Run returns nil once Stop has been called, and an error only when the
 	// event loop itself failed.
-	for range engines {
-		if err := <-errs; err != nil {
-			return err
-		}
-	}
-	return nil
+	return engine.Run()
 }
 
 // fib's prefork serves the entry from a process for every two CPUs, each

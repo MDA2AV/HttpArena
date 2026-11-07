@@ -1,13 +1,13 @@
 module httparena/fib-tuned
 
-go 1.27
+go 1.27.3
 
 require (
 	github.com/andybalholm/brotli v1.2.4
 	github.com/bytedance/sonic v1.15.4
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/klauspost/compress v1.20.0
-	github.com/lesismal/fib v1.0.1-0.20261007162414-12c8367fcc93
+	github.com/lesismal/fib v1.7.2
 	google.golang.org/protobuf v1.36.10
 )
 

@@ -17,7 +17,8 @@ import (
 )
 
 // CompressConfig sets how hard each coding works and which bodies are worth
-// it. Zero values take the defaults newCompress documents.
+// it. Zero values take the defaults newCompress documents, except
+// BrotliQuality, whose zero is quality 0.
 type CompressConfig struct {
 	// MinLength is the shortest body compressed.
 	MinLength int
@@ -33,12 +34,13 @@ type CompressConfig struct {
 	Prefer []string
 }
 
-// defaultPrefer is the order measured to cost least for the bytes it saves on
-// the JSON bodies here (25-50 items, 4-8 KB): gzip at level 6 makes them 81%
-// smaller in about 17us, zstd about as small in a little less, and brotli
-// only gets smaller than gzip from quality 5 on, by another 10% for four
-// times the CPU. A client that asks for brotli by q value still gets it.
-var defaultPrefer = []string{"gzip", "zstd", "br", "deflate"}
+// defaultPrefer is fiber's compress middleware's order between codings a
+// client weighs the same: brotli first, so "gzip, br" gets brotli.
+var defaultPrefer = []string{"br", "zstd", "gzip", "deflate"}
+
+// defaultMinLength is the shortest body fasthttp, under fiber's compress
+// middleware, compresses (fasthttp's minCompressLen).
+const defaultMinLength = 200
 
 // newCompress is a compression middleware on fib's middleware API, doing what
 // fib's own compress does - one OnResponse hook that sees the response whole -
@@ -52,11 +54,9 @@ var defaultPrefer = []string{"gzip", "zstd", "br", "deflate"}
 // is the first in Config.Prefer.
 func newCompress(config CompressConfig) middleware.Middleware {
 	if config.MinLength <= 0 {
-		config.MinLength = 256
+		config.MinLength = defaultMinLength
 	}
-	if config.BrotliQuality <= 0 {
-		config.BrotliQuality = 5
-	}
+	config.BrotliQuality = min(max(config.BrotliQuality, brotli.BestSpeed), brotli.BestCompression)
 	if config.ZstdLevel == 0 {
 		config.ZstdLevel = zstd.SpeedDefault
 	}
@@ -71,7 +71,8 @@ func newCompress(config CompressConfig) middleware.Middleware {
 	}
 	codings := newCoders(config)
 	return func(next fibhttp.Handler) fibhttp.Handler {
-		return fibhttp.HandlerFunc(func(c *fibhttp.Context, r *stdhttp.Request) {
+		return fibhttp.HandlerFunc(func(c *fibhttp.Context) {
+			r := c.Request
 			coder := codings.negotiate(r.Header["Accept-Encoding"])
 			head := r.Method == stdhttp.MethodHead
 			c.OnResponse(func(response *fibhttp.Response) {
@@ -93,7 +94,7 @@ func newCompress(config CompressConfig) middleware.Middleware {
 					response.Header["Etag"] = []string{"W/" + tag}
 				}
 			})
-			next.ServeHTTP(c, r)
+			next.ServeHTTP(c)
 		})
 	}
 }
