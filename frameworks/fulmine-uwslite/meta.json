@@ -1,0 +1,28 @@
+{
+  "display_name": "fulmine.js - uwsLite",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "uwebsockets",
+  "description": "fulmine.js routes written with app.uwsLite: (req, res) handlers on uWebSockets.js over two small objects, with route middleware and streams.",
+  "repo": "https://github.com/nigrosimone/fulmine.js",
+  "website": "https://fulmine.sndesign.it/",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "async",
+    "latency-10k",
+    "latency-1m",
+    "json-comp",
+    "json-tls",
+    "8gbit"
+  ],
+  "maintainers": ["nigrosimone"]
+}
