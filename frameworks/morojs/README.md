@@ -6,7 +6,7 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
 
 - **Language:** JavaScript
 - **Runtime:** Node.js 26
-- **Framework:** [MoroJS 1.8](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.1.16, its own native HTTP engine
+- **Framework:** [MoroJS 1.8](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.1.17, its own native HTTP engine
 - **Build:** Multi-stage on `node:26.13-trixie-slim` (pinned by minor: the compression middleware's reused
   brotli encoder needs Node 26.11 or later, and the bench host builds against whatever `node:26` it
   has cached); the engine ships prebuilt binaries, so no toolchain
@@ -66,7 +66,11 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
 - `json-tls`, `static-tls` and `8gbit` listen on `8081` behind the engine's own TLS listener
   (TLS 1.3, ALPN `http/1.1`), when `/certs/server.crt` and `/certs/server.key` are mounted. Moro
   locks one configuration per process, so that listener is a second process running the same file
-  with `MORO_ROLE=tls`, clustered the same way; it is not started when the certificates are absent.
+  with `MORO_ROLE=tls`, clustered the same way; it is not started when the certificates are absent. The
+  engine terminates TLS on its own OpenSSL BIOs (1.1.17): one copy in, ciphertext appended straight
+  into the buffer it sends from, and a body over 8 KiB encrypted from the caller's bytes rather than
+  copied behind the head first. Measured at one worker on these three request mixes, CPU per request
+  fell by a fifth on the static files, a seventh on the JSON bodies and a sixth on the 100 KB echo.
 - `tls_check` is opted into: a third process of the same file (`MORO_ROLE=tlscheck`) listens on
   `9000` reading `/certs-tls`, with `server.ssl.watch: true`, so a pair replaced on disk is
   validated and swapped onto the running listener without a restart and without touching
