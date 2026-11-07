@@ -29,7 +29,7 @@ _zrk_cmd() {
         return 0
     fi
     if docker image inspect "$ZRK_IMAGE" >/dev/null 2>&1; then
-        printf '%s\n' docker run --rm --network host \
+        printf '%s\n' docker run --rm --init --network host \
             --cpuset-cpus="$GCANNON_CPUS" --security-opt seccomp=unconfined \
             --ulimit memlock=-1:-1 --ulimit nofile=1048576:1048576 \
             -v "$REQUESTS_DIR:$REQUESTS_DIR:ro" "$ZRK_IMAGE"
