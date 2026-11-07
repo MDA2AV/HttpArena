@@ -13,8 +13,12 @@ Defined in `scripts/lib/common.sh`. Override by exporting before you run the scr
 
 | Variable | Default | Description |
 |---|---|---|
-| `DURATION` | `5s` | Load-test duration per run (`-d`/`-D` passed through to the tool). |
-| `RUNS` | `3` | Measurement iterations per (profile, connection count). Best wins. |
+| `DURATION` | `5s` | Load-test duration per measured round (`-d`/`-D` passed through to the tool), for profiles with no line in `PROFILE_PLAN` (`scripts/lib/profiles.sh`). Set explicitly, it overrides that table too. |
+| `RUNS` | `3` | Measured rounds per (profile, connection count), under the same rules. Best wins. |
+| `WARMUP` | `15s` | Length of each discarded warm-up run of the profile's own workload. `0` turns the warm-up off. |
+| `WARMUP_RUNS` | `3` | How many warm-up runs come before the first measured round. `0` turns the warm-up off. |
+| `COOLDOWN` | `15` | Seconds of idle between load-generator runs, the warm-up included. |
+| `TEST_COOLDOWN` | `45` | Seconds of idle between any two tests of an entry: another profile, or another connection count of the same one. |
 | `THREADS` | `64` | gcannon / wrk worker threads. |
 | `H2THREADS` | `64` | h2load worker threads (HTTP/2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |

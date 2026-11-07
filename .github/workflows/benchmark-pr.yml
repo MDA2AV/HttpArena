@@ -176,7 +176,7 @@ jobs:
             # straight into that measures the tail of the last one, and on a run
             # over a hundred entries every one of them would inherit it from
             # whoever happened to precede it. Not applied before the first.
-            if [ "$FIRST" = "true" ]; then FIRST=false; else sleep 15; fi
+            if [ "$FIRST" = "true" ]; then FIRST=false; else sleep 45; fi
             echo "::group::benchmark $fw"
             # Always save results to disk for comparison; only commit if --save requested
             if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
@@ -329,6 +329,12 @@ jobs:
                                            "rps": int(m2.group(1)), "cpu": m2.group(2),
                                            "mem": m2.group(3)})
                           continue
+                      # Spread of the throughput across the measured rounds. Only
+                      # there with at least two rounds.
+                      m4 = re.match(r"^=== Runs: .* \| stddev (\d+) \(([\d.]+)%\) ===$", line)
+                      if m4 and rows:
+                          rows[-1].update(sd=int(m4.group(1)), sdpct=m4.group(2))
+                          continue
                       # The paced profiles report what they are actually ranked
                       # on. rps is the same for every entry that held the rate,
                       # so on its own it says nothing about them.
@@ -341,14 +347,15 @@ jobs:
           def table(rows, deltas):
               paced = any("cpureq" in r for r in rows)
               if paced:
-                  out = ["| Test | Conn | RPS | Rate | CPU/req | p99 | p99.9 | CPU | Mem | Δ RPS | Δ Mem |",
-                         "|------|------|-----|------|---------|-----|-------|-----|-----|-------|-------|"]
+                  out = ["| Test | Conn | RPS | StdDev | Rate | CPU/req | p99 | p99.9 | CPU | Mem | Δ RPS | Δ Mem |",
+                         "|------|------|-----|--------|------|---------|-----|-------|-----|-----|-------|-------|"]
               else:
-                  out = ["| Test | Conn | RPS | CPU | Mem | Δ RPS | Δ Mem |",
-                         "|------|------|-----|-----|-----|-------|-------|"]
+                  out = ["| Test | Conn | RPS | StdDev | CPU | Mem | Δ RPS | Δ Mem |",
+                         "|------|------|-----|--------|-----|-----|-------|-------|"]
               for r in rows:
                   d = deltas.get(r["prof"] + "/" + r["conns"], {})
-                  base = "| {} | {} | {:,} |".format(r["prof"], r["conns"], r["rps"])
+                  sd = "{:,} ({}%)".format(r["sd"], r["sdpct"]) if "sd" in r else "—"
+                  base = "| {} | {} | {:,} | {} |".format(r["prof"], r["conns"], r["rps"], sd)
                   tail_ = " {}% | {} | {} | {} |".format(
                       r["cpu"], r["mem"], d.get("rps", ""), d.get("mem", ""))
                   if paced:

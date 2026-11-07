@@ -31,8 +31,10 @@ Five load generators are dispatched per profile - each one is built for a specif
 |-----------|-------|
 | Load generators | `gcannon` (HTTP/1.1, WebSocket), `wrk` (static, json-tls and 8gbit rotation), `h2load` (HTTP/2, h2c, gateway), `h2load-h3` (HTTP/3 / QUIC), `zrk` (fixed-rate) |
 | Threads | 64 for `gcannon` / `wrk` / `h2load` / `h2load-h3` (`$THREADS` / `$H2THREADS` / `$H3THREADS`) |
-| Duration | 5s default; `async-db` 10s (hardcoded in the profile dispatcher) |
-| Runs | 3 per (profile, connection count) - best RPS wins |
+| Warm-up | 3 x 15s of the profile's own workload, discarded, before the first measured round, on every fresh container |
+| Duration | 15s for `baseline`, `limited-conn`, `json-tls` and the HTTP/2 and HTTP/3 baseline, static and JSON profiles; `async` and `async-db` 10s; `latency-*` 20s; 5s otherwise |
+| Runs | 2 for the 15s profiles, 3 otherwise, per (profile, connection count) - best RPS wins |
+| Cool-down | 15s between runs, the warm-up included; 45s between any two tests: another profile, connection count or entry |
 | Networking | Docker `--network host` for all containers (server + load generator + Postgres + Redis sidecars) |
 
 ## Data mounts

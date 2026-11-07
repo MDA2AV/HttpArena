@@ -54,6 +54,7 @@ HTTP/2 uses far fewer connections because each connection multiplexes many strea
 | Endpoint | `GET /baseline2?a=1&b=1` |
 | Connections | 256, 1,024 |
 | Streams per connection | 100 (`-m 100`) |
-| Duration | 5s |
-| Runs | 3 (best taken) |
+| Warm-up | 3 x 15s, discarded |
+| Duration | 15s |
+| Runs | 2 (best taken) |
 | Load generator | h2load |

@@ -45,6 +45,7 @@ Content-Type: application/json
 | Endpoint | `GET /json/{count}?m={multiplier}` |
 | Connections | 1,024, 4,096 |
 | Streams per connection | 32 (`-m 32`) |
-| Duration | 5s |
-| Runs | 3 (best taken) |
+| Warm-up | 3 x 15s, discarded |
+| Duration | 15s |
+| Runs | 2 (best taken) |
 | Load generator | h2load with `-p h2c` and URI rotation (`-i json-h2c-uris.txt`) |

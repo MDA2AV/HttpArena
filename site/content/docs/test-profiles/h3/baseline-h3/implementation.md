@@ -44,8 +44,9 @@ Content-Type: text/plain
 | Connections | 64 |
 | Streams per connection | 64 (`-m 64`) |
 | Threads | 64 (`H3THREADS`) |
-| Duration | 5s |
-| Runs | 3 (best taken) |
+| Warm-up | 3 x 15s, discarded |
+| Duration | 15s |
+| Runs | 2 (best taken) |
 | Load generator | h2load-h3 (`--alpn-list=h3`) |
 | Port | 8443 (TLS + QUIC) |
 

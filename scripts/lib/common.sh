@@ -19,8 +19,24 @@ H1TLS_PORT=8081   # h1 + TLS (json-tls profile)
 H2C_PORT=8082     # h2c prior-knowledge (baseline-h2c, json-h2c profiles)
 
 # Run settings — can be overridden via env vars at invocation time.
+#
+# RUNS and DURATION are the defaults for a profile with no line in PROFILE_PLAN
+# (scripts/lib/profiles.sh). Set in the environment they beat that table too, so
+# a smoke test stays one: RUNS=1 DURATION=2s WARMUP=0 ./scripts/benchmark.sh ...
+RUNS_FROM_ENV="${RUNS:-}"
+DURATION_FROM_ENV="${DURATION:-}"
 DURATION="${DURATION:-5s}"
 RUNS="${RUNS:-3}"
+# Discarded runs of the profile's own workload before the measured rounds, on
+# every fresh container: WARMUP_RUNS of WARMUP each. 0 for either turns it off.
+# See run_one() in benchmark.sh.
+WARMUP_RUNS="${WARMUP_RUNS:-3}"
+WARMUP="${WARMUP:-15s}"
+# Seconds of idle between load-generator runs, the warm-up included.
+COOLDOWN="${COOLDOWN:-15}"
+# Seconds of idle between any two tests of an entry: another profile, or another
+# connection count of the same one. The workflows pause as long between entries.
+TEST_COOLDOWN="${TEST_COOLDOWN:-45}"
 THREADS="${THREADS:-64}"
 # The async profile's generator thread count, separately settable. It gets its own
 # knob because the profile is closed-loop - every connection holds one request for
@@ -90,6 +106,30 @@ banner() {
     echo "=============================================="
     echo "=== $* ==="
     echo "=============================================="
+}
+
+# ── Load-generator output ───────────────────────────────────────────────────
+
+# Print a run's output with the noise taken out. h2load's threads share stdout
+# with no locking, so their progress messages arrive chopped up and interleaved
+# ("44Warm-up phase is over for thread #.", "35.") and no pattern can match them
+# all. Keep its summary instead, which starts at "finished in" and is only printed
+# once the threads are done. A run with no summary keeps everything, because the
+# reason it failed is in there.
+print_run_output() {
+    local tool="$1" output="$2"
+    case "$tool" in
+        h2load|h2load-h3)
+            if grep -q 'finished in ' <<< "$output"; then
+                awk '/^=== h2load-/            { print; keep = 0; next }
+                     /^Application protocol:/  { print; next }
+                     /finished in /            { keep = 1 }
+                     keep' <<< "$output"
+                return 0
+            fi
+            ;;
+    esac
+    grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' <<< "$output" || true
 }
 
 # ── Failure diagnostics ─────────────────────────────────────────────────────

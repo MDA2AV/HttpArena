@@ -2271,8 +2271,9 @@ def _board_faq(rows, fw_lang, current, round_name, n_profiles, n_entries):
          % (n_entries, n_profiles, len(rows), SCOPE_NAME[DEFAULT_SCOPE])),
         ("How are the benchmarks run?",
          "Every entry runs in a container on the same machine%s, pinned to dedicated cores, one "
-         "connection count per run. Requests per second is the best of three runs; latency, CPU "
-         "and memory come from that run. Round: %s."
+         "connection count per run. Each run starts with a warm-up that is thrown away; requests "
+         "per second is the best of the measured rounds after it, and latency, CPU and memory "
+         "come from that round. Round: %s."
          % (" (%s, %s cores)" % (e(hw), e(current.get("cores", "?"))) if hw else "",
             e(round_name))),
         ("Can I add my own framework?",
@@ -2628,8 +2629,9 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
 
     if runs:
         out.append('<h2 id="results">Every result</h2>')
-        out.append("<p>%s, %d runs. Requests per second is the best of three; latency, CPU and "
-                   "memory come from that run.</p>" % (e(round_name), len(runs)))
+        out.append("<p>%s, %d runs. Requests per second is the best measured round after a "
+                   "discarded warm-up; latency, CPU and memory come from that round.</p>"
+                   % (e(round_name), len(runs)))
         body = "".join(
             "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>"
             "<td>%s</td></tr>"

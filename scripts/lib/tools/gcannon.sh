@@ -33,7 +33,7 @@ gcannon_build_args() {
         async-db)
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/async-db-5.raw,$REQUESTS_DIR/async-db-10.raw,$REQUESTS_DIR/async-db-20.raw,$REQUESTS_DIR/async-db-35.raw,$REQUESTS_DIR/async-db-50.raw"
-                  -c "$conns" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
+                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline" -r 25)
             ;;
         async)
             # One template, a flat wait. The value still travels in the path, so
@@ -45,10 +45,6 @@ gcannon_build_args() {
             # Every held connection is one request the server is currently
             # sleeping on, so 32K connections means 32K live timers.
             #
-            # 10s rather than the 5s default: long enough that establishing the
-            # connections is a small share of the window, short enough to keep
-            # three runs plus their cool-downs reasonable.
-            #
             # ASYNC_THREADS overrides the generator's thread count for this
             # profile alone. It exists because the result moves with it: on a
             # 32-core box, holding the server fixed and changing only this took
@@ -57,7 +53,7 @@ gcannon_build_args() {
             # default stays at THREADS so nothing changes unless it is set.
             args=("http://localhost:$PORT"
                   --raw "$REQUESTS_DIR/async-delay.raw"
-                  -c "$conns" -t "${ASYNC_THREADS:-$THREADS}" -d 10s -p "$pipeline")
+                  -c "$conns" -t "${ASYNC_THREADS:-$THREADS}" -d "$duration" -p "$pipeline")
             ;;
         fortunes)
             # Single endpoint, fixed 12-row seed + 1 runtime-injected row.
