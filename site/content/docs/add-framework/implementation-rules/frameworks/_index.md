@@ -35,3 +35,17 @@ Every framework entry also declares a **mode** in `meta.json.mode` - how strictl
   {{< card link="standard" title="Standard" subtitle="Default, production-style usage: documented framework APIs, production settings, and standard libraries." icon="shield-check" >}}
   {{< card link="tuned" title="Tuned" subtitle="Non-default configs, experimental flags, and custom optimizations allowed." icon="adjustments" >}}
 {{< /cards >}}
+
+## Variants
+
+A **variant** is the same framework on another runtime or with another documented API, for example Hono on Node and Hono on Bun. It is a different concept from mode: each variant follows all the rules of its own mode, and no variant is the real one, they are all legitimate.
+
+```json
+"framework": "hono",
+"variant": "bun"
+```
+
+- A framework has **at most two** variants, because every entry runs on the same hardware. Subscribe a variant only to the tests where it is different.
+- A variant has its own row, with a pill that says which variant it is, and it is scored like any other entry.
+- A variant is listed only when the Variants filter is on, and it has no badges or medals, unless it sets `"default_visible": true`. Like a tuned entry that is filtered out, it still counts for the leader of each profile.
+- Each variant has its own badge URL, under its own entry name.

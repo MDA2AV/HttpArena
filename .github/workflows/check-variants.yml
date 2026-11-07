@@ -1,0 +1,17 @@
+name: Check variants
+
+on:
+  pull_request:
+    paths:
+      - 'frameworks/*/meta.json'
+      - 'scripts/check_variants.py'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 scripts/check_variants.py frameworks

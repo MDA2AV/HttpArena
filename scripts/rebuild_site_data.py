@@ -76,6 +76,9 @@ def rebuild_frameworks_json(root: Path, site_data: Path) -> None:
         }
         if "mode" in m:
             entry["mode"] = m["mode"]
+        for key in ("framework", "variant", "default_visible"):
+            if key in m:
+                entry[key] = m[key]
         if m.get("website"):
             entry["website"] = m["website"]
         if "completeness" in m:

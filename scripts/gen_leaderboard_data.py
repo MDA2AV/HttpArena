@@ -1485,6 +1485,8 @@ def badge_composite(agg, profiles, meta, scope, types, show_tuned=True, lang=Non
 
     def shown(fw):
         """hidden() in index.html — display only, never touches the maxima."""
+        if meta.get(fw, {}).get("hidden"):
+            return False
         if not show_tuned and meta.get(fw, {}).get("mode", "standard") == "tuned":
             return False
         if lang and fw_lang.get(fw) != lang:
@@ -1770,7 +1772,8 @@ def profile_medals(agg, profiles, meta):
             if not p["scoredConns"]:
                 continue
             field = [(fw, eff(pid, fw)) for fw in agg["avg"].get(pid, {})
-                     if in_league(fw) and _scored_for(prof, meta, pid, fw)]
+                     if in_league(fw) and _scored_for(prof, meta, pid, fw)
+                     and not meta.get(fw, {}).get("hidden")]
             field = [(fw, v) for fw, v in field if v > 0]
             for with_tuned in (False, True):
                 rows = sorted((r for r in field if with_tuned or not is_tuned(r[0])),
@@ -3623,6 +3626,10 @@ def build_meta(frameworks, tls_check=None):
                 "repo": m.get("repo", ""),
                 # optional and rare, so only on the entries that set it
                 **({"website": m["website"]} if m.get("website") else {}),
+                **({"framework": m["framework"], "variant": m["variant"]}
+                   if m.get("variant") else {}),
+                **({"hidden": True}
+                   if m.get("variant") and m.get("default_visible") is not True else {}),
                 "dir": m.get("dir", ""),
                 "engine": m.get("engine", ""),
                 "cmp": m.get("completeness"),
