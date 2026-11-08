@@ -1,0 +1,1 @@
+2026-11-08 14:18:10.203+00 0ms WARN type=app main [src/security.rs:994] enable_io_uring_restrictions is set but this build uses the reactor (epoll) runtime backend, which has no io_uring ring to restrict; ignoring
