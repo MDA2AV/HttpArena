@@ -847,7 +847,7 @@
     "repo": "https://github.com/nigrosimone/fulmine.js",
     "type": "emerging",
     "engine": "uwebsockets",
-    "mode": "standard",
+    "mode": "tuned",
     "website": "https://fulmine.sndesign.it/",
     "completeness": {
       "routing": true,
