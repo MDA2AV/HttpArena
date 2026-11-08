@@ -1,2 +1,3 @@
-[INFO][HTTP/2] Server listening on 0.0.0.0:8082 [S][sQUYt3EKLXl]
-hidi: h2 on :8443, h2c on :8082, threads: 64
+[INFO][HTTP/2] Server listening on 0.0.0.0:8082 [S][VkUzKqp6ytP]
+hidi: h2 on :8443, h2c on :8082, threads: [INFO][HTTP/2] Server listening on 0.0.0.0:8443 [S][FmrieJxZKUg]
+64
