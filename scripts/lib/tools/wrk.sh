@@ -59,8 +59,24 @@ wrk_run() {
 wrk_parse() {
     local output="$2"
 
-    # "Requests/sec: 1283707.14"
-    echo "rps=$(echo "$output" | grep -oP 'Requests/sec:\s+\K[\d.]+' | cut -d. -f1 || echo 0)"
+    # "X requests in Ys, ZGB read", plus "Non-2xx or 3xx responses: N" when
+    # any response had a status of 400 or above. wrk does not split those into
+    # 4xx and 5xx, so they are all reported as 4xx.
+    local total_reqs failed_reqs ok_reqs
+    total_reqs=$(echo "$output" | grep -oP '(\d+) requests in' | grep -oP '\d+' | head -1 || true)
+    total_reqs=${total_reqs:-0}
+    failed_reqs=$(echo "$output" | grep -oP 'Non-2xx or 3xx responses:\s+\K\d+' | head -1 || true)
+    failed_reqs=${failed_reqs:-0}
+    ok_reqs=$(( total_reqs > failed_reqs ? total_reqs - failed_reqs : 0 ))
+
+    # "Requests/sec: 1283707.14", which counts every response. Scaled down to
+    # the successful share, the same rule h2load's rps follows: an entry that
+    # answers 404 for a file it cannot find -- the percent-encoded one in
+    # static-tls, say -- must not be paid for the cheap 404s.
+    local raw_rps
+    raw_rps=$(echo "$output" | grep -oP 'Requests/sec:\s+\K[\d.]+' | head -1 || true)
+    echo "rps=$(awk -v r="${raw_rps:-0}" -v ok="$ok_reqs" -v t="$total_reqs" \
+        'BEGIN { printf "%d", (t > 0 ? r * ok / t : r) }')"
 
     # "Latency   3.70ms    8.37ms 279.91ms   96.41%" — avg=$2, stdev=$3, max=$4.
     # wrk exposes no percentiles without --latency, so use max ($4) as the tail.
@@ -72,9 +88,6 @@ wrk_parse() {
     echo "reconnects=0"
     echo "bandwidth=$(echo "$output" | grep -oP 'Transfer/sec:\s+\K\S+' | head -1 || echo 0)"
 
-    # wrk only knows "X requests in Ys, ZGB read" — all are treated as 2xx.
-    local total_reqs
-    total_reqs=$(echo "$output" | grep -oP '(\d+) requests in' | grep -oP '\d+' | head -1 || echo 0)
-    echo "status_2xx=$total_reqs"
-    echo "status_3xx=0"; echo "status_4xx=0"; echo "status_5xx=0"
+    echo "status_2xx=$ok_reqs"
+    echo "status_3xx=0"; echo "status_4xx=$failed_reqs"; echo "status_5xx=0"
 }

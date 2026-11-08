@@ -18,3 +18,4 @@ https://localhost:8443/static/hero.webp
 https://localhost:8443/static/thumb1.webp
 https://localhost:8443/static/thumb2.webp
 https://localhost:8443/static/manifest.json
+https://localhost:8443/static/%7E%40file%20name.txt

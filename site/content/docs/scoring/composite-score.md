@@ -79,7 +79,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Query parsing over TLS with multiplexed streams |
-| Static | Yes | 20 static files served over TLS with multiplexed streams |
+| Static | Yes | 21 static files served over TLS with multiplexed streams |
 | Baseline h2c | Yes | Query parsing over cleartext h2 on port 8082 (prior-knowledge) |
 | JSON h2c | Yes | JSON serialization workload over cleartext h2 on port 8082 |
 
@@ -88,7 +88,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Query parsing over QUIC (UDP) with TLS 1.3 |
-| Static | Yes | 20 static files served over QUIC (UDP) with TLS 1.3 |
+| Static | Yes | 21 static files served over QUIC (UDP) with TLS 1.3 |
 
 ### Gateway
 

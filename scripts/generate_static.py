@@ -1237,6 +1237,45 @@ def generate_manifest(target_kb):
     return json.dumps(manifest, separators=(',', ':'))
 
 
+# --- Percent-encoded file name ---
+#
+# The one asset whose name cannot travel in a URI as it is. The space has to be
+# sent as %20, and the load generators send the other two specials encoded as
+# well (%7E%40file%20name.txt), so a server only finds it if it decodes the
+# path before looking the file up. Linux and Windows both accept the name.
+ENCODED_FILE_NAME = '~@file name.txt'
+
+TEXT_WORDS = [
+    'the', 'a', 'of', 'to', 'and', 'in', 'is', 'for', 'on', 'with', 'by', 'as',
+    'request', 'response', 'server', 'client', 'header', 'body', 'path', 'query',
+    'segment', 'octet', 'character', 'encoding', 'decoding', 'percent', 'name',
+    'file', 'directory', 'resource', 'identifier', 'scheme', 'authority', 'host',
+    'port', 'connection', 'stream', 'buffer', 'cache', 'handler', 'route',
+    'reserved', 'unreserved', 'delimiter', 'component', 'syntax', 'parser',
+    'served', 'mapped', 'resolved', 'compared', 'normalized', 'escaped', 'sent',
+    'every', 'each', 'one', 'two', 'three', 'before', 'after', 'when', 'where',
+]
+
+
+def generate_text(target_kb, rng):
+    """Generate wrapped plain prose of exactly target_kb, ASCII only."""
+    target = target_kb * 1024
+    lines, line = [], ''
+    while sum(len(l) + 1 for l in lines) < target:
+        sentence = ' '.join(rng.choice(TEXT_WORDS) for _ in range(rng.randint(6, 18)))
+        sentence = sentence[0].upper() + sentence[1:] + '.'
+        for word in sentence.split(' '):
+            if len(line) + len(word) + 1 > 72:
+                lines.append(line)
+                line = ''
+            line = f'{line} {word}' if line else word
+        if rng.random() < 0.15:
+            lines.extend([line, ''])
+            line = ''
+    text = '\n'.join(lines)[:target - 1]
+    return text + '\n'
+
+
 # --- Binary file generation ---
 
 def generate_webp(target_kb):
@@ -1436,6 +1475,11 @@ def main():
     save_binary(os.path.join(OUT, 'thumb2.webp'), generate_webp(6))     # 6 KB
     save_binary(os.path.join(OUT, 'regular.woff2'), generate_woff2(18)) # 18 KB
     save_binary(os.path.join(OUT, 'bold.woff2'), generate_woff2(22))    # 22 KB
+
+    # Plain text behind a percent-encoded name. Its own seed, so adding it left
+    # every file above byte-for-byte where it was.
+    compress_and_save(os.path.join(OUT, ENCODED_FILE_NAME),
+                      generate_text(16, random.Random(695)))                    # 16 KB
 
     # Summary
     print()

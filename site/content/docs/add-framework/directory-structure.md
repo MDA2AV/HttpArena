@@ -43,7 +43,7 @@ The benchmark runner mounts these paths into your container (read-only):
 | Path | Purpose |
 |------|---------|
 | `/data/dataset.json` | 50-item dataset for `/json` endpoint |
-| `/data/static/` | 20 static assets (CSS, JS, HTML, fonts, images) - 15 ship with `.gz` and `.br` sibling files for precompression-aware frameworks |
+| `/data/static/` | 21 static assets (CSS, JS, HTML, fonts, images, plus `~@file name.txt`, which is requested percent-encoded) - 16 ship with `.gz` and `.br` sibling files for precompression-aware frameworks |
 | `/certs/server.crt` | TLS certificate for HTTPS/H2/H3 |
 | `/certs/server.key` | TLS private key for HTTPS/H2/H3 |
 

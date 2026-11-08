@@ -1,3 +1,6 @@
 site/** linguist-documentation linguist-vendored
 data/** linguist-documentation linguist-vendored
 *.sh text eol=lf
+# Served byte-for-byte and compared against their .br/.gz twins, so a checkout
+# must never rewrite line endings in them.
+data/static/** -text

@@ -617,6 +617,134 @@ static_staleness_probe() {
     fi
 }
 
+# ───── Percent-encoded static paths ─────
+#
+# RFC 3986 lets any path character travel percent-encoded, and some have to: a
+# file name with a space in it cannot be requested any other way. None of the
+# other names need it, and most servers skip the decode when there is no '%' in
+# the path, so a server that never decodes at all would pass every other static
+# check here.
+#
+# So one file in the set has a name that only arrives encoded. The load
+# generators send it as %7E%40file%20name.txt, one request in 21, so the cost of
+# decoding shows up in the numbers without the profile becoming about it.
+STATIC_ENCODED_NAME='~@file name.txt'
+STATIC_ENCODED_PATH='%7E%40file%20name.txt'
+
+# Every file the static profiles rotate over, by its name on disk, in the order
+# of requests/static-rotate.lua and requests/static-h2-uris.txt.
+STATIC_ASSETS=(
+    reset.css layout.css theme.css components.css utilities.css
+    analytics.js helpers.js app.js vendor.js router.js
+    header.html footer.html regular.woff2 bold.woff2
+    logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json
+    "$STATIC_ENCODED_NAME"
+)
+
+# The path a file is requested at: its name, encoded the way the load generators
+# send it.
+static_url_path() {
+    if [ "$1" = "$STATIC_ENCODED_NAME" ]; then
+        printf '%s' "$STATIC_ENCODED_PATH"
+    else
+        printf '%s' "$1"
+    fi
+}
+
+# A spelling of $1 drawn fresh per run: the space is always encoded, since it
+# cannot be sent otherwise, and every other character is sent as it is or
+# encoded, in either hex case, at random. All of them name the same file under
+# RFC 3986, and none can be prepared for. The dot is left alone so that no
+# spelling ever brushes against a server's dot-segment handling.
+_random_percent_spelling() {
+    local name="$1" out="" c hex i
+    for (( i = 0; i < ${#name}; i++ )); do
+        c="${name:$i:1}"
+        if [ "$c" = "." ]; then
+            out+="$c"
+        elif [ "$c" = " " ] || (( RANDOM % 2 )); then
+            hex="$(printf '%02X' "'$c")"
+            (( RANDOM % 2 )) && hex="$(printf '%s' "$hex" | tr 'A-F' 'a-f')"
+            out+="%$hex"
+        else
+            out+="$c"
+        fi
+    done
+    printf '%s' "$out"
+}
+
+# Requests the encoded file under several spellings and requires the exact bytes
+# on disk back for each of them, then requires a double-encoded name to miss.
+#
+#   * the benchmark's own spelling, %7E%40file%20name.txt
+#   * the same in lower-case hex -- RFC 3986 2.1 makes the case insignificant
+#   * the minimal spelling, ~@file%20name.txt, with only the space encoded
+#   * a random spelling drawn per run (see above)
+#
+# Between them, a route registered for the literal encoded string, a lookup
+# keyed on it, or a decoder that only knows upper-case hex all fail. The last
+# check sends %2520 for the space: decoded once that is "%20", a name no file
+# has, so only a server that decodes twice -- the classic path-traversal bug --
+# finds the file.
+#
+# $1 label  $2 url prefix  $3 docs url  $4.. extra curl args
+static_percent_decoding_probe() {
+    local label="$1" url_prefix="$2" docs="$3"
+    shift 3
+
+    local disk="$DATA_DIR/static/$STATIC_ENCODED_NAME"
+    if [ ! -f "$disk" ]; then
+        fail_with_link "[$label]: '$STATIC_ENCODED_NAME' is missing from data/static in this checkout" "$docs"
+        return 0
+    fi
+    local want
+    want="$(sha256sum < "$disk" | cut -d' ' -f1)"
+
+    local -a spellings=(
+        "$STATIC_ENCODED_PATH"
+        "$(printf '%s' "$STATIC_ENCODED_PATH" | tr 'A-F' 'a-f')"
+        "~@file%20name.txt"
+        "$(_random_percent_spelling "$STATIC_ENCODED_NAME")"
+    )
+
+    # --request-target puts the path on the wire exactly as written. Given the
+    # path in the URL instead, curl normalises it first -- it upper-cases the
+    # hex in every %xx -- and the lower-case spelling would never be sent.
+    local body
+    body="$(mktemp)"
+    _fetch_exact() {
+        : > "$body"
+        curl -s --max-time 30 -o "$body" -w '%{http_code}' "$@" 2>/dev/null || true
+    }
+
+    local spelling code got served=0
+    for spelling in "${spellings[@]}"; do
+        code="$(_fetch_exact "$@" --request-target "/static/${spelling}" "${url_prefix}/")"
+        got="$(sha256sum < "$body" | cut -d' ' -f1)"
+        if [ "$code" = "200" ] && [ "$got" = "$want" ]; then
+            served=$((served + 1))
+        elif [ "$code" = "200" ]; then
+            fail_with_link "[$label]: GET /static/$spelling answered 200, but not with the bytes of '$STATIC_ENCODED_NAME' ($(wc -c < "$body") bytes, expected $(wc -c < "$disk"))" "$docs"
+        else
+            fail_with_link "[$label]: GET /static/$spelling should serve '$STATIC_ENCODED_NAME' once the path is percent-decoded, got HTTP ${code:-000}" "$docs"
+        fi
+    done
+    if [ "$served" -eq "${#spellings[@]}" ]; then
+        echo "  PASS [$label] (${#spellings[@]} spellings of '$STATIC_ENCODED_NAME' served, incl. /static/${spellings[3]})"
+        PASS=$((PASS + 1))
+    fi
+
+    local twice="%7E%40file%2520name.txt"
+    code="$(_fetch_exact "$@" --request-target "/static/${twice}" "${url_prefix}/")"
+    rm -f "$body"
+    if [ "$code" = "404" ] || [ "$code" = "400" ]; then
+        echo "  PASS [$label, decoded once] (GET /static/$twice -> HTTP $code)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[$label, decoded once]: GET /static/$twice names the file '~@file%20name.txt', which does not exist, and must answer 404 (or 400); got HTTP ${code:-000}. A 200 means the path was percent-decoded twice" "$docs"
+    fi
+}
+
 # ───── tls_check (opt-in, validation only) ─────
 #
 # Subscribed by putting "tls" in meta.json "tests". Nothing is measured: this
@@ -2037,11 +2165,14 @@ if has_test "static-tls"; then
     check_header "GET /static/manifest.json Content-Type (TLS)" "Content-Type" "application/json" "$STATICTLS_DOCS" \
         -sk "https://localhost:$H1TLS_PORT/static/manifest.json"
 
+    check_header "GET /static/$STATIC_ENCODED_PATH Content-Type (TLS)" "Content-Type" "text/plain" "$STATICTLS_DOCS" \
+        -sk "https://localhost:$H1TLS_PORT/static/$STATIC_ENCODED_PATH"
+
     # Verify file sizes match actual files on disk
     stls_fail=false
-    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
+    for sf in "${STATIC_ASSETS[@]}"; do
         expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        actual_size=$(curl -sk --max-time 30 -o /dev/null -w '%{size_download}' "https://localhost:$H1TLS_PORT/static/$sf" || echo "0")
+        actual_size=$(curl -sk --max-time 30 -o /dev/null -w '%{size_download}' "https://localhost:$H1TLS_PORT/static/$(static_url_path "$sf")" || echo "0")
         if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
             true
         else
@@ -2050,7 +2181,7 @@ if has_test "static-tls"; then
         fi
     done
     if [ "$stls_fail" = "false" ]; then
-        echo "  PASS [static-tls file sizes] (20 files verified)"
+        echo "  PASS [static-tls file sizes] (${#STATIC_ASSETS[@]} files verified)"
         PASS=$((PASS + 1))
     fi
 
@@ -2058,11 +2189,11 @@ if has_test "static-tls"; then
     stls_comp_fail=false
     stls_comp_count=0
     stls_comp_skip=0
-    for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
+    for sf in "${STATIC_ASSETS[@]}"; do
         expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
         _hdr_tmp=$(mktemp)
         _body_tmp=$(mktemp)
-        curl -sk --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "https://localhost:$H1TLS_PORT/static/$sf" || true
+        curl -sk --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "https://localhost:$H1TLS_PORT/static/$(static_url_path "$sf")" || true
         comp_enc=$(grep -i "^content-encoding:" "$_hdr_tmp" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
         decompressed=$(wc -c < "$_body_tmp")
         rm -f "$_hdr_tmp" "$_body_tmp"
@@ -2089,6 +2220,9 @@ if has_test "static-tls"; then
     check_status "GET /static/nonexistent.txt (TLS)" "404" "$STATICTLS_DOCS" \
         -sk "https://localhost:$H1TLS_PORT/static/nonexistent.txt"
 
+    static_percent_decoding_probe "static-tls percent-decoded path" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" \
+        -k --http1.1
+
     static_staleness_probe "static-tls file follows the disk" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" \
         "hero.webp" "identity" -k
     static_staleness_probe "static-tls variant follows the disk" "https://localhost:$H1TLS_PORT" "$STATICTLS_DOCS" \
@@ -2113,6 +2247,9 @@ if has_test "static-h2"; then
         check_header "GET /static/manifest.json Content-Type" "Content-Type" "application/json" "$STATIC_H2_DOCS" \
             -sk --http2 "https://localhost:$H2PORT/static/manifest.json"
 
+        check_header "GET /static/$STATIC_ENCODED_PATH Content-Type" "Content-Type" "text/plain" "$STATIC_H2_DOCS" \
+            -sk --http2 "https://localhost:$H2PORT/static/$STATIC_ENCODED_PATH"
+
         # Check response size is non-zero
         static_size=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{size_download}' "https://localhost:$H2PORT/static/reset.css" || echo "0")
         if [ "$static_size" -gt 0 ]; then
@@ -2125,6 +2262,9 @@ if has_test "static-h2"; then
         # 404 for missing files
         check_status "GET /static/nonexistent.txt" "404" "$STATIC_H2_DOCS" \
             -sk --http2 "https://localhost:$H2PORT/static/nonexistent.txt"
+
+        static_percent_decoding_probe "static-h2 percent-decoded path" "https://localhost:$H2PORT" "$STATIC_H2_DOCS" \
+            -k --http2
     fi
 fi
 
@@ -2172,6 +2312,18 @@ if has_test "baseline-h3" || has_test "static-h3"; then
                 PASS=$((PASS + 1))
             else
                 fail_with_link "[static-h3 over QUIC]: expected 4 2xx responses, got ${got:-none} — the entry subscribes to static-h3 but did not serve /static over HTTP/3" "$DOCS_BASE/h3/static-h3/validation"
+            fi
+
+            # The encoded name is one of the 21 URIs static-h3 rotates over, and
+            # an HTTP/3 stack can take a path apart differently from the h1/h2
+            # listener of the same entry. The full set of spellings is asserted
+            # over h1/h2; here the benchmark's own spelling has to resolve.
+            got=$(h3_request "https://localhost:$H2PORT/static/$STATIC_ENCODED_PATH" 4)
+            if [ "${got:-0}" = "4" ]; then
+                echo "  PASS [static-h3 percent-decoded path over QUIC] (4/4 2xx for /static/$STATIC_ENCODED_PATH)"
+                PASS=$((PASS + 1))
+            else
+                fail_with_link "[static-h3 percent-decoded path over QUIC]: expected 4 2xx responses for /static/$STATIC_ENCODED_PATH, got ${got:-none} — the path has to be percent-decoded to find '$STATIC_ENCODED_NAME'" "$DOCS_BASE/h3/static-h3/validation"
             fi
         fi
     fi
