@@ -26,7 +26,8 @@
     "static-tls",
     "async-db",
     "baseline-h2",
-    "static-h2"
+    "static-h2",
+    "rendezvous"
   ],
   "maintainers": []
 }

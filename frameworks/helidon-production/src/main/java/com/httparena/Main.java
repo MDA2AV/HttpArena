@@ -33,6 +33,7 @@ public final class Main {
                         .get("/pipeline", new PipelineHandler())
                         .get("/baseline11", baselineHandler)
                         .get("/delay/{ms}", new DelayHandler())
+                        .get("/rendezvous/{key}", new RendezvousHandler())
                         .get("/json/{count}", jsonHandler)
                         .get("/json", jsonHandler)
                         .post("/baseline11", new BaselinePostHandler())

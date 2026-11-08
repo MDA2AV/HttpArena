@@ -769,6 +769,7 @@ dependencies = [
  "rustls-pemfile",
  "serde",
  "serde_json",
+ "tokio",
  "tokio-postgres",
 ]
 

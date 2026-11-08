@@ -108,6 +108,13 @@ declare -A PROFILES=(
     [echo-ws]="1|0|0-31,64-95|512,4096,16384|ws-echo"
     [echo-ws-pipeline]="16|0|0-31,64-95|512,4096,16384|ws-echo"
     [echo-ws-limited]="1|10|0-31,64-95|512,4096|ws-echo"
+    # Rendezvous: GET /rendezvous/{key}?v={value} (requests/rendezvous.lua). A request
+    # cannot be answered until another connection's request for the same key arrives,
+    # and each gets the other's value. Every other profile answers a request from that
+    # request alone, which is the case a shared-nothing event loop per core is built
+    # for; here the two sides usually sit on different workers, so something has to
+    # cross between them on every exchange.
+    [rendezvous]="1|0|0-31,64-95|4096|rendezvous"
 )
 
 PROFILE_ORDER=(
@@ -123,6 +130,7 @@ PROFILE_ORDER=(
     production-stack
     unary-grpc unary-grpc-tls
     echo-ws echo-ws-pipeline echo-ws-limited
+    rendezvous
     latency-1m latency-10k latency-500k-8cpu
     # Last on purpose. It closes ~49K sockets at exit and every one sits in
     # TIME_WAIT for the kernel's fixed ~60s, so anything scheduled after it
@@ -149,7 +157,7 @@ parse_profile() {
 endpoint_tool() {
     case "$1" in
         # wrk (lua script rotation)
-        static-tls|json-tls)                 echo "wrk" ;;
+        static-tls|json-tls|rendezvous)      echo "wrk" ;;
         # zrk — the only paced generator; holds a fixed offered rate
         latency-1m|latency-10k|latency-500k-8cpu|8gbit)  echo "zrk" ;;
         # h2load for all HTTP/2 variants (TLS via ALPN + h2c prior-knowledge)

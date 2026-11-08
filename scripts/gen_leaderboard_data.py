@@ -129,6 +129,13 @@ CATALOG = [
         ("gateway-h3", "Gateway (H3)", "Reverse proxy + server over h3.",            [64,256],      [64,256],  True,True,False),
         ("production-stack", "Production Stack", "Edge + Redis + JWT auth + server.",[256,1024],[256,1024],True,True,False),
     ]),
+    ("Interaction", [
+        # Every other profile answers a request from that request alone. Here one
+        # connection's request cannot be answered without another's, so the shared-
+        # nothing designs that lead the other boards have to pay for the crossing (#1686).
+        ("rendezvous", "Rendezvous", "Each request waits for another connection's, and gets its value.",
+                                                                                     [4096],[4096],True,True,False),
+    ]),
     ("WebSocket", [
         ("echo-ws",          "Echo",           "WebSocket echo throughput.",         [512,4096,16384],[512,4096,16384],True,True,False),
         ("echo-ws-pipeline", "Echo Pipelined", "Batched WebSocket echo.",            [512,4096,16384],[512,4096,16384],True,True,False),
@@ -169,6 +176,7 @@ PROFILE_DOC = {
     "latency-500k-8cpu": "test-profiles/h1/latency-500k-8cpu/implementation",
     "async-db":         "test-profiles/h1/async-database/implementation",
     "fortunes":         "test-profiles/h1/fortunes/implementation",
+    "rendezvous":       "test-profiles/interaction/rendezvous/implementation",
     "baseline-h2":      "test-profiles/h2/baseline-h2/implementation",
     "static-h2":        "test-profiles/h2/static-h2/implementation",
     "baseline-h2c":     "test-profiles/h2/baseline-h2c/implementation",
@@ -1252,9 +1260,9 @@ def _slug(name):
 # category -> family key. Mirrors familyOf() in index.html; anything unlisted is
 # HTTP/1.1 (Connection, Workload, Database, Multi-endpoint).
 FAMILY_OF_CAT = {"Gateway": "gw", "HTTP/2": "h2", "HTTP/3": "h3",
-                 "gRPC": "grpc", "WebSocket": "ws"}
+                 "gRPC": "grpc", "WebSocket": "ws", "Interaction": "ix"}
 FAMILY_LABEL = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3",
-                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+                "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "ix": "Interaction"}
 
 # Leagues are the board's type filter. flagship+emerging is its default view and
 # ranks as one field; engine and infrastructure entries are each scored on their
@@ -1846,16 +1854,18 @@ OG_TEXT = (232, 234, 237)
 OG_MUTED = (154, 160, 166)
 
 SCOPE_NAME = {"h1": "HTTP/1.1", "h2": "HTTP/2", "h3": "HTTP/3",
-              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket"}
+              "gw": "Gateway", "grpc": "gRPC", "ws": "WebSocket", "ix": "Interaction"}
 # The board's <h1> per family. renderHead() writes the same strings, so the
 # pre-rendered heading and the rendered one match.
 SCOPE_H1 = {"h1": "HTTP/1.1 web server benchmarks", "h2": "HTTP/2 web server benchmarks",
             "h3": "HTTP/3 web server benchmarks",
             "gw": "Gateway and production stack benchmarks",
-            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks"}
+            "grpc": "gRPC server benchmarks", "ws": "WebSocket server benchmarks",
+            "ix": "Cross-connection web server benchmarks"}
 SCOPE_BLURB = {"h1": "all HTTP/1.1 profiles", "h2": "all HTTP/2 profiles",
                "h3": "all HTTP/3 profiles", "gw": "the gateway & production-stack profiles",
-               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles"}
+               "grpc": "all gRPC profiles", "ws": "all WebSocket profiles",
+               "ix": "the interaction profiles"}
 # The board's own default: view=composite, scope=h1, flagship+emerging, tuned
 # shown, useMem and rescale off. Prerendering anything else would show a crawler
 # a page no visitor lands on.
@@ -2760,7 +2770,8 @@ def _lang_faq(lang, scopes, n_entries, round_name):
             continue
         fw, _k, _t, score, rank, of, _l, _lr, _lo = rows[0]
         qa.append((
-            f"What is the fastest {lang} {SCOPE_NAME[scope]} server?",
+            f"What is the fastest {lang} "
+            f"{'cross-connection' if scope == 'ix' else SCOPE_NAME[scope]} server?",
             f"{fw}, with a composite of {score:.0f} on {SCOPE_NAME[scope]} and "
             f"{rank} of {of} against all languages in its league."))
     qa.append((
