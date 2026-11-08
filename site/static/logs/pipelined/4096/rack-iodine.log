@@ -1,143 +1,266 @@
-/app/vendor/bundle/ruby/4.1.0+5/gems/iodine-0.7.58/lib/iodine/iodine_ext.so: warning: undefining the allocator of T_DATA class IodineObjectStorage
-INFO: Listening on port 8080
-INFO: Starting up Iodine:
- * Iodine 0.7.58
- * Ruby 4.1.0
- * facil.io 0.7.4 (epoll)
- * 127 Workers X 1 Threads per worker.
- * Maximum 131056 open files / sockets per worker.
- * Master (root) process: 1.
-
-INFO: Server is running 127 workers X 1 thread with facil.io 0.7.4 (epoll)
-* Linked to OpenSSL 3.5.7 9 Jun 2026
-* Detected capacity: 131056 open file limit
-* Root pid: 1
-* Press ^C to stop
-
-INFO: 10 is running.
-INFO: 14 is running.
-INFO: 18 is running.
-INFO: 22 is running.
-INFO: 26 is running.
-INFO: 30 is running.
-INFO: 35 is running.
-INFO: 40 is running.
-INFO: 45 is running.
-INFO: 50 is running.
-INFO: 55 is running.
-INFO: 60 is running.
-INFO: 65 is running.
-INFO: 70 is running.
-INFO: 75 is running.
-INFO: 80 is running.
-INFO: 85 is running.
-INFO: 91 is running.
-INFO: 96 is running.
-INFO: 100 is running.
-INFO: 106 is running.
-INFO: 110 is running.
-INFO: 116 is running.
-INFO: 121 is running.
-INFO: 126 is running.
-INFO: 130 is running.
-INFO: 135 is running.
-INFO: 140 is running.
-INFO: 146 is running.
-INFO: 151 is running.
-INFO: 157 is running.
-INFO: 162 is running.
-INFO: 167 is running.
-INFO: 171 is running.
-INFO: 177 is running.
-INFO: 182 is running.
-INFO: 187 is running.
-INFO: 192 is running.
-INFO: 197 is running.
-INFO: 202 is running.
-INFO: 207 is running.
-INFO: 212 is running.
-INFO: 217 is running.
-INFO: 222 is running.
-INFO: 227 is running.
-INFO: 232 is running.
-INFO: 237 is running.
-INFO: 242 is running.
-INFO: 246 is running.
-INFO: 252 is running.
-INFO: 257 is running.
-INFO: 262 is running.
-INFO: 267 is running.
-INFO: 272 is running.
-INFO: 277 is running.
-INFO: 282 is running.
-INFO: 287 is running.
-INFO: 295 is running.
-INFO: 299 is running.
-INFO: 303 is running.
-INFO: 307 is running.
-INFO: 312 is running.
-INFO: 317 is running.
-INFO: 323 is running.
-INFO: 328 is running.
-INFO: 333 is running.
-INFO: 338 is running.
-INFO: 343 is running.
-INFO: 348 is running.
-INFO: 353 is running.
-INFO: 358 is running.
-INFO: 363 is running.
-INFO: 368 is running.
-INFO: 373 is running.
-INFO: 378 is running.
-INFO: 383 is running.
-INFO: 388 is running.
-INFO: 393 is running.
-INFO: 398 is running.
-INFO: 403 is running.
-INFO: 408 is running.
-INFO: 413 is running.
-INFO: 418 is running.
-INFO: 423 is running.
-INFO: 428 is running.
-INFO: 433 is running.
-INFO: 438 is running.
-INFO: 443 is running.
-INFO: 448 is running.
-INFO: 453 is running.
-INFO: 458 is running.
-INFO: 463 is running.
-INFO: 468 is running.
-INFO: 473 is running.
-INFO: 478 is running.
-INFO: 483 is running.
-INFO: 488 is running.
-INFO: 493 is running.
-INFO: 498 is running.
-INFO: 503 is running.
-INFO: 508 is running.
-INFO: 513 is running.
-INFO: 518 is running.
-INFO: 523 is running.
-INFO: 528 is running.
-INFO: 533 is running.
-INFO: 538 is running.
-INFO: 543 is running.
-INFO: 548 is running.
-INFO: 553 is running.
-INFO: 558 is running.
-INFO: 563 is running.
-INFO: 568 is running.
-INFO: 574 is running.
-INFO: 578 is running.
-INFO: 583 is running.
-INFO: 588 is running.
-INFO: 593 is running.
-INFO: 598 is running.
-INFO: 603 is running.
-INFO: 610 is running.
-INFO: 614 is running.
-INFO: 618 is running.
-INFO: 625 is running.
-INFO: 629 is running.
-INFO: 633 is running.
-INFO: 638 is running.
+INFO:     
+	Starting the iodine server.
+	Version: 0.8.4
+	Engine: epoll
+	Workers: 128	(cluster mode)
+	Threads: 1+1	(per worker)
+	Press ^C to exit.
+INFO:     (1) spawning 128 workers.
+* No configuration file found @ config/boot.rb
+* Starting iodine @ ./config.ru
+INFO:     (8) worker starting up.
+INFO:     (12) worker starting up.
+INFO:     (17) worker starting up.
+INFO:     (22) worker starting up.
+INFO:     (28) worker starting up.
+INFO:     (32) worker starting up.
+INFO:     (37) worker starting up.
+INFO:     (43) worker starting up.
+INFO:     (47) worker starting up.
+INFO:     (53) worker starting up.
+INFO:     (59) worker starting up.
+INFO:     (65) worker starting up.
+INFO:     (71) worker starting up.
+INFO:     (76) worker starting up.
+INFO:     (83) worker starting up.
+INFO:     (90) worker starting up.
+INFO:     (95) worker starting up.
+INFO:     (102) worker starting up.
+INFO:     (108) worker starting up.
+INFO:     (114) worker starting up.
+INFO:     (120) worker starting up.
+INFO:     (127) worker starting up.
+INFO:     (133) worker starting up.
+INFO:     (139) worker starting up.
+INFO:     (146) worker starting up.
+INFO:     (152) worker starting up.
+INFO:     (158) worker starting up.
+INFO:     (164) worker starting up.
+INFO:     (170) worker starting up.
+INFO:     (176) worker starting up.
+INFO:     (182) worker starting up.
+INFO:     (188) worker starting up.
+INFO:     (194) worker starting up.
+INFO:     (200) worker starting up.
+INFO:     (206) worker starting up.
+INFO:     (212) worker starting up.
+INFO:     (17) started listening @ 0.0.0.0:8080
+INFO:     (8) started listening @ 0.0.0.0:8080
+INFO:     (218) worker starting up.
+INFO:     (12) started listening @ 0.0.0.0:8080
+INFO:     (28) started listening @ 0.0.0.0:8080
+INFO:     (225) worker starting up.
+INFO:     (22) started listening @ 0.0.0.0:8080
+INFO:     (231) worker starting up.
+INFO:     (237) worker starting up.
+INFO:     (43) started listening @ 0.0.0.0:8080
+INFO:     (53) started listening @ 0.0.0.0:8080
+INFO:     (32) started listening @ 0.0.0.0:8080
+INFO:     (243) worker starting up.
+INFO:     (37) started listening @ 0.0.0.0:8080
+INFO:     (47) started listening @ 0.0.0.0:8080
+INFO:     (249) worker starting up.
+INFO:     (59) started listening @ 0.0.0.0:8080
+INFO:     (255) worker starting up.
+INFO:     (71) started listening @ 0.0.0.0:8080
+INFO:     (76) started listening @ 0.0.0.0:8080
+INFO:     (261) worker starting up.
+INFO:     (65) started listening @ 0.0.0.0:8080
+INFO:     (83) started listening @ 0.0.0.0:8080
+INFO:     (267) worker starting up.
+INFO:     (90) started listening @ 0.0.0.0:8080
+INFO:     (273) worker starting up.
+INFO:     (278) worker starting up.
+INFO:     (95) started listening @ 0.0.0.0:8080
+INFO:     (284) worker starting up.
+INFO:     (114) started listening @ 0.0.0.0:8080
+INFO:     (102) started listening @ 0.0.0.0:8080
+INFO:     (289) worker starting up.
+INFO:     (296) worker starting up.
+INFO:     (120) started listening @ 0.0.0.0:8080
+INFO:     (108) started listening @ 0.0.0.0:8080
+INFO:     (302) worker starting up.
+INFO:     (139) started listening @ 0.0.0.0:8080
+INFO:     (133) started listening @ 0.0.0.0:8080
+INFO:     (308) worker starting up.
+INFO:     (127) started listening @ 0.0.0.0:8080
+INFO:     (315) worker starting up.
+INFO:     (146) started listening @ 0.0.0.0:8080
+INFO:     (320) worker starting up.
+INFO:     (158) started listening @ 0.0.0.0:8080
+INFO:     (152) started listening @ 0.0.0.0:8080
+INFO:     (326) worker starting up.
+INFO:     (170) started listening @ 0.0.0.0:8080
+INFO:     (333) worker starting up.
+INFO:     (164) started listening @ 0.0.0.0:8080
+INFO:     (339) worker starting up.
+INFO:     (176) started listening @ 0.0.0.0:8080
+INFO:     (182) started listening @ 0.0.0.0:8080
+INFO:     (346) worker starting up.
+INFO:     (188) started listening @ 0.0.0.0:8080
+INFO:     (352) worker starting up.
+INFO:     (200) started listening @ 0.0.0.0:8080
+INFO:     (194) started listening @ 0.0.0.0:8080
+INFO:     (358) worker starting up.
+INFO:     (364) worker starting up.
+INFO:     (212) started listening @ 0.0.0.0:8080
+INFO:     (206) started listening @ 0.0.0.0:8080
+INFO:     (218) started listening @ 0.0.0.0:8080
+INFO:     (225) started listening @ 0.0.0.0:8080
+INFO:     (370) worker starting up.
+INFO:     (376) worker starting up.
+INFO:     (237) started listening @ 0.0.0.0:8080
+INFO:     (231) started listening @ 0.0.0.0:8080
+INFO:     (386) worker starting up.
+INFO:     (382) worker starting up.
+INFO:     (243) started listening @ 0.0.0.0:8080
+INFO:     (393) worker starting up.
+INFO:     (249) started listening @ 0.0.0.0:8080
+INFO:     (400) worker starting up.
+INFO:     (255) started listening @ 0.0.0.0:8080
+INFO:     (261) started listening @ 0.0.0.0:8080
+INFO:     (406) worker starting up.
+INFO:     (278) started listening @ 0.0.0.0:8080
+INFO:     (267) started listening @ 0.0.0.0:8080
+INFO:     (273) started listening @ 0.0.0.0:8080
+INFO:     (411) worker starting up.
+INFO:     (418) worker starting up.
+INFO:     (423) worker starting up.
+INFO:     (284) started listening @ 0.0.0.0:8080
+INFO:     (289) started listening @ 0.0.0.0:8080
+INFO:     (430) worker starting up.
+INFO:     (296) started listening @ 0.0.0.0:8080
+INFO:     (435) worker starting up.
+INFO:     (308) started listening @ 0.0.0.0:8080
+INFO:     (315) started listening @ 0.0.0.0:8080
+INFO:     (441) worker starting up.
+INFO:     (302) started listening @ 0.0.0.0:8080
+INFO:     (447) worker starting up.
+INFO:     (326) started listening @ 0.0.0.0:8080
+INFO:     (320) started listening @ 0.0.0.0:8080
+INFO:     (454) worker starting up.
+INFO:     (460) worker starting up.
+INFO:     (333) started listening @ 0.0.0.0:8080
+INFO:     (339) started listening @ 0.0.0.0:8080
+INFO:     (466) worker starting up.
+INFO:     (346) started listening @ 0.0.0.0:8080
+INFO:     (472) worker starting up.
+INFO:     (478) worker starting up.
+INFO:     (358) started listening @ 0.0.0.0:8080
+INFO:     (484) worker starting up.
+INFO:     (364) started listening @ 0.0.0.0:8080
+INFO:     (352) started listening @ 0.0.0.0:8080
+INFO:     (490) worker starting up.
+INFO:     (370) started listening @ 0.0.0.0:8080
+INFO:     (495) worker starting up.
+INFO:     (501) worker starting up.
+INFO:     (376) started listening @ 0.0.0.0:8080
+INFO:     (507) worker starting up.
+INFO:     (513) worker starting up.
+INFO:     (386) started listening @ 0.0.0.0:8080
+INFO:     (520) worker starting up.
+INFO:     (382) started listening @ 0.0.0.0:8080
+INFO:     (526) worker starting up.
+INFO:     (400) started listening @ 0.0.0.0:8080
+INFO:     (393) started listening @ 0.0.0.0:8080
+INFO:     (532) worker starting up.
+INFO:     (538) worker starting up.
+INFO:     (406) started listening @ 0.0.0.0:8080
+INFO:     (544) worker starting up.
+INFO:     (411) started listening @ 0.0.0.0:8080
+INFO:     (550) worker starting up.
+INFO:     (423) started listening @ 0.0.0.0:8080
+INFO:     (556) worker starting up.
+INFO:     (418) started listening @ 0.0.0.0:8080
+INFO:     (563) worker starting up.
+INFO:     (441) started listening @ 0.0.0.0:8080
+INFO:     (435) started listening @ 0.0.0.0:8080
+INFO:     (569) worker starting up.
+INFO:     (430) started listening @ 0.0.0.0:8080
+INFO:     (575) worker starting up.
+INFO:     (447) started listening @ 0.0.0.0:8080
+INFO:     (460) started listening @ 0.0.0.0:8080
+INFO:     (581) worker starting up.
+INFO:     (454) started listening @ 0.0.0.0:8080
+INFO:     (466) started listening @ 0.0.0.0:8080
+INFO:     (587) worker starting up.
+INFO:     (472) started listening @ 0.0.0.0:8080
+INFO:     (593) worker starting up.
+INFO:     (478) started listening @ 0.0.0.0:8080
+INFO:     (599) worker starting up.
+INFO:     (484) started listening @ 0.0.0.0:8080
+INFO:     (605) worker starting up.
+INFO:     (490) started listening @ 0.0.0.0:8080
+INFO:     (495) started listening @ 0.0.0.0:8080
+INFO:     (611) worker starting up.
+INFO:     (507) started listening @ 0.0.0.0:8080
+INFO:     (617) worker starting up.
+INFO:     (513) started listening @ 0.0.0.0:8080
+INFO:     (501) started listening @ 0.0.0.0:8080
+INFO:     (520) started listening @ 0.0.0.0:8080
+INFO:     (623) worker starting up.
+INFO:     (526) started listening @ 0.0.0.0:8080
+INFO:     (629) worker starting up.
+INFO:     (532) started listening @ 0.0.0.0:8080
+INFO:     (635) worker starting up.
+INFO:     (538) started listening @ 0.0.0.0:8080
+INFO:     (641) worker starting up.
+INFO:     (544) started listening @ 0.0.0.0:8080
+INFO:     (550) started listening @ 0.0.0.0:8080
+INFO:     (647) worker starting up.
+INFO:     (653) worker starting up.
+INFO:     (556) started listening @ 0.0.0.0:8080
+INFO:     (659) worker starting up.
+INFO:     (569) started listening @ 0.0.0.0:8080
+INFO:     (563) started listening @ 0.0.0.0:8080
+INFO:     (665) worker starting up.
+INFO:     (575) started listening @ 0.0.0.0:8080
+INFO:     (671) worker starting up.
+INFO:     (581) started listening @ 0.0.0.0:8080
+INFO:     (678) worker starting up.
+INFO:     (587) started listening @ 0.0.0.0:8080
+INFO:     (593) started listening @ 0.0.0.0:8080
+INFO:     (683) worker starting up.
+INFO:     (689) worker starting up.
+INFO:     (599) started listening @ 0.0.0.0:8080
+INFO:     (695) worker starting up.
+INFO:     (605) started listening @ 0.0.0.0:8080
+INFO:     (701) worker starting up.
+INFO:     (611) started listening @ 0.0.0.0:8080
+INFO:     (707) worker starting up.
+INFO:     (713) worker starting up.
+INFO:     (617) started listening @ 0.0.0.0:8080
+INFO:     (623) started listening @ 0.0.0.0:8080
+INFO:     (719) worker starting up.
+INFO:     (629) started listening @ 0.0.0.0:8080
+INFO:     (635) started listening @ 0.0.0.0:8080
+INFO:     (725) worker starting up.
+INFO:     (731) worker starting up.
+INFO:     (641) started listening @ 0.0.0.0:8080
+INFO:     (647) started listening @ 0.0.0.0:8080
+INFO:     (737) worker starting up.
+INFO:     (653) started listening @ 0.0.0.0:8080
+INFO:     (659) started listening @ 0.0.0.0:8080
+INFO:     (744) worker starting up.
+INFO:     (665) started listening @ 0.0.0.0:8080
+INFO:     (750) worker starting up.
+INFO:     (756) worker starting up.
+INFO:     (761) worker starting up.
+INFO:     (678) started listening @ 0.0.0.0:8080
+INFO:     (671) started listening @ 0.0.0.0:8080
+INFO:     (767) worker starting up.
+INFO:     (683) started listening @ 0.0.0.0:8080
+INFO:     (689) started listening @ 0.0.0.0:8080
+INFO:     (695) started listening @ 0.0.0.0:8080
+INFO:     (701) started listening @ 0.0.0.0:8080
+INFO:     (707) started listening @ 0.0.0.0:8080
+INFO:     (713) started listening @ 0.0.0.0:8080
+INFO:     (719) started listening @ 0.0.0.0:8080
+INFO:     (725) started listening @ 0.0.0.0:8080
+INFO:     (731) started listening @ 0.0.0.0:8080
+INFO:     (737) started listening @ 0.0.0.0:8080
+INFO:     (744) started listening @ 0.0.0.0:8080
+INFO:     (750) started listening @ 0.0.0.0:8080
+INFO:     (756) started listening @ 0.0.0.0:8080
+INFO:     (761) started listening @ 0.0.0.0:8080
+INFO:     (767) started listening @ 0.0.0.0:8080
