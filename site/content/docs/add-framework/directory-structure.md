@@ -16,10 +16,12 @@ frameworks/
 
 ## Dockerfile
 
-The Dockerfile should build and run your server. Containers are started with `--network host`, so bind to:
+The Dockerfile should build and run your server. Containers are started with `--network host`, so bind to the ports of the profiles you subscribe to:
 
-- **Port 8080** - HTTP/1.1
-- **Port 8443** - HTTPS with HTTP/2 and HTTP/3 (if supported)
+- **Port 8080** - HTTP/1.1 (and WebSocket, and cleartext gRPC)
+- **Port 8081** - HTTP/1.1 over TLS (`json-tls`, `static-tls`, `8gbit`)
+- **Port 8082** - cleartext HTTP/2 with prior knowledge (`baseline-h2c`, `json-h2c`)
+- **Port 8443** - HTTPS with HTTP/2 and HTTP/3 (if supported), and gRPC over TLS
 
 Example (Go):
 
@@ -42,7 +44,7 @@ The benchmark runner mounts these paths into your container (read-only):
 
 | Path | Purpose |
 |------|---------|
-| `/data/dataset.json` | 50-item dataset for `/json` endpoint |
+| `/data/dataset.json` | 50-item dataset for the `/json/{count}` endpoint |
 | `/data/static/` | 20 static assets (CSS, JS, HTML, fonts, images) - 15 ship with `.gz` and `.br` sibling files for precompression-aware frameworks |
 | `/certs/server.crt` | TLS certificate for HTTPS/H2/H3 |
 | `/certs/server.key` | TLS private key for HTTPS/H2/H3 |

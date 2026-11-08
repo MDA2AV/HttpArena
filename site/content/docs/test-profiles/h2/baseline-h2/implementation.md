@@ -40,7 +40,7 @@ Content-Type: text/plain
 | | Baseline (HTTP/1.1) | Baseline (HTTP/2) |
 |---|---|---|
 | Protocol | HTTP/1.1 plaintext | HTTP/2 over TLS |
-| Connections | 512 - 4,096 | 256 - 1,024 |
+| Connections | 4,096 | 256 - 1,024 |
 | Requests per connection | 1 at a time | 100 concurrent streams |
 | Load generator | gcannon | h2load |
 | Port | 8080 | 8443 |

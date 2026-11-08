@@ -8,7 +8,7 @@ description: "Endpoint contract, request and response shapes, and the anti-cheat
 
 The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection - exercising async I/O scheduling, connection pooling, and async Postgres driver efficiency.
 
-**This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
+**This test is for framework entries** - engine and infrastructure entries (raw-socket servers, nginx, h2o, etc.) are not expected to subscribe.
 
 > **Reference-only.** This profile is measured and published but does not contribute to the
 > composite score. The database and its driver dominate the result far more than the framework
@@ -104,7 +104,7 @@ The benchmark runner provides these environment variables to your container:
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `DATABASE_URL` | `postgres://bench:bench@localhost:5432/benchmark` | Postgres connection string. Always read from this - never hardcode. |
-| `DATABASE_MAX_CONN` | `256` | Maximum connections allowed by the Postgres instance. Use this to size your connection pool. May be lower for CPU-constrained tests (e.g. API-4, API-16). |
+| `DATABASE_MAX_CONN` | `256` | Maximum connections allowed by the Postgres instance. Use this to size your connection pool. |
 
 ## Implementation notes
 

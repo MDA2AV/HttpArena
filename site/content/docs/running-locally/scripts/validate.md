@@ -16,24 +16,31 @@ Run the validation suite against a framework. Builds the Docker image, starts th
 1. Reads the framework's `meta.json` to determine which tests are subscribed
 2. Builds the Docker image
 3. Mounts only the data volumes required by the subscribed tests
-4. Starts a Postgres sidecar when `async-db`, `api-4`, or `api-16` tests are enabled
+4. Starts a Postgres sidecar when `async-db`, `fortunes`, `gateway-64`, `gateway-h3` or `production-stack` is subscribed
 5. Waits for the server to start (up to 30 seconds)
 6. Runs all validation checks for the subscribed tests
 7. Prints a pass/fail summary and exits with code 1 if any check failed
 
+There is no option to validate a single profile: every profile in `meta.json` is checked on each run.
+
 ## Validation coverage
 
-Each subscribed test triggers its corresponding validation checks. Workload profiles (`api-4`, `api-16`) automatically trigger validation for all endpoints they use, even if those individual tests are not in `meta.json`.
+Each subscribed test triggers its corresponding validation checks. Profiles that reuse another profile's endpoint are covered by that profile's checks - the fixed-rate `latency-*` profiles, for example, run the full baseline suite.
+
+An entry with `"tls_check": true` in `meta.json` also runs the opt-in [TLS hardening](/docs/test-profiles/h1/tls/validation/) section.
 
 On failure, each check prints a link to the relevant validation documentation page for reference.
 
 ## Anti-cheat checks
 
-Several validations use randomized inputs to detect hardcoded responses:
+Several validations use randomized inputs, drawn fresh on every run, to detect hardcoded responses:
 
 - **Baseline**: random query parameters and POST bodies
-- **Upload**: random binary payload with byte count verification
-- **Database / Async DB**: empty price range that must return zero results
+- **JSON**: random counts and multipliers, with every item compared against `data/dataset.json`
+- **Async**: random delays, and 32 overlapping requests that each carry a different delay
+- **8Gbit**: random bodies that must be echoed back byte for byte
+- **Async DB**: random price ranges and limits, plus an empty range that must return zero results
+- **Static files**: a file replaced on disk must be served with its new bytes
 
 ## Example output
 

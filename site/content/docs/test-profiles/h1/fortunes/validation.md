@@ -51,7 +51,7 @@ The upper bound is generous - engines that emit more whitespace, longer DOCTYPEs
 
 ## What is NOT validated
 
-- **Sort order.** The implementation guidelines specify ordinal-byte sort, but the validator does not parse the rendered HTML and verify row positions. Frameworks shipping a different sort still pass - the production rules govern correctness here, not the validator.
+- **Sort order.** The implementation guidelines specify ordinal-byte sort, but the validator does not parse the rendered HTML and verify row positions. Frameworks shipping a different sort still pass - the implementation rules govern correctness here, not the validator.
 - **Exact byte output.** Two correct implementations can produce different HTML and both pass.
 - **Header row presence.** A `<tr><th>...</th></tr>` header row is recommended for parity with the reference rendering but not enforced.
 - **Performance under load.** Validation is correctness-only; the benchmark driver measures throughput separately.
