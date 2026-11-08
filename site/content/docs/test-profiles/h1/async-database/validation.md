@@ -8,7 +8,7 @@ The following checks are executed by `validate.sh` for every framework subscribe
 
 ## Response structure with varying limits
 
-Sends `GET /async-db?min=M&max=N&limit=L` with varying price ranges and limits (different from the benchmark values to prevent hardcoded responses). Tested combinations: `min=5&max=80&limit=7`, `min=20&max=150&limit=18`, `min=100&max=400&limit=33`, `min=10&max=50&limit=50`. For each request, verifies:
+Sends four `GET /async-db?min=M&max=N&limit=L` requests with values drawn at random on every run: `min` between 1 and 120, `max` 20 to 300 above `min`, and `limit` between 1 and 50. Because they are random, a hardcoded response cannot pass. For each request, verifies:
 
 - **Item count** equals the requested limit
 - Every item has a nested `rating` object with a `score` field

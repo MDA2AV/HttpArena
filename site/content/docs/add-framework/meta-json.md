@@ -37,6 +37,7 @@ Create a `meta.json` file in your framework directory:
 | `website` | Optional link to the framework's official website |
 | `enabled` | Set to `false` to skip this framework during benchmark runs |
 | `tests` | Array of test profiles this framework participates in |
+| `tls_check` | Optional. Set to `true` to opt into the [TLS hardening checks](/docs/test-profiles/h1/tls/validation/) - certificate rotation, SNI, resumption and a vulnerability scan on a dedicated TLS listener on port 9000. Nothing is measured; passing earns the gold TLS badge |
 | `maintainers` | Array of GitHub usernames to notify when a PR modifies this framework |
 
 ## Available test profiles
@@ -46,24 +47,30 @@ Create a `meta.json` file in your framework directory:
 | `baseline` | HTTP/1.1 | `/baseline11` |
 | `pipelined` | HTTP/1.1 | `/pipeline` |
 | `limited-conn` | HTTP/1.1 | `/baseline11` |
+| `async` | HTTP/1.1 | `/delay/{ms}` |
+| `latency-1m` | HTTP/1.1 | `/baseline11` (fixed 1M req/s) |
+| `latency-10k` | HTTP/1.1 | `/baseline11` (fixed 10K req/s) |
+| `latency-500k-8cpu` | HTTP/1.1 | `/baseline11` (fixed 500K req/s on four cores plus SMT) |
 | `json-comp` | HTTP/1.1 | `/json/{count}?m=N` (must honor `Accept-Encoding: gzip, br`) |
 | `json-tls` | HTTP/1.1 + TLS | `/json/{count}?m=N` (port 8081, ALPN `http/1.1`) |
 | `8gbit` | HTTP/1.1 + TLS | `POST /echo` on port 8081 (10 KB echoed verbatim) |
-| `api-4` | HTTP/1.1 | `/baseline11`, `/json/{count}`, `/async-db` (4 CPU, 16 GB) |
-| `api-16` | HTTP/1.1 | `/baseline11`, `/json/{count}`, `/async-db` (16 CPU, 32 GB) |
+| `static-tls` | HTTP/1.1 + TLS | `/static/*` (port 8081) |
 | `async-db` | HTTP/1.1 | `/async-db?min=X&max=Y&limit=N` (requires `DATABASE_URL`) |
+| `fortunes` | HTTP/1.1 | `/fortunes` (requires `DATABASE_URL`, renders HTML with a template engine) |
 | `baseline-h2` | HTTP/2 | `/baseline2` (TLS, port 8443) |
 | `static-h2` | HTTP/2 | `/static/*` (TLS, port 8443) |
 | `baseline-h2c` | HTTP/2 cleartext | `/baseline2` (port 8082, prior-knowledge) |
 | `json-h2c` | HTTP/2 cleartext | `/json/{count}?m=N` (port 8082, prior-knowledge) |
 | `baseline-h3` | HTTP/3 | `/baseline2` (QUIC, port 8443) |
 | `static-h3` | HTTP/3 | `/static/*` (QUIC, port 8443) |
-| `gateway-64` | HTTP/2 | Compose stack serving `/static/*`, `/json`, `/async-db`, `/baseline2` (TLS, port 8443) |
-| `gateway-h3` | HTTP/3 | Compose stack serving `/static/*`, `/json`, `/async-db`, `/baseline2` (QUIC, port 8443) |
+| `gateway-64` | HTTP/2 | Compose stack serving `/static/*`, `/json/{count}`, `/async-db`, `/baseline2` (TLS, port 8443) |
+| `gateway-h3` | HTTP/3 | Compose stack serving `/static/*`, `/json/{count}`, `/async-db`, `/baseline2` (QUIC, port 8443) |
 | `production-stack` | HTTP/2 | Compose stack: edge + JWT auth sidecar + Redis + server (TLS, port 8443) |
 | `unary-grpc` | gRPC | `BenchmarkService/GetSum` (h2c, port 8080) |
 | `unary-grpc-tls` | gRPC | `BenchmarkService/GetSum` (TLS, port 8443) |
 | `echo-ws` | WebSocket | `/ws` echo (port 8080) |
+| `echo-ws-pipeline` | WebSocket | `/ws` echo (port 8080), 16 messages in flight |
+| `echo-ws-limited` | WebSocket | `/ws` echo (port 8080), new connection every 10 messages |
 
 Only include profiles your framework supports. Frameworks missing a profile simply don't appear in that profile's leaderboard.
 

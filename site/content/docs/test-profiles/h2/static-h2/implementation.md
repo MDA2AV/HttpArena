@@ -15,15 +15,15 @@ Serves 20 static files of various types and sizes over HTTP/2 with TLS, simulati
 
 The load generator ([h2load](https://nghttp2.org/documentation/h2load-howto.html)) requests 20 static files in a round-robin pattern across multiplexed streams. All requests include `Accept-Encoding: br;q=1, gzip;q=0.8`.
 
-- **CSS** (5 files, 8–55 KB): `reset.css`, `layout.css`, `theme.css`, `components.css`, `utilities.css`
-- **JavaScript** (5 files, 15–400 KB): `analytics.js`, `helpers.js`, `app.js`, `vendor.js`, `router.js`
-- **HTML** (2 files, 5–8 KB): `header.html`, `footer.html`
-- **Fonts** (2 files, 20–25 KB): `regular.woff2`, `bold.woff2`
-- **SVG** (2 files, 12–55 KB): `logo.svg`, `icon-sprite.svg`
-- **Images** (3 files, 15–120 KB): `hero.webp`, `thumb1.webp`, `thumb2.webp`
+- **CSS** (5 files, 8–200 KB): `reset.css`, `layout.css`, `theme.css`, `components.css`, `utilities.css`
+- **JavaScript** (5 files, 12–300 KB): `analytics.js`, `helpers.js`, `app.js`, `vendor.js`, `router.js`
+- **HTML** (2 files, 55–120 KB): `header.html`, `footer.html`
+- **Fonts** (2 files, 18–22 KB): `regular.woff2`, `bold.woff2`
+- **SVG** (2 files, 15–70 KB): `logo.svg`, `icon-sprite.svg`
+- **Images** (3 files, 6–45 KB): `hero.webp`, `thumb1.webp`, `thumb2.webp`
 - **JSON** (1 file, 3 KB): `manifest.json`
 
-Total payload: ~1.16 MB across 20 files (~966 KB compressible text + ~200 KB binary).
+Total payload: ~1242 KB across 20 files (~1143 KB compressible text + ~99 KB binary).
 
 Pre-compressed versions (`.gz`, `.br`) are available on disk. See the [Static TLS compression section](/docs/test-profiles/h1/static-tls/implementation/#compression) for full compression rules.
 
@@ -65,7 +65,7 @@ Content-Type: application/javascript
 | | Baseline (HTTP/2) | Static Files (HTTP/2) |
 |---|---|---|
 | Endpoint | Single `GET /baseline2` | 20 different `/static/*` URIs |
-| Response size | ~2 bytes | 3–400 KB (varied) |
+| Response size | ~2 bytes | 3–300 KB (varied) |
 | Content types | `text/plain` | CSS, JS, HTML, fonts, SVG, WebP, JSON |
 | h2load mode | Single URI | Multi-URI (`-i` flag, round-robin) |
 

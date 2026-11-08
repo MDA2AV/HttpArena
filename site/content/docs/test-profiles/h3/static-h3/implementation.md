@@ -27,7 +27,7 @@ The HTTP/3 Static Files profile serves 20 static files of various types over QUI
 
 ## Static files
 
-20 files (~1.16 MB total, ~966 KB compressible text + ~200 KB binary):
+20 files (~1242 KB total, ~1143 KB compressible text + ~99 KB binary):
 
 | Type | Files | Examples |
 |------|-------|---------|

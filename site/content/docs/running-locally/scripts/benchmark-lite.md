@@ -15,7 +15,7 @@ weight: 4
 | CPU pinning | Per-profile `--cpuset-cpus` | None - all containers see every core |
 | `THREADS` default | 64 | `nproc / 2` |
 | `H2THREADS` / `H3THREADS` default | 64 / 64 | Same as `THREADS` |
-| Profile set | 26 profiles | 14 - skips `json-tls`, `static-tls`, `async`, `latency-1m`, `fortunes`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `echo-ws-pipeline`, `echo-ws-limited` |
+| Profile set | 27 profiles | 13 - skips `json-tls`, `static-tls`, `async`, `latency-1m`, `latency-10k`, `latency-500k-8cpu`, `fortunes`, `baseline-h2c`, `json-h2c`, `gateway-64`, `gateway-h3`, `production-stack`, `echo-ws-pipeline`, `echo-ws-limited` |
 | Connection counts | Varies (512, 1024, 4096, 16384, …) | One per profile (mostly 512; h3 64) |
 | Framework selection | One framework, always | Optional - runs every enabled framework if omitted |
 
@@ -44,6 +44,12 @@ First time you invoke it (or after a `docker rmi`), the script builds every load
 - `h2load:latest` - Ubuntu 24.04 + `apt install nghttp2-client` (glibc build, not musl).
 - `h2load-h3:local` - Ubuntu 24.04 + builds `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` from source. Takes 5–10 minutes the first time.
 - `wrk:local` - Ubuntu 24.04 + `wrk` source build.
+
+The one image it does **not** build is `zrk:local`, which `8gbit` needs. Build it once yourself:
+
+```bash
+docker build -t zrk:local -f docker/zrk.Dockerfile docker/
+```
 
 All images are built **before** the host tuning step, because `system_tune()` restarts the Docker daemon and buildkit DNS takes a few seconds to recover - long enough to break `git clone` inside a build container.
 
@@ -75,8 +81,7 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 | `pipelined` | 16 | ∞ | 512 | gcannon | `/pipeline` |
 | `limited-conn` | 1 | 10 | 512 | gcannon | `/baseline11` |
 | `json-comp` | 1 | ∞ | 512 | gcannon | `/json/{count}` + compression |
-| `8gbit` | 1 | ∞ | 128 | wrk | `POST /echo` (TLS) |
-| `static` | 1 | 10 | 512 | wrk | `/static/*` |
+| `8gbit` | 1 | ∞ | 128 | zrk | `POST /echo` (TLS) |
 | `async-db` | 1 | ∞ | 512 | gcannon | `/async-db?limit=N` |
 | `baseline-h2` | 1 | ∞ | 512 | h2load | `/baseline2` (TLS) |
 | `static-h2` | 1 | ∞ | 512 | h2load | `/static/*` (TLS) |
@@ -88,7 +93,7 @@ Everything in [benchmark.sh → Environment variables](../benchmark/#environment
 
 ## Requirements
 
-The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk - is built automatically inside containers. You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
+The only hard requirement is **Docker Engine**. Everything else - gcannon, h2load, h2load-h3, wrk - is built automatically inside containers (zrk, for `8gbit`, once by hand as shown above). You don't need `io_uring` on the host kernel (the gcannon container carries its own `liburing 2.9`), you don't need `nghttp2-client` installed, and you don't need a Rust/Go toolchain.
 
 Host tuning (CPU governor, sysctl, docker daemon restart, MTU, page-cache drop) is still best-effort - it uses `sudo` where needed and warns + continues if you don't have it. Numbers without tuning are noisier but still usable for relative comparisons.
 
@@ -111,4 +116,4 @@ Host tuning (CPU governor, sysctl, docker daemon restart, MTU, page-cache drop) 
 DURATION=2s RUNS=1 ./scripts/benchmark-lite.sh actix baseline
 ```
 
-Lite runs are great for CI-style smoke tests and for comparing frameworks relative to each other on your own hardware. Absolute numbers will not match the published leaderboard - that's produced on a dedicated 128-core host with CPU isolation and native load generators.
+Lite runs are great for CI-style smoke tests and for comparing frameworks relative to each other on your own hardware. Absolute numbers will not match the published leaderboard - that's produced on a dedicated 64-core (128-thread) host with CPU isolation and native load generators.

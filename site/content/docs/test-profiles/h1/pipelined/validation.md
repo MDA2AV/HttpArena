@@ -9,3 +9,7 @@ The following checks are executed by `validate.sh` for every framework subscribe
 ## GET /pipeline response
 
 Sends `GET /pipeline` and verifies the response body is exactly `ok`.
+
+## Content-Type header
+
+Verifies the response carries `Content-Type: text/plain`.
