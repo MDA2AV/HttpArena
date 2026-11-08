@@ -257,9 +257,8 @@ private fun Application.configureRouting(appData: ArenaApplicationDeps) {
          * Static files
          * https://www.http-arena.com/docs/test-profiles/h1/isolated/static/
          */
-        staticFiles("/static", dir = File("/data/static"), index = null) {
-            preCompressed(CompressedFileType.BROTLI, CompressedFileType.GZIP)
-        }
+        @OptIn(ExperimentalKtorApi::class)
+        staticFiles("/static", kotlinx.io.files.Path("/data/static"))
 
         /**
          * Echo WebSocket
