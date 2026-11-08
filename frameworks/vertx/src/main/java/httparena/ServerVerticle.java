@@ -112,6 +112,12 @@ public class ServerVerticle extends VerticleBase {
 
         Future<?> plain = vertx.createHttpServer(options).requestHandler(router).listen();
 
+        HttpServerOptions h2c = new HttpServerOptions()
+                .setHost("0.0.0.0")
+                .setPort(8082)
+                .setHttp2ClearTextEnabled(true);
+        Future<?> cleartext = vertx.createHttpServer(h2c).requestHandler(router).listen();
+
         // json-tls and static-tls on 8081, the same router behind TLS. This verticle is
         // deployed once per core, so every instance binds both ports and the listener is
         // spread across all the event loops rather than parked on one. ALPN is off: the
@@ -127,9 +133,9 @@ public class ServerVerticle extends VerticleBase {
                     .setUseAlpn(false)
                     .setSslEngineOptions(new OpenSSLEngineOptions())
                     .setKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
-            return Future.all(plain, vertx.createHttpServer(tls).requestHandler(router).listen());
+            return Future.all(plain, cleartext, vertx.createHttpServer(tls).requestHandler(router).listen());
         }
-        return plain;
+        return Future.all(plain, cleartext);
     }
 
     private void text(RoutingContext ctx, String body) {
