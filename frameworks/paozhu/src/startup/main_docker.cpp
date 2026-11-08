@@ -1,4 +1,4 @@
-// Pinned for 903cbd82 (identical to upstream; kept under this entry's control).
+// Pinned for 25104601 (identical to upstream; kept under this entry's control).
 // Refresh from PAOZHU_REF when bumping the upstream revision.
 
 #include <string>
