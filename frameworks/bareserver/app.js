@@ -64,9 +64,8 @@ if (cluster.isPrimary) {
 
   const SERVER_HDR = { server: 'bareserver' };
 
-  app.get('/pipeline', (req, res) => {
-    res.set(SERVER_HDR).type('text/plain').send('ok');
-  });
+  // Native Rust static bypass for maximum pipelining throughput
+  app.static('/pipeline', 'ok', SERVER_HDR);
 
   app.get('/delay/:ms', async (req, res) => {
     const ms = parseInt(req.params.ms, 10);
@@ -102,17 +101,21 @@ if (cluster.isPrimary) {
     if (count < 0) count = 0;
     if (count > datasetItems.length) count = datasetItems.length;
     const m = parseInt(req.query.m, 10) || 1;
-    const items = datasetItems.slice(0, count).map((d) => ({
-      id: d.id,
-      name: d.name,
-      category: d.category,
-      price: d.price,
-      quantity: d.quantity,
-      active: d.active,
-      tags: d.tags,
-      rating: d.rating,
-      total: d.price * d.quantity * m,
-    }));
+    const items = new Array(count);
+    for (let i = 0; i < count; i++) {
+      const d = datasetItems[i];
+      items[i] = {
+        id: d.id,
+        name: d.name,
+        category: d.category,
+        price: d.price,
+        quantity: d.quantity,
+        active: d.active,
+        tags: d.tags,
+        rating: d.rating,
+        total: d.price * d.quantity * m,
+      };
+    }
     const body = JSON.stringify({ items, count });
     const ae = req.get('accept-encoding') || '';
     if (ae.includes('gzip')) {
@@ -129,20 +132,30 @@ if (cluster.isPrimary) {
     const min = parseFloat(req.query.min) || 10;
     const max = parseFloat(req.query.max) || 50;
     const rows = dbStmt.all(min, max);
-    const items = rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      category: r.category,
-      price: r.price,
-      quantity: r.quantity,
-      active: r.active === 1,
-      tags: JSON.parse(r.tags),
-      rating: { score: r.rating_score, count: r.rating_count },
-    }));
-    res.set(SERVER_HDR).json({ items, count: items.length });
+    const count = rows.length;
+    const items = new Array(count);
+    for (let i = 0; i < count; i++) {
+      const r = rows[i];
+      items[i] = {
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        price: r.price,
+        quantity: r.quantity,
+        active: r.active === 1,
+        tags: JSON.parse(r.tags),
+        rating: { score: r.rating_score, count: r.rating_count },
+      };
+    }
+    res.set(SERVER_HDR).json({ items, count });
   });
 
-  app.get('/async-db', async (req, res) => {
+  const ASYNC_DB_QUERY = {
+    name: 'async-db',
+    text: 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
+  };
+
+  app.get('/async-db', (req, res) => {
     if (!pgPool) {
       return res.set(SERVER_HDR).json({ items: [], count: 0 });
     }
@@ -151,26 +164,28 @@ if (cluster.isPrimary) {
     let limit = parseInt(req.query.limit, 10) || 50;
     if (limit < 1) limit = 1;
     if (limit > 50) limit = 50;
-    try {
-      const result = await pgPool.query({
-        name: 'async-db',
-        text: 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3',
-        values: [min, max, limit],
-      });
-      const items = result.rows.map((r) => ({
-        id: r.id,
-        name: r.name,
-        category: r.category,
-        price: r.price,
-        quantity: r.quantity,
-        active: r.active,
-        tags: r.tags,
-        rating: { score: r.rating_score, count: r.rating_count },
-      }));
-      res.set(SERVER_HDR).json({ items, count: items.length });
-    } catch {
-      res.set(SERVER_HDR).json({ items: [], count: 0 });
-    }
+    pgPool.query({ ...ASYNC_DB_QUERY, values: [min, max, limit] }, (err, result) => {
+      if (err || !result) {
+        return res.set(SERVER_HDR).json({ items: [], count: 0 });
+      }
+      const rows = result.rows;
+      const count = rows.length;
+      const items = new Array(count);
+      for (let i = 0; i < count; i++) {
+        const r = rows[i];
+        items[i] = {
+          id: r.id,
+          name: r.name,
+          category: r.category,
+          price: r.price,
+          quantity: r.quantity,
+          active: r.active,
+          tags: r.tags,
+          rating: { score: r.rating_score, count: r.rating_count },
+        };
+      }
+      res.set(SERVER_HDR).json({ items, count });
+    });
   });
 
   app.post('/echo', (req, res) => {
