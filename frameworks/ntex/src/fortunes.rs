@@ -74,8 +74,11 @@ fn render(mut fortunes: Vec<Fortune<'_>>) -> HttpResponse {
     }
 }
 
+/// The rendered page, or `500` without a database or on a database error.
 pub async fn fortunes() -> HttpResponse {
-    let rows = db::fortunes().await.unwrap_or_default();
+    let Some(rows) = db::fortunes().await else {
+        return HttpResponse::InternalServerError().build();
+    };
     render(
         rows.iter()
             .map(|row| Fortune {
@@ -151,20 +154,13 @@ mod tests {
         assert!(positions.is_sorted(), "rows out of order: {page}");
     }
 
-    /// STATEMENT: Without a database `/fortunes` still renders the page with
-    /// the runtime row only.
+    /// STATEMENT: Without a database `/fortunes` fails with `500`.
     ///
     /// HOW:
     /// - Call `fortunes` on a thread where `db::init` never opened a pool.
-    /// - Confirm `200`, a `<!DOCTYPE html>` page with the header row and the
-    ///   runtime row, two `<tr>` in total.
+    /// - Confirm the status is `500 Internal Server Error`.
     #[ntex::test]
-    async fn fallback_without_database() {
-        let response = fortunes().await;
-        assert_eq!(response.status(), StatusCode::OK);
-        let page = page(response).await;
-        assert!(page.starts_with("<!DOCTYPE html>"));
-        assert!(page.contains(RUNTIME_MESSAGE));
-        assert_eq!(page.matches("<tr").count(), 2);
+    async fn error_without_database() {
+        assert_eq!(fortunes().await.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }

@@ -64,16 +64,18 @@ The same routes are served over TLS with HTTP/1.1 on port 8081 (`json-tls`,
   ntex-io's `tokio` feature, so no tokio runtime is started. Each worker keeps
   a `deadpool::unmanaged::Pool` of `DATABASE_MAX_CONN / workers` connections
   (default 256 in total) with the query prepared once per connection.
-  Connections open in the background and retry every second; until one is
-  ready, or if `DATABASE_URL` is unset, the endpoint returns
-  `{"items":[],"count":0}`. A closed connection is dropped from the pool and
-  reopened
+  Connections open in the background and retry every second. Until one is
+  ready, if `DATABASE_URL` is unset, if no connection frees up within 5
+  seconds, or if the query fails, the endpoint returns
+  `500 Internal Server Error`. Checkout skips connections Postgres has
+  closed, for example after a restart; each one is dropped from the pool and
+  reopened in the background
 - `/fortunes` runs `SELECT id, message FROM fortune` on a statement prepared
   once per connection, appends the runtime row, sorts by message in byte order
   and renders the Askama template `templates/fortunes.html` into a
   pre-sized buffer. `askama.toml` registers an escaper that writes named
-  entities (`&lt;`) instead of Askama's numeric ones. Without a database the
-  page holds only the runtime row
+  entities (`&lt;`) instead of Askama's numeric ones. Database errors return
+  `500` in the same cases as `/async-db`
 - A missing `/certs` leaves the TLS listeners down instead of aborting startup:
   `validate.sh` mounts the directory only for entries subscribed to a TLS test
 - Docker release builds use `target-cpu=native` and ThinLTO, together with the

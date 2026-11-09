@@ -88,7 +88,7 @@ impl Db {
     /// Opens one connection, retrying until it succeeds, and adds it to the pool.
     async fn open(self) {
         loop {
-            if let Ok(conn) = connect(&self.config).await {
+            if let Ok(conn) = self.connect().await {
                 let _ = self.pool.try_add(conn);
                 return;
             }
@@ -96,52 +96,84 @@ impl Db {
         }
     }
 
-    /// Runs the statement `stmt` picks from a pooled connection.
+    /// Drops a closed connection from the pool and reopens it in the background.
+    fn replace(&self, conn: Object<Conn>) {
+        drop(Object::take(conn));
+        ntex::rt::spawn(self.clone().open());
+    }
+
+    /// Replaces every idle connection Postgres has closed. Busy ones are
+    /// replaced when their query fails or at their next checkout.
+    fn evict_closed(&self) {
+        let mut live = Vec::new();
+        while let Ok(conn) = self.pool.try_get() {
+            if conn.client.is_closed() {
+                self.replace(conn);
+            } else {
+                live.push(conn);
+            }
+        }
+    }
+
+    /// Runs the statement `stmt` picks from a pooled connection, or returns
+    /// `None` if nothing is connected, checkout times out or the query fails.
     async fn query(
         &self,
         stmt: fn(&Conn) -> &Statement,
         params: &[&(dyn ToSql + Sync)],
     ) -> Option<Vec<Row>> {
-        // Nothing is connected yet: answer with the fallback instead of waiting.
-        if self.pool.status().size == 0 {
-            return None;
-        }
-        let conn = ntex::time::timeout(CHECKOUT_TIMEOUT, self.pool.get())
-            .await
-            .ok()?
-            .ok()?;
+        let conn = loop {
+            // Nothing is connected: fail now instead of waiting for checkout.
+            if self.pool.status().size == 0 {
+                return None;
+            }
+            let conn = ntex::time::timeout(CHECKOUT_TIMEOUT, self.pool.get())
+                .await
+                .ok()?
+                .ok()?;
+            // Skip connections Postgres has closed, e.g. after a restart.
+            if !conn.client.is_closed() {
+                break conn;
+            }
+            self.replace(conn);
+        };
         match conn.client.query(stmt(&conn), params).await {
             Ok(rows) => Some(rows),
             Err(_) => {
                 if conn.client.is_closed() {
-                    drop(Object::take(conn));
-                    ntex::rt::spawn(self.clone().open());
+                    self.replace(conn);
                 }
                 None
             }
         }
     }
-}
 
-async fn connect(config: &Config) -> Result<Conn, Box<dyn std::error::Error>> {
-    let host = match config.get_hosts().first() {
-        Some(Host::Tcp(host)) => host.clone(),
-        None => "localhost".to_string(),
-        #[cfg(unix)]
-        Some(Host::Unix(_)) => return Err("unix socket hosts are not supported".into()),
-    };
-    let port = config.get_ports().first().copied().unwrap_or(5432);
-    let io = ntex::connect::connect(ntex::connect::Connect::new(host).set_port(port)).await?;
-    let (client, connection) = config.connect_raw(io, NoTls).await?;
-    // The connection future drives the socket for every query on this client.
-    ntex::rt::spawn(connection);
-    let query = client.prepare(QUERY).await?;
-    let fortunes = client.prepare(FORTUNES).await?;
-    Ok(Conn {
-        client,
-        query,
-        fortunes,
-    })
+    async fn connect(&self) -> Result<Conn, Box<dyn std::error::Error>> {
+        let config = &self.config;
+        let host = match config.get_hosts().first() {
+            Some(Host::Tcp(host)) => host.clone(),
+            None => "localhost".to_string(),
+            #[cfg(unix)]
+            Some(Host::Unix(_)) => return Err("unix socket hosts are not supported".into()),
+        };
+        let port = config.get_ports().first().copied().unwrap_or(5432);
+        let io = ntex::connect::connect(ntex::connect::Connect::new(host).set_port(port)).await?;
+        let (client, connection) = config.connect_raw(io, NoTls).await?;
+        // The connection future drives the socket for every query on this
+        // client and ends when Postgres closes it, e.g. on restart.
+        let db = self.clone();
+        ntex::rt::spawn(async move {
+            let _ = connection.await;
+            db.evict_closed();
+        });
+        let query = client.prepare(QUERY).await?;
+        let fortunes = client.prepare(FORTUNES).await?;
+        Ok(Conn {
+            client,
+            query,
+            fortunes,
+        })
+    }
 }
 
 fn item(row: &Row) -> DbItem<'_> {
@@ -183,19 +215,22 @@ fn current() -> Option<Db> {
     DB.with(|db| db.get().cloned().flatten())
 }
 
-/// All `fortune` rows as `(id, message)`, or `None` without a database.
+/// All `fortune` rows as `(id, message)`, or `None` without a database or on
+/// a database error.
 pub async fn fortunes() -> Option<Vec<Row>> {
     current()?.query(|conn| &conn.fortunes, &[]).await
 }
 
+/// Items in the requested price range, or `500` without a database or on a
+/// database error.
 pub async fn async_db(query: web::types::Query<Vec<(String, String)>>) -> HttpResponse {
     let (min, max, limit) = params(&query);
     let rows = match current() {
-        Some(db) => db
-            .query(|conn| &conn.query, &[&min, &max, &limit])
-            .await
-            .unwrap_or_default(),
-        None => Vec::new(),
+        Some(db) => db.query(|conn| &conn.query, &[&min, &max, &limit]).await,
+        None => None,
+    };
+    let Some(rows) = rows else {
+        return HttpResponse::InternalServerError().build();
     };
     let items: Vec<_> = rows.iter().map(item).collect();
     HttpResponse::Ok().json(&DbList {
@@ -242,28 +277,158 @@ mod tests {
         );
     }
 
-    /// STATEMENT: Without a database `/async-db` answers with the empty fallback.
-    ///
-    /// HOW:
-    /// - Call `async_db` on a thread where `init` never opened a pool.
-    /// - Confirm `200`, `Content-Type: application/json` and the body
-    ///   `{"items":[],"count":0}`.
-    #[ntex::test]
-    async fn fallback_without_database() {
+    async fn async_db_status() -> StatusCode {
         let app = test::init_service(
             App::new().service(web::resource("/async-db").route(web::get().to(async_db))),
         )
         .await;
-        let response = app
-            .call(TestRequest::with_uri("/async-db?min=10&max=50&limit=5").to_request())
+        app.call(TestRequest::with_uri("/async-db?min=10&max=50&limit=5").to_request())
+            .await
+            .unwrap()
+            .status()
+    }
+
+    /// Polls `done` every 50 ms for up to 5 seconds.
+    async fn wait_for(done: impl Fn() -> bool) -> bool {
+        for _ in 0..100 {
+            if done() {
+                return true;
+            }
+            ntex::time::sleep(Duration::from_millis(50)).await;
+        }
+        done()
+    }
+
+    /// STATEMENT: Without a database `/async-db` fails with `500`.
+    ///
+    /// HOW:
+    /// - Call `async_db` on a thread where `init` never opened a pool.
+    /// - Confirm the status is `500 Internal Server Error`.
+    #[ntex::test]
+    async fn error_without_database() {
+        assert_eq!(async_db_status().await, StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    /// STATEMENT: While the pool has no open connection, `/async-db` fails
+    /// with `500` instead of waiting for one.
+    ///
+    /// HOW:
+    /// - Install a `Db` with an empty pool in this thread's `DB` cell, as
+    ///   `init` does before any connection opens.
+    /// - Call `async_db` and confirm `500 Internal Server Error`.
+    #[ntex::test]
+    async fn error_while_not_connected() {
+        DB.with(|db| {
+            let _ = db.set(Some(Db {
+                config: Config::new(),
+                pool: Pool::new(1),
+            }));
+        });
+        assert_eq!(async_db_status().await, StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    /// STATEMENT: Connections Postgres closed are skipped and reopened, so
+    /// requests keep succeeding while one live connection remains.
+    ///
+    /// HOW:
+    /// - Needs Postgres at `DATABASE_URL`.
+    /// - Call `init` and wait until the pool is full, check out every
+    ///   connection and read its `pg_backend_pid()`.
+    /// - From the first connection, `pg_terminate_backend` the others, wait
+    ///   until their clients report closed, then return all to the pool.
+    /// - Request `/async-db` once per pooled connection and confirm every
+    ///   status is `200`.
+    /// - Confirm the pool refills to its full size.
+    #[ntex::test]
+    #[ignore = "needs Postgres at DATABASE_URL"]
+    async fn closed_connections_are_skipped() {
+        init();
+        let db = current().expect("DATABASE_URL");
+        let max = db.pool.status().max_size;
+        assert!(max > 1, "needs at least two connections per pool");
+        assert!(wait_for(|| db.pool.status().size == max).await);
+
+        let mut conns = Vec::new();
+        let mut pids = Vec::new();
+        for _ in 0..max {
+            let conn = db.pool.get().await.unwrap();
+            let row = conn
+                .client
+                .query_one("SELECT pg_backend_pid()", &[])
+                .await
+                .unwrap();
+            pids.push(row.get::<_, i32>(0));
+            conns.push(conn);
+        }
+        conns[0]
+            .client
+            .query(
+                "SELECT pg_terminate_backend(pid) FROM unnest($1::int4[]) AS pid",
+                &[&pids[1..].to_vec()],
+            )
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response.headers().get("Content-Type").unwrap(),
-            "application/json"
-        );
-        assert_eq!(test::read_body(response).await, r#"{"items":[],"count":0}"#);
+        assert!(wait_for(|| conns[1..].iter().all(|c| c.client.is_closed())).await);
+        drop(conns);
+
+        for _ in 0..max {
+            assert_eq!(async_db_status().await, StatusCode::OK);
+        }
+        assert!(wait_for(|| db.pool.status().size == max).await);
+    }
+
+    /// STATEMENT: Idle connections Postgres closes are replaced without
+    /// waiting for a request to find them.
+    ///
+    /// HOW:
+    /// - Needs Postgres at `DATABASE_URL`.
+    /// - Call `init` and wait until the pool is full, check out every
+    ///   connection, read its `pg_backend_pid()`, then return all but the
+    ///   first to the pool.
+    /// - From the first connection, `pg_terminate_backend` the others.
+    /// - Without sending requests, wait until the pool is full again and
+    ///   every idle connection is open.
+    #[ntex::test]
+    #[ignore = "needs Postgres at DATABASE_URL"]
+    async fn idle_closed_connections_are_replaced() {
+        init();
+        let db = current().expect("DATABASE_URL");
+        let max = db.pool.status().max_size;
+        assert!(max > 1, "needs at least two connections per pool");
+        assert!(wait_for(|| db.pool.status().size == max).await);
+
+        let mut conns = Vec::new();
+        let mut pids = Vec::new();
+        for _ in 0..max {
+            let conn = db.pool.get().await.unwrap();
+            let row = conn
+                .client
+                .query_one("SELECT pg_backend_pid()", &[])
+                .await
+                .unwrap();
+            pids.push(row.get::<_, i32>(0));
+            conns.push(conn);
+        }
+        let first = conns.remove(0);
+        drop(conns);
+        first
+            .client
+            .query(
+                "SELECT pg_terminate_backend(pid) FROM unnest($1::int4[]) AS pid",
+                &[&pids[1..].to_vec()],
+            )
+            .await
+            .unwrap();
+        drop(first);
+
+        let all_idle_open = || {
+            let mut idle = Vec::new();
+            while let Ok(conn) = db.pool.try_get() {
+                idle.push(conn);
+            }
+            idle.len() == max && idle.iter().all(|c| !c.client.is_closed())
+        };
+        assert!(wait_for(all_idle_open).await);
     }
 
     /// STATEMENT: Queries run against Postgres over ntex `Io` and match the
