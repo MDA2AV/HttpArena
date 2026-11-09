@@ -22,6 +22,7 @@ if (cluster.isPrimary) {
   const express = require('bareserver');
   const zlib = require('zlib');
   const GZIP_OPTS = { level: 1 };
+  const BROTLI_OPTS = { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 3 } };
 
   const app = express({ port: 8080 });
 
@@ -42,13 +43,14 @@ if (cluster.isPrimary) {
     }
   } catch (e) {}
 
-  // PostgreSQL with per-worker connection budget
+  // PostgreSQL with per-worker connection budget (pg.native preferred)
   let pgPool;
   const dbUrl = process.env.DATABASE_URL;
   if (dbUrl) {
     try {
-      const { Pool } = require('pg');
-      pgPool = new Pool({ connectionString: dbUrl, max: 4 });
+      const pg = require('pg');
+      const PoolClass = pg.native ? pg.native.Pool : pg.Pool;
+      pgPool = new PoolClass({ connectionString: dbUrl, max: 4 });
       pgPool.on('error', () => {});
     } catch (e) {}
   }
@@ -118,7 +120,9 @@ if (cluster.isPrimary) {
     }
     const body = JSON.stringify({ items, count });
     const ae = req.get('accept-encoding') || '';
-    if (ae.includes('gzip')) {
+    if (ae.includes('br')) {
+      res.set(SERVER_HDR).set('content-encoding', 'br').type('application/json').send(zlib.brotliCompressSync(body, BROTLI_OPTS));
+    } else if (ae.includes('gzip')) {
       res.set(SERVER_HDR).set('content-encoding', 'gzip').type('application/json').send(zlib.gzipSync(body, GZIP_OPTS));
     } else {
       res.set(SERVER_HDR).type('application/json').send(body);

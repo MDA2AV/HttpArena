@@ -3,8 +3,9 @@
   "private": true,
   "main": "app.js",
   "dependencies": {
-    "bareserver": "^0.1.2",
+    "bareserver": "^0.1.4",
     "better-sqlite3": "^13.0.2",
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "pg-native": "^3.8.0"
   }
 }
