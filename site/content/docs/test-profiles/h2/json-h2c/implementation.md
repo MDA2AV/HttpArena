@@ -14,7 +14,7 @@ Same `/json` workload as [JSON TLS](../../h1/json-tls/) (dataset slice + per-ite
 
 ## Workload
 
-The load generator rotates through the same seven `(count, m)` pairs as the H/1 JSON profile:
+The load generator rotates through the same seven `(count, m)` pairs as [JSON TLS](../../h1/json-tls/):
 
 `(1, 3)`, `(5, 7)`, `(10, 2)`, `(15, 5)`, `(25, 4)`, `(40, 8)`, `(50, 6)`
 

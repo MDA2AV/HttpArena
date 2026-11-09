@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "HTTP Arena Gateway API",
-    "version": "1.0.0",
-    "description": "Endpoint contract for HTTP Arena **gateway** benchmark profiles.\n\nThis spec covers the **production-stack** profile — a full production stack with an edge proxy, Redis cache, shared JWT authsvc, and framework server behind HTTPS/H2 on port 8443. The **gateway-h2** and **gateway-h3** profiles reuse the `/baseline2`, `/json/{count}`, `/async-db`, and `/static/*` endpoints from the main spec via a reverse proxy and have no additional endpoint contract here.\n\nAll numeric fields are integers — no floats. JSON responses use lowercase field names. Endpoints that query Postgres always return HTTP 200 with an empty list rather than an error when no rows match or the database is unavailable.\n\n**Port mapping:**\n- `8443` — HTTP/2+TLS (production-stack profile; ALPN `h2`)\n\nSee the [main API spec](/openapi.json) for all non-gateway benchmark endpoints.",
+    "version": "1.1.0",
+    "description": "Endpoint contract for HTTP Arena **gateway** benchmark profiles. Gateway profiles are orchestrated with Docker Compose and measure the end-to-end throughput of a whole stack on port 8443.\n\n- **gateway-64** (Gateway H2) and **gateway-h3** (Gateway H3) - exactly two services, a production-grade reverse proxy and the framework server, behind HTTP/2 + TLS (or HTTP/3 at the edge for gateway-h3). The proxy serves `/static/*` from disk; the server answers `/baseline2`, `/json/{count}` and `/async-db`. These reuse the endpoints of the [main API spec](/openapi.json) and have no additional contract here. Note that the gateway workload requests `/json/{count}` **without** the `m` multiplier, so a missing `m` must be treated as 1.\n- **production-stack** - four services (edge proxy, Redis cache, the shared JWT authsvc, framework server) behind HTTP/2 + TLS. Its endpoints are documented below.\n\nAll numeric fields are integers - no floats. JSON responses use lowercase field names.\n\n**Port mapping:**\n- `8443` - HTTP/2 + TLS at the edge (ALPN `h2`), and HTTP/3 over QUIC for gateway-h3\n\nSee the [main API spec](/openapi.json) for all non-gateway benchmark endpoints.",
     "contact": {
       "name": "HTTP Arena on GitHub",
       "url": "https://github.com/MDA2AV/HttpArena"
@@ -15,7 +15,7 @@
   },
   "externalDocs": {
     "description": "Knowledge Base",
-    "url": "https://http-arena.com/docs/"
+    "url": "https://http-arena.com/docs/test-profiles/gateway/"
   },
   "x-tagGroups": [
     {
@@ -26,13 +26,13 @@
   "servers": [
     {
       "url": "https://localhost:8443",
-      "description": "HTTP/2+TLS — production-stack profile (ALPN: h2)"
+      "description": "HTTP/2 + TLS at the edge - production-stack profile (ALPN: h2)"
     }
   ],
   "tags": [
     {
       "name": "Production Stack",
-      "description": "Full production stack benchmark: four services (edge proxy, Redis cache, shared JWT authsvc, framework server) behind HTTPS/H2 on port 8443. `/api/*` endpoints require JWT Bearer auth verified by authsvc at the edge. `/public/*` endpoints are unauthenticated. Gateway H2 and Gateway H3 profiles reuse the existing `/baseline2`, `/json/{count}`, `/async-db`, and `/static/*` endpoints via a reverse proxy — no additional endpoint contract.",
+      "description": "Full production stack benchmark: four services - edge proxy, Redis cache, the shared JWT authsvc (from `frameworks/_shared/authsvc/`, built as-is) and the framework server - behind HTTPS/H2 on port 8443, at 256 and 1,024 connections.\n\n- `/static/*` is served by the edge from disk (no auth, never reaches the server)\n- `/public/*` is forwarded to the server without auth or caching\n- `/api/*` is verified by authsvc on **every** request (no auth caching at the edge); the server receives a trusted `X-User-Id` header and never parses JWTs itself\n\nThe read workload is 30% `/static/*`, 10% `/public/baseline`, 50% `GET /api/items/{id}` (IDs 1-10,000) and 10% `GET /api/me`, run in parallel with a write workload of `POST /api/items/{id}` for IDs 1-20. All `/api/*` requests carry `Authorization: Bearer <jwt>`.\n\n**Standard:** Exactly four services. JWT verification must happen at the edge via `auth_request` / `forward_auth` using the shared authsvc - no custom auth. The server must implement cache-aside on `/api/items` reads and invalidation on writes, and must wait on a healthy cache (`depends_on` with `condition: service_healthy`).\n\n**Tuned:** Same four-service shape. May tune proxy configuration, connection pools, CPU split and cache TTLs. May not replace authsvc or skip JWT verification.\n\n**Engine:** No specific rules. May replace any service with a custom implementation.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/gateway/production-stack/"
@@ -46,7 +46,7 @@
           "Production Stack"
         ],
         "summary": "Public baseline sum (production-stack profile)",
-        "description": "Unauthenticated sum endpoint used in the production-stack workload (10% of requests). Identical behavior to `/baseline11` — returns `a + b` as plain text. The `/public/` prefix separates it from JWT-protected `/api/` endpoints so the edge proxy can route without calling authsvc.",
+        "description": "Unauthenticated sum endpoint, 10% of the production-stack read workload. Identical behavior to `/baseline11` - returns `a + b` as plain text. The `/public/` prefix separates it from JWT-protected `/api/` endpoints so the edge proxy can route without calling authsvc. Validation sends randomized operands.",
         "operationId": "publicBaselineGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
@@ -84,7 +84,7 @@
           "Production Stack"
         ],
         "summary": "Public JSON processing (production-stack profile)",
-        "description": "Unauthenticated JSON endpoint used in the production-stack workload. Identical behavior to `/json/{count}` — returns the first `count` dataset items with computed `total` fields.",
+        "description": "Unauthenticated JSON endpoint, no auth and no cache. Identical behavior to `/json/{count}` - returns the first `count` dataset items with computed `total` fields. Validation requests `/public/json/25` without `m`, so a missing `m` must be treated as 1.",
         "operationId": "publicJsonGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
@@ -95,14 +95,14 @@
             "name": "count",
             "in": "path",
             "required": true,
-            "description": "Number of items to return (1–50)",
-            "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 50, "example": 5 }
+            "description": "Number of items to return (1-50)",
+            "schema": { "type": "integer", "format": "int32", "minimum": 1, "maximum": 50, "example": 25 }
           },
           {
             "name": "m",
             "in": "query",
             "required": false,
-            "description": "Per-request multiplier for `total = price × quantity × m`. Defaults to 1.",
+            "description": "Per-request multiplier for `total = price × quantity × m`. Treated as 1 when absent.",
             "schema": { "type": "integer", "format": "int32", "default": 1, "example": 3 }
           }
         ],
@@ -123,8 +123,8 @@
         "tags": [
           "Production Stack"
         ],
-        "summary": "Read item with two-tier cache-aside (production-stack profile)",
-        "description": "JWT-authenticated item read. The edge proxy verifies the `Authorization: Bearer` token via authsvc before forwarding the request; the framework receives a trusted `X-User-Id` header and must **not** perform its own JWT verification.\n\nImplements two-tier cache-aside:\n1. Check L1 (in-process memory, key `item:{id}`)\n2. L1 miss → check L2 (Redis, `REDIS_URL`)\n3. L2 miss → `SELECT ... FROM items WHERE id = $1`\n4. Populate both tiers with TTL ≤ 1 second\n5. Return with `X-Cache: HIT` (L1 or L2 hit) or `X-Cache: MISS` (Postgres hit)",
+        "summary": "Read item with cache-aside (production-stack profile)",
+        "description": "JWT-authenticated item read, 50% of the read workload (IDs 1-10,000). The edge proxy verifies the `Authorization: Bearer` token via authsvc before forwarding the request; the framework receives a trusted `X-User-Id` header and must **not** perform its own JWT verification.\n\nImplements cache-aside on key `item:{id}`:\n1. Check the cache\n2. Miss → `SELECT ... FROM items WHERE id = $1`\n3. Populate the cache with TTL ≤ 1 second\n4. Return the item with `X-Cache: HIT` (served from cache) or `X-Cache: MISS` (fetched from Postgres)\n\nHow the cache is built is the framework's choice: two-tier in-process + Redis (e.g. .NET HybridCache), Redis only, in-process only, or the framework's own cache abstraction. Validation reads a cold ID twice and requires `MISS` then `HIT`.",
         "operationId": "apiItemsGet",
         "security": [{ "BearerAuth": [] }],
         "externalDocs": {
@@ -145,7 +145,7 @@
             "description": "Item found",
             "headers": {
               "X-Cache": {
-                "description": "`HIT` when served from L1 or L2 cache, `MISS` when fetched from Postgres",
+                "description": "`HIT` when served from cache, `MISS` when fetched from Postgres",
                 "schema": { "type": "string", "enum": ["MISS", "HIT"] }
               }
             },
@@ -164,7 +164,7 @@
           "Production Stack"
         ],
         "summary": "Update item and invalidate cache (production-stack profile)",
-        "description": "JWT-authenticated item update. Updates `name`, `price`, and `quantity` in Postgres, then **invalidates cache key `item:{id}`** in both L1 and L2 so the next read sees fresh data. Returns `204 No Content` on success.\n\nNote: the method is POST (not PUT) because the production-stack workload uses POST for writes — this matches the load generator template.",
+        "description": "JWT-authenticated item update - the write workload, round-robin over IDs 1-20, which are also read so the cache churns. Parses `name`, `price` and `quantity` from the JSON body, runs `UPDATE items SET ... WHERE id = $1` in Postgres, then **invalidates cache key `item:{id}`** in every tier it uses, so the next read is a `MISS`. Returns `204 No Content` on success.\n\nThe write path must reject unauthenticated calls just like the read path: validation posts without a token and with a bogus one, and requires `401` both times.\n\nNote: the method is POST (not PUT) because the production-stack workload uses POST for writes - this matches the load generator template.",
         "operationId": "apiItemsPost",
         "security": [{ "BearerAuth": [] }],
         "externalDocs": {
@@ -177,7 +177,7 @@
             "in": "path",
             "required": true,
             "description": "Item ID to update",
-            "schema": { "type": "integer", "format": "int32", "example": 42 }
+            "schema": { "type": "integer", "format": "int32", "example": 2 }
           }
         ],
         "requestBody": {
@@ -185,13 +185,13 @@
           "content": {
             "application/json": {
               "schema": { "$ref": "#/components/schemas/UpdateItemRequest" },
-              "example": { "name": "Updated Name", "price": 30, "quantity": 5 }
+              "example": { "name": "bench-updated", "price": 250, "quantity": 10 }
             }
           }
         },
         "responses": {
           "204": { "description": "Item updated and cache invalidated" },
-          "401": { "description": "Missing or invalid JWT" },
+          "401": { "description": "Missing or invalid JWT (rejected by authsvc at the edge)" },
           "404": { "description": "Item not found" }
         }
       }
@@ -202,7 +202,7 @@
           "Production Stack"
         ],
         "summary": "Get current user profile (production-stack profile)",
-        "description": "JWT-authenticated user profile read. The edge proxy sets `X-User-Id` from the verified JWT `sub` claim; the framework reads this header and performs a cache-aside lookup (`user:{id}`, TTL ≤ 30 seconds) against the `users` table.\n\nSQL on cache miss: `SELECT id, name, email, plan FROM users WHERE id = $1`",
+        "description": "JWT-authenticated user profile read, 10% of the read workload. The edge proxy sets `X-User-Id` from the verified JWT `sub` claim; the framework reads this header and performs a cache-aside lookup on `user:{id}` (TTL ≤ 30 seconds) against the `users` table. The benchmark token belongs to user 42.\n\nSQL on cache miss: `SELECT id, name, email, plan FROM users WHERE id = $1`",
         "operationId": "apiMeGet",
         "security": [{ "BearerAuth": [] }],
         "externalDocs": {
@@ -214,7 +214,7 @@
             "description": "User profile",
             "headers": {
               "X-Cache": {
-                "description": "`HIT` when served from cache, `MISS` when fetched from Postgres",
+                "description": "Optional. `HIT` when served from cache, `MISS` when fetched from Postgres",
                 "schema": { "type": "string", "enum": ["MISS", "HIT"] }
               }
             },
@@ -224,13 +224,13 @@
                 "example": {
                   "id": 42,
                   "name": "Alice Chen",
-                  "email": "alice@example.com",
+                  "email": "alice@bench.local",
                   "plan": "pro"
                 }
               }
             }
           },
-          "401": { "description": "Missing or invalid JWT" }
+          "401": { "description": "Missing or invalid JWT (rejected by authsvc at the edge)" }
         }
       }
     }
@@ -241,13 +241,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT",
-        "description": "HMAC-SHA256 JWT verified by the shared authsvc sidecar on every `/api/*` request. The framework never parses or validates tokens itself — it receives a trusted `X-User-Id` header set by the edge proxy after successful verification. The pre-generated benchmark token embeds `{\"sub\":\"42\",\"name\":\"Alice Chen\",\"exp\":<future>}`."
+        "description": "HMAC-SHA256 JWT verified by the shared authsvc sidecar on every `/api/*` request, with the secret from its `JWT_SECRET` environment variable. The framework never parses or validates tokens itself - it receives a trusted `X-User-Id` header set by the edge proxy after successful verification. The pre-generated benchmark token (`data/jwt-token.txt`) embeds `{\"sub\":\"42\",\"name\":\"Alice Chen\",\"exp\":<future>}`."
       }
     },
     "schemas": {
       "Rating": {
         "type": "object",
-        "description": "Aggregated item rating, restructured from the `rating_score` and `rating_count` columns in Postgres.",
+        "description": "Aggregated item rating. In Postgres it is stored as the `rating_score` and `rating_count` columns and must be restructured into this object.",
         "additionalProperties": false,
         "required": ["score", "count"],
         "properties": {
@@ -265,7 +265,7 @@
       },
       "Item": {
         "type": "object",
-        "description": "A single item as stored in the Postgres `items` table. Used in async-db, CRUD, and production-stack responses.",
+        "description": "A single item as stored in the Postgres `items` table. Used in async-db and production-stack responses.",
         "additionalProperties": false,
         "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating"],
         "properties": {
@@ -310,7 +310,7 @@
       },
       "ProcessedItem": {
         "type": "object",
-        "description": "An item from the JSON dataset with a per-request computed `total` field. Used only in `/json/{count}` and `/public/json/{count}` responses.",
+        "description": "An item from the JSON dataset, unchanged, with a per-request computed `total` field. Used only in `/json/{count}` and `/public/json/{count}` responses.",
         "additionalProperties": false,
         "required": ["id", "name", "category", "price", "quantity", "active", "tags", "rating", "total"],
         "properties": {
@@ -354,7 +354,7 @@
           "total": {
             "type": "integer",
             "format": "int64",
-            "description": "Computed per request as `price × quantity × m`",
+            "description": "Computed per request as `price × quantity × m` - integer arithmetic, no rounding",
             "example": 14760
           }
         }
@@ -375,29 +375,29 @@
             "type": "integer",
             "format": "int32",
             "description": "Number of items returned. Must equal the `count` route parameter.",
-            "example": 5
+            "example": 25
           }
         }
       },
       "UpdateItemRequest": {
         "type": "object",
-        "description": "Request body for `PUT /crud/items/{id}` and `POST /api/items/{id}`. Updates `name`, `price`, and `quantity`. The cache entry for the item ID is invalidated on success.",
+        "description": "Request body for `POST /api/items/{id}`. Updates `name`, `price`, and `quantity`. The cache entry for the item ID is invalidated on success.",
         "additionalProperties": false,
         "required": ["name", "price", "quantity"],
         "properties": {
           "name": {
             "type": "string",
-            "example": "Updated Name"
+            "example": "bench-updated"
           },
           "price": {
             "type": "integer",
             "format": "int32",
-            "example": 30
+            "example": 250
           },
           "quantity": {
             "type": "integer",
             "format": "int32",
-            "example": 5
+            "example": 10
           }
         }
       },
@@ -419,7 +419,7 @@
           "email": {
             "type": "string",
             "format": "email",
-            "example": "alice@example.com"
+            "example": "alice@bench.local"
           },
           "plan": {
             "type": "string",

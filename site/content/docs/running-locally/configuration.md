@@ -15,7 +15,8 @@ Defined in `scripts/lib/common.sh`. Override by exporting before you run the scr
 |---|---|---|
 | `DURATION` | `5s` | Load-test duration per run (`-d`/`-D` passed through to the tool). |
 | `RUNS` | `3` | Measurement iterations per (profile, connection count). Best wins. |
-| `THREADS` | `64` | gcannon / wrk worker threads. |
+| `THREADS` | `64` | gcannon / wrk / zrk worker threads. |
+| `ASYNC_THREADS` | `64` | gcannon worker threads for the `async` profile only. |
 | `H2THREADS` | `64` | h2load worker threads (HTTP/2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
 | `SKIP_TUNE` | `false` | When `true`, skips kernel/hardware tuning (CPU governor, socket limits) that requires `sudo`. Useful for local development. |
@@ -28,8 +29,8 @@ In `benchmark-lite.sh`, `THREADS` defaults to `max(nproc / 2, 1)` and `H2THREADS
 |---|---|---|
 | `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc` - prior-knowledge on the same socket). |
 | `H2PORT` | `8443` | HTTPS / HTTP/2 over TLS (`baseline-h2`, `static-h2`, gateway + production-stack), HTTP/3 over QUIC (`baseline-h3`, `static-h3`, `gateway-h3`), and gRPC-TLS (`unary-grpc-tls`). |
-| `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS, used only by the `json-tls` profile (ALPN `http/1.1`). |
-| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for the `baseline-h2c` and `json-h2c` profiles. Must be a dedicated listener that refuses HTTP/1.1 - the validator checks this explicitly. |
+| `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS for the `json-tls`, `static-tls` and `8gbit` profiles (ALPN `http/1.1`). |
+| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for the `baseline-h2c` and `json-h2c` profiles. The listener may also answer HTTP/1.1; the benchmark and the validator only ever speak h2c to it. |
 
 Every framework `Dockerfile` reads the same defaults from its env, so you rarely need to change these.
 
@@ -47,14 +48,15 @@ Each load generator has a pair of variables - native binary name and docker imag
 
 | Native (`$TOOL`) | Docker (`$TOOL_IMAGE`) | Used for | Source |
 |---|---|---|---|
-| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | h1, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws | `docker/gcannon.Dockerfile` |
-| `H2LOAD=h2load` | `H2LOAD_IMAGE=h2load:latest` | baseline-h2, static-h2, unary-grpc, unary-grpc-tls, gateway-64 | `docker/h2load.Dockerfile` (Ubuntu + glibc, **not** alpine) |
-| `H2LOAD_H3=h2load-h3` | `H2LOAD_H3_IMAGE=h2load-h3:local` | baseline-h3, static-h3 | `docker/h2load-h3.Dockerfile` (quictls + ngtcp2 + nghttp3) |
-| `WRK=wrk` | `WRK_IMAGE=wrk:local` | static, json-tls | `docker/wrk.Dockerfile` |
+| `GCANNON=gcannon` | `GCANNON_IMAGE=gcannon:latest` | baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws, echo-ws-pipeline, echo-ws-limited | `docker/gcannon.Dockerfile` |
+| `H2LOAD=h2load` | `H2LOAD_IMAGE=h2load:latest` | baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack | `docker/h2load.Dockerfile` (Ubuntu + glibc, **not** alpine) |
+| `H2LOAD_H3=h2load-h3` | `H2LOAD_H3_IMAGE=h2load-h3:local` | baseline-h3, static-h3, gateway-h3 | `docker/h2load-h3.Dockerfile` (quictls + ngtcp2 + nghttp3) |
+| `WRK=wrk` | `WRK_IMAGE=wrk:local` | static-tls, json-tls | `docker/wrk.Dockerfile` |
+| `ZRK=zrk` | `ZRK_IMAGE=zrk:local` | latency-1m, latency-10k, latency-500k-8cpu, 8gbit | `docker/zrk.Dockerfile` |
 
 ## Postgres sidecar
 
-Started automatically when the framework subscribes to `async-db`, `api-4`, `api-16`, or `gateway-64`.
+Started automatically when the framework subscribes to `async-db`, `fortunes`, `gateway-64`, `gateway-h3` or `production-stack`.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -85,7 +87,8 @@ From `endpoint_tool()` in `scripts/lib/profiles.sh`:
 
 | Endpoint | Tool |
 |---|---|
-| `static`, `json-tls` | wrk |
+| `static-tls`, `json-tls` | wrk |
+| `latency-1m`, `latency-10k`, `latency-500k-8cpu`, `8gbit` | zrk |
 | `h2`, `static-h2`, `h2c`, `json-h2c`, `gateway-64`, `grpc`, `grpc-tls`, `production-stack` | h2load |
 | `h3`, `static-h3`, `gateway-h3` | h2load-h3 |
 | everything else (`""`, `pipeline`, `async-db`, `async`, `fortunes`, `json-compressed`, `ws-echo`) | gcannon |
