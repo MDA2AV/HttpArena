@@ -1,5 +1,5 @@
 # Pinned build definition for the HttpArena paozhu entry.
-# Snapshot of upstream CMakeLists.txt at 25104601b49fdbdedb36e5fb1a47b67206c0bc5c.
+# Snapshot of upstream CMakeLists.txt at 71305087d905da641b6f55eac1781566341ebbc6.
 # Local changes: ENABLE_BENCHMARK defaults to ON, and both build configs compile
 # startup/main_docker.cpp (foreground Docker entry) instead of the forking
 # main_daemon.cpp / interactive main_dev.cpp.

@@ -7,11 +7,11 @@ C++20 web framework entry built from the upstream [paozhu](https://github.com/hg
 - **Language:** C++20
 - **Engine:** paozhu (standalone Asio event loop, native HTTP/2)
 - **Build:** `debian:bookworm` → `debian:bookworm-slim`, GCC with `-O3 -march=native`, `-DENABLE_BENCHMARK=ON`
-- **Source:** upstream commit pinned by the `PAOZHU_REF` build arg (`25104601`, `v1.17.4-12`); local development tree is `/Users/hzq/paozhu`. When `vendor/paozhu-src.tar.gz` is present the Dockerfile unpacks that archive instead and `PAOZHU_REF` is ignored.
+- **Source:** upstream commit pinned by the `PAOZHU_REF` build arg (`71305087`, `v1.17.4-16`); local development tree is `/Users/hzq/paozhu`. When `vendor/paozhu-src.tar.gz` is present the Dockerfile unpacks that archive instead and `PAOZHU_REF` is ignored.
 
 ## Pinned `CMakeLists.txt`
 
-paozhu is not a linkable library: the app *is* a paozhu project, and its build definition has to reproduce the whole upstream graph (globbing `vendor/`, `libs/`, `common/`, `controller/`, running `paozhu_pre` to generate the router table and linking OpenSSL/zlib/brotli). `src/CMakeLists.txt` is a checked-in snapshot of that file at `25104601`, so the Dockerfile no longer patches upstream text at build time. It has exactly two local changes:
+paozhu is not a linkable library: the app *is* a paozhu project, and its build definition has to reproduce the whole upstream graph (globbing `vendor/`, `libs/`, `common/`, `controller/`, running `paozhu_pre` to generate the router table and linking OpenSSL/zlib/brotli). `src/CMakeLists.txt` is a checked-in snapshot of that file at `71305087`, so the Dockerfile no longer patches upstream text at build time. It has exactly two local changes:
 
 1. `option(ENABLE_BENCHMARK "Enable benchmarks" ON)` — benchmark tier is the default for any `cmake` invocation, not just one with `-D`. `BENCHMARK` drops per-request logging, keepalive/stream caps and the disk pre-check for dotted URLs (which would otherwise shadow `/static/:filename`).
 2. Both branches of the `add_executable` generator expression point at `startup/main_docker.cpp` — the upstream Release default `main_daemon.cpp` forks and would make PID 1 exit immediately.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pinned for 25104601: upstream Step 2 aborts under set -e when grep -c
+# Pinned for 71305087: upstream Step 2 aborts under set -e when grep -c
 # finds no RBAC markers; the left=... assignment below has || true added.
 # Refresh from PAOZHU_REF when bumping the upstream revision.
 #

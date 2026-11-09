@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pinned so mini_project.sh, the controller generator and the CMake entry point
 # stay in sync with the scaffold this entry was written against.
-ARG PAOZHU_REF=25104601b49fdbdedb36e5fb1a47b67206c0bc5c
+ARG PAOZHU_REF=71305087d905da641b6f55eac1781566341ebbc6
 WORKDIR /paozhu
 # Prefer a source archive shipped in the build context (offline / slow-GitHub
 # environments); otherwise fetch the pinned revision from codeload. The direct
@@ -45,8 +45,8 @@ RUN if [ -f /ctx/vendor/paozhu-src.tar.gz ]; then \
 # Upstream's clean-project initializer empties the ORM/view/demo layers and
 # leaves only the framework core; paozhu_pre (run by CMake at build time)
 # regenerates the router table from controller/src/*.cpp. The pinned copy in
-# src/ carries one fix for 25104601: its Step 2 aborts under `set -e` when
-# `grep -c` finds no RBAC markers in the stripped entry points.
+# src/ carries one fix (still needed at 71305087): its Step 2 aborts under
+# `set -e` when `grep -c` finds no RBAC markers in the stripped entry points.
 COPY src/mini_project.sh /paozhu/mini_project.sh
 RUN bash mini_project.sh && \
     rm -f controller/src/*.cpp && \
