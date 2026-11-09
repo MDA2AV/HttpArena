@@ -1255,6 +1255,20 @@
     "type": "engine",
     "engine": "kestrel"
   },
+  "klite": {
+    "dir": "klite",
+    "description": "Klite 2.x, a lightweight zero-dependency Kotlin framework on the JDK's built-in jdk.httpserver with virtual threads. Annotated routes, klite-json, klite-jdbc with its own connection pool, jte templates, JDK 25.",
+    "repo": "https://github.com/keksworks/klite",
+    "type": "emerging",
+    "engine": "jdk.httpserver",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": false
+    }
+  },
   "koa": {
     "dir": "koa",
     "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
