@@ -1541,7 +1541,7 @@
     "repo": "https://github.com/leocaolab/mipyre",
     "type": "experimental",
     "engine": "mipyre",
-    "mode": "tuned",
+    "mode": "standard",
     "completeness": {
       "routing": true,
       "middleware": true,
