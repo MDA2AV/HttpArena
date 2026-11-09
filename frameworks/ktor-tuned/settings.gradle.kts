@@ -11,7 +11,7 @@ dependencyResolutionManagement {
         maven("https://redirector.kotlinlang.org/maven/ktor-eap")
     }
     versionCatalogs {
-        create("ktorLibs").from("io.ktor:ktor-version-catalog:3.7.0-async-files-eap-1693")
+        create("ktorLibs").from("io.ktor:ktor-version-catalog:3.7.0-async-files-eap-1699")
     }
 }
 
