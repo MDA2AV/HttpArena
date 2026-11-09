@@ -1,4 +1,4 @@
-FROM gradle:9.5.1-jdk21-corretto AS build
+FROM gradle:9.5.1-jdk21 AS build
 WORKDIR /app
 COPY build.gradle.kts settings.gradle.kts ./
 RUN gradle dependencies --no-daemon -q 2>/dev/null || true

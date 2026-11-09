@@ -10,7 +10,7 @@ RUN apt-get update -qq && \
         libclang-dev \
         media-types \
         pkg-config \
-        varnish-dev
+        varnish-dev="$(dpkg-query -W -f='${Version}' varnish)"
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable -q
 ENV PATH="/root/.cargo/bin:${PATH}"
 

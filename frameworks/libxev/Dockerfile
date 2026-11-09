@@ -4,9 +4,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Zig 0.16.0 - libxev's minimum supported version (a stable release, not a nightly).
-RUN curl -LSs https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz \
+RUN arch="$(uname -m)" \
+    && curl -LSs "https://ziglang.org/download/0.16.0/zig-${arch}-linux-0.16.0.tar.xz" \
       | tar -xJ -C /opt \
-    && ln -s /opt/zig-x86_64-linux-0.16.0/zig /usr/local/bin/zig
+    && ln -s "/opt/zig-${arch}-linux-0.16.0/zig" /usr/local/bin/zig
 
 WORKDIR /app
 COPY build.zig build.zig.zon ./

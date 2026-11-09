@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 COPY frameworks/aspnet-minimal-satorigc/ .
-RUN dotnet publish -c Release -r linux-x64 --self-contained -o out
+RUN dotnet publish -c Release --use-current-runtime --self-contained -o out
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
