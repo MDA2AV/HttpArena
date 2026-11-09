@@ -1615,6 +1615,20 @@
       "response": true
     }
   },
+  "netcode-http": {
+    "dir": "netcode-http",
+    "description": "netcode-http's router on quic-zig's event loop, which serves HTTP/1.1, WebSocket and HTTP/3 from one loop: one loop per core, sharing the ports through SO_REUSEPORT. Routes decode their query and body from a typed spec; a WebSocket is a route too, on quic-zig's upgrade and framing. QUIC, TLS 1.3 and HTTP/3 are quic-zig's own, in Zig, with no C library.",
+    "repo": "https://github.com/endel/netcode-http",
+    "type": "experimental",
+    "engine": "quic-zig",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "neton-hyper": {
     "dir": "neton-hyper",
     "description": "Neton, a Kotlin Multiplatform framework compiled to a native executable. Routing, middleware, request parsing and the response pipeline are the framework's; the hyper4k engine (Tokio + Hyper 1.x, linked in as a Rust static library) only does protocol and transport. Serves HTTP/1.1 on 8080, HTTP/2 cleartext on 8082, HTTP/1.1+TLS on 8081 and HTTP/2+TLS on 8443 (ALPN) from one route table; static files and TLS terminate in the framework.",
