@@ -320,6 +320,10 @@ async fn main() -> std::io::Result<()> {
     let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
     let static_dir: &'static Path = Path::new("/data/static");
 
+    // ntex starts one worker per CPU the process may use and pins each worker
+    // to one CPU, so the count is taken here, before any worker starts.
+    db::set_workers(std::thread::available_parallelism().map_or(1, |n| n.get()));
+
     let app = async move |_: &()| {
         db::init();
         App::new()

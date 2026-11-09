@@ -2,7 +2,7 @@
 //! `Io` (through ntex-io's tokio `AsyncRead`/`AsyncWrite` impls) on the native
 //! runtime, pooled per worker with deadpool's unmanaged pool.
 
-use std::{cell::OnceCell, str::FromStr, time::Duration};
+use std::{cell::OnceCell, str::FromStr, sync::OnceLock, time::Duration};
 
 use deadpool::unmanaged::{Object, Pool};
 use ntex::web::{self, HttpResponse};
@@ -17,6 +17,11 @@ const CHECKOUT_TIMEOUT: Duration = Duration::from_secs(5);
 // While nothing is connected, a query rechecks this many times before failing.
 const NOT_CONNECTED_RETRIES: u32 = 5;
 const NOT_CONNECTED_DELAY: Duration = Duration::from_millis(200);
+
+/// Workers sharing `DATABASE_MAX_CONN`, recorded by `main` before they start.
+/// ntex pins each worker thread to one CPU, so `available_parallelism()` on a
+/// worker returns 1 and would size every worker's pool to the whole limit.
+static WORKERS: OnceLock<usize> = OnceLock::new();
 
 thread_local! {
     // The app factory runs once per listener on every worker, so the pool is
@@ -60,6 +65,12 @@ struct DbList<'a> {
     count: usize,
 }
 
+/// Records how many workers split `DATABASE_MAX_CONN` between their pools.
+/// Call it on the main thread before the server starts its workers.
+pub fn set_workers(workers: usize) {
+    let _ = WORKERS.set(workers.max(1));
+}
+
 /// Opens this worker's pool, unless `DATABASE_URL` is unset or invalid.
 ///
 /// Connections are opened in the background and retried until Postgres
@@ -72,8 +83,12 @@ pub fn init() {
                 .ok()
                 .and_then(|v| v.parse::<usize>().ok())
                 .unwrap_or(256);
-            // ntex starts one worker per logical CPU by default.
-            let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
+            // Recorded by `main`. Unpinned callers that skip it (tests) fall
+            // back to the CPUs their own thread may run on.
+            let workers = WORKERS
+                .get()
+                .copied()
+                .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, |n| n.get()));
             let size = (max_conn / workers).max(1);
             let db = Db {
                 config,
