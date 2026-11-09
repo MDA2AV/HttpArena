@@ -29,9 +29,9 @@ sub vcl_synth {
     set resp.http.Content-Type = "text/plain";
 
     if (req.url == "/pipeline") {
-        synthetic("ok");
+        set resp.body += "ok";
     } else if (req.url ~ "^/baseline(11|2)(\?|$)") {
-        synthetic(httparena.baseline_sum());
+        set resp.body += httparena.baseline_sum();
     } else {
         set resp.status = 404;
     }
