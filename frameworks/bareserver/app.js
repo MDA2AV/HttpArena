@@ -68,6 +68,27 @@ if (cluster.isPrimary) {
     } catch (e) {}
   }
 
+  function parseFastInt(str, start, end) {
+    let res = 0;
+    let sign = 1;
+    let i = start;
+    if (i < end && str.charCodeAt(i) === 45) {
+      sign = -1;
+      i++;
+    }
+    let hasDigit = false;
+    for (; i < end; i++) {
+      const code = str.charCodeAt(i) - 48;
+      if (code >= 0 && code <= 9) {
+        res = res * 10 + code;
+        hasDigit = true;
+      } else {
+        break;
+      }
+    }
+    return hasDigit ? res * sign : NaN;
+  }
+
   function sumQueryFast(rawQuery, queryObj) {
     if (rawQuery) {
       let sum = 0;
@@ -78,7 +99,7 @@ if (cluster.isPrimary) {
         if (eq === -1) break;
         let amp = rawQuery.indexOf('&', eq);
         if (amp === -1) amp = len;
-        const n = parseInt(rawQuery.substring(eq + 1, amp), 10);
+        const n = parseFastInt(rawQuery, eq + 1, amp);
         if (n === n) sum += n;
         start = amp + 1;
       }
