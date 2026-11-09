@@ -14,6 +14,7 @@ WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY app.js .
 ENV NODE_ENV=production
+ENV TOKIO_WORKER_THREADS=1
 ENV UV_THREADPOOL_SIZE=64
 EXPOSE 8080
 CMD ["node", "app.js"]

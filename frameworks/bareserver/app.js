@@ -3,6 +3,19 @@ const os = require('os');
 const fs = require('fs');
 
 function getCPUCount() {
+  for (const p of ['/sys/fs/cgroup/cpuset.cpus', '/sys/fs/cgroup/cpuset/cpuset.cpus']) {
+    try {
+      const cpuset = fs.readFileSync(p, 'utf8').trim();
+      if (cpuset) {
+        let count = 0;
+        for (const part of cpuset.split(',')) {
+          const [start, end] = part.split('-').map(Number);
+          count += end !== undefined ? (end - start + 1) : 1;
+        }
+        if (count >= 1) return count;
+      }
+    } catch {}
+  }
   try {
     const max = fs.readFileSync('/sys/fs/cgroup/cpu.max', 'utf8').trim();
     const [quota, period] = max.split(' ');
@@ -55,10 +68,25 @@ if (cluster.isPrimary) {
     } catch (e) {}
   }
 
-  function sumQuery(query) {
+  function sumQueryFast(rawQuery, queryObj) {
+    if (rawQuery) {
+      let sum = 0;
+      let start = 0;
+      const len = rawQuery.length;
+      while (start < len) {
+        let eq = rawQuery.indexOf('=', start);
+        if (eq === -1) break;
+        let amp = rawQuery.indexOf('&', eq);
+        if (amp === -1) amp = len;
+        const n = parseInt(rawQuery.substring(eq + 1, amp), 10);
+        if (n === n) sum += n;
+        start = amp + 1;
+      }
+      return sum;
+    }
     let sum = 0;
-    for (const k in query) {
-      const n = parseInt(query[k], 10);
+    for (const k in queryObj) {
+      const n = parseInt(queryObj[k], 10);
       if (n === n) sum += n;
     }
     return sum;
@@ -69,23 +97,23 @@ if (cluster.isPrimary) {
   // Native Rust static bypass for maximum pipelining throughput
   app.static('/pipeline', 'ok', SERVER_HDR);
 
-  app.get('/delay/:ms', async (req, res) => {
+  app.get('/delay/:ms', (req, res) => {
     const ms = parseInt(req.params.ms, 10);
     if (!Number.isInteger(ms) || ms < 0) return res.status(404).send();
-    if (ms > 0) await new Promise((r) => setTimeout(r, ms));
-    res.set(SERVER_HDR).type('text/plain').send(String(ms));
+    if (ms === 0) return res.set(SERVER_HDR).type('text/plain').send('0');
+    setTimeout(() => res.set(SERVER_HDR).type('text/plain').send(String(ms)), ms);
   });
 
   app.get('/baseline2', (req, res) => {
-    res.set(SERVER_HDR).type('text/plain').send(String(sumQuery(req.query)));
+    res.set(SERVER_HDR).type('text/plain').send(String(sumQueryFast(req._raw.query, req.query)));
   });
 
   app.get('/baseline11', (req, res) => {
-    res.set(SERVER_HDR).type('text/plain').send(String(sumQuery(req.query)));
+    res.set(SERVER_HDR).type('text/plain').send(String(sumQueryFast(req._raw.query, req.query)));
   });
 
   app.post('/baseline11', (req, res) => {
-    const querySum = sumQuery(req.query);
+    const querySum = sumQueryFast(req._raw.query, req.query);
     if (req._rawBody && req._rawBody.length > 0) {
       const n = parseInt(req._rawBody.toString('utf8').trim(), 10);
       const total = n === n ? querySum + n : querySum;
