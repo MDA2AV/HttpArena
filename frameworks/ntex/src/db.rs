@@ -14,6 +14,9 @@ const QUERY: &str = "SELECT id, name, category, price, quantity, active, tags, r
 const FORTUNES: &str = "SELECT id, message FROM fortune";
 const RECONNECT_DELAY: Duration = Duration::from_secs(1);
 const CHECKOUT_TIMEOUT: Duration = Duration::from_secs(5);
+// While nothing is connected, a query rechecks this many times before failing.
+const NOT_CONNECTED_RETRIES: u32 = 5;
+const NOT_CONNECTED_DELAY: Duration = Duration::from_millis(200);
 
 thread_local! {
     // The app factory runs once per listener on every worker, so the pool is
@@ -116,16 +119,24 @@ impl Db {
     }
 
     /// Runs the statement `stmt` picks from a pooled connection, or returns
-    /// `None` if nothing is connected, checkout times out or the query fails.
+    /// `None` if nothing connects within the retries, checkout times out or
+    /// the query fails.
     async fn query(
         &self,
         stmt: fn(&Conn) -> &Statement,
         params: &[&(dyn ToSql + Sync)],
     ) -> Option<Vec<Row>> {
+        let mut retries = NOT_CONNECTED_RETRIES;
         let conn = loop {
-            // Nothing is connected: fail now instead of waiting for checkout.
+            // Nothing is connected: give a reconnect a moment, then fail
+            // instead of waiting the full checkout timeout.
             if self.pool.status().size == 0 {
-                return None;
+                if retries == 0 {
+                    return None;
+                }
+                retries -= 1;
+                ntex::time::sleep(NOT_CONNECTED_DELAY).await;
+                continue;
             }
             let conn = ntex::time::timeout(CHECKOUT_TIMEOUT, self.pool.get())
                 .await
@@ -309,13 +320,16 @@ mod tests {
         assert_eq!(async_db_status().await, StatusCode::INTERNAL_SERVER_ERROR);
     }
 
-    /// STATEMENT: While the pool has no open connection, `/async-db` fails
-    /// with `500` instead of waiting for one.
+    /// STATEMENT: While the pool has no open connection, `/async-db` retries
+    /// `NOT_CONNECTED_RETRIES` times, then fails with `500` well before the
+    /// checkout timeout.
     ///
     /// HOW:
     /// - Install a `Db` with an empty pool in this thread's `DB` cell, as
     ///   `init` does before any connection opens.
     /// - Call `async_db` and confirm `500 Internal Server Error`.
+    /// - Confirm the call took at least `NOT_CONNECTED_RETRIES` times
+    ///   `NOT_CONNECTED_DELAY` and less than `CHECKOUT_TIMEOUT`.
     #[ntex::test]
     async fn error_while_not_connected() {
         DB.with(|db| {
@@ -324,7 +338,34 @@ mod tests {
                 pool: Pool::new(1),
             }));
         });
+        let start = std::time::Instant::now();
         assert_eq!(async_db_status().await, StatusCode::INTERNAL_SERVER_ERROR);
+        let elapsed = start.elapsed();
+        assert!(elapsed >= NOT_CONNECTED_DELAY * NOT_CONNECTED_RETRIES);
+        assert!(elapsed < CHECKOUT_TIMEOUT);
+    }
+
+    /// STATEMENT: A request that arrives before the first connection opens
+    /// waits for it instead of failing.
+    ///
+    /// HOW:
+    /// - Needs Postgres at `DATABASE_URL`.
+    /// - Install a `Db` with an empty pool in this thread's `DB` cell and
+    ///   spawn one `Db::open`.
+    /// - Call `async_db` straight away and confirm `200 OK`.
+    #[ntex::test]
+    #[ignore = "needs Postgres at DATABASE_URL"]
+    async fn waits_for_reconnect() {
+        let config = Config::from_str(&std::env::var("DATABASE_URL").unwrap()).unwrap();
+        let db = Db {
+            config,
+            pool: Pool::new(1),
+        };
+        DB.with(|cell| {
+            let _ = cell.set(Some(db.clone()));
+        });
+        ntex::rt::spawn(db.open());
+        assert_eq!(async_db_status().await, StatusCode::OK);
     }
 
     /// STATEMENT: Connections Postgres closed are skipped and reopened, so
