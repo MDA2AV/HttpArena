@@ -276,6 +276,20 @@
       "response": true
     }
   },
+  "bareserver": {
+    "dir": "bareserver",
+    "description": "bareserver - Zero-dependency, native-fast Express-compatible HTTP engine powered by Rust Tokio/Hyper.",
+    "repo": "https://github.com/tarunbtw/bareserver",
+    "type": "experimental",
+    "engine": "hyper",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "beskar-websocket": {
     "dir": "beskar-websocket",
     "description": "High-performance WebSocket echo server built with Beskar.Networking.",

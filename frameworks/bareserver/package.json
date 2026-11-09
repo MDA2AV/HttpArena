@@ -1,0 +1,11 @@
+{
+  "name": "httparena-bareserver",
+  "private": true,
+  "main": "app.js",
+  "dependencies": {
+    "bareserver": "^0.1.6",
+    "better-sqlite3": "^13.0.2",
+    "pg": "^8.13.0",
+    "pg-native": "^3.8.0"
+  }
+}
