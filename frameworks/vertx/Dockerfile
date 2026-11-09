@@ -10,7 +10,7 @@ RUN mvn -B -q clean package -DskipTests
 FROM eclipse-temurin:27-jre
 WORKDIR /app
 COPY --from=build /app/target/vertx-httparena.jar app.jar
-EXPOSE 8080
+EXPOSE 8080 8082
 ENTRYPOINT ["java", \
   "-server", \
   "-XX:+UseG1GC", \
