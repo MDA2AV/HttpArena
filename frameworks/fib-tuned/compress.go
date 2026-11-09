@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	fibhttp "github.com/lesismal/fib/http"
 	"github.com/lesismal/fib/middleware"
+	brrr "github.com/molecule-man/go-brrr"
 )
 
 // CompressConfig sets how hard each coding works and which bodies are worth
@@ -56,7 +56,7 @@ func newCompress(config CompressConfig) middleware.Middleware {
 	if config.MinLength <= 0 {
 		config.MinLength = defaultMinLength
 	}
-	config.BrotliQuality = min(max(config.BrotliQuality, brotli.BestSpeed), brotli.BestCompression)
+	config.BrotliQuality = min(max(config.BrotliQuality, brrr.BestSpeed), brrr.BestCompression)
 	if config.ZstdLevel == 0 {
 		config.ZstdLevel = zstd.SpeedDefault
 	}
@@ -197,9 +197,13 @@ func newCoders(config CompressConfig) *coders {
 		panic(err)
 	}
 	all := map[string]coder{
-		"br": streamCoder("br", func() streamWriter {
-			return brotli.NewWriterLevel(nil, config.BrotliQuality)
-		}),
+		// go-brrr, the brotli encoder fasthttp, and so fiber-tuned, uses: its
+		// one-shot Compress keeps pooled encoders per quality and is told the
+		// body's length up front.
+		"br": {name: "br", encode: func(body []byte) ([]byte, bool) {
+			out, err := brrr.Compress(body, config.BrotliQuality)
+			return out, err == nil && len(out) < len(body)
+		}},
 		"zstd": {name: "zstd", encode: func(body []byte) ([]byte, bool) {
 			out := zenc.EncodeAll(body, make([]byte, 0, len(body)/2))
 			return out, len(out) < len(body)

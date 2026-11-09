@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/andybalholm/brotli"
 	"github.com/bytedance/sonic"
 	"github.com/bytedance/sonic/encoder"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,6 +26,7 @@ import (
 	"github.com/lesismal/fib/prefork"
 	"github.com/lesismal/fib/taskpool"
 	fibtls "github.com/lesismal/fib/tls"
+	brrr "github.com/molecule-man/go-brrr"
 	"google.golang.org/protobuf/proto"
 
 	pb "httparena/fib-tuned/proto"
@@ -109,7 +109,7 @@ func newRouter() *fibhttp.Router {
 	r.Get("/static/*", staticFile)
 	compressed := r.With(newCompress(CompressConfig{
 		MinLength:     defaultMinLength,
-		BrotliQuality: brotli.BestSpeed,
+		BrotliQuality: brrr.BestSpeed,
 		ZstdLevel:     zstd.SpeedFastest,
 		GzipLevel:     gzip.BestSpeed,
 		DeflateLevel:  flate.BestSpeed,
