@@ -1,0 +1,32 @@
+{
+  "display_name": "bareserver",
+  "language": "JS",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "hyper",
+  "description": "bareserver - Zero-dependency, native-fast Express-compatible HTTP engine powered by Rust Tokio/Hyper.",
+  "repo": "https://github.com/tarunbtw/bareserver",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "pipelined",
+    "limited-conn",
+    "json-comp",
+    "8gbit",
+    "async-db"
+  ],
+  "maintainers": [
+    "tarunbtw"
+  ]
+}
+
