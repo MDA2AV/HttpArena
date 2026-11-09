@@ -1,0 +1,22 @@
+.{
+    .name = .netcode_http_arena,
+    .version = "0.1.0",
+    .fingerprint = 0xb570cc07497aab89,
+    .minimum_zig_version = "0.17.1",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+    .dependencies = .{
+        .http = .{
+            .url = "git+https://github.com/endel/netcode-http#99a85a7cdb6aea9d0e56d601efa070c59cba50c9",
+            .hash = "http-0.1.0-TSf2FwRYBAC0HVl80zpbTJCZHm-rKtU0TdR_ldMZwu_f",
+        },
+        // The commit netcode-http pins: one quic-zig in the build.
+        .quic = .{
+            .url = "git+https://github.com/endel/quic-zig#2785c6e74b33cb95c498e8242203ebb6e847d064",
+            .hash = "quic-0.6.0-TPyrNGyyNgA49Mukx6FbKwMIN4ka0vcl0YxZvevboacS",
+        },
+    },
+}
