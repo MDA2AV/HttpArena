@@ -268,7 +268,7 @@
       "threads": 64,
       "duration": "5s",
       "pipeline": 1,
-      "bandwidth": "3.13GB",
+      "bandwidth": "3.12GB",
       "reconnects": 0,
       "status_2xx": 1045141,
       "status_3xx": 0,
