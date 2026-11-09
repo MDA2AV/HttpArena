@@ -37,6 +37,20 @@
       }
     ]
   },
+  "aegon-java": {
+    "dir": "aegon-java",
+    "description": "Linux-native Java 22+ web framework powered by Aegon's io_uring multishot engine, Project Panama Foreign Function & Memory (FFM) API, Project Loom virtual threads, Fastjson2, and libdeflate compression.",
+    "repo": "https://github.com/UdayKhare09/Aegon",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aegon": {
     "dir": "aegon",
     "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, Glaze JSON serialization, and native zero-overhead gRPC over HTTP/2 with kTLS TX offload.",
@@ -2733,6 +2747,14 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "veb"
+  },
+  "veil": {
+    "dir": "veil",
+    "description": "veil 0.10 reverse proxy from its published container image (full-container build: epoll readiness reactor, no tokio), one process with four listeners. A Proxy-Wasm module loaded into veil answers /baseline11 (including the POST body), /baseline2, /pipeline and /json/{count}, serializing the JSON body per request from the dataset veil loads at startup; /static/* is veil's File backend (sendfile, on-the-fly compression on every protocol, caches that follow the disk). TLS via rustls: HTTP/1.1 on :8081, h2 and h3 (quiche) on :8443, h2c on :8082.",
+    "repo": "https://github.com/aofusa/veil-proxy",
+    "type": "infrastructure",
+    "engine": "veil",
+    "website": "https://github.com/aofusa/veil-proxy"
   },
   "velocity": {
     "dir": "velocity",
