@@ -117,6 +117,21 @@
       "response": false
     }
   },
+  "armeria": {
+    "dir": "armeria",
+    "description": "Armeria 1.43 on Netty's epoll transport. Services registered on ServerBuilder, compression through EncodingService (brotli4j), static files through FileService with precompressed variants, gRPC through armeria-grpc, WebSocket through WebSocketService, TLS through BoringSSL (netty-tcnative).",
+    "repo": "https://github.com/line/armeria",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard",
+    "website": "https://armeria.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aspnet-minimal": {
     "dir": "aspnet-minimal",
     "description": "Minimal ASP.NET Core server using .NET 10 with Kestrel and minimal API routing.",
