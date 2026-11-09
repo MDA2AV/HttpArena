@@ -6,7 +6,7 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
 
 - **Language:** JavaScript
 - **Runtime:** Node.js 26
-- **Framework:** [MoroJS 1.8](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.1.17, its own native HTTP engine
+- **Framework:** [MoroJS 1.8](https://github.com/Moro-JS/moro) on `@morojs/engine` 1.1.18, its own native HTTP engine
 - **Build:** Multi-stage on `node:26.13-trixie-slim` (pinned by minor: the compression middleware's reused
   brotli encoder needs Node 26.11 or later, and the bench host builds against whatever `node:26` it
   has cached); the engine ships prebuilt binaries, so no toolchain
@@ -82,16 +82,22 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   `h2` (HTTP/1.1 still accepted), `:8082` is cleartext prior-knowledge HTTP/2. Each is its own
   process for the same one-configuration-per-process reason, clustered as node:cluster processes,
   which is Moro's transport for its Node servers.
-- `/echo` sends back `req.rawBody`, the framework's undecoded copy of the request body, so the
-  bytes are the bytes that arrived, `Content-Length` or chunked alike; a Buffer handed to
-  `res.send()` goes out `application/octet-stream` through the framework's prepared reply.
+- `/echo` sends back `req.rawBody`, the request body as it arrived, `Content-Length` or chunked
+  alike. The engine collects the body where its reads land and hands that storage to JavaScript
+  without a copy (`@morojs/engine` 1.1.18); `req.rawBody` is a Buffer view of it. A Buffer handed
+  to `res.send()` goes out `application/octet-stream` through the framework's prepared reply.
 - `/ws` is the engine's own RFC 6455 support through `app.websocket()` with `{ raw: true }`, so a
   text frame reaches the handler as the string it carried and `socket.send()` returns it as one.
   The engine corks the connection for the duration of each read (`@morojs/engine` 1.1.14), so
   the echoes of a pipelined batch of frames leave in one write, each frame built straight into
   that write (1.1.15). The upgrade itself is the engine's as well (1.1.15, MoroJS 1.8.17): a valid
   handshake is answered and the socket opened without the request ever entering JavaScript, and
-  the handshake's headers, query and peer address stay readable on the socket on demand.
+  the handshake's headers, query and peer address stay readable on the socket on demand. One
+  read of the socket enters JavaScript once, however many frames it holds (1.1.18): the frames
+  share a callback scope and the microtask checkpoint runs after the last of them, as Node's own
+  socket data callback behaves. The handler is called directly and its reply settled on the spot
+  (MoroJS 1.8.22); the framework used to wrap every call in a promise and emit two events with
+  fresh objects per frame, a cost paid whether or not anything listened.
 - Static files go through `staticFiles({ root: '/data/static', precompressed: true, cache: true })`:
   the framework's handler with its in-memory cache. A file and its `.br` and `.gz` sidecars are
   read once and served from memory with their `ETag` and `Last-Modified`, the sidecar negotiated
