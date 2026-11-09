@@ -1,7 +1,7 @@
 {
   "display_name": "paozhu",
   "language": "C++",
-  "type": "emerging",
+  "type": "experimental",
   "mode": "standard",
   "completeness": {
     "routing": true,
