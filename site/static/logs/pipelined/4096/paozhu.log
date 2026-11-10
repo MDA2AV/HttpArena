@@ -1,10 +1,10 @@
 [CORS-WARN] site host=localhost not configured cors_domain, default deny all origin
+[websockets] websockets.conf not found or parse fail, websocket client disabled
+[sockets] /app/conf/h1/sockets.conf not found or parse fail, socket client disabled
+[mqtt_client] /app/conf/h1/mqtt.conf not found or parse fail, mqtt client disabled
 [CORS-WARN] site host=localhost not configured cors_domain, default deny all origin
 [websockets] websockets.conf not found or parse fail, websocket client disabled
-[websockets] websockets.conf not found or parse fail, websocket client disabled[sockets] /app/conf/h1/sockets.conf
- not found or parse fail, socket client disabled
 [sockets] /app/conf/main/sockets.conf not found or parse fail, socket client disabled
-[mqtt_client] /app/conf/h1/mqtt.conf not found or parse fail, mqtt client disabled
 [mqtt_client] /app/conf/main/mqtt.conf not found or parse fail, mqtt client disabled
 [ws_subpub] init: registered 0 clients
 [sock_subpub] init: registered 0 clients
