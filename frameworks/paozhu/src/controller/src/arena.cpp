@@ -500,10 +500,11 @@ long long body_number(const std::string &body)
     return end == p ? 0 : value;
 }
 
-// paozhu streams raw (non-form, non-JSON) request bodies to a temp file and
-// leaves peer->rawcontent empty for them (http_parse.cpp posttype 5). Read that
-// file back for POST /baseline11 and unlink it immediately: the benchmark sends
-// a POST-heavy workload and httpwatch only sweeps old files periodically.
+// Raw (non-form, non-JSON) request bodies stay in peer->rawcontent while they
+// fit in CONST_HTTP_RAW_POST_SIZE (2 MB, http_parse.cpp posttype 5); only larger
+// ones are spilled to a temp file. Return the in-memory bytes when present,
+// otherwise read the spilled file and unlink it right away. The benchmark's POST
+// bodies are a few bytes, so the file branch is the >2 MB case.
 std::string raw_body(const std::shared_ptr<http::httppeer> &peer)
 {
     if (!peer->rawcontent.empty())
@@ -631,8 +632,17 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
         peer->output = "Not Found";
         co_return "";
     }
-    peer->output.assign(std::istreambuf_iterator<char>(in),
-                        std::istreambuf_iterator<char>());
+    // Size the body once, then read straight into peer->output: no per-byte
+    // iterator and no second copy. Still one open + one read per request.
+    const std::streampos end = in.seekg(0, std::ios::end).tellg();
+    const std::streamsize size = end < 0 ? 0 : static_cast<std::streamsize>(end);
+    peer->output.resize(static_cast<std::size_t>(size));
+    in.seekg(0, std::ios::beg);
+    if (size > 0 && !in.read(&peer->output[0], size))
+    {
+        // Short read (file shrank between sizing and reading): keep what arrived.
+        peer->output.resize(static_cast<std::size_t>(in.gcount()));
+    }
     peer->type(mime_of(filename));
     co_return "";
 }

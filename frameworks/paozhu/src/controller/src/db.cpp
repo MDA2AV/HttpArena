@@ -60,10 +60,13 @@ namespace
         }
     };
 
-    // The upstream PG pool grows on demand without honouring maxpool, so cap
-    // in-flight queries below DATABASE_MAX_CONN to keep under Postgres'
-    // max_connections. Waiting uses an asio timer, never a blocking semaphore:
-    // blocking an io thread can deadlock the coroutine that holds a ticket.
+    // The framework splits orm.conf's maxpool budget across io_context slots
+    // (per-slot quota = budget / slot count). Cap global in-flight queries at
+    // the smallest slot quota so even a fully skewed request distribution
+    // never pushes a slot into the pool's wait-timeout path; the env-derived
+    // budget stays as the ceiling and as the fallback when no pool exists.
+    // Waiting uses an asio timer, never a blocking semaphore: blocking an io
+    // thread can deadlock the coroutine that holds a ticket.
     class db_ticket
     {
         static std::atomic<int> &in_flight()
@@ -79,7 +82,25 @@ namespace
                 int n = env ? std::atoi(env) : 256;
                 if (n < 8) n = 8;
                 if (n > 256) n = 256;
-                return n > 24 ? n - 24 : n;
+                int cap = n > 24 ? n - 24 : n;
+
+                auto &pools = orm::get_orm_conn_pool_obj();
+                auto it     = pools.find("pg");
+                if (it != pools.end() && it->second && !it->second->slots.empty())
+                {
+                    const auto &pool = *it->second;
+                    unsigned int smallest = pool.slot_max_of(1, 0);// 1 = select role
+                    for (unsigned int i = 1; i < pool.slots.size(); ++i)
+                    {
+                        const unsigned int q = pool.slot_max_of(1, i);
+                        if (q < smallest) smallest = q;
+                    }
+                    if (smallest >= 1 && static_cast<int>(smallest) < cap)
+                    {
+                        cap = static_cast<int>(smallest);
+                    }
+                }
+                return cap;
             }();
             return value;
         }
@@ -343,6 +364,10 @@ asio::awaitable<std::string> arena_fortunes(std::shared_ptr<httppeer> peer)
         try
         {
             auto link = std::make_unique<orm::db_conn>("pg");
+            // 201 = 200 seeded rows + the runtime row appended below. The seed is
+            // this repo's own: 12 TechEmpower rows plus generate_series(13,200) in
+            // data/pgdb-seed.sql. It is not the 12-row TE contract, so revisit this
+            // if the seed changes; reserve() only sets capacity either way.
             rows.reserve(201);
             co_await link->async_query("SELECT id,message FROM fortune", rows);
         }
