@@ -1,0 +1,28 @@
+{
+  "display_name": "klite",
+  "language": "Kotlin",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": false
+  },
+  "engine": "jdk.httpserver",
+  "description": "Klite 2.x, a lightweight zero-dependency Kotlin framework on the JDK's built-in jdk.httpserver with virtual threads. Annotated routes, klite-json, klite-jdbc with its own connection pool, jte templates, JDK 25.",
+  "repo": "https://github.com/keksworks/klite",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "async-db",
+    "fortunes"
+  ],
+  "maintainers": []
+}
