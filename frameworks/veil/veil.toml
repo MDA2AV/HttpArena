@@ -1,0 +1,95 @@
+# veil for HttpArena: one process, four listeners.
+# The dynamic endpoints are answered by a Proxy-Wasm module loaded into veil (httparena_filter.wasm);
+# /static/* is veil's File backend. Nothing is proxied to an upstream application.
+
+[server]
+graceful_shutdown_timeout_secs = 5
+
+[[listener]]
+name = "plain"                       # HTTP/1.1 (and h2c by prior knowledge)
+listen = "0.0.0.0:8080"
+tls = false
+
+[[listener]]
+name = "h1tls"                       # TLS, HTTP/1.1 only (no h2 in ALPN)
+listen = "0.0.0.0:8081"
+tls = true
+http2 = false
+
+[[listener]]
+name = "h2c"                         # cleartext HTTP/2 (prior knowledge)
+listen = "0.0.0.0:8082"
+tls = false
+
+[[listener]]
+name = "https"                       # TLS h2 + HTTP/1.1, and HTTP/3 on UDP 8443
+listen = "0.0.0.0:8443"
+tls = true
+http2 = true
+http3 = true
+
+[tls]
+cert_path = "/certs/server.crt"
+key_path = "/certs/server.key"
+
+[logging]
+level = "warn"
+
+[access_log]
+enabled = false
+
+[security]
+drop_privileges_user = "nonroot"
+drop_privileges_group = "nonroot"
+enable_seccomp = true
+seccomp_mode = "filter"
+enable_landlock = true
+landlock_read_paths = ["/certs", "/data", "/etc/veil"]
+landlock_write_paths = []
+
+[wasm]
+enabled = true
+
+[wasm.defaults]
+max_execution_time_ms = 100
+
+[wasm.defaults.pooling]
+# every worker of every listener keeps reused instances
+total_memories = 4096
+total_tables = 4096
+
+[[wasm.modules]]
+name = "arena"
+path = "/etc/veil/httparena_filter.wasm"
+instance_reuse = true
+data_files = { dataset = "/data/dataset.json" }
+
+[wasm.modules.capabilities]
+allow_request_headers_read = true
+allow_request_body_read = true
+allow_send_local_response = true
+allowed_properties = ["request.path", "plugin_data.*"]
+
+[[route]]
+[route.conditions]
+path = "/static/*"
+[route.action]
+type = "File"
+path = "/data/static/"
+mode = "sendfile"
+[route.open_file_cache]
+enabled = true
+watch = true
+[route.static_file_cache]
+enabled = true
+watch = true
+[route.compression]
+enabled = true                       # br / gzip by Accept-Encoding; compressed results are cached
+
+[[route]]
+modules = ["arena"]
+[route.conditions]
+path = "/*"
+[route.action]
+type = "Respond"
+status = 404

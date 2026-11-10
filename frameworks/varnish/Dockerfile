@@ -1,4 +1,4 @@
-FROM varnish:9.0.3 AS build
+FROM varnish:9.1.0 AS build
 
 USER root
 RUN apt-get update -qq && \
@@ -20,7 +20,7 @@ COPY vmod/src ./src
 RUN cargo build --release && \
     cp target/release/libvmod_httparena.so /tmp/libvmod_httparena.so
 
-FROM varnish:9.0.3
+FROM varnish:9.1.0
 
 COPY --from=build /tmp/libvmod_httparena.so /usr/lib/varnish/vmods/libvmod_httparena.so
 COPY --from=build /etc/mime.types /etc/varnish/mime.types

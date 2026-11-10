@@ -37,6 +37,20 @@
       }
     ]
   },
+  "aegon-java": {
+    "dir": "aegon-java",
+    "description": "Linux-native Java 22+ web framework powered by Aegon's io_uring multishot engine, Project Panama Foreign Function & Memory (FFM) API, Project Loom virtual threads, Fastjson2, and libdeflate compression.",
+    "repo": "https://github.com/UdayKhare09/Aegon",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aegon": {
     "dir": "aegon",
     "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, Glaze JSON serialization, and native zero-overhead gRPC over HTTP/2 with kTLS TX offload.",
@@ -115,6 +129,21 @@
       "middleware": true,
       "request": true,
       "response": false
+    }
+  },
+  "armeria": {
+    "dir": "armeria",
+    "description": "Armeria 1.43 on Netty's epoll transport. Services registered on ServerBuilder, compression through EncodingService (brotli4j), static files through FileService with precompressed variants, gRPC through armeria-grpc, WebSocket through WebSocketService, TLS through BoringSSL (netty-tcnative).",
+    "repo": "https://github.com/line/armeria",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard",
+    "website": "https://armeria.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
     }
   },
   "aspnet-minimal": {
@@ -841,6 +870,21 @@
       "response": false
     }
   },
+  "fulmine.js - uwsLite": {
+    "dir": "fulmine-uwslite",
+    "description": "fulmine.js routes written with app.uwsLite: (req, res) handlers on uWebSockets.js over two small objects, with route middleware and streams.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "tuned",
+    "website": "https://fulmine.sndesign.it/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "fulmine.js": {
     "dir": "fulmine",
     "description": "fulmine.js (drop-in Express 5 on uWebSockets.js) with its own cluster option for multi-core scaling.",
@@ -1255,6 +1299,20 @@
     "type": "engine",
     "engine": "kestrel"
   },
+  "klite": {
+    "dir": "klite",
+    "description": "Klite 2.x, a lightweight zero-dependency Kotlin framework on the JDK's built-in jdk.httpserver with virtual threads. Annotated routes, klite-json, klite-jdbc with its own connection pool, jte templates, JDK 25.",
+    "repo": "https://github.com/keksworks/klite",
+    "type": "emerging",
+    "engine": "jdk.httpserver",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": false
+    }
+  },
   "koa": {
     "dir": "koa",
     "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
@@ -1268,6 +1326,13 @@
       "request": true,
       "response": true
     }
+  },
+  "kron-native": {
+    "dir": "kron-native",
+    "description": "kron-native \u2014 the kron entry on Kotlin/Native: edixoi on kron, the Kotlin port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it, as one native binary with no JVM (the Dockerfile's KRON_RUNTIME build arg, set to native); the kron entry runs the same code, at the same kron commit, on the JVM. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the ring driven by hand from Kotlin over the kernel's own io_uring header through cinterop (no liburing). Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with BoringSSL linked into the binary, with kernel TX offload where the kernel has the tls module and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to kron (the same code on the JVM), edixoi (C#) and edixoi-kt, which serve the same profiles.",
+    "repo": "https://github.com/MDA2AV/kron",
+    "type": "engine",
+    "engine": "io_uring"
   },
   "kron": {
     "dir": "kron",
@@ -1615,6 +1680,20 @@
       "response": true
     }
   },
+  "netcode-http": {
+    "dir": "netcode-http",
+    "description": "netcode-http's router on quic-zig's event loop, which serves HTTP/1.1, WebSocket and HTTP/3 from one loop: one loop per core, sharing the ports through SO_REUSEPORT. Routes decode their query and body from a typed spec; a WebSocket is a route too, on quic-zig's upgrade and framing. QUIC, TLS 1.3 and HTTP/3 are quic-zig's own, in Zig, with no C library.",
+    "repo": "https://github.com/endel/netcode-http",
+    "type": "experimental",
+    "engine": "quic-zig",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "neton-hyper": {
     "dir": "neton-hyper",
     "description": "Neton, a Kotlin Multiplatform framework compiled to a native executable. Routing, middleware, request parsing and the response pipeline are the framework's; the hyper4k engine (Tokio + Hyper 1.x, linked in as a Rust static library) only does protocol and transport. Serves HTTP/1.1 on 8080, HTTP/2 cleartext on 8082, HTTP/1.1+TLS on 8081 and HTTP/2+TLS on 8443 (ALPN) from one route table; static files and TLS terminate in the framework.",
@@ -1941,6 +2020,21 @@
     "type": "flagship",
     "engine": "puma",
     "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "rama": {
+    "dir": "rama",
+    "description": "Rama 0.4 on the multi-threaded Tokio runtime, default configuration. Routing and path/query/body extractors through the rama web Router, JSON via its Json response, compression through the rama CompressionLayer, static files through ServeDir, TLS via rustls and WebSocket via the rama-ws acceptor.",
+    "repo": "https://github.com/plabayo/rama",
+    "type": "flagship",
+    "engine": "rama-http-core",
+    "mode": "standard",
+    "website": "https://ramaproxy.org",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -2653,6 +2747,26 @@
     "repo": "https://github.com/vlang/v",
     "type": "engine",
     "engine": "veb"
+  },
+  "veil-python": {
+    "dir": "veil-python",
+    "description": "veil-api 0.10 from PyPI (Python bindings of the veil server; Linux wheels use the epoll readiness reactor). @app.get/@app.post handlers with path/query binding, dict responses serialized to JSON, async def handlers on veil's persistent asyncio event loop, @app.websocket for /ws, gRPC through the grpcio-generated servicer on veil.grpc.Server, /static/* through app.serve_dir, compression through [api] compression. One process with four listeners from the configuration file.",
+    "repo": "https://github.com/aofusa/veil-proxy",
+    "type": "experimental",
+    "engine": "veil",
+    "mode": "standard",
+    "website": "https://github.com/aofusa/veil-proxy",
+    "completeness": {
+      "middleware": false
+    }
+  },
+  "veil": {
+    "dir": "veil",
+    "description": "veil 0.10 reverse proxy from its published container image (full-container build: epoll readiness reactor, no tokio), one process with four listeners. A Proxy-Wasm module loaded into veil answers /baseline11 (including the POST body), /baseline2, /pipeline and /json/{count}, serializing the JSON body per request from the dataset veil loads at startup; /static/* is veil's File backend (sendfile, on-the-fly compression on every protocol, caches that follow the disk). TLS via rustls: HTTP/1.1 on :8081, h2 and h3 (quiche) on :8443, h2c on :8082.",
+    "repo": "https://github.com/aofusa/veil-proxy",
+    "type": "infrastructure",
+    "engine": "veil",
+    "website": "https://github.com/aofusa/veil-proxy"
   },
   "velocity": {
     "dir": "velocity",

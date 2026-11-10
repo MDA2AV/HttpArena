@@ -1,0 +1,13 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.linecorp.armeria.internal.shaded.jctools.maps.NonBlockingHashMap (file:/app/app.jar)
+WARNING: Please consider reporting this to the maintainers of class com.linecorp.armeria.internal.shaded.jctools.maps.NonBlockingHashMap
+WARNING: sun.misc.Unsafe::arrayBaseOffset will be removed in a future release
+[main] INFO com.linecorp.armeria.common.Flags - verboseExceptions: rate-limit=10 (default)
+[main] INFO com.linecorp.armeria.common.Flags - useEpoll: true (default)
+[main] INFO com.linecorp.armeria.common.Flags - annotatedServiceExceptionVerbosity: unhandled (default)
+[main] INFO com.linecorp.armeria.common.Flags - Using Tls engine: OpenSSL BoringSSL, 0x1010107f
+[main] INFO com.linecorp.armeria.common.util.SystemInfo - hostname: diogo (from /proc/sys/kernel/hostname)
+[armeria-boss-http-*:8080] INFO com.linecorp.armeria.server.Server - Serving HTTP at /[0:0:0:0:0:0:0:0]:8080 - http://127.0.0.1:8080/
+[armeria-boss-http-*:8082] INFO com.linecorp.armeria.server.Server - Serving HTTP at /[0:0:0:0:0:0:0:0]:8082 - http://127.0.0.1:8082/
+[armeria-boss-https-*:8081] INFO com.linecorp.armeria.server.Server - Serving HTTPS at /[0:0:0:0:0:0:0:0]:8081 - https://127.0.0.1:8081/
+[armeria-boss-https-*:8443] INFO com.linecorp.armeria.server.Server - Serving HTTPS at /[0:0:0:0:0:0:0:0]:8443 - https://127.0.0.1:8443/

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option java_package = "benchmark";
+option java_outer_classname = "Benchmark";
+
+package benchmark;
+
+service BenchmarkService {
+  rpc GetSum (SumRequest) returns (SumReply);
+  rpc StreamSum (StreamRequest) returns (stream SumReply);
+}
+
+message SumRequest {
+  int32 a = 1;
+  int32 b = 2;
+}
+
+message StreamRequest {
+  int32 a = 1;
+  int32 b = 2;
+  int32 count = 3;
+}
+
+message SumReply {
+  int32 result = 1;
+}
