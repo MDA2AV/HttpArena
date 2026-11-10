@@ -96,8 +96,7 @@ const maxBody = 131072
 
 func delay(r http.server.Request) http.server.Response {
     ms := num(http.server.Param(r, "ms"))
-    os.Sleep(ms)
-    return http.server.Text(convert.FormatInt(ms))
+    return http.server.Delayed(ms, http.server.Text(convert.FormatInt(ms)))
 }
 
 func routes(ds []Item) []http.server.Route {
@@ -107,7 +106,7 @@ func routes(ds []Item) []http.server.Route {
         http.server.Route{method: "GET", path: "/baseline11", handler: baseline, middleware: none},
         http.server.Route{method: "POST", path: "/baseline11", handler: baseline, middleware: none},
         http.server.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
-        http.server.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none},
+        http.server.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none, cache: http.server.Unstated{}},
         http.server.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
     }
 }
