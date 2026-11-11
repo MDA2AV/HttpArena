@@ -1,0 +1,18 @@
+{
+  "display_name": "Sharaf (Potateh)",
+  "language": "Scala",
+  "type": "experimental",
+  "mode": "tuned",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "Potateh",
+  "description": "Sharaf on Potateh, compiled with Scala Native; connection limit raised to 8192.",
+  "repo": "https://github.com/sake92/sharaf",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn"],
+  "maintainers": ["sake92"]
+}
