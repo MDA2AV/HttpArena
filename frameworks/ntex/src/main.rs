@@ -299,7 +299,10 @@ const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
 const ALPN_H2: &[&[u8]] = &[b"h2", b"http/1.1"];
 
 /// Threads accepting connections, each with its own `SO_REUSEPORT` listener.
-const ACCEPTORS: usize = 8;
+const ACCEPTORS: usize = 12;
+
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[ntex::main(timer_resolution = 2)]
 async fn main() -> std::io::Result<()> {

@@ -7,7 +7,8 @@ rust-version = "1.97"
 [dependencies]
 askama = "0.16"
 deadpool = { version = "0.13", default-features = false, features = ["unmanaged"] }
-ntex = { version = "4.6", default-features = false, features = ["compress", "rustls"] }
+mimalloc = { version = "0.1", default-features = false }
+ntex = { version = "4.7", default-features = false, features = ["compress", "rustls"] }
 ntex-files = "4.4"
 ntex-io = { version = "4.7", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
