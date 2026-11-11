@@ -1,0 +1,4 @@
+2026-11-08 14:19:48.775+00 0ms WARN type=app main [src/security.rs:994] enable_io_uring_restrictions is set but this build uses the reactor (epoll) runtime backend, which has no io_uring ring to restrict; ignoring
+2026-11-08 14:19:49.758+00 0ms WARN type=app  [src/proxy/detect.rs:403] TLS handshake error: EOF during handshake
+2026-11-08 14:19:57.037+00 0ms WARN type=app  [src/proxy/detect.rs:403] TLS handshake error: EOF during handshake
+2026-11-08 14:20:04.310+00 0ms WARN type=app  [src/proxy/detect.rs:403] TLS handshake error: EOF during handshake

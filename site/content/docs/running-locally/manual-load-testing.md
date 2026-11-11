@@ -26,9 +26,9 @@ Starts a framework container interactively with the same mounts the benchmark us
 ./scripts/run.sh actix
 ```
 
-This exposes `8080` (HTTP/1.1, h2c gRPC), `8443` (HTTPS / HTTP/2 / HTTP/3 / gRPC-TLS), and `8081` (h1 TLS for `json-tls`).
+The container runs on the host network, so whatever the framework listens on is reachable directly: `8080` (HTTP/1.1, h2c gRPC), `8081` (HTTP/1.1 over TLS for `json-tls`, `static-tls`, `8gbit`), `8082` (h2c) and `8443` (HTTPS / HTTP/2 / HTTP/3 / gRPC-TLS).
 
-If you need postgres for `async-db` / `api-*`:
+If you need postgres for `async-db` / `fortunes`:
 
 ```bash
 docker run -d --name httparena-postgres --network host \
@@ -50,6 +50,7 @@ docker build -t gcannon:latest    -f docker/gcannon.Dockerfile    docker
 docker build -t h2load:latest     -f docker/h2load.Dockerfile     docker
 docker build -t h2load-h3:local   -f docker/h2load-h3.Dockerfile  docker
 docker build -t wrk:local         -f docker/wrk.Dockerfile        docker
+docker build -t zrk:local         -f docker/zrk.Dockerfile        docker
 ```
 
 The slow one is `h2load-h3:local` (compiles quictls + nghttp3 + ngtcp2 + nghttp2 --enable-http3 from source - 5–10 minutes). Everything else is under a minute.
@@ -81,7 +82,7 @@ docker run $DFLAGS gcannon:latest \
 docker run $DFLAGS \
     -v "$(pwd)/requests:/requests:ro" \
     gcannon:latest http://localhost:8080 \
-    --raw /requests/get.raw,/requests/json-get.raw,/requests/async-db-get.raw \
+    --raw /requests/get.raw,/requests/json-get.raw,/requests/async-db-10.raw \
     -c 1024 -t 64 -d 10s
 
 # WebSocket echo
@@ -94,20 +95,20 @@ Useful flags: `-r <N>` force-reconnect every N requests (`0` = keep-alive foreve
 
 #### Dynamic placeholders in raw templates
 
-Raw request files support `{RAND:min:max}` and `{SEQ:start}` placeholders that are substituted per-request at send time. Useful for CRUD benchmarks where each request should target a different database row:
+Raw request files support `{RAND:min:max}` and `{SEQ:start}` placeholders that are substituted per-request at send time. Useful against your own endpoints when each request should target a different database row (none of the stock profiles use them):
 
 ```bash
 # Template with {RAND} - each request reads a random item
-printf 'GET /crud/{RAND:1:100000} HTTP/1.1\r\nHost: localhost:8080\r\n\r\n' > /tmp/crud-read.raw
+printf 'GET /items/{RAND:1:100000} HTTP/1.1\r\nHost: localhost:8080\r\n\r\n' > /tmp/items-read.raw
 
 # Template with {SEQ} - each request creates a unique item
-printf 'POST /crud HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/json\r\nContent-Length: 72\r\n\r\n{"id":{SEQ:100001},"name":"Bench","category":"test","price":100,"qty":50}' > /tmp/crud-create.raw
+printf 'POST /items HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/json\r\nContent-Length: 72\r\n\r\n{"id":{SEQ:100001},"name":"Bench","category":"test","price":100,"qty":50}' > /tmp/items-create.raw
 
 # Mix them - gcannon round-robins across templates
 docker run $DFLAGS \
     -v /tmp:/requests:ro \
     gcannon:latest http://localhost:8080 \
-    --raw /requests/crud-read.raw,/requests/crud-create.raw \
+    --raw /requests/items-read.raw,/requests/items-create.raw \
     -c 512 -t 64 -d 5s
 ```
 
@@ -119,7 +120,7 @@ Values are zero-padded to a fixed width so `Content-Length` stays correct. `{RAN
 # HTTP/2 over TLS, 256 connections, 100 streams/conn
 docker run $DFLAGS h2load:latest \
     https://localhost:8443/baseline2?a=1\&b=1 \
-    -c 256 -m 100 -t 128 -D 5
+    -c 256 -m 100 -t 64 -D 5
 
 # gRPC unary over h2c (need a prebuilt request body)
 docker run $DFLAGS \
@@ -128,10 +129,10 @@ docker run $DFLAGS \
     http://localhost:8080/benchmark.BenchmarkService/GetSum \
     -d /requests/grpc-sum.bin \
     -H 'content-type: application/grpc' -H 'te: trailers' \
-    -c 256 -m 100 -t 128 -D 5
+    -c 256 -m 100 -t 64 -D 5
 ```
 
-`-D` takes seconds (not `5s`), `-m` is the max concurrent streams per connection, `-t` is worker threads.
+`-D` is the duration (`5` and `5s` both work), `-m` is the max concurrent streams per connection, `-t` is worker threads.
 
 ### h2load-h3 - HTTP/3 over QUIC
 
@@ -150,9 +151,9 @@ If h3 errors out with `connect error`, bump the host's UDP buffer sizes - the be
 sudo sysctl -w net.core.rmem_max=7500000 net.core.wmem_max=7500000
 ```
 
-### wrk - static file rotation, json-tls
+### wrk - static-tls, json-tls
 
-`wrk` needs the lua scripts from `requests/` for multi-URL rotation:
+`wrk` needs the lua scripts from `requests/` for multi-URL rotation. Both profiles run over TLS on port 8081:
 
 ```bash
 docker run $DFLAGS \
@@ -160,7 +161,7 @@ docker run $DFLAGS \
     wrk:local \
     -t 64 -c 1024 -d 5s \
     -s /requests/static-rotate.lua \
-    http://localhost:8080
+    https://localhost:8081
 ```
 
 A simple single-URL test (no script, no rotation):
@@ -170,6 +171,18 @@ docker run $DFLAGS wrk:local \
     -t 8 -c 256 -d 5s \
     http://localhost:8080/baseline11?a=1\&b=1
 ```
+
+### zrk - fixed-rate load
+
+zrk holds a fixed request rate (`-R`) instead of finding the maximum. This is what the latency profiles run, here at 10K req/s:
+
+```bash
+docker run $DFLAGS zrk:local \
+    -t 64 -c 1024 -d 20s -R 10000 \
+    "http://localhost:8080/baseline11?a=1&b=2"
+```
+
+Add `--format json` for a machine-readable summary, which includes `rate_ratio` - how much of the requested rate was actually held.
 
 ## CPU pinning (optional)
 
@@ -200,7 +213,7 @@ Mount the directory read-only into any tool: `-v "$(pwd)/requests:/requests:ro"`
 
 ## Parsing the output
 
-The benchmark driver's parsers live in `scripts/lib/tools/*.sh` - `gcannon_parse`, `h2load_parse`, `h2load_h3_parse`, `wrk_parse`. If you want to script on top of a manual run, source one of those modules:
+The benchmark driver's parsers live in `scripts/lib/tools/*.sh` - `gcannon_parse`, `h2load_parse`, `h2load_h3_parse`, `wrk_parse`, `zrk_parse`. If you want to script on top of a manual run, source one of those modules:
 
 ```bash
 source scripts/lib/common.sh

@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "HTTP Arena API",
-    "version": "1.0.0",
-    "description": "Endpoint contract for HTTP Arena benchmark implementations.\n\nEach path corresponds to a test profile. Frameworks must implement the endpoints for every profile they subscribe to, following the production or tuned rules documented per operation. The validation script (`validate.sh`) runs these endpoints against a live server before any benchmark results are accepted.\n\nAll numeric fields are integers — no floats. JSON responses use lowercase field names. Endpoints that query Postgres always return HTTP 200 with an empty list rather than an error when no rows match or the database is unavailable.\n\n**Port mapping:**\n- `8080` — HTTP/1.1 plaintext (all isolated and workload profiles)\n- `8081` — HTTP/1.1 + TLS (json-tls profile; ALPN `http/1.1`)\n- `8082` — HTTP/2 cleartext / h2c (baseline-h2c, json-h2c; prior-knowledge)\n- `8443` — HTTP/2+TLS and HTTP/3/QUIC (baseline-h2, static-h2, h3 profiles)\n\n**gRPC** and **WebSocket** endpoints cannot be fully modeled in OpenAPI 3.0; their contracts are described in the operation descriptions and linked documentation.\n\nGateway and production-stack endpoints are documented in the separate [gateway spec](/openapi-gateway.json).",
+    "version": "2.0.0",
+    "description": "Endpoint contract for HTTP Arena benchmark implementations.\n\nEach path is used by one or more test profiles. Frameworks must implement the endpoints for every profile they subscribe to in `meta.json`, following the **Standard** or **Tuned** rules documented per operation (plus the **Engine** or **Infrastructure** rules where an entry is of that kind). The validation script (`validate.sh`) runs these endpoints against a live server before any benchmark results are accepted. Most parameters it sends are drawn at random on every run, so a response prepared in advance cannot pass.\n\nAll numeric fields are integers - no floats. JSON responses use lowercase field names. Endpoints that query Postgres return HTTP 200 with an empty list rather than an error when no rows match or the database is unavailable.\n\n**Port mapping:**\n- `8080` - HTTP/1.1 plaintext (baseline, limited-conn, pipelined, async, json-comp, async-db, fortunes, the latency profiles and the WebSocket profiles) and cleartext HTTP/2 for gRPC (unary-grpc)\n- `8081` - HTTP/1.1 + TLS, ALPN `http/1.1` (json-tls, static-tls, 8gbit)\n- `8082` - HTTP/2 cleartext with prior knowledge (baseline-h2c, json-h2c)\n- `8443` - HTTP/2 + TLS over TCP (baseline-h2, static-h2, unary-grpc-tls) and HTTP/3 over QUIC on UDP (baseline-h3, static-h3)\n- `9000` - opt-in TLS hardening listener (`\"tls_check\": true` in `meta.json`), HTTP/1.1 + TLS with its own certificate directory `/certs-tls`. Validation only, nothing is measured.\n\nTLS certificates are mounted at `/certs/server.crt` and `/certs/server.key`. The dataset is mounted at `/data/dataset.json` and the static files at `/data/static/`.\n\n**gRPC** and **WebSocket** endpoints cannot be fully modeled in OpenAPI 3.0; their contracts are described in the operation descriptions and linked documentation.\n\nGateway and production-stack endpoints are documented in the separate [gateway spec](/openapi-gateway.json).",
     "contact": {
       "name": "HTTP Arena on GitHub",
       "url": "https://github.com/MDA2AV/HttpArena"
@@ -22,12 +22,13 @@
       "name": "HTTP/1.1",
       "tags": [
         "Baseline",
-        "Static Files",
-        "Upload",
-        "JSON Processing",
+        "Pipelined",
+        "Async Delay",
+        "JSON",
+        "8Gbit Echo",
+        "Static Files over TLS",
         "Async Database",
-        "CRUD",
-        "Pipelined"
+        "Fortunes"
       ]
     },
     {
@@ -48,8 +49,7 @@
     {
       "name": "gRPC",
       "tags": [
-        "gRPC Unary",
-        "gRPC Streaming"
+        "gRPC Unary"
       ]
     },
     {
@@ -62,81 +62,93 @@
   "servers": [
     {
       "url": "http://localhost:8080",
-      "description": "HTTP/1.1 plaintext — default port for all benchmark containers"
+      "description": "HTTP/1.1 plaintext (and h2c for gRPC) - default port for all benchmark containers"
     },
     {
       "url": "https://localhost:8081",
-      "description": "HTTP/1.1 + TLS — json-tls profile (ALPN: http/1.1)"
+      "description": "HTTP/1.1 + TLS - json-tls, static-tls and 8gbit profiles (ALPN: http/1.1)"
     },
     {
       "url": "http://localhost:8082",
-      "description": "HTTP/2 cleartext (h2c) — baseline-h2c and json-h2c profiles (prior-knowledge, no ALPN)"
+      "description": "HTTP/2 cleartext (h2c) - baseline-h2c and json-h2c profiles (prior-knowledge, no ALPN)"
     },
     {
       "url": "https://localhost:8443",
-      "description": "HTTP/2+TLS and HTTP/3/QUIC — baseline-h2, static-h2, gateway, h3, and production-stack profiles"
+      "description": "HTTP/2 + TLS (TCP) and HTTP/3 / QUIC (UDP) - baseline-h2, static-h2, unary-grpc-tls, baseline-h3 and static-h3 profiles"
+    },
+    {
+      "url": "https://localhost:9000",
+      "description": "HTTP/1.1 + TLS - opt-in TLS hardening checks (tls_check), validation only"
     }
   ],
   "tags": [
     {
       "name": "Baseline",
-      "description": "Primary throughput benchmark over persistent keep-alive connections (512, 4096 connections). Also covers the **short-lived** profile (connections closed after 10 requests) and the **API-4 / API-16** mixed workload profiles — all use the same `/baseline11` endpoint.",
+      "description": "Primary throughput benchmark over persistent keep-alive connections (4,096 connections). The same `/baseline11` endpoint also drives the **limited-conn** profile (connections closed and re-opened after 10 requests) and the fixed-rate **latency-1m**, **latency-10k** and **latency-500k-8cpu** profiles, which send `GET /baseline11?a=1&b=2` at a pinned rate and rank on the CPU spent to serve it.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/baseline/"
-      }
-    },
-    {
-      "name": "Static Files",
-      "description": "Serves 20 static assets (CSS, JS, HTML, fonts, SVG, WebP, JSON) from `/data/static/` in a round-robin pattern. Compression via `Accept-Encoding: br;q=1, gzip;q=0.8` is optional but improves throughput. Pre-compressed `.gz` and `.br` sidecars are available on disk for all text files.",
-      "externalDocs": {
-        "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/static/"
-      }
-    },
-    {
-      "name": "Upload",
-      "description": "Large request body ingestion benchmark. Measures body reading throughput with payloads rotating across 500 KB, 2 MB, 10 MB, and 20 MB.",
-      "externalDocs": {
-        "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/upload/"
-      }
-    },
-    {
-      "name": "JSON Processing",
-      "description": "JSON serialization benchmark. Loads a 50-item dataset at startup and computes per-request `total` fields. Also covers the **JSON Compressed** profile (same endpoint, client sends `Accept-Encoding: gzip, br`, server must compress), the **JSON TLS** profile (same endpoint on port 8081 over HTTP/1.1+TLS), and the **JSON H2C** profile (same endpoint on port 8082 over HTTP/2 cleartext).",
-      "externalDocs": {
-        "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/json-processing/"
-      }
-    },
-    {
-      "name": "Async Database",
-      "description": "Async Postgres range query benchmark. Exercises async I/O scheduling, connection pooling, and JSON serialization with live database queries against the `items` table.",
-      "externalDocs": {
-        "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/async-database/"
-      }
-    },
-    {
-      "name": "CRUD",
-      "description": "Realistic REST API benchmark with paginated list, cached single-item read (200 ms TTL), create (upsert), and update with cache invalidation against Postgres.",
-      "externalDocs": {
-        "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/baseline/"
       }
     },
     {
       "name": "Pipelined",
-      "description": "HTTP pipelining benchmark. 16 requests are sent back-to-back on each connection before awaiting responses, isolating raw I/O throughput from application logic.",
+      "description": "HTTP pipelining benchmark. 16 requests are sent back-to-back on each connection before awaiting responses, isolating raw I/O throughput from application logic. Reference-only for frameworks - not part of their composite score; scored for infrastructure entries.",
       "externalDocs": {
         "description": "Test Profile",
-        "url": "https://http-arena.com/docs/test-profiles/h1/isolated/pipelined/"
+        "url": "https://http-arena.com/docs/test-profiles/h1/pipelined/"
+      }
+    },
+    {
+      "name": "Async Delay",
+      "description": "A flat 10 ms wait named in the route, over 32,000 held connections. Measures what a framework does with a request it cannot answer yet - its concurrency model rather than its parser.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://http-arena.com/docs/test-profiles/h1/async/"
+      }
+    },
+    {
+      "name": "JSON",
+      "description": "JSON serialization workload. Loads a 50-item dataset at startup and computes a per-request `total` field. Used by **json-comp** (port 8080, client sends `Accept-Encoding: gzip, br`, server must compress) and **json-tls** (port 8081, HTTP/1.1 + TLS, no compression). The **json-h2c** profile serves the same endpoint over HTTP/2 cleartext (see H2 JSON).",
+      "externalDocs": {
+        "description": "Test Profile (JSON TLS)",
+        "url": "https://http-arena.com/docs/test-profiles/h1/json-tls/"
+      }
+    },
+    {
+      "name": "8Gbit Echo",
+      "description": "A 10 KB body is posted over HTTP/1.1 + TLS on port 8081 and must come back verbatim, loading ingest and egress at once. The rate is pinned at 50,000 req/s over 512 connections, so the profile is scored on cost (CPU and latency) rather than throughput.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://http-arena.com/docs/test-profiles/h1/8gbit/"
+      }
+    },
+    {
+      "name": "Static Files over TLS",
+      "description": "Serves 20 static assets (CSS, JS, HTML, fonts, SVG, WebP, JSON) from `/data/static/` over HTTP/1.1 + TLS on port 8081, in a round-robin pattern with `Accept-Encoding: br;q=1, gzip;q=0.8`. Pre-compressed `.gz` and `.br` sidecars are available on disk for the 15 text files. Reference-only for framework and engine entries; scored for infrastructure.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://http-arena.com/docs/test-profiles/h1/static-tls/"
+      }
+    },
+    {
+      "name": "Async Database",
+      "description": "Async Postgres range query benchmark. Exercises async I/O scheduling, connection pooling, and JSON serialization with live database queries against the 100,000-row `items` table. Reference-only - not part of the composite score.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://http-arena.com/docs/test-profiles/h1/async-database/"
+      }
+    },
+    {
+      "name": "Fortunes",
+      "description": "Template rendering benchmark: query 200 rows from Postgres, append one row at request time, sort, and render an HTML table with auto-escaping. Reference-only - not part of the composite score.",
+      "externalDocs": {
+        "description": "Test Profile",
+        "url": "https://http-arena.com/docs/test-profiles/h1/fortunes/"
       }
     },
     {
       "name": "H2 Baseline",
-      "description": "HTTP/2 baseline — same `a + b` sum as `/baseline11` but served over HTTP/2. Two sub-profiles: **baseline-h2** (port 8443, TLS + ALPN `h2`) and **baseline-h2c** (port 8082, h2c prior-knowledge, no TLS). Port 8082 must refuse HTTP/1.1.",
+      "description": "HTTP/2 baseline - same `a + b` sum as `/baseline11` but served over HTTP/2 with 100 concurrent streams per connection. Two sub-profiles: **baseline-h2** (port 8443, TLS + ALPN `h2`) and **baseline-h2c** (port 8082, h2c prior-knowledge, no TLS).",
       "externalDocs": {
         "description": "Test Profile (H2 TLS)",
         "url": "https://http-arena.com/docs/test-profiles/h2/baseline-h2/"
@@ -144,7 +156,7 @@
     },
     {
       "name": "H2 Static Files",
-      "description": "Same `/static/*` endpoint as the HTTP/1.1 static profile, served over HTTP/2+TLS on port 8443 with 32 concurrent streams per connection.",
+      "description": "Same `/static/*` endpoint as Static Files over TLS, served over HTTP/2 + TLS on port 8443 with 32 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/h2/static-h2/"
@@ -152,7 +164,7 @@
     },
     {
       "name": "H2 JSON",
-      "description": "Same `/json/{count}` endpoint as the HTTP/1.1 JSON profile, served over HTTP/2 cleartext (h2c) on port 8082 with 32 concurrent streams per connection.",
+      "description": "Same `/json/{count}` endpoint as the JSON profiles, served over HTTP/2 cleartext (h2c) on port 8082 with 32 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/h2/json-h2c/"
@@ -160,7 +172,7 @@
     },
     {
       "name": "H3 Baseline",
-      "description": "Same `/baseline2` endpoint as the H2 baseline, served over HTTP/3 / QUIC on port 8443. Only frameworks with native QUIC support participate.",
+      "description": "Same `/baseline2` endpoint as the H2 baseline, served over HTTP/3 / QUIC on UDP port 8443 with 64 concurrent streams per connection. Only frameworks with native QUIC support participate.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/h3/baseline-h3/"
@@ -168,7 +180,7 @@
     },
     {
       "name": "H3 Static Files",
-      "description": "Same `/static/*` endpoint, served over HTTP/3 / QUIC on port 8443 with 64 concurrent streams per connection.",
+      "description": "Same `/static/*` endpoint, served over HTTP/3 / QUIC on UDP port 8443 with 64 concurrent streams per connection.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/h3/static-h3/"
@@ -176,7 +188,7 @@
     },
     {
       "name": "gRPC Unary",
-      "description": "Unary gRPC RPC (`GetSum`) over HTTP/2 cleartext on port 8080. Load generator: h2load with 100 concurrent streams per connection.",
+      "description": "Unary gRPC RPC (`GetSum`) with 100 concurrent streams per connection. Two profiles with the same RPC and load: **unary-grpc** over HTTP/2 cleartext (h2c, prior-knowledge) on port 8080, and **unary-grpc-tls** over HTTP/2 + TLS (ALPN `h2`) on port 8443.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/grpc/unary/"
@@ -184,7 +196,7 @@
     },
     {
       "name": "WebSocket Echo",
-      "description": "WebSocket echo benchmark. Each connection upgrades via HTTP/1.1 then exchanges text frames. Note: the WebSocket message exchange after the `101` response cannot be modeled in OpenAPI 3.0 — only the HTTP upgrade handshake is documented here.",
+      "description": "WebSocket echo benchmark. Each connection upgrades via HTTP/1.1, then exchanges `\"hello\"` text frames. Three profiles share the `/ws` endpoint: **echo-ws** (one message in flight), **echo-ws-pipeline** (16 messages in flight) and **echo-ws-limited** (connection closed and re-upgraded after 10 messages). Note: the message exchange after the `101` response cannot be modeled in OpenAPI 3.0 - only the HTTP upgrade handshake is documented here.",
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/ws/echo/"
@@ -193,16 +205,22 @@
   ],
   "paths": {
     "/baseline11": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext"
+        }
+      ],
       "get": {
         "tags": [
           "Baseline"
         ],
         "summary": "Sum two query parameters",
-        "description": "Returns `a + b` as plain text. Used in the primary throughput benchmark (connections: 512, 4096), the short-lived connections profile (same endpoint, connections closed after 10 requests), and mixed API workload profiles (API-4, API-16).\n\n**Production:** Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults.\n\n**Tuned:** May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed.",
+        "description": "Returns `a + b` as plain text with `Content-Type: text/plain` (a `charset` suffix is allowed).\n\nUsed by the **baseline** profile (4,096 keep-alive connections, mixed with the two POST forms below), the **limited-conn** profile (same requests, connections closed after 10 requests) and the fixed-rate **latency-1m**, **latency-10k** and **latency-500k-8cpu** profiles, which send `GET /baseline11?a=1&b=2` at a pinned rate. The latency profiles add no code, but they charge every CPU cycle the server spends - busy-wait loops, spin-polling and fixed-cadence timers are all counted there.\n\nValidation also sends randomized operands, lower-cased header names, and requests split into fragments at every byte offset, so the parser must reassemble requests across reads.\n\n**Standard:** Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults.\n\n**Tuned:** May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed.\n\n**Infrastructure:** Configuration is free. The endpoint must be answered by a module or handler loaded into the server itself, not proxied to an application process behind it.",
         "operationId": "baselineGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/baseline/implementation/"
         },
         "parameters": [
           {
@@ -248,11 +266,11 @@
           "Baseline"
         ],
         "summary": "Sum query parameters and plain-text body value",
-        "description": "Returns `a + b + body` as plain text. The load generator sends requests with both `Content-Length` and chunked `Transfer-Encoding` bodies; both must be handled correctly.\n\n**Production:** Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults.\n\n**Tuned:** May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed.",
+        "description": "Returns `a + b + body` as plain text with `Content-Type: text/plain`. The load generator sends bodies framed with both `Content-Length` and chunked `Transfer-Encoding`, and does not send a `Content-Type` header; both framings must be handled correctly.\n\n**Standard:** Must use the framework standard HTTP server with default configuration. No custom TCP tuning, no experimental flags, no worker count beyond framework defaults.\n\n**Tuned:** May adjust worker counts, thread pools, TCP socket options, and use framework-specific performance flags. Custom buffer sizes allowed.\n\n**Infrastructure:** Configuration is free. The endpoint must be answered by a module or handler loaded into the server itself, not proxied to an application process behind it.",
         "operationId": "baselinePost",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/baseline/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/baseline/implementation/"
         },
         "parameters": [
           {
@@ -306,70 +324,23 @@
         }
       }
     },
-    "/baseline2": {
-      "get": {
-        "tags": [
-          "H2 Baseline",
-          "H3 Baseline"
-        ],
-        "summary": "Sum two query parameters (H2 / H3 baseline)",
-        "description": "Same sum computation as `/baseline11` but used exclusively by the HTTP/2 and HTTP/3 profiles. Served on three ports depending on the profile:\n\n- **Port 8443** (HTTP/2+TLS, ALPN `h2`) — baseline-h2 profile\n- **Port 8082** (HTTP/2 cleartext, h2c prior-knowledge) — baseline-h2c profile; this port must refuse HTTP/1.1 connections\n- **Port 8443** (HTTP/3 / QUIC) — baseline-h3 profile\n\nAlso used as the backend sum endpoint in all gateway profiles (`/baseline2?a=N&b=M`).\n\n**Production:** Must use the framework standard HTTP/2 + TLS configuration. No custom ALPN settings or TLS cipher tuning.\n\n**Tuned:** May optimize TLS settings, HTTP/2 stream limits, window sizes, and connection parameters.",
-        "operationId": "baseline2Get",
-        "externalDocs": {
-          "description": "Implementation Guidelines (H2)",
-          "url": "https://http-arena.com/docs/test-profiles/h2/baseline-h2/implementation/"
-        },
-        "parameters": [
-          {
-            "name": "a",
-            "in": "query",
-            "required": true,
-            "description": "First integer operand",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "example": 1
-            }
-          },
-          {
-            "name": "b",
-            "in": "query",
-            "required": true,
-            "description": "Second integer operand",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "example": 1
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Sum of `a` and `b`",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "integer",
-                  "format": "int32",
-                  "example": 2
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/pipeline": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext"
+        }
+      ],
       "get": {
         "tags": [
           "Pipelined"
         ],
-        "summary": "Pipelining probe — return fixed 'ok' response",
-        "description": "Returns the fixed plain-text string `ok`. Used exclusively by the pipelined profile, where the load generator sends 16 requests back-to-back on each connection before awaiting responses. The trivial response body removes application-level variance so the benchmark measures pure HTTP pipeline handling throughput.\n\n**Production:** Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations.\n\n**Tuned:** May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags.",
+        "summary": "Pipelining probe - return fixed 'ok' response",
+        "description": "Returns the fixed plain-text string `ok` with `Content-Type: text/plain`. Used exclusively by the pipelined profile, where the load generator sends 16 requests back-to-back on each connection before awaiting responses. The trivial response body removes application-level variance so the benchmark measures pure HTTP pipeline handling throughput.\n\n**Standard:** Must use the framework standard request handling. No custom pipeline batching or read-ahead optimizations.\n\n**Tuned:** May implement custom pipeline batching, read buffer optimizations, or framework-specific pipelining flags.\n\n**Infrastructure:** Configuration is free. Each request in a batch must produce its own response; coalescing the batch into one pre-built buffer, or answering from a cache keyed on the request line, is not allowed.",
         "operationId": "pipelineGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/pipelined/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/pipelined/implementation/"
         },
         "responses": {
           "200": {
@@ -386,100 +357,47 @@
         }
       }
     },
-    "/static/{filename}": {
+    "/delay/{ms}": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext"
+        }
+      ],
       "get": {
         "tags": [
-          "Static Files",
-          "H2 Static Files",
-          "H3 Static Files"
+          "Async Delay"
         ],
-        "summary": "Serve a static file",
-        "description": "Serves one of 20 pre-loaded static assets from `/data/static/`. The load generator round-robins across all 20 URIs with `Accept-Encoding: br;q=1, gzip;q=0.8`.\n\nCompression is optional. When the client sends `Accept-Encoding`, the server should compress text files (CSS, JS, HTML, SVG, JSON) and skip already-compressed binary formats (woff2, webp). Pre-compressed `.gz` and `.br` sidecar files are available on disk for all text files.\n\nThis endpoint is also used directly from the gateway profiles, where the proxy serves `/static/*` from disk.\n\n**Production:** Must load files from disk on every request. No in-memory caching, no memory-mapped files. Compression must use the framework's standard middleware or built-in static file handler. Serving pre-compressed `.br`/`.gz` variants via a documented framework API is allowed.\n\n**Tuned:** May cache files in memory at startup, use memory-mapped files, or any caching strategy. Free to use any compression approach.",
-        "operationId": "staticGet",
+        "summary": "Wait `ms` milliseconds, then echo the delay",
+        "description": "Parses `{ms}` from the path, waits that long, and responds with the parsed number as the body and `Content-Type: text/plain`. `GET /delay/0` is a valid request that must answer immediately with `0`.\n\nThe benchmark sends a flat `GET /delay/10` over 32,000 held connections, so the throughput ceiling is `connections / delay` = 3.2M rps. Validation draws its own delays after the container is up, checks that each response took at least ~90% of the requested time, that `/delay/500` takes measurably longer than `/delay/10`, and runs 32 overlapping requests with 32 different delays - the delay is per-request state, never a field on the server, connection or handler.\n\nPrefer a real async wait (`await Task.Delay`, `tokio::time::sleep`, `asyncio.sleep`, ...). Blocking the thread is permitted but caps throughput at `threads / delay`; do not create a thread per request, and do not sleep by polling I/O.\n\n**Standard:** Bind `/delay/{ms}` with the framework's own router and wait with the framework's own idiomatic mechanism. Blocking the request's thread for the duration is permitted, but you may not answer before the delay has elapsed, and the delay must be read from the path on every request.\n\n**Tuned:** May use a custom timer wheel, a dedicated timer thread, coarser timer granularity, or batched expiry, so long as no response leaves before its own delay has elapsed.\n\n**Engine:** Must derive the wait from the request path with a real timer. A fixed configured interval, a static delay directive, or anything that answers without reading `{ms}` is not an implementation of this profile.",
+        "operationId": "delayGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/static/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/async/implementation/"
         },
         "parameters": [
           {
-            "name": "filename",
+            "name": "ms",
             "in": "path",
             "required": true,
-            "description": "Asset filename, e.g. `reset.css`, `app.js`, `hero.webp`",
+            "description": "Delay in whole milliseconds. `0` means no delay.",
             "schema": {
-              "type": "string",
-              "example": "reset.css"
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0,
+              "example": 10
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "File contents with correct `Content-Type`. May include `Content-Encoding: br` or `Content-Encoding: gzip` when compression was applied.",
-            "headers": {
-              "Content-Type": {
-                "description": "MIME type matching the file extension (e.g. `text/css`, `application/javascript`, `image/webp`)",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "Content-Encoding": {
-                "description": "Compression applied, if any. Only present when the response body is compressed.",
-                "schema": {
-                  "type": "string",
-                  "enum": [
-                    "br",
-                    "gzip"
-                  ]
-                }
-              }
-            },
-            "content": {
-              "*/*": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "File not found"
-          }
-        }
-      }
-    },
-    "/upload": {
-      "post": {
-        "tags": [
-          "Upload"
-        ],
-        "summary": "Upload binary body and return its byte count",
-        "description": "Reads the entire request body and returns the byte count as plain text. The benchmark rotates payloads across 500 KB, 2 MB, 10 MB, and 20 MB.\n\nThe byte count must be computed by reading the uploaded data. **Do not** return the `Content-Length` header value — this defeats the purpose of the test, which measures body ingestion throughput.\n\n**Production:** Must use the framework standard body reading API. Streaming is allowed if the framework supports it natively.\n\n**Tuned:** May use custom buffer sizes, direct socket reads, or bypass framework body parsing for maximum throughput.",
-        "operationId": "upload",
-        "externalDocs": {
-          "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/upload/implementation/"
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/octet-stream": {
-              "schema": {
-                "type": "string",
-                "format": "binary"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Exact number of bytes received in the request body",
+            "description": "The parsed delay, in decimal, with no surrounding whitespace or JSON. Sent no earlier than `ms` milliseconds after the request arrived.",
             "content": {
               "text/plain": {
                 "schema": {
                   "type": "integer",
-                  "format": "int64",
-                  "example": 20971520
+                  "format": "int32",
+                  "example": 10
                 }
               }
             }
@@ -488,24 +406,42 @@
       }
     },
     "/json/{count}": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext - json-comp"
+        },
+        {
+          "url": "https://localhost:8081",
+          "description": "HTTP/1.1 + TLS - json-tls"
+        },
+        {
+          "url": "http://localhost:8082",
+          "description": "HTTP/2 cleartext - json-h2c"
+        },
+        {
+          "url": "https://localhost:9000",
+          "description": "HTTP/1.1 + TLS - opt-in tls_check listener (probed with /json/1)"
+        }
+      ],
       "get": {
         "tags": [
-          "JSON Processing",
+          "JSON",
           "H2 JSON"
         ],
         "summary": "Process dataset items and serialize JSON",
-        "description": "Returns the first `count` items (1–50) from the pre-loaded dataset (`/data/dataset.json`), each with a computed `total` field (`price × quantity × m`). The `count` field in the response must equal the route parameter.\n\nThe benchmark rotates across seven `(count, m)` pairs: `(1,3)`, `(5,7)`, `(10,2)`, `(15,5)`, `(25,4)`, `(40,8)`, `(50,6)`. Different multipliers per template ensure every response body is unique — caching by path alone returns wrong totals.\n\n**Compression (json-compressed profile):** when the client sends `Accept-Encoding: gzip, br`, the server must compress the response body and set `Content-Encoding`. When no `Accept-Encoding` is sent, no `Content-Encoding` must be set. Compression must use the framework's built-in middleware.\n\n**TLS variant (json-tls profile):** same endpoint served on **port 8081** over HTTP/1.1+TLS (ALPN `http/1.1`). No `Accept-Encoding` is sent by the load generator for this profile.\n\n**H2c variant (json-h2c profile):** same endpoint served on **port 8082** over HTTP/2 cleartext.\n\n**Production:** Must use the framework standard JSON serialization. No pre-serialized caches, no custom serializers, no bypassing the framework response pipeline.\n\n**Tuned:** May use alternative JSON libraries (simd-json, sonic-json) and framework-specific optimizations. The JSON body must still be serialized per request from live data — pre-computed response caches are not allowed on either type.",
+        "description": "Returns the first `count` items (1-50) from the pre-loaded dataset (`/data/dataset.json`), unchanged, each with a computed `total` field (`price × quantity × m`). Responds with `Content-Type: application/json`. The `count` field in the response must equal the route parameter.\n\n**json-tls** (port 8081, HTTP/1.1 + TLS, ALPN `http/1.1`) and **json-h2c** (port 8082, HTTP/2 cleartext) rotate across seven `(count, m)` pairs: `(1,3)`, `(5,7)`, `(10,2)`, `(15,5)`, `(25,4)`, `(40,8)`, `(50,6)`. No `Accept-Encoding` is sent.\n\n**json-comp** (port 8080) rotates across `(25,4)`, `(40,8)`, `(50,6)` and sends `Accept-Encoding: gzip, br`. The server must compress the body with gzip or brotli and set the matching `Content-Encoding`; when no `Accept-Encoding` is sent, no `Content-Encoding` may be set. This profile is scored by a compression-weighted formula, so smaller bodies win.\n\nThe gateway profiles request `/json/{count}` without `m`, so a missing `m` must be treated as 1.\n\nValidation draws `count` and `m` at random on every run and compares every item field by field against `data/dataset.json`, so a made-up item with a self-consistent `total` fails.\n\n**Standard:** Must use the framework standard JSON serialization - and, for json-comp, the framework or engine's built-in response compression. json-tls must use a standard TLS stack (OpenSSL, BoringSSL, rustls, SChannel, JDK JSSE, ...). No pre-serialized or pre-compressed caches, no bypassing the framework response pipeline.\n\n**Tuned:** May use alternative JSON libraries, tuned compression libraries, tuned TLS providers, HTTP/2 stream and window tuning, and framework-specific optimizations. The JSON body must still be serialized (and compressed) per request from live data - pre-computed response caches are not allowed on either type.\n\n**Infrastructure:** The JSON body must be serialized per request by the handler module. A static file on disk, a literal-response config directive, or any pre-serialized response cache does not qualify. TLS must come from a standard stack and every connection must complete a real handshake.",
         "operationId": "jsonGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/json-processing/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/json-tls/implementation/"
         },
         "parameters": [
           {
             "name": "count",
             "in": "path",
             "required": true,
-            "description": "Number of items to return (1–50)",
+            "description": "Number of items to return (1-50)",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -518,21 +454,31 @@
             "name": "m",
             "in": "query",
             "required": false,
-            "description": "Integer multiplier used to compute each item's `total` as `price × quantity × m`. Defaults to 1 when absent.",
+            "description": "Integer multiplier used to compute each item's `total` as `price × quantity × m`. Treated as 1 when absent.",
             "schema": {
               "type": "integer",
               "format": "int32",
               "default": 1,
               "example": 3
             }
+          },
+          {
+            "name": "Accept-Encoding",
+            "in": "header",
+            "required": false,
+            "description": "Sent by the json-comp profile only. When present, the response must be compressed.",
+            "schema": {
+              "type": "string",
+              "example": "gzip, br"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Processed dataset items with computed totals. May include `Content-Encoding: gzip` or `Content-Encoding: br` when responding to a request with `Accept-Encoding`.",
+            "description": "Processed dataset items with computed totals. Compressed, with `Content-Encoding: gzip` or `br`, when the request carried `Accept-Encoding`.",
             "headers": {
               "Content-Encoding": {
-                "description": "Compression applied (json-compressed profile only). Absent when client did not send `Accept-Encoding`.",
+                "description": "Compression applied (json-comp). Must be absent when the client did not send `Accept-Encoding`.",
                 "schema": {
                   "type": "string",
                   "enum": [
@@ -575,17 +521,172 @@
         }
       }
     },
+    "/echo": {
+      "servers": [
+        {
+          "url": "https://localhost:8081",
+          "description": "HTTP/1.1 + TLS - 8gbit (ALPN: http/1.1)"
+        }
+      ],
+      "post": {
+        "tags": [
+          "8Gbit Echo"
+        ],
+        "summary": "Echo the request body back verbatim",
+        "description": "Reads the request body and writes the same bytes back, unchanged, with `Content-Type: application/octet-stream`. Used by the **8gbit** profile over HTTP/1.1 + TLS on port 8081: 10 KB bodies with `Content-Length`, a fixed offered rate of 50,000 req/s over 512 connections. The profile is scored on CPU per request and latency, gated on holding the rate.\n\nThe benchmark sends `Content-Length`, but **chunked must work too**. Validation posts random bodies of 1 B, 1 KB, 10 KB and 100 KB, chunked bodies of 10 KB and 100 KB, and an empty body (which must return `200` with an empty body), and compares every echo byte for byte. All probes use HTTP/1.1, even if port 8081 also advertises `h2`.\n\n**Standard:** Must read the request body through the framework's standard body API and write it back through the standard response API. Streaming is allowed and encouraged. Answering without reading - a response assembled from `Content-Length`, or a canned buffer of the right size - is not an echo.\n\n**Tuned:** May stream, use vectored writes, reuse buffers, or hand the bytes back with zero copies. The body must still be the bytes that arrived.\n\n**Engine:** Same as above. An engine is free to splice or reuse the receive buffer directly for the response.\n\n**Infrastructure:** A proxy may stream the body through to an origin and back, or echo it itself. Either way the bytes returned must be the bytes sent.",
+        "operationId": "echoPost",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/h1/8gbit/implementation/"
+        },
+        "requestBody": {
+          "required": false,
+          "description": "Arbitrary bytes. 10,240 bytes in the benchmark; any size, including empty, in validation.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request body, byte for byte",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/static/{filename}": {
+      "servers": [
+        {
+          "url": "https://localhost:8081",
+          "description": "HTTP/1.1 + TLS - static-tls"
+        },
+        {
+          "url": "https://localhost:8443",
+          "description": "HTTP/2 + TLS - static-h2; HTTP/3 over QUIC (UDP) - static-h3"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Static Files over TLS",
+          "H2 Static Files",
+          "H3 Static Files"
+        ],
+        "summary": "Serve a static file",
+        "description": "Serves one of 20 static assets from `/data/static/` with the `Content-Type` matching the file extension (e.g. `text/css`, `application/javascript`, `application/json`). Missing files return `404`. The load generator round-robins across all 20 URIs with `Accept-Encoding: br;q=1, gzip;q=0.8`.\n\nUsed by **static-tls** (port 8081, HTTP/1.1 + TLS, 1,024 connections), **static-h2** (port 8443, HTTP/2 + TLS, 32 streams per connection) and **static-h3** (UDP port 8443, HTTP/3, 64 streams per connection). In the gateway profiles the proxy serves `/static/*` straight from disk.\n\nCompression is optional. When applied, it should cover the text files (CSS, JS, HTML, SVG, JSON) and skip the already-compressed binary formats (woff2, webp). Pre-compressed `.gz` (level 9) and `.br` (level 11) siblings are on disk for the 15 text files; serving them is allowed for every entry type.\n\n**Files must follow the disk.** Validation replaces a file with different bytes of the same length while the server runs, and the next response must carry the new bytes within 2 seconds (30 seconds for infrastructure entries). It also checks every file's size, decompressed sizes, and the 404.\n\n**Standard:** File contents may be served from memory, but the cache must be the framework's own - a documented static file handler with whatever caching it comes with. No reading the directory into a map at startup, no pre-loaded buffers, no mapping the files by hand. Compression must use the framework's standard middleware or built-in static file handler - no handmade compression code. Serving the pre-compressed `.br`/`.gz` variants on disk is allowed, by a documented framework API where one exists, and otherwise by selecting the variant off `Accept-Encoding`; the response must carry the original file's `Content-Type` and the matching `Content-Encoding`.\n\n**Tuned:** Same cache rule as Standard: the framework's own cache, following the disk. Pre-rendered response headers are allowed, as is serving the pre-compressed variants by any mechanism, with any compression approach.\n\n**Engine:** Same cache rule as Standard. No other restrictions.\n\n**Infrastructure:** Configuration is free, including sendfile, `open_file_cache`, mmap and in-memory caching. Bodies must come from the mounted static directory.\n\nTLS (and, for static-h3, QUIC) must come from a standard stack, and every connection must complete a real handshake.",
+        "operationId": "staticGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/h1/static-tls/implementation/"
+        },
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "description": "Asset filename",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "reset.css",
+                "layout.css",
+                "theme.css",
+                "components.css",
+                "utilities.css",
+                "analytics.js",
+                "helpers.js",
+                "app.js",
+                "vendor.js",
+                "router.js",
+                "header.html",
+                "footer.html",
+                "regular.woff2",
+                "bold.woff2",
+                "logo.svg",
+                "icon-sprite.svg",
+                "hero.webp",
+                "thumb1.webp",
+                "thumb2.webp",
+                "manifest.json"
+              ],
+              "example": "reset.css"
+            }
+          },
+          {
+            "name": "Accept-Encoding",
+            "in": "header",
+            "required": false,
+            "description": "Sent by the load generator on every request",
+            "schema": {
+              "type": "string",
+              "example": "br;q=1, gzip;q=0.8"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File contents with the correct `Content-Type`. May include `Content-Encoding: br` or `Content-Encoding: gzip` when compression was applied; the decompressed body must equal the file on disk.",
+            "headers": {
+              "Content-Type": {
+                "description": "MIME type matching the file extension: `text/css`, `application/javascript`, `text/html`, `font/woff2`, `image/svg+xml`, `image/webp`, `application/json`",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Encoding": {
+                "description": "Compression applied, if any. Only present when the response body is compressed.",
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "br",
+                    "gzip"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found"
+          }
+        }
+      }
+    },
     "/async-db": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext"
+        }
+      ],
       "get": {
         "tags": [
           "Async Database"
         ],
         "summary": "Query items from Postgres by price range",
-        "description": "Executes `SELECT ... FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3` asynchronously, restructures `rating_score`/`rating_count` columns into a nested `rating` object, and serializes the result as JSON.\n\nReturns `{\"items\":[],\"count\":0}` when no rows match or the database is unavailable (do not return an error response).\n\n**Production:** Must use an async PostgreSQL driver with standard connection pooling. Size the pool from the `DATABASE_MAX_CONN` environment variable (currently 256), not from CPU count.\n\n**Tuned:** May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults.",
+        "description": "Executes `SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3` asynchronously, restructures `rating_score`/`rating_count` into a nested `rating` object, and serializes the result as JSON with `Content-Type: application/json`.\n\nThe benchmark sends `min=10&max=50` with `limit` rotating across 5, 10, 20, 35 and 50, over 1,024 connections. Validation draws `min`, `max` and `limit` at random, and checks that an empty range (`min=9999&max=9999`) returns `count: 0`.\n\nReturns `{\"items\":[],\"count\":0}` when no rows match or the database is unavailable (do not return an error response). Read the connection string from `DATABASE_URL`; never hardcode it.\n\n**Standard:** Must use an async PostgreSQL driver with standard connection pooling. Size the pool from the `DATABASE_MAX_CONN` environment variable (currently 256), not from CPU count.\n\n**Tuned:** May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults.",
         "operationId": "asyncDbGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/async-database/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/async-database/implementation/"
         },
         "parameters": [
           {
@@ -616,7 +717,7 @@
             "name": "limit",
             "in": "query",
             "required": false,
-            "description": "Maximum number of items to return (1–50). Defaults to 50.",
+            "description": "Maximum number of items to return, clamped to 1-50. Defaults to 50.",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -662,154 +763,79 @@
         }
       }
     },
-    "/crud/items": {
+    "/fortunes": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext"
+        }
+      ],
       "get": {
         "tags": [
-          "CRUD"
+          "Fortunes"
         ],
-        "summary": "List items with pagination",
-        "description": "Returns paginated items from Postgres filtered by `category`, ordered by `id`. Uses load-more semantics: `total` equals `items.length` (the number of items in this response), **not** the full filter row count.\n\nSQL: `SELECT ... FROM items WHERE category = $1 ORDER BY id LIMIT $2 OFFSET $3`\n\n**Production:** Must use a standard async Postgres driver with connection pooling. Cache-aside with 200 ms absolute TTL on single-item reads, invalidated on PUT. In-process cache (e.g. `IMemoryCache`, `HashMap`) is the default; multi-process runtimes may use the provided Redis sidecar (`REDIS_URL`).\n\n**Tuned:** May use custom pool sizes, prepared statements, multi-tier caches, or any cache backend including the Redis sidecar.",
-        "operationId": "itemsList",
+        "summary": "Render the fortunes table as HTML",
+        "description": "On each request:\n\n1. Read all 200 rows from the `fortune` table (`SELECT id, message FROM fortune`, no `ORDER BY`), using the same pool and `DATABASE_URL` as async-db.\n2. Append `{ id: 0, message: \"Additional fortune added at request time.\" }` in memory - 201 rows.\n3. Sort by `message` using ordinal / byte comparison (not locale-aware).\n4. Render a complete HTML document (`<!DOCTYPE html>`) with a `<table>` holding one `<tr>` per fortune, plus an optional header row.\n\nRespond with `Content-Type: text/html` (charset optional). All messages must be HTML-escaped: row 11 contains a raw `<script>` tag, which must appear as `&lt;script&gt;`.\n\nValidation checks features rather than bytes: the Content-Type, the DOCTYPE, 201-210 `<tr>` elements, the runtime-injected row, the escaping, and a body size between 18 KB and 64 KB.\n\n**Standard:** Must render with a real template engine - documented templating syntax, interpolation, control flow, and HTML auto-escaping by default (Razor, Jinja2, ERB, Twig, html/template, Thymeleaf, Handlebars, Askama, templ, ...). The template must be a separate artifact, not inline string concatenation in the handler. No pre-rendered or cached response bodies; the template executes per request.\n\n**Tuned:** May use any rendering strategy, including hand-rolled string building. The handler must still query the database, append the runtime row, sort, and HTML-escape per request - pre-rendered bodies and response caches are not allowed on either type.",
+        "operationId": "fortunesGet",
         "externalDocs": {
           "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+          "url": "https://http-arena.com/docs/test-profiles/h1/fortunes/implementation/"
         },
-        "parameters": [
-          {
-            "name": "category",
-            "in": "query",
-            "required": false,
-            "description": "Filter by category. Defaults to `\"electronics\"`.",
-            "schema": {
-              "type": "string",
-              "default": "electronics",
-              "example": "electronics"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "description": "1-indexed page number. Defaults to 1.",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1,
-              "minimum": 1,
-              "example": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "description": "Items per page (max 50). Defaults to 10.",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 50,
-              "example": 10
-            }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Paginated item list",
+            "description": "Rendered HTML page with 201 fortunes",
             "content": {
-              "application/json": {
+              "text/html": {
                 "schema": {
-                  "$ref": "#/components/schemas/ItemPage"
+                  "type": "string"
                 },
-                "example": {
-                  "items": [
-                    {
-                      "id": 42,
-                      "name": "Alpha Widget 42",
-                      "category": "electronics",
-                      "price": 30,
-                      "quantity": 5,
-                      "active": true,
-                      "tags": [
-                        "fast",
-                        "new"
-                      ],
-                      "rating": {
-                        "score": 42,
-                        "count": 127
-                      }
-                    }
-                  ],
-                  "total": 10,
-                  "page": 1,
-                  "limit": 10
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "CRUD"
-        ],
-        "summary": "Create or upsert an item",
-        "description": "Inserts an item into Postgres using `ON CONFLICT (id) DO UPDATE` (upsert). Returns HTTP 201 with the created or upserted item.",
-        "operationId": "itemsCreate",
-        "externalDocs": {
-          "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
-        },
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateItemRequest"
-              },
-              "example": {
-                "id": 200001,
-                "name": "New Product",
-                "category": "test",
-                "price": 25,
-                "quantity": 10
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Item created or upserted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
+                "example": "<!DOCTYPE html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr><tr><td>11</td><td>&lt;script&gt;alert(&quot;This should not be displayed in a browser alert box.&quot;);&lt;/script&gt;</td></tr>...</table></body></html>"
               }
             }
           }
         }
       }
     },
-    "/crud/items/{id}": {
+    "/baseline2": {
+      "servers": [
+        {
+          "url": "https://localhost:8443",
+          "description": "HTTP/2 + TLS (baseline-h2) and HTTP/3 over QUIC (baseline-h3)"
+        },
+        {
+          "url": "http://localhost:8082",
+          "description": "HTTP/2 cleartext, prior-knowledge (baseline-h2c)"
+        }
+      ],
       "get": {
         "tags": [
-          "CRUD"
+          "H2 Baseline",
+          "H3 Baseline"
         ],
-        "summary": "Get single item by ID (cached)",
-        "description": "Returns a single item by ID using cache-aside with a **200 ms** absolute TTL.\n\n- Cache miss: query Postgres, populate cache, return item with `X-Cache: MISS`\n- Cache hit: return cached item with `X-Cache: HIT`\n- Not found: return HTTP 404\n\nIn-process cache is the default. Multi-process runtimes (e.g. SO_REUSEPORT workers) may use the Redis sidecar at `REDIS_URL` for a shared cache; in that case cache the pre-serialized JSON body so HIT responses skip re-serialization.",
-        "operationId": "itemsGetById",
+        "summary": "Sum two query parameters (H2 / H3 baseline)",
+        "description": "Same sum computation as `/baseline11`, returned as plain text with `Content-Type: text/plain`, used by the HTTP/2 and HTTP/3 profiles. The benchmark sends `GET /baseline2?a=1&b=1`:\n\n- **Port 8443** (HTTP/2 + TLS, ALPN `h2`) - baseline-h2, 256 and 1,024 connections × 100 streams\n- **Port 8082** (HTTP/2 cleartext, prior-knowledge) - baseline-h2c, 256, 1,024 and 4,096 connections × 100 streams. The port may also answer HTTP/1.1; validation requires the response to be HTTP/2 when the client opens with the h2 preface.\n- **UDP port 8443** (HTTP/3 / QUIC) - baseline-h3, 64 connections × 64 streams\n\nAlso used as the backend sum endpoint in the gateway profiles.\n\n**Standard:** Must use the framework standard HTTP/2 + TLS (or h2c, or native QUIC/HTTP3) configuration. No custom ALPN settings or TLS cipher tuning.\n\n**Tuned:** May optimize TLS settings, HTTP/2 stream limits, window sizes, connection parameters, and for HTTP/3 the QUIC parameters, congestion control and UDP buffer sizes.\n\n**Infrastructure:** Configuration is free. HTTP/2 must be the server's own implementation, and QUIC must come from the server's own implementation or a standard library it is built against (quiche, ngtcp2, quictls, msquic). The endpoint must be answered by a module or handler loaded into the server itself, not proxied to an application process behind it.",
+        "operationId": "baseline2Get",
         "externalDocs": {
-          "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
+          "description": "Implementation Guidelines (H2)",
+          "url": "https://http-arena.com/docs/test-profiles/h2/baseline-h2/implementation/"
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
+            "name": "a",
+            "in": "query",
             "required": true,
-            "description": "Item ID",
+            "description": "First integer operand",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "example": 1
+            }
+          },
+          {
+            "name": "b",
+            "in": "query",
+            "required": true,
+            "description": "Second integer operand",
             "schema": {
               "type": "integer",
               "format": "int32",
@@ -819,111 +845,33 @@
         ],
         "responses": {
           "200": {
-            "description": "Item found",
-            "headers": {
-              "X-Cache": {
-                "description": "`MISS` when the item was fetched from Postgres, `HIT` when served from cache",
-                "schema": {
-                  "type": "string",
-                  "enum": [
-                    "MISS",
-                    "HIT"
-                  ]
-                }
-              }
-            },
+            "description": "Sum of `a` and `b`",
             "content": {
-              "application/json": {
+              "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/Item"
-                },
-                "example": {
-                  "id": 1,
-                  "name": "Alpha Widget 1",
-                  "category": "electronics",
-                  "price": 30,
-                  "quantity": 5,
-                  "active": true,
-                  "tags": [
-                    "fast",
-                    "new"
-                  ],
-                  "rating": {
-                    "score": 42,
-                    "count": 127
-                  }
+                  "type": "integer",
+                  "format": "int32",
+                  "example": 2
                 }
               }
             }
-          },
-          "404": {
-            "description": "Item not found"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "CRUD"
-        ],
-        "summary": "Update item and invalidate cache",
-        "description": "Updates the item in Postgres and **invalidates the cache entry** for the ID (in-process or Redis, whichever is in use). Returns 200 with the updated item, or 404 if the item does not exist.",
-        "operationId": "itemsUpdate",
-        "externalDocs": {
-          "description": "Implementation Guidelines",
-          "url": "https://http-arena.com/docs/test-profiles/h1/isolated/crud/implementation/"
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Item ID",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "example": 200001
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateItemRequest"
-              },
-              "example": {
-                "name": "Updated Name",
-                "price": 30,
-                "quantity": 5
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Item updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Item"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Item not found"
           }
         }
       }
     },
     "/ws": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 plaintext (upgraded to WebSocket)"
+        }
+      ],
       "get": {
         "tags": [
           "WebSocket Echo"
         ],
-        "summary": "WebSocket upgrade — echo server",
-        "description": "Upgrades the connection to WebSocket protocol (RFC 6455). After the `101 Switching Protocols` response, the server echoes every received text frame verbatim. The load generator sends text frames containing `\"hello\"` (5 bytes) and awaits the echo before sending the next frame (one message in flight per connection).\n\nOpenAPI 3.0 cannot model the WebSocket message exchange that follows the upgrade. Only the HTTP handshake is documented here.\n\n**Production:** Must use the framework standard WebSocket API with default buffer sizes.\n\n**Tuned:** May optimize WebSocket frame handling, buffer sizes, and use custom frame parsers.",
+        "summary": "WebSocket upgrade - echo server",
+        "description": "Upgrades the connection to the WebSocket protocol (RFC 6455). After the `101 Switching Protocols` response, the server echoes every received message back unchanged, with the same opcode - text frames as text, binary frames as binary. The load generator sends text frames containing `\"hello\"` (5 bytes):\n\n- **echo-ws** - one message in flight per connection (512, 4,096 and 16,384 connections)\n- **echo-ws-pipeline** - 16 messages sent back-to-back, then 16 echoes read\n- **echo-ws-limited** - 10 messages per connection, then the connection is closed and a new one upgraded (512 and 4,096 connections)\n\n`Sec-WebSocket-Accept` must be computed per connection from the client's `Sec-WebSocket-Key`. Validation also checks binary echo, several messages in a row, a clean close handshake, and that a plain `GET /ws` without upgrade headers gets a 4xx (or a closed connection) without taking the server down.\n\nOpenAPI 3.0 cannot model the WebSocket message exchange that follows the upgrade. Only the HTTP handshake is documented here.\n\n**Standard:** Must use the framework standard WebSocket API with default buffer sizes. No custom batching or read-ahead optimizations. The upgrade handshake must be handled by the framework's own WebSocket support - pre-computing or caching the 101 response across connections is not allowed.\n\n**Tuned:** May optimize WebSocket frame handling, the upgrade path, and buffer sizes, and use custom frame parsers or batched read paths, as long as every connection performs a real handshake.",
         "operationId": "wsUpgrade",
         "externalDocs": {
           "description": "Implementation Guidelines",
@@ -976,7 +924,7 @@
         ],
         "responses": {
           "101": {
-            "description": "Switching Protocols — WebSocket connection established. The connection switches to WebSocket framing; subsequent communication is not HTTP.",
+            "description": "Switching Protocols - WebSocket connection established. The connection switches to WebSocket framing; subsequent communication is not HTTP.",
             "headers": {
               "Upgrade": {
                 "schema": {
@@ -1002,17 +950,30 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "Request to `/ws` without valid upgrade headers (`426 Upgrade Required` or another 4xx is equally acceptable)"
           }
         }
       }
     },
     "/benchmark.BenchmarkService/GetSum": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/2 cleartext, prior-knowledge (unary-grpc)"
+        },
+        {
+          "url": "https://localhost:8443",
+          "description": "HTTP/2 + TLS, ALPN h2 (unary-grpc-tls)"
+        }
+      ],
       "post": {
         "tags": [
           "gRPC Unary"
         ],
-        "summary": "gRPC unary — sum two integers",
-        "description": "Unary gRPC RPC over HTTP/2 cleartext (h2c) on port 8080. The server implements `BenchmarkService/GetSum` defined in the shared proto:\n\n```protobuf\nservice BenchmarkService {\n  rpc GetSum (SumRequest) returns (SumReply);\n}\nmessage SumRequest { int32 a = 1; int32 b = 2; }\nmessage SumReply   { int32 result = 1; }\n```\n\nThe load generator (h2load) sends pre-encoded 9-byte gRPC frames (`00 00000004 08011002` for `SumRequest{a=1,b=2}`) with `content-type: application/grpc` and `te: trailers`.\n\nOpenAPI 3.0 cannot model binary protobuf framing. The `application/grpc` body shown here represents the wire format conceptually — refer to the proto definition and linked docs for the exact binary encoding.\n\n**Production:** Must use the standard gRPC library for the language with default configuration. No custom protobuf serialization.\n\n**Tuned:** May optimize gRPC channel settings, thread pools, and use custom protobuf serialization.",
+        "summary": "gRPC unary - sum two integers",
+        "description": "Unary gRPC RPC over HTTP/2: cleartext (h2c, prior-knowledge) on port 8080 for **unary-grpc**, and TLS (ALPN `h2`) on port 8443 for **unary-grpc-tls**. The server implements `BenchmarkService/GetSum` defined in the shared proto (`requests/benchmark.proto`):\n\n```protobuf\nsyntax = \"proto3\";\npackage benchmark;\n\nservice BenchmarkService {\n  rpc GetSum (SumRequest) returns (SumReply);\n}\nmessage SumRequest { int32 a = 1; int32 b = 2; }\nmessage SumReply   { int32 result = 1; }\n```\n\nThe load generator (h2load, 256 and 1,024 connections × 100 streams) sends a pre-encoded 9-byte gRPC frame (`00 00000004 08011002` for `SumRequest{a=1,b=2}`) with `content-type: application/grpc` and `te: trailers`. Validation sends randomized operands, decodes the reply and requires `grpc-status: 0`; server reflection is not required.\n\nOpenAPI 3.0 cannot model binary protobuf framing. The `application/grpc` body shown here represents the wire format conceptually - refer to the proto definition and linked docs for the exact binary encoding.\n\n**Standard:** Must use the standard gRPC library for the language with default configuration. No custom protobuf serialization.\n\n**Tuned:** May optimize gRPC channel settings, thread pools, and use custom protobuf serialization.",
         "operationId": "grpcGetSum",
         "externalDocs": {
           "description": "Implementation Guidelines",
@@ -1030,7 +991,7 @@
         },
         "responses": {
           "200": {
-            "description": "gRPC OK (grpc-status: 0). Response body is a protobuf-encoded `SumReply`.",
+            "description": "gRPC OK (`grpc-status: 0`, sent as a trailer). Response body is a length-prefixed, protobuf-encoded `SumReply`, e.g. `00 00000002 0803` for `result = 3`.",
             "headers": {
               "content-type": {
                 "schema": {
@@ -1041,7 +1002,7 @@
                 }
               },
               "grpc-status": {
-                "description": "gRPC status code. `0` = OK.",
+                "description": "gRPC status code, sent as a trailer. `0` = OK.",
                 "schema": {
                   "type": "string",
                   "enum": [
@@ -1066,7 +1027,7 @@
     "schemas": {
       "Rating": {
         "type": "object",
-        "description": "Aggregated item rating, restructured from the `rating_score` and `rating_count` columns in Postgres.",
+        "description": "Aggregated item rating. In Postgres it is stored as the `rating_score` and `rating_count` columns and must be restructured into this object.",
         "additionalProperties": false,
         "required": [
           "score",
@@ -1087,7 +1048,7 @@
       },
       "Item": {
         "type": "object",
-        "description": "A single item as stored in the Postgres `items` table. Used in async-db, CRUD, and production-stack responses.",
+        "description": "A single item as stored in the Postgres `items` table. Used in async-db and production-stack responses.",
         "additionalProperties": false,
         "required": [
           "id",
@@ -1144,7 +1105,7 @@
       },
       "ProcessedItem": {
         "type": "object",
-        "description": "An item from the JSON dataset with a per-request computed `total` field. Used only in `/json/{count}` and `/public/json/{count}` responses.",
+        "description": "An item from the JSON dataset, unchanged, with a per-request computed `total` field. Used only in `/json/{count}` and `/public/json/{count}` responses.",
         "additionalProperties": false,
         "required": [
           "id",
@@ -1201,7 +1162,7 @@
           "total": {
             "type": "integer",
             "format": "int64",
-            "description": "Computed per request as `price × quantity × m`",
+            "description": "Computed per request as `price × quantity × m` - integer arithmetic, no rounding",
             "example": 14760
           }
         }
@@ -1252,107 +1213,9 @@
           }
         }
       },
-      "ItemPage": {
-        "type": "object",
-        "description": "Paginated response from `GET /crud/items`. Uses load-more semantics: `total` equals `items.length` (items in this response), not the full filter row count.",
-        "additionalProperties": false,
-        "required": [
-          "items",
-          "total",
-          "page",
-          "limit"
-        ],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Item"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Number of items in this response (equals `items.length`). Not the total row count for the filter.",
-            "example": 10
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32",
-            "example": 1
-          },
-          "limit": {
-            "type": "integer",
-            "format": "int32",
-            "example": 10
-          }
-        }
-      },
-      "CreateItemRequest": {
-        "type": "object",
-        "description": "Request body for `POST /crud/items`. All fields are required. The item is inserted with `ON CONFLICT (id) DO UPDATE` (upsert).",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "name",
-          "category",
-          "price",
-          "quantity"
-        ],
-        "properties": {
-          "id": {
-            "type": "integer",
-            "format": "int32",
-            "example": 200001
-          },
-          "name": {
-            "type": "string",
-            "example": "New Product"
-          },
-          "category": {
-            "type": "string",
-            "example": "test"
-          },
-          "price": {
-            "type": "integer",
-            "format": "int32",
-            "example": 25
-          },
-          "quantity": {
-            "type": "integer",
-            "format": "int32",
-            "example": 10
-          }
-        }
-      },
-      "UpdateItemRequest": {
-        "type": "object",
-        "description": "Request body for `PUT /crud/items/{id}` and `POST /api/items/{id}`. Updates `name`, `price`, and `quantity`. The cache entry for the item ID is invalidated on success.",
-        "additionalProperties": false,
-        "required": [
-          "name",
-          "price",
-          "quantity"
-        ],
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Updated Name"
-          },
-          "price": {
-            "type": "integer",
-            "format": "int32",
-            "example": 30
-          },
-          "quantity": {
-            "type": "integer",
-            "format": "int32",
-            "example": 5
-          }
-        }
-      },
       "SumRequest": {
         "type": "object",
-        "description": "Protobuf `SumRequest` message used by both `GetSum` (unary) and `StreamSum` (streaming) RPCs. Over the wire this is a binary gRPC DATA frame — the JSON representation here is for documentation only.\n\n```protobuf\nmessage SumRequest { int32 a = 1; int32 b = 2; }\n```",
+        "description": "Protobuf `SumRequest` message for the `GetSum` RPC. Over the wire this is a binary gRPC DATA frame - the JSON representation here is for documentation only.\n\n```protobuf\nmessage SumRequest { int32 a = 1; int32 b = 2; }\n```",
         "additionalProperties": false,
         "required": [
           "a",
@@ -1371,37 +1234,9 @@
           }
         }
       },
-      "StreamRequest": {
-        "type": "object",
-        "description": "Protobuf `StreamRequest` message for the `StreamSum` server-streaming RPC. Over the wire this is a binary gRPC DATA frame.\n\n```protobuf\nmessage StreamRequest { int32 a = 1; int32 b = 2; int32 count = 3; }\n```",
-        "additionalProperties": false,
-        "required": [
-          "a",
-          "b",
-          "count"
-        ],
-        "properties": {
-          "a": {
-            "type": "integer",
-            "format": "int32",
-            "example": 1
-          },
-          "b": {
-            "type": "integer",
-            "format": "int32",
-            "example": 2
-          },
-          "count": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Number of `SumReply` messages the server must emit. Load generator always sends 5000; clamp defensively to ≥ 1.",
-            "example": 5000
-          }
-        }
-      },
       "SumReply": {
         "type": "object",
-        "description": "Protobuf `SumReply` response message. For `GetSum`: `result = a + b`. For `StreamSum`: `result = a + b + i` for the i-th message (0-indexed). Over the wire this is a binary gRPC DATA frame.\n\n```protobuf\nmessage SumReply { int32 result = 1; }\n```",
+        "description": "Protobuf `SumReply` response message with `result = a + b`. Over the wire this is a binary gRPC DATA frame. proto3 omits the field when `result` is 0.\n\n```protobuf\nmessage SumReply { int32 result = 1; }\n```",
         "additionalProperties": false,
         "required": [
           "result"

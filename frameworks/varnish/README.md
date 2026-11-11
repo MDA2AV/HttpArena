@@ -9,7 +9,7 @@ backend process at all.
 
 ## Stack
 
-- **Engine:** varnishd 9.0 (native TLS via `-A`, HTTP/2 via `feature=+http2`)
+- **Engine:** varnishd 9.1 (native TLS via `-A`, HTTP/2 via `feature=+http2`)
 - **Static files:** `vmod-fileserver`, rooted at `/data`, using `/etc/mime.types`
   for correct `Content-Type` per extension — installed via the Debian
   `media-types` package in the build stage and copied into the final image

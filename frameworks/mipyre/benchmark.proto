@@ -1,0 +1,18 @@
+// HttpArena's unary-grpc service; benchmark_pb2.py next to it is
+// `protoc --python_out=. benchmark.proto` with protoc 36.2.
+syntax = "proto3";
+
+package benchmark;
+
+service BenchmarkService {
+  rpc GetSum (SumRequest) returns (SumReply);
+}
+
+message SumRequest {
+  int32 a = 1;
+  int32 b = 2;
+}
+
+message SumReply {
+  int32 result = 1;
+}

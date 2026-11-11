@@ -1,11 +1,11 @@
 # sober
 
-[Sober](https://github.com/sober-lang/sober)'s standard library HTTP/1.1 server (`std/http` on `std/net`, TLS 1.3 from `std/tls`), default configuration.
+[Sober](https://github.com/sober-lang/sober)'s standard library HTTP/1.1 server (`std/http/server` on `std/net`, TLS 1.3 from `std/tls`), default configuration.
 
 ## Stack
 
-- **Language:** Sober 0.6.6
-- **Framework:** none beyond the standard library: `std/http` (server, router, middleware, gzip), `std/json`, `std/tls`
+- **Language:** Sober 0.7.1
+- **Framework:** none beyond the standard library: `std/http/server` (server, router, middleware, gzip), `std/json`, `std/tls`
 - **Build:** the release tarball of the compiler (one static ELF, standard library built in) on `alpine`, static binary on `scratch`
 
 ## Endpoints
@@ -21,17 +21,17 @@
 
 ## Notes
 
-- Routing through a plain table of `http.Route` values (method, `:param` / `*rest` patterns, per-route
-  `before` / `after` middleware, `Mount` / `Merge` to compose tables), dispatched with `http.Dispatch`
-- The request arrives parsed: `http.Param`, `http.Query`, `http.Header`, a buffered body
-  (Content-Length or chunked), `http.Form` and `http.JsonDoc`. The response is a value
-  (`http.Text`, `http.Json`, or `http.Response{status, contentType, body | stream, headers}`)
+- Routing through a plain table of `http.server.Route` values (method, `:param` / `*rest` patterns, per-route
+  `before` / `after` middleware, `Mount` / `Merge` to compose tables), dispatched with `http.server.Dispatch`
+- The request arrives parsed: `http.server.Param`, `http.server.Query`, `http.server.Header`, a buffered body
+  (Content-Length or chunked), `http.server.Form` and `http.server.JsonDoc`. The response is a value
+  (`http.server.Text`, `http.server.Json`, or `http.server.Response{status, contentType, body | stream, headers}`)
 - JSON serialized per request by `std/json` (`json.Encode`)
-- gzip is the server's built-in response compression (`http.ServeConn(..., compress: http.Gzip{})`),
+- gzip is the server's built-in response compression (`http.server.ServeConn(..., compression: http.server.Gzip{})`),
   at the default level, negotiated per request off `Accept-Encoding`, with `Vary: Accept-Encoding`
 - `json-tls` and `8gbit` listen on `8081` when `/certs/server.crt` and `/certs/server.key` (or `TLS_CERT` /
   `TLS_KEY`) can be read: `tls.Serve` hands each connection to the same route table only after the handshake,
-  and `http.ServeWith` serves it over `tls.Recv` / `tls.Send`. TLS 1.3 only, X25519, AES-128-GCM and
+  and `http.server.ServeWith` serves it over `tls.Recv` / `tls.Send`. TLS 1.3 only, X25519, AES-128-GCM and
   ChaCha20-Poly1305, no session resumption
 - One task per connection (`net.Serve`), on a work-stealing scheduler with one worker per CPU in the
   affinity mask (capped by the cgroup `cpu.max` quota). io_uring with an acceptor per worker, epoll fallback

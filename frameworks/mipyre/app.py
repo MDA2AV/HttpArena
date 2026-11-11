@@ -8,12 +8,14 @@ Ports, threads and TLS come from the MIPYRE_* settings launcher.py gives.
 """
 
 import asyncio
-import html
 import json
 import logging
 import os
 from operator import itemgetter
+from pathlib import Path
 
+import benchmark_pb2
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from mipyre import Mipyre, Request, Response
 from mipyre.db import PgPool
 
@@ -67,13 +69,7 @@ app = Mipyre()
 # engine default of 2.5 MiB is left raised so an oversized body is answered
 # rather than 413'd.
 app.max_body_size = 25 * 1024 * 1024
-# min_size=256 skips tiny bodies (/pipeline "ok", short query params).
-# Arena's json-comp rotates through /json/1..50 with pipeline depth 25
-# and hundreds of connections — throughput is bounded by compression
-# CPU, so pick the cheapest settings that still compress meaningfully:
-# gzip level=1 (fastest) wins ~2x speed over level=6 at ~15% worse ratio,
-# and brotli quality=0 is the brotli equivalent.
-app.enable_compression(min_size=256, brotli_quality=0, gzip_level=1)
+app.enable_compression()
 
 # Static serving — Arena harness mounts /data/static/ (static-h2 on :8443,
 # static-tls on :8081: the same mount serves every port). `precompressed=True`
@@ -86,15 +82,18 @@ app.static("/static", os.environ.get("STATIC_DIR", "/data/static"), precompresse
 # default cap of 1024 would answer every connection past it with 503.
 app.max_websocket_connections = 16384 + 1024
 
-# unary-grpc / unary-grpc-tls: benchmark.BenchmarkService/GetSum, answered by
-# the engine in Rust. Opt-in (without it the path is routed like any other
-# request and 404s here).
-app.enable_grpc_benchmark()
+
+@app.get("/pipeline")
+def pipeline(req: "Request"):
+    return "ok"
 
 
-# /pipeline is answered from the accept loop with a pre-built response; no
-# Python runs for it.
-app.add_fast_response("GET", "/pipeline", b"ok", content_type="text/plain")
+# unary-grpc / unary-grpc-tls: benchmark.BenchmarkService/GetSum, its messages
+# decoded and encoded by protobuf; benchmark_pb2 is protoc's from benchmark.proto.
+@app.unary_unary("/benchmark.BenchmarkService/GetSum")
+def get_sum(message: bytes) -> bytes:
+    request = benchmark_pb2.SumRequest.FromString(message)
+    return benchmark_pb2.SumReply(result=request.a + request.b).SerializeToString()
 
 
 def _sum_ab(req) -> int:
@@ -164,17 +163,8 @@ async def delay(req: "Request"):
 # text, binary as binary) until the client closes. A plain GET /ws without the
 # upgrade headers is not routed here and gets 404.
 @app.websocket("/ws")
-async def ws_echo(ws):
-    async for msg in ws:
-        try:
-            if msg.__class__ is str:
-                await ws.send(msg)
-            else:
-                await ws.send_bytes(msg)
-        except ConnectionError:
-            # The client closed while its echo was being queued: nothing left to
-            # answer, and the connection's end is not an error of this handler.
-            return
+def ws_echo(ws, msg):
+    return msg
 
 
 # Same payload shape + multiplier semantics as Actix/FastAPI reference:
@@ -182,8 +172,7 @@ async def ws_echo(ws):
 # return {"items": [...], "count": N}.
 #
 # Returning the dict lets mipyre serialize it in Rust (pythonize +
-# serde_json) on every request; nothing is cached by URL or parameters
-# (HttpArena's tuned rules forbid response caching keyed by URL/params).
+# serde_json) on every request.
 @app.get("/json/{count}")
 def json_endpoint(req: "Request"):
     try:
@@ -263,16 +252,14 @@ def _rows_to_payload(rows):
 
 # fortunes (GET /fortunes): every request queries the 200 rows, appends the
 # runtime row, sorts by message (str order is code point order, which is the
-# UTF-8 byte order the profile asks for) and renders the page. Tuned mode allows
-# a hand-written emitter; every message goes through html.escape (& < > " ').
-# Only the fixed layout around the rows is a constant.
+# UTF-8 byte order the profile asks for) and renders templates/fortunes.html,
+# which escapes every message.
 _FORTUNES_SQL = "SELECT id, message FROM fortune"
 _FORTUNE_RUNTIME_ROW = (0, "Additional fortune added at request time.")
-_FORTUNES_HEAD = (
-    "<!DOCTYPE html><html><head><title>Fortunes</title></head><body>"
-    "<table><tr><th>id</th><th>message</th></tr>"
-)
-_FORTUNES_TAIL = "</table></body></html>"
+_FORTUNES_TEMPLATE = Environment(
+    loader=FileSystemLoader(Path(__file__).parent / "templates"),
+    autoescape=select_autoescape(),
+).get_template("fortunes.html")
 
 
 @app.get("/fortunes")
@@ -282,13 +269,8 @@ def fortunes(req: "Request"):
     rows = [(r["id"], r["message"]) for r in PG_POOL.fetch_all(_FORTUNES_SQL)]
     rows.append(_FORTUNE_RUNTIME_ROW)
     rows.sort(key=itemgetter(1))
-    escape = html.escape
-    parts = [_FORTUNES_HEAD]
-    append = parts.append
-    for fid, message in rows:
-        append(f"<tr><td>{fid}</td><td>{escape(message)}</td></tr>")
-    append(_FORTUNES_TAIL)
-    return Response("".join(parts), content_type="text/html; charset=utf-8")
+    page = _FORTUNES_TEMPLATE.render(fortunes=rows)
+    return Response(page, content_type="text/html; charset=utf-8")
 
 
 _EMPTY_DB_RESPONSE = {"items": [], "count": 0}

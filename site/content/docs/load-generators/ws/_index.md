@@ -4,7 +4,7 @@ seo_title: "WebSocket Load Generation"
 description: "HttpArena drives its WebSocket profiles with gcannon in --ws mode, reusing the same io_uring engine as the HTTP/1.1 tests."
 ---
 
-HttpArena drives the `echo-ws` profile with **gcannon in `--ws` mode**. The same io_uring engine documented under [HTTP/1.1 → gcannon](../h1/gcannon/) is reused here - worker threads, per-thread provided-buffer rings, multishot receives, per-connection state - with a frame-aware send/recv loop layered on top. Using one tool across transports keeps the client-side ceiling, threading model, and CPU-pinning behavior consistent so differences in the measurement land on the server, not the generator.
+HttpArena drives the WebSocket profiles (`echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`) with **gcannon in `--ws` mode**. The same io_uring engine documented under [HTTP/1.1 → gcannon](../h1/gcannon/) is reused here - worker threads, per-thread provided-buffer rings, multishot receives, per-connection state - with a frame-aware send/recv loop layered on top. Using one tool across transports keeps the client-side ceiling, threading model, and CPU-pinning behavior consistent so differences in the measurement land on the server, not the generator.
 
 ## Handshake
 
@@ -19,7 +19,7 @@ Once upgraded, each connection runs the steady-state loop:
 3. Wait for the server to echo it back (matched server-to-client frame)
 4. On receipt, increment the per-thread frame counter and immediately send the next frame
 
-Pipeline depth is 1 for the `echo-ws` profile - one message in flight per connection - so the measurement is effectively a back-to-back request/response loop rather than a batched burst. With thousands of concurrent connections each running this loop in parallel, the steady-state throughput reflects the server's ability to multiplex WebSocket frames across a large connection count without head-of-line blocking.
+Pipeline depth is 1 for the `echo-ws` profile - one message in flight per connection - so the measurement is effectively a back-to-back request/response loop rather than a batched burst. `echo-ws-pipeline` runs the same loop with 16 messages in flight (`-p 16`), and `echo-ws-limited` closes each connection after 10 messages (`-r 10`) so every replacement connection redoes the upgrade. With thousands of concurrent connections each running this loop in parallel, the steady-state throughput reflects the server's ability to multiplex WebSocket frames across a large connection count without head-of-line blocking.
 
 Both text frames (opcode `0x1`) and binary frames (opcode `0x2`) are exercised against the server during validation; benchmark runs use the text shape for simplicity. Framing follows RFC 6455: masked from client to server, unmasked from server to client, FIN bit set on every frame (no fragmented messages in the benchmark path).
 

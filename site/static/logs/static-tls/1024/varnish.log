@@ -1,5 +1,5 @@
-Debug: Version: varnish-9.0.3 revision 0a625649cd40af4b6c10be5e58a2e89a5e275baa
-Debug: Platform: Linux,6.17.0-22-generic,x86_64,-jnone,-sdefault,-sdefault,-hcritbit
-Debug: Child (21) Started
+Debug: Version: varnish-9.1.0 revision ffd36e9db9a1ec2bf6637deda180a87d40a13d0f
+Debug: Platform: Linux,6.17.0-22-generic,x86_64,-jnone,-sdefault,-sdefault,-ssynth,-hcritbit
+Debug: Child (20) Started
 Child launched OK
-Info: Child (21) said Child starts
+Info: Child (20) said Child starts
