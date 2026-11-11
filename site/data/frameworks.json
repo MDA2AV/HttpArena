@@ -1110,6 +1110,13 @@
       "response": true
     }
   },
+  "hidi": {
+    "dir": "hidi",
+    "description": "C++20 HTTP/2 client/server library on coroutines (kelcoro). Serves h2 on :8443 and h2c (prior knowledge) on :8082.",
+    "repo": "https://github.com/kelbon/hidi",
+    "type": "engine",
+    "engine": "hidi"
+  },
   "hirundo": {
     "dir": "hirundo",
     "description": "Minimal Hirundo engine benchmark pinned to the upstream Helidon/Nima Ring adapter with HTTP/1.1, TLS, HTTP/2, H2c, and WebSocket support.",
