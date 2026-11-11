@@ -2,8 +2,7 @@ use std::path::Path;
 
 use ntex::http::header::{self, ContentEncoding};
 use ntex::http::{self, HttpService};
-use ntex::io::IoConfig;
-use ntex::util::{BytePageSize, Bytes};
+use ntex::util::Bytes;
 use ntex::web::{self, App, HttpRequest, HttpResponse, middleware};
 use ntex_files::NamedFile;
 use serde::{Deserialize, Serialize};
@@ -278,17 +277,6 @@ fn app_config() -> web::WebAppConfig {
     web::WebAppConfig::new().set_state(web::types::PayloadConfig::new(MAX_BODY))
 }
 
-fn server_config(write_page: BytePageSize) -> ntex::SharedCfg {
-    ntex::SharedCfg::new("HTTPARENA")
-        .add(
-            IoConfig::new()
-                .set_read_size(BytePageSize::Size8, BytePageSize::Size64)
-                .set_write_size(write_page)
-                .set_write_backpressure(256 * 1024),
-        )
-        .into()
-}
-
 fn load_tls_config(
     cert: impl std::io::Read,
     key: impl std::io::Read,
@@ -339,7 +327,7 @@ async fn main() -> std::io::Result<()> {
         .bind(
             "http",
             "0.0.0.0:8080",
-            server_config(BytePageSize::Size4),
+            ntex::SharedCfg::default(),
             async move |st| HttpService::new(app(st).await),
         )?;
 
@@ -357,7 +345,7 @@ async fn main() -> std::io::Result<()> {
         server = server.bind(
             "tls-h1",
             "0.0.0.0:8081",
-            server_config(BytePageSize::Size16),
+            ntex::SharedCfg::default(),
             async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
         )?;
         // baseline-h2 and static-h2 negotiate h2 on 8443.
@@ -369,7 +357,7 @@ async fn main() -> std::io::Result<()> {
         server = server.bind(
             "tls-h2",
             "0.0.0.0:8443",
-            server_config(BytePageSize::Size16),
+            ntex::SharedCfg::default(),
             async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
         )?;
     }
@@ -425,7 +413,7 @@ mod tests {
                 .into_boxed_slice(),
         );
         let server = test::server_with(
-            test::config().server_cfg(server_config(BytePageSize::Size4)),
+            test::config().server_cfg(ntex::SharedCfg::default()),
             async move |_| {
                 App::new()
                     .with_config(app_config())
@@ -506,7 +494,7 @@ mod tests {
         let server = test::server_with(
             test::config()
                 .rustls(tls)
-                .server_cfg(server_config(BytePageSize::Size16)),
+                .server_cfg(ntex::SharedCfg::default()),
             async |_| {
                 App::new()
                     .with_config(app_config())
@@ -698,7 +686,7 @@ mod tests {
         let server = test::server_with(
             test::config()
                 .rustls(tls)
-                .server_cfg(server_config(BytePageSize::Size16)),
+                .server_cfg(ntex::SharedCfg::default()),
             async |_| {
                 App::new()
                     .with_config(app_config())
