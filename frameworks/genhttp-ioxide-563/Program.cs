@@ -1,0 +1,102 @@
+using System.Net;
+using System.Security.Authentication;
+
+using genhttp;
+using genhttp.Infrastructure;
+
+using GenHTTP.Api.Infrastructure;
+
+using GenHTTP.Engine.Ioxide;
+
+using ioxide;
+using Microsoft.Extensions.Logging.Abstractions;
+
+// Reactor count follows the available CPUs (api-4 / api-16 control this via cpuset pinning);
+// override with IOXIDE_REACTORS.
+var reactors = int.TryParse(Environment.GetEnvironmentVariable("IOXIDE_REACTORS"), out var rc) ? rc : Environment.ProcessorCount;
+
+// Postgres (async-db / crud) is per-reactor: its pool is opened on each reactor's own thread.
+Postgres.Configure(reactors);
+
+Action<Reactor>? onReactorStart = Postgres.Enabled ? Postgres.Start : null;
+
+// The engine buffers a whole response in one write slab; static assets can exceed the 16 KB default.
+// Size the slab above the largest asset (plus GenHTTP's 64 KB file-copy buffer) - only when static is
+// mounted, so the high-connection profiles keep the small per-connection buffer.
+int? writeSlab = null;
+var staticRoot = Environment.GetEnvironmentVariable("IOXIDE_STATIC") ?? "/data/static";
+if (Directory.Exists(staticRoot))
+{
+    long largest = 0;
+    foreach (var file in Directory.EnumerateFiles(staticRoot, "*", SearchOption.AllDirectories))
+    {
+        largest = Math.Max(largest, new FileInfo(file).Length);
+    }
+    writeSlab = (int)largest + 128 * 1024;
+}
+
+// The harness mounts a certificate pair; without it only the plaintext listeners come up.
+// kTLS derives its keys from one TLS 1.3 ciphersuite, so it pins the floor to 1.3 as well.
+var kernelTls = true;
+var tlsFloor = kernelTls ? SslProtocols.Tls13 : SslProtocols.Tls12 | SslProtocols.Tls13;
+
+var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
+var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
+var hasCert = File.Exists(certPath) && File.Exists(keyPath);
+
+var options = new EngineOptions
+{
+    Reactor = new ReactorOptions
+    {
+        ReactorCount = reactors,
+
+        // RecvSlots and RecvBufferSize are left at the engine's defaults on purpose. A parked
+        // request keeps its recv buffer - the engine parses headers zero-copy out of it - so the
+        // slot count is really a ceiling on requests in flight, not just a buffer count. This entry
+        // used to pin it at 256, carried over from the old BufferRingEntries setting, and the async
+        // profile paid for it: holding 32000 connections on a 10ms wait, the server flat-lined at
+        // slots x reactors in flight however many connections were offered, stretching the wait
+        // rather than serving more. Measured at 12000 connections, 16 reactors:
+        //
+        //     256 slots    385,584 rps   wait stretched to 30.8ms
+        //    4096 slots    934,065 rps   wait held at 10.1ms
+    },
+    Tcp = new TcpTransportOptions
+    {
+        WriteSlabSize = writeSlab ?? new TcpTransportOptions().WriteSlabSize,
+
+        // Kernel TLS on the way out, which is what this entry measured before the engine made it
+        // opt-in: ioxide.tls used to default it on, so json-tls has always been kTLS TX with
+        // OpenSSL still decrypting inbound. It needs the Linux tls module - without it every
+        // handshake on a secure port fails - so IOXIDE_KTLS=0 turns it off.
+        //
+        //     cat /proc/sys/net/ipv4/tcp_available_ulp   # wanted: tls
+        TxKernelTls = kernelTls,
+    },
+};
+
+// Compression is attached per route in Project.cs, not to the host.
+var host = Host.Create(onReactorStart: onReactorStart, options: options)
+               .Logging(NullLoggerFactory.Instance, false)
+               .Handler(Project.Create());
+
+//   :8080  HTTP/1.1 plaintext          baseline, pipelined, limited-conn, async, json-comp, async-db, ws
+//   :8082  HTTP/1.1 + HTTP/2 cleartext baseline-h2c, json-h2c - the preface decides which
+host.Bind(IPAddress.Any, 8080, HttpProtocols.Http1);
+host.Bind(IPAddress.Any, 8082, HttpProtocols.Http1AndHttp2);
+
+if (hasCert)
+{
+    // The engine terminates TLS itself now, in OpenSSL, so the certificate is named as files -
+    // which is also the only form HTTP/3 takes, ngtcp2 loading PEM by path.
+    var certificate = new FileCertificateProvider(certPath, keyPath);
+
+    //   :8081  HTTP/1.1 over TLS                 json-tls, static-tls, 8gbit
+    //   :8443  HTTP/1.1 + HTTP/2 over TCP,       baseline-h2, static-h2 (ALPN picks h2)
+    //          and HTTP/3 over QUIC on the       baseline-h3, static-h3
+    //          same port number
+    host.Bind(IPAddress.Any, 8081, certificate, sslProtocols: tlsFloor, httpProtocols: HttpProtocols.Http1);
+    host.Bind(IPAddress.Any, 8443, certificate, sslProtocols: tlsFloor, httpProtocols: HttpProtocols.All);
+}
+
+await host.RunAsync();
