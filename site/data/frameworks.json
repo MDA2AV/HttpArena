@@ -1844,7 +1844,7 @@
   },
   "paozhu": {
     "dir": "paozhu",
-    "description": "Paozhu C++20 web framework on standalone Asio, built from the upstream mini_project.sh clean scaffold. Annotated controller routes answer /baseline11, /baseline2, /pipeline, /json/{count}?m={multiplier}, /static/{filename}, /async-db?min=&max=&limit= and /fortunes; the dataset is parsed once at startup and serialized per request, static files are read from /data/static on every request, and the DB routes use paozhu's own async Postgres driver. Two server instances share the image: plaintext HTTP/1.1 on :8080 and ALPN h2 on :8443, plus a second instance whose TLS listener on :8081 advertises only http/1.1 for json-tls and whose cleartext :8082 listener serves h2c prior-knowledge for json-h2c.",
+    "description": "Paozhu C++20 web framework on standalone Asio, built from the upstream mini_project.sh clean scaffold. Annotated controller routes answer /baseline11, /baseline2, /pipeline, /json/{count}?m={multiplier}, /static/{filename}, /delay/{ms}, /async-db?min=&max=&limit= and /fortunes; the dataset is parsed once at startup and serialized per request, static files are read from /data/static on every request, and the DB routes use paozhu's own async Postgres driver. Two server instances share the image: plaintext HTTP/1.1 on :8080 and ALPN h2 on :8443, plus a second instance whose TLS listener on :8081 advertises only http/1.1 for json-tls and whose cleartext :8082 listener serves h2c prior-knowledge for json-h2c.",
     "repo": "https://github.com/hggq/paozhu",
     "type": "experimental",
     "engine": "paozhu",
