@@ -2,7 +2,7 @@
   "display_name": "mipyre",
   "language": "Python",
   "type": "experimental",
-  "mode": "tuned",
+  "mode": "standard",
   "completeness": {
     "routing": true,
     "middleware": true,
@@ -27,12 +27,14 @@
     "async",
     "async-db",
     "fortunes",
+    "unary-grpc",
+    "unary-grpc-tls",
     "baseline-h2",
     "static-h2",
     "baseline-h2c",
-    "json-h2c",
-    "unary-grpc",
-    "unary-grpc-tls"
+    "json-h2c"
   ],
-  "maintainers": ["ddxd"]
+  "maintainers": [
+    "ddxd"
+  ]
 }
