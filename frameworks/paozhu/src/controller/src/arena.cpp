@@ -1,8 +1,11 @@
 #include "httppeer.h"
+#include "pzcache.h"
 
 #include <asio/steady_timer.hpp>
 #include <asio/this_coro.hpp>
 #include <asio/use_awaitable.hpp>
+
+#include <sys/stat.h>
 
 #include <chrono>
 #include <cstdio>
@@ -564,6 +567,18 @@ bool safe_filename(const std::string &name)
     return true;
 }
 
+// pzcache payload for one /data/static file. The mtime/size stamp is the
+// freshness check: it is compared against a fresh stat() on EVERY request, so
+// a file the validation suite replaces mid-run is reloaded immediately and a
+// stale body can never outlive the inode it was read from. Only the
+// open+read is cached; the stat stays.
+struct static_file_entry
+{
+    std::string body;
+    long long mtime_sec = 0;
+    long long file_size = 0;
+};
+
 }  // namespace
 
 namespace http
@@ -620,34 +635,70 @@ asio::awaitable<std::string> arena_json(std::shared_ptr<httppeer> peer)
 asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
 {
     const std::string filename = peer->get["filename"].to_string();
-    // Read on every request: the validation suite replaces a mounted file and
-    // expects the next response to carry the new bytes.
-    std::ifstream in;
+    struct stat st {};
+    bool stat_ok = false;
     if (safe_filename(filename))
     {
-        in.open("/data/static/" + filename, std::ios::binary);
+        // stat on every request: the validation suite replaces a mounted file
+        // and expects the next response to carry the new bytes. The pzcache
+        // entry only spares the open+read, never this freshness check.
+        stat_ok = ::stat(("/data/static/" + filename).c_str(), &st) == 0 &&
+                  (st.st_mode & S_IFREG) != 0;
     }
-    // is_open(), not operator bool(): a default-constructed ifstream has a
-    // goodbit state even though no file is attached, so a rejected filename
-    // would otherwise fall through to a 200 with an empty body.
-    if (!in.is_open())
+    if (!stat_ok)
     {
         peer->status(404);
         peer->type("text/plain");
         peer->output = "Not Found";
         co_return "";
     }
-    // Size the body once, then read straight into peer->output: no per-byte
-    // iterator and no second copy. Still one open + one read per request.
-    const std::streampos end = in.seekg(0, std::ios::end).tellg();
-    const std::streamsize size = end < 0 ? 0 : static_cast<std::streamsize>(end);
-    peer->output.resize(static_cast<std::size_t>(size));
-    in.seekg(0, std::ios::beg);
-    if (size > 0 && !in.read(&peer->output[0], size))
+
+    pzcache<static_file_entry> &cache = pzcache<static_file_entry>::conn();
+    const long long mtime_sec = static_cast<long long>(st.st_mtime);
+    const long long file_size = static_cast<long long>(st.st_size);
+    try
     {
-        // Short read (file shrank between sizing and reading): keep what arrived.
-        peer->output.resize(static_cast<std::size_t>(in.gcount()));
+        // get() throws "Not in pzcache" on miss, and the background exptime
+        // sweeper may erase between check() and get(), so the miss path is a
+        // catch rather than a check-then-get. expnum=0: the stat stamp above
+        // decides freshness, not a TTL.
+        const static_file_entry &hit = cache.get(filename);
+        if (hit.mtime_sec == mtime_sec && hit.file_size == file_size)
+        {
+            peer->output = hit.body;
+            peer->type(mime_of(filename));
+            co_return "";
+        }
     }
+    catch (...)
+    {
+    }
+
+    // Size the body once, then read straight into it: no per-byte iterator
+    // and no second copy. Short read (file shrank between stat and read):
+    // keep what arrived. A zero-size file is a valid body, not a miss.
+    std::ifstream in("/data/static/" + filename, std::ios::binary);
+    std::string body;
+    bool read_ok = false;
+    if (in.is_open())
+    {
+        body.resize(static_cast<std::size_t>(file_size));
+        in.read(&body[0], file_size);
+        body.resize(static_cast<std::size_t>(in.gcount()));
+        read_ok = true;
+    }
+    if (!read_ok)
+    {
+        peer->status(404);
+        peer->type("text/plain");
+        peer->output = "Not Found";
+        co_return "";
+    }
+    // cover_data=true: a replaced file overwrites the old body instead of
+    // leaving it while only bumping exptime (pzcache's default).
+    static_file_entry entry{std::move(body), mtime_sec, file_size};
+    cache.save(filename, entry, 0, true);
+    peer->output = std::move(entry.body);
     peer->type(mime_of(filename));
     co_return "";
 }
