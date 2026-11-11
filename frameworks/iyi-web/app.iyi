@@ -1,0 +1,98 @@
+module app
+
+import std/json::{JSON, Builder, PullParser, serializable}
+import std/list::{List}
+import web/iyi_web/dsl::*
+import web/iyi_web/config::*
+import web/iyi_web/context::{Context}
+
+struct Rating
+  getter score : Int64
+  getter count : Int64
+  derive serializable
+end
+
+# Workers share the dataset, so its tags are a `List`, which is Share; an
+# `Array` is not, and std/json reads and writes a `List` through this.
+struct TagList
+  def self.from_json(pull : PullParser) : List(String)
+    tags = [] of String
+    pull.read_array { tags << pull.read_string }
+    List.new(tags)
+  end
+
+  def self.to_json(tags : List(String), json : Builder) : Nil
+    json.array { tags.each { |tag| json.string(tag) } }
+  end
+end
+
+struct Item
+  getter id : Int64
+  getter name : String
+  getter category : String
+  getter price : Int64
+  getter quantity : Int64
+  getter active : Bool
+  @[JSON::Field(converter: TagList)]
+  getter tags : List(String)
+  getter rating : Rating
+  @[JSON::Field(emit_null: false)]
+  getter total : Int64?
+  derive serializable
+
+  def initialize(@id : Int64, @name : String, @category : String, @price : Int64, @quantity : Int64,
+                 @active : Bool, @tags : List(String), @rating : Rating, @total : Int64?)
+  end
+
+  def with_total(m : Int64) : Item
+    Item.new(@id, @name, @category, @price, @quantity, @active, @tags, @rating, @price * @quantity * m)
+  end
+end
+
+struct JsonResponse
+  getter items : Array(Item)
+  getter count : Int32
+  derive serializable
+
+  def initialize(@items : Array(Item), @count : Int32)
+  end
+end
+
+DATASET = List.new(JSON.from_json(File.read(ENV["DATASET_PATH"]? || "/data/dataset.json"), Array(Item)))
+
+get "/pipeline" do |env|
+  env.text("ok")
+end
+
+def query_sum(env : Context) : Int64
+  q = env.params.query
+  ((q["a"]? || "").to_i64? || 0_i64) + ((q["b"]? || "").to_i64? || 0_i64)
+end
+
+get "/baseline11" do |env|
+  env.text(query_sum(env).to_s)
+end
+
+post "/baseline11" do |env|
+  env.text((query_sum(env) + (env.params.raw_body.strip.to_i64? || 0_i64)).to_s)
+end
+
+get "/delay/:ms" do |env|
+  ms = env.params.url["ms"].to_i? || 0
+  sleep(ms)
+  env.text(ms.to_s)
+end
+
+get "/json/:count" do |env|
+  m = (env.params.query["m"]? || "").to_i64? || 1_i64
+  n = (env.params.url["count"].to_i? || 0).clamp(0, DATASET.size)
+  items = [] of Item
+  n.times { |i| items << DATASET[i].with_total(m) }
+  env.json(JsonResponse.new(items, n))
+end
+
+logging false
+serve_static false
+gzip true
+
+run 8080
