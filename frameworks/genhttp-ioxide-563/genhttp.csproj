@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Features>runtime-async=on</Features>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <!-- Server GC without DATAS, which .NET turns on with Server GC by default and which trades
+         throughput for a smaller heap. Holding the async profile's 32000 requests across their
+         waits, it cost 2-3% throughput and a worse p99 locally. Documented setting:
+         https://learn.microsoft.com/dotnet/core/runtime-config/garbage-collector#dynamic-adaptation-to-application-sizes-datas -->
+    <GarbageCollectionAdaptationMode>0</GarbageCollectionAdaptationMode>
+  </PropertyGroup>
+
+  <!-- GenHTTP from the branch checkout the Dockerfile makes, on ioxide 0.26.563; ioxide.pg and
+       ioxide.timer below are built against the same ioxide, so they move with it. -->
+  <PropertyGroup>
+    <GenHttpSource Condition="'$(GenHttpSource)' == ''">$(MSBuildThisFileDirectory)../GenHTTP/</GenHttpSource>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(GenHttpSource)Engine/Ioxide/GenHTTP.Engine.Ioxide.csproj" />
+    <ProjectReference Include="$(GenHttpSource)Modules/IO/GenHTTP.Modules.IO.csproj" />
+    <ProjectReference Include="$(GenHttpSource)Modules/Files/GenHTTP.Modules.Files.csproj" />
+    <ProjectReference Include="$(GenHttpSource)Modules/Layouting/GenHTTP.Modules.Layouting.csproj" />
+    <ProjectReference Include="$(GenHttpSource)Modules/Webservices/GenHTTP.Modules.Webservices.csproj" />
+    <ProjectReference Include="$(GenHttpSource)Modules/Compression/GenHTTP.Modules.Compression.csproj" />
+    <ProjectReference Include="$(GenHttpSource)Modules/Websockets/GenHTTP.Modules.Websockets.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ioxide.pg" Version="0.26.563" />
+    <!-- Ring-native timeouts for /delay: the wait completes on the reactor, not the thread pool. -->
+    <PackageReference Include="ioxide.timer" Version="0.26.563" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="11.0.0-preview.5.26302.115" />
+  </ItemGroup>
+
+</Project>
