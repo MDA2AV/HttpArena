@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Security.Authentication;
 
 using genhttp;
@@ -37,7 +38,8 @@ if (Directory.Exists(staticRoot))
 
 // The harness mounts a certificate pair; without it only the plaintext listeners come up.
 // kTLS derives its keys from one TLS 1.3 ciphersuite, so it pins the floor to 1.3 as well.
-var kernelTls = true;
+// ioxide refuses to start kTLS without the kernel's tls module, which a validation runner can lack.
+var kernelTls = KernelTlsAvailable();
 var tlsFloor = kernelTls ? SslProtocols.Tls13 : SslProtocols.Tls12 | SslProtocols.Tls13;
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
@@ -67,8 +69,8 @@ var options = new EngineOptions
 
         // Kernel TLS on the way out, which is what this entry measured before the engine made it
         // opt-in: ioxide.tls used to default it on, so json-tls has always been kTLS TX with
-        // OpenSSL still decrypting inbound. It needs the Linux tls module - without it every
-        // handshake on a secure port fails - so IOXIDE_KTLS=0 turns it off.
+        // OpenSSL still decrypting inbound. It needs the Linux tls module, so it is on only where
+        // KernelTlsAvailable finds it.
         //
         //     cat /proc/sys/net/ipv4/tcp_available_ulp   # wanted: tls
         TxKernelTls = kernelTls,
@@ -100,3 +102,19 @@ if (hasCert)
 }
 
 await host.RunAsync();
+
+// ioxide's own probe: TCP_ULP "tls" on an unconnected socket refuses with ENOTCONN once the module is found.
+static bool KernelTlsAvailable()
+{
+    using var probe = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+    try
+    {
+        probe.SetRawSocketOption(6 /* SOL_TCP */, 31 /* TCP_ULP */, "tls"u8);
+        return true;
+    }
+    catch (SocketException e)
+    {
+        return e.SocketErrorCode == SocketError.NotConnected;
+    }
+}
