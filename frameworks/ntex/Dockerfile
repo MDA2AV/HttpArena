@@ -7,9 +7,11 @@ COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release --locked \
     && cargo clean --release -p httparena-ntex && rm src/main.rs
 COPY src ./src
+COPY askama.toml ./
+COPY templates ./templates
 RUN cargo build --release --locked
 
 FROM debian:bookworm-slim
 COPY --from=build /app/target/release/httparena-ntex /server
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8443
 CMD ["/server"]
