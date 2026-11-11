@@ -54,6 +54,7 @@ Registered through paozhu annotations; path parameters must be the final segment
 | `/static/{filename}` | GET | Reads `/data/static/{filename}` from disk and serves it with a MIME type |
 | `/async-db?min=&max=&limit=` | GET | Async Postgres range query over `items`, returns `{"items":[...],"count":N}` |
 | `/fortunes` | GET | Reads the 200 `fortune` rows, appends a runtime row, sorts and renders an HTML table |
+| `/delay/{ms}` | GET | Waits `ms` ms on a per-request Asio timer (no blocking sleep), then echoes the value as plain text |
 
 `/data/dataset.json` is parsed once at startup into typed fields. String fields are kept as the raw bytes between the source quotes, so escapes round-trip exactly; the response body is serialized per request because `m` varies. A missing or malformed dataset makes `/json` return 400 rather than taking the other profiles down.
 

@@ -1,5 +1,10 @@
 #include "httppeer.h"
 
+#include <asio/steady_timer.hpp>
+#include <asio/this_coro.hpp>
+#include <asio/use_awaitable.hpp>
+
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -644,6 +649,35 @@ asio::awaitable<std::string> arena_static(std::shared_ptr<httppeer> peer)
         peer->output.resize(static_cast<std::size_t>(in.gcount()));
     }
     peer->type(mime_of(filename));
+    co_return "";
+}
+
+//@urlpath(null,delay/:ms)
+asio::awaitable<std::string> arena_delay(std::shared_ptr<httppeer> peer)
+{
+    // Echo the raw path parameter: /delay/0 must answer "0", not a default.
+    const std::string text = peer->get["ms"].to_string();
+    char *end              = nullptr;
+    const long long asked  = std::strtoll(text.c_str(), &end, 10);
+    long long ms           = (end == text.c_str() || asked < 0) ? 0 : asked;
+    if (ms > 5000)
+    {
+        ms = 5000;
+    }
+
+    // One timer per request, suspended on the coroutine's own executor. The
+    // async profile holds 32K connections, so a blocking sleep here would
+    // exhaust the io threads long before the first response is written.
+    if (ms > 0)
+    {
+        auto executor       = co_await asio::this_coro::executor;
+        asio::steady_timer timer(executor);
+        timer.expires_after(std::chrono::milliseconds(ms));
+        co_await timer.async_wait(asio::use_awaitable);
+    }
+
+    peer->type("text/plain");
+    peer->output = text;
     co_return "";
 }
 
