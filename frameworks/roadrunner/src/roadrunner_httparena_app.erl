@@ -22,12 +22,7 @@ start(_StartType, _StartArgs) ->
         %% The async profile opens 32K connections at once; deepen the
         %% kernel accept queue past the storm size (the kernel clamps
         %% this to `net.core.somaxconn`), like the h2c listener below.
-        socket_backlog => 32768,
-        %% WebSocket sessions inherit the listener's 64 KB socket buffer,
-        %% held live per socket; the echo profiles exchange small text
-        %% frames, so shrink it per roadrunner's ws.recv_buffer production
-        %% guidance for small-message, high-concurrency deployments.
-        ws => #{recv_buffer => 4096}
+        socket_backlog => 32768
     }),
     H2cPort = application:get_env(roadrunner_httparena, h2c_port, 8082),
     {ok, _} = roadrunner:start_listener(httparena_h2c, #{
