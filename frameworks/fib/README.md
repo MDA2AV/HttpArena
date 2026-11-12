@@ -9,7 +9,7 @@ binding.
 ## Stack
 
 - **Language:** Go 1.27.3 (fib's own `go.mod` requires it)
-- **Framework:** fib v1.7.2: `http` (with its `Router`), `http3`, `grpc`, `tls` and `middleware/compress`
+- **Framework:** fib v1.8.0: `http` (with its `Router`), `http3`, `grpc`, `tls` and `middleware/compress`
   packages, no dependencies beyond the standard library. `pgx` for `/async-db`, and
   `google.golang.org/protobuf` for the gRPC messages
 - **Build:** `golang:1.27.3-alpine`, static binary on `scratch`

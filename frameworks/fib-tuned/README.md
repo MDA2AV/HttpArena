@@ -7,7 +7,7 @@ the same as there; see its README.
 ## Stack
 
 - **Language:** Go 1.27.3 (fib's own `go.mod` requires it)
-- **Framework:** fib v1.7.2: `http`, `http3`, `grpc`, `tls` and `middleware` packages
+- **Framework:** fib v1.8.0: `http`, `http3`, `grpc`, `tls` and `middleware` packages
 - **Compression:** `molecule-man/go-brrr` (brotli, as fasthttp uses), `klauspost/compress` (zstd, gzip, deflate)
 - **JSON:** `bytedance/sonic`, as fiber-tuned uses, for the `/json` and `/async-db` responses,
   which answer through `Context.JSON` as in `fib`, with sonic set as fib's `JSONEncoder`:

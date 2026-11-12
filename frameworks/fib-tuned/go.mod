@@ -6,7 +6,7 @@ require (
 	github.com/bytedance/sonic v1.15.4
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/klauspost/compress v1.20.0
-	github.com/lesismal/fib v1.7.3-0.20261108195951-83172f920122
+	github.com/lesismal/fib v1.8.0
 	github.com/molecule-man/go-brrr v1.3.1
 	google.golang.org/protobuf v1.36.10
 )
