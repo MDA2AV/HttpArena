@@ -6,6 +6,7 @@
 
 import java.net.InetSocketAddress
 import ba.sake.potateh.ServerConfig
+import ba.sake.querson.QueryStringRW
 import ba.sake.sharaf.*
 import ba.sake.sharaf.potateh.PotatehSharafServer
 import ba.sake.tupson.*
@@ -36,7 +37,8 @@ object Main {
         val body = Request.current.bodyString.trim.toLongOption.getOrElse(0L)
         Response.withBody((querySum + body).toString)
       case GET -> Path("json", count) =>
-        val multiplier = Request.current.queryParamsRaw.get("m").flatMap(_.headOption).flatMap(_.toLongOption).getOrElse(1L)
+        case class Query(m: Long = 1L) derives QueryStringRW
+        val multiplier = Request.current.queryParams[Query].m
         val items = dataset.take(count.toIntOption.getOrElse(0).max(0)).map { item =>
           item.copy(total = item.price * item.quantity * multiplier)
         }
@@ -53,6 +55,9 @@ object Main {
     Runtime.getRuntime.addShutdownHook(new Thread(() => server.stop()))
   }
 
-  private def querySum(using Request): Long =
-    Request.current.queryParamsRaw.values.flatten.flatMap(_.trim.toLongOption).sum
+  private def querySum(using Request): Long = {
+    case class Query(a: Long = 0L, b: Long = 0L) derives QueryStringRW
+    val query = Request.current.queryParams[Query]
+    query.a + query.b
+  }
 }
