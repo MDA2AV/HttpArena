@@ -60,7 +60,7 @@ struct OutList<'a> {
 fn load_dataset() -> Vec<DatasetItem> {
     let path = std::env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".to_string());
     match std::fs::read_to_string(path) {
-        Ok(text) => serde_json::from_str(&text).unwrap_or_default(),
+        Ok(text) => sonic_rs::from_str(&text).unwrap_or_default(),
         Err(_) => Vec::new(),
     }
 }
@@ -274,7 +274,7 @@ fn routes(
 }
 
 fn app_config() -> web::WebAppConfig {
-    web::WebAppConfig::new().set_state(web::types::PayloadConfig::new(MAX_BODY))
+    web::WebAppConfig::new().set_value(web::types::PayloadConfig::new(MAX_BODY))
 }
 
 fn load_tls_config(
