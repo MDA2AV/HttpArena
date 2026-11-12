@@ -5,7 +5,7 @@
 FROM python:3.14-slim
 WORKDIR /app
 
-ARG MIPYRE_VERSION=4.0.0
+ARG MIPYRE_VERSION=4.1.0
 COPY . ./
 RUN pip install --no-cache-dir --find-links ./wheels "mipyre==${MIPYRE_VERSION}" "jinja2==3.1.6" "protobuf==7.36.2"
 
