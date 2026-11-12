@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 prost = "0.14"
-tako-rs = { version = "2.4.1", features = ["grpc", "http2", "tls"] }
+tako-rs = { version = "2.7.0", features = ["grpc", "http2", "tls"] }
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
 
 [profile.release]

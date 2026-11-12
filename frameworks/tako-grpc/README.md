@@ -1,6 +1,6 @@
 # tako-grpc
 
-The gRPC profiles for [Tako](https://github.com/rust-dd/tako) 2.4.1, reported as `tako`.
+The gRPC profiles for [Tako](https://github.com/rust-dd/tako) 2.7.0, reported as `tako`.
 
 ## Why a separate entry
 
@@ -11,7 +11,7 @@ so the gRPC service gets its own container.
 ## Stack
 
 - **Language:** Rust 1.99
-- **Framework:** tako-rs 2.4.1 (`grpc`, `http2`, `tls`)
+- **Framework:** tako-rs 2.7.0 (`grpc`, `http2`, `tls`)
 - **Protobuf:** prost 0.14
 - **Build:** Multi-stage, `debian:trixie-slim` runtime
 

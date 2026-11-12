@@ -1,13 +1,13 @@
 # tako
 
-[Tako](https://github.com/rust-dd/tako) 2.4.2 (`tako-rs` on crates.io) on hyper and Tokio, default configuration.
+[Tako](https://github.com/rust-dd/tako) 2.7.0 (`tako-rs` on crates.io) on hyper and Tokio, default configuration.
 gRPC lives in [`tako-grpc`](../tako-grpc) and the gateway stacks in [`tako-gateway`](../tako-gateway);
 all three report as `tako`.
 
 ## Stack
 
 - **Language:** Rust 1.99
-- **Framework:** tako-rs 2.4.2
+- **Framework:** tako-rs 2.7.0
 - **Build:** Multi-stage, `debian:trixie-slim` runtime
 
 ## Listeners
@@ -51,7 +51,7 @@ behind the gateway edge listens in cleartext only.
 - Static files through tako's `ServeDir` with `PrecompressedPolicy::both()`,
   which picks the `.br`/`.gz` sibling from `Accept-Encoding` and reads from disk
   on every request
-- WebSocket through `TakoWs`, echoing text and binary frames
+- WebSocket through `WebSocketUpgrade`, echoing text and binary frames
 - Postgres through deadpool-postgres and tokio-postgres, pool sized from
   `DATABASE_MAX_CONN`, statements prepared once per connection
 - Production-stack reads are cache-aside in process (moka, 1 s TTL for items,
