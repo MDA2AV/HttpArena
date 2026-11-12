@@ -399,9 +399,9 @@ checksum = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
 
 [[package]]
 name = "errno"
-version = "0.3.14"
+version = "0.3.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
+checksum = "e35d6e78f4cebb90e51d543db8fe41528851d6deeef6ef21ebd4bfdc1e784776"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
@@ -802,9 +802,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-bytes"
-version = "1.15.1"
+version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b66468ed6abc26b826b399f5f66dcfd03f1818587b7a39ec537ef1d88617aee"
+checksum = "c7dca6f1c7cd624f604a9369cdf1b6d677fd475b3cc891180c6b0ac5be7806fe"
 dependencies = [
  "bytes",
  "serde",
@@ -847,9 +847,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-grpc"
-version = "4.1.0"
+version = "4.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85c0a093db30dc790ba6d9c9e2bde9645fd5375712c96b602bd1202bbf30870f"
+checksum = "41fe4dba63e2151bdc48b911069d77cd2831df675f9315c0a56aacc8329d492a"
 dependencies = [
  "base64 0.22.1",
  "bitflags",
@@ -881,9 +881,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-h2"
-version = "4.4.3"
+version = "4.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7443046a66021398b532a24d705265b6180d69464d7314e750a51067cc290cf6"
+checksum = "91cdc988c8033c29bdd8d4730cbec48dfaddad6a9dc544d69ee6a7d5d2feddc2"
 dependencies = [
  "bitflags",
  "fastrand",
@@ -970,9 +970,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-net"
-version = "4.10.2"
+version = "4.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab07d6da0802f4b8282967361790b011f291802c1186cc7f51ac86adc1bdabc8"
+checksum = "ef70da0b9947e0823509ede3c1c3dece12cdfdf40ac6debb13fb1d6219b28c91"
 dependencies = [
  "bitflags",
  "cfg-if",

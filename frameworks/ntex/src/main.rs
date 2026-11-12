@@ -296,7 +296,6 @@ fn load_tls_config(
 }
 
 const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
-const ALPN_H2: &[&[u8]] = &[b"h2", b"http/1.1"];
 
 /// Threads accepting connections, each with its own `SO_REUSEPORT` listener.
 const ACCEPTORS: usize = 12;
@@ -335,7 +334,7 @@ async fn main() -> std::io::Result<()> {
         )?;
 
     // The harness mounts /certs only for the TLS profiles, so a missing pair
-    // leaves the TLS listeners down rather than aborting startup.
+    // leaves the TLS listener down rather than aborting startup.
     let cert = Path::new("/certs/server.crt");
     let key = Path::new("/certs/server.key");
     if cert.exists() && key.exists() {
@@ -348,18 +347,6 @@ async fn main() -> std::io::Result<()> {
         server = server.bind(
             "tls-h1",
             "0.0.0.0:8081",
-            ntex::SharedCfg::default(),
-            async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
-        )?;
-        // baseline-h2 and static-h2 negotiate h2 on 8443.
-        let tls = load_tls_config(
-            std::fs::File::open(cert)?,
-            std::fs::File::open(key)?,
-            ALPN_H2,
-        )?;
-        server = server.bind(
-            "tls-h2",
-            "0.0.0.0:8443",
             ntex::SharedCfg::default(),
             async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
         )?;
@@ -658,66 +645,5 @@ mod tests {
                 .unwrap();
             assert_eq!(response.status(), StatusCode::NOT_FOUND, "{uri}");
         }
-    }
-
-    /// STATEMENT: The 8443 TLS configuration negotiates HTTP/2 and serves the
-    /// h2 profiles.
-    ///
-    /// HOW:
-    /// - Start a rustls test server with `ALPN_H2` and a client offering `h2`.
-    /// - Confirm `/baseline2` returns `55` and `/static/app.js` returns the
-    ///   brotli sibling, both over `Version::HTTP_2`.
-    #[ntex::test]
-    async fn h2_tls_baseline_and_static() {
-        let rcgen::CertifiedKey { cert, signing_key } =
-            rcgen::generate_simple_self_signed(vec!["localhost".into()]).unwrap();
-        let tls = load_tls_config(
-            cert.pem().as_bytes(),
-            signing_key.serialize_pem().as_bytes(),
-            ALPN_H2,
-        )
-        .unwrap();
-        let mut roots = rustls::RootCertStore::empty();
-        roots.add(cert.der().clone()).unwrap();
-        let mut client_tls = rustls::ClientConfig::builder()
-            .with_root_certificates(roots)
-            .with_no_client_auth();
-        client_tls.alpn_protocols = vec![b"h2".to_vec(), b"http/1.1".to_vec()];
-        let client = ntex::client::Client::builder()
-            .rustls(client_tls)
-            .build(ntex::SharedCfg::default());
-        let server = test::server_with(
-            test::config()
-                .rustls(tls)
-                .server_cfg(ntex::SharedCfg::default()),
-            async |_| {
-                App::new()
-                    .with_config(app_config())
-                    .configure(|cfg| routes(cfg, &[], static_dir()))
-            },
-        );
-
-        let response = client
-            .get(server.url("/baseline2?a=13&b=42"))
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(response.version(), ntex::http::Version::HTTP_2);
-        assert_eq!(response.body().await.unwrap(), "55");
-
-        let response = client
-            .get(server.url("/static/app.js"))
-            .header("Accept-Encoding", "br")
-            .no_decompress()
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(response.version(), ntex::http::Version::HTTP_2);
-        assert_eq!(response.headers().get("Content-Encoding").unwrap(), "br");
-        let expected = std::fs::read(static_dir().join("app.js.br")).unwrap();
-        assert_eq!(response.body().limit(MAX_BODY).await.unwrap(), expected);
-        server.stop().await;
     }
 }
