@@ -2,6 +2,7 @@ use std::{io, path::Path};
 
 use ntex::http::header::{self, ContentEncoding};
 use ntex::http::{self, HttpService};
+use ntex::server::LoadBalancing;
 use ntex::web::{self, App, HttpRequest, HttpResponse};
 use ntex_files::NamedFile;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, pem::PemObject};
@@ -250,12 +251,16 @@ async fn main() -> io::Result<()> {
 
     // HTTP/2-only service: every connection must open with the h2 preface
     // (prior knowledge), there is no HTTP/1.1 fallback on this port.
-    let mut srv = ntex::server::build().backlog(1024).bind(
-        "h2c",
-        "0.0.0.0:8082",
-        ntex::SharedCfg::default(),
-        async move |_| HttpService::h2(app()),
-    )?;
+    // Each worker accepts connections on its own `SO_REUSEPORT` listener.
+    let mut srv = ntex::server::build()
+        .backlog(1024)
+        .load_balancing(LoadBalancing::Reuseport)
+        .bind(
+            "h2c",
+            "0.0.0.0:8082",
+            ntex::SharedCfg::default(),
+            async move |_| HttpService::h2(app()),
+        )?;
 
     // The harness mounts /certs only for the TLS profile, so a missing pair
     // leaves the TLS listener down instead of aborting startup.

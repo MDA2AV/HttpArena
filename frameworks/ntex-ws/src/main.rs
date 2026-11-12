@@ -2,6 +2,7 @@ use std::io;
 
 use ntex::http::{HttpService, Request, Response, ResponseError, body::BodySize, h1};
 use ntex::io::{Filter, Io};
+use ntex::server::LoadBalancing;
 use ntex::util::ByteString;
 use ntex::ws;
 
@@ -81,7 +82,8 @@ async fn echo<F: Filter>(io: &Io<F>) {
 async fn main() -> io::Result<()> {
     ntex::server::build()
         .backlog(1024)
-        .acceptors(12)
+        // each worker accepts on its own `SO_REUSEPORT` listener
+        .load_balancing(LoadBalancing::Reuseport)
         .bind(
             "ws",
             "0.0.0.0:8080",

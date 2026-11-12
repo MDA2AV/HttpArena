@@ -878,9 +878,9 @@ dependencies = [
 
 [[package]]
 name = "ntex-net"
-version = "4.10.3"
+version = "4.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef70da0b9947e0823509ede3c1c3dece12cdfdf40ac6debb13fb1d6219b28c91"
+checksum = "3eac18d5d0c5d4eef3ad7ec1c5eae545c242ee1217164b52d286340db5b39657"
 dependencies = [
  "bitflags",
  "cfg-if",
@@ -931,12 +931,13 @@ dependencies = [
 
 [[package]]
 name = "ntex-rt"
-version = "4.8.1"
+version = "4.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73b5a375bc5a080bd5dcdc36e8a524097d37ee08321518993b07197806bcbf5c"
+checksum = "ba3846d6025dd3e6850a393b9e3e1bac8728de3583be8d3459c88283f66c89d2"
 dependencies = [
  "async-channel",
  "atomic-waker",
+ "bitflags",
  "crossbeam-channel",
  "crossbeam-queue",
  "ctrlc",
@@ -951,14 +952,15 @@ dependencies = [
  "parking_lot",
  "scoped-tls",
  "signal-hook",
+ "slab",
  "windows-sys",
 ]
 
 [[package]]
 name = "ntex-server"
-version = "4.5.2"
+version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df2dbf016b453d4f6ece0c5e5709d7557e1224f18f0a6dd0f4b941cf0876cb52"
+checksum = "98f61727fc234e6effece5d90ab4d836d8319e2348db33a46a390c739e48ec03"
 dependencies = [
  "async-channel",
  "event-listener",
@@ -1012,15 +1014,14 @@ dependencies = [
 
 [[package]]
 name = "ntex-util"
-version = "4.9.0"
+version = "4.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5204d7d9a5b17a26b43d955e4ebcb0b8413d04d6a925cec6ecd17b9259ba95d"
+checksum = "8d249db19373086e53a18b174cb5e966db2c77241e57b73f743656eafc1fe1f2"
 dependencies = [
  "backoff",
  "bitflags",
  "foldhash",
  "futures-core",
- "futures-timer",
  "hashbrown",
  "log",
  "ntex-bytes",

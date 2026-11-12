@@ -2,6 +2,7 @@ use std::path::Path;
 
 use ntex::http::header::{self, ContentEncoding};
 use ntex::http::{self, HttpService};
+use ntex::server::LoadBalancing;
 use ntex::util::Bytes;
 use ntex::web::{self, App, HttpRequest, HttpResponse, middleware};
 use ntex_files::NamedFile;
@@ -250,7 +251,19 @@ fn routes(
     cfg: &mut web::ServiceConfig<()>,
     dataset: &'static [DatasetItem],
     static_dir: &'static Path,
+    compress: bool,
 ) {
+    // json-comp on 8080 requires built-in compression; json-tls on 8081 does not.
+    let json = web::resource("/json/{count}");
+    let handler = web::get().to(async move |query, path| json_items(query, path, dataset).await);
+    if compress {
+        cfg.service(
+            json.middleware(middleware::Compress::default())
+                .route(handler),
+        );
+    } else {
+        cfg.service(json.route(handler));
+    }
     cfg.service(
         web::resource("/baseline11")
             .route(web::get().to(baseline11))
@@ -265,11 +278,6 @@ fn routes(
             .route(web::get().to(async move |req| static_file(req, static_dir).await)),
     )
     .service(web::resource("/delay/{ms}").route(web::get().to(delay)))
-    .service(
-        web::resource("/json/{count}")
-            .middleware(middleware::Compress::default())
-            .route(web::get().to(async move |query, path| json_items(query, path, dataset).await)),
-    )
     .service(web::resource("/echo").route(web::post().to(echo_body)));
 }
 
@@ -297,9 +305,6 @@ fn load_tls_config(
 
 const ALPN_H1: &[&[u8]] = &[b"http/1.1"];
 
-/// Threads accepting connections, each with its own `SO_REUSEPORT` listener.
-const ACCEPTORS: usize = 12;
-
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
@@ -314,23 +319,23 @@ async fn main() -> std::io::Result<()> {
     // to one CPU, so the count is taken here, before any worker starts.
     db::set_workers(std::thread::available_parallelism().map_or(1, |n| n.get()));
 
-    let app = async move |_: &()| {
+    let app = async move |_: &(), compress: bool| {
         db::init();
         App::new()
             .with_config(app_config())
-            .configure(|cfg| routes(cfg, dataset, static_dir))
+            .configure(move |cfg| routes(cfg, dataset, static_dir, compress))
     };
 
-    // `web::HttpServer` does not expose the number of accept threads, so the
-    // server is assembled from the http service directly.
+    // Each worker accepts connections on its own `SO_REUSEPORT` listener, the
+    // kernel spreads new connections between them; no accept thread.
     let mut server = ntex::server::build()
         .backlog(1024)
-        .acceptors(ACCEPTORS)
+        .load_balancing(LoadBalancing::Reuseport)
         .bind(
             "http",
             "0.0.0.0:8080",
             ntex::SharedCfg::default(),
-            async move |st| HttpService::new(app(st).await),
+            async move |st| HttpService::new(app(st, true).await),
         )?;
 
     // The harness mounts /certs only for the TLS profiles, so a missing pair
@@ -348,7 +353,7 @@ async fn main() -> std::io::Result<()> {
             "tls-h1",
             "0.0.0.0:8081",
             ntex::SharedCfg::default(),
-            async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st).await)),
+            async move |st| http::rustls(tls.clone(), &[], HttpService::new(app(st, false).await)),
         )?;
     }
 
@@ -369,7 +374,8 @@ mod tests {
     #[ntex::test]
     async fn baseline_query_and_body() {
         let app =
-            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir(), true)))
+                .await;
 
         for (uri, body, expected) in [
             ("/baseline11?a=13&b=42", "20", "75"),
@@ -385,9 +391,8 @@ mod tests {
         }
     }
 
-    #[ntex::test]
-    async fn json_serialization_and_compression() {
-        let dataset: &'static [DatasetItem] = Box::leak(
+    fn test_dataset() -> &'static [DatasetItem] {
+        Box::leak(
             (1..=50)
                 .map(|id| DatasetItem {
                     id,
@@ -401,13 +406,18 @@ mod tests {
                 })
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
-        );
+        )
+    }
+
+    #[ntex::test]
+    async fn json_serialization_and_compression() {
+        let dataset = test_dataset();
         let server = test::server_with(
             test::config().server_cfg(ntex::SharedCfg::default()),
             async move |_| {
                 App::new()
                     .with_config(app_config())
-                    .configure(|cfg| routes(cfg, dataset, static_dir()))
+                    .configure(|cfg| routes(cfg, dataset, static_dir(), true))
             },
         );
 
@@ -462,6 +472,15 @@ mod tests {
         server.stop().await;
     }
 
+    /// STATEMENT: The TLS app serves echo, delay and uncompressed JSON over HTTP/1.1.
+    ///
+    /// HOW:
+    /// - Start a rustls test server with the routes built as on 8081 (no compression).
+    /// - Echo 10 KiB and 20 MiB bodies with `Accept-Encoding: gzip`; confirm HTTP/1.1,
+    ///   no `Content-Encoding` and the same body.
+    /// - Request `/json/50` (above the 1 KiB compression floor) with
+    ///   `Accept-Encoding: gzip`; confirm no `Content-Encoding`.
+    /// - Request `/delay/40` and confirm it takes at least 40 ms.
     #[ntex::test]
     async fn native_tls_echo_and_delay() {
         let rcgen::CertifiedKey { cert, signing_key } =
@@ -488,9 +507,19 @@ mod tests {
             async |_| {
                 App::new()
                     .with_config(app_config())
-                    .configure(|cfg| routes(cfg, &[], static_dir()))
+                    .configure(|cfg| routes(cfg, test_dataset(), static_dir(), false))
             },
         );
+
+        let response = client
+            .get(server.url("/json/50"))
+            .header("Accept-Encoding", "gzip")
+            .no_decompress()
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(!response.headers().contains_key("Content-Encoding"));
 
         for size in [10 * 1024, 20 * 1024 * 1024] {
             let payload = Bytes::from(vec![b'x'; size]);
@@ -523,7 +552,8 @@ mod tests {
     #[ntex::test]
     async fn pipeline_and_baseline2() {
         let app =
-            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir(), true)))
+                .await;
 
         for (uri, expected) in [("/pipeline", "ok"), ("/baseline2?a=13&b=42&a=x", "55")] {
             let response = app
@@ -577,7 +607,8 @@ mod tests {
     #[ntex::test]
     async fn static_files_select_precompressed_siblings() {
         let app =
-            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir(), true)))
+                .await;
 
         for (name, accept, encoding, suffix, content_type) in [
             ("app.js", "gzip, br", Some("br"), ".br", "javascript"),
@@ -629,7 +660,8 @@ mod tests {
     #[ntex::test]
     async fn static_files_reject_missing_and_traversal() {
         let app =
-            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir()))).await;
+            test::init_service(App::new().configure(|cfg| routes(cfg, &[], static_dir(), true)))
+                .await;
 
         for uri in [
             "/static/nonexistent.txt",

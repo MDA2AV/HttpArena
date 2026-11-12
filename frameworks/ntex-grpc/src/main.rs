@@ -1,6 +1,6 @@
 use std::{convert::Infallible, io, path::Path};
 
-use ntex::{http, service::ServiceFactory};
+use ntex::{http, server::LoadBalancing, service::ServiceFactory};
 use ntex_grpc::server;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, pem::PemObject};
 
@@ -53,12 +53,16 @@ fn load_tls_config(cert: &Path, key: &Path) -> io::Result<rustls::ServerConfig> 
 async fn main() -> io::Result<()> {
     // ntex starts one worker per available CPU; each serves h2c with prior
     // knowledge, so the first bytes on a connection are the h2 preface.
-    let mut srv = ntex::server::build().backlog(1024).bind(
-        "grpc",
-        "0.0.0.0:8080",
-        ntex::SharedCfg::default(),
-        async |_| server::GrpcServer::new(BenchmarkServer),
-    )?;
+    // Each worker accepts connections on its own `SO_REUSEPORT` listener.
+    let mut srv = ntex::server::build()
+        .backlog(1024)
+        .load_balancing(LoadBalancing::Reuseport)
+        .bind(
+            "grpc",
+            "0.0.0.0:8080",
+            ntex::SharedCfg::default(),
+            async |_| server::GrpcServer::new(BenchmarkServer),
+        )?;
 
     // The harness mounts /certs only for the TLS profile, so a missing pair
     // leaves the TLS listener down instead of aborting startup.

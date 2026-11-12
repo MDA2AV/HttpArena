@@ -2,12 +2,13 @@
 //! `Io` (through ntex-io's tokio `AsyncRead`/`AsyncWrite` impls) on the native
 //! runtime, pooled per worker with deadpool's unmanaged pool.
 
-use std::{cell::OnceCell, str::FromStr, sync::OnceLock, time::Duration};
+use std::{cell::OnceCell, error::Error, str::FromStr, sync::OnceLock, time::Duration};
 
 use deadpool::unmanaged::{Object, Pool};
 use ntex::web::{self, HttpResponse};
 use serde::Serialize;
-use tokio_postgres::{Client, Config, NoTls, Row, Statement, config::Host, types::ToSql};
+use tokio_postgres::types::{FromSql, ToSql, Type};
+use tokio_postgres::{Client, Config, NoTls, Row, Statement, config::Host};
 
 const QUERY: &str = "SELECT id, name, category, price, quantity, active, tags, rating_score, \
                      rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
@@ -55,8 +56,31 @@ struct DbItem<'a> {
     price: i32,
     quantity: i32,
     active: bool,
-    tags: serde_json::Value,
+    tags: Json,
     rating: DbRating,
+}
+
+/// A `JSON` or `JSONB` column parsed with sonic-rs.
+#[derive(Serialize)]
+struct Json(sonic_rs::Value);
+
+impl<'a> FromSql<'a> for Json {
+    fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Sync + Send>> {
+        // Binary `JSONB` is the JSON text behind a format version byte.
+        let text = if *ty == Type::JSONB {
+            match raw.split_first() {
+                Some((1, text)) => text,
+                _ => return Err("unsupported JSONB format version".into()),
+            }
+        } else {
+            raw
+        };
+        Ok(Json(sonic_rs::from_slice(text)?))
+    }
+
+    fn accepts(ty: &Type) -> bool {
+        matches!(*ty, Type::JSON | Type::JSONB)
+    }
 }
 
 #[derive(Serialize)]
@@ -259,10 +283,16 @@ pub async fn async_db(query: web::types::Query<Vec<(String, String)>>) -> HttpRe
         return HttpResponse::InternalServerError().build();
     };
     let items: Vec<_> = rows.iter().map(item).collect();
-    HttpResponse::Ok().json(&DbList {
+    let list = DbList {
         count: items.len(),
         items,
-    })
+    };
+    match sonic_rs::to_vec(&list) {
+        Ok(body) => HttpResponse::Ok()
+            .content_type("application/json")
+            .body(body),
+        Err(_) => HttpResponse::InternalServerError().build(),
+    }
 }
 
 #[cfg(test)]
