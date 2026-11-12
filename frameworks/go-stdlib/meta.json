@@ -10,18 +10,26 @@
     "response": false
   },
   "engine": "net/http",
-  "description": "The Go standard library net/http server with no framework, default configuration. Routing through the ServeMux method and wildcard patterns of Go 1.22, JSON through encoding/json, gzip written by hand with compress/gzip because the standard library ships no compression middleware.",
+  "description": "The Go standard library net/http server with no framework, default configuration. Routing through the ServeMux method and wildcard patterns of Go 1.22, JSON through encoding/json, gzip written by hand with compress/gzip because the standard library ships no compression middleware. HTTP/2 is net/http's own: over TLS through ALPN on 8443, and with prior knowledge on 8082 through http.Server.Protocols.",
   "repo": "https://github.com/golang/go",
   "enabled": true,
   "tests": [
-    "baseline", "async", "latency-1m", "latency-10k", "latency-500k-8cpu",
+    "baseline",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
     "pipelined",
     "limited-conn",
     "json-comp",
     "json-tls",
     "8gbit",
     "static-tls",
-    "async-db"
+    "async-db",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c"
   ],
   "maintainers": []
 }
