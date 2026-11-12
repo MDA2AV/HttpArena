@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/lesismal/fib v1.7.3-0.20261108195951-83172f920122
+	github.com/lesismal/fib v1.8.0
 	google.golang.org/protobuf v1.36.10
 )
 
