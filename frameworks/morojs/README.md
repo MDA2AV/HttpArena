@@ -67,8 +67,10 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   (TLS 1.3, ALPN `http/1.1`), when `/certs/server.crt` and `/certs/server.key` are mounted. Moro
   locks one configuration per process, so that listener is a second process running the same file
   with `MORO_ROLE=tls`, clustered the same way; it is not started when the certificates are absent. The
-  engine terminates TLS on its own OpenSSL BIOs (1.1.17): one copy in, ciphertext appended straight
-  into the buffer it sends from, and a body over 8 KiB encrypted from the caller's bytes rather than
+  engine terminates TLS with the BoringSSL it bundles (`@morojs/engine` 1.1.20; kept current by a
+  scheduled engine release for every upstream snapshot) on its own BIOs (1.1.17): one copy in,
+  ciphertext appended straight into the buffer it sends from, and a body over 8 KiB encrypted
+  from the caller's bytes rather than
   copied behind the head first. Measured at one worker on these three request mixes, CPU per request
   fell by a fifth on the static files, a seventh on the JSON bodies and a sixth on the 100 KB echo.
 - `tls_check` is opted into: a third process of the same file (`MORO_ROLE=tlscheck`) listens on
@@ -76,15 +78,17 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   validated and swapped onto the running listener without a restart and without touching
   connections already established. Only started when `/certs-tls` is mounted, which validate.sh
   alone does.
-- `baseline-h2`, `static-h2`, `baseline-h2c` and `json-h2c` run on Moro's HTTP/2 server, which is
-  Node's http2 module behind the framework's own request and response objects (`engine: 'node'`
-  with `http2: true`); the native engine speaks HTTP/1.1 only. `:8443` terminates TLS with ALPN
-  `h2` (HTTP/1.1 still accepted), `:8082` is cleartext prior-knowledge HTTP/2. Each is its own
-  process for the same one-configuration-per-process reason, clustered as node:cluster processes,
-  which is Moro's transport for its Node servers.
+- `baseline-h2`, `static-h2`, `baseline-h2c` and `json-h2c` run on the native engine's own HTTP/2
+  (`http2: true`; RFC 9113 and HPACK implemented in the engine, `@morojs/engine` 1.1.19), behind
+  the same request and response objects, routes and middleware as HTTP/1.1. `:8443` terminates TLS
+  with ALPN `h2` (HTTP/1.1 still accepted), `:8082` is cleartext prior-knowledge HTTP/2 with
+  HTTP/1.1 beside it. Each is its own process for the same one-configuration-per-process reason,
+  clustered on worker threads like the other listeners.
 - `/echo` sends back `req.rawBody`, the request body as it arrived, `Content-Length` or chunked
-  alike. The engine collects the body where its reads land and hands that storage to JavaScript
-  without a copy (`@morojs/engine` 1.1.18); `req.rawBody` is a Buffer view of it. A Buffer handed
+  alike. The engine collects the body where its reads land, and with `server.lendBodies: true`
+  (`@morojs/engine` 1.1.19) lends that storage to JavaScript for the length of the request:
+  `req.rawBody` is a Buffer view of it, nothing is allocated or copied, and the memory goes back
+  to the engine with the response instead of waiting for a garbage collection. A Buffer handed
   to `res.send()` goes out `application/octet-stream` through the framework's prepared reply.
 - `/ws` is the engine's own RFC 6455 support through `app.websocket()` with `{ raw: true }`, so a
   text frame reaches the handler as the string it carried and `socket.send()` returns it as one.
