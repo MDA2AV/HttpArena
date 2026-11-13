@@ -1,27 +1,12 @@
-fn cgroup_cpus() -> usize {
-    std::fs::read_to_string("/sys/fs/cgroup/cpu.max")
-        .ok()
-        .and_then(|s| {
-            let mut parts = s.trim().split(' ');
-            let quota = parts.next()?;
-            if quota == "max" { return None; }
-            let period: usize = parts.next()?.parse().ok()?;
-            let q: usize = quota.parse().ok()?;
-            let cpus = q / period;
-            if cpus >= 1 { Some(cpus) } else { None }
-        })
-        .unwrap_or_else(num_cpus::get)
-}
-
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse};
-use actix_web::http::header::{HeaderValue, SERVER};
 use actix_web::http::Version;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use futures_util::future::{ready, Either};
 use serde::{Deserialize, Serialize};
 use std::io;
 
-static SERVER_HDR: HeaderValue = HeaderValue::from_static("actix");
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[derive(Deserialize)]
 struct BaselineQuery {
@@ -34,13 +19,13 @@ struct JsonQuery {
     m: Option<i64>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct Rating {
     score: i64,
     count: i64,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize)]
 struct DatasetItem {
     id: i64,
     name: String,
@@ -52,47 +37,47 @@ struct DatasetItem {
     rating: Rating,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize)]
 struct RatingOut {
     score: i64,
     count: i64,
 }
 
-#[derive(Serialize, Clone)]
-struct ProcessedItem {
+// Field order is the wire order: id..rating, then the computed total.
+#[derive(Serialize)]
+struct ProcessedItem<'a> {
     id: i64,
-    name: String,
-    category: String,
+    name: &'a str,
+    category: &'a str,
     price: i64,
     quantity: i64,
     active: bool,
-    tags: Vec<String>,
+    tags: &'a [String],
     rating: RatingOut,
     total: i64,
 }
 
 #[derive(Serialize)]
-struct JsonResponse {
-    items: Vec<ProcessedItem>,
+struct JsonResponse<'a> {
+    items: Vec<ProcessedItem<'a>>,
     count: usize,
 }
 
-struct AppState {
-    dataset: Vec<DatasetItem>,
-}
-
-fn build_json_body(dataset: &[DatasetItem], count: usize, m: i64) -> Vec<u8> {
+// The first `count` items with their totals. Strings and tags are borrowed from
+// the dataset: the response is still built and serialized on every request, it
+// just does not copy every name, category and tag into it first.
+fn build_json(dataset: &[DatasetItem], count: usize, m: i64) -> JsonResponse<'_> {
     let count = count.min(dataset.len());
-    let items: Vec<ProcessedItem> = dataset[..count]
+    let items = dataset[..count]
         .iter()
         .map(|d| ProcessedItem {
             id: d.id,
-            name: d.name.clone(),
-            category: d.category.clone(),
+            name: &d.name,
+            category: &d.category,
             price: d.price,
             quantity: d.quantity,
             active: d.active,
-            tags: d.tags.clone(),
+            tags: &d.tags,
             rating: RatingOut {
                 score: d.rating.score,
                 count: d.rating.count,
@@ -100,8 +85,7 @@ fn build_json_body(dataset: &[DatasetItem], count: usize, m: i64) -> Vec<u8> {
             total: d.price * d.quantity * m,
         })
         .collect();
-    let resp = JsonResponse { count, items };
-    serde_json::to_vec(&resp).unwrap_or_default()
+    JsonResponse { items, count }
 }
 
 fn load_dataset() -> Vec<DatasetItem> {
@@ -115,34 +99,31 @@ fn load_dataset() -> Vec<DatasetItem> {
 async fn baseline2(query: web::Query<BaselineQuery>) -> HttpResponse {
     let sum = query.a.unwrap_or(0) + query.b.unwrap_or(0);
     HttpResponse::Ok()
-        .insert_header((SERVER, SERVER_HDR.clone()))
         .content_type("text/plain")
         .body(sum.to_string())
 }
 
 async fn json_endpoint(
-    state: web::Data<AppState>,
+    web::ThinData(dataset): web::ThinData<&'static [DatasetItem]>,
     path: web::Path<usize>,
     query: web::Query<JsonQuery>,
 ) -> HttpResponse {
-    let count = path.into_inner().min(state.dataset.len());
-    let m = query.m.unwrap_or(1);
-    let body = build_json_body(&state.dataset, count, m);
-    HttpResponse::Ok()
-        .insert_header((SERVER, SERVER_HDR.clone()))
-        .content_type("application/json")
-        .body(body)
+    HttpResponse::Ok().json(&build_json(
+        dataset,
+        path.into_inner(),
+        query.m.unwrap_or(1),
+    ))
 }
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
-    let dataset = load_dataset();
-    let state = web::Data::new(AppState { dataset });
-    let workers = cgroup_cpus();
+    // Leaked once at startup so handlers borrow the items instead of cloning
+    // every string into each response.
+    let dataset: &'static [DatasetItem] = Box::leak(load_dataset().into_boxed_slice());
 
     HttpServer::new(move || {
         App::new()
-            .app_data(state.clone())
+            .app_data(web::ThinData(dataset))
             // bind_auto_h2c accepts H1 and h2c on the same socket; this
             // middleware short-circuits H1 requests with 400 so the port
             // serves h2c exclusively from the app's perspective. The
@@ -161,7 +142,6 @@ async fn main() -> io::Result<()> {
             .route("/baseline2", web::get().to(baseline2))
             .route("/json/{count}", web::get().to(json_endpoint))
     })
-    .workers(workers)
     .tcp_nodelay(true)
     .bind_auto_h2c("0.0.0.0:8082")?
     .run()
