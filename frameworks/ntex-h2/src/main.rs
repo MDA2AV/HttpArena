@@ -60,7 +60,7 @@ struct OutList<'a> {
 fn load_dataset() -> Vec<DatasetItem> {
     let path = std::env::var("DATASET_PATH").unwrap_or_else(|_| "/data/dataset.json".to_string());
     match std::fs::read_to_string(path) {
-        Ok(text) => sonic_rs::from_str(&text).unwrap_or_default(),
+        Ok(text) => serde_json::from_str(&text).unwrap_or_default(),
         Err(_) => Vec::new(),
     }
 }
@@ -112,12 +112,7 @@ async fn json_items(
         .find_map(|(key, value)| (key == "m").then_some(value))
         .and_then(|v| v.parse::<i64>().ok())
         .unwrap_or(1);
-    match sonic_rs::to_vec(&build_json(dataset, path.into_inner(), m)) {
-        Ok(body) => HttpResponse::Ok()
-            .content_type("application/json")
-            .body(body),
-        Err(_) => HttpResponse::InternalServerError().build(),
-    }
+    HttpResponse::Ok().json(&build_json(dataset, path.into_inner(), m))
 }
 
 /// Encodings acceptable to the client in preference order, best first.

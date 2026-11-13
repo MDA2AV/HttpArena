@@ -14,13 +14,12 @@ ntex-io = { version = "4.7", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 rustls-pemfile = "2"
 serde = { version = "1", features = ["derive"] }
-sonic-rs = "0.5"
-tokio-postgres = { version = "0.7", default-features = false }
+serde_json = "1"
+tokio-postgres = { version = "0.7", default-features = false, features = ["with-serde_json-1"] }
 
 [dev-dependencies]
 flate2 = "1"
 rcgen = "0.14"
-serde_json = "1"
 
 [profile.release]
 opt-level = 3
