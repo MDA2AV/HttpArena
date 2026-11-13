@@ -4,12 +4,13 @@
   "type": "flagship",
   "mode": "standard",
   "engine": "actix",
-  "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled",
+  "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled and mimalloc as the allocator",
   "repo": "https://github.com/actix/actix-web",
   "enabled": true,
   "tests": [
     "echo-ws",
-    "echo-ws-pipeline"
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": []
 }
