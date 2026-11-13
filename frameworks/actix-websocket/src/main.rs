@@ -1,6 +1,9 @@
 use actix_web::{web, App, HttpServer, HttpRequest, HttpResponse};
 use actix_ws;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 async fn ws_handler(req: HttpRequest, body: web::Payload) -> actix_web::Result<HttpResponse> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
     actix_web::rt::spawn(async move {
