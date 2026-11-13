@@ -16,6 +16,21 @@ _h2load_cmd() {
     fi
 }
 
+h2load_check_version() {
+    if [ "${H2LOAD_VERSION_CHECKED:-false}" = true ]; then return 0; fi
+    local -a cmd
+    local version
+    mapfile -t cmd < <(_h2load_cmd)
+    version=$("${cmd[@]}" --version) || return 1
+    if [[ ! "$version" =~ nghttp2/([0-9]+)\.([0-9]+)\.([0-9]+) ]] \
+        || (( BASH_REMATCH[1] < 1 || (BASH_REMATCH[1] == 1 && BASH_REMATCH[2] < 69) )); then
+        echo "h2load >= 1.69.0 is required: older clients can run forever after -D expires during connection setup. Update H2LOAD or build docker/h2load.Dockerfile." >&2
+        return 1
+    fi
+    echo "[info] $version"
+    H2LOAD_VERSION_CHECKED=true
+}
+
 # ── Build arguments ─────────────────────────────────────────────────────────
 
 h2load_build_args() {
@@ -136,8 +151,9 @@ h2load_run() {
 
     if [ "$split_idx" -lt 0 ]; then
         # Single-invocation path — every profile except production-stack.
-        timeout 45 taskset -c "$GCANNON_CPUS" "${args[@]}" 2>&1 || true
-        return
+        local exit_code=0
+        timeout 45 taskset -c "$GCANNON_CPUS" "${args[@]}" 2>&1 || exit_code=$?
+        return "$exit_code"
     fi
 
     # Split-invocation path — two h2load processes pinned to the same cpuset,
@@ -156,108 +172,24 @@ h2load_run() {
     timeout 45 taskset -c "$GCANNON_CPUS" "${writes_argv[@]}" >"$writes_log" 2>&1 &
     local writes_pid=$!
 
-    wait "$reads_pid"  2>/dev/null || true
-    wait "$writes_pid" 2>/dev/null || true
+    local reads_exit=0 writes_exit=0
+    wait "$reads_pid"  2>/dev/null || reads_exit=$?
+    wait "$writes_pid" 2>/dev/null || writes_exit=$?
 
     # Emit combined output with sentinels so h2load_parse can sum the two
-    # sections' 2xx counts and combine bandwidth/duration.
+    # sections' completed requests and validate both runs.
     echo "=== h2load-reads ==="
     cat "$reads_log"
     echo "=== h2load-writes ==="
     cat "$writes_log"
 
     rm -f "$reads_log" "$writes_log"
+    if [ "$reads_exit" -ne 0 ]; then return "$reads_exit"; fi
+    return "$writes_exit"
 }
 
 # ── Parse output ────────────────────────────────────────────────────────────
 
 h2load_parse() {
-    local endpoint="$1"
-    local output="$2"
-
-    # rps = successful 2xx responses divided by wall duration. h2load's
-    # own "finished in Xs, Y req/s" number counts all completed requests
-    # including 4xx/5xx, which silently inflates rps when the server is
-    # broken — a stale image serving 404s would look like a throughput win.
-    # Computing from 2xx + the reported duration makes that impossible.
-
-    if [ "$endpoint" = "production-stack" ]; then
-        # Split-invocation output: two h2load runs concatenated with
-        # "=== h2load-reads ===" / "=== h2load-writes ===" sentinels.
-        # Sum 2xx across both sections, average durations, combine rps.
-        # Write-side 2xx may appear as "0 2xx" because POST /api/items
-        # returns 204 (in the 2xx range but h2load's status buckets
-        # bucket 2xx/3xx/4xx/5xx by first digit, so 204 counts as 2xx).
-        local reads_ok reads_dur writes_ok writes_dur total_ok total_4xx total_5xx
-        reads_ok=$(echo "$output"  | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | grep -oP '\d+(?= 2xx)' | head -1)
-        reads_dur=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | grep -oP 'finished in \K[\d.]+' | head -1)
-        writes_ok=$(echo "$output" | awk '/=== h2load-writes ===/,0' \
-            | grep -oP '\d+(?= 2xx)' | head -1)
-        writes_dur=$(echo "$output" | awk '/=== h2load-writes ===/,0' \
-            | grep -oP 'finished in \K[\d.]+' | head -1)
-
-        reads_ok=${reads_ok:-0}
-        writes_ok=${writes_ok:-0}
-        reads_dur=${reads_dur:-1}
-        writes_dur=${writes_dur:-1}
-        total_ok=$(( reads_ok + writes_ok ))
-
-        # Use the reads duration as the primary (they're ~identical — both
-        # runs use -D $duration and start at the same time).
-        local dur="$reads_dur"
-        [ "$dur" = "0" ] && dur="$writes_dur"
-        [ "$dur" = "0" ] && dur=1
-
-        echo "rps=$(awk -v ok="$total_ok" -v dur="$dur" \
-            'BEGIN { if (dur+0 > 0) printf "%d", ok/dur; else print 0 }' 2>/dev/null || echo 0)"
-
-        # Report read-path latency (writes have their own latency profile
-        # that would need a separate column; keeping one number for now).
-        echo "avg_lat=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | awk '/time for request:/{print $6}' | head -1)"
-        echo "p99_lat=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | awk '/time for request:/{print $5}' | head -1)"
-
-        echo "reconnects=0"
-        echo "bandwidth=$(echo "$output" | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' \
-            | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' | head -1 || echo 0)"
-
-        # Sum all status counters across both sections.
-        local r2xx r4xx r5xx w2xx w4xx w5xx
-        r2xx=$(echo "$output"  | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' | grep -oP '\d+(?= 2xx)' | head -1)
-        r4xx=$(echo "$output"  | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' | grep -oP '\d+(?= 4xx)' | head -1)
-        r5xx=$(echo "$output"  | awk '/=== h2load-reads ===/,/=== h2load-writes ===/' | grep -oP '\d+(?= 5xx)' | head -1)
-        w2xx=$(echo "$output"  | awk '/=== h2load-writes ===/,0' | grep -oP '\d+(?= 2xx)' | head -1)
-        w4xx=$(echo "$output"  | awk '/=== h2load-writes ===/,0' | grep -oP '\d+(?= 4xx)' | head -1)
-        w5xx=$(echo "$output"  | awk '/=== h2load-writes ===/,0' | grep -oP '\d+(?= 5xx)' | head -1)
-        echo "status_2xx=$(( ${r2xx:-0} + ${w2xx:-0} ))"
-        echo "status_3xx=0"
-        echo "status_4xx=$(( ${r4xx:-0} + ${w4xx:-0} ))"
-        echo "status_5xx=$(( ${r5xx:-0} + ${w5xx:-0} ))"
-        return
-    fi
-
-    # Single-invocation path — every profile except production-stack.
-    local duration_secs ok
-    duration_secs=$(echo "$output" | grep -oP 'finished in \K[\d.]+' | head -1)
-    duration_secs=${duration_secs:-1}
-    ok=$(echo "$output" | grep -oP '\d+(?= 2xx)' | head -1)
-    ok=${ok:-0}
-    echo "rps=$(awk -v ok="$ok" -v dur="$duration_secs" \
-        'BEGIN { if (dur+0 > 0) printf "%d", ok/dur; else print 0 }' 2>/dev/null || echo 0)"
-
-    # Latency — h2 mode uses "time for request:" one-liner: min/max/mean/sd, no
-    # percentiles. avg = mean ($6). h2load has no p99, so use max ($5) as the tail.
-    echo "avg_lat=$(echo "$output" | awk '/time for request:/{print $6}' | head -1)"
-    echo "p99_lat=$(echo "$output" | awk '/time for request:/{print $5}' | head -1)"
-
-    echo "reconnects=0"
-    echo "bandwidth=$(echo "$output" | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' | head -1 || echo 0)"
-
-    echo "status_2xx=$(echo "$output" | grep -oP '\d+(?= 2xx)' | head -1 || echo 0)"
-    echo "status_3xx=$(echo "$output" | grep -oP '\d+(?= 3xx)' | head -1 || echo 0)"
-    echo "status_4xx=$(echo "$output" | grep -oP '\d+(?= 4xx)' | head -1 || echo 0)"
-    echo "status_5xx=$(echo "$output" | grep -oP '\d+(?= 5xx)' | head -1 || echo 0)"
+    python3 "${BASH_SOURCE[0]%/*}/h2load_parse.py" "$1" <<< "$2"
 }

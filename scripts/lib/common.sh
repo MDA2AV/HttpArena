@@ -55,7 +55,7 @@ fi
 export GCANNON_CPUS
 
 H2LOAD="${H2LOAD:-h2load}"
-H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:latest}"
+H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:1.69.0}"
 
 H2LOAD_H3="${H2LOAD_H3:-h2load-h3}"
 H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"

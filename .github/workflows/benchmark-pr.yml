@@ -376,6 +376,8 @@ jobs:
                   return "".join(f.readlines()[-n:])
 
           def composite(fw):
+              if fw in failed:
+                  return "\n\nComposite score unavailable: some measurements failed; retained results are not a complete new run."
               text = tail(logs_dir + "/" + fw + ".composite.md", 50).strip()
               return "\n\n" + text if text else ""
 
@@ -387,6 +389,8 @@ jobs:
               rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
               deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
               head = table(rows, deltas) + composite(fw) if rows else "No results captured"
+              if fw in failed:
+                  head = "**Benchmark failed; valid partial results follow.**\n\n" + head
               body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + ".log", 200))
           else:
               heads = []

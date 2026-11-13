@@ -9,11 +9,13 @@ RUN apk add --no-cache musl-dev pkgconfig
 
 # Prime the dep cache: build against an empty main.rs so cargo downloads
 # and compiles the dependency graph once. Actual src/ changes below don't
-# invalidate this layer.
+# invalidate this layer. Let Cargo remove the placeholder's artifacts so this
+# also works when its target-directory layout changes.
 COPY Cargo.toml .
 RUN mkdir src && echo 'fn main() {}' > src/main.rs && \
     cargo build --release && \
-    rm -rf src target/release/deps/authsvc*
+    cargo clean --release --package authsvc && \
+    rm -rf src
 
 # Now add the real source and rebuild.
 COPY src ./src

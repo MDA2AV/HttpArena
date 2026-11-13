@@ -16,6 +16,7 @@ composite score in any family.
 """
 
 from __future__ import annotations
+import os
 import sys
 from pathlib import Path
 
@@ -54,7 +55,7 @@ def replaced(main, run, names):
 
 def display_name(frameworks, fw_dir):
     for name, m in frameworks.items():
-        if m.get("dir") == fw_dir:
+        if m.get("dir") == fw_dir or any(v.get("dir") == fw_dir for v in m.get("variants", [])):
             return name
     return fw_dir
 
@@ -85,6 +86,12 @@ def main():
     main_fws = g.load("frameworks.json", main_data) or {}
     run_fws = g.load("frameworks.json", run_data) or {}
     names = {display_name(run_fws, d) for d in sys.argv[4:]}
+    status_dir = Path(os.environ.get("HTTPARENA_RUN_STATUS_DIR", Path(__file__).resolve().parents[1] / "results/run-status"))
+    incomplete = set()
+    for fw_dir in sys.argv[4:]:
+        status = status_dir / f"{fw_dir}.exit"
+        if not status.is_file() or status.read_text().strip() != "0":
+            incomplete.add(display_name(run_fws, fw_dir))
     main_index = g.load_results(main_data)
     before = standings(main_fws, main_index)
     after_fws = {n: m for n, m in main_fws.items() if n not in names}
@@ -93,7 +100,11 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     for fw_dir in sys.argv[4:]:
         name = display_name(run_fws, fw_dir)
-        if name in before or name in after:
+        if name in incomplete:
+            (out_dir / f"{fw_dir}.composite.md").write_text(
+                "Composite score unavailable: related measurements failed or did not finish; retained results are not a complete new run.\n",
+                encoding="utf-8")
+        elif name in before or name in after:
             (out_dir / f"{fw_dir}.composite.md").write_text(
                 table(before.get(name, {}), after.get(name, {})) + "\n", encoding="utf-8")
 
