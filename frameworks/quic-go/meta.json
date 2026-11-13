@@ -1,0 +1,21 @@
+{
+  "display_name": "quic-go",
+  "language": "Go",
+  "type": "flagship",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": false,
+    "request": true,
+    "response": false
+  },
+  "engine": "quic-go",
+  "description": "quic-go, the pure-Go QUIC implementation behind Caddy's HTTP/3, serving HTTP/3 through its http3.Server with default configuration. Handlers are plain net/http ones routed by the Go 1.22 ServeMux; /static reads files from disk on every request and picks the pre-compressed .br/.gz twin off Accept-Encoding. A net/http TLS listener on tcp/8443 answers the harness readiness probe and is idle during the run.",
+  "repo": "https://github.com/quic-go/quic-go",
+  "enabled": true,
+  "tests": [
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": []
+}

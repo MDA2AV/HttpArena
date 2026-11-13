@@ -68,8 +68,9 @@ var gzipPool = sync.Pool{New: func() any {
 }}
 
 // The standard library has no compression middleware, so Accept-Encoding is
-// parsed here: the gzip token counts only when its q value is above zero.
-func acceptsGzip(header string) bool {
+// parsed here: a coding counts only when its q value is above zero, so
+// "br;q=0" refuses br rather than asking for it.
+func acceptsEncoding(header, coding string) bool {
 	for header != "" {
 		part := header
 		if i := strings.IndexByte(header, ','); i >= 0 {
@@ -78,7 +79,7 @@ func acceptsGzip(header string) bool {
 			header = ""
 		}
 		name, params, _ := strings.Cut(part, ";")
-		if !strings.EqualFold(strings.TrimSpace(name), "gzip") {
+		if !strings.EqualFold(strings.TrimSpace(name), coding) {
 			continue
 		}
 		for params != "" {
@@ -164,7 +165,7 @@ func jsonItems(w http.ResponseWriter, r *http.Request) {
 
 	h := w.Header()
 	h.Set("Content-Type", "application/json")
-	if acceptsGzip(r.Header.Get("Accept-Encoding")) {
+	if acceptsEncoding(r.Header.Get("Accept-Encoding"), "gzip") {
 		out := bufPool.Get().(*bytes.Buffer)
 		out.Reset()
 		zw := gzipPool.Get().(*gzip.Writer)
@@ -206,46 +207,6 @@ func echoBody(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	w.Write(body)
-}
-
-// One goroutine per request over every core the cgroup allows: read the cpu
-// quota the way koa's getCPUCount does and cap GOMAXPROCS with it, so a
-// CPU-limited container does not schedule against cores it cannot use.
-func limitProcsToCgroup() {
-	quota, ok := cgroupCPUs()
-	if ok && quota >= 1 && quota < runtime.NumCPU() {
-		runtime.GOMAXPROCS(quota)
-	}
-}
-
-func cgroupCPUs() (int, bool) {
-	// cgroup v2: "<quota> <period>", or "max <period>" when unlimited.
-	if data, err := os.ReadFile("/sys/fs/cgroup/cpu.max"); err == nil {
-		fields := strings.Fields(string(data))
-		if len(fields) == 2 && fields[0] != "max" {
-			quota, err1 := strconv.Atoi(fields[0])
-			period, err2 := strconv.Atoi(fields[1])
-			if err1 == nil && err2 == nil && period > 0 {
-				return quota / period, true
-			}
-		}
-		return 0, false
-	}
-	// cgroup v1: quota and period in two separate files, -1 when unlimited.
-	quota, err1 := readIntFile("/sys/fs/cgroup/cpu/cpu.cfs_quota_us")
-	period, err2 := readIntFile("/sys/fs/cgroup/cpu/cpu.cfs_period_us")
-	if err1 == nil && err2 == nil && quota > 0 && period > 0 {
-		return quota / period, true
-	}
-	return 0, false
-}
-
-func readIntFile(path string) (int, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return 0, err
-	}
-	return strconv.Atoi(strings.TrimSpace(string(data)))
 }
 
 var pgPool *pgxpool.Pool
@@ -544,12 +505,12 @@ func staticFile(w http.ResponseWriter, r *http.Request) {
 	base := "/data/static/" + name
 	path, enc := base, ""
 	ae := r.Header.Get("Accept-Encoding")
-	if strings.Contains(ae, "br") {
+	if acceptsEncoding(ae, "br") {
 		if _, err := os.Stat(base + ".br"); err == nil {
 			path, enc = base+".br", "br"
 		}
 	}
-	if enc == "" && strings.Contains(ae, "gzip") {
+	if enc == "" && acceptsEncoding(ae, "gzip") {
 		if _, err := os.Stat(base + ".gz"); err == nil {
 			path, enc = base+".gz", "gzip"
 		}
@@ -574,7 +535,8 @@ func staticFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	limitProcsToCgroup()
+	// No GOMAXPROCS setup: since Go 1.25 the runtime caps it at the
+	// container's CPU limit itself, and it already followed the cpuset.
 	loadDataset()
 	loadPgPool()
 	loadRedis()
@@ -595,8 +557,14 @@ func main() {
 	mux.HandleFunc("GET /crud/items/{id}", crudRead)
 	mux.HandleFunc("PUT /crud/items/{id}", crudUpdate)
 
-	// json-tls and static-tls on 8081, the same mux behind TLS. The harness only
-	// mounts /certs for the TLS profiles, so without them it is not opened.
+	// Every listener below serves the same mux; only the protocol in front of it
+	// changes.
+	//
+	// The TLS ports open only when the harness mounts /certs, which it does for
+	// the TLS and h2 profiles alone.
+	//   8081  json-tls, static-tls: HTTP/1.1 over TLS.
+	//   8443  baseline-h2, static-h2: HTTP/2 negotiated through ALPN by
+	//         net/http itself, HTTP/1.1 for clients that do not offer h2.
 	const cert, key = "/certs/server.crt", "/certs/server.key"
 	if _, err := os.Stat(cert); err == nil {
 		if _, err := os.Stat(key); err == nil {
@@ -604,8 +572,23 @@ func main() {
 				tls := &http.Server{Addr: ":8081", Handler: mux}
 				tls.ListenAndServeTLS(cert, key)
 			}()
+			go func() {
+				h2 := &http.Server{Addr: ":8443", Handler: mux}
+				h2.ListenAndServeTLS(cert, key)
+			}()
 		}
 	}
+
+	// baseline-h2c and json-h2c on 8082: HTTP/2 with prior knowledge through
+	// http.Server.Protocols (Go 1.24), with HTTP/1.1 kept on the same port, which
+	// the h2c profiles allow and which net/http tells apart by the h2 preface.
+	go func() {
+		var protocols http.Protocols
+		protocols.SetHTTP1(true)
+		protocols.SetUnencryptedHTTP2(true)
+		h2c := &http.Server{Addr: ":8082", Handler: mux, Protocols: &protocols}
+		h2c.ListenAndServe()
+	}()
 
 	server := &http.Server{Addr: ":8080", Handler: mux}
 	if err := server.ListenAndServe(); err != nil {

@@ -7,8 +7,8 @@ the same as there; see its README.
 ## Stack
 
 - **Language:** Go 1.27.3 (fib's own `go.mod` requires it)
-- **Framework:** fib v1.7.2: `http`, `http3`, `grpc`, `tls` and `middleware` packages
-- **Compression:** `andybalholm/brotli`, `klauspost/compress` (zstd, gzip, deflate)
+- **Framework:** fib v1.8.0: `http`, `http3`, `grpc`, `tls` and `middleware` packages
+- **Compression:** `molecule-man/go-brrr` (brotli, as fasthttp uses), `klauspost/compress` (zstd, gzip, deflate)
 - **JSON:** `bytedance/sonic`, as fiber-tuned uses, for the `/json` and `/async-db` responses,
   which answer through `Context.JSON` as in `fib`, with sonic set as fib's `JSONEncoder`:
   json-tls served 1.06M requests a second with it against 747k through `encoding/json` on 64
@@ -61,4 +61,6 @@ variants are already on disk.
 - A coded body that is no shorter is sent as it was, and every response that could have been
   coded carries `Vary: Accept-Encoding`.
 - Writers are recycled through `sync.Pool`, and the coded body is copied out of a pooled buffer
-  at its exact length; one zstd encoder serves every request through `EncodeAll`.
+  at its exact length; one zstd encoder serves every request through `EncodeAll`, and brotli
+  goes through go-brrr's one-shot `Compress`, which keeps its own encoders per quality. On 8
+  CPUs go-brrr took `json-comp` from 115k to 202k req/s against andybalholm/brotli.
