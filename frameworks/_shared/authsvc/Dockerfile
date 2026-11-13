@@ -9,18 +9,28 @@ RUN apk add --no-cache musl-dev pkgconfig
 
 # Prime the dep cache: build against an empty main.rs so cargo downloads
 # and compiles the dependency graph once. Actual src/ changes below don't
-# invalidate this layer. Let Cargo remove the placeholder's artifacts so this
-# also works when its target-directory layout changes.
+# invalidate this layer.
+#
+# `cargo clean -p authsvc` then drops the placeholder's own artifacts, and only
+# those, wherever this cargo keeps them. This step used to delete
+# target/release/deps/authsvc* by hand. Cargo 1.100 moved each package's
+# artifacts to target/release/build/<package>/<hash>/, the glob stopped
+# matching, and the build below found the placeholder up to date and shipped
+# it: an authsvc that exits 0 at once without a word, so every
+# production-stack run failed before measuring anything.
 COPY Cargo.toml .
 RUN mkdir src && echo 'fn main() {}' > src/main.rs && \
     cargo build --release && \
-    cargo clean --release --package authsvc && \
+    cargo clean --release -p authsvc && \
     rm -rf src
 
-# Now add the real source and rebuild.
+# Now add the real source and rebuild. The grep fails the build if the
+# placeholder is ever shipped again: the server's startup line is in the
+# real binary and nowhere in the empty one.
 COPY src ./src
 RUN cargo build --release && \
-    strip target/release/authsvc
+    strip target/release/authsvc && \
+    grep -q "authsvc listening on" target/release/authsvc
 
 FROM alpine:3.20
 # ca-certificates are needed if authsvc ever connects to something over
