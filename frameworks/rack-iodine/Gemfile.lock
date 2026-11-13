@@ -17,4 +17,4 @@ CHECKSUMS
   rack (3.2.8) sha256=1fecc85e463ebc7a2a945fff829ffcd549babeb1556384796fad946c28dc4ec7
 
 BUNDLED WITH
-  4.0.8
+  4.1.0.beta2
