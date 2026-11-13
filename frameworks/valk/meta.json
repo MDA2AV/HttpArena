@@ -1,0 +1,40 @@
+{
+  "display_name": "valk",
+  "language": "Valk",
+  "type": "emerging",
+  "mode": "standard",
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "engine": "valk.http",
+  "description": "Valk's standard library HTTP/1.1, HTTP/2 and WebSocket server (io_uring with epoll fallback), built-in router, JSON serializer, static file server and response compression.",
+  "repo": "https://github.com/valk-lang/valk",
+  "website": "https://valk-lang.dev",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "async",
+    "latency-1m",
+    "latency-10k",
+    "latency-500k-8cpu",
+    "json-comp",
+    "json-tls",
+    "8gbit",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
+  ],
+  "maintainers": [
+    "ctxcode"
+  ]
+}
