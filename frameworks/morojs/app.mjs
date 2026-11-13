@@ -28,12 +28,11 @@ const CERTS_DIR = process.env.CERTS_DIR || '/certs';
 // process. 'plain' serves :8080; 'tls' serves json-tls, static-tls and 8gbit
 // on :8081 from /certs; 'tlscheck' serves the opt-in TLS hardening section on
 // :9000 from /certs-tls, reloading the pair whenever the files change. The
-// two HTTP/2 listeners run on Moro's own HTTP/2 server (Node's http2 module,
-// `engine: 'node'` with `http2: true`): the native engine speaks HTTP/1.1
-// only. 'h2' is TLS with ALPN h2 on :8443 for baseline-h2 and static-h2;
+// two HTTP/2 listeners are the native engine's too (`http2: true`, engine
+// 1.1.19): 'h2' is TLS with ALPN h2 on :8443 for baseline-h2 and static-h2;
 // 'h2c' is cleartext prior-knowledge HTTP/2 on :8082 for baseline-h2c and
-// json-h2c. Both cluster as node:cluster processes, Moro's transport for the
-// Node servers.
+// json-h2c. HTTP/1.1 is served beside HTTP/2 on both ports, and they cluster
+// as every other listener here does, on worker threads.
 const ROLE = process.env.MORO_ROLE || 'plain';
 const LISTENERS = {
     plain: { port: 8080 },
@@ -192,14 +191,10 @@ function defineRoutes(app) {
     app.post('/baseline11').handler(baseline11);
 
     // Behind the gateway proxies, which terminate TLS and h2 and forward this
-    // over loopback h1, and directly on the HTTP/2 listeners. On the native
-    // engine a bare number sent as a string is text/plain through the
-    // framework's prepared reply; on the HTTP/2 server the type is set by
-    // hand so it is text/plain there too, whatever a content sniff would make
-    // of it.
-    const textPlain = listener.http2 === true;
+    // over loopback h1, and directly on the HTTP/2 listeners. A bare number
+    // sent as a string is text/plain through the framework's prepared reply,
+    // on a stream as on an HTTP/1.1 connection.
     app.get('/baseline2').handler((req, res) => {
-        if (textPlain) res.setHeader('Content-Type', 'text/plain');
         res.send(String(sumQuery(req.query)));
     });
 
@@ -255,9 +250,9 @@ function defineRoutes(app) {
     }
 
     // 8gbit: the body exactly as it arrived, Content-Length or chunked, sent
-    // back as the same bytes. req.rawBody is the framework's undecoded copy,
-    // and a Buffer sent as is goes out application/octet-stream through the
-    // framework's prepared reply.
+    // back as the same bytes. req.rawBody is the body undecoded, a Buffer of
+    // its own. A Buffer sent as is goes out application/octet-stream through
+    // the framework's prepared reply.
     app.post('/echo').handler((req, res) => {
         res.send(req.rawBody ?? Buffer.alloc(0));
     });
@@ -442,7 +437,6 @@ if (listener.certs) {
     server.ssl = { ...pairIn(listener.certs), ...(listener.watch ? { watch: true } : {}) };
 }
 if (listener.http2) {
-    server.engine = 'node';
     server.http2 = true;
 }
 
