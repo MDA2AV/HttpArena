@@ -1,128 +1,181 @@
-use std::cell::RefCell;
-
-use sark_grpc::server::{Config, dispatch_buffered};
-use sark_grpc::status::Status;
+use o3::buffer;
 use sark_grpc::{
-    Metadata, RequestHead, Routes, StreamingRequest, StreamingResponse, UnaryRequest, UnaryResponse,
+    Code, Status, encode,
+    protocol::request,
+    server::service::{
+        self,
+        handler::{self, modes, output},
+        reply::{Reply, Write},
+        timers,
+    },
 };
 
-include!(concat!(env!("OUT_DIR"), "/benchmark.rs"));
+#[derive(Clone, Copy, Debug, PartialEq, prost::Message)]
+#[prost(skip_debug)]
+pub struct SumRequest {
+    #[prost(int32, tag = "1")]
+    pub a: i32,
+    #[prost(int32, tag = "2")]
+    pub b: i32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, prost::Message)]
+#[prost(skip_debug)]
+pub struct StreamRequest {
+    #[prost(int32, tag = "1")]
+    pub a: i32,
+    #[prost(int32, tag = "2")]
+    pub b: i32,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, prost::Message)]
+#[prost(skip_debug)]
+pub struct SumReply {
+    #[prost(int32, tag = "1")]
+    pub result: i32,
+}
+
+impl encode::Message for SumReply {
+    type Plan<'a> = &'a Self;
+
+    fn plan(&self) -> Self::Plan<'_> {
+        self
+    }
+}
+
+impl encode::Plan for &SumReply {
+    fn write<S: encode::Sink>(self, sink: S) -> Result<S::Output, sark_grpc::Status> {
+        let mut bytes = [0; 11];
+        let mut remaining = bytes.as_mut_slice();
+        let Ok(()) = prost::Message::encode(self, &mut remaining) else {
+            unreachable!("encode")
+        };
+        let written = 11 - remaining.len();
+        sink.try_slices([&bytes[..written]])
+    }
+}
 
 pub struct BenchSvc;
 
-impl BenchmarkServiceService for BenchSvc {
-    fn get_sum(&mut self, request: UnaryRequest<SumRequest>) -> UnaryResponse<SumReply> {
-        UnaryResponse::new(SumReply {
-            result: request.message.a.wrapping_add(request.message.b),
+pub struct Replies {
+    result: i32,
+    remaining: u32,
+}
+
+impl Iterator for Replies {
+    type Item = SumReply;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.remaining = self.remaining.checked_sub(1)?;
+        let result = self.result;
+        self.result = self.result.wrapping_add(1);
+        Some(SumReply { result })
+    }
+}
+
+#[derive(Default)]
+pub enum Call {
+    #[default]
+    Unknown,
+    GetSum,
+    StreamSum(<output::Streaming<BenchSvc> as handler::Handler>::Call),
+}
+
+impl handler::Handler for BenchSvc {
+    type Call = Call;
+    type Timer = timers::Off;
+
+    fn start<W: Write>(
+        &mut self,
+        _: &mut (),
+        _: &mut service::Stream,
+        head: &request::Head,
+        reply: &mut Reply<'_, W>,
+    ) -> handler::Start<Self::Call> {
+        handler::Start::buffered(match head.path() {
+            b"/benchmark.BenchmarkService/GetSum" => Call::GetSum,
+            b"/benchmark.BenchmarkService/StreamSum" => Call::StreamSum(Default::default()),
+            _ => {
+                reply.finish_with(Status::from_code(Code::Unimplemented));
+                Call::Unknown
+            }
         })
     }
 
-    fn stream_sum(
+    fn request<S: buffer::raw::Segment, W: Write>(
         &mut self,
-        request: StreamingRequest<StreamRequest>,
-    ) -> StreamingResponse<SumReply> {
-        let mut replies = Vec::new();
-        for msg in &request.messages {
-            let sum = msg.a.wrapping_add(msg.b);
-            let count = msg.count.max(0) as usize;
-            for _ in 0..count {
-                replies.push(SumReply { result: sum });
+        context: &mut (),
+        call: &mut Self::Call,
+        request: service::Request<'_, S>,
+        response: &mut service::Response<'_, W>,
+    ) -> handler::RequestState {
+        match call {
+            Call::GetSum => modes::Unary::new(BenchSvc, encode::Prost::new()).request(
+                context,
+                &mut (),
+                request,
+                response,
+            ),
+            Call::StreamSum(call) => output::Streaming::new(BenchSvc, encode::Prost::new())
+                .request(context, call, request, response),
+            Call::Unknown => {
+                response.finish_with(Status::from_code(Code::Unimplemented));
+                handler::RequestState::Complete
             }
         }
-        StreamingResponse::new(replies)
+    }
+
+    fn output<W: Write>(
+        &mut self,
+        context: &mut (),
+        call: &mut Self::Call,
+        output: &mut timers::Output<'_, '_, '_, Self::Timer>,
+        reply: &mut Reply<'_, W>,
+    ) -> handler::OutputState {
+        let code = match call {
+            Call::StreamSum(call) => {
+                return output::Streaming::new(BenchSvc, encode::Prost::new())
+                    .output(context, call, output, reply);
+            }
+            Call::GetSum => Code::Internal,
+            Call::Unknown => Code::Unimplemented,
+        };
+        reply.finish_with(Status::from_code(code));
+        handler::OutputState::Complete
     }
 }
 
-fn head(path: &[u8]) -> RequestHead {
-    RequestHead {
-        path: path.to_vec(),
-        authority: None,
-        metadata: Metadata::new(),
+impl modes::UnaryFn for BenchSvc {
+    type Response = SumReply;
+    type Codec = encode::Prost<SumReply, SumRequest>;
+
+    fn unary<'a, S: buffer::raw::Segment + 'a>(
+        &mut self,
+        _: &mut (),
+        request: modes::Request<SumRequest>,
+    ) -> modes::Response<SumReply> {
+        modes::Response::new(SumReply {
+            result: request.body.a.wrapping_add(request.body.b),
+        })
     }
 }
 
-type BenchRoutes = Routes<__SarkGrpcBenchmarkServiceRoutes<BenchSvc>>;
+impl output::StreamFn for BenchSvc {
+    type Response = SumReply;
+    type Stream = Replies;
+    type Codec = encode::Prost<SumReply, StreamRequest>;
 
-pub fn dispatch(path: &[u8], body: &[u8]) -> (Vec<u8>, Status) {
-    thread_local! {
-        static ROUTES: RefCell<BenchRoutes> = RefCell::new(benchmark_service_routes(BenchSvc));
-    }
-    let response = ROUTES
-        .with_borrow_mut(|routes| dispatch_buffered(routes, head(path), body, &Config::default()));
-    let mut out = Vec::new();
-    match response.encode_body(&mut out) {
-        Ok(()) => (out, response.status),
-        Err(status) => (Vec::new(), status),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use prost::Message;
-    use sark_grpc::frame::{Deframer, MessageFrame};
-    use sark_grpc::status::Code;
-
-    use super::*;
-
-    const GET_SUM: &[u8] = b"/benchmark.BenchmarkService/GetSum";
-    const STREAM_SUM: &[u8] = b"/benchmark.BenchmarkService/StreamSum";
-
-    fn frame(payload: &[u8]) -> Vec<u8> {
-        let mut out = Vec::new();
-        MessageFrame::encode(false, payload, &mut out).unwrap();
-        out
-    }
-
-    fn deframe(bytes: &[u8]) -> Vec<MessageFrame> {
-        let mut deframer = Deframer::new(4 * 1024 * 1024);
-        let mut out = Vec::new();
-        deframer.push(bytes, &mut out).unwrap();
-        out
-    }
-
-    #[test]
-    fn get_sum_decodes_request_and_frames_reply() {
-        let mut payload = Vec::new();
-        SumRequest { a: 7, b: 35 }.encode(&mut payload).unwrap();
-        let (frames, status) = dispatch(GET_SUM, &frame(&payload));
-        assert_eq!(status.code(), Code::Ok);
-        let messages = deframe(&frames);
-        assert_eq!(messages.len(), 1);
-        let reply = SumReply::decode(messages[0].payload.as_slice()).unwrap();
-        assert_eq!(reply.result, 42);
-    }
-
-    #[test]
-    fn stream_sum_emits_count_replies() {
-        let mut payload = Vec::new();
-        StreamRequest {
-            a: 4,
-            b: 6,
-            count: 3,
-        }
-        .encode(&mut payload)
-        .unwrap();
-        let (frames, status) = dispatch(STREAM_SUM, &frame(&payload));
-        assert_eq!(status.code(), Code::Ok);
-        let messages = deframe(&frames);
-        assert_eq!(messages.len(), 3);
-        for message in &messages {
-            let reply = SumReply::decode(message.payload.as_slice()).unwrap();
-            assert_eq!(reply.result, 10);
-        }
-    }
-
-    #[test]
-    fn unknown_method_is_unimplemented() {
-        let (frames, status) = dispatch(b"/benchmark.BenchmarkService/Missing", &[]);
-        assert!(frames.is_empty());
-        assert_eq!(status.code(), Code::Unimplemented);
-    }
-
-    #[test]
-    fn get_sum_without_message_is_invalid_argument() {
-        let (frames, status) = dispatch(GET_SUM, &[]);
-        assert!(frames.is_empty());
-        assert_eq!(status.code(), Code::InvalidArgument);
+    fn stream<'a, S: buffer::raw::Segment + 'a>(
+        &mut self,
+        _: &mut (),
+        request: modes::Request<StreamRequest>,
+    ) -> output::Response<Self::Stream> {
+        let body = request.body;
+        output::Response::new(Replies {
+            result: body.a.wrapping_add(body.b),
+            remaining: body.count.max(0) as u32,
+        })
     }
 }

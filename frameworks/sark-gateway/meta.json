@@ -4,11 +4,12 @@
   "type": "engine",
   "engine": "io_uring",
   "description": "sark behind a stock Caddy edge (TLS + h2/h3) \u2014 gateway profiles. Caddy terminates TLS and serves static from disk; sark serves dynamic endpoints over TCP. No tokio, no Arc/atomic.",
-  "repo": "https://github.com/dope-rs/dope",
-  "enabled": true,
+  "repo": "https://github.com/dope-rs/sark",
+  "enabled": false,
   "tests": [
     "gateway-64",
-    "gateway-h3"
+    "gateway-h3",
+    "production-stack"
   ],
   "maintainers": [
     "inq"
