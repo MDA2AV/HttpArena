@@ -89,3 +89,55 @@ fn database_updates_reach_item_and_range_responses() {
     )
     .expect("database application");
 }
+
+#[test]
+#[ignore = "requires seeded disposable PostgreSQL and Redis"]
+fn user_cache_keeps_identity_and_fixed_expiration() {
+    use std::time::{Duration, Instant};
+
+    let pair = dope_test::harness::server::Pair::bind()
+        .expect("HTTP listener")
+        .timeouts(Duration::from_secs(2), Duration::from_secs(45))
+        .expect("cache test deadline");
+    let mut worker = common::http::worker(pair.addr());
+    worker.boot.database_url =
+        Some(std::env::var("HTTPARENA_TEST_DATABASE_URL").expect("isolated PostgreSQL URL"));
+    worker.boot.redis_url =
+        Some(std::env::var("HTTPARENA_TEST_REDIS_URL").expect("isolated Redis URL"));
+    let redis = std::env::var("HTTPARENA_TEST_REDIS_CONTAINER").expect("isolated Redis container");
+    pair.run(
+        move |context, http| {
+            httparena_sark::runtime::serve(
+                worker,
+                context,
+                httparena_sark::runtime::Bindings {
+                    http: Some(http),
+                    ..Default::default()
+                },
+            )
+            .map(drop)
+        },
+        |address| {
+            let first = common::http::request_headers(address, "/api/me", None, &["x-user-id: 42"]);
+            assert_eq!(first.0, 200);
+            let admitted = Instant::now();
+            common::database::redis(&redis, &["SET", "user:42", "["]);
+            common::database::redis(&redis, &["SET", "user:8", r#"{"id":8}"#]);
+            assert_eq!(
+                common::http::request_headers(address, "/api/me", None, &["x-user-id: 8"]),
+                (200, br#"{"id":8}"#.to_vec()),
+            );
+            std::thread::sleep(Duration::from_secs(20).saturating_sub(admitted.elapsed()));
+            assert_eq!(
+                common::http::request_headers(address, "/api/me", None, &["x-user-id: 42"]),
+                first,
+            );
+            std::thread::sleep(Duration::from_secs(31).saturating_sub(admitted.elapsed()));
+            assert_eq!(
+                common::http::request_headers(address, "/api/me", None, &["x-user-id: 42"]),
+                (502, b"response encoding failed".to_vec()),
+            );
+        },
+    )
+    .expect("cached user application");
+}

@@ -14,6 +14,7 @@ use dope::{
 };
 use dope_fiber::task::time::sleep::{self, TimerExt as _};
 use dope_tls::tls::{Tls, roles};
+use o3::base::cell::region;
 use sark::http::{
     field::text::{Ascii, IntError},
     payload::response::status::Code,
@@ -53,6 +54,7 @@ pub struct State<'files, 'd, P, R> {
     pub pg_configured: bool,
     pub redis_configured: bool,
     pub cache_tokens: cache::Tokens,
+    pub users: region::Value<region::Identity<'d>, cache::Users>,
     pub dataset: &'files dataset::Dataset,
     pub files: files::Root<'files, 'd>,
     pub diagnostics: &'files Cell<Option<io::Error>>,

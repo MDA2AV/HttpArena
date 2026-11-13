@@ -3,6 +3,7 @@ use std::{
     convert::Infallible,
     num::{NonZero, ParseIntError, TryFromIntError},
     str::{self, Utf8Error},
+    time::Instant,
 };
 
 use cartel_pg::{
@@ -17,12 +18,13 @@ use dope::{
     manifold::client::{attempt::ConnectFault, close, conn},
     net::link::event::ConnectError,
 };
+use dope_fiber::task::local::Once;
 use o3::{
     buffer::{
         storage::{self, Shared},
         write::consume,
     },
-    mem::Rejected,
+    mem::{Rejected, rc},
 };
 use sark::http::{
     field::{self, Value},
@@ -42,6 +44,7 @@ pub const ID: u8 = 10;
 pub const TASKS: usize = 64;
 pub const MAX_BODY_BYTES: usize = 1024 * 1024;
 const MAX_FORTUNES: usize = 4096;
+const HIT: Value<&'static [u8]> = field::literal!(Value::try_bytes(b"HIT"));
 const MISS: Value<&'static [u8]> = field::literal!(Value::try_bytes(b"MISS"));
 
 #[derive(PgTable, PgRow)]
@@ -206,6 +209,7 @@ pub enum BodyError {
     Size(Overflow),
     Build(storage::BuildError<consume::Error>),
     Allocation(TryReserveError),
+    Retain(rc::Error),
     Count(TryFromIntError),
     EscapeSize { bytes: usize },
     Limit { actual: usize, maximum: usize },
@@ -554,8 +558,23 @@ where
     let id = positive_id(request.id.ok_or_else(Error::identity)?).map_err(Error::integer)?;
     Error::require(state.pg_configured, Upstream::Postgres)?;
     Error::require(state.redis_configured, Upstream::Redis)?;
+    if let Some(body) = Once::new(|access| {
+        state
+            .users
+            .read(access.read(), |users| users.get(id, Instant::now()))
+    })
+    .await
+    .map_err(BodyError::Retain)
+    .map_err(Error::body)?
+    {
+        return Ok(CachedResponse {
+            status: Code::OK,
+            cache: HIT,
+            body,
+        });
+    }
     let key = Key::user(id);
-    if let Some(body) = state
+    let response = if let Some(body) = state
         .redis
         .acquire()
         .await
@@ -565,37 +584,47 @@ where
         .await
         .map_err(Error::cache)?
     {
-        return cached(body.as_ref()).map_err(Error::body);
-    }
-    let body = {
-        let query = state.pg.acquire().await.map_err(Error::pg)?;
-        let row = User::by_id(query, id.get()).await.map_err(Error::pg)?;
-        let row = row.decode().map_err(Error::decode)?;
-        encode(
-            UserBody {
-                id: i64::from(row.id),
-                name: row.name.into(),
-                email: row.email.into(),
-                plan: row.plan.into(),
-            },
-            cache::MAX_BYTES,
-        )
-        .map_err(Error::body)?
+        cached(body.as_ref()).map_err(Error::body)?
+    } else {
+        let body = {
+            let query = state.pg.acquire().await.map_err(Error::pg)?;
+            let row = User::by_id(query, id.get()).await.map_err(Error::pg)?;
+            let row = row.decode().map_err(Error::decode)?;
+            encode(
+                UserBody {
+                    id: i64::from(row.id),
+                    name: row.name.into(),
+                    email: row.email.into(),
+                    plan: row.plan.into(),
+                },
+                cache::MAX_BYTES,
+            )
+            .map_err(Error::body)?
+        };
+        state
+            .redis
+            .acquire()
+            .await
+            .map_err(Error::cache)?
+            .basic()
+            .set_seconds(key.as_bytes(), &body, cache::USER_TTL)
+            .await
+            .map_err(Error::cache)?;
+        CachedResponse {
+            status: Code::OK,
+            cache: MISS,
+            body,
+        }
     };
-    state
-        .redis
-        .acquire()
-        .await
-        .map_err(Error::cache)?
-        .basic()
-        .set_seconds(key.as_bytes(), &body, cache::USER_TTL)
-        .await
-        .map_err(Error::cache)?;
-    Ok(CachedResponse {
-        status: Code::OK,
-        cache: MISS,
-        body,
+    Once::new(|access| {
+        state.users.write(access, |users| {
+            users.insert(id, &response.body, Instant::now())
+        })
     })
+    .await
+    .map_err(BodyError::Retain)
+    .map_err(Error::body)?;
+    Ok(response)
 }
 
 #[sark::handler(pub)]
@@ -712,7 +741,7 @@ fn cached(bytes: &[u8]) -> Result<CachedResponse, BodyError> {
         .map_err(BodyError::Build)?;
     Ok(CachedResponse {
         status: Code::OK,
-        cache: field::literal!(Value::try_bytes(b"HIT")),
+        cache: HIT,
         body,
     })
 }

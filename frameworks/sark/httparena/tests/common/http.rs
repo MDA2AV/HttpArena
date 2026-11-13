@@ -18,6 +18,15 @@ pub fn worker(address: SocketAddr) -> Worker<'static> {
 }
 
 pub fn request(address: SocketAddr, path: &str, body: Option<&[u8]>) -> (u16, Vec<u8>) {
+    request_headers(address, path, body, &[])
+}
+
+pub fn request_headers(
+    address: SocketAddr,
+    path: &str,
+    body: Option<&[u8]>,
+    headers: &[&str],
+) -> (u16, Vec<u8>) {
     let mut command = Command::new("curl");
     command.args([
         "--silent",
@@ -27,6 +36,9 @@ pub fn request(address: SocketAddr, path: &str, body: Option<&[u8]>) -> (u16, Ve
         "--write-out",
         "\n%{http_code}",
     ]);
+    for header in headers {
+        command.args(["--header", header]);
+    }
     if let Some(body) = body {
         command.args([
             "--header",

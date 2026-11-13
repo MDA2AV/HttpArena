@@ -1,13 +1,26 @@
-use std::{cell::Cell, num::NonZero};
+use std::{
+    cell::Cell,
+    collections::hash_map::RandomState,
+    hash::BuildHasher,
+    num::NonZero,
+    time::{Duration, Instant},
+};
 
 use cartel_redis::{
     api::{Commands, decode},
     client::settings,
 };
+use o3::{
+    alloc,
+    buffer::storage::Shared,
+    depot::map::{self, flat::Table},
+    mem::rc,
+};
 
 pub const ID: u8 = 11;
 pub const USER_TTL: NonZero<u64> = NonZero::<u64>::MIN.saturating_add(29);
 pub const MAX_BYTES: usize = 64 * 1024;
+const USER_ENTRIES: NonZero<usize> = NonZero::<usize>::MIN.saturating_add(255);
 const RESERVE: &[u8] = br#"local value = redis.call('GET', KEYS[1])
 if value then return value end
 redis.call('SET', KEYS[1], ARGV[1], 'EX', 1)
@@ -15,6 +28,92 @@ return ARGV[1]"#;
 const FILL: &[u8] = br#"if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
 redis.call('SET', KEYS[1], ARGV[2], 'EX', 1)
 return 1"#;
+
+pub struct Users {
+    entries: Table<Entry>,
+    hash: RandomState,
+}
+
+struct Entry {
+    id: NonZero<i32>,
+    admitted_at: Instant,
+    body: Shared,
+}
+
+impl Entry {
+    fn new(id: NonZero<i32>, body: &Shared, admitted_at: Instant) -> Result<Self, rc::Error> {
+        Ok(Self {
+            id,
+            admitted_at,
+            body: body.try_clone()?,
+        })
+    }
+
+    fn live(&self, now: Instant) -> bool {
+        now.duration_since(self.admitted_at) < Duration::from_secs(USER_TTL.get())
+    }
+}
+
+impl Users {
+    pub fn new(configured: bool) -> Result<Self, alloc::Error> {
+        let plan = if configured {
+            map::Plan::fixed::<{ USER_ENTRIES.get() }>()
+        } else {
+            map::Plan::fixed::<0>()
+        };
+        Ok(Self {
+            entries: Table::try_new(plan)?,
+            hash: RandomState::new(),
+        })
+    }
+
+    pub(crate) fn get(&self, id: NonZero<i32>, now: Instant) -> Result<Option<Shared>, rc::Error> {
+        self.entries
+            .get(self.hash.hash_one(id), |entry| entry.id == id)
+            .filter(|entry| entry.live(now))
+            .map(|entry| entry.body.try_clone())
+            .transpose()
+    }
+
+    pub(crate) fn insert(
+        &mut self,
+        id: NonZero<i32>,
+        body: &Shared,
+        now: Instant,
+    ) -> Result<(), rc::Error> {
+        let hash = self.hash.hash_one(id);
+        match self.entries.entry(hash, |entry| entry.id == id) {
+            Some(map::Entry::Occupied(mut entry)) => {
+                if !entry.get().live(now) {
+                    *entry.get_mut() = Entry::new(id, body, now)?;
+                }
+            }
+            Some(map::Entry::Vacant(entry)) => {
+                entry.insert(Entry::new(id, body, now)?);
+            }
+            None => {
+                let Some(victim) = self
+                    .entries
+                    .values()
+                    .min_by_key(|entry| entry.admitted_at)
+                    .map(|entry| entry.id)
+                else {
+                    return Ok(());
+                };
+                let value = Entry::new(id, body, now)?;
+                self.entries
+                    .retire(self.hash.hash_one(victim), |entry| entry.id == victim);
+                let Some(map::Entry::Vacant(entry)) =
+                    self.entries.entry(hash, |entry| entry.id == id)
+                else {
+                    unreachable!("cache")
+                };
+                entry.insert(value);
+            }
+        }
+        Ok(())
+    }
+}
 
 pub struct Tokens {
     prefix: [u8; 16],

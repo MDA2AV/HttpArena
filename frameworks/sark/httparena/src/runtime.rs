@@ -378,6 +378,8 @@ pub fn serve<C: executor::Build>(
         .redis()
         .map_err(|cause| fail(format_args!("Redis input: {cause:?}")))?;
     let redis_configured = redis_address.is_some();
+    let users = cache::Users::new(pg_configured && redis_configured)
+        .map_err(|cause| fail(format_args!("user cache: {cause:?}")))?;
     let redis_limits = cache::config(application_tasks, redis_configured)
         .map_err(|cause| fail(format_args!("Redis capacity: {cause:?}")))?;
     let (_, redis) = cartel_redis::client::plan::Plan::<{ cache::ID }>::new(redis_limits)
@@ -494,6 +496,7 @@ pub fn serve<C: executor::Build>(
                 .map_err(|cause| fail(format_args!("file resident budget: {cause:?}")))?;
             let files = files::Root::try_new(&boot.static_root, &port, budget)
                 .map_err(|cause| fail(format_args!("static root: {cause:?}")))?;
+            let users = stage.driver().storage.region().proof().bind(users);
             drop(boot);
             pg.install(stage, |pg, stage| {
                 redis.install(stage, |redis, stage| {
@@ -506,7 +509,7 @@ pub fn serve<C: executor::Build>(
                                         let ((pg, redis), permit) = issued.into_parts();
                                         let state = std::pin::pin!(State {
                                             pg, redis, pg_configured, redis_configured,
-                                            dataset: &dataset, files, cache_tokens, diagnostics: &diagnostics,
+                                            dataset: &dataset, files, cache_tokens, users, diagnostics: &diagnostics,
                                         });
                                         let state = state.as_ref().get_ref();
                                         let port = &port;
@@ -562,7 +565,7 @@ pub fn serve<C: executor::Build>(
                                                                 let ((pg, redis), permit) = issued.into_parts();
                                                                 let state = std::pin::pin!(State {
                                                                     pg, redis, pg_configured, redis_configured,
-                                                                    dataset: &dataset, files, cache_tokens, diagnostics: &diagnostics,
+                                                                    dataset: &dataset, files, cache_tokens, users, diagnostics: &diagnostics,
                                                                 });
                                                                 let state = state.as_ref().get_ref();
                                                                 let port = &port;

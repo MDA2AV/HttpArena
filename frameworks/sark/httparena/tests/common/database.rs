@@ -29,3 +29,13 @@ pub fn oversized_fortune() -> String {
 pub fn updated_range() -> Vec<u8> {
     [b"{\"items\":[".as_slice(), UPDATED_ROW, b"],\"count\":1}"].concat()
 }
+
+pub fn redis(container: &str, args: &[&str]) {
+    let output = std::process::Command::new("docker")
+        .args(["exec", container, "redis-cli"])
+        .args(args)
+        .output()
+        .expect("Redis fixture");
+    assert!(output.status.success());
+    assert_eq!(output.stdout, b"OK\n");
+}
