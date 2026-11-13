@@ -6,11 +6,8 @@ use std::{
 };
 
 use cartel_pg::{
-    Jsonb, PgRow, PgTable,
-    api::traits::Client as PgClient,
-    pg_instance,
-    port::config,
-    query_group, reply,
+    Jsonb, PgRow, PgTable, api::traits::Client as PgClient, pg_instance, port::config, query_group,
+    reply,
 };
 use cartel_redis::{
     api::{Client as RedisClient, Commands as _},
@@ -35,7 +32,7 @@ use sark::http::{
     },
 };
 use sark_json::{
-    Raw,
+    Raw, Text,
     writing::{self, TryEncode},
 };
 
@@ -145,7 +142,7 @@ impl<'a> Item<'a> {
             price: i64::from(row.price),
             quantity: i64::from(row.quantity),
             active: row.active,
-            tags: Raw::try_new(row.tags.as_bytes())
+            tags: Raw::try_from(Text::from(row.tags))
                 .map_err(Rejected::discard)
                 .map_err(BodyError::Json)?,
             rating: Rating {
@@ -658,7 +655,11 @@ pub fn render_fortunes(mut rows: Vec<(i32, &str)>) -> Result<Vec<u8>, BodyError>
     }
     check_limit(bound, MAX_BODY_BYTES)?;
     rows.sort_unstable_by(|left, right| left.1.cmp(right.1));
-    let html = tent::html!(
+    let mut output = String::new();
+    output
+        .try_reserve_exact(bound)
+        .map_err(BodyError::Allocation)?;
+    let html = tent::html_into!(
         r#"| <!DOCTYPE html>
 html
   head
@@ -672,9 +673,10 @@ html
         tr
           td (row.0)
           td (row.1)
-"#
+"#,
+        output,
     );
-    Ok(html.into_owned().into_bytes())
+    Ok(html.into_bytes())
 }
 
 fn positive_id(value: usize) -> Result<NonZero<i32>, TryFromIntError> {
