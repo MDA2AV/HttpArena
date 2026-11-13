@@ -1,6 +1,6 @@
 package main
 
-// HttpArena entry for Sober, on std/http + std/json + std/tls alone.
+// HttpArena entry for Sober, on std/http/server + std/json + std/tls alone.
 // Plain HTTP/1.1 on 0.0.0.0:8080 and, when /certs/server.{crt,key} (or TLS_CERT / TLS_KEY)
 // can be read, the same routes over TLS 1.3 on 0.0.0.0:8081 (ports overridable by argv).
 // Prints "ready <port>" / "tls-ready <port>" once listening.
@@ -8,13 +8,13 @@ package main
 
 import "std/compress/flate"
 import "std/convert"
-import "std/http"
+import "std/http/server"
 import "std/io"
+import "std/iter"
 import "std/json"
 import "std/net"
 import "std/os"
 import "std/task"
-import "std/iter"
 import "std/tls"
 
 func num(s string?) int {
@@ -70,45 +70,44 @@ func load() []Item {
     return freeze(xs)
 }
 
-func items(ds []Item, r http.Request) http.Response {
-    c := num(http.Param(r, "count"))
+func items(ds []Item, r http.server.Request) http.server.Response {
+    c := num(http.server.Param(r, "count"))
     n := if c < 0 { 0 } else if c > len(ds) { len(ds) } else { c }
-    m0 := num(http.Query(r, "m"))
+    m0 := num(http.server.Query(r, "m"))
     m := if m0 == 0 { 1 } else { m0 }
     mut out := mut []Processed{}
     for i <- iter.Range(0, n) {
         d := ds[i]
         out = append(out, Processed{id: d.id, name: d.name, category: d.category, price: d.price, quantity: d.quantity, active: d.active, tags: d.tags, rating: d.rating, total: d.price * d.quantity * m})
     }
-    return http.Json(json.Encode[Body](Body{items: freeze(out), count: n}))
+    return http.server.Json(json.Encode[Body](Body{items: freeze(out), count: n}))
 }
 
-func baseline(r http.Request) http.Response {
+func baseline(r http.server.Request) http.server.Response {
     body := if r.method == "POST" { num(string(r.body) catch "") } else { 0 }
-    return http.Text(convert.FormatInt(num(http.Query(r, "a")) + num(http.Query(r, "b")) + body))
+    return http.server.Text(convert.FormatInt(num(http.server.Query(r, "a")) + num(http.server.Query(r, "b")) + body))
 }
 
-func echo(r http.Request) http.Response {
-    return http.Response{status: 200, contentType: "application/octet-stream", body: r.body}
+func echo(r http.server.Request) http.server.Response {
+    return http.server.Response{status: 200, contentType: "application/octet-stream", body: r.body}
 }
 
 const maxBody = 131072
 
-func delay(r http.Request) http.Response {
-    ms := num(http.Param(r, "ms"))
-    os.Sleep(ms)
-    return http.Text(convert.FormatInt(ms))
+func delay(r http.server.Request) http.server.Response {
+    ms := num(http.server.Param(r, "ms"))
+    return http.server.Delayed(ms, http.server.Text(convert.FormatInt(ms)))
 }
 
-func routes(ds []Item) []http.Route {
-    none := []http.Middleware{}
-    return []http.Route{
-        http.Route{method: "GET", path: "/pipeline", handler: (r) => http.Text("ok"), middleware: none},
-        http.Route{method: "GET", path: "/baseline11", handler: baseline, middleware: none},
-        http.Route{method: "POST", path: "/baseline11", handler: baseline, middleware: none},
-        http.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
-        http.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none},
-        http.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
+func routes(ds []Item) []http.server.Route {
+    none := []http.server.Middleware{}
+    return []http.server.Route{
+        http.server.Route{method: "GET", path: "/pipeline", handler: (r) => http.server.Text("ok"), middleware: none},
+        http.server.Route{method: "GET", path: "/baseline11", handler: baseline, middleware: none},
+        http.server.Route{method: "POST", path: "/baseline11", handler: baseline, middleware: none},
+        http.server.Route{method: "GET", path: "/delay/:ms", handler: delay, middleware: none},
+        http.server.Route{method: "GET", path: "/json/:count", handler: (r) => items(ds, r), middleware: none, cache: http.server.Unstated{}},
+        http.server.Route{method: "POST", path: "/echo", handler: echo, middleware: none},
     }
 }
 
@@ -128,13 +127,13 @@ func serveTls(ds []Item, cfg tls.Config, tport string) int {
     return if e != nil { 1 } else { 0 }
 }
 
-func serveTlsConn(rs []http.Route, c tls.Conn) error? {
-    return http.ServeWith((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody)
+func serveTlsConn(rs []http.server.Route, c tls.Conn) error? {
+    return http.server.ServeWith((k) => tls.Recv(c, k), (b) => tls.Send(c, b), (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, put: (b) => tls.Put(c, b))
 }
 
 func run(port string, tport string) int {
     ds := load()
-    gzw := task.NewLocal((w mut flate.Work) => flate.Prepare(mut w))
+    gzw := task.NewLocal((w mut compress.flate.Work) => compress.flate.NewWork(mut w))
     cfg := certs()
     pe, se := task.Run((s task.Scope) => {
         if cfg != nil {
@@ -145,10 +144,10 @@ func run(port string, tport string) int {
     return if se != nil || pe != nil { 1 } else { 0 }
 }
 
-func plain(rs []http.Route, gzw task.Local, port string) error? {
+func plain(rs []http.server.Route, gzw task.Local, port string) error? {
     for l <- net.Listen("0.0.0.0:${port}")? {
         io.WriteStdout(bytes("ready ${net.Port(l)}\n"))?
-        net.Serve(l, (c net.Conn) => http.ServeConn(c, (r http.Request) => http.Dispatch(rs, r), maxBody: maxBody, compress: http.Gzip{}, work: gzw), conns: 40000)?
+        net.Serve(l, (c net.Conn) => http.server.ServeConn(c, (r http.server.Request) => http.server.Dispatch(rs, r), maxBody: maxBody, compression: http.server.Gzip{}, work: gzw), conns: 40000)?
     }
     return nil
 }

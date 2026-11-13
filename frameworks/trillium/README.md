@@ -8,7 +8,7 @@ Trillium 1.x async Rust web framework on tokio.
 - **Engine:** trillium-http (h1 + h2 prior-knowledge), trillium-quinn (h3)
 - **TLS:** trillium-rustls (h1 + h2 via ALPN), trillium-quinn for QUIC
 - **gRPC:** trillium-grpc (`benchmark.BenchmarkService` over h2c + h2/TLS)
-- **JSON:** sonic-rs
+- **JSON:** serde_json
 - **DB:** deadpool-postgres + tokio-postgres
 - **Build:** Multi-stage, `debian:bookworm-slim` runtime, `-C target-cpu=native`
 

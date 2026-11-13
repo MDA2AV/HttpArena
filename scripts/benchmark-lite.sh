@@ -21,7 +21,7 @@
 # Usage:
 #   ./scripts/benchmark-lite.sh                     # every enabled framework
 #   ./scripts/benchmark-lite.sh <framework>         # one framework, all profiles
-#   ./scripts/benchmark-lite.sh <framework> <profile>
+#   ./scripts/benchmark-lite.sh <framework> <profile[,profile...]>
 #   ./scripts/benchmark-lite.sh <framework> --save  # persist results
 #   ./scripts/benchmark-lite.sh --load-threads 4 <framework>
 
@@ -125,6 +125,23 @@ fi
 FRAMEWORK_ARG="${POSITIONAL[0]:-}"
 PROFILE_FILTER="${POSITIONAL[1]:-}"
 
+# One profile or a comma-separated list, as in benchmark.sh; checked against
+# the lite table now so a name this script does not run fails before any
+# framework is built.
+PROFILE_LIST=()
+if [ -n "$PROFILE_FILTER" ]; then
+    IFS=',' read -ra _wanted <<< "$PROFILE_FILTER"
+    for _p in "${_wanted[@]}"; do
+        [ -n "$_p" ] || continue
+        [ -n "${PROFILES[$_p]+x}" ] || fail "unknown profile: $_p (not in the lite profile table of this script)"
+        case ",$(IFS=,; echo "${PROFILE_LIST[*]}")," in
+            *",$_p,"*) ;;
+            *) PROFILE_LIST+=("$_p") ;;
+        esac
+    done
+    [ "${#PROFILE_LIST[@]}" -gt 0 ] || fail "no profile named in: $PROFILE_FILTER"
+fi
+
 # ── Cleanup + tuning ────────────────────────────────────────────────────────
 
 cleanup_all() {
@@ -210,8 +227,8 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
     if $need_pg; then postgres_start; fi
 
     local profiles_to_run
-    if [ -n "$PROFILE_FILTER" ]; then
-        profiles_to_run=("$PROFILE_FILTER")
+    if [ "${#PROFILE_LIST[@]}" -gt 0 ]; then
+        profiles_to_run=("${PROFILE_LIST[@]}")
     else
         profiles_to_run=("${PROFILE_ORDER[@]}")
     fi

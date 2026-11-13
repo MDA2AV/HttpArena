@@ -7,18 +7,18 @@ weight: 3
 
 `scripts/benchmark.sh` is the full-fidelity benchmark driver. It runs one framework across every profile it subscribes to, tunes the host, collects metrics, and (with `--save`) persists results to `results/` and the site data JSONs.
 
-The driver itself is small (~320 lines of orchestration) - all of the real work lives in the composable library modules under `scripts/lib/`.
+The driver itself is mostly orchestration - the real work lives in the composable library modules under `scripts/lib/`.
 
 ## Synopsis
 
 ```bash
-./scripts/benchmark.sh <framework> [profile] [--save]
+./scripts/benchmark.sh <framework> [profile[,profile...]] [--save]
 ```
 
 | Argument | Description |
 |---|---|
 | `<framework>` | Name of the framework directory under `frameworks/`. Required. |
-| `[profile]` | Optional - run only this profile (e.g. `baseline`, `async-db`, `echo-ws`). If omitted, runs every profile the framework subscribes to. |
+| `[profile]` | Optional - run only this profile (e.g. `baseline`, `async-db`, `echo-ws`), or a comma-separated list run in the order given (e.g. `gateway-h3,gateway-64`). A name that is not a profile fails before anything is built. If omitted, runs every profile the framework subscribes to. |
 | `--save` | Persist results. Without it, you get a dry run - numbers printed, nothing written. |
 
 `--save` can appear in any position. There is no other positional argument.
@@ -26,7 +26,7 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
 ## What a run does, step by step
 
 1. **Cleanup** - stops and removes any leftover `httparena-*` containers.
-2. **Load-generator images** (docker mode only) - builds any missing `gcannon`, `h2load`, `h2load-h3`, or `wrk` image from `docker/*.Dockerfile`. Runs *before* host tuning on purpose: tuning restarts the Docker daemon, and buildkit's DNS takes a few seconds to recover afterwards, long enough to break a `git clone` inside a build container.
+2. **Load-generator images** - in docker mode, builds any missing `gcannon`, `h2load`, `h2load-h3`, `wrk` or `zrk` image from `docker/*.Dockerfile`. In native mode only `zrk` is built, and only when a fixed-rate profile is subscribed and no `zrk` binary is on the `PATH`. Runs *before* host tuning on purpose: tuning restarts the Docker daemon, and buildkit's DNS takes a few seconds to recover afterwards, long enough to break a `git clone` inside a build container.
 3. **Framework build** - `frameworks/<fw>/build.sh` if present, otherwise `docker build frameworks/<fw>`.
 4. **Host tuning** (`scripts/lib/system.sh`):
    - CPU governor → `performance` via `cpupower` (falls back to writing `/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor`).
@@ -40,11 +40,11 @@ The driver itself is small (~320 lines of orchestration) - all of the real work 
    - Starts the framework container (or `docker compose up` for gateway profiles).
    - Waits up to 30s for the right endpoint to respond.
    - Builds the tool-specific argument vector.
-   - Runs `$RUNS` measurement iterations (default 3), keeps the best by rps.
-   - Each iteration: starts `docker stats` polling, runs the load generator (`timeout 45s`), stops polling, parses output.
+   - Runs `$RUNS` measurement iterations (default 3), keeps the best by rps (by score on the fixed-rate profiles).
+   - Each iteration: starts `docker stats` polling, runs the load generator under a timeout, stops polling, parses output.
    - Raw load-generator output from every run is written to `site/static/logs/<profile>/<conns>/<framework>.<tool>.run<N>.txt` - useful when a parser misbehaves.
 7. **Save** (`--save` only) - writes `results/<profile>/<conns>/<framework>.json` + framework `docker logs` to `site/static/logs/<profile>/<conns>/<framework>.log`.
-8. **Restore** - trap runs `framework_stop`, `gateway_down`, `postgres_stop`, then restores the original CPU governor and loopback MTU.
+8. **Restore** - trap runs `framework_stop`, `gateway_down`, `postgres_stop`, then restores the loopback MTU. The CPU governor is deliberately left on `performance`.
 9. **Rebuild site data** (`--save` only) - re-runs `scripts/rebuild_site_data.py` to regenerate `site/data/results/<framework>.json` and `site/data/frameworks.json`.
 
 ## Flags
@@ -65,9 +65,11 @@ Set via `VAR=value ./scripts/benchmark.sh ...` or `export VAR=value`.
 |---|---|---|
 | `DURATION` | `5s` | `-d`/`-D` value passed to each load generator. |
 | `RUNS` | `3` | Measurement iterations per (profile, conns). Best result wins. |
-| `THREADS` | `64` | Load-generator threads for gcannon, wrk, and the default path. |
+| `THREADS` | `64` | Load-generator threads for gcannon, wrk, zrk, and the default path. |
+| `ASYNC_THREADS` | `64` | gcannon threads for the `async` profile only. |
 | `H2THREADS` | `64` | h2load worker threads (h2, h2c gRPC). |
 | `H3THREADS` | `64` | h2load-h3 worker threads (HTTP/3 over QUIC). |
+| `SKIP_TUNE` | `false` | When `true`, skips the host tuning step. |
 
 ### Ports
 
@@ -75,8 +77,8 @@ Set via `VAR=value ./scripts/benchmark.sh ...` or `export VAR=value`.
 |---|---|---|
 | `PORT` | `8080` | HTTP/1.1 plaintext (all `h1*` profiles + `echo-ws`); also h2c for gRPC (`unary-grpc`). |
 | `H2PORT` | `8443` | HTTPS / HTTP/2 TLS (`baseline-h2`, `static-h2`, gateway + production-stack), HTTP/3 QUIC (`baseline-h3`, `static-h3`, `gateway-h3`), gRPC-TLS (`unary-grpc-tls`). |
-| `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS - only used by the `json-tls` profile. |
-| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for `baseline-h2c` and `json-h2c`. Must refuse HTTP/1.1 - the validator checks this. |
+| `H1TLS_PORT` | `8081` | HTTP/1.1 + TLS for `json-tls`, `static-tls` and `8gbit`. |
+| `H2C_PORT` | `8082` | HTTP/2 cleartext prior-knowledge for `baseline-h2c` and `json-h2c`. The listener may also answer HTTP/1.1; only h2c is ever sent to it. |
 
 ### Load generator selection
 
@@ -96,14 +98,16 @@ LOADGEN_DOCKER=true ./scripts/benchmark.sh aspnet-minimal
 
 | Variable | Default | Used for |
 |---|---|---|
-| `GCANNON` | `gcannon` | Native binary - baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, echo-ws. |
+| `GCANNON` | `gcannon` | Native binary - baseline, pipelined, limited-conn, json-comp, async-db, async, fortunes, and the three WebSocket profiles. |
 | `GCANNON_IMAGE` | `gcannon:latest` | Docker image when `LOADGEN_DOCKER=true`. |
 | `H2LOAD` | `h2load` | Native binary - baseline-h2, static-h2, baseline-h2c, json-h2c, unary-grpc, unary-grpc-tls, gateway-64, production-stack. |
 | `H2LOAD_IMAGE` | `h2load:latest` | Docker image (Ubuntu 24.04 + glibc build; do **not** use the alpine/musl image - it's 20–40% slower). |
 | `H2LOAD_H3` | `h2load-h3` | Native binary - baseline-h3, static-h3, gateway-h3. |
 | `H2LOAD_H3_IMAGE` | `h2load-h3:local` | Docker image with `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` built from source. |
-| `WRK` | `wrk` | Native binary - static, json-tls. |
+| `WRK` | `wrk` | Native binary - static-tls, json-tls. |
 | `WRK_IMAGE` | `wrk:local` | Docker image. |
+| `ZRK` | `zrk` | Native binary - latency-1m, latency-10k, latency-500k-8cpu, 8gbit. |
+| `ZRK_IMAGE` | `zrk:local` | Docker image, built automatically when no native `zrk` is on the `PATH`. |
 
 ### Postgres sidecar
 
@@ -125,21 +129,30 @@ pipeline | req_per_conn | cpu_limit | connections | endpoint
 | `baseline` | 1 | ∞ | `0-31,64-95` | 4096 | gcannon | `/baseline11` |
 | `pipelined` | 16 | ∞ | `0-31,64-95` | 4096 | gcannon | `/pipeline` |
 | `limited-conn` | 1 | 10 | `0-31,64-95` | 4096 | gcannon | `/baseline11` (reconnect every 10 req) |
+| `async` | 1 | ∞ | `0-31,64-95` | 32000 | gcannon | `GET /delay/10`, 10s runs |
+| `latency-1m` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 1M req/s, 20s runs |
+| `latency-10k` | 1 | ∞ | `0-31,64-95` | 1024 | zrk | `/baseline11` paced at 10K req/s, 20s runs |
+| `latency-500k-8cpu` | 1 | ∞ | `0-3,64-67` | 1024 | zrk | `/baseline11` paced at 500K req/s, 20s runs |
 | `json-comp` | 1 | ∞ | `0-31,64-95` | 4096, 16384 | gcannon | `/json/{count}` + `Accept-Encoding: gzip, br` |
 | `json-tls` | 1 | ∞ | `0-31,64-95` | 4096 | wrk | `/json/{count}` over TLS on `H1TLS_PORT` |
 | `8gbit` | 1 | ∞ | `0-31,64-95` | 512 | zrk | `POST /echo` on TLS `:8081` - 10 KB echoed, paced at 50k req/s |
-| `api-4` | 1 | 5 | `0-3` | 256 | gcannon | 8-template mix (baseline / json / async-db) |
-| `api-16` | 1 | 5 | `0-7,64-71` | 1024 | gcannon | 8-template mix |
-| `static` | 1 | 200 | `0-31,64-95` | 1024, 4096, 6800 | wrk | 20 files via `static-rotate.lua` |
-| `async-db` | 1 | ∞ | `0-31,64-95` | 1024 | gcannon | 5 limit variants (5/10/20/35/50), `-r 25` |
+| `static-tls` | 1 | 200 | `0-31,64-95` | 1024 | wrk | 20 files via `static-rotate.lua` over TLS on `H1TLS_PORT` |
+| `async-db` | 1 | ∞ | `0-31,64-95` | 1024 | gcannon | 5 limit variants (5/10/20/35/50), `-r 25`, 10s runs |
+| `fortunes` | 1 | ∞ | `0-31,64-95` | 1024 | gcannon | `/fortunes` |
 | `baseline-h2` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `/baseline2` on `H2PORT` TLS |
 | `static-h2` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `/static/*` on `H2PORT` TLS |
+| `baseline-h2c` | 1 | ∞ | `0-31,64-95` | 256, 1024, 4096 | h2load | `/baseline2` h2c on `H2C_PORT` |
+| `json-h2c` | 1 | ∞ | `0-31,64-95` | 1024, 4096 | h2load | `/json/{count}` h2c on `H2C_PORT` |
 | `baseline-h3` | 1 | ∞ | `0-31,64-95` | 64 | h2load-h3 | `/baseline2` on `H2PORT` QUIC |
 | `static-h3` | 1 | ∞ | `0-31,64-95` | 64 | h2load-h3 | `/static/*` on `H2PORT` QUIC |
+| `gateway-64` | 1 | ∞ | entry's compose file | 512, 1024 | h2load | 20-URI mix through the entry's proxy + server stack |
+| `gateway-h3` | 1 | ∞ | entry's compose file | 64, 256 | h2load-h3 | same mix over QUIC |
+| `production-stack` | 1 | ∞ | entry's compose file | 256, 1024 | h2load | reads + writes through edge, auth, cache and server |
 | `unary-grpc` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | `benchmark.BenchmarkService/GetSum` h2c |
 | `unary-grpc-tls` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | same, TLS |
-| `gateway-64` | 1 | ∞ | `0-31,64-95` | 256, 1024 | h2load | 20-URI mix behind nginx via `docker compose` |
 | `echo-ws` | 1 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon `--ws` | `/ws` |
+| `echo-ws-pipeline` | 16 | ∞ | `0-31,64-95` | 512, 4096, 16384 | gcannon `--ws` | `/ws`, 16 messages in flight |
+| `echo-ws-limited` | 1 | 10 | `0-31,64-95` | 512, 4096 | gcannon `--ws` | `/ws`, new connection every 10 messages |
 
 **Subscription:** a framework only runs profiles listed in its `meta.json` `tests` array. Profiles it's not subscribed to are silently skipped.
 

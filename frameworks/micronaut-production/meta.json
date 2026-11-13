@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "netty",
-  "description": "Micronaut 5.2 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
+  "description": "Micronaut on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
   "repo": "https://github.com/micronaut-projects/micronaut-core",
   "enabled": true,
   "tests": [
@@ -31,7 +31,11 @@
     "baseline-h2c",
     "json-h2c",
     "static-h2",
-    "static-tls"
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "baseline-h3",
+    "static-h3"
   ],
   "maintainers": []
 }

@@ -10,6 +10,9 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
+import io.vertx.core.net.OpenSSLEngineOptions;
+
+import io.netty.handler.ssl.OpenSsl;
 
 public class Main {
 
@@ -28,6 +31,12 @@ public class Main {
         Vertx vertx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
         if (!vertx.isNativeTransportEnabled()) {
             System.err.println("epoll native transport unavailable: " + vertx.unavailableNativeTransportCause());
+            System.exit(1);
+        }
+        // The TLS port runs on OpenSSL, and without it every 8081 listen fails. Exit with the
+        // reason up front, the same as for epoll, rather than leave it to a failed deployment.
+        if (!OpenSSLEngineOptions.isAvailable()) {
+            System.err.println("OpenSSL unavailable: " + OpenSsl.unavailabilityCause());
             System.exit(1);
         }
         Item[] items = dataset;

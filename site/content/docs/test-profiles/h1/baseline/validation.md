@@ -4,7 +4,7 @@ seo_title: "Baseline Throughput Benchmark: Validation Checks"
 description: "The correctness checks validate.sh runs against the HTTP/1.1 baseline throughput benchmark before a framework's results are accepted."
 ---
 
-The following checks are executed by `validate.sh` for every framework subscribed to the `baseline` or `limited-conn` test.
+The following checks are executed by `validate.sh` for every framework subscribed to `baseline` or `limited-conn`. The fixed-rate profiles `latency-1m`, `latency-10k` and `latency-500k-8cpu` drive the same endpoint, so they run these checks too.
 
 ## GET with query parameters
 
@@ -17,6 +17,10 @@ Sends `POST /baseline11?a=13&b=42` with body `20` and `Content-Type: text/plain`
 ## POST with chunked Transfer-Encoding
 
 Sends `POST /baseline11?a=13&b=42` with body `20` and `Transfer-Encoding: chunked`. Verifies the response body is `75`.
+
+## Content-Type header
+
+Verifies that both the GET and the POST response carry `Content-Type: text/plain` (a `charset` suffix is allowed).
 
 ## Anti-cheat: randomized query parameters
 

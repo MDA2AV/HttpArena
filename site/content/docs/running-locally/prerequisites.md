@@ -32,8 +32,8 @@ What you need installed before running HttpArena benchmarks locally.
 | Who it's for | Full runs on a tuned benchmark host | Laptops, CI runners, quick local validation |
 | Load generators | Native binaries by default, docker mode opt-in (`LOADGEN_DOCKER=true`) | **Always** docker, forced |
 | CPU pinning | Per-profile `--cpuset-cpus` | None (container gets all cores) |
-| Threads | 64 (h1) / 128 (h2) / 64 (h3) - fixed | `nproc / 2`, or `--load-threads N` |
-| Profiles | All 21 | Subset (no api-4/16, json-tls, gateway-64) |
+| Threads | 64 for every generator | `nproc / 2`, or `--load-threads N` |
+| Profiles | All 27 | A subset of 13 (see [benchmark-lite.sh](../scripts/benchmark-lite/#profile-set)) |
 | Host tuning (CPU gov, sysctl, MTU, daemon restart) | Yes | Yes |
 | Root needed | For tuning + docker | For tuning + docker |
 
@@ -44,6 +44,8 @@ Pick `benchmark-lite.sh` if you just want to sanity-check a framework; pick `ben
 Just Docker, bash, python3. Every load-generator image is built from `docker/*.Dockerfile` on first run (first invocation takes a few minutes while `quictls` + `ngtcp2` compile for `h2load-h3`; cached after that).
 
 You do **not** need `gcannon`, `h2load`, `h2load-h3`, or `wrk` installed on the host. You do not need a specific kernel for gcannon - the container already carries `liburing` 2.9.
+
+The one exception is `zrk`, which drives `8gbit`: `benchmark-lite.sh` does not build its image. Build it once with `docker build -t zrk:local -f docker/zrk.Dockerfile docker/` before running that profile.
 
 ## benchmark.sh requirements (native load-generator mode)
 
@@ -67,11 +69,13 @@ For the default (native) mode, install each tool the host binary. If anything is
 
 - **h2load-h3** - HTTP/3 over QUIC. No official distro package; the docker image (`docker/h2load-h3.Dockerfile`) builds `quictls` + `nghttp3` + `ngtcp2` + `nghttp2 --enable-http3` from source. Easiest path: use `LOADGEN_DOCKER=true` for h3 profiles.
 
-- **wrk** - static-file profile. Any recent build works.
+- **wrk** - `static-tls` and `json-tls`. Any recent build works.
 
   ```bash
   sudo apt install wrk
   ```
+
+- **zrk** - the fixed-rate profiles (`latency-1m`, `latency-10k`, `latency-500k-8cpu`, `8gbit`). No distro package; if no `zrk` binary is on the `PATH`, `benchmark.sh` builds and uses the `zrk:local` image from `docker/zrk.Dockerfile` automatically.
 
 
 ## Permission notes

@@ -1,7 +1,6 @@
 const std = @import("std");
 const zio = @import("zio");
 const http = @import("dusty");
-const json = @import("json");
 const pg = @import("pg");
 const templates = @import("templates/fortunes.zig");
 
@@ -39,8 +38,8 @@ fn loadDataset(allocator: std.mem.Allocator, io: std.Io) void {
 
     var read_buf: [8192]u8 = undefined;
     var reader = file.reader(io, &read_buf);
-    const decoded = json.decode([]const DatasetItem, allocator, &reader.interface, .{}) catch return;
-    dataset = decoded.value;
+    var json_reader: std.json.Reader = .init(allocator, &reader.interface);
+    dataset = std.json.parseFromTokenSourceLeaky([]const DatasetItem, allocator, &json_reader, .{ .allocate = .alloc_always }) catch return;
 }
 
 fn baseline(req: *http.Request, res: *http.Response) !void {
@@ -51,13 +50,10 @@ fn baseline(req: *http.Request, res: *http.Response) !void {
     }
     if (req.method == .post) {
         if (try req.body()) |b| {
-            sum += std.fmt.parseInt(i64, std.mem.trim(u8, b, " \t\r\n"), 10) catch 0;
+            sum += std.fmt.parseInt(i64, b, 10) catch 0;
         }
     }
-    res.content_type = .text;
-    var w = res.writer();
-    try w.interface.print("{d}", .{sum});
-    try w.end();
+    try res.print(.text, "{d}", .{sum});
 }
 
 fn pipeline(_: *http.Request, res: *http.Response) !void {
@@ -68,12 +64,9 @@ fn pipeline(_: *http.Request, res: *http.Response) !void {
 fn delay(req: *http.Request, res: *http.Response) !void {
     const ms = req.params.getInt(u32, "ms") orelse 0;
     if (ms > 0) {
-        try req.io.sleep(.fromMilliseconds(@intCast(ms)), .awake);
+        try req.io.sleep(.fromMilliseconds(ms), .awake);
     }
-    res.content_type = .text;
-    var w = res.writer();
-    try w.interface.print("{d}", .{ms});
-    try w.end();
+    try res.print(.text, "{d}", .{ms});
 }
 
 fn jsonItems(req: *http.Request, res: *http.Response) !void {
@@ -111,10 +104,7 @@ fn jsonItems(req: *http.Request, res: *http.Response) !void {
     const payload = .{ .items = resp_items, .count = count };
 
     res.compress = true;
-    try res.header("Content-Type", "application/json");
-    var w = res.writer();
-    try json.encode(payload, &w.interface);
-    try w.end();
+    try res.json(payload, .{});
 }
 
 const DbItem = struct {
@@ -136,13 +126,7 @@ const DbResponse = struct {
 const empty_db_response: DbResponse = .{ .items = &.{}, .count = 0 };
 
 fn asyncDb(req: *http.Request, res: *http.Response) !void {
-    const p = pool orelse {
-        try res.header("Content-Type", "application/json");
-        var w = res.writer();
-        try json.encode(empty_db_response, &w.interface);
-        try w.end();
-        return;
-    };
+    const p = pool orelse return res.json(empty_db_response, .{});
 
     const min = req.query.getInt(i32, "min") orelse 10;
     const max = req.query.getInt(i32, "max") orelse 50;
@@ -152,19 +136,13 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
         "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3",
         .{ min, max, limit },
         .{ .cache_name = "async_db" },
-    ) catch {
-        try res.header("Content-Type", "application/json");
-        var w = res.writer();
-        try json.encode(empty_db_response, &w.interface);
-        try w.end();
-        return;
-    };
+    ) catch return res.json(empty_db_response, .{});
     defer result.deinit();
 
-    var items: std.ArrayListUnmanaged(DbItem) = .empty;
+    var items: std.ArrayList(DbItem) = .empty;
     while (try result.next()) |row| {
         const tags_json = try row.get([]const u8, 6);
-        const tags = json.decodeFromSliceLeaky([]const []const u8, req.arena, tags_json, .{}) catch &.{};
+        const tags = std.json.parseFromSliceLeaky([]const []const u8, req.arena, tags_json, .{ .allocate = .alloc_always }) catch &.{};
 
         try items.append(req.arena, DbItem{
             .id = try row.get(i32, 0),
@@ -181,11 +159,7 @@ fn asyncDb(req: *http.Request, res: *http.Response) !void {
         });
     }
 
-    const payload: DbResponse = .{ .items = items.items, .count = items.items.len };
-    try res.header("Content-Type", "application/json");
-    var w = res.writer();
-    try json.encode(payload, &w.interface);
-    try w.end();
+    try res.json(DbResponse{ .items = items.items, .count = items.items.len }, .{});
 }
 
 const Fortune = templates.Fortune;
@@ -213,10 +187,7 @@ fn fortunes(req: *http.Request, res: *http.Response) !void {
     try list.append(req.arena, .{ .id = 0, .message = "Additional fortune added at request time." });
     std.mem.sort(Fortune, list.items, {}, fortuneLessThan);
 
-    res.content_type = .html;
-    var w = res.writer();
-    try templates.FortunesPage.render(.{list.items}, &w.interface);
-    try w.end();
+    try res.render(.html, templates.FortunesPage, .{list.items});
 }
 
 fn wsEcho(req: *http.Request, res: *http.Response) !void {
@@ -225,13 +196,16 @@ fn wsEcho(req: *http.Request, res: *http.Response) !void {
         return;
     };
     defer ws.deinit();
+    ws.autoflush = false;
     while (true) {
-        const msg = try ws.receive();
-        switch (msg.type) {
-            .text, .binary => try ws.send(msg.type, msg.data),
-            .close => return,
-            else => {},
+        for (try ws.receiveMany()) |msg| {
+            switch (msg.type) {
+                .text, .binary => try ws.send(msg.type, msg.data),
+                .close => return,
+                else => {},
+            }
         }
+        try ws.flush();
     }
 }
 
@@ -270,7 +244,10 @@ pub fn main(init: std.process.Init) !void {
         .{ .address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8080) } },
         .{
             .address = .{ .ip = try std.Io.net.IpAddress.parse("0.0.0.0", 8081) },
-            .tls = .{ .cert_path = cert_path, .key_path = key_path },
+            .tls = .{
+                .certificate = .{ .file = .{ .cert_path = cert_path, .key_path = key_path } },
+                .alpn_protocols = &.{"http/1.1"},
+            },
         },
     };
     var server = http.Server(void).init(init.gpa, rt.io(), .{
@@ -290,6 +267,13 @@ pub fn main(init: std.process.Init) !void {
     server.router.get("/ws", wsEcho);
     server.router.get("/async-db", asyncDb);
     server.router.get("/fortunes", fortunes);
+
+    // Mounted by the harness; absent when the server is run on its own.
+    const static_dir: ?std.Io.Dir = std.Io.Dir.cwd().openDir(rt.io(), "/data/static", .{}) catch null;
+    defer if (static_dir) |dir| dir.close(rt.io());
+    if (static_dir) |dir| {
+        server.router.static("/static", dir, .{ .precompressed = &.{ .br, .gzip } });
+    }
 
     try server.run();
 }

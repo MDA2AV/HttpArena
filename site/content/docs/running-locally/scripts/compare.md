@@ -8,7 +8,7 @@ weight: 4
 Compare a framework's benchmark results against the published leaderboard data on the main branch. Outputs a Markdown table with deltas, suitable for PR comments.
 
 ```bash
-./scripts/compare.sh <framework> [profile] [--compare <framework>]
+./scripts/compare.sh <framework> [profile[,profile...]] [--compare <framework>]
 ```
 
 ## Options
@@ -16,7 +16,7 @@ Compare a framework's benchmark results against the published leaderboard data o
 | Parameter | Description |
 |-----------|-------------|
 | `<framework>` | Name of the framework to compare |
-| `[profile]` | Optional - compare only this test profile |
+| `[profile]` | Optional - compare only this test profile, or a comma-separated list of profiles |
 | `--compare <framework>` | Optional - use another framework's published results as the baseline instead of this framework's own |
 
 ## What it does

@@ -3,4 +3,46 @@
 | |\/| | |/ __| '__/ _ \| '_ \ / _` | | | | __|
 | |  | | | (__| | | (_) | | | | (_| | |_| | |_ 
 |_|  |_|_|\___|_|  \___/|_| |_|\__,_|\__,_|\__|
-12:03:49.022 INFO  io.micronaut.runtime.Micronaut - Startup completed in 795ms. Server Running: https://diogo:8443
+11:06:37.398 INFO  io.micronaut.runtime.Micronaut - Startup completed in 956ms. Server Running: https://diogo:8443
+11:06:38.926 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:38.926 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.248 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.248 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.500 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.500 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.693 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.693 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.805 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.806 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.903 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.904 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.991 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:39.991 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:50.876 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:50.876 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:50.926 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:50.926 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:50.986 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:50.987 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.041 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.042 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.095 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.095 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.145 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.146 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.194 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:06:51.194 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.210 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.211 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.270 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.270 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.321 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.321 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.373 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.373 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.425 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.425 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.475 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.476 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.524 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 
+11:07:03.524 WARN  i.n.channel.uring.IoUringIoHandler - CompletionQueue overflow detected, consider increasing size: 4096 

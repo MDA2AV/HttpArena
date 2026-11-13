@@ -24,6 +24,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .route("/ws", web::get().to(ws_handler))
     })
+    .tcp_nodelay(true)
     .bind("0.0.0.0:8080")?
     .run()
     .await

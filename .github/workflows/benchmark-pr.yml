@@ -10,7 +10,7 @@ on:
         description: 'Framework(s) to benchmark — one name, a comma-separated list, or "all" for every enabled framework subscribed to the profile'
         required: true
       profile:
-        description: 'Profile (e.g. baseline, baseline-h2, leave empty for all — required when framework is "all")'
+        description: 'Profile, or a comma-separated list of profiles (e.g. baseline, or gateway-h3,gateway-64). Leave empty for all — required when framework is "all"'
         required: false
         default: ''
       save:
@@ -29,8 +29,8 @@ permissions:
 # Queue runs on the same PR instead of cancelling the one in flight — a second
 # /benchmark comment used to abort the first run mid-benchmark and silently
 # discard its --save results (#1084). GitHub keeps at most one *pending* run
-# per group, so batches beyond two should use /benchmark-multiple, which runs
-# everything in a single job.
+# per group, so batches beyond two should go in one job: /benchmark-multiple
+# for several frameworks, a comma-separated -t list for several profiles.
 concurrency:
   group: benchmark-pr-${{ inputs.pr }}
   cancel-in-progress: false
@@ -77,12 +77,12 @@ jobs:
           fi
           if [ "$FRAMEWORK" = "all" ]; then
             if [ -z "$PROFILE" ]; then
-              echo "Error: framework=all requires a profile (-t <test>)"
+              echo "Error: framework=all requires a profile (-t <test>[,<test>...])"
               exit 1
             fi
             LIST=$(python3 -c '
           import json, pathlib, re, sys
-          profile = sys.argv[1]
+          profiles = {p for p in sys.argv[1].split(",") if p}
           names = []
           for meta in sorted(pathlib.Path("frameworks").glob("*/meta.json")):
               name = meta.parent.name
@@ -94,7 +94,7 @@ jobs:
                   continue
               if not m.get("enabled", True):
                   continue
-              if profile in (m.get("tests") or []):
+              if profiles & set(m.get("tests") or []):
                   names.append(name)
           print(" ".join(names))
           ' "$PROFILE")
@@ -206,6 +206,8 @@ jobs:
           for fw in $LIST; do
             ./scripts/compare.sh "$fw" "$PROFILE" "${compare_args[@]}" > "/tmp/bench_logs/$fw.compare.md" 2>/dev/null || true
           done
+          # Composite score of each entry on main and after this run, written to <fw>.composite.md
+          python3 scripts/composite_delta.py /tmp/main_site_data /tmp/bench_site_data /tmp/bench_logs $LIST || true
           # Restore benchmark site/data (not original PR data)
           if [ -d /tmp/bench_site_data ]; then
             cp -r /tmp/bench_site_data/* site/data/ 2>/dev/null || true
@@ -373,6 +375,10 @@ jobs:
               with open(path, errors="replace") as f:
                   return "".join(f.readlines()[-n:])
 
+          def composite(fw):
+              text = tail(logs_dir + "/" + fw + ".composite.md", 50).strip()
+              return "\n\n" + text if text else ""
+
           def details(summary, text):
               return "<details><summary>" + summary + "</summary>\n\n```\n" + text + "\n```\n</details>"
 
@@ -380,7 +386,7 @@ jobs:
               fw = fws[0]
               rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
               deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
-              head = table(rows, deltas) if rows else "No results captured"
+              head = table(rows, deltas) + composite(fw) if rows else "No results captured"
               body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + ".log", 200))
           else:
               heads = []
@@ -390,7 +396,7 @@ jobs:
                   deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
                   mark = "❌" if fw in failed else "✅"
                   head = "### " + mark + " `" + fw + "`\n\n"
-                  head += table(rows, deltas) if rows else "_No results captured._"
+                  head += table(rows, deltas) + composite(fw) if rows else "_No results captured._"
                   extra = ""
                   if fw in failed:
                       extra = "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + ".log", 60))

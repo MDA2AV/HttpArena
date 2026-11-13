@@ -15,6 +15,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -111,11 +112,18 @@ public class ServerVerticle extends VerticleBase {
 
         Future<?> plain = vertx.createHttpServer(options).requestHandler(router).listen();
 
+        HttpServerOptions h2c = new HttpServerOptions()
+                .setHost("0.0.0.0")
+                .setPort(8082)
+                .setHttp2ClearTextEnabled(true);
+        Future<?> cleartext = vertx.createHttpServer(h2c).requestHandler(router).listen();
+
         // json-tls and static-tls on 8081, the same router behind TLS. This verticle is
         // deployed once per core, so every instance binds both ports and the listener is
         // spread across all the event loops rather than parked on one. ALPN is off: the
         // two profiles want HTTP/1.1 negotiated and no h2 offered. The harness only mounts
-        // /certs for the TLS profiles.
+        // /certs for the TLS profiles. OpenSSL (BoringSSL through netty-tcnative) rather than
+        // the JDK's SSLEngine, which Vert.x falls back to when no engine is set.
         if (new File(CERT).isFile() && new File(KEY).isFile()) {
             HttpServerOptions tls = new HttpServerOptions()
                     .setHost("0.0.0.0")
@@ -123,10 +131,11 @@ public class ServerVerticle extends VerticleBase {
                     .setCompressionSupported(true)
                     .setSsl(true)
                     .setUseAlpn(false)
+                    .setSslEngineOptions(new OpenSSLEngineOptions())
                     .setKeyCertOptions(new PemKeyCertOptions().setCertPath(CERT).setKeyPath(KEY));
-            return Future.all(plain, vertx.createHttpServer(tls).requestHandler(router).listen());
+            return Future.all(plain, cleartext, vertx.createHttpServer(tls).requestHandler(router).listen());
         }
-        return plain;
+        return Future.all(plain, cleartext);
     }
 
     private void text(RoutingContext ctx, String body) {

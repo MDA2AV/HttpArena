@@ -23,7 +23,15 @@ statements() ->
           FROM items
          WHERE price BETWEEN $1 AND $2 LIMIT $3
         """,
-        fortunes => ~"SELECT id, message FROM fortune"
+        fortunes => ~"SELECT id, message FROM fortune",
+        item_by_id => ~"""
+        SELECT id, name, category, price, quantity, active, tags,
+               rating_score, rating_count
+          FROM items
+         WHERE id = $1
+        """,
+        item_update => ~"UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4",
+        user_by_id => ~"SELECT id, name, email, plan FROM users WHERE id = $1"
     }.
 
 %% Start an ecpool pool of `pool_size()` connections. ecpool routes each

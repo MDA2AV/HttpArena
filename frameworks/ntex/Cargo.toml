@@ -1,16 +1,27 @@
 [package]
 name = "httparena-ntex"
-version = "0.1.0"
-edition = "2021"
+version = "0.4.0"
+edition = "2024"
+rust-version = "1.97"
 
 [dependencies]
-ntex = { version = "2", features = ["tokio", "rustls"] }
+askama = "0.16"
+deadpool = { version = "0.13", default-features = false, features = ["unmanaged"] }
+ntex = { version = "4.6", default-features = false, features = ["compress", "rustls"] }
+ntex-files = "4.4"
+ntex-io = { version = "4.7", features = ["tokio"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
 rustls-pemfile = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+tokio-postgres = { version = "0.7", default-features = false, features = ["with-serde_json-1"] }
+
+[dev-dependencies]
 flate2 = "1"
+rcgen = "0.14"
 
 [profile.release]
 opt-level = 3
 codegen-units = 1
+lto = "thin"
+panic = "abort"

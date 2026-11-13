@@ -1,4 +1,4 @@
-FROM rust:1.94-bookworm AS build
+FROM rust:1.99-bookworm AS build
 WORKDIR /app
 ENV RUSTFLAGS="-C target-cpu=native"
 COPY Cargo.toml Cargo.lock ./

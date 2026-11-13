@@ -1,0 +1,43 @@
+# nginx terminates TLS (h2) on 8443 and serves /static/*; the roadrunner server gets no certs and only listens in cleartext.
+services:
+  proxy:
+    build: ./proxy
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-7,64-71}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      server:
+        condition: service_healthy
+
+  server:
+    build: ../roadrunner
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-8-31,72-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/baseline11?a=1&b=1"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s

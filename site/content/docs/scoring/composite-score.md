@@ -4,13 +4,13 @@ seo_title: "Composite Score Methodology"
 description: "The composite score explained: per-profile normalization, the sum across scored profiles, the compression adjustment and the memory bonus."
 ---
 
-The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–1,000 scale, then **summed** across all scored profiles. An optional memory toggle adds a 0–500 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
+The composite score combines results from multiple test profiles into a single number that reflects overall framework performance. Each profile is normalized to a 0–1,000 scale, then **summed** across the scored profiles of one protocol family - HTTP/1.1, HTTP/2, HTTP/3, Gateway, gRPC or WebSocket. Each family has its own composite, and the board shows one at a time. An optional memory toggle adds a 0–500 bonus per profile for memory-efficient frameworks on top of their raw-throughput score.
 
 ## How it works
 
 ### Step 1: Average RPS per profile
 
-For each framework and profile, compute the average RPS across all connection counts. This rewards frameworks that scale well across concurrency levels rather than just their peak.
+For each framework and profile, compute the average RPS across the profile's scored connection counts. This rewards frameworks that scale well across concurrency levels rather than just their peak.
 
 ### Step 2: Normalize per profile
 
@@ -32,19 +32,17 @@ Framework types remain separate: engine entries are scored on their own subset o
 
 The **Rescale to selection** toggle opts back into the other behaviour, normalizing against only the frameworks currently shown. That is the more useful view when the question is how a subset compares against itself, for example ranking the Ruby entries against each other rather than against the field.
 
-**Exception: the fixed-rate profiles.** [Latency-1M](/docs/test-profiles/h1/latency-1m/implementation/#scoring), [Latency-10K](/docs/test-profiles/h1/latency-10k/implementation/#scoring) and [8Gbit](/docs/test-profiles/h1/8gbit/implementation/#scoring) pin their request rate, so every entry that holds the rate delivers the same one and normalizing on rps would score all of them 1,000. Each contributes its own 0–100 score instead, built from CPU, mean latency and the p99 tail, and that score is normalized against the leading score in the field - so the leader of one of these columns is worth 1,000, exactly like the leader of an rps column. The two differ only in the rate offered - a saturating 1M req/s against a near-idle 10K - so they are scored separately and read separately.
-
-One consequence is worth naming: because that score is not rebased on the field leader, the best entry on either profile contributes about 970 rather than a full 1,000. No single entry is simultaneously cheapest and best on both tails, so nobody collects the whole column. That is deliberate, and it is the same reason the profile's own score is not rescaled.
+**Exception: the fixed-rate profiles.** [Latency-1M](/docs/test-profiles/h1/latency-1m/implementation/#scoring), [Latency-10K](/docs/test-profiles/h1/latency-10k/implementation/#scoring) and [8Gbit](/docs/test-profiles/h1/8gbit/implementation/#scoring) pin their request rate, so every entry that holds the rate delivers the same one and normalizing on rps would score all of them 1,000. Each contributes its own 0–100 score instead, built from CPU, mean latency and the p99 tail, and that score is normalized against the leading score in the field - so the leader of one of these columns is worth 1,000, exactly like the leader of an rps column. Latency-1M and Latency-10K differ only in the rate offered - a saturating 1M req/s against a near-idle 10K - so they are scored separately and read separately.
 
 ### Step 3: Sum across scored profiles
 
-The final composite score is the **sum** of per-profile scores across all **scored** profiles:
+The final composite score is the **sum** of per-profile scores across the family's **scored** profiles:
 
 ```
 composite = sum(scored_profile_scores)
 ```
 
-Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 1,000 points per profile, so with the current 21 scored profiles for framework (flagship and emerging) entries the raw-throughput ceiling is 21,000, rising to 31,500 when the memory-efficiency toggle is on (each profile adds up to 500 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
+Summing instead of averaging means the composite scales with the number of scored profiles: a framework that places well in many profiles separates cleanly from one that only wins a single profile. A perfect-across-the-board framework earns 1,000 points per profile. On the HTTP/1.1 board, framework entries are scored on 8 profiles, so the raw-throughput ceiling there is 8,000, rising to 12,000 when the memory-efficiency toggle is on (each profile adds up to 500 more points). Engine entries are scored on a smaller subset and have a correspondingly lower ceiling.
 
 Frameworks that don't participate in a scored profile receive 0 for that profile, which lowers their composite by the full 1,000-point ceiling of that profile.
 
@@ -54,25 +52,25 @@ The finished sum is then cut by the entry's [completeness factor](../completenes
 
 Not all profiles count toward the composite score. Profiles marked as **scored** contribute to the composite. Reference-only profiles (marked with **\***) are displayed for comparison but do not affect the ranking.
 
-### H/1.1 Isolated
+The tables below show whether a profile counts for framework entries. Engines and infrastructure are scored on their own sets, listed under [Type-specific scoring](#type-specific-scoring).
+
+### H/1.1
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Mixed GET/POST with query parsing |
 | Pipelined | No (*) | 16 requests batched per connection. Reference-only - a raw I/O and middleware-efficiency indicator; HTTP/1.1 pipelining is disabled in modern browsers and proxies, so it no longer counts toward the composite ranking |
 | Short-lived | Yes | Connections closed after 10 requests |
+| Async Delay | Yes | `GET /delay/10` over 32,000 held connections - what the framework does while a request waits |
+| Latency-10K | Yes | Fixed 10K req/s; scored on CPU cost and latency (0-100 score, see above) |
+| Latency-1M | Yes | Fixed 1M req/s; scored on CPU cost and latency (0-100 score, see above) |
+| Latency-500K/8 | No (*) | Fixed 500K req/s on four cores plus SMT. Reference-only while the first entries are measured |
 | JSON Compressed | Yes | JSON with `Accept-Encoding: gzip, br` and multiplier `?m=N` |
 | JSON TLS | Yes | JSON workload over HTTP/1.1 + TLS on port 8081 |
-| Async Delay | Yes | `GET /delay/10` over 32,000 held connections - what the framework does while a request waits. Scored for frameworks and engines, not for infrastructure |
+| 8Gbit | Yes | 10 KB echoed over TLS at a fixed 50K req/s; scored on CPU cost and latency (0-100 score, see above) |
+| Static TLS | No (*) | 20 static files over HTTP/1.1 + TLS. Reference-only for frameworks and engines, scored for infrastructure |
 | Async DB | No (*) | Async Postgres query with connection pooling. Reference-only since #1331 - the driver dominates the result more than the framework does |
 | Fortunes | No (*) | DB query + HTML template render. Reference-only - engine-comparison test, not part of the composite ranking |
-
-### H/1.1 Workload
-
-| Profile | Scored | Workload |
-|---|---|---|
-| API-4 | Yes | Baseline + JSON + async-db on 4 CPUs |
-| API-16 | Yes | Baseline + JSON + async-db on 16 CPUs |
 
 ### H/2
 
@@ -104,8 +102,6 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 |---|---|---|
 | Unary | Yes | gRPC unary call over cleartext HTTP/2 |
 | Unary TLS | Yes | gRPC unary call over TLS |
-| Stream | Yes | Server-streaming gRPC over cleartext HTTP/2 |
-| Stream TLS | Yes | Server-streaming gRPC over TLS |
 
 ### WebSocket
 
@@ -115,7 +111,7 @@ Not all profiles count toward the composite score. Profiles marked as **scored**
 | Echo Pipelined | Yes | Batched WebSocket echo throughput |
 | Echo Short-lived | Yes | WebSocket echo with each connection closed after 10 messages |
 
-Fortunes, Pipelined, Static TLS and Async DB are the reference-only profiles - shown on the board as faded columns for comparison, but not counted in the composite score.
+Pipelined, Latency-500K/8, Static TLS, Async DB and Fortunes are the reference-only profiles for framework entries - shown on the board as faded columns for comparison, but not counted in the composite score.
 
 The two database profiles were scored until recently. They stopped because the database and its driver dominate them far more than the framework does: a framework's `async-db` number mostly reports which Postgres driver its language has, which is not what this board sets out to compare. They are still run and still published, because the number is worth having; it just no longer decides the ranking.
 
@@ -171,11 +167,11 @@ B actually wins the memory term despite A's 5× throughput advantage, because `s
 
 Types are scored **separately** - each has its own composite ranking and normalization pool. The scored profiles differ by type:
 
-- **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
-- **Engines** are scored on a reduced set: Baseline, Short-lived, JSON TLS, async-db, H/2 (all three), H/3 (both), gRPC (all four), the gateway profiles, and WebSocket, since most engines don't implement the heavier endpoints (compression negotiation, the TLS echo).
-- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Upload, the database profiles, gRPC, WebSocket and the gateway stacks may be displayed as reference data but do not count.
+- **Frameworks** (Flagship, Emerging and Experimental, in either Standard or Tuned mode) are scored on every profile marked *Yes* above, across H/1.1, H/2, H/3, Gateway, gRPC and WebSocket.
+- **Engines** are scored on the same set minus JSON Compressed and JSON h2c, since most engines don't implement compression negotiation or a JSON pipeline over h2c: Baseline, Short-lived, Async Delay, Latency-10K, Latency-1M, JSON TLS, 8Gbit, H/2 Baseline, Static and Baseline h2c, H/3 (both), gRPC (both), the gateway profiles, and WebSocket.
+- **Infrastructure** (nginx, Caddy, h2o and similar proxies / static-file servers) is scored on the nine profiles a server can answer without an application framework behind it: Baseline, Pipelined, Short-lived, JSON TLS, Static TLS, and Baseline and Static over both H/2 and H/3. Everything else may be displayed as reference data but does not count.
 
-Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there.
+Note that the infrastructure set is not a subset of the framework set. Pipelined is reference-only for frameworks and engines - it measures batching more than framework throughput - but for a proxy that behaviour is exactly what is being compared, so it counts there and only there. Static TLS works the same way: serving files is the job of a static-file server, so it counts for infrastructure only.
 
 The Type filter on the composite leaderboard switches between these rankings. Flagship, Emerging and Experimental can be combined (they share the framework normalization pool); Engine and Infrastructure are each exclusive. Experimental is hidden by default and shown only when selected. Tuned entries (a `mode`, not a type) are shown within whichever framework types are selected, marked with a ring.
 

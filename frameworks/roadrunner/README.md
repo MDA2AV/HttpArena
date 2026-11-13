@@ -14,10 +14,11 @@ Covered:
 - `baseline-h3`, `static-h3`
 - `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited`
 
+`gateway-64`, `gateway-h3` and `production-stack` run this same server behind stock proxies, from the compose files in [`frameworks/roadrunner-gateway`](../roadrunner-gateway).
+
 Deferred (tracked under [HttpArena coverage gaps](https://github.com/arizona-framework/roadrunner/blob/main/docs/roadmap.md) in the roadrunner roadmap):
 
 - `unary-grpc` and its TLS variant: no gRPC stack.
-- `gateway-64`, `gateway-h3`, `production-stack`: reverse-proxy multi-container scenarios; out of scope for the single-framework entry.
 
 ## Build
 

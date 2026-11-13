@@ -1,0 +1,44 @@
+# gateway-64: stock nginx (proxy/) terminating TLS and h2 on 8443, in front
+# of the entry's server, which it reaches over HTTP/1.1 on PROXY_PORT. The
+# server gets no /certs, so it runs the build without TLS and leaves 8443 to
+# the proxy; it opens 8080 too, where benchmark.sh's readiness probe looks.
+# PROXY_CPUSET and SERVER_CPUSET move the CPU split. Modelled on libuvcpp's
+# compose.gateway.yml.
+services:
+  proxy:
+    build: ./proxy
+    command: ["nginx", "-g", "daemon off; worker_processes 32;"]
+    network_mode: host
+    cpuset: "${PROXY_CPUSET:-0-15,64-79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-16-31,80-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - PROXY_PORT=8085
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

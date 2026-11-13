@@ -10,9 +10,9 @@
   <packaging>jar</packaging>
 
   <properties>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <vertx.version>5.1.6</vertx.version>
+    <vertx.version>5.2.3</vertx.version>
   </properties>
 
   <!-- Pins the Netty native transport below to the Netty this Vert.x is built on -->
@@ -69,6 +69,16 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-epoll</artifactId>
+      <classifier>linux-aarch_64</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <classifier>linux-x86_64</classifier>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
       <classifier>linux-aarch_64</classifier>
     </dependency>
   </dependencies>

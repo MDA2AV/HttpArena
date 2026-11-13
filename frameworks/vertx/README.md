@@ -4,9 +4,9 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 
 ## Stack
 
-- **Language:** Java 21
+- **Language:** Java 25
 - **Framework:** Vert.x 5.1 (vertx-core + vertx-web)
-- **Build:** Maven shade jar, `eclipse-temurin:21-jre` runtime
+- **Build:** Maven shade jar, `eclipse-temurin:27-jre` runtime
 
 ## Endpoints
 
@@ -29,6 +29,8 @@ Eclipse Vert.x with vertx-web on Netty, one server verticle per core.
 - Routing, path and query params through the vertx-web `Router`
 - JSON built as `JsonObject` and written with `RoutingContext.json`
 - Compression through `HttpServerOptions.setCompressionSupported(true)`
+- TLS through OpenSSL (BoringSSL from `netty-tcnative-boringssl-static`) via `OpenSSLEngineOptions`,
+  rather than the JDK's `SSLEngine` that Vert.x uses when no engine is set
 - The verticle is deployed once per core, all instances sharing port 8080
 - `/echo` is read from the request stream, so the 20 MB body is never buffered
 

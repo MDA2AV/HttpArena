@@ -1,0 +1,12 @@
+  [36mwastnet/1.0.3[0m started in 75 ms
+  >>  Local:   http://localhost:8080
+  >>  Network: http://192.168.1.105:8080
+  [36mwastnet/1.0.3[0m started in 23 ms
+  >>  Local:   https://localhost:8081
+  >>  Network: https://192.168.1.105:8081
+  [36mwastnet/1.0.3[0m started in 8 ms
+  >>  Local:   http://localhost:8082
+  >>  Network: http://192.168.1.105:8082
+  [36mwastnet/1.0.3[0m started in 28 ms
+  >>  Local:   https://localhost:8443
+  >>  Network: https://192.168.1.105:8443

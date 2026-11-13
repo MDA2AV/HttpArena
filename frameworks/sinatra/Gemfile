@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'sinatra', '~> 4.1'
-gem 'puma', '~> 8.0'
+gem 'puma', git: 'https://github.com/p8/puma.git', ref: 'performance/stringio-chunked-bodies'
 gem 'pg', '~> 1.5'
 gem 'redis'
 gem 'json'

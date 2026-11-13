@@ -2,14 +2,14 @@
 
 [![Discord](https://discordapp.com/api/guilds/1177529388229734410/widget.png?style=shield)](https://discord.com/invite/H84B5ZqDXR)
 
-## Hardware Upgrade
-Hi, thank you for visiting or contributing to our project, we are always looking to improve this benchmark platform, if you wish to help us by sponsoring or donating, all the money is invested into infrastructure costs, we are currently aiming for hardware upgrades that would substantially improve our benchmarks.
-
 HTTP framework benchmark platform.
 
-30 test profiles. 64-core dedicated hardware. Same conditions for every framework.
+27 test profiles. 64-core dedicated hardware. Same conditions for every framework.
 
-[View Leaderboard](https://http-arena.com/) | [Documentation](https://http-arena.com/#doc=) | [Add a Framework](https://http-arena.com/#doc=add-framework)
+[View Leaderboard](https://http-arena.com/) | [Documentation](https://http-arena.com/docs/) | [Add a Framework](https://http-arena.com/docs/add-framework/)
+
+## Hardware Upgrade
+Hi, thank you for visiting or contributing to our project, we are always looking to improve this benchmark platform, if you wish to help us by sponsoring or donating, all the money is invested into infrastructure costs, we are currently aiming for hardware upgrades that would substantially improve our benchmarks.
 
 ---
 
@@ -19,6 +19,7 @@ HTTP framework benchmark platform.
 |---------|-------------|
 | `/benchmark -f <framework>` | Run every test the framework subscribes to |
 | `/benchmark -f <framework> -t <test>` | Run one test only |
+| `/benchmark -f <framework> -t <t1>,<t2>,...` | Run several tests in one job: one approval, one results commit, untouched tests keep their numbers |
 | `/benchmark -f <framework> --save` | Run and save results (updates the leaderboard on merge) |
 | `/benchmark -f <framework> -t <test> --save` | Run one test and save results |
 | `/benchmark -f <framework> --compare <other>` | Measure the deltas against another framework instead of this one |
@@ -42,10 +43,10 @@ The reply states which baseline it used, and profiles the other framework does n
 
 | Category | Profiles | Description |
 |----------|----------|-------------|
-| Connection | `baseline`, `pipelined` *, `limited-conn` | Mixed GET/POST with query parsing (512/4K conns), 16× batched pipelining (reference-only, shown faded, excluded from the composite score), short-lived connections that close after 10 requests |
+| Connection | `baseline`, `pipelined` *, `limited-conn` | Mixed GET/POST with query parsing (4K conns), 16× batched pipelining (reference-only, shown faded, excluded from the composite score), short-lived connections that close after 10 requests |
 | Concurrency | `async` | `GET /delay/{ms}` with the wait named in the route, 32K held connections. Isolates what a framework does while a request is pending, with no database or I/O in the way. Scored for frameworks and engines, not for infrastructure, since the spec settled at a flat 10 ms over 32K connections |
 | Efficiency | `latency-1m`, `latency-10k`, `latency-500k-8cpu` * | One million req/s offered at a fixed rate with zrk; the metric is CPU spent per request, read exactly from the container's cgroup rather than sampled. Everyone who finishes serves the same million, so what separates them is the bill. Scored on its own 0-100 formula rather than on rps, since the rate is pinned. `latency-10k` is the identical setup - same cores, connections and endpoint - at a near-idle 10K req/s, so what it reports is the standing cost of being a running server rather than of serving load, and it is scored the same way. Both score CPU at 0.50, p99 at 0.25 and mean latency at 0.25, the mean being the queueing signal: ten times the best mean is worth nothing. `latency-500k-8cpu` pins 500K req/s with the server on four cores plus their SMT siblings, so the load sits near saturation and the queue a server builds shows in its mean; reference-only while the first entries are measured |
-| Workload | `json-comp`, `json-tls`, `8gbit`, `static-tls` | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, a 10 KB body echoed over TLS at a pinned 50K req/s so ingest and egress load together - scored on the same 0-100 formula as the latency profiles, since its rate is pinned too, 20-file static asset serving over TLS |
+| Workload | `json-comp`, `json-tls`, `8gbit`, `static-tls` * | JSON serialization, gzip/brotli compression, HTTP/1.1 over TLS, a 10 KB body echoed over TLS at a pinned 50K req/s so ingest and egress load together - scored on the same 0-100 formula as the latency profiles, since its rate is pinned too, 20-file static asset serving over TLS (reference-only for frameworks and engines, scored for infrastructure) |
 | Database | `async-db` * | Async Postgres sequential scan. Reference-only: the database and its driver dominate it far more than the framework does, so it is measured and shown but no longer decides the ranking |
 | Templates | `fortunes` * | DB query + HTML template render (TechEmpower-style Fortunes). Reference-only: measures template-engine throughput, and is not part of the composite score |
 | H/2 | `baseline-h2`, `static-h2`, `baseline-h2c`, `json-h2c` | Baseline + static over TLS with h2 stream multiplexing; baseline + JSON over cleartext h2 (prior-knowledge, port 8082) |
@@ -54,6 +55,8 @@ The reply states which baseline it used, and profiles the other framework does n
 | Gateway | `gateway-64`, `gateway-h3` | Reverse proxy + server stack over HTTP/2 and HTTP/3 with mixed workload |
 | Production Stack | `production-stack` | Four-service architecture: edge + Redis + JWT auth sidecar + server, 10K-item cache-aside, concurrent reads + writes |
 | WebSocket | `echo-ws`, `echo-ws-pipeline`, `echo-ws-limited` | Echo throughput across connection counts; 16x batched echo; echo with each connection closed after 10 messages (upgrade-handshake cost) |
+
+\* Reference-only for framework entries: measured and shown on the board, but not part of their composite score.
 
 ## Run Locally
 
@@ -64,12 +67,13 @@ cd HttpArena
 ./scripts/validate.sh <framework>            # correctness check
 ./scripts/benchmark.sh <framework>           # all profiles
 ./scripts/benchmark.sh <framework> baseline  # specific profile
+./scripts/benchmark.sh <framework> gateway-h3,gateway-64  # several profiles, in that order
 ./scripts/benchmark.sh <framework> --save    # save results
 ```
 
 ## Contributing
 
-- [Add a new framework](https://http-arena.com/#doc=add-framework)
+- [Add a new framework](https://http-arena.com/docs/add-framework/)
 - Improve an existing implementation by opening a PR that modifies files under `frameworks/<name>/`
 - [Open an issue](https://github.com/MDA2AV/HttpArena/issues)
 - Comment on any open issue or PR
@@ -97,11 +101,11 @@ Swap `actix` for your entry and `h1` for the family you want:
 
 | Family | `<family>` | Composite it reports |
 |---|---|---|
-| HTTP/1.1 | `h1` | Connection, Workload, Database and Multi-endpoint profiles |
+| HTTP/1.1 | `h1` | Connection, Concurrency, Efficiency, Workload and Database profiles |
 | HTTP/2 | `h2` | the HTTP/2 profiles |
 | HTTP/3 | `h3` | the HTTP/3 profiles |
 | Gateway | `gw` | reverse-proxy and production-stack profiles |
-| gRPC | `grpc` | unary and streaming, plaintext and TLS |
+| gRPC | `grpc` | unary, plaintext and TLS |
 | WebSocket | `ws` | the echo profiles |
 
 `<framework>` is your entry's name on the board, lowercased, with anything
@@ -153,7 +157,7 @@ square next to every framework name:
 | 🟦 | `emerging` | flagship + emerging, as one field |
 | 🟧 | `experimental` | other experimental entries |
 | 🟥 | `engine` | other engines, on the profiles engines are scored on |
-| 🟦 | `infrastructure` | other proxies / static-file servers, on the profiles infrastructure is scored on |
+| 🟦 (teal) | `infrastructure` | other proxies / static-file servers, on the profiles infrastructure is scored on |
 
 A few things worth knowing before you paste it:
 

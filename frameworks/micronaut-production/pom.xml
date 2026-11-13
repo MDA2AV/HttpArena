@@ -16,6 +16,7 @@
   <packaging>jar</packaging>
 
   <properties>
+    <rocker.version>2.4.0</rocker.version>
     <jdk.version>27</jdk.version>
     <release.version>27</release.version>
     <micronaut.version>5.2.3</micronaut.version>
@@ -25,6 +26,31 @@
   </properties>
 
   <dependencies>
+    <!-- HTTP/3 over QUIC; the native QUIC codec for both architectures -->
+    <dependency>
+      <groupId>io.micronaut</groupId>
+      <artifactId>micronaut-http-netty-http3</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.micronaut.views</groupId>
+      <artifactId>micronaut-views-rocker</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-pg-client</artifactId>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>tools.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>io.micronaut</groupId>
       <artifactId>micronaut-websocket</artifactId>
@@ -45,11 +71,34 @@
       <artifactId>logback-classic</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <finalName>micronaut-production-httparena</finalName>
     <plugins>
+      <!-- compiles src/main/rocker/**/*.rocker.html into plain Java classes at build time -->
+      <plugin>
+        <groupId>com.fizzed</groupId>
+        <artifactId>rocker-maven-plugin</artifactId>
+        <version>${rocker.version}</version>
+        <executions>
+          <execution>
+            <id>generate-rocker-templates</id>
+            <phase>generate-sources</phase>
+            <goals><goal>generate</goal></goals>
+            <configuration>
+              <templateDirectory>src/main/rocker</templateDirectory>
+              <!-- Micronaut Views renders to a Writer, so keep static text as characters. -->
+              <plainTextStrategy>STATIC_STRINGS</plainTextStrategy>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>

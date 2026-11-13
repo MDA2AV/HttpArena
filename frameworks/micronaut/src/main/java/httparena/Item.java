@@ -1,8 +1,11 @@
 package httparena;
 
+import io.micronaut.serde.annotation.Serdeable;
+
 import java.util.List;
 
 /** One dataset record, as read from dataset.json. */
+@Serdeable
 public record Item(
         long id,
         String name,

@@ -1,6 +1,6 @@
 FROM alpine:3.20 AS build
 ARG TARGETARCH
-ARG ZIG_VERSION=0.16.0
+ARG ZIG_VERSION=0.17.0
 RUN apk add --no-cache ca-certificates curl git tar xz
 
 WORKDIR /server

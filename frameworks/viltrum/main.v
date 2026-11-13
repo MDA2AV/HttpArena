@@ -27,6 +27,12 @@ struct Page {
 	count int
 }
 
+struct TlsPort {
+	dir   string
+	port  int
+	http2 bool
+}
+
 fn main() {
 	dataset := json.decode([]Item, os.read_file('/data/dataset.json') or { '[]' }) or { []Item{} }
 	mut app := viltrum.new()
@@ -38,6 +44,10 @@ fn main() {
 	}
 	app.get('/baseline11', baseline)
 	app.post('/baseline11', baseline)
+	// the HTTP/2 profiles' baseline, on 8082 (h2c) and 8443 (h2)
+	app.get('/baseline2', baseline)
+	// static-h2: the files from disk, their .br and .gz copies to clients that accept them
+	app.static_files('/static', '/data/static', precompressed: true)
 	app.get('/pipeline', fn (mut c viltrum.Ctx) {
 		c.text(200, 'ok')
 	})
@@ -69,7 +79,48 @@ fn main() {
 		}
 		c.after(int(ms), delay_done, u64(ms))
 	})
-	app.listen('0.0.0.0:8080') or { panic(err) }
+	// 8gbit: the body comes back through the framework's body and response API.
+	app.post('/echo', fn (mut c viltrum.Ctx) {
+		c.bytes(200, 'application/octet-stream', c.body())
+	})
+	// echo-ws: each message comes back as it came, text or binary, from the worker
+	// that owns the connection.
+	app.ws('/ws', viltrum.WsHandler{
+		on_message: fn (mut s viltrum.Ws, m viltrum.WsMessage) {
+			if m.binary {
+				s.send_binary(m.data)
+			} else {
+				s.send_text(m.text())
+			}
+		}
+	})
+	mut listeners := [
+		viltrum.Listener{
+			addr: '0.0.0.0:8080'
+		},
+		// baseline-h2c and json-h2c: HTTP/2 with prior knowledge (and HTTP/1.1) on 8082
+		viltrum.Listener{
+			addr:  '0.0.0.0:8082'
+			http2: true
+		},
+	]
+	// json-tls and 8gbit on 8081; baseline-h2 and static-h2 on 8443, HTTP/2 chosen by
+	// ALPN; the TLS hardening check on 9000 with its own pair, which it replaces on disk
+	// while the server runs.
+	for l in [TlsPort{'/certs', 8081, false}, TlsPort{'/certs', 8443, true},
+		TlsPort{'/certs-tls', 9000, false}] {
+		if os.exists('${l.dir}/server.crt') {
+			listeners << viltrum.Listener{
+				addr:  '0.0.0.0:${l.port}'
+				http2: l.http2
+				tls:   viltrum.TlsOptions{
+					cert_file: '${l.dir}/server.crt'
+					key_file:  '${l.dir}/server.key'
+				}
+			}
+		}
+	}
+	app.serve(listeners) or { panic(err) }
 }
 
 // first is a view of a's first n items; safe because n <= a.len and jsonenc only reads.

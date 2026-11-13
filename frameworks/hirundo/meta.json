@@ -12,5 +12,5 @@
     "baseline-h2", "static-h2", "baseline-h2c", "json-h2c",
     "echo-ws", "echo-ws-pipeline", "echo-ws-limited"
   ],
-  "maintainers": []
+  "maintainers": ["mpenet"]
 }

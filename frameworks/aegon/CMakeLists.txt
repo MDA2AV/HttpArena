@@ -12,13 +12,25 @@ endif()
 find_package(Aegon REQUIRED)
 find_package(glaze REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Protobuf REQUIRED)
 
-add_executable(aegon-arena main.cpp)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/benchmark.proto)
+
+add_executable(aegon-arena main.cpp ${PROTO_SRCS} ${PROTO_HDRS})
+
+target_include_directories(aegon-arena PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/proto
+    ${Protobuf_INCLUDE_DIRS}
+)
 
 target_link_libraries(aegon-arena PRIVATE
     Aegon::http
+    Aegon::net
     Aegon::core
     Aegon::config
+    Aegon::storage
     glaze::glaze
     Threads::Threads
+    ${Protobuf_LIBRARIES}
 )

@@ -16,23 +16,16 @@ curl -sk --http1.1 https://localhost:8081/json/1?m=1
 
 The response must report `http_version = 1.1`. A framework that advertises only `h2` on port 8081, or that refuses HTTP/1.1 clients, fails this check.
 
-### Response body is correct for multiple (count, m) pairs
+### Response body matches the dataset
 
-Three requests are sent over HTTPS on port 8081 with different counts and multipliers:
-
-| Count | Multiplier |
-|-------|-----------|
-| 7 | 2 |
-| 23 | 11 |
-| 50 | 1 |
-
-For each response the validator checks:
+Four requests are sent over HTTPS on port 8081 with a random `count` (1–50) and a random multiplier `m` (2–89), drawn fresh on every run. For each response the validator checks:
 
 1. `count` field equals the route count
-2. Every item in `items` contains the full schema - `id`, `name`, `category`, `price`, `quantity`, `active`, `tags` (array), `rating` (object with `score` and `count`), and `total`
-3. `total == price * quantity * m` for every item (integer, exact)
+2. Every item in `items` contains the full schema - `id`, `name`, `category`, `price`, `quantity`, `active` (boolean), `tags` (array), `rating` (object with `score` and `count`), and `total`
+3. The items are the first `count` entries of `data/dataset.json`, unchanged - every field is compared against the dataset
+4. `total == price * quantity * m` for every item (integer, exact)
 
-These `(count, m)` pairs are deliberately **different** from the `json-comp` validation pairs so a framework that tries to cache validation results across profiles can't pass both.
+Because the values are random, no response can be prepared in advance.
 
 ### Content-Type is application/json
 
@@ -44,7 +37,7 @@ The response must include a `Content-Type` header containing `application/json`.
 
 ## TLS checks
 
-These run on every profile that uses TLS: `json-tls` and `static-tls` on port 8081, `baseline-h2` and `static-h2` on 8443. They ask two separate questions: what this connection negotiated, and what the server is willing to negotiate at all.
+These run on every profile that uses TLS: `json-tls`, `static-tls` and `8gbit` on port 8081, and `baseline-h2`, `static-h2` and `unary-grpc-tls` on 8443. They ask two separate questions: what this connection negotiated, and what the server is willing to negotiate at all. The first four checks below run for each of those profiles. The last one, which offers obsolete protocols and weak ciphers, runs only for `json-tls`, `baseline-h2` and `unary-grpc-tls`.
 
 ### Serves the certificate the harness mounted
 
@@ -98,8 +91,4 @@ OpenSSL will not offer an SSLv3 or TLS 1.0 handshake, nor a NULL/EXPORT/RC4 one,
 ./scripts/validate.sh <framework>
 ```
 
-Filter to this profile only:
-
-```bash
-./scripts/validate.sh <framework> json-tls
-```
+This runs the checks for every profile listed in the framework's `meta.json`.

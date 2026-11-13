@@ -1,7 +1,7 @@
 {
   "actix": {
     "dir": "actix",
-    "description": "Actix-web 4 with rustls for TLS. Standard configuration: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update \u2014 no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Pinned to actix git main for try_compressed() (unreleased in actix-files 0.6.10). Compiled with -O3 and thin LTO.",
+    "description": "Actix-web 4 with rustls for TLS. Standard configuration with TCP_NODELAY enabled: actix-files serves static content from disk per request via try_compressed(), which selects a pre-compressed .br/.gz sibling by Accept-Encoding through the framework API (no hand-rolled suffix lookup); the Compress middleware compresses dynamic responses (json-comp) on-the-fly. deadpool-postgres for async DB pooling (sized from DATABASE_MAX_CONN); crud reads go through an in-memory cache-aside (X-Cache MISS/HIT, invalidated on update \u2014 no Redis required). json-tls is served over HTTP/1.1-with-TLS on :8081; baseline-h2/static-h2 over h2 on :8443. serde_json per request. Compiled with -O3 and thin LTO.",
     "repo": "https://github.com/actix/actix-web",
     "type": "flagship",
     "engine": "actix",
@@ -15,7 +15,7 @@
     "variants": [
       {
         "dir": "actix-h2c",
-        "description": "Actix-web 4 h2c-only listener on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
+        "description": "Actix-web 4 h2c-only listener with TCP_NODELAY enabled on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
@@ -29,7 +29,7 @@
       },
       {
         "dir": "actix-websocket",
-        "description": "Actix-web WebSocket echo server",
+        "description": "Actix-web WebSocket echo server with TCP_NODELAY enabled",
         "repo": "https://github.com/actix/actix-web",
         "type": "flagship",
         "engine": "actix",
@@ -37,9 +37,23 @@
       }
     ]
   },
+  "aegon-java": {
+    "dir": "aegon-java",
+    "description": "Linux-native Java 22+ web framework powered by Aegon's io_uring multishot engine, Project Panama Foreign Function & Memory (FFM) API, Project Loom virtual threads, Fastjson2, and libdeflate compression.",
+    "repo": "https://github.com/UdayKhare09/Aegon",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "aegon": {
     "dir": "aegon",
-    "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, and Glaze JSON serialization.",
+    "description": "Linux-native C++26 asynchronous web framework powered by io_uring multishot primitives, coroutines, stepped SIMD vectorization, Glaze JSON serialization, and native zero-overhead gRPC over HTTP/2 with kTLS TX offload.",
     "repo": "https://github.com/UdayKhare09/Aegon",
     "type": "experimental",
     "engine": "io_uring",
@@ -80,6 +94,20 @@
     "engine": "netty",
     "mode": "standard"
   },
+  "anole": {
+    "dir": "anole",
+    "description": "Anole: HTTP/1.1, HTTP/2, HTTP/3, WebSocket, gRPC and WebTransport on the zio async runtime (io_uring where available, epoll fallback), BoringSSL. Documented APIs and default settings.",
+    "repo": "https://github.com/xuckless/anole",
+    "type": "experimental",
+    "engine": "zio",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "araara-standard": {
     "dir": "araara-standard",
     "description": "araara - an OCaml 5 web stack built on HCS, using HCS server defaults where possible for the HttpArena harness. Eio, radix-trie routing, Phoenix-style plugs, Postgres via repodb, gzip/zstd compression. HTTP/3 and gRPC are not implemented.",
@@ -101,6 +129,21 @@
       "middleware": true,
       "request": true,
       "response": false
+    }
+  },
+  "armeria": {
+    "dir": "armeria",
+    "description": "Armeria 1.43 on Netty's epoll transport. Services registered on ServerBuilder, compression through EncodingService (brotli4j), static files through FileService with precompressed variants, gRPC through armeria-grpc, WebSocket through WebSocketService, TLS through BoringSSL (netty-tcnative).",
+    "repo": "https://github.com/line/armeria",
+    "type": "flagship",
+    "engine": "Netty",
+    "mode": "standard",
+    "website": "https://armeria.dev",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
     }
   },
   "aspnet-minimal": {
@@ -361,6 +404,13 @@
       "response": true
     }
   },
+  "cnetmod": {
+    "dir": "cnetmod",
+    "description": "Cross-platform pure C++23 Modules networking engine using native stackless coroutines, io_uring with epoll fallback, per-loop HTTP/1.1 and HTTP/2, BoringSSL QUIC/HTTP/3, routed WebSocket upgrades, and native gRPC. One image serves HTTP/1.1, WebSocket and gRPC h2c on :8080, TLS HTTP/1.1 on :8081, h2c on :8082, HTTP/2 on :8443/tcp and HTTP/3 on :8443/udp.",
+    "repo": "https://github.com/banderzhm/cnetmod",
+    "type": "engine",
+    "engine": "cnetmod"
+  },
   "codebehind": {
     "dir": "codebehind",
     "description": "CodeBehind 4.8.2 on ASP.NET Core and Kestrel. Routes via CodeBehind controller classes under wwwroot/*/Default.aspx, JSON through System.Text.Json with web defaults, gzip and brotli through ResponseCompression at level 1, json-tls on 8081, static files on 8081, dataset loaded once at startup.",
@@ -402,6 +452,13 @@
       "request": true,
       "response": true
     }
+  },
+  "cweb": {
+    "dir": "cweb",
+    "description": "Zero-copy asynchronous HTTP/1.1 & WebSocket framework in C using io_uring and splice.",
+    "repo": "https://bitbucket.org/saadalabeed/cweb/src/main/",
+    "type": "experimental",
+    "engine": ""
   },
   "dart-io": {
     "dir": "dart-io",
@@ -468,6 +525,20 @@
       "response": true
     }
   },
+  "dusty-tuned": {
+    "dir": "dusty-tuned",
+    "description": "Dusty HTTP framework on the zio async runtime, the dusty entry with two changes: JSON through json.zig instead of std.json, and no request or keep-alive timeouts. Same routes, static and TLS paths as dusty.",
+    "repo": "https://github.com/lalinsky/dusty",
+    "type": "emerging",
+    "engine": "zio",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "dusty": {
     "dir": "dusty",
     "description": "Dusty HTTP framework on the zio async runtime (io_uring where available, epoll fallback). Router with params/wildcards, JSON, gzip, WebSocket. Standard configuration, no tuning.",
@@ -495,6 +566,13 @@
       "request": true,
       "response": true
     }
+  },
+  "edixoi-kt": {
+    "dir": "edixoi-kt",
+    "description": "edixoi-kt \u2014 edixoi on the JVM: the Kotlin port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, with the syscalls made straight through the Foreign Function & Memory API (no liburing, no JNI shim). Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with the BoringSSL ioxide bundles, called through FFM, with kernel TX offload and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to edixoi, which serves the same profiles in C#.",
+    "repo": "https://github.com/MDA2AV/ioxide",
+    "type": "engine",
+    "engine": "io_uring"
   },
   "edixoi": {
     "dir": "edixoi",
@@ -631,7 +709,7 @@
   },
   "fib-tuned": {
     "dir": "fib-tuned",
-    "description": "The fib entry with its compression replaced: the JSON routes sit behind a compression middleware written in the entry on fib's middleware API (Context.OnResponse, as fib's own compress, around the routes through Router.With), coding brotli (andybalholm/brotli), zstd, gzip and deflate (klauspost/compress) as Accept-Encoding weighs them. Between codings a client weighs the same it picks gzip, then zstd, brotli and deflate, the order measured to cost least for the bytes saved on these 4-8 KB bodies. JSON responses are encoded with sonic, which Context.JSON calls as fib's JSONEncoder. It runs with GOGC=200. Everything else - prefork with a child for every two CPUs, fib's default configuration, listeners on 8080/8082/8081/8443 tcp+udp/9000, fib's Router and routes, gRPC through fib's grpc package, static through FileCache, TLS - is the fib entry's.",
+    "description": "The fib entry with its compression replaced: the JSON routes sit behind a compression middleware written in the entry on fib's middleware API (Context.OnResponse, as fib's own compress, around the routes through Router.With), coding brotli (andybalholm/brotli), zstd, gzip and deflate (klauspost/compress) as Accept-Encoding weighs them, with fiber-tuned's settings (compress.LevelBestSpeed): brotli quality 0, zstd fastest, gzip and deflate level 1, bodies of 200 bytes or more, and between codings a client weighs the same brotli first, then zstd, gzip and deflate, fiber's order. JSON responses are encoded with sonic, which Context.JSON calls as fib's JSONEncoder. It runs with GOGC=200. Everything else - prefork with a child for every two CPUs, fib's default configuration, listeners on 8080/8082/8081/8443 tcp+udp/9000, fib's Router and routes, gRPC through fib's grpc package, static through FileCache, TLS - is the fib entry's.",
     "repo": "https://github.com/lesismal/fib",
     "type": "experimental",
     "engine": "fib",
@@ -645,7 +723,7 @@
   },
   "fib": {
     "dir": "fib",
-    "description": "fib (Fast In Balance) Go networking library, served through its prefork package: a master process starts a child for every two CPUs, each with two Ps and its own heap, and every engine a child binds listens with SO_REUSEPORT, so the children share the ports. In each child an edge-triggered epoll event loop hands HTTP/1 connections' rounds to a logical worker pool, where each connection is an ordered task that any idle worker may run. Its http package serves HTTP/1.1, HTTP/2 (ALPN and prior-knowledge h2c) and, through package http3, HTTP/3 over its own QUIC, all through one handler taking a *http.Request and a Context; TLS through package tls on crypto/tls. Default configuration throughout; the certificate on the opt-in TLS hardening listener is picked per handshake through tls.Config.GetCertificate, so a renewed pair is served without a restart. Requests are routed by fib's Router (chi's API with fib's handlers), the same one for every protocol, with path parameters read through Context.Param, and JSON answered through Context.JSON, encoding/json's encoding; the JSON routes sit behind fib's compress middleware (Router.With(compress.New()), defaults), which gzips per request as Accept-Encoding allows. The gRPC profiles' BenchmarkService, protoc-generated with google.golang.org/protobuf messages, is served by fib's grpc package through the same router, so gRPC shares 8080 (h2c) and 8443 (h2 over TLS) with HTTP. /delay waits in its handler, on fib's worker pool, which grows for handlers that block, /async-db answers a retained request from a goroutine, and /static goes through fib's FileCache, which serves the files from memory and follows the disk through an inotify watch, choosing the pre-compressed twin on disk off Accept-Encoding.",
+    "description": "fib (Fast In Balance) Go networking library, served through its prefork package: a master process starts a child for every two CPUs, each with two Ps and its own heap, and the engine each child runs listens with SO_REUSEPORT, so the children share the ports; every listener is a fib.Binding of that one engine (fib.New), sharing its event loop, task pool and buffer pool. In each child an edge-triggered epoll event loop hands HTTP/1 connections' rounds to a logical worker pool, where each connection is an ordered task that any idle worker may run. Its http package serves HTTP/1.1, HTTP/2 (ALPN and prior-knowledge h2c) and, through package http3, HTTP/3 over its own QUIC, all through one handler taking a Context that carries the *http.Request; TLS through package tls on crypto/tls. Default configuration throughout, but for request bodies past 64 KiB, which stream to their handlers as fit, fib's gateway, has them; the certificate on the opt-in TLS hardening listener is picked per handshake through tls.Config.GetCertificate, so a renewed pair is served without a restart. Requests are routed by fib's Router (chi's API with fib's handlers), the same one for every protocol, with path parameters read through Context.Param, and JSON answered through Context.JSON, encoding/json's encoding; the JSON routes sit behind fib's compress middleware (Router.With(compress.New(...))) with fiber's compress settings, the default level (gzip 6) and fasthttp's 200-byte floor, which gzips per request as Accept-Encoding allows. The gRPC profiles' BenchmarkService, protoc-generated with google.golang.org/protobuf messages, is served by fib's grpc package through the same router, so gRPC shares 8080 (h2c) and 8443 (h2 over TLS) with HTTP. nothing blocks fib's workers, as in fit: /delay answers its request, retained through Context.Async, from a timer, /async-db hands its query to a taskpool of as many workers as the database pool has connections, request bodies past 64 KiB stream to their handlers (StreamRequestBody, fit's 64 KiB threshold and buffer), and /echo sends a streamed body back as it arrives through OnBody and WriteNoWait, holding the request body with HoldBody until OnWritable while the client is behind, and /static goes through fib's FileCache, which serves the files from memory and follows the disk through an inotify watch, choosing the pre-compressed twin on disk off Accept-Encoding.",
     "repo": "https://github.com/lesismal/fib",
     "type": "experimental",
     "engine": "fib",
@@ -705,6 +783,27 @@
       }
     ]
   },
+  "fit": {
+    "dir": "fit",
+    "description": "fit, a reverse proxy, static file server and API gateway built on fib, with a Go handler module compiled in as fit build does: httparena answers /baseline11 and /baseline2, httparena_json /json/{count}, serializing the body per request from the dataset read when the config is loaded. /pipeline is fit's respond handler and /static/* its static handler, which keeps small files in memory, revalidates them against the disk every second and serves the .br/.gz twins on disk off Accept-Encoding. One process, fib's default engine settings, from a .conf config: HTTP/1.1 on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 (fib's own QUIC) on :8443, TLS on crypto/tls.",
+    "repo": "https://github.com/lesismal/fit",
+    "type": "infrastructure",
+    "engine": "fit"
+  },
+  "flare": {
+    "dir": "flare",
+    "description": "Mojo networking library: HTTP/1.1, HTTP/2, HTTP/3, WebSocket and gRPC on a thread-per-core reactor, with sans-I/O protocol codecs mirrored by Lean 4 models.",
+    "repo": "https://github.com/ehsanmok/flare",
+    "type": "emerging",
+    "engine": "flare",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "flask": {
     "dir": "flask",
     "description": "Flask web framework on Gunicorn with sync workers",
@@ -741,6 +840,14 @@
       "response": true
     }
   },
+  "fnet-h1": {
+    "dir": "fnet-h1",
+    "description": "fnet v1.0.0's fhttp HTTP/1.1 server: fnet's epoll event loops find where each request message ends and enqueue it, then the standard library parses it and runs an http.Handler on a task-pool worker, so there is no goroutine per connection. Responses are buffered whole. A request whose body is not buffered (larger than 1MB, chunked, or framed unusually) is handed to an internal net/http server, which closes that connection after the one request. fnet's ReusePort option is on: on Linux every sub-reactor listens on :8080 with a socket of its own, sharing the port through SO_REUSEPORT so the kernel spreads the connections over the loops. A second fhttp.Server on :8081 speaks HTTPS through fnet's ftls (crypto/tls inside the connection callbacks, ALPN http/1.1) for the TLS profiles. Static files are read per request from the mounted directory, serving the pre-compressed .br/.gz siblings when the client accepts them; /async-db and the crud routes use pgx's pool sized from DATABASE_MAX_CONN, with Redis as a cache-aside store for item reads where REDIS_URL is provided.",
+    "repo": "https://github.com/linfeip/fnet",
+    "type": "experimental",
+    "engine": "fnet",
+    "mode": "standard"
+  },
   "fnet-ws": {
     "dir": "fnet-ws",
     "description": "fnet v1.0.0's websocket package on fhttp: the upgrade is answered on fnet's epoll event loops, then frames are parsed in the connection's own task on fnet's executor, so an unfragmented message is echoed straight from the read buffer it arrived in, with no goroutine per connection; replies written while a batch of frames is processed are coalesced into one write. fnet's ReusePort option is on: on Linux every sub-reactor listens on :8080 with a socket of its own, sharing the port through SO_REUSEPORT so the kernel spreads the connections over the loops.",
@@ -761,6 +868,21 @@
       "middleware": false,
       "request": false,
       "response": false
+    }
+  },
+  "fulmine.js - uwsLite": {
+    "dir": "fulmine-uwslite",
+    "description": "fulmine.js routes written with app.uwsLite: (req, res) handlers on uWebSockets.js over two small objects, with route middleware and streams.",
+    "repo": "https://github.com/nigrosimone/fulmine.js",
+    "type": "emerging",
+    "engine": "uwebsockets",
+    "mode": "tuned",
+    "website": "https://fulmine.sndesign.it/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
     }
   },
   "fulmine.js": {
@@ -801,6 +923,36 @@
     "engine": "kestrel",
     "mode": "standard",
     "website": "https://genhttp.org/documentation/server/engines/kestrel/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "genhttp-kt-netty": {
+    "dir": "genhttp-kt-netty",
+    "description": "Kotlin port of the GenHTTP web server on JDK 25, running on its Netty engine (the counterpart of GenHTTP's ioxide engine): one Netty event loop per core on the native epoll transport, every connection served by a coroutine on the loop that accepted it, TLS through OpenSSL (netty-tcnative). Implemented with web services and a layout router, JSON via Jackson, Postgres via HikariCP and JDBC on a dispatcher beside the event loops.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/genhttp-kt",
+    "type": "experimental",
+    "engine": "netty",
+    "mode": "standard",
+    "website": "https://genhttp-kt.genhttp.run/documentation/server/engines/netty/",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "genhttp-kt": {
+    "dir": "genhttp-kt",
+    "description": "Kotlin port of the GenHTTP web server on JDK 25, running on its own HTTP/1.1 engine (NIO channels, a coroutine per connection on virtual threads, TLS via the JDK SSLEngine). Implemented with web services and a layout router, JSON via Jackson, Postgres via HikariCP and JDBC.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/genhttp-kt",
+    "type": "experimental",
+    "engine": "genhttp-kt",
+    "mode": "standard",
+    "website": "https://genhttp-kt.genhttp.run/",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -1028,6 +1180,20 @@
       "response": true
     }
   },
+  "httparena-io_uring": {
+    "dir": "httparena-io_uring",
+    "description": "libioxd \u2014 an HTTP/1.1 server library in C23 on a thread-per-core io_uring runtime with stackful coroutines. Raw io_uring syscalls, no liburing: multishot accept and recv over provided buffer rings, one ring and one SO_REUSEPORT listener per worker; a handler reads as linear code and every wait - a body read, a timer, a send - parks the connection on the ring. TLS 1.3 handshakes in OpenSSL, records in the kernel (kTLS) on :8081. Static files are served from memory by the library's static module, checked against the disk per request; the dataset is parsed once with cJSON, serialized per request by the library's JSON writer, and coded by its compression middleware (brotli, gzip) when the client asks.",
+    "repo": "https://github.com/MDA2AV/libioxd",
+    "type": "experimental",
+    "engine": "",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "http.jl": {
     "dir": "httpjl",
     "description": "HTTP.jl 2 on its Reseau transport, one process with one interactive thread per core. Routing on the stream handler, JSON through JSON3, gzip by hand with LibDeflate because HTTP.jl ships no compression middleware. json-tls on 8081 through Reseau's TLS listener, the transport HTTP.jl already ships.",
@@ -1133,12 +1299,68 @@
     "type": "engine",
     "engine": "kestrel"
   },
+  "klite": {
+    "dir": "klite",
+    "description": "Klite 2.x, a lightweight zero-dependency Kotlin framework on the JDK's built-in jdk.httpserver with virtual threads. Annotated routes, klite-json, klite-jdbc with its own connection pool, jte templates, JDK 25.",
+    "repo": "https://github.com/keksworks/klite",
+    "type": "emerging",
+    "engine": "jdk.httpserver",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": false
+    }
+  },
   "koa": {
     "dir": "koa",
     "description": "Koa 3 on the Node http server, default configuration, one cluster worker per core. Routing through @koa/router, JSON through the koa response body, gzip through koa-compress.",
     "repo": "https://github.com/koajs/koa",
     "type": "flagship",
     "engine": "node:http",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "kron-native": {
+    "dir": "kron-native",
+    "description": "kron-native \u2014 the kron entry on Kotlin/Native: edixoi on kron, the Kotlin port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it, as one native binary with no JVM (the Dockerfile's KRON_RUNTIME build arg, set to native); the kron entry runs the same code, at the same kron commit, on the JVM. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the ring driven by hand from Kotlin over the kernel's own io_uring header through cinterop (no liburing). Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with BoringSSL linked into the binary, with kernel TX offload where the kernel has the tls module and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to kron (the same code on the JVM), edixoi (C#) and edixoi-kt, which serve the same profiles.",
+    "repo": "https://github.com/MDA2AV/kron",
+    "type": "engine",
+    "engine": "io_uring"
+  },
+  "kron": {
+    "dir": "kron",
+    "description": "kron \u2014 edixoi on kron, the Kotlin port of the ioxide io_uring runtime, on its raw recv/send API and nothing above it, natively or on the JVM: the Dockerfile's KRON_RUNTIME build arg picks, the JVM at present. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the ring driven by hand from Kotlin over the kernel's own io_uring header (no liburing): natively through cinterop, one binary; on the JVM through the FFM API, as a jar on JDK 25. Handlers are Kotlin suspend functions that the reactor resumes inline on the thread that took the completion, with no dispatcher and no thread pool. The HTTP/1.1 handling (request line, query string, case-insensitive headers, Content-Length and chunked bodies, keep-alive, pipelining, reads fragmented across recv boundaries) is edixoi's, ported to Kotlin \u2014 no framework, no router. One handler answers on both doors: plaintext on :8080, and TLS on :8081 for json-tls and the 8gbit echo, terminated with BoringSSL (linked into the native binary, carried in the jar on the JVM), with kernel TX offload where the kernel has the tls module and BoringSSL receive. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring, so a held connection costs a kernel deadline rather than a thread. Companion to edixoi (C#) and edixoi-kt (the JVM port), which serve the same profiles.",
+    "repo": "https://github.com/MDA2AV/kron",
+    "type": "engine",
+    "engine": "io_uring"
+  },
+  "ktor-kronos-native": {
+    "dir": "ktor-kronos-native",
+    "description": "ktor-kronos-native, JetBrains Ktor on Kotlin/Native with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of CIO: one native binary, no JVM; the ktor-kronos entry runs the same routes on the JVM. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, driven from Kotlin over the kernel's own io_uring header (no liburing). Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring. The routes are the ktor entry's, answered the same way: JSON through Ktor's ContentNegotiation with kotlinx.serialization, and Ktor's own WebSockets; json-comp is left out, as Ktor's Compression plugin is JVM-only. TLS on :8081 is the engine's own connector on kron's BoringSSL. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite).",
+    "repo": "https://github.com/MDA2AV/ktor",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "ktor-kronos": {
+    "dir": "ktor-kronos",
+    "description": "ktor-kronos, JetBrains Ktor on the JVM with the kron engine (ktor-server-kron, in the MDA2AV/ktor fork) instead of Netty or CIO. kron is the Kotlin port of the ioxide io_uring runtime: one reactor per core, each pinned to its CPU and owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, the kernel and BoringSSL reached through the FFM API on JDK 25. Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and run through Ktor's own pipeline - routing, plugins, call.receive and call.respond - on the reactor that accepted the connection, with no thread pool in between. Responses to pipelined requests leave in one send. delay() is an IORING_OP_TIMEOUT on the reactor's ring. The routes are the ktor entry's, answered the same way: JSON through Ktor's ContentNegotiation with kotlinx.serialization, gzipped by Ktor's Compression plugin, and Ktor's own WebSockets. TLS on :8081 is the engine's own connector on kron's BoringSSL. The engine passes Ktor's own engine suites (HttpServerCommonTestSuite, WebSocketEngineSuite).",
+    "repo": "https://github.com/MDA2AV/ktor",
+    "type": "experimental",
+    "engine": "io_uring",
     "mode": "standard",
     "completeness": {
       "routing": true,
@@ -1175,6 +1397,20 @@
       "response": true
     }
   },
+  "ktron": {
+    "dir": "ktron",
+    "description": "Ktron \u2014 a Kotlin web framework on the Kotlin port of the ioxide io_uring runtime. One reactor per core, each owning its ring and its share of the SO_REUSEPORT listeners; multishot accept and recv into provided buffer rings, with the syscalls made straight through the Foreign Function & Memory API. Requests are parsed by Glyph11, the hardened HTTP/1.1 parser, and routed by a segment trie whose parameters are offsets into the request. Middleware are ordered before/after hooks that can short-circuit; handlers are plain functions, or suspend functions the reactor resumes inline on its own thread, with no dispatcher and no thread pool. JSON is serialized by Ghost's generated serializers straight into the connection's buffer, and compressed by the framework's gzip/brotli middleware. TLS on :8081 is the BoringSSL ioxide bundles over FFM, with kernel TX offload. The async profile's wait is an IORING_OP_TIMEOUT on the reactor's ring.",
+    "repo": "https://github.com/MDA2AV/Ktron",
+    "type": "experimental",
+    "engine": "io_uring",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "lapis": {
     "dir": "lapis",
     "description": "Lapis on OpenResty with LuaJIT, one nginx worker per core. Routing and params through the Lapis application API, cjson serialization, gzip through the nginx gzip directive.",
@@ -1202,13 +1438,6 @@
       "request": true,
       "response": true
     }
-  },
-  "libioma": {
-    "dir": "libioma",
-    "description": "Minimal HTTP/1.1 framework in C on a thread-per-core io_uring runtime with stackful coroutines. Raw io_uring syscalls, no liburing; multishot accept and recv over provided buffer rings.",
-    "repo": "https://github.com/MDA2AV/libioma",
-    "type": "engine",
-    "engine": "io_uring"
   },
   "libreactorng": {
     "dir": "libreactorng",
@@ -1289,7 +1518,7 @@
   },
   "micronaut-production": {
     "dir": "micronaut-production",
-    "description": "Micronaut 5.2 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
+    "description": "Micronaut on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing, injection and argument binding are generated at compile time, JSON goes through Micronaut Serialization, gzip through the Netty server compression the framework enables by itself.",
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",
@@ -1303,7 +1532,7 @@
   },
   "micronaut-tuned": {
     "dir": "micronaut-tuned",
-    "description": "Micronaut 5.2 on the Netty HTTP server with the epoll native transport, no idle handler, request header and URL validation off, Netty bounds and leak checks off and Parallel GC. Routing, injection and argument binding are still generated at compile time, JSON goes through Micronaut Serialization and gzip through the framework compression.",
+    "description": "Micronaut on the Netty HTTP server with the io_uring native transport (epoll or NIO when the kernel does not allow it), no idle handler, request header and URL validation off, Netty bounds and leak checks off and Parallel GC. Routing, injection and argument binding are still generated at compile time, JSON goes through Micronaut Serialization and gzip through the framework compression.",
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",
@@ -1317,7 +1546,7 @@
   },
   "micronaut": {
     "dir": "micronaut",
-    "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Jackson, gzip through the Netty server compression the framework enables by itself.",
+    "description": "Micronaut 5 on the Netty HTTP server, default configuration, running on the JVM and not on native-image. Routing and injection are generated at compile time by the Micronaut annotation processor, JSON through Micronaut Serialization with Jackson Core and no Jackson Databind, gzip through the Netty server compression the framework enables by itself.",
     "repo": "https://github.com/micronaut-projects/micronaut-core",
     "type": "flagship",
     "engine": "netty",
@@ -1350,6 +1579,20 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "mipyre": {
+    "dir": "mipyre",
+    "description": "mipyre \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc): one pinned thread per physical core, each with its own PEP 684 sub-interpreter, so Python handlers run on every core at once. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, precompressed static files, async Postgres via sqlx. Handlers are standard Python functions routed via decorators.",
+    "repo": "https://github.com/leocaolab/mipyre",
+    "type": "experimental",
+    "engine": "mipyre",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "mojolicious": {
     "dir": "mojolicious",
     "description": "Mojolicious 9 on Mojo::Server::Prefork, the server hypnotoad runs, one worker per core. Routing through Mojolicious::Lite, JSON through Mojo::JSON, gzip through the renderer's own compression.",
@@ -1373,7 +1616,7 @@
   },
   "morojs": {
     "dir": "morojs",
-    "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), default configuration, clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression, static files and the cache-aside through the built-in middleware and cache adapters, WebSockets through the engine's own RFC 6455 support.",
+    "description": "MoroJS 1.8 on its native HTTP engine (@morojs/engine), default configuration, clustered by the framework itself with one worker thread per core sharing the port through SO_REUSEPORT. Routing, path and query parameters and body parsing through the Moro request, JSON through res.json, compression (brotli quality 3 or gzip level 3 as the client accepts, one reused encoder per setting per worker, handed to the engine's own response path by the route middleware), static files from the built-in middleware's in-memory cache and the cache-aside through the built-in cache adapters, WebSockets through the engine's own RFC 6455 support, upgrades included, HTTP/2 through Moro's HTTP/2 server on Node's http2 module.",
     "repo": "https://github.com/Moro-JS/moro",
     "type": "emerging",
     "engine": "@morojs/engine",
@@ -1429,6 +1672,20 @@
     "repo": "https://github.com/nestjs/nest",
     "type": "flagship",
     "engine": "nodehttp",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "netcode-http": {
+    "dir": "netcode-http",
+    "description": "netcode-http's router on quic-zig's event loop, which serves HTTP/1.1, WebSocket and HTTP/3 from one loop: one loop per core, sharing the ports through SO_REUSEPORT. Routes decode their query and body from a typed spec; a WebSocket is a route too, on quic-zig's upgrade and framing. QUIC, TLS 1.3 and HTTP/3 are quic-zig's own, in Zig, with no C library.",
+    "repo": "https://github.com/endel/netcode-http",
+    "type": "experimental",
+    "engine": "quic-zig",
     "mode": "standard",
     "completeness": {
       "routing": true,
@@ -1531,7 +1788,7 @@
   },
   "ntex": {
     "dir": "ntex",
-    "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+    "description": "ntex 4 on its native runtime. Routing and extractors through ntex::web, JSON through HttpResponse::json. Static files served from disk per request, choosing a pre-compressed .br/.gz sibling off Accept-Encoding. async-db with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). fortunes rendered through an Askama template. json-tls and static-tls over HTTP/1.1 with rustls on 8081; baseline-h2 and static-h2 over h2 on 8443.",
     "repo": "https://github.com/ntex-rs/ntex",
     "type": "flagship",
     "engine": "ntex",
@@ -1585,6 +1842,20 @@
       "response": true
     }
   },
+  "paozhu": {
+    "dir": "paozhu",
+    "description": "Paozhu C++20 web framework on standalone Asio, built from the upstream mini_project.sh clean scaffold. Annotated controller routes answer /baseline11, /baseline2, /pipeline, /json/{count}?m={multiplier}, /static/{filename}, /delay/{ms}, /async-db?min=&max=&limit= and /fortunes; the dataset is parsed once at startup and serialized per request, static files are read from /data/static with bodies cached in-process via pzcache (revalidated by a per-request stat of mtime+size), and the DB routes use paozhu's own async Postgres driver. Two server instances share the image: plaintext HTTP/1.1 on :8080 and ALPN h2 on :8443, plus a second instance whose TLS listener on :8081 advertises only http/1.1 for json-tls and whose cleartext :8082 listener serves h2c prior-knowledge for json-h2c.",
+    "repo": "https://github.com/hggq/paozhu",
+    "type": "experimental",
+    "engine": "paozhu",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "pedestal": {
     "dir": "pedestal",
     "description": "Default Pedestal Jetty connector benchmark retaining Pedestal routing and interceptors.",
@@ -1627,6 +1898,20 @@
     "type": "engine",
     "engine": "picoev"
   },
+  "plod": {
+    "dir": "plod",
+    "description": "Plod: a REST framework for Goose, a memory-safe systems language with no heap allocator or garbage collector, with routes, scopes, middleware, and extractors in the manner of Actix, over goose-http's io_uring loop, one worker per CPU. JSON is serialized per request with plod::format_fields, through Goose's standard json writer, and compressed through plod::compressed at default levels; static files come from disk through plod::files, with their .br and .gz siblings; /async-db runs on goose-postgres's async pool, and production-stack's cache-aside is in process. HTTP/3 is goose-http's own QUIC, written in Goose over goose-tls's handshake and libcrypto's packet protection, with QPACK's static table, on UDP 8443 beside h2. The gateway profiles put stock nginx in front of it, with nginx's own HTTP/3 for gateway-h3.",
+    "repo": "https://github.com/kaitk/plod",
+    "type": "experimental",
+    "engine": "goose-http",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "plug-cowboy": {
     "dir": "plug-cowboy",
     "description": "Plug on the Cowboy adapter without Phoenix. Routing through Plug.Router, Jason JSON encoding, gzip through the cowboy_compress_h stream handler.",
@@ -1654,20 +1939,6 @@
     "repo": "https://github.com/facebook/proxygen",
     "type": "engine",
     "engine": "proxygen"
-  },
-  "pyronova": {
-    "dir": "pyronova",
-    "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
-    "repo": "https://github.com/leocaolab/pyronova",
-    "type": "experimental",
-    "engine": "pyronova",
-    "mode": "tuned",
-    "completeness": {
-      "routing": true,
-      "middleware": true,
-      "request": true,
-      "response": true
-    }
   },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
@@ -1721,6 +1992,13 @@
     "type": "engine",
     "engine": "iodine"
   },
+  "rack-puma": {
+    "dir": "rack-puma",
+    "description": "Puma is a fast, multi-threaded HTTP server for Ruby",
+    "repo": "https://github.com/puma/puma",
+    "type": "engine",
+    "engine": "puma"
+  },
   "rage": {
     "dir": "rage",
     "description": "Rage is a modern Ruby framework designed for non-blocking I/O and simpler infrastructure",
@@ -1742,6 +2020,21 @@
     "type": "flagship",
     "engine": "puma",
     "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "rama": {
+    "dir": "rama",
+    "description": "Rama 0.4 on the multi-threaded Tokio runtime, default configuration. Routing and path/query/body extractors through the rama web Router, JSON via its Json response, compression through the rama CompressionLayer, static files through ServeDir, TLS via rustls and WebSocket via the rama-ws acceptor.",
+    "repo": "https://github.com/plabayo/rama",
+    "type": "flagship",
+    "engine": "rama-http-core",
+    "mode": "standard",
+    "website": "https://ramaproxy.org",
     "completeness": {
       "routing": true,
       "middleware": true,
@@ -1818,7 +2111,23 @@
       "middleware": true,
       "request": true,
       "response": true
-    }
+    },
+    "variants": [
+      {
+        "dir": "roadrunner-gateway",
+        "description": "The roadrunner server from frameworks/roadrunner behind stock reverse proxies. Gateway: nginx (h2) or Caddy (h3) terminates TLS on :8443, serves /static/* from disk with precompressed sidecars, and proxies the rest to roadrunner on :8080 over HTTP/1.1 keepalive. Production stack: nginx auth_request against the shared authsvc on every /api/* call; the server does cache-aside in process (ETS, 1 s item TTL, 30 s user TTL) over epgsql and invalidates on writes.",
+        "repo": "https://github.com/arizona-framework/roadrunner",
+        "type": "emerging",
+        "engine": "roadrunner",
+        "mode": "standard",
+        "completeness": {
+          "routing": true,
+          "middleware": true,
+          "request": true,
+          "response": true
+        }
+      }
+    ]
   },
   "robyn": {
     "dir": "robyn",
@@ -2027,7 +2336,7 @@
   },
   "sober": {
     "dir": "sober",
-    "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection, io_uring with an acceptor per worker (epoll fallback). Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compress: option of the server. Static ELF with no libc, FROM scratch.",
+    "description": "Sober's standard library HTTP/1.1 server (std/http on std/net, TLS 1.3 from std/tls), default configuration. One task per connection; one io_uring and one SO_REUSEPORT listener per worker \u2014 each worker accepts on its own ring and runs the connection itself (epoll fallback), with workers pinned one per CPU. Routes are a plain table ([]http.Route with method, :param / *rest patterns, Mount / Merge, before / after middleware), JSON through std/json, gzip through the built-in compression: option of the server. Static ELF with no libc, FROM scratch.",
     "repo": "https://github.com/sober-lang/sober",
     "type": "experimental",
     "engine": "std/http",
@@ -2291,7 +2600,7 @@
   },
   "trillium-tuned": {
     "dir": "trillium-tuned",
-    "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints.",
+    "description": "Trillium 1.x with one current_thread tokio runtime per CPU, SO_REUSEPORT TCP sharding (single QUIC endpoint for h3), tuned HttpConfig (larger response/body buffers, 64K h2 frames, eager body preallocation), a 4 KiB websocket read buffer, and static files preloaded into memory at startup. sonic-rs for JSON, deadpool-postgres, mimalloc, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints.",
     "repo": "https://github.com/trillium-rs/trillium",
     "type": "emerging",
     "engine": "trillium-http",
@@ -2305,7 +2614,7 @@
   },
   "trillium": {
     "dir": "trillium",
-    "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, trillium-api for JSON handlers, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints, deadpool-postgres for async-db and crud.",
+    "description": "Trillium 1.x async Rust web framework on tokio. trillium-rustls for TLS (h1 + h2 via ALPN), trillium-quinn for HTTP/3, trillium-websockets for /ws, trillium-static for /static/* served from disk per request, trillium-compression middleware for runtime gzip/brotli, serde_json for JSON, trillium-grpc for the benchmark.BenchmarkService gRPC endpoints, deadpool-postgres for async-db and crud.",
     "repo": "https://github.com/trillium-rs/trillium",
     "type": "emerging",
     "engine": "trillium-http",
@@ -2340,7 +2649,7 @@
   },
   "uio-ws": {
     "dir": "uio-ws",
-    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. Default configuration otherwise.",
+    "description": "uws WebSocket echo on uio: the RFC 6455 handshake and frame parser run in the connection's own I/O task on uio's edge-triggered event loops, one per CPU, so each message is parsed from the buffer its task read into and echoed from that task with no goroutine per connection; a read round's replies leave coalesced in one sendmsg, and a send the socket refuses is finished by the next write turn without pausing the read. A SO_REUSEPORT listener group puts each upgrade on the loop that runs its connection. uio defaults otherwise.",
     "repo": "https://github.com/urpc/uio",
     "type": "experimental",
     "engine": "uio",
@@ -2439,9 +2748,58 @@
     "type": "engine",
     "engine": "veb"
   },
+  "veil": {
+    "dir": "veil",
+    "description": "veil 0.10 reverse proxy from its published container image (full-container build: epoll readiness reactor, no tokio), one process with four listeners. A Proxy-Wasm module loaded into veil answers /baseline11 (including the POST body), /baseline2, /pipeline and /json/{count}, serializing the JSON body per request from the dataset veil loads at startup; /static/* is veil's File backend (sendfile, on-the-fly compression on every protocol, caches that follow the disk). TLS via rustls: HTTP/1.1 on :8081, h2 and h3 (quiche) on :8443, h2c on :8082.",
+    "repo": "https://github.com/aofusa/veil-proxy",
+    "type": "infrastructure",
+    "engine": "veil",
+    "website": "https://github.com/aofusa/veil-proxy"
+  },
+  "veil-api": {
+    "dir": "veil-api",
+    "description": "veil 0.10 API library (crates.io veil-proxy, full-container: epoll readiness reactor, no tokio or hyper). #[veil::route] handlers with path/query extraction, serde_json responses, compression through [api] compression, WebSocket through WebSocketUpgrade, gRPC services generated by veil-build (prost), /static/* through App::serve_dir. One process with four listeners from the configuration file; HTTP/3 via quiche.",
+    "repo": "https://github.com/aofusa/veil-proxy",
+    "type": "experimental",
+    "engine": "veil",
+    "mode": "standard",
+    "website": "https://github.com/aofusa/veil-proxy",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "veil-python": {
+    "dir": "veil-python",
+    "description": "veil-api 0.10 from PyPI (Python bindings of the veil server; Linux wheels use the epoll readiness reactor). @app.get/@app.post handlers with path/query binding, dict responses serialized to JSON, async def handlers on veil's persistent asyncio event loop, @app.websocket for /ws, gRPC through the grpcio-generated servicer on veil.grpc.Server, /static/* through app.serve_dir, compression through [api] compression. One process with four listeners from the configuration file.",
+    "repo": "https://github.com/aofusa/veil-proxy",
+    "type": "experimental",
+    "engine": "veil",
+    "mode": "standard",
+    "website": "https://github.com/aofusa/veil-proxy",
+    "completeness": {
+      "middleware": false
+    }
+  },
+  "velocity": {
+    "dir": "velocity",
+    "description": "Velocity, a lightweight Express.js alternative on node:http with the cluster module for multi-core scaling.",
+    "repo": "https://github.com/aneeshhmon-create/velocity",
+    "type": "experimental",
+    "engine": "nodehttp",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "vertx": {
     "dir": "vertx",
-    "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option.",
+    "description": "Eclipse Vert.x 5 with vertx-web on Netty's epoll transport, one server verticle per core. Routing and query/path params through the Router API, JsonObject serialization, gzip through the server compression option, TLS through BoringSSL (netty-tcnative).",
     "repo": "https://github.com/eclipse-vertx/vert.x",
     "type": "flagship",
     "engine": "Netty",
@@ -2469,7 +2827,7 @@
   },
   "viltrum": {
     "dir": "viltrum",
-    "description": "HTTP framework for V with its own HTTP/1.1 engine: one SO_REUSEPORT epoll worker per CPU, pipelined responses batched into one write, and no allocation per request inside the framework (CI-enforced). Router with :params, middleware chain (c.next()), compile-time JSON encoder, gzip middleware on miniz. Request framing is smuggling-hardened (Content-Length and chunked) and fuzzed in CI. Default configuration.",
+    "description": "HTTP framework for V with its own engine: one SO_REUSEPORT epoll worker per CPU, pipelined responses batched into one write, and no allocation per request inside the framework (CI-enforced). Router with :params, middleware chain (c.next()), compile-time JSON encoder, gzip middleware on its own DEFLATE encoder, static files with ETag, ranges and precompressed .br/.gz copies. TLS 1.3 on the same workers: the common handshake (X25519, RSA-PSS) and the AES-GCM records on its own code, the rest on mbedtls, the TLS library V ships; certificates reloaded when the files change. HTTP/2 on the same workers and through the same router and Ctx: over TLS by ALPN and cleartext with prior knowledge, its own HPACK, flow control and RFC 9113 limits. WebSocket (RFC 6455) on the same workers, messages handed over as views into the read buffer. Request framing is smuggling-hardened (Content-Length and chunked) and fuzzed in CI. Default configuration.",
     "repo": "https://github.com/Tuntii/viltrum",
     "type": "experimental",
     "engine": "viltrum",
@@ -2497,6 +2855,20 @@
     "mode": "standard",
     "completeness": {
       "routing": false,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
+  "wastnet": {
+    "dir": "wastnet",
+    "description": "wastnet 1.0.3 annotation MVC (wastnet-mvc: @RestController / @Endpoint / @PathParam / @WebSocket) on top of its own zero-dependency Java NIO engine. Standard configuration: a single AnnotationRouterHandler is shared by four listeners - :8080 plaintext HTTP/1.1 (carrying the WebSocket upgrade), :8081 HTTP/1.1 + TLS advertising ALPN http/1.1, :8082 h2c prior-knowledge, :8443 h2 over TLS with ALPN h2. Static files go through the framework's HttpResourceRoute (sendfile zero-copy, ETag/Last-Modified); dynamic JSON responses are compressed by the framework's built-in GZIP (HttpOptions.GZIP) and JSON is serialized per request by wast, the library wastnet's own MVC layer uses. Each listener gets a worker pool sized to the 64 available cores, and HTTP/1.1 pipelining is enabled through HttpOptions.PIPELINE_ENABLED (it is off by default). Both are documented production settings.",
+    "repo": "https://github.com/wycst02/wastnet",
+    "type": "experimental",
+    "engine": "wastnet",
+    "mode": "standard",
+    "completeness": {
+      "routing": true,
       "middleware": true,
       "request": true,
       "response": true

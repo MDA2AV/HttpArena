@@ -84,9 +84,9 @@ Total body size lands between roughly 18–40 KB depending on engine formatting.
 
 Validation does not enforce byte-for-byte equality - it checks features (Content-Type, DOCTYPE, row count, runtime-row text, escape correctness, body size band). See [Validation](validation/) for exact checks.
 
-## Production vs Tuned
+## Standard vs Tuned
 
-**Production** entries should look like idiomatic templated HTML in the framework - a `.cshtml` Razor page, a Jinja2 template loaded via `flask.render_template`, an ERB view in Sinatra, a `templ` component in Go, etc. The template lives in its own file and is composed (or compiled) by the engine. Auto-escaping is on; user content goes through `@variable` / `{{ variable }}` syntax that escapes by default.
+**Standard** entries should look like idiomatic templated HTML in the framework - a `.cshtml` Razor page, a Jinja2 template loaded via `flask.render_template`, an ERB view in Sinatra, a `templ` component in Go, etc. The template lives in its own file and is composed (or compiled) by the engine. Auto-escaping is on; user content goes through `@variable` / `{{ variable }}` syntax that escapes by default.
 
 **Tuned** entries are free to skip the engine entirely - emit HTML via `StringBuilder.Append`, `bytes.Buffer.WriteString`, manual `<<` concatenation, custom byte-slice writers. This mirrors what many TechEmpower Fortunes entries do to chase peak throughput. The handler must still:
 - Query the DB per request (no pre-rendered response cache).

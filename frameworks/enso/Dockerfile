@@ -6,5 +6,6 @@ COPY deps.edn ./
 RUN clojure -X:deps prep
 
 COPY src ./src
+RUN mkdir classes && clojure -M:aot -e "(compile 'httparena.enso.core)"
 
-CMD ["clojure", "-J--enable-native-access=ALL-UNNAMED", "-M", "-m", "httparena.enso.core"]
+CMD ["clojure", "-J--enable-native-access=ALL-UNNAMED", "-M:aot", "-m", "httparena.enso.core"]

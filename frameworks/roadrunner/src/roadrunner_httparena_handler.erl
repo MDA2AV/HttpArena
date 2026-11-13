@@ -35,7 +35,25 @@ routes() ->
             path => ~"/static/*path",
             handler => roadrunner_static,
             state => #{dir => static_dir(), cache_ttl_ms => 1000}
-        }
+        },
+        %% production-stack: the edge verifies the JWT on every `/api/*`
+        %% call and forwards the user as `X-User-Id`, so nothing here
+        %% reads a token.
+        {~"/public/baseline", ?MODULE, baseline},
+        #{
+            path => ~"/public/json/:count",
+            handler => ?MODULE,
+            state => json,
+            middlewares => [roadrunner_compress]
+        },
+        #{path => ~"/api/items/:id", handler => ?MODULE, state => item_get, methods => [~"GET"]},
+        #{
+            path => ~"/api/items/:id",
+            handler => ?MODULE,
+            state => item_update,
+            methods => [~"POST"]
+        },
+        #{path => ~"/api/me", handler => ?MODULE, state => me, methods => [~"GET"]}
     ].
 
 static_dir() ->
@@ -63,7 +81,71 @@ handle_route(async_db, Req) ->
 handle_route(fortunes, Req) ->
     fortunes_endpoint(Req);
 handle_route(ws, Req) ->
-    {{websocket, roadrunner_httparena_ws, undefined}, Req}.
+    {{websocket, roadrunner_httparena_ws, undefined}, Req};
+handle_route(item_get, Req) ->
+    item_get_endpoint(Req);
+handle_route(item_update, Req) ->
+    item_update_endpoint(Req);
+handle_route(me, Req) ->
+    me_endpoint(Req).
+
+%% Cache-aside reads: a fresh cached row answers without Postgres, a
+%% miss reads the row and keeps it for the profile's TTL (1 s for items,
+%% 30 s for users). The row is cached, not the response: it is encoded
+%% on every request.
+item_get_endpoint(Req) ->
+    Id = binding_int(~"id", Req, 0),
+    cached_json({item, Id}, 1000, fun() -> load_item(Id) end, Req).
+
+me_endpoint(Req) ->
+    case roadrunner_req:header(~"x-user-id", Req) of
+        undefined ->
+            {roadrunner_resp:unauthorized(), Req};
+        UserId ->
+            Id = bin_int(UserId, 0),
+            cached_json({user, Id}, 30000, fun() -> load_user(Id) end, Req)
+    end.
+
+cached_json(Key, TtlMs, Load, Req) ->
+    case roadrunner_httparena_cache:fetch(Key, TtlMs, Load) of
+        {hit, Value} -> {roadrunner_resp:json(200, [{~"x-cache", ~"HIT"}], Value), Req};
+        {miss, Value} -> {roadrunner_resp:json(200, [{~"x-cache", ~"MISS"}], Value), Req};
+        not_found -> {roadrunner_resp:not_found(), Req}
+    end.
+
+load_item(Id) ->
+    case roadrunner_httparena_db:query(item_by_id, [Id]) of
+        {ok, _Cols, [Row]} -> {ok, roadrunner_httparena_items:row_to_json(Row)};
+        {ok, _Cols, []} -> not_found
+    end.
+
+load_user(Id) ->
+    case roadrunner_httparena_db:query(user_by_id, [Id]) of
+        {ok, _Cols, [{Id, Name, Email, Plan}]} ->
+            {ok, #{~"id" => Id, ~"name" => Name, ~"email" => Email, ~"plan" => Plan}};
+        {ok, _Cols, []} ->
+            not_found
+    end.
+
+%% Write path: update the row, then drop the cached copy so the next
+%% read misses and reloads it from Postgres.
+item_update_endpoint(Req) ->
+    Id = binding_int(~"id", Req, 0),
+    {ok, Body, Req2} = roadrunner_req:read_body(Req),
+    case json:decode(iolist_to_binary(Body)) of
+        #{~"name" := Name, ~"price" := Price, ~"quantity" := Qty} when
+            is_binary(Name), is_integer(Price), is_integer(Qty)
+        ->
+            case roadrunner_httparena_db:query(item_update, [Name, Price, Qty, Id]) of
+                {ok, 0} ->
+                    {roadrunner_resp:not_found(), Req2};
+                {ok, _Updated} ->
+                    ok = roadrunner_httparena_cache:delete({item, Id}),
+                    {roadrunner_resp:no_content(), Req2}
+            end;
+        _ ->
+            {roadrunner_resp:bad_request(), Req2}
+    end.
 
 %% roadrunner_resp has no octet-stream builder, so the buffered
 %% `{Status, Headers, Body}` triple is assembled here. `content-length`

@@ -3,7 +3,7 @@ title: Implementation Guidelines
 seo_title: "Gateway H2 Benchmark: Implementation Guide"
 description: "Endpoint contract, request and response shapes, and the anti-cheat constraints a framework must satisfy for the Gateway H2 proxy and server stack."
 ---
-{{< type-rules standard="Must ship exactly two services - one reverse proxy and one application server. The proxy must be a widely-used, production-grade server (Nginx, Caddy, Envoy, HAProxy, Traefik, etc.). No custom proxy implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as production. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, connection pooling). May tune the proxy-to-server protocol (h2c, Unix sockets, etc.). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom proxy implementations. Ranked separately from frameworks." >}}
+{{< type-rules standard="Must ship exactly two services - one reverse proxy and one application server. The proxy must be a widely-used, production-grade server (Nginx, Caddy, Envoy, HAProxy, Traefik, etc.). No custom proxy implementations. No caches, load balancers, or additional sidecars beyond the two services. The proxy must serve /static/* directly from disk; the server must serve /baseline2, /json, and /async-db using standard framework middleware." tuned="Same two-service shape as Standard. May optimize proxy configuration (worker counts, buffer sizes, keepalive tuning, connection pooling). May tune the proxy-to-server protocol (h2c, Unix sockets, etc.). Server may use any caching or optimization strategy on its own endpoints." engine="No specific rules. May use custom proxy implementations. Ranked separately from frameworks." >}}
 
 The Gateway-64 test benchmarks a **proxy + server combination** as a unit. The load generator sends TLS-encrypted HTTP/2 requests to port 8443; the proxy terminates TLS, serves `/static/*` directly from disk, and forwards dynamic endpoints to the application server over the entry's choice of internal protocol.
 
@@ -28,8 +28,10 @@ Exactly two services - nothing else. One proxy, one server. Splitting dynamic en
 |---|---|---|
 | `/static/*` | Proxy | Static files served directly from `/data/static/` |
 | `/baseline2?a=N&b=M` | Server | Query-parameter sum |
-| `/json` | Server | Dataset processing (~10 KB JSON response) |
-| `/async-db?min=N&max=M` | Server | Postgres range query |
+| `/json/{count}` | Server | Dataset processing (up to ~10 KB JSON response) |
+| `/async-db?min=N&max=M&limit=L` | Server | Postgres range query |
+
+The gateway requests `/json/{count}` without the `m` multiplier, so the server must treat a missing `m` as 1 and return `total = price × quantity`.
 
 Rules:
 
@@ -215,7 +217,7 @@ The load generator ([h2load](https://nghttp2.org/documentation/h2load-howto.html
 | Category | URIs | Count | Weight | Handled by |
 |---|---|---|---|---|
 | Static files | `/static/reset.css`, `components.css`, `app.js`, `vendor.js`, `header.html`, `hero.webp` - a mix of CSS, JS, HTML, and an image for `sendfile`-path coverage | 6 | 30% | Proxy |
-| JSON | `/json/{count}` with `count ∈ {1, 5, 10, 15, 25, 40, 50}` - 7 payload sizes, same set as the h1-isolated JSON profile | 7 | 35% | Server |
+| JSON | `/json/{count}` with `count ∈ {1, 5, 10, 15, 25, 40, 50}` - 7 payload sizes, the same counts JSON TLS rotates through | 7 | 35% | Server |
 | Baseline | `/baseline2?a=N&b=M` with 4 distinct parameter combinations to defeat URI-keyed caches | 4 | 20% | Server |
 | Async DB | `/async-db?min=10&max=50&limit=N` with `limit ∈ {10, 25, 50}` | 3 | 15% | Server |
 
@@ -237,7 +239,7 @@ The leaderboard shows a colored breakdown of how many requests each category han
 
 | Parameter | Value |
 |---|---|
-| Endpoints | `/static/*`, `/json`, `/async-db`, `/baseline2` |
+| Endpoints | `/static/*`, `/json/{count}`, `/async-db`, `/baseline2` |
 | Connections | 512, 1,024 |
 | Streams per connection | 32 (`-m 32`) |
 | Duration | 5s |

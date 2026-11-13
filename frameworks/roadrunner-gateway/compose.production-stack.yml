@@ -1,0 +1,93 @@
+# edge (nginx, auth_request to the shared authsvc) + cache (Redis) + authsvc + server (roadrunner, in-process cache-aside).
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "${EDGE_CPUSET:-0-14,64-78}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      authsvc:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "${CACHE_CPUSET:-15,79}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "${AUTH_CPUSET:-16-19,80-83}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9090/_health"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  server:
+    build: ../roadrunner
+    network_mode: host
+    cpuset: "${SERVER_CPUSET:-20-31,84-95}"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    depends_on:
+      cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/baseline11?a=1&b=1"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s

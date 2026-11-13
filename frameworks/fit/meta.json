@@ -1,0 +1,23 @@
+{
+  "display_name": "fit",
+  "language": "Go",
+  "type": "infrastructure",
+  "engine": "fit",
+  "description": "fit, a reverse proxy, static file server and API gateway built on fib, with a Go handler module compiled in as fit build does: httparena answers /baseline11 and /baseline2, httparena_json /json/{count}, serializing the body per request from the dataset read when the config is loaded. /pipeline is fit's respond handler and /static/* its static handler, which keeps small files in memory, revalidates them against the disk every second and serves the .br/.gz twins on disk off Accept-Encoding. One process, fib's default engine settings, from a .conf config: HTTP/1.1 on :8080, h1 over TLS on :8081, h2c on :8082, h2 and h3 (fib's own QUIC) on :8443, TLS on crypto/tls.",
+  "repo": "https://github.com/lesismal/fit",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json-tls",
+    "static-tls",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "baseline-h3",
+    "static-h3"
+  ],
+  "maintainers": ["lesismal"]
+}

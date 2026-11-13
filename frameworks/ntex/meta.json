@@ -10,7 +10,7 @@
     "response": true
   },
   "engine": "ntex",
-  "description": "ntex 2 on its own tokio-backed runtime, default configuration. Routing and extractors through ntex::web, JSON through serde_json, gzip negotiated in the handler at level 1, json-tls on 8081 through rustls.",
+  "description": "ntex 4 on its native runtime. Routing and extractors through ntex::web, JSON through HttpResponse::json. Static files served from disk per request, choosing a pre-compressed .br/.gz sibling off Accept-Encoding. async-db with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). fortunes rendered through an Askama template. json-tls and static-tls over HTTP/1.1 with rustls on 8081; baseline-h2 and static-h2 over h2 on 8443.",
   "repo": "https://github.com/ntex-rs/ntex",
   "enabled": true,
   "tests": [
@@ -18,10 +18,16 @@
     "async",
     "latency-1m",
     "latency-10k", "latency-500k-8cpu",
+    "pipelined",
     "limited-conn",
     "json-comp",
     "json-tls",
-    "8gbit"
+    "8gbit",
+    "static-tls",
+    "async-db",
+    "fortunes",
+    "baseline-h2",
+    "static-h2"
   ],
   "maintainers": []
 }

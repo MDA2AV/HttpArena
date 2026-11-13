@@ -13,7 +13,7 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn -B -q dependency:resolve dependency:resolve-plugins
 COPY src ./src
-RUN mvn -B -q clean package -DskipTests
+RUN mvn -B -q clean package
 
 FROM eclipse-temurin:27-jre
 WORKDIR /app
@@ -22,6 +22,7 @@ EXPOSE 8080
 # Netty safety checks off and Parallel GC, the same trade-offs the other tuned entries make
 ENTRYPOINT ["java", \
   "-XX:+UseParallelGC", \
+  "-Dio.netty.allocator.type=pooled", \
   "--enable-native-access=ALL-UNNAMED", \
   "-Dio.netty.buffer.checkBounds=false", \
   "-Dio.netty.buffer.checkAccessible=false", \

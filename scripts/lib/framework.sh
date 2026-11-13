@@ -130,7 +130,15 @@ framework_start() {
         fi
     fi
 
-    docker run "${args[@]}" "$IMAGE_NAME" >/dev/null
+    # A diagnostic may hand the image a command of its own — an explicit worker
+    # count, say — to run the same profile at several settings. Unset is the
+    # normal path, and then the image's own CMD runs untouched.
+    if [ -n "${FRAMEWORK_CMD_ARGS:-}" ]; then
+        # shellcheck disable=SC2086  # word-split on purpose: this is an argument list
+        docker run "${args[@]}" "$IMAGE_NAME" $FRAMEWORK_CMD_ARGS >/dev/null
+    else
+        docker run "${args[@]}" "$IMAGE_NAME" >/dev/null
+    fi
 }
 
 framework_stop() {

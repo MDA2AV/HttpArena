@@ -1,0 +1,5 @@
+{
+  "framework": "cnetmod",
+  "tls": "pass",
+  "check": "none"
+}
