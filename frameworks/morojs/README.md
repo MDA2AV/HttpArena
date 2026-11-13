@@ -85,11 +85,8 @@ MoroJS on its native HTTP engine, clustered by the framework itself.
   HTTP/1.1 beside it. Each is its own process for the same one-configuration-per-process reason,
   clustered on worker threads like the other listeners.
 - `/echo` sends back `req.rawBody`, the request body as it arrived, `Content-Length` or chunked
-  alike. The engine collects the body where its reads land, and with `server.lendBodies: true`
-  (`@morojs/engine` 1.1.19) lends that storage to JavaScript for the length of the request:
-  `req.rawBody` is a Buffer view of it, nothing is allocated or copied, and the memory goes back
-  to the engine with the response instead of waiting for a garbage collection. A Buffer handed
-  to `res.send()` goes out `application/octet-stream` through the framework's prepared reply.
+  alike, in the framework's default body handling. A Buffer handed to `res.send()` goes out
+  `application/octet-stream` through the framework's prepared reply.
 - `/ws` is the engine's own RFC 6455 support through `app.websocket()` with `{ raw: true }`, so a
   text frame reaches the handler as the string it carried and `socket.send()` returns it as one.
   The engine corks the connection for the duration of each read (`@morojs/engine` 1.1.14), so

@@ -250,11 +250,9 @@ function defineRoutes(app) {
     }
 
     // 8gbit: the body exactly as it arrived, Content-Length or chunked, sent
-    // back as the same bytes. req.rawBody is the body undecoded; with
-    // server.lendBodies it is the engine's own storage, lent for the length
-    // of the request and released with it, which is all an echo needs. A
-    // Buffer sent as is goes out application/octet-stream through the
-    // framework's prepared reply.
+    // back as the same bytes. req.rawBody is the body undecoded, a Buffer of
+    // its own. A Buffer sent as is goes out application/octet-stream through
+    // the framework's prepared reply.
     app.post('/echo').handler((req, res) => {
         res.send(req.rawBody ?? Buffer.alloc(0));
     });
@@ -459,11 +457,6 @@ const app = await createApp({
         // second was the profile's tail (p99 of 0.8 s on gateway-h3, 3.8 s on
         // production-stack). The harness raises somaxconn to 65535 for this.
         backlog: 16384,
-        // A body the framework does not parse is lent, not handed over: no
-        // buffer is allocated for it and its memory goes back with the
-        // request instead of waiting for a garbage collection. Nothing here
-        // keeps a body past its response.
-        lendBodies: true,
         ...server,
     },
     performance: { clustering: { enabled: true, workers } },
