@@ -1,4 +1,6 @@
 using System.Text.Json;
+using HttpArena.Services;
+using HttpArena.Types;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -8,6 +10,15 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
+
+// The gateway handlers are aspnet-minimal's, written against its services;
+// they are registered here the way aspnet-minimal registers them.
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
+
+builder.Services.AddSingleton<DatabaseService>();
+builder.Services.AddSingleton<DatasetService>();
+builder.Services.AddSingleton<ItemService>();
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -67,7 +78,11 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
 
 var app = builder.Build();
 
-AppData.Load();
+// Load the dataset and open the Postgres pool at startup instead of on the
+// first request. The /api routes below run their queries on the same pool.
+_ = app.Services.GetRequiredService<DatasetService>();
+_ = app.Services.GetRequiredService<ItemService>();
+var pg = app.Services.GetRequiredService<DatabaseService>().Postgres;
 
 // ── gateway-64 routes (unchanged) ───────────────────────────────────────────
 
@@ -133,9 +148,9 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
             async cancel =>
             {
                 wasMiss = true;
-                if (AppData.PgDataSource is null) return "";
+                if (pg is null) return "";
 
-                await using var cmd = AppData.PgDataSource.CreateCommand(
+                await using var cmd = pg.CreateCommand(
                     "SELECT id, name, category, price, quantity, active, rating_score, rating_count " +
                     "FROM items WHERE id = $1 LIMIT 1");
                 cmd.Parameters.AddWithValue(id);
@@ -195,13 +210,13 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
             return;
         }
 
-        if (AppData.PgDataSource is null)
+        if (pg is null)
         {
             ctx.Response.StatusCode = 503;
             return;
         }
 
-        await using var cmd = AppData.PgDataSource.CreateCommand(
+        await using var cmd = pg.CreateCommand(
             "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4");
         cmd.Parameters.AddWithValue(update.Name);
         cmd.Parameters.AddWithValue(update.Price);
@@ -242,9 +257,9 @@ if (!string.IsNullOrWhiteSpace(redisUrl))
             async cancel =>
             {
                 wasMiss = true;
-                if (AppData.PgDataSource is null) return "";
+                if (pg is null) return "";
 
-                await using var cmd = AppData.PgDataSource.CreateCommand(
+                await using var cmd = pg.CreateCommand(
                     "SELECT id, name, email, plan FROM users WHERE id = $1 LIMIT 1");
                 cmd.Parameters.AddWithValue(uid);
 
