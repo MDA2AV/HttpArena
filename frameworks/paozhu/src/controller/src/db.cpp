@@ -63,13 +63,12 @@ namespace
 
     // paozhu's ORM pool already enforces per-slot quotas with asynchronous
     // backoff in async_get_pg_select_conn(). What the handlers still need is a
-    // process-wide ceiling under Postgres' max_connections:
-    //   * DATABASE_MAX_CONN is the harness budget; 24 slots stay reserved for
-    //     the edit pool, readiness probes and PG maintenance.
-    //   * the pool's TOTAL select quota is the second ceiling. Never use the
-    //     smallest per-slot quota here: budget/slots shrinks as orm_ioc_num
-    //     grows (4 slots -> 63, 16 -> 15, 64 -> 3), so adding io threads would
-    //     lower the cap while the pool itself can still serve 255 queries.
+    // process-wide ceiling under Postgres' max_connections: the pool's TOTAL
+    // select quota (parsed from orm.conf) minus 24 backends reserved for the
+    // edit pool, readiness probes and PG maintenance. Never use the smallest
+    // per-slot quota here: budget/slots shrinks as orm_ioc_num grows
+    // (4 slots -> 63, 16 -> 15, 64 -> 3), so adding io threads would lower the
+    // cap while the pool itself can still serve 255 queries.
     // Waiting must be a coroutine on the request's own executor: paozhu runs
     // one thread per io_context, so a blocking semaphore would pin that thread
     // and the coroutine holding a ticket could never resume to release it.
@@ -84,10 +83,15 @@ namespace
         static int limit()
         {
             static const int value = [] {
+                // Single source of truth: the pool's parsed quota, i.e. the
+                // maxpool that entrypoint.sh rendered into orm.conf. The pool
+                // splits it across slots, so sum the slots back up instead of
+                // copying one slot's quota (which would scale the cap down as
+                // orm_ioc_num grows). DATABASE_MAX_CONN is only a fallback for
+                // a process started without orm.conf (no DB profile).
                 const char *env = std::getenv("DATABASE_MAX_CONN");
-                int budget = env ? std::atoi(env) : 256;
-                budget = std::clamp(budget, 8, 256);
-                int cap = budget > 24 ? budget - 24 : budget;
+                int fallback = std::clamp(env ? std::atoi(env) : 256, 8, 256);
+                int cap = fallback > 24 ? fallback - 24 : fallback;
 
                 auto &pools = orm::get_orm_conn_pool_obj();
                 auto it     = pools.find("pg");
@@ -99,9 +103,16 @@ namespace
                     {
                         total += pool.slot_max_of(1, static_cast<unsigned int>(i));// 1 = select role
                     }
-                    if (total > 0 && total < cap)
+                    if (total > 0)
                     {
-                        cap = static_cast<int>(total);
+                        // Leave 24 backends for the edit pool, readiness probes
+                        // and PG maintenance: orm.conf's 255 would otherwise
+                        // consume all of max_connections=256.
+                        const long long usable = total > 24 ? total - 24 : total;
+                        if (usable < cap)
+                        {
+                            cap = static_cast<int>(usable);
+                        }
                     }
                 }
                 return cap;
@@ -190,7 +201,7 @@ namespace
         }
     };
 
-    void respond_db_error(const std::shared_ptr<httppeer> &peer, std::string_view message)
+    void respond_db_error(const std::shared_ptr<http::httppeer> &peer, std::string_view message)
     {
         peer->type("text/plain; charset=utf-8");
         peer->status(503);
@@ -202,7 +213,7 @@ namespace
     // returns 0 rows, so checking rows.empty() would mistake a legitimate
     // empty /async-db result for an error; iserror / error_msg are the signal.
     template <typename Row>
-    asio::awaitable<bool> fetch_rows(const std::shared_ptr<httppeer> &peer,
+    asio::awaitable<bool> fetch_rows(const std::shared_ptr<http::httppeer> &peer,
                                      const std::string &sql,
                                      std::vector<Row> &rows)
     {
