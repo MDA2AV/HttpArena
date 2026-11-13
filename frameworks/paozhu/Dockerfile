@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Pinned so mini_project.sh, the controller generator and the CMake entry point
 # stay in sync with the scaffold this entry was written against.
-ARG PAOZHU_REF=49e4b81553837d35b3c8725eae916e5cb88a978b
+ARG PAOZHU_REF=6543f280384703faa8aed86ebfd115ff90eb9538
 WORKDIR /paozhu
 # Prefer a source archive shipped in the build context (offline / slow-GitHub
 # environments); otherwise fetch the pinned revision from codeload. The direct
@@ -66,6 +66,11 @@ COPY src/CMakeLists.txt /paozhu/CMakeLists.txt
 # The foreground entry itself is pinned too: it resolves argv[1] to a conf file
 # and installs the SIGTERM handler that the two-conf-dir layout relies on.
 COPY src/startup/main_docker.cpp /paozhu/startup/main_docker.cpp
+# Benchmark-specific HTTP/2 send-ring parameters (32 slots / 24 backpressure / 24 feed).
+# Override the upstream header so these macros are actually compiled in. Requires the
+# matching 32-slot http2_ring_queue.h/.cpp in the source tree: upstream 49e4b815 hardcodes
+# a 16-slot ring, and this header alone cannot change its capacity.
+COPY cost_define.h /paozhu/common/cost_define.h
 RUN cmake -B build -S . \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CXX_FLAGS="-O3 -march=native" && \
