@@ -13,7 +13,7 @@ RUN apk add --no-cache musl-dev pkgconfig
 COPY Cargo.toml .
 RUN mkdir src && echo 'fn main() {}' > src/main.rs && \
     cargo build --release && \
-    rm -rf src target/release/deps/authsvc*
+    cargo clean --release -p authsvc && rm -rf src
 
 # Now add the real source and rebuild.
 COPY src ./src
