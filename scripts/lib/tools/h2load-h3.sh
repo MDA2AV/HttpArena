@@ -1,8 +1,8 @@
 # scripts/lib/tools/h2load-h3.sh — h2load built with ngtcp2 for HTTP/3.
 #
 # Shares the same binary family as h2load but runs with --alpn-list=h3 to
-# negotiate HTTP/3 over QUIC. Output format differs from plain h2load — the
-# latency table uses "request :" instead of "time for request:".
+# negotiate HTTP/3 over QUIC. The shared parser accepts both old summary
+# tables and the newer tables with latency percentiles.
 
 : "${H2LOAD_H3_CMD:=}"
 
@@ -49,33 +49,11 @@ h2load_h3_build_args() {
 }
 
 h2load_h3_run() {
-    timeout 45 taskset -c "$GCANNON_CPUS" "$@" 2>&1 || true
+    timeout 45 taskset -c "$GCANNON_CPUS" "$@" 2>&1
 }
 
 # ── Parse output ────────────────────────────────────────────────────────────
 
 h2load_h3_parse() {
-    local output="$2"  # $1 = endpoint unused
-
-    # rps from 2xx/duration — see h2load.sh for rationale (avoid inflating
-    # rps when the server is serving 4xx/5xx responses).
-    local duration_secs ok
-    duration_secs=$(echo "$output" | grep -oP 'finished in \K[\d.]+' | head -1)
-    duration_secs=${duration_secs:-1}
-    ok=$(echo "$output" | grep -oP '\d+(?= 2xx)' | head -1)
-    ok=${ok:-0}
-    echo "rps=$(awk -v ok="$ok" -v dur="$duration_secs" \
-        'BEGIN { if (dur+0 > 0) printf "%d", ok/dur; else print 0 }' 2>/dev/null || echo 0)"
-
-    # h3 emits a tabular "request :" line with mean at column 8 and p99 at col 7.
-    echo "avg_lat=$(echo "$output" | awk '/^\s*request\s*:/ { print $8; exit }')"
-    echo "p99_lat=$(echo "$output" | awk '/^\s*request\s*:/ { print $7; exit }')"
-
-    echo "reconnects=0"
-    echo "bandwidth=$(echo "$output" | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' | head -1 || echo 0)"
-
-    echo "status_2xx=$(echo "$output" | grep -oP '\d+(?= 2xx)' | head -1 || echo 0)"
-    echo "status_3xx=$(echo "$output" | grep -oP '\d+(?= 3xx)' | head -1 || echo 0)"
-    echo "status_4xx=$(echo "$output" | grep -oP '\d+(?= 4xx)' | head -1 || echo 0)"
-    echo "status_5xx=$(echo "$output" | grep -oP '\d+(?= 5xx)' | head -1 || echo 0)"
+    python3 "${BASH_SOURCE[0]%/*}/h2load_parse.py" "$1" <<< "$2"
 }

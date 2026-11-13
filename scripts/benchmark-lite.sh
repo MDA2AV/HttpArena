@@ -220,11 +220,11 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
         return 0
     fi
 
-    framework_build
+    framework_build || return 1
 
     local need_pg=false
     if framework_subscribes_to async-db; then need_pg=true; fi
-    if $need_pg; then postgres_start; fi
+    if $need_pg; then postgres_start || return 1; fi
 
     local profiles_to_run
     if [ "${#PROFILE_LIST[@]}" -gt 0 ]; then
@@ -233,7 +233,7 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
         profiles_to_run=("${PROFILE_ORDER[@]}")
     fi
 
-    local profile
+    local profile failed_profiles=0
     for profile in "${profiles_to_run[@]}"; do
         [ -n "${PROFILES[$profile]+x}" ] || { warn "unknown profile: $profile"; continue; }
         framework_subscribes_to "$profile" || { info "skip: $fw does not subscribe to $profile"; continue; }
@@ -242,7 +242,7 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
         IFS=',' read -ra CONN_COUNTS <<< "$PROF_CONNS"
         local CONNS
         for CONNS in "${CONN_COUNTS[@]}"; do
-            run_one "$profile" "$CONNS" || continue
+            run_one "$profile" "$CONNS" || failed_profiles=$((failed_profiles + 1))
         done
     done
 
@@ -250,6 +250,7 @@ import json; print(str(json.load(open('$meta')).get('enabled', True)).lower())" 
     # statement, the &&-list would make run_framework return 1 for non-DB
     # frameworks and kill the script under `set -e` after a successful run.
     if $need_pg; then postgres_stop; fi
+    [ "$failed_profiles" -eq 0 ]
 }
 
 # ── Single (profile, conns) iteration ──────────────────────────────────────
@@ -264,8 +265,9 @@ run_one() {
     tool=$(endpoint_tool "$endpoint")
 
     banner "$FRAMEWORK / $profile / ${CONNS}c (tool=$tool)"
+    if [ "$tool" = h2load ]; then h2load_check_version || return 1; fi
 
-    framework_start "$endpoint" "$PROF_CPU"
+    framework_start "$endpoint" "$PROF_CPU" || return 1
     if ! framework_wait_ready "$endpoint"; then
         warn "$FRAMEWORK did not come up for $profile; skipping"
         dump_container_logs "$CONTAINER_NAME" "$FRAMEWORK"
@@ -287,19 +289,28 @@ run_one() {
         echo ""; echo "[run $run/$RUNS]"
         stats_start "$CONTAINER_NAME"
 
-        local output
-        output=$("${tool//-/_}_run" "${gc_args[@]}")
+        local output run_exit=0 metrics
+        output=$("${tool//-/_}_run" "${gc_args[@]}") || run_exit=$?
         stats_stop
 
         echo "$output" | grep -Ev '^(Warm-up|Main benchmark duration|Stopped all clients|progress: [0-9]+% of clients started|spawning thread #[0-9]+|[0-9]*Warm-up phase is over for thread #[0-9]+)' || true
         info "CPU $STATS_AVG_CPU | Mem $STATS_PEAK_MEM"
         [ -n "$STATS_BREAKDOWN" ] && info "  $STATS_BREAKDOWN"
 
+        if [ "$run_exit" -ne 0 ]; then
+            warn "run $run failed: load generator exited with status $run_exit"
+            continue
+        fi
+        if ! metrics=$("${tool//-/_}_parse" "$endpoint" "$output"); then
+            warn "run $run failed: invalid load-generator output"
+            continue
+        fi
+
         declare -A m=()
         local line
         while IFS= read -r line; do
             [[ "$line" == *=* ]] && m["${line%%=*}"]="${line#*=}"
-        done < <("${tool//-/_}_parse" "$endpoint" "$output")
+        done <<< "$metrics"
 
         local rps_int=${m[rps]:-0}
         if [ "$rps_int" -gt "$best_rps" ] 2>/dev/null; then
@@ -312,6 +323,12 @@ run_one() {
         fi
         sleep 2
     done
+
+    if [ "$best_rps" -lt 0 ]; then
+        warn "$profile/$CONNS: no valid measurements; no result saved"
+        framework_stop
+        return 1
+    fi
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
@@ -353,6 +370,7 @@ save_result() {
   "rps": $best_rps,
   "avg_latency": "${BEST_M[avg_lat]:-}",
   "p99_latency": "${BEST_M[p99_lat]:-}",
+  "max_latency": "${BEST_M[max_lat]:-}",
   "cpu": "$best_cpu",
   "memory": "$best_mem",
   "connections": $CONNS,
@@ -377,15 +395,16 @@ EOF
 # ── Driver: either one framework, or loop through every enabled one ────────
 
 FRAMEWORK=""
+failed_frameworks=0
 if [ -z "$FRAMEWORK_ARG" ]; then
     info "no framework argument — running every enabled framework"
     for fw_dir in "$ROOT_DIR"/frameworks/*/; do
         [ -d "$fw_dir" ] || continue
         fw=$(basename "$fw_dir")
-        run_framework "$fw" || warn "$fw run failed, continuing"
+        run_framework "$fw" || { warn "$fw run failed, continuing"; failed_frameworks=$((failed_frameworks + 1)); }
     done
 else
-    run_framework "$FRAMEWORK_ARG"
+    run_framework "$FRAMEWORK_ARG" || failed_frameworks=$((failed_frameworks + 1))
 fi
 
 if [ "$SAVE_RESULTS" = "true" ]; then
@@ -393,4 +412,8 @@ if [ "$SAVE_RESULTS" = "true" ]; then
     python3 "$SCRIPT_DIR/rebuild_site_data.py" --root "$ROOT_DIR"
 fi
 
+if [ "$failed_frameworks" -gt 0 ]; then
+    warn "$failed_frameworks framework runs failed"
+    exit 1
+fi
 info "done"

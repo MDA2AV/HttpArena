@@ -1,0 +1,31 @@
+name: Benchmark tool checks
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/benchmark-tools.yml
+      - frameworks/_shared/authsvc/**
+      - docker/h2load.Dockerfile
+      - scripts/benchmark.sh
+      - scripts/benchmark-lite.sh
+      - scripts/composite_delta.py
+      - scripts/lib/common.sh
+      - scripts/lib/tools/h2load*
+      - scripts/tests/**
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: bash -n scripts/benchmark.sh scripts/benchmark-lite.sh scripts/lib/common.sh scripts/lib/tools/h2load.sh scripts/lib/tools/h2load-h3.sh
+      - name: Build auth sidecar
+        run: docker build -t httparena-authsvc:test frameworks/_shared/authsvc
+      - name: Build HTTP/2 load generator
+        run: docker build -t httparena-h2load:test -f docker/h2load.Dockerfile docker
+      - name: Test parsers, exit codes and images
+        env:
+          HTTPARENA_TEST_AUTHSVC_IMAGE: httparena-authsvc:test
+          HTTPARENA_TEST_H2LOAD_IMAGE: httparena-h2load:test
+        run: python3 -B -m unittest discover -s scripts/tests -p 'test_*.py' -v
