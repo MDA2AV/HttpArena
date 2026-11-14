@@ -1,6 +1,9 @@
 # Sharaf on Potateh
 
-Sharaf is a simple Scala 3 web server. This version is compiled to native code with Scala Native.
+Sharaf is a simple Scala 3 web server. This version uses Sharaf 0.22.0, Scala
+3.10.0, sbt 1.12 and Scala Native 0.5.12. The executable is linked in
+`release-full` mode. The image is built and runs on Alpine, so the runtime
+contains no JVM.
 
 ```bash
 ./scripts/validate.sh sharaf-potateh

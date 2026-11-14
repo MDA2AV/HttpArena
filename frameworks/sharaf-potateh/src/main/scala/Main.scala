@@ -1,9 +1,3 @@
-//> using scala 3.9.0
-//> using platform native
-//> using nativeVersion 0.5.12
-//> using dep ba.sake::sharaf-potateh::0.21.0
-//> using options -Yretain-trees
-
 import java.net.InetSocketAddress
 import ba.sake.potateh.ServerConfig
 import ba.sake.querson.QueryStringRW

@@ -1,15 +1,13 @@
-FROM ubuntu:24.04 AS build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates clang curl gzip libgc-dev libunwind-dev openjdk-21-jdk && \
-    rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://github.com/VirtusLab/scala-cli/releases/download/v1.16.0/scala-cli-x86_64-pc-linux.gz | gzip -d > /usr/local/bin/scala-cli && \
-    chmod +x /usr/local/bin/scala-cli
+FROM sbtscala/scala-sbt:eclipse-temurin-alpine-21.0.11_10_1.12.15_3.3.8 AS build
+RUN apk add --no-cache clang gcc
 WORKDIR /app
-COPY Main.scala .
-RUN scala-cli --power package Main.scala --native --native-mode release-fast --server=false -o /app/server
+COPY build.sbt .
+COPY project ./project
+RUN sbt update
+COPY src ./src
+RUN sbt -batch nativeLink
 
-FROM ubuntu:24.04
-RUN apt-get update && apt-get install -y --no-install-recommends libgc1 libunwind8 && rm -rf /var/lib/apt/lists/*
-COPY --from=build /app/server /server
+FROM alpine:3.23
+COPY --from=build /app/target/native/server /server
 EXPOSE 8080
 ENTRYPOINT ["/server"]
