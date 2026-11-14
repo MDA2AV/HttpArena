@@ -1,6 +1,6 @@
-[2026-10-24T22:14:47Z INFO  httparena_trillium_tuned] starting trillium-tuned via server(): 64 reuseport worker(s) + shared runtime for h3
-[2026-10-24T22:14:47Z INFO  trillium_static::handler] serving files within "/data/static"
-[2026-10-24T22:14:47Z INFO  trillium_server_common::listener_config::reuseport] reuseport: 64 per-core worker(s) across 4 listener(s)
-[2026-10-24T22:14:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
-[2026-10-24T22:14:55Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
-[2026-10-24T22:15:03Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-11-13T21:48:40Z INFO  httparena_trillium_tuned] starting trillium-tuned via server(): 64 reuseport worker(s) + shared runtime for h3
+[2026-11-13T21:48:40Z INFO  trillium_static::handler] serving files within "/data/static"
+[2026-11-13T21:48:40Z INFO  trillium_server_common::listener_config::reuseport] reuseport: 64 per-core worker(s) across 4 listener(s)
+[2026-11-13T21:48:40Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-11-13T21:48:48Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }
+[2026-11-13T21:48:55Z ERROR trillium_server_common::running_config] acceptor error from 127.0.0.1: Custom { kind: UnexpectedEof, error: "tls handshake eof" }

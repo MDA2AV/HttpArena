@@ -10,14 +10,15 @@
     "response": true
   },
   "engine": "ntex",
-  "description": "ntex 4 on its native runtime. Routing and extractors through ntex::web, JSON through HttpResponse::json. Static files served from disk per request, choosing a pre-compressed .br/.gz sibling off Accept-Encoding. async-db with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). fortunes rendered through an Askama template. json-tls and static-tls over HTTP/1.1 with rustls on 8081; baseline-h2 and static-h2 over h2 on 8443.",
+  "description": "ntex 4 on its native runtime. Routing and extractors through ntex::web, JSON through HttpResponse::json. Static files served from disk per request, choosing a pre-compressed .br/.gz sibling off Accept-Encoding. async-db with deadpool's unmanaged pool (sized from DATABASE_MAX_CONN). fortunes rendered through an Askama template. json-tls and static-tls over HTTP/1.1 with rustls on 8081.",
   "repo": "https://github.com/ntex-rs/ntex",
   "enabled": true,
   "tests": [
     "baseline",
     "async",
     "latency-1m",
-    "latency-10k", "latency-500k-8cpu",
+    "latency-10k",
+    "latency-500k-8cpu",
     "pipelined",
     "limited-conn",
     "json-comp",
@@ -25,9 +26,7 @@
     "8gbit",
     "static-tls",
     "async-db",
-    "fortunes",
-    "baseline-h2",
-    "static-h2"
+    "fortunes"
   ],
   "maintainers": []
 }
