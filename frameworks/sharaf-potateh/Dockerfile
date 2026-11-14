@@ -5,7 +5,7 @@ COPY build.sbt .
 COPY project ./project
 RUN sbt update
 COPY src ./src
-RUN sbt -batch nativeLink
+RUN sbt -batch -J-Xmx4G nativeLink
 
 FROM alpine:3.23
 COPY --from=build /app/target/native/server /server
