@@ -2117,7 +2117,7 @@ def write_llms_txt(tree, content, families, fw_lang, current, round_name, fw_ent
         + ", pinned to dedicated cores, one connection count per run. Round: " + round_name + ".",
         "",
         "The leaderboard at " + SITE + "/ is rendered client-side, so the ranking below is the "
-        "same data as text. Scores are the composite: each profile is worth 100 to the best entry "
+        "same data as text. Scores are the composite: each profile is worth 1,000 to the best entry "
         "in the field and a framework's score is the sum over the profiles of that family, scaled "
         "by its completeness factor - the entry loses 2.5% for each of routing, middleware, the "
         "request it hands you and the response it builds that it does not do, so the factor runs "
@@ -2254,7 +2254,7 @@ def _board_faq(rows, fw_lang, current, round_name, n_profiles, n_entries):
         ("What is the fastest web framework?",
          "%s%s leads the %s composite with %.0f, ahead of %s and %s. The composite adds a "
          "normalized score over every profile of the family, where the leader of each profile "
-         "scores 100, so it ranks an entry over the whole suite instead of on one test. The "
+         "scores 1,000, so it ranks an entry over the whole suite instead of on one test. The "
          "sum is then reduced by 2.5%% for each of routing, middleware, the request it hands you "
          "and the response it builds that the entry does not do for you, so a framework that "
          "does none of the four keeps 90%% of what it scored on throughput."
@@ -2362,7 +2362,7 @@ def build_index_page(rows, fw_lang, current, round_name, n_profiles, n_entries,
     # with the same strings so the pre-rendered page and the rendered one say
     # the same thing.
     blurb = ("Normalized score summed across " + SCOPE_BLURB[DEFAULT_SCOPE] +
-             " (each profile worth 100 to its leader in the full field, so filtering does not "
+             " (each profile worth 1,000 to its leader in the full field, so filtering does not "
              'change the numbers), per framework type. Higher is better. '
              '<a href="/docs/scoring/composite-score/">How it works →</a>')
 
@@ -2699,7 +2699,7 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
 
     if ranks:
         out.append('<h2 id="rank">Composite rank</h2>')
-        out.append("<p>Each profile of a family is worth 100 to the entry that leads it, and the "
+        out.append("<p>Each profile of a family is worth 1,000 to the entry that leads it, and the "
                    "composite is the sum over the family, less 2.5% for each of routing, "
                    "middleware, request and response the entry does not do for you - its "
                    '<a href="/docs/scoring/completeness/">completeness factor</a>, which the '
