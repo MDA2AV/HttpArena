@@ -22,7 +22,42 @@ An entry subscribes to the suites it wants with `spec` in `meta.json`, a list li
 "spec": ["h1", "h2", "h3", "ws"]
 ```
 
-A suite the entry does not list shows as not measured in its column. Only `h1` and `h2` need `/spec`. The compliance columns themselves are being added to the validation run - until they land, validation checks the route but no score is recorded.
+A suite the entry does not list shows as not measured in its column. Only `h1` and `h2` need `/spec`.
+
+## Running the suites
+
+On a PR, `/spec -f <entry>` runs the suites the entry lists, and a `/benchmark` without `-t` runs them after the benchmark. With `--save` the scores are committed to the PR as `site/data/spec/<entry>.json`, the way benchmark results are saved to `site/data/results/`. Locally:
+
+```bash
+./scripts/spec.sh <entry>          # scores in results/spec/<entry>.json
+./scripts/spec.sh <entry> --save   # and in site/data/spec/<entry>.json
+```
+
+Each suite runs against a fresh container, with the tools pinned in `scripts/spec.sh`: Http11Probe at a fixed commit, h2spec 2.6.0, h3spec v0.1.15 and Autobahn 25.10.1. Autobahn runs its cases 1-7 and 10: case 9 is a throughput test and 12-13 cover permessage-deflate, which no profile asks for.
+
+## The scores
+
+```json
+{
+  "framework": "aspnet-minimal",
+  "suites": {
+    "h1": {"tool": "http11probe", "version": "d50d818", "passed": 144, "total": 159, "warnings": 19, "failed": ["COMP-OPTIONS-STAR", "..."]},
+    "h2": {"tool": "h2spec", "version": "2.6.0", "passed": 146, "total": 146, "failed": [],
+           "listeners": {"tls": {"passed": 146, "total": 146, "failed": []}, "h2c": {"passed": 146, "total": 146, "failed": []}}},
+    "h3": {"tool": "h3spec", "version": "v0.1.15", "passed": 43, "total": 85, "failed": ["..."]}
+  }
+}
+```
+
+- **`passed` out of `total`**, and the IDs of the tests that failed, for every suite the entry lists.
+- **`h1`** counts the probe's scored tests. A warning - the RFC allows both the strict and the lenient behaviour - counts as passed.
+- **`h2`** is scored on each HTTP/2 listener the entry runs; the score is the weaker of the two, and both are kept under `listeners`.
+- **`h3`** leaves out the tests h3spec reports as pending (0-RTT, extra streams it could not open).
+- **`ws`** leaves out Autobahn's informational cases, which pass or fail no one, and lists `non_strict` ones, which pass.
+- **`error`** in place of a score means the suite could not be measured at all - the server never came up, or the WebSocket handshake was refused on every case. It is not a score of zero.
+- **`crashed`** means the server stopped running during the suite. The tests it could no longer answer count as failed.
+
+The board columns that read these files are still to come.
 
 {{< cards >}}
   {{< card link="implementation" title="Implementation" subtitle="The /spec contract: methods, ports, bodies, the header echo, and why each part exists." icon="code" >}}

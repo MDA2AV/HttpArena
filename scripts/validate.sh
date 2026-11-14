@@ -154,37 +154,15 @@ has_test() {
 # The compliance suites the entry subscribes to: "spec" in meta.json, a list
 # like "tests". Checked the same way and for the same reason -- a typo or a
 # suite with nothing to run against would otherwise drop a column without a
-# word. See site/content/docs/test-profiles/compliance/.
-SPEC_KNOWN="h1 h2 h3 ws"
-SPEC_SUITES=$(python3 -c "
-import json
-v = json.load(open('$META_FILE')).get('spec', [])
-print(' '.join(v) if isinstance(v, list) and all(isinstance(s, str) for s in v) else '!')")
-if [ "$SPEC_SUITES" = "!" ]; then
+# word. The table of suites lives in lib/spec.sh, shared with spec.sh.
+source "$SCRIPT_DIR/lib/spec.sh"
+if ! spec_load "$META_FILE"; then
     echo "FAIL: meta.json \"spec\" must be a list of compliance suites, e.g. [\"h1\", \"h2\"] (known: $SPEC_KNOWN)"
     exit 1
 fi
-has_spec() {
-    [[ " $SPEC_SUITES " == *" $1 "* ]]
-}
-SPEC_BAD=()
-for s in $SPEC_SUITES; do
-    case "$s" in
-        h1) spec_need="baseline pipelined limited-conn json-comp async async-db fortunes latency-1m latency-10k latency-500k-8cpu" ;;
-        h2) spec_need="baseline-h2 static-h2 baseline-h2c json-h2c" ;;
-        h3) spec_need="baseline-h3 static-h3" ;;
-        ws) spec_need="echo-ws echo-ws-pipeline echo-ws-limited" ;;
-        *)  SPEC_BAD+=("$s: not a compliance suite (known: $SPEC_KNOWN)"); continue ;;
-    esac
-    spec_ok=false
-    for p in $spec_need; do
-        if has_test "$p"; then spec_ok=true; fi
-    done
-    $spec_ok || SPEC_BAD+=("$s: the entry runs no profile it could be run against (needs one of: $spec_need)")
-done
-if [ ${#SPEC_BAD[@]} -gt 0 ]; then
+if ! SPEC_PROBLEMS=$(spec_check "$TESTS"); then
     echo "FAIL: meta.json \"spec\" lists suite(s) that cannot run:"
-    printf '      %s\n' "${SPEC_BAD[@]}"
+    printf '%s\n' "$SPEC_PROBLEMS" | sed 's/^/      /'
     exit 1
 fi
 if [ -n "$SPEC_SUITES" ]; then
@@ -2659,10 +2637,10 @@ spec_h2_checks() {
 if [ -n "$SPEC_SUITES" ] && [ "$GATEWAY_ONLY" = "false" ]; then
     SPEC_DOCS="$DOCS_BASE/compliance/validation"
     echo "[test] compliance suites (spec: $SPEC_SUITES)"
-    if has_spec h1; then
+    if spec_has h1; then
         spec_h1_checks
     fi
-    if has_spec h2; then
+    if spec_has h2; then
         if has_test "baseline-h2" || has_test "static-h2"; then
             spec_h2_checks "h2 :$H2PORT" "https://localhost:$H2PORT" -k --http2
         fi
@@ -2670,10 +2648,10 @@ if [ -n "$SPEC_SUITES" ] && [ "$GATEWAY_ONLY" = "false" ]; then
             spec_h2_checks "h2c :$H2C_PORT" "http://localhost:$H2C_PORT" --http2-prior-knowledge
         fi
     fi
-    if has_spec h3; then
+    if spec_has h3; then
         echo "  NOTE [spec h3]: no route to check - h3spec runs against the QUIC listener on :$H2PORT"
     fi
-    if has_spec ws; then
+    if spec_has ws; then
         echo "  NOTE [spec ws]: no route to check - Autobahn runs against the /ws echo"
     fi
 fi
