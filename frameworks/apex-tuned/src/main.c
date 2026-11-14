@@ -439,36 +439,13 @@ static void* worker_main(void *arg) {
 
     while (g_running) {
         uint64_t now_us = clock_monotonic_us();
-        timer_entry_t te;
-        while (timer_heap_peek(&w->timers, &te)) {
-            if (te.expire_at_us > now_us) break;
-            timer_heap_pop(&w->timers, &te);
-            conn_t *c = (conn_t*)te.conn_ptr;
-            if (c && c->gen == te.conn_gen && c->parked_in_timer) {
-                handle_timer_expiration(w, c, te.delay_ms);
-            }
-        }
-
         int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
 
         int nfds;
         if (timeout_us < 0) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, -1);
-        } else if (timeout_us <= 200) {
+        } else if (timeout_us == 0) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
-#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__)
-            if (nfds == 0 && timeout_us > 0) {
-                for (int spin = 0; spin < 16; spin++) {
-                    __builtin_ia32_pause();
-                }
-            }
-#elif defined(__aarch64__)
-            if (nfds == 0 && timeout_us > 0) {
-                for (int spin = 0; spin < 16; spin++) {
-                    asm volatile("yield" ::: "memory");
-                }
-            }
-#endif
         } else {
 #if defined(__linux__)
             struct timespec ts = {
@@ -476,6 +453,10 @@ static void* worker_main(void *arg) {
                 .tv_nsec = (long)((timeout_us % 1000000) * 1000)
             };
             nfds = epoll_pwait2(w->epoll_fd, events, MAX_EVENTS, &ts, NULL);
+            if (nfds < 0 && errno == ENOSYS) {
+                int timeout_ms = (int)((timeout_us + 999) / 1000);
+                nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
+            }
 #else
             int timeout_ms = (int)((timeout_us + 999) / 1000);
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
@@ -488,6 +469,7 @@ static void* worker_main(void *arg) {
 
         if (w->timers.count > 0) {
             now_us = clock_monotonic_us();
+            timer_entry_t te;
             while (timer_heap_peek(&w->timers, &te)) {
                 if (te.expire_at_us > now_us) break;
                 timer_heap_pop(&w->timers, &te);
@@ -678,7 +660,7 @@ static void* worker_main(void *arg) {
 }
 
 static int create_listen_socket(int port) {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
     if (fd < 0) return -1;
 
     int one = 1;
@@ -771,7 +753,7 @@ int main(void) {
         router_add(&w->router, HTTP_METHOD_GET, "/static/", static_file_handler);
 
         compress_worker_init(&w->compress);
-        timer_heap_init(&w->timers, 4096);
+        timer_heap_init(&w->timers, 16384);
         w->free_conns = NULL;
 
         for (int k = 0; k < 128; k++) {

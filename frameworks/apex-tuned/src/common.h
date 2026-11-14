@@ -128,8 +128,4 @@ static inline void set_sock_opts(int fd) {
     int one = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags >= 0) {
-        fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    }
 }

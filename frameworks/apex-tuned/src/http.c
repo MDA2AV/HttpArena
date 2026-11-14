@@ -123,10 +123,18 @@ size_t res_serialize(const response_t *res, char *out_buf, size_t max_out) {
     }
 
     if (res->content_type) {
-        size_t ct_len = strlen(res->content_type);
-        memcpy(p, "Content-Type: ", 14); p += 14;
-        memcpy(p, res->content_type, ct_len); p += ct_len;
-        memcpy(p, "\r\n", 2); p += 2;
+        if (strcmp(res->content_type, "text/plain") == 0) {
+            memcpy(p, "Content-Type: text/plain\r\n", 26);
+            p += 26;
+        } else if (strcmp(res->content_type, "application/json") == 0) {
+            memcpy(p, "Content-Type: application/json\r\n", 32);
+            p += 32;
+        } else {
+            size_t ct_len = strlen(res->content_type);
+            memcpy(p, "Content-Type: ", 14); p += 14;
+            memcpy(p, res->content_type, ct_len); p += ct_len;
+            memcpy(p, "\r\n", 2); p += 2;
+        }
     }
 
     if (res->content_encoding) {
