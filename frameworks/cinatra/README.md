@@ -1,8 +1,13 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/21b958d48bff023a3cb4d9712641cb9fa7f3c8dd/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/2348812dbfd7876bcbc6023d87cf4a2005116f75/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
+
+The entry requests `flagship` based on existing downstream use in
+[yalantinglibs' coro_http](https://github.com/alibaba/yalantinglibs/blob/54f9c0642386e7860e8e11ada698c484dc562d7d/README.md#standalone-sublibraries)
+and [Mooncake's HTTP metadata service](https://github.com/kvcache-ai/Mooncake/blob/504f2ae4a307abe095d3baa75d40ed2661b6481b/mooncake-store/src/http_metadata_server.cpp).
+The benchmark configuration remains `tuned`.
 
 The cases use cinatra's router, request/body APIs, streaming response writer,
 builtin gzip, executor-local sleep and WebSocket reader/writer. JSON is selected,
