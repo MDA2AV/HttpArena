@@ -22,7 +22,7 @@ static inline void swap_entries(timer_entry_t *a, timer_entry_t *b) {
     *b = tmp;
 }
 
-bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_ms, void *conn_ptr, uint32_t conn_gen, int64_t delay_ms) {
+bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_us, void *conn_ptr, uint32_t conn_gen, int64_t delay_ms) {
     if (th->count >= th->capacity) {
         size_t new_cap = th->capacity * 2;
         timer_entry_t *re = realloc(th->entries, sizeof(timer_entry_t) * new_cap);
@@ -33,7 +33,7 @@ bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_ms, void *conn_ptr, ui
 
     size_t i = th->count++;
     th->entries[i] = (timer_entry_t){
-        .expire_at_ms = expire_at_ms,
+        .expire_at_us = expire_at_us,
         .conn_ptr = conn_ptr,
         .conn_gen = conn_gen,
         .delay_ms = delay_ms
@@ -41,7 +41,7 @@ bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_ms, void *conn_ptr, ui
 
     while (i > 0) {
         size_t parent = (i - 1) / 2;
-        if (th->entries[parent].expire_at_ms <= th->entries[i].expire_at_ms) {
+        if (th->entries[parent].expire_at_us <= th->entries[i].expire_at_us) {
             break;
         }
         swap_entries(&th->entries[parent], &th->entries[i]);
@@ -71,10 +71,10 @@ bool timer_heap_pop(timer_heap_t *th, timer_entry_t *out) {
         size_t right = 2 * i + 2;
         size_t smallest = i;
 
-        if (left < th->count && th->entries[left].expire_at_ms < th->entries[smallest].expire_at_ms) {
+        if (left < th->count && th->entries[left].expire_at_us < th->entries[smallest].expire_at_us) {
             smallest = left;
         }
-        if (right < th->count && th->entries[right].expire_at_ms < th->entries[smallest].expire_at_ms) {
+        if (right < th->count && th->entries[right].expire_at_us < th->entries[smallest].expire_at_us) {
             smallest = right;
         }
         if (smallest == i) break;
@@ -86,10 +86,9 @@ bool timer_heap_pop(timer_heap_t *th, timer_entry_t *out) {
     return true;
 }
 
-int timer_heap_next_timeout_ms(const timer_heap_t *th, uint64_t now_ms) {
+int64_t timer_heap_next_timeout_us(const timer_heap_t *th, uint64_t now_us) {
     if (th->count == 0) return -1;
-    uint64_t next_ms = th->entries[0].expire_at_ms;
-    if (next_ms <= now_ms) return 0;
-    uint64_t diff = next_ms - now_ms;
-    return (diff > 1000) ? 1000 : (int)diff;
+    uint64_t next_us = th->entries[0].expire_at_us;
+    if (next_us <= now_us) return 0;
+    return (int64_t)(next_us - now_us);
 }

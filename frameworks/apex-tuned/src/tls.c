@@ -33,7 +33,12 @@ SSL_CTX* tls_init_server_ctx(const char *cert_file, const char *key_file) {
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
     SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
 
-    SSL_CTX_set_options(ctx, SSL_OP_NO_RENEGOTIATION | SSL_OP_CIPHER_SERVER_PREFERENCE);
+    long options = SSL_OP_NO_RENEGOTIATION | SSL_OP_CIPHER_SERVER_PREFERENCE;
+#ifdef SSL_OP_ENABLE_KTLS
+    options |= SSL_OP_ENABLE_KTLS;
+#endif
+    SSL_CTX_set_options(ctx, options);
+    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
     SSL_CTX_set_alpn_select_cb(ctx, alpn_select_cb, NULL);
 
     if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {

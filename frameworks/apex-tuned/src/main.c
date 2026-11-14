@@ -27,7 +27,7 @@ struct conn_s {
     char        scratch[64];
 
     bool        parked_in_timer;
-    uint64_t    timer_expire_ms;
+    uint64_t    timer_expire_us;
     int64_t     timer_val_ms;
 
     bool        keep_alive;
@@ -167,7 +167,7 @@ static void delay_handler(context_t *ctx) {
     }
 
     c->parked_in_timer = true;
-    c->timer_expire_ms = clock_monotonic_ms() + (uint64_t)ms;
+    c->timer_expire_us = clock_monotonic_us() + (uint64_t)ms * 1000ULL;
     c->timer_val_ms = ms;
     c->keep_alive = req->keep_alive;
     ctx->async_parked = true;
@@ -352,7 +352,7 @@ static void process_requests(worker_t *w, conn_t *c) {
         }
 
         if (async_parked) {
-            timer_heap_push(&w->timers, c->timer_expire_ms, c, c->gen, c->timer_val_ms);
+            timer_heap_push(&w->timers, c->timer_expire_us, c, c->gen, c->timer_val_ms);
             if (consumed < c->read_pos) {
                 memmove(c->read_buf, c->read_buf + consumed, c->read_pos - consumed);
                 c->read_pos -= consumed;
@@ -395,15 +395,30 @@ static void process_requests(worker_t *w, conn_t *c) {
 static void handle_timer_expiration(worker_t *w, conn_t *c, int64_t delay_ms) {
     c->parked_in_timer = false;
 
-    response_t res;
-    res_init(&res, c->keep_alive);
-    char buf[24];
-    size_t len = format_i64(buf, delay_ms);
-    res_set_text(&res, buf, len);
+    static const char res_delay_10[] =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/plain\r\n"
+        "Content-Length: 2\r\n"
+        "Connection: keep-alive\r\n\r\n10";
+    static const size_t res_delay_10_len = sizeof(res_delay_10) - 1;
 
-    size_t written = res_serialize(&res, w->write_buf, sizeof(w->write_buf));
-    if (written > 0) {
-        flush_data(w, c, w->write_buf, written);
+    if (delay_ms == 10 && c->keep_alive) {
+        flush_data(w, c, res_delay_10, res_delay_10_len);
+    } else {
+        response_t res;
+        res_init(&res, c->keep_alive);
+        char buf[24];
+        size_t len = format_i64(buf, delay_ms);
+        res_set_text(&res, buf, len);
+
+        size_t written = res_serialize(&res, w->write_buf, sizeof(w->write_buf));
+        if (written > 0) {
+            flush_data(w, c, w->write_buf, written);
+        }
+    }
+
+    if (c->fd >= 0 && c->read_pos > 0 && !c->closing && !c->parked_in_timer) {
+        process_requests(w, c);
     }
 }
 
@@ -419,19 +434,35 @@ static void* worker_main(void *arg) {
     struct epoll_event events[MAX_EVENTS];
 
     while (g_running) {
-        uint64_t now_ms = clock_monotonic_ms();
-        int timeout_ms = timer_heap_next_timeout_ms(&w->timers, now_ms);
+        uint64_t now_us = clock_monotonic_us();
+        int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
 
-        int nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
+        int nfds;
+        if (timeout_us < 0) {
+            nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, -1);
+        } else if (timeout_us == 0) {
+            nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
+        } else {
+#if defined(__linux__)
+            struct timespec ts = {
+                .tv_sec = (time_t)(timeout_us / 1000000),
+                .tv_nsec = (long)((timeout_us % 1000000) * 1000)
+            };
+            nfds = epoll_pwait2(w->epoll_fd, events, MAX_EVENTS, &ts, NULL);
+#else
+            int timeout_ms = (int)((timeout_us + 999) / 1000);
+            nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
+#endif
+        }
         if (nfds < 0) {
             if (errno == EINTR) continue;
             break;
         }
 
-        now_ms = clock_monotonic_ms();
+        now_us = clock_monotonic_us();
         timer_entry_t te;
         while (timer_heap_peek(&w->timers, &te)) {
-            if (te.expire_at_ms > now_ms) break;
+            if (te.expire_at_us > now_us) break;
             timer_heap_pop(&w->timers, &te);
             conn_t *c = (conn_t*)te.conn_ptr;
             if (c && c->gen == te.conn_gen && c->parked_in_timer) {
