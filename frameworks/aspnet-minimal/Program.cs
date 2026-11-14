@@ -115,6 +115,14 @@ app.MapPost("/baseline11", Handlers.SumBody);
 app.MapGet("/baseline2", Handlers.Sum);
 
 app.MapPost("/echo", Handlers.EchoBody);
+
+// The compliance route (docs/test-profiles/compliance): one route with what
+// Http11Probe and h2spec need. Mapped like every other route, so it goes
+// through the same Kestrel parser and middleware as the benchmarked ones.
+app.MapMethods("/spec", new[] { "GET", "HEAD" }, Handlers.SpecText);
+app.MapMethods("/spec", new[] { "OPTIONS" }, Handlers.SpecOptions);
+app.MapPost("/spec", Handlers.EchoBody);
+app.MapMethods("/spec/headers", new[] { "GET", "POST" }, Handlers.SpecHeaders);
 app.MapGet("/delay/{ms:int}", Handlers.Delay);
 app.MapGet("/json/{count}", Handlers.Json);
 app.MapGet("/async-db", Handlers.AsyncDatabase);
