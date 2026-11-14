@@ -1,21 +1,26 @@
 ---
 title: Validation
 seo_title: "Compliance: /spec Validation Checks"
-description: "What validate.sh checks on the /spec route, on each listener the entry runs, once the entry opts in with \"spec\": true."
+description: "How the spec list in meta.json is checked, and what validate.sh checks on the /spec route for the h1 and h2 suites."
 ---
 
-Opt in with the `spec` field in `meta.json`. Like `tls_check`, it is a capability the entry declares rather than a profile it is measured on, so it has its own field instead of an entry in `tests`:
+The compliance suites an entry subscribes to are listed in the `spec` field of `meta.json`, the way profiles are listed in `tests`. It is a field of its own because nothing in it is measured:
 
 ```json
-"enabled": true,
-"spec": true
+"tests": ["baseline", "baseline-h2", "baseline-h2c", "baseline-h3"],
+"spec": ["h1", "h2", "h3"]
 ```
 
-Once it is set, the whole contract is checked on every listener the entry runs. Serving `/spec` on 8080 and forgetting it on 8443 fails validation rather than quietly losing the H/2 column. An entry without the field is not checked here, and its H/1.1 and H/2 compliance cells show as not measured.
+Two checks run before anything is built, like the one on `tests`:
+
+- **Unknown names fail.** The suites are `h1`, `h2`, `h3` and `ws`. A typo would otherwise drop a column without a word.
+- **A suite needs a profile to run against.** `h1` needs an HTTP/1.1 profile on 8080; `h2` one of `baseline-h2`, `static-h2`, `baseline-h2c` or `json-h2c`; `h3` one of `baseline-h3` or `static-h3`; `ws` one of the echo-ws profiles.
+
+Then `/spec` is checked for `h1` and `h2`, on every listener that suite uses: serving it on 8080 and forgetting it on 8443 fails rather than quietly losing the H/2 column. `h3` and `ws` need no route, so there is nothing more to check for them here. A suite the entry does not list is not checked, and shows as not measured in its column.
 
 Bodies are random bytes, so a canned response cannot pass, and every echo is compared byte for byte.
 
-## HTTP/1.1 on 8080
+## `h1`: HTTP/1.1 on 8080
 
 | Check | What it establishes |
 |---|---|
@@ -28,7 +33,7 @@ Bodies are random bytes, so a canned response cannot pass, and every echo is com
 | `GET /spec/headers` with a random `X-Spec-Probe` value | `200` and a line `X-Spec-Probe: <value>`, name in any case |
 | `POST /spec/headers` with a body | the same line, with the body read and discarded |
 
-## HTTP/2 on 8443 and 8082
+## `h2`: HTTP/2 on 8443 and 8082
 
 What h2spec needs, on each HTTP/2 listener the entry runs:
 

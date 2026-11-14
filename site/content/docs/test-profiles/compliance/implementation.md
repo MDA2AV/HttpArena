@@ -5,13 +5,13 @@ description: "The /spec contract: GET, HEAD, OPTIONS and POST on one route plus 
 ---
 {{< type-rules standard="Through the framework's normal routing, request body and header APIs, on the same listeners, parser and middleware as the benchmarked routes." tuned="Same as standard. Nothing on this route is measured, so there is nothing to tune." engine="Same contract. The route has to sit behind the same parser as the benchmarked routes: validating more strictly on /spec than on /baseline11 would score compliance for code the benchmark never runs." infrastructure="A proxy may answer /spec itself or pass it through to an origin. Either way the contract holds at the listener the suites connect to." >}}
 
-One route, opted into with `"spec": true` in `meta.json`, served on every listener the compliance suites use:
+One route, needed by the `h1` and `h2` suites in the `spec` list of `meta.json`, on every listener those suites use:
 
-| Port | Protocol | Required when the entry runs |
+| Port | Protocol | Required when |
 |---|---|---|
-| 8080 | HTTP/1.1 | any HTTP/1.1 profile on 8080 (every entry with `baseline` does) |
-| 8443 | HTTP/2 over TLS | `baseline-h2` or `static-h2` |
-| 8082 | HTTP/2 cleartext | `baseline-h2c` or `json-h2c` |
+| 8080 | HTTP/1.1 | `spec` lists `h1` |
+| 8443 | HTTP/2 over TLS | `spec` lists `h2` and the entry runs `baseline-h2` or `static-h2` |
+| 8082 | HTTP/2 cleartext | `spec` lists `h2` and the entry runs `baseline-h2c` or `json-h2c` |
 
 ## The contract
 
@@ -75,8 +75,8 @@ The probe's normalization tests send a malformed header name - `Content_Length`,
 
 ## What does not need /spec
 
-- **H/3**: h3spec has no path setting. It sends malformed QUIC and HTTP/3 traffic and checks the error code the server closes the stream or connection with.
-- **WebSocket**: Autobahn runs against the existing `/ws` echo.
+- **`h3`**: h3spec has no path setting. It sends malformed QUIC and HTTP/3 traffic and checks the error code the server closes the stream or connection with.
+- **`ws`**: Autobahn runs against the existing `/ws` echo.
 - **HTTP/1.1 over TLS** (port 8081) is not probed, so `/spec` is not required there.
 
 ## Try it

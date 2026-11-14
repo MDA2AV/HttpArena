@@ -124,9 +124,6 @@ TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['t
 # The TLS section is a capability an entry opts into, not a profile it is
 # measured on, so it is its own field rather than an entry in "tests".
 TLS_CHECK_OPTIN=$(python3 -c "import json; print('yes' if json.load(open('$META_FILE')).get('tls_check') else 'no')")
-# The /spec compliance route is opted into the same way: a capability, not a
-# profile. See site/content/docs/test-profiles/compliance/.
-SPEC_OPTIN=$(python3 -c "import json; print('yes' if json.load(open('$META_FILE')).get('spec') else 'no')")
 FRAMEWORK_TYPE=$(python3 -c "import json; print(json.load(open('$META_FILE')).get('type',''))")
 echo "[info] Subscribed tests: $TESTS"
 
@@ -153,6 +150,46 @@ has_test() {
     # positives. Bash pattern match on the space-padded string is exact.
     [[ " $TESTS " == *" $1 "* ]]
 }
+
+# The compliance suites the entry subscribes to: "spec" in meta.json, a list
+# like "tests". Checked the same way and for the same reason -- a typo or a
+# suite with nothing to run against would otherwise drop a column without a
+# word. See site/content/docs/test-profiles/compliance/.
+SPEC_KNOWN="h1 h2 h3 ws"
+SPEC_SUITES=$(python3 -c "
+import json
+v = json.load(open('$META_FILE')).get('spec', [])
+print(' '.join(v) if isinstance(v, list) and all(isinstance(s, str) for s in v) else '!')")
+if [ "$SPEC_SUITES" = "!" ]; then
+    echo "FAIL: meta.json \"spec\" must be a list of compliance suites, e.g. [\"h1\", \"h2\"] (known: $SPEC_KNOWN)"
+    exit 1
+fi
+has_spec() {
+    [[ " $SPEC_SUITES " == *" $1 "* ]]
+}
+SPEC_BAD=()
+for s in $SPEC_SUITES; do
+    case "$s" in
+        h1) spec_need="baseline pipelined limited-conn json-comp async async-db fortunes latency-1m latency-10k latency-500k-8cpu" ;;
+        h2) spec_need="baseline-h2 static-h2 baseline-h2c json-h2c" ;;
+        h3) spec_need="baseline-h3 static-h3" ;;
+        ws) spec_need="echo-ws echo-ws-pipeline echo-ws-limited" ;;
+        *)  SPEC_BAD+=("$s: not a compliance suite (known: $SPEC_KNOWN)"); continue ;;
+    esac
+    spec_ok=false
+    for p in $spec_need; do
+        if has_test "$p"; then spec_ok=true; fi
+    done
+    $spec_ok || SPEC_BAD+=("$s: the entry runs no profile it could be run against (needs one of: $spec_need)")
+done
+if [ ${#SPEC_BAD[@]} -gt 0 ]; then
+    echo "FAIL: meta.json \"spec\" lists suite(s) that cannot run:"
+    printf '      %s\n' "${SPEC_BAD[@]}"
+    exit 1
+fi
+if [ -n "$SPEC_SUITES" ]; then
+    echo "[info] Compliance suites: $SPEC_SUITES"
+fi
 
 # Build — skip standalone build if framework only subscribes to compose profiles
 # (gateway-64, gateway-h3, production-stack) and has no isolated tests.
@@ -2472,13 +2509,13 @@ if has_test "echo-ws" || has_test "echo-ws-pipeline" || has_test "echo-ws-limite
     fi
 fi
 
-# ───── Compliance route (/spec; opt-in with "spec": true) ─────
+# ───── Compliance route (/spec, for the h1 and h2 suites in "spec") ─────
 #
 # The route the protocol-compliance suites run against: Http11Probe on :8080,
-# h2spec on the HTTP/2 listeners. Nothing on it is measured. An entry that opts
-# in is held to the whole contract on every listener it runs, so a route added
-# on :8080 and forgotten on :8443 fails here instead of quietly losing the H/2
-# compliance column. Contract: site/content/docs/test-profiles/compliance/.
+# h2spec on the HTTP/2 listeners. Nothing on it is measured. An entry whose
+# "spec" lists h1 or h2 is held to the whole contract on every listener that
+# suite uses, so a route added on :8080 and forgotten on :8443 fails here
+# instead of quietly losing the H/2 compliance column. h3 and ws need no route. Contract: site/content/docs/test-profiles/compliance/.
 
 # One raw HTTP/1.1 exchange. Prints the status code and the number of bytes that
 # followed the headers -- the one thing curl cannot show for a HEAD response.
@@ -2619,30 +2656,26 @@ spec_h2_checks() {
     rm -f "$src" "$out"
 }
 
-if [ "$SPEC_OPTIN" = "yes" ] && [ "$GATEWAY_ONLY" = "false" ]; then
+if [ -n "$SPEC_SUITES" ] && [ "$GATEWAY_ONLY" = "false" ]; then
     SPEC_DOCS="$DOCS_BASE/compliance/validation"
-    echo "[test] compliance route (/spec, opt-in)"
-    spec_listeners=0
-    for t in $TESTS; do
-        case "$t" in
-            baseline|pipelined|limited-conn|json-comp|async|async-db|fortunes|latency-1m|latency-10k|latency-500k-8cpu)
-                spec_listeners=1 ;;
-        esac
-    done
-    [ "$spec_listeners" -eq 1 ] && spec_h1_checks
-    if has_test "baseline-h2" || has_test "static-h2"; then
-        spec_h2_checks "h2 :$H2PORT" "https://localhost:$H2PORT" -k --http2
-        spec_listeners=$((spec_listeners + 1))
+    echo "[test] compliance suites (spec: $SPEC_SUITES)"
+    if has_spec h1; then
+        spec_h1_checks
     fi
-    if has_test "baseline-h2c" || has_test "json-h2c"; then
-        spec_h2_checks "h2c :$H2C_PORT" "http://localhost:$H2C_PORT" --http2-prior-knowledge
-        spec_listeners=$((spec_listeners + 1))
+    if has_spec h2; then
+        if has_test "baseline-h2" || has_test "static-h2"; then
+            spec_h2_checks "h2 :$H2PORT" "https://localhost:$H2PORT" -k --http2
+        fi
+        if has_test "baseline-h2c" || has_test "json-h2c"; then
+            spec_h2_checks "h2c :$H2C_PORT" "http://localhost:$H2C_PORT" --http2-prior-knowledge
+        fi
     fi
-    if [ "$spec_listeners" -eq 0 ]; then
-        echo "  NOTE [spec]: opted in, but the entry runs no HTTP/1.1 profile on :$PORT and no h2 profile, so there is no listener the compliance suites use"
+    if has_spec h3; then
+        echo "  NOTE [spec h3]: no route to check - h3spec runs against the QUIC listener on :$H2PORT"
     fi
-elif [ "$SPEC_OPTIN" = "yes" ]; then
-    echo "  NOTE [spec]: opted in, but a compose-only entry has no standalone listener to check"
+    if has_spec ws; then
+        echo "  NOTE [spec ws]: no route to check - Autobahn runs against the /ws echo"
+    fi
 fi
 
 # ───── Hand the host's ports to the compose stacks ─────

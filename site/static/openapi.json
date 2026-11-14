@@ -210,7 +210,7 @@
     },
     {
       "name": "Compliance",
-      "description": "The /spec route the protocol-compliance suites run against: Http11Probe on port 8080, h2spec on 8443 and 8082. Opt-in with `\"spec\": true` in meta.json. Nothing on it is measured; it feeds the compliance score columns, which are never part of the composite.",
+      "description": "The /spec route the protocol-compliance suites run against: Http11Probe on port 8080, h2spec on 8443 and 8082. Used by entries whose meta.json `spec` list includes `h1` or `h2`. Nothing on it is measured; it feeds the compliance score columns, which are never part of the composite.",
       "externalDocs": {
         "description": "Compliance",
         "url": "https://http-arena.com/docs/test-profiles/compliance/"
