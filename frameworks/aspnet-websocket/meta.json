@@ -7,6 +7,7 @@
   "description": "ASP.NET Core WebSocket echo server using .NET 10 preview with Kestrel and minimal API.",
   "repo": "https://github.com/dotnet/aspnetcore",
   "enabled": true,
+  "spec": ["ws"],
   "tests": [
     "echo-ws",
     "echo-ws-pipeline"
