@@ -7,10 +7,16 @@ Reads what scripts/spec.sh left in <work dir> and prints the JSON it writes to
 results/spec/<entry dir>.json (and, with --save, site/data/spec/<entry dir>.json).
 The tool versions come from SPEC_VERSION_H1, _H2, _H3 and _WS in the environment.
 
-Per suite: "passed" out of "total" and the IDs of the tests that failed. A
-suite that could not be measured has "error" instead of a score, and one whose
-server died part-way has "crashed": true - the tests it could no longer answer
-are counted as failed. File format: site/content/docs/test-profiles/compliance/.
+Per suite: "passed" out of "total", and in "failed" one record per failed test
+with what the tool expected and what the server did - enough to see why without
+the raw output, which stays on the machine that ran the suite:
+
+    {"id", "test": what it checks, "expected", "got", and where the tool says
+     so "rfc", "level" (MUST/SHOULD...) and "note"}
+
+A suite that could not be measured has "error" instead of a score, and one
+whose server died part-way has "crashed": true - the tests it could no longer
+answer are counted as failed. File format: site/content/docs/test-profiles/compliance/.
 """
 import json
 import os
@@ -28,6 +34,25 @@ def read(path):
         return f.read()
 
 
+def clip(text, n=300):
+    text = " ".join(str(text or "").split())
+    return text if len(text) <= n else text[:n - 3] + "..."
+
+
+H1_STATES = {"ClosedByServer": "connection closed", "Open": "connection left open",
+             "TimedOut": "timed out", "Error": "connection error"}
+
+
+def h1_got(r):
+    """What the server did, from the probe's own fields: status, connection, error."""
+    state = H1_STATES.get(r.get("connectionState"), str(r.get("connectionState") or "").lower())
+    status = r.get("statusCode")
+    got = (str(status) if status not in (None, "") else "no response") + (", " + state if state else "")
+    if r.get("error"):
+        got += " (" + clip(r["error"], 120) + ")"
+    return got
+
+
 def h1(work):
     path = os.path.join(work, "h1.json")
     if not os.path.exists(path):
@@ -39,21 +64,30 @@ def h1(work):
         "passed": sum(r["verdict"] in OK_VERDICTS for r in scored),
         "total": len(scored),
         "warnings": sum(r["verdict"] == "Warn" for r in scored),
-        "failed": [r["id"] for r in scored if r["verdict"] not in OK_VERDICTS],
+        "failed": [dict({"id": r["id"], "test": clip(r.get("description"), 160),
+                         "expected": clip(r.get("expected"), 120), "got": h1_got(r)},
+                        **{k: clip(r[f], 160) for k, f in (("rfc", "rfcReference"), ("level", "rfcLevel"),
+                                                           ("note", "behavioralNote")) if r.get(f)})
+                   for r in scored if r["verdict"] not in OK_VERDICTS],
     }, None
 
 
 def h2_listener(path):
-    """One h2spec JUnit report. Failures are <error> elements; IDs follow
-    h2spec's own numbering, <section>/<position in that section>."""
+    """One h2spec JUnit report. Failures are <error> elements, whose text lists
+    what h2spec would have accepted, one per line, and then what arrived. IDs
+    follow h2spec's own numbering, <section>/<position in that section>."""
     passed, total, failed = 0, 0, []
     for suite in ET.fromstring(read(path)).iter("testsuite"):
         for i, case in enumerate(suite.iter("testcase"), 1):
             if case.find("skipped") is not None:
                 continue
             total += 1
-            if case.find("error") is not None or case.find("failure") is not None:
-                failed.append(f'{case.get("package")}/{i}')
+            error = case.find("error") if case.find("error") is not None else case.find("failure")
+            if error is not None:
+                lines = [ln.strip() for ln in (error.text or "").strip().splitlines() if ln.strip()]
+                failed.append({"id": f'{case.get("package")}/{i}', "test": clip(case.get("classname"), 160),
+                               "expected": clip(" or ".join(lines[:-1]), 200),
+                               "got": clip(lines[-1] if lines else "", 200)})
             else:
                 passed += 1
     return {"passed": passed, "total": total, "failed": failed}
@@ -87,9 +121,24 @@ def h3(work):
         tail = (text.strip().splitlines() or ["h3spec printed nothing"])[-1]
         return None, "h3spec printed no summary: " + tail[:200]
     examples, failures, pending = (int(x or 0) for x in summary[-1])
-    failed = []
-    if "Failures:" in text:
-        failed = re.findall(r"^  \d+\) (.+?)\s*$", text.split("Failures:", 1)[1], re.M)
+    # Each failure: "  N) <requirement>", then the lines saying what happened,
+    # then "To rerun use: ...". The requirement is the test, and what h3spec
+    # expected is in its wording ("MUST send TRANSPORT_PARAMETER_ERROR if ...").
+    failed, cur = [], None
+    for line in (text.split("Failures:", 1)[1] if "Failures:" in text else "").splitlines():
+        m = re.match(r"^  \d+\) (.+?)\s*$", line)
+        if m:
+            cur = {"id": clip(m.group(1), 200), "got": []}
+            failed.append(cur)
+            continue
+        s = line.strip()
+        if cur is None or not s or re.match(r"^\S+\.hs:\d+:\d+:", s):
+            continue
+        if s.startswith("To rerun use"):
+            cur = None
+            continue
+        cur["got"].append(s)
+    failed = [{"id": f["id"], "got": clip(" / ".join(f["got"]), 200)} for f in failed]
     # Pending tests are ones h3spec could not set up (0-RTT, extra streams),
     # so they are neither passed nor failed.
     total = examples - pending
@@ -124,9 +173,16 @@ def ws(work):
     def key(case):
         return [int(x) for x in case.split(".")]
 
-    failed = sorted((c for c, v in cases.items()
+    failed = []
+    for c in sorted((c for c, v in cases.items()
                      if v.get("behavior") not in OK_BEHAVIOURS or v.get("behaviorClose") not in OK_BEHAVIOURS),
-                    key=key)
+                    key=key):
+        rep_ = report(c)
+        got = rep_.get("result") or every[c].get("behavior", "")
+        if every[c].get("behaviorClose") not in OK_BEHAVIOURS and rep_.get("resultClose"):
+            got += " / close: " + rep_["resultClose"]
+        failed.append({"id": c, "test": clip(rep_.get("description"), 160),
+                       "expected": clip(rep_.get("expectation"), 200), "got": clip(got, 200)})
     return {
         "passed": len(cases) - len(failed),
         "total": len(cases),

@@ -27,12 +27,12 @@ def main():
         return
 
     rows = ["| Suite | Tool | Score | Failed |", "|---|---|---|---|"]
-    failed_lists = []
+    details = []
     for key, s in suites.items():
         label = f"{LABELS.get(key, key)} (`{key}`)"
         tool = f'{s.get("tool", "")} {s.get("version", "")}'.strip()
         if "error" in s:
-            rows.append(f'| {label} | {tool} | not measured | {s["error"]} |')
+            rows.append(f'| {label} | {tool} | not measured | {cell(s["error"])} |')
             continue
         score = f'{s["passed"]} / {s["total"]}'
         listeners = s.get("listeners") or {}
@@ -42,15 +42,39 @@ def main():
             score += " (" + ", ".join(parts) + ")"
         if s.get("crashed"):
             score += " - **the server crashed during the suite**"
-        rows.append(f'| {label} | {tool} | {score} | {len(s["failed"])} |')
-        if s["failed"]:
-            failed_lists.append(f"**{LABELS.get(key, key)}:** " + ", ".join(f"`{t}`" for t in s["failed"]))
+        failed = [f if isinstance(f, dict) else {"id": f} for f in s.get("failed") or []]
+        rows.append(f'| {label} | {tool} | {score} | {len(failed)} |')
+        if failed:
+            details.append(f"<details><summary>{LABELS.get(key, key)}: {len(failed)} failed</summary>\n\n"
+                           + failure_table(failed) + "\n\n</details>")
 
     out = "#### Compliance\n\n" + "\n".join(rows)
-    if failed_lists:
-        out += "\n\n<details><summary>Failed tests</summary>\n\n" + "\n\n".join(failed_lists) + "\n</details>"
+    if details:
+        out += "\n\n" + "\n\n".join(details)
     print(out)
 
+
+def cell(text):
+    """Text for one cell of a markdown table."""
+    return " ".join(str(text or "").split()).replace("|", "\\|")
+
+
+def failure_table(failed):
+    """One row per failed test: what it checks, what was expected, what came back."""
+    rows = ["| Test | Expected | Got |", "|---|---|---|"]
+    for f in failed:
+        tid = cell(f.get("id"))
+        test = f"`{tid}`" if " " not in tid else tid
+        if f.get("test"):
+            test += " " + cell(f["test"])
+        ref = ", ".join(x for x in (f.get("rfc"), str(f.get("level") or "").upper()) if x)
+        if ref:
+            test += f" ({cell(ref)})"
+        got = cell(f.get("got")) or "-"
+        if f.get("note"):
+            got += f" ({cell(f['note'])})"
+        rows.append(f"| {test} | {cell(f.get('expected')) or '-'} | {got} |")
+    return "\n".join(rows)
 
 if __name__ == "__main__":
     main()

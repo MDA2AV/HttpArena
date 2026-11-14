@@ -2676,7 +2676,7 @@ def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
 
 
 def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
-             lang_scopes=None, updated="", has_compare=False):
+             lang_scopes=None, updated="", has_compare=False, spec=None):
     e = _html.escape
     facts = [TYPE_LABEL.get(m.get("type", "emerging"), m.get("type", "")), lang]
     if m.get("engine") and m["engine"] != fw:
@@ -2730,6 +2730,9 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
         out.append(_scroll("<table><thead><tr><th>Family</th><th>Rank</th><th>Composite</th></tr>"
                            "</thead><tbody>" + rows + "</tbody></table>"))
 
+    if spec:
+        out.append(_fw_spec(spec, m.get("dir", "")))
+
     if runs:
         out.append('<h2 id="results">Every result</h2>')
         out.append("<p>%s, %d runs. Requests per second is the best of three; latency, CPU and "
@@ -2757,7 +2760,7 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
 
 
 def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievements=(),
-             lang_scopes=None, updated="", has_compare=False):
+             lang_scopes=None, updated="", has_compare=False, spec=None):
     e = _html.escape
     url = SITE + _fw_url(fw)
     title = f"{fw} performance benchmark & ranking"
@@ -2813,7 +2816,7 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
     body = ('<div class="docs-layout one-col"><main class="doc-main">'
             '<article class="doc-wrap"><h1 class="doc-title">' + e(fw) + "</h1>"
             + _fw_body(fw, m, lang, ranks, runs, round_name, lang_url, achievements,
-                       lang_scopes, updated, has_compare)
+                       lang_scopes, updated, has_compare, spec)
             + "</article></main></div>")
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
@@ -3775,7 +3778,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
 
 
 def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
-                   round_name, with_og, updated=""):
+                   round_name, with_og, updated="", spec_full=None):
     """A page per framework that has results, plus the index over them."""
     if FW_OUT.exists():
         shutil.rmtree(FW_OUT)
@@ -3861,7 +3864,7 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
         (dest / "index.html").write_text(
             _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url,
                      achievements.get(fw, ()), lang_scopes.get(lang), updated,
-                     lang in compare_langs),
+                     lang in compare_langs, (spec_full or {}).get(fw)),
             encoding="utf-8")
         if with_og:
             _og_card(dest / "og.png", "Benchmark results", fw,
@@ -3941,20 +3944,83 @@ def _spec_ratio(cell):
     return -0.5 if "e" in cell else cell["p"] / cell["t"]
 
 
-def _spec_for(m, spec_by_dir):
+def _spec_full_for(m, spec_by_dir):
     """The compliance scores of one board entry: every directory shown under its
-    display name (its own and its variants'), joined suite by suite. Two
-    directories scoring the same suite keep the weaker score."""
+    display name (its own and its variants'), joined suite by suite into
+    {suite: (directory, the suite as its file has it)}. Two directories scoring
+    the same suite keep the weaker score."""
     dirs = [m.get("dir", "")] + [v.get("dir", "") for v in m.get("variants") or []]
     joined = {}
     for d in dirs:
         for suite, s in (spec_by_dir.get(d) or {}).items():
             if not isinstance(s, dict):
                 continue
-            cell = _spec_cell(s)
-            if suite not in joined or _spec_ratio(cell) < _spec_ratio(joined[suite]):
-                joined[suite] = cell
+            if suite not in joined or _spec_ratio(_spec_cell(s)) < _spec_ratio(_spec_cell(joined[suite][1])):
+                joined[suite] = (d, s)
     return joined
+
+
+def _spec_for(m, spec_by_dir):
+    """The board's compact cell per suite, from the same selection as the entry page."""
+    return {suite: _spec_cell(s) for suite, (_d, s) in _spec_full_for(m, spec_by_dir).items()}
+
+
+SPEC_SECTION = (("h1", "HTTP/1.1"), ("h2", "HTTP/2"), ("h3", "HTTP/3"), ("ws", "WebSocket"))
+
+
+def _spec_test_cell(f):
+    """A failed test as the entry page names it: ID, what it checks, its RFC section and level."""
+    e = _html.escape
+    tid = str(f.get("id") or "")
+    out = ("<code>%s</code>" % e(tid)) if " " not in tid else e(tid)
+    if f.get("test"):
+        out += " " + e(str(f["test"]))
+    ref = ", ".join(x for x in (str(f.get("rfc") or ""), str(f.get("level") or "").upper()) if x)
+    if ref:
+        out += " <small>(%s)</small>" % e(ref)
+    return out
+
+
+def _fw_spec(spec, own_dir):
+    """The entry page's compliance section: the score of each suite the entry
+    runs and, for every test that failed, what it checks, what was expected and
+    what the server did. A suite measured on a variant names that directory."""
+    e = _html.escape
+    rows, tables = [], []
+    for suite, label in SPEC_SECTION:
+        if suite not in spec:
+            continue
+        d, s = spec[suite]
+        tool = e((str(s.get("tool", "")) + " " + str(s.get("version", ""))).strip())
+        where = e(label) + ("" if d == own_dir else " <small>(%s)</small>" % e(d))
+        if "error" in s or not s.get("total"):
+            rows.append("<tr><td>%s</td><td>%s</td><td>not measured</td><td>%s</td></tr>"
+                        % (where, tool, e(str(s.get("error") or ""))))
+            continue
+        failed = [f if isinstance(f, dict) else {"id": f} for f in s.get("failed") or []]
+        p, t = int(s["passed"]), int(s["total"])
+        rows.append("<tr><td>%s</td><td>%s</td><td>%d of %d (%s%%)</td><td>%d%s</td></tr>"
+                    % (where, tool, p, t, "100" if p == t else "%.1f" % (100.0 * p / t), len(failed),
+                       " - the server crashed during the suite" if s.get("crashed") else ""))
+        if failed:
+            body = "".join(
+                "<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
+                % (_spec_test_cell(f), e(str(f.get("expected") or "-")),
+                   e(str(f.get("got") or "-")) + (" (%s)" % e(str(f["note"])) if f.get("note") else ""))
+                for f in failed)
+            tables.append('<h3 id="spec-%s">%s: what failed</h3>' % (suite, e(label))
+                          + _scroll("<table><thead><tr><th>Test</th><th>Expected</th><th>Got</th></tr>"
+                                    "</thead><tbody>" + body + "</tbody></table>"))
+    if not rows:
+        return ""
+    return ('<h2 id="spec">Protocol compliance</h2>'
+            "<p>The conformance suites this entry subscribes to, run against it on the benchmark "
+            "machine: Http11Probe on HTTP/1.1, h2spec on HTTP/2, h3spec on HTTP/3 and Autobahn on "
+            "WebSocket. A score, not part of the composite. "
+            '<a href="/docs/test-profiles/compliance/">How it works</a>.</p>'
+            + _scroll("<table><thead><tr><th>Suite</th><th>Tool</th><th>Passed</th><th>Failed</th></tr>"
+                      "</thead><tbody>" + "".join(rows) + "</tbody></table>")
+            + "".join(tables))
 
 
 def build_meta(frameworks, tls_check=None, spec_by_dir=None):
@@ -4107,7 +4173,9 @@ def main():
     (fw_entries, n_fw_cards, lang_pages, lang_scopes,
      members_by_lang, compare_langs) = build_fw_pages(profiles, results, meta, fw_lang,
                                                       badge_index, achievements,
-                                                      round_name, has_og, updated)
+                                                      round_name, has_og, updated,
+                                                      {n: _spec_full_for(fm, spec_by_dir)
+                                                       for n, fm in frameworks.items()})
     compare_pages, n_cmp_cards = build_compare_pages(
         profiles, results, {l: s.get(DEFAULT_SCOPE, []) for l, s in lang_scopes.items()},
         members_by_lang, compare_langs, round_name, updated, has_og, fw_lang)

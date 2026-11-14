@@ -492,6 +492,8 @@
 /* The compliance (Spec) column: a profile-like cell, set off from the profiles after it. */
 .cm th.spech, .cm td.spec{border-right:1px solid var(--line-soft)}
 .cm td.pc.spec.crashed .cmem{color:#c0392b}
+.cm td.spec a.speclink{color:inherit; text-decoration:none}
+.cm td.spec a.speclink:hover{text-decoration:underline}
   .cm th.pcol.refcol{opacity:.45}
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
@@ -805,7 +807,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // the entries that do not run the suite at all.
   function specRatio(s){ if(!s) return -1; if(s.e!=null||!s.t) return -0.5; return s.p/s.t; }
   function specTip(s){
-    if(s.e!=null) return s.tool+': not measured - '+s.e+'. Not part of the composite.';
+    if(s.e!=null) return s.tool+': not measured - '+s.e+'. Not part of the composite. Click for details.';
     var t=s.tool+': '+s.p+' of '+s.t+' passed, '+s.f+' failed';
     if(s.w) t+=', '+s.w+' warnings counted as passed (the RFC allows both behaviours)';
     if(s.ns) t+=', '+s.ns+' non-strict counted as passed';
@@ -814,17 +816,20 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       if(parts.length>1) t+='. Per listener: '+parts.join(', ')+'; the lower one counts';
     }
     if(s.c) t+='. The server crashed during the suite: the tests it could no longer answer count as failed';
-    return t+'. Not part of the composite.';
+    return t+'. Not part of the composite.'+(s.f?' Click for what failed and why.':'');
   }
   function specCell(fw){
     var s=specOf(fw);
     if(!s) return '<td class="num pc empty spec" data-tip="'+esc('Does not run the '+SPEC_LABEL[specSuite()]+' compliance suite.')+'">·</td>';
-    if(s.e!=null||!s.t) return '<td class="num pc nc spec" data-tip="'+esc(specTip(s))+'"><span class="pcv"><span class="crps">—</span></span></td>';
+    // The value links to the entry page, which lists every failed test with
+    // what was expected and what the server did.
+    var link=function(text){ return '<a class="speclink" href="/frameworks/'+esc(slugOf(fw))+'/#spec">'+text+'</a>'; };
+    if(s.e!=null||!s.t) return '<td class="num pc nc spec" data-tip="'+esc(specTip(s))+'"><span class="pcv"><span class="crps">'+link('—')+'</span></span></td>';
     var r=s.p/s.t;
     var bar=state.heat ? '<span class="cbar" style="background:'+heatColor(r)+'"></span>'
                        : '<span class="cbar" style="width:'+(r*100).toFixed(0)+'%"></span>';
     return '<td class="num pc spec'+(r===1?' lead':'')+(s.c?' crashed':'')+'" data-tip="'+esc(specTip(s))+'">'
-      + '<span class="pcv"><span class="crps">'+(r===1?'100':(r*100).toFixed(1))+'%</span>'
+      + '<span class="pcv"><span class="crps">'+link((r===1?'100':(r*100).toFixed(1))+'%')+'</span>'
       + '<span class="cmem">'+(s.c?'crashed':s.p+'/'+s.t)+'</span></span>'+bar+'</td>';
   }
 
