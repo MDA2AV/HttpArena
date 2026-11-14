@@ -1045,6 +1045,8 @@ def _docs_css():
 .cmp-pick{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
 .cmp-pick select{font:inherit;font-size:.9rem;padding:.35rem .5rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
 .doc-body td.n,.doc-body th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* the line over each group of rows in a head-to-head table, naming its unit */
+.cmp-table tr.cmp-sub th{text-align:left;font-weight:600;font-size:.8rem;color:var(--text-2);background:var(--panel-2)}
 /* the date the numbers were last published, on every generated page */
 .updated{color:var(--muted);font-size:.82rem;margin-top:1.6rem}
 /* the one-sentence answer at the top of a language page, before any table */
@@ -2404,14 +2406,83 @@ def kind_has_mode(kind):
     return kind in MODE_TYPES
 
 
-# What an entry of this tier is, in a sentence. Used where prose would otherwise
-# call a reverse proxy a web framework.
-_KIND_NOUN = {"engine": "an HTTP engine",
-              "infrastructure": "a reverse proxy or static-file server"}
+# A composite is only comparable inside the league it was taken in. Each league
+# is normalized against its own leader, and the leagues do not all count the
+# same profiles, so 1,644 among engines and 1,732 among frameworks are not two
+# points on one scale: the engine with the lower number can be ahead on every
+# test the two share (#1461). Every page below that orders, ranks or compares
+# entries by composite therefore does it one league at a time.
+#
+# The grouping is LEAGUES, the fields the published ranks were taken in, and a
+# league added there without a name here fails the build rather than quietly
+# landing in somebody else's table.
+_LEAGUE_NAME = {("flagship", "emerging"): "framework", ("engine",): "engine",
+                ("experimental",): "experimental", ("infrastructure",): "infrastructure"}
+LEAGUE_ORDER = [_LEAGUE_NAME[types] for types in LEAGUES]
+_TYPE_LEAGUE = {t: _LEAGUE_NAME[types] for types in LEAGUES for t in types}
+# The heading over a league's table and the first column of it, then the league
+# and one entry of it as a sentence names them. {lang} is where a language goes
+# when there is one to name: "experimental C frameworks", not "C experimental
+# frameworks".
+LEAGUE_HEAD = {"framework": "Frameworks", "engine": "Engines",
+               "experimental": "Experimental frameworks",
+               "infrastructure": "Reverse proxies and static-file servers"}
+LEAGUE_COL = {"framework": "Framework", "engine": "Engine",
+              "experimental": "Framework", "infrastructure": "Server"}
+LEAGUE_MANY = {"framework": "{lang} web frameworks", "engine": "{lang} HTTP engines",
+               "experimental": "experimental {lang} frameworks",
+               "infrastructure": "{lang} reverse proxies and static-file servers"}
+LEAGUE_ONE = {"framework": "{lang} web framework", "engine": "{lang} HTTP engine",
+              "experimental": "experimental {lang} framework",
+              "infrastructure": "{lang} reverse proxy or static-file server"}
 
 
-def _a_kind(kind):
-    return _KIND_NOUN.get(kind, "a web framework")
+def _league(kind):
+    """The league an entry of this type is ranked in."""
+    return _TYPE_LEAGUE.get(kind, kind)
+
+
+# A type no league knows has no published rank, so it never reaches a ranking,
+# but it can still sit in a picker. These keep such an entry from failing the
+# build over a label.
+def _league_head(league):
+    return LEAGUE_HEAD.get(league, league.capitalize())
+
+
+def _league_many(league, lang=""):
+    """"Clojure HTTP engines", or "HTTP engines" where no language is named."""
+    fmt = LEAGUE_MANY.get(league, "{lang} " + league + " entries")
+    return " ".join(fmt.replace("{lang}", lang).split())
+
+
+def _league_one(league, lang=""):
+    fmt = LEAGUE_ONE.get(league, "{lang} " + league + " entry")
+    return " ".join(fmt.replace("{lang}", lang).split())
+
+
+def _and(items):
+    """"a", "a and b", "a, b, and c" - the comma before the last "and" matters
+    here, because one of the leagues has an "and" of its own in its name."""
+    items = list(items)
+    if len(items) < 3:
+        return " and ".join(items)
+    return ", ".join(items[:-1]) + ", and " + items[-1]
+
+
+def _by_league(rows):
+    """[(league, rows best first)] in league order, for rows that carry the
+    entry's type second and its composite fourth. Leagues with no row are left
+    out, and a type no league knows keeps a group of its own at the end."""
+    groups = {}
+    for r in rows:
+        groups.setdefault(_league(r[1]), []).append(r)
+    order = LEAGUE_ORDER + sorted(k for k in groups if k not in LEAGUE_ORDER)
+    return [(k, sorted(groups[k], key=lambda r: -r[3])) for k in order if k in groups]
+
+
+def _league_first(rows):
+    """The same rows as one list: league by league, best first inside each."""
+    return [r for _k, rs in _by_league(rows) for r in rs]
 
 
 def _fw_url(fw):
@@ -2515,23 +2586,36 @@ def _fw_achievements(items):
 
 
 def _fw_neighbours(fw, scopes):
-    """(family, rows, index of fw) for the language field this entry sits in.
+    """(family, rows, index of fw) for the language field this entry sits in:
+    the entries of its language that are ranked in its league.
 
-    Its own family when it runs one, the first it appears in otherwise. An entry
-    page used to link nowhere except its language summary, which left every one
-    of them a leaf: the entries directly around it are the pages a reader wants
-    next, and the ones a crawler needs to reach the rest of the language from
-    here."""
+    Its own family when it runs one, the first it appears in otherwise - but a
+    family where it has somebody to stand next to is preferred over one where it
+    is alone in its league. An entry page used to link nowhere except its
+    language summary, which left every one of them a leaf: the entries directly
+    around it are the pages a reader wants next, and the ones a crawler needs to
+    reach the rest of the language from here.
+
+    Same league only. The rows used to be every entry of the language in one
+    list, so a flagship framework was shown "5% ahead" of an engine that beats
+    it on nine of the ten tests they share - the two composites come from
+    different leagues and were never on one scale (#1461)."""
+    first = ("", [], -1)
     for scope in [DEFAULT_SCOPE] + [x for x in scopes if x != DEFAULT_SCOPE]:
-        rows = scopes.get(scope) or []
-        for i, r in enumerate(rows):
-            if r[0] == fw:
-                return scope, rows, i
-    return "", [], -1
+        for _league_key, rows in _by_league(scopes.get(scope) or []):
+            for i, r in enumerate(rows):
+                if r[0] != fw:
+                    continue
+                if len(rows) > 1:
+                    return scope, rows, i
+                if first[2] < 0:
+                    first = (scope, rows, i)
+    return first
 
 
 def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
-    """The entries either side of this one, and the leader of its language."""
+    """The entries either side of this one, and the leader of its language,
+    among the entries ranked in its league."""
     e = _html.escape
     scope, rows, i = _fw_neighbours(fw, scopes)
     cmp_url = _compare_url(lang)
@@ -2562,8 +2646,11 @@ def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
             % (cmp_url, quote(fw), quote(rows[j][0]))) if has_compare else "")
         for j in sorted(set(near)))
     return ("<h2 id=\"compare\">Compared with</h2>"
-            "<p>The %s entries around %s on the %s composite, and the one leading them.%s</p>"
-            % (e(lang), e(fw), SCOPE_NAME.get(scope, scope),
+            "<p>The %s around %s on the %s composite, and the one leading them. Entries "
+            "of other leagues are left out: a composite does not carry from one league to "
+            "another.%s</p>"
+            % (e(_league_many(_league(rows[i][1]), lang)), e(fw),
+               SCOPE_NAME.get(scope, scope),
                " The last column shows every profile side by side." if has_compare else "")
             + "<table><thead><tr><th>Entry</th><th class=\"n\">Composite</th>"
               "<th class=\"n\">vs %s</th>%s</tr></thead><tbody>"
@@ -2714,7 +2801,15 @@ def _fw_page(fw, m, lang, ranks, runs, round_name, og_url, lang_url="", achievem
     return head + header + body + _THEME_TOGGLE + "</body></html>"
 
 
-def _lang_faq(lang, scopes, n_entries, round_name):
+def _lead_scope(scopes):
+    """The family a language's summary is written about: the board's default one
+    where the language has a row in it, the first it has otherwise."""
+    if scopes.get(DEFAULT_SCOPE):
+        return DEFAULT_SCOPE
+    return next((s for s, rows in scopes.items() if rows), None)
+
+
+def _lang_faq(lang, scopes, n_entries, round_name, has_compare=False):
     """[(question, answer)] for one language, generated from its own rows.
 
     "fastest <language> web framework" is the question these pages exist to
@@ -2725,56 +2820,70 @@ def _lang_faq(lang, scopes, n_entries, round_name):
 
     "Fastest" is the word people use; the composite is what is actually being
     compared, so each answer names it rather than letting the word stand alone.
+
+    One answer per league. The leader used to be whichever entry of the language
+    had the highest composite, and a composite from the engine league was read
+    off against one from the framework league as if they shared a scale - "Enso
+    scores higher but is an HTTP engine" (#1461). nginx is still not a C web
+    framework, so each league is asked the question it can answer.
     """
     e = _html.escape
     qa = []
-    lead = scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else None)
-    if lead:
-        fw, kind, tuned, score, rank, of, _link, lrank, lof = lead[0]
-        # nginx is not a C web framework and swerver is not a Zig one. Ask the
-        # question the leader can actually answer, and answer the framework one
-        # separately with the quickest entry that is a framework.
-        is_fw = kind_has_mode(kind)
+    lead_scope = _lead_scope(scopes)
+    leagues = _by_league(scopes[lead_scope]) if lead_scope else []
+    for n, (league, rows) in enumerate(leagues):
+        fw, _kind, tuned, score, rank, of, _link, _lrank, _lof = rows[0]
         qa.append((
-            f"What is the fastest {lang} web framework?" if is_fw
-            else f"What is the fastest {lang} HTTP server?",
-            f"{fw}"
-            + ("" if is_fw else f", {_a_kind(kind)},")
-            + f" leads the {lang} entries in HttpArena with a composite score of "
-              f"{score:.0f} on {SCOPE_NAME[DEFAULT_SCOPE]}, measured over {round_name}. "
-              f"The composite sums a normalized score across the profiles of a family, "
-              f"where the leader of each profile scores 100. Against every language, "
-              f"{fw} ranks {rank} of {of} in its own league."
-            + (f" It is a tuned entry, so it is ranked in the field that includes "
-               f"tuned configurations." if tuned else "")))
-        if not is_fw:
-            top_fw = next((r for r in lead if kind_has_mode(r[1])), None)
-            if top_fw:
-                qa.append((
-                    f"What is the fastest {lang} web framework?",
-                    f"{top_fw[0]}, with a composite of {top_fw[3]:.0f} on "
-                    f"{SCOPE_NAME[DEFAULT_SCOPE]}. {fw} scores higher but is "
-                    f"{_a_kind(kind)}, not a framework, and is ranked in its own league."))
+            f"What is the fastest {_league_one(league, lang)}?",
+            f"{fw} leads the {_league_many(league, lang)} in HttpArena with a composite "
+            f"score of {score:.0f} on {SCOPE_NAME[lead_scope]}, measured over {round_name}. "
+            + ("The composite sums a normalized score across the profiles of a family, "
+               "where the leader of each profile scores 1,000. " if n == 0 else "")
+            + f"Against every language, {fw} ranks {rank} of {of} in its league."
+            + (" It is a tuned entry, so it is ranked in the field that includes "
+               "tuned configurations." if tuned else "")))
+    if len(leagues) > 1:
+        both = {"framework", "engine"} <= {league for league, _rows in leagues}
+        qa.append((
+            f"Why are {lang} entries ranked in separate leagues?",
+            "HttpArena ranks " + _and(_league_many(league) for league, _rows in leagues)
+            + " apart. Each league is normalized against its own leader, and the leagues do "
+              "not all count the same profiles"
+            + (" - engines are not scored on JSON Compressed, for one" if both else "")
+            + ". A composite from one league is therefore not on the same scale as a composite "
+              "from another, and the higher number across two leagues is not the faster server. "
+              "To set two entries from different leagues against each other, use the "
+            + (f"{lang} head-to-head comparison" if has_compare
+               else "head-to-head comparison across languages")
+            + ", which lines up every test both of them ran."))
     for scope, rows in scopes.items():
-        if scope == DEFAULT_SCOPE or not rows:
+        if scope == lead_scope or not rows:
             continue
-        fw, _k, _t, score, rank, of, _l, _lr, _lo = rows[0]
-        qa.append((
-            f"What is the fastest {lang} {SCOPE_NAME[scope]} server?",
-            f"{fw}, with a composite of {score:.0f} on {SCOPE_NAME[scope]} and "
-            f"{rank} of {of} against all languages in its league."))
+        groups = _by_league(rows)
+        if len(groups) == 1:
+            fw, _k, _t, score, rank, of, _l, _lr, _lo = groups[0][1][0]
+            answer = (f"{fw}, with a composite of {score:.0f} on {SCOPE_NAME[scope]} and "
+                      f"{rank} of {of} against all languages in its league.")
+        else:
+            answer = "; ".join(
+                f"among {_league_many(league)}, {rs[0][0]} (composite {rs[0][3]:.0f}, "
+                f"{rs[0][4]} of {rs[0][5]} in that league)" for league, rs in groups)
+            answer = (answer[0].upper() + answer[1:] + ". The leagues are scored separately, "
+                      "so those composites are not on one scale.")
+        qa.append((f"What is the fastest {lang} {SCOPE_NAME[scope]} server?", answer))
     qa.append((
         f"How many {lang} web frameworks are benchmarked?",
         f"{n_entries} {lang} " + ("entry is" if n_entries == 1 else "entries are")
         + f" measured, covering {', '.join(SCOPE_NAME[s] for s in scopes) or 'no family'}"
           f". Every one runs on the same machine, in the same round ({round_name}), "
           f"against the same profiles."))
-    if lead:
-        fw = lead[0][0]
+    if leagues:
+        league, rows = leagues[0]
+        fw, rank, of = rows[0][0], rows[0][4], rows[0][5]
         qa.append((
             f"Is {lang} fast for web servers?",
-            f"The quickest {lang} entry, {fw}, places {lead[0][4]} of {lead[0][5]} on "
-            f"{SCOPE_NAME[DEFAULT_SCOPE]} across every language in its league, so that "
+            f"The leading {_league_one(league, lang)}, {fw}, places {rank} of {of} on "
+            f"{SCOPE_NAME[lead_scope]} across every language in its league, so that "
             f"placing is the honest answer for {lang} at its best rather than for "
             f"{lang} in general. The tables below show the spread across all "
             f"{n_entries} " + ("entry" if n_entries == 1 else "entries") + "."))
@@ -2795,8 +2904,11 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
     url = SITE + _lang_url(lang)
     title = lang + " web framework benchmarks: performance comparison"
     n = len(all_entries)
-    faq = _lang_faq(lang, scopes, n, round_name)
-    lead_row = (scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else None))
+    faq = _lang_faq(lang, scopes, n, round_name, has_compare)
+    lead_scope = _lead_scope(scopes)
+    # The leagues of the family this page leads with, each best first. Its first
+    # league is the one the opening sentence is about.
+    leagues = _by_league(scopes[lead_scope]) if lead_scope else []
     # Kept short on purpose: this is the search-snippet and og:description, not
     # the page. The composite-score sentence with its numbers belongs to the
     # on-page "answer" paragraph below, which a reader (or an assistant) reaches
@@ -2806,22 +2918,29 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
             f"{lang} web frameworks and HTTP servers, compared by performance "
             f"in a composite score table.")
 
+    # One table per league, never one per family: a composite is taken against
+    # the leader of the entry's own league, over the profiles that league
+    # counts, so sorting an engine in among the frameworks by that number orders
+    # them by something that is not a comparison (#1461).
     tables = []
     for scope, rows in scopes.items():
-        head_cells = ("<tr><th>Framework</th><th>Type</th><th>Composite</th>"
-                      "<th>Rank overall</th><th>Rank among " + e(lang) + "</th></tr>")
-        body = "".join(
-            '<tr><td><a href="%s">%s</a></td><td>%s</td><td>%.0f</td>'
-            '<td><a href="%s">%d of %d</a></td><td>%s</td></tr>'
-            % (_fw_url(fw), e(fw),
-               e(TYPE_LABEL.get(kind, kind)) + (' <span class="fw-kind">tuned</span>'
-                                                if tuned else ""),
-               score, e(link), rank, of,
-               ("%d of %d" % (lrank, lof)) if lrank else "&mdash;")
-            for fw, kind, tuned, score, rank, of, link, lrank, lof in rows)
-        tables.append("<h2 id=\"%s\">%s</h2>" % (scope, e(SCOPE_NAME[scope]))
-                      + "<table><thead>" + head_cells + "</thead><tbody>" + body
-                      + "</tbody></table>")
+        tables.append("<h2 id=\"%s\">%s</h2>" % (scope, e(SCOPE_NAME[scope])))
+        for league, lrows in _by_league(rows):
+            head_cells = ("<tr><th>%s</th><th>Type</th><th>Composite</th>"
+                          "<th>Rank in its league</th><th>Rank among %s</th></tr>"
+                          % (e(LEAGUE_COL.get(league, "Entry")), e(lang)))
+            body = "".join(
+                '<tr><td><a href="%s">%s</a></td><td>%s</td><td>%.0f</td>'
+                '<td><a href="%s">%d of %d</a></td><td>%s</td></tr>'
+                % (_fw_url(fw), e(fw),
+                   e(TYPE_LABEL.get(kind, kind)) + (' <span class="fw-kind">tuned</span>'
+                                                    if tuned else ""),
+                   score, e(link), rank, of,
+                   ("%d of %d" % (lrank, lof)) if lrank else "&mdash;")
+                for fw, kind, tuned, score, rank, of, link, lrank, lof in lrows)
+            tables.append("<h3 id=\"%s-%s\">%s</h3>" % (scope, league, e(_league_head(league)))
+                          + "<table><thead>" + head_cells + "</thead><tbody>" + body
+                          + "</tbody></table>")
 
     has_tuned = any(r[2] for rows in scopes.values() for r in rows)
     listed = {fw for rows in scopes.values() for fw, *_ in rows}
@@ -2829,7 +2948,6 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
     every = "".join('<li><a href="%s">%s</a></li>' % (_fw_url(fw), e(fw))
                     for fw, _k in sorted(all_entries, key=lambda x: x[0].lower()))
 
-    ranked = scopes.get(DEFAULT_SCOPE) or (next(iter(scopes.values())) if scopes else [])
     graph = [
         {"@type": "CollectionPage", "@id": url + "#page", "name": title, "description": desc,
          "url": url, "inLanguage": "en", "isPartOf": {"@id": SITE + "/#website"},
@@ -2839,13 +2957,15 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
             {"@type": "ListItem", "position": 1, "name": "Frameworks",
              "item": SITE + "/frameworks/"},
             {"@type": "ListItem", "position": 2, "name": lang, "item": url}]},
-    ] + (([{"@type": "ItemList", "@id": url + "#ranking",
-           "name": lang + " " + SCOPE_NAME[DEFAULT_SCOPE] + " composite ranking",
+    ] + ([{"@type": "ItemList", "@id": url + "#ranking-" + league,
+           "name": "%s: %s composite ranking" % (_league_many(league, lang),
+                                                 SCOPE_NAME[lead_scope]),
            "itemListOrder": "https://schema.org/ItemListOrderDescending",
-           "numberOfItems": len(ranked),
+           "numberOfItems": len(lrows),
            "itemListElement": [{"@type": "ListItem", "position": i + 1, "name": r[0],
                                 "url": SITE + _fw_url(r[0])}
-                               for i, r in enumerate(ranked)]}] if ranked else [])
+                               for i, r in enumerate(lrows)]}
+          for league, lrows in leagues]
          + ([_faq_node(url, faq)] if faq else [])) + _org_nodes()
     head = ('<!doctype html><html lang="en" data-theme=""><head>'
             '<meta charset="utf-8">'
@@ -2872,41 +2992,53 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
     # The answer first, in a sentence, before any table. Both a reader skimming
     # and an assistant summarising take the first paragraph.
     answer = ""
-    if lead_row:
-        fw, kind, tuned, score, rank, of, link, _lr, _lo = lead_row[0]
-        is_fw = kind_has_mode(kind)
-        extra = ""
-        if not is_fw:
-            top_fw = next((r for r in lead_row if kind_has_mode(r[1])), None)
-            if top_fw:
-                extra = (' The quickest %s <i>framework</i> is <a href="%s"><b>%s</b></a>, '
-                         'at %.0f.' % (e(lang), _fw_url(top_fw[0]), e(top_fw[0]), top_fw[3]))
-        answer = ('<p class="lead-answer">The fastest %s %s in HttpArena is '
-                  '<a href="%s"><b>%s</b></a>%s, with a composite of %.0f on %s &mdash; '
+    if leagues:
+        league, lrows = leagues[0]
+        fw, _kind, tuned, score, rank, of, link, _lr, _lo = lrows[0]
+        # The other leagues are named with their place in their own field and no
+        # composite: two composites in one sentence read as a comparison, and
+        # these two are not one.
+        others = "".join(
+            ' The leading %s is <a href="%s"><b>%s</b></a>, <a href="%s">%d of %d</a> '
+            'in its own league.'
+            % (e(_league_one(other, lang)), _fw_url(orows[0][0]), e(orows[0][0]),
+               e(orows[0][6]), orows[0][4], orows[0][5])
+            for other, orows in leagues[1:])
+        answer = ('<p class="lead-answer">The fastest %s in HttpArena is '
+                  '<a href="%s"><b>%s</b></a>, with a composite of %.0f on %s &mdash; '
                   '<a href="%s">%d of %d</a> against every language in its league. '
                   'Measured over %s, every entry on the same machine.%s%s</p>'
-                  % (e(lang), "web framework" if is_fw else "HTTP server",
-                     _fw_url(fw), e(fw), "" if is_fw else " (%s)" % e(_a_kind(kind)),
-                     score, e(SCOPE_NAME[DEFAULT_SCOPE]),
+                  % (e(_league_one(league, lang)), _fw_url(fw), e(fw),
+                     score, e(SCOPE_NAME[lead_scope]),
                      e(link), rank, of, e(round_name),
-                     " This is a tuned entry." if tuned else "", extra))
+                     " This is a tuned entry." if tuned else "", others))
     intro = ('<p><a href="%s">Compare any two %s entries profile by profile →</a></p>'
              % (_compare_url(lang), e(lang)) if has_compare else "")
     intro += ("<p>Every %s entry in the benchmark, compared on the composite score of each "
-             "family. The composite sums a normalized score over the profiles of that family, "
-             "where the leader of each profile scores 100, and scales the sum by the entry's "
+             "family, one table per league. The composite sums a normalized score over the "
+             "profiles of that family, where the leader of each profile scores 1,000, and scales "
+             "the sum by the entry's "
              '<a href="/docs/scoring/completeness/">completeness factor</a>. '
-             "Rank overall is the entry's place in "
-             "its own league across all languages; rank among %s narrows the same field to this "
-             "language. Both link through to the board view they were taken in. "
+             "Frameworks, engines, experimental entries and infrastructure are separate "
+             "leagues: each is normalized against its own leader, and they do not all count the "
+             "same profiles, so a composite compares with the others in its table and with "
+             "nothing outside it. Rank in its league is the entry's place across all languages; rank "
+             "among %s narrows the same field to this language. Both link through to the board "
+             "view they were taken in. "
              '<a href="/docs/scoring/composite-score/">How the score works</a>.</p>'
              % (e(lang), e(lang)))
+    if any(len(_by_league(rows)) > 1 for rows in scopes.values()):
+        intro += ('<p>To set two entries from different leagues against each other, '
+                  '<a href="%s">compare them head to head</a>: that table lines up every test '
+                  "both of them ran.</p>"
+                  % (_compare_url(lang) if has_compare else _compare_url(None)))
     if has_tuned:
         # Composites are normalized over the whole league either way, so the
-        # score column compares directly; only the field a rank is taken in
-        # differs, which is why a tuned row's "of" is the larger number.
-        intro += ("<p>Composite scores compare directly across every row. Ranks do not "
-                  "always share a field: a tuned entry has no place in the standard-only "
+        # score column compares directly inside a table; only the field a rank
+        # is taken in differs, which is why a tuned row's "of" is the larger
+        # number.
+        intro += ("<p>Composite scores compare directly across every row of a table. Ranks do "
+                  "not always share a field: a tuned entry has no place in the standard-only "
                   "ranking, so its rank is taken from the field that includes tuned "
                   "entries and counts more of them.</p>")
     if rest:
@@ -3039,69 +3171,143 @@ def _cmp_views(profiles, results, entries):
     return out
 
 
+def _lat_human(value):
+    """A latency as the board would print it. The paced profiles are recorded
+    in bare microseconds, so a 9-second tail arrives as "9170944.0us"."""
+    us = _lat.to_us(value)
+    if us is None:
+        return value or ""
+    if us < 1000:
+        return "%.0fus" % us
+    if us < 1e6:
+        return "%.2fms" % (us / 1e3)
+    return "%.2fs" % (us / 1e6)
+
+
 def _cmp_data(views, results, entries):
-    """fw -> view key -> [rps, avg, p99, cpu, memory], the numbers the picker draws."""
+    """fw -> view key -> [rps, avg, p99, cpu, memory] and, on a fixed-rate
+    profile, the profile's own score as a sixth value: the numbers the picker
+    draws."""
     data = {fw: {} for fw in entries}
-    for key, _p, _c in views:
+    for key, p, _c in views:
+        # Field-wide and the same number the board ranks the column on, so it
+        # compares across leagues the way requests per second does.
+        paced = lat_scores(p["id"]) if p["id"] in _lat.FULL_RATE else None
         for r in results.get(key, []):
             if r["fw"] in data and r.get("rps"):
-                data[r["fw"]][key] = [round(r["rps"]), r.get("avg_latency") or "",
-                                      r.get("p99_latency") or "", r.get("cpu") or "",
-                                      r.get("memory") or ""]
+                row = [round(r["rps"]), _lat_human(r.get("avg_latency")),
+                       _lat_human(r.get("p99_latency")), r.get("cpu") or "",
+                       r.get("memory") or ""]
+                if paced is not None:
+                    row.append(round(paced.get(r["fw"], 0.0), 1))
+                data[r["fw"]][key] = row
     return data
 
 
+def _cmp_metric(row):
+    """What a row is decided on: requests per second, except on the fixed-rate
+    profiles. Every entry is offered the same rate there, so 9,980 against 9,982
+    is the generator's jitter and not a result - three of the four tests ntex
+    was "behind" fiber-tuned on were exactly that. Those rows carry the
+    profile's score out of 100, which is what the board ranks them on."""
+    return row[5] if len(row) > 5 else row[0]
+
+
 def _cmp_wins(data, views, a, b):
-    """(views a leads, views b leads, views both ran) on requests per second."""
+    """(tests a leads, tests b leads, tests both ran), each on its own metric."""
     wa = wb = both = 0
     for key, _p, _c in views:
         ra, rb = data[a].get(key), data[b].get(key)
         if not ra or not rb:
             continue
         both += 1
-        if ra[0] > rb[0]:
+        ma, mb = _cmp_metric(ra), _cmp_metric(rb)
+        if ma > mb:
             wa += 1
-        elif rb[0] > ra[0]:
+        elif mb > ma:
             wb += 1
     return wa, wb, both
 
 
+def _cmp_delta(ma, mb):
+    """The first column against the second, as the table prints it.
+
+    Halves round away from zero, spelled out rather than left to round(): the
+    picker script redraws this cell, Python rounds a half to even and JavaScript
+    rounds it up, and with scores to one decimal the halves are not rare - 11.7
+    against 20.0 is -41.5% exactly, and the two printed -42% and -41%."""
+    d = (ma - mb) / mb * 100 if mb else 0
+    d = int(abs(d) + 0.5) * (-1 if d < 0 else 1)
+    return ("+%d%%" % d) if d > 0 else ("%d%%" % d)   # no "-0%": it rounds to 0%
+
+
+# The two kinds of row a comparison holds, in the order they are printed, with
+# the line that says what the numbers under it are. One table, because it is one
+# comparison; two groups, because a score out of 100 under a column of requests
+# per second would be read as one. _CMP_JS draws the same groups from CMP.g.
+CMP_GROUPS = ("Requests per second",
+              "Fixed-rate profiles: score out of 100, from CPU cost and latency at a "
+              "pinned request rate")
+
+
 def _cmp_table(data, views, a, b):
     e = _html.escape
-    body = []
+    groups = ([], [])
     for key, p, c in views:
         ra, rb = data[a].get(key), data[b].get(key)
         if not ra or not rb:
             continue
-        d = (ra[0] - rb[0]) / rb[0] * 100 if rb[0] else 0
-        body.append('<tr><td>%s</td><td>%s</td><td class="n">%s</td><td class="n">%s</td>'
-                    '<td class="n">%s</td><td class="n">%s</td><td class="n">%s</td></tr>'
-                    % (e(p["label"]), f"{c:,}", f"{ra[0]:,}", f"{rb[0]:,}",
-                       ("+%.0f%%" if d >= 0 else "%.0f%%") % d, e(ra[2] or "-"), e(rb[2] or "-")))
-    if not body:
+        paced = len(ra) > 5 and len(rb) > 5
+        ma, mb = _cmp_metric(ra), _cmp_metric(rb)
+        shown = (lambda v: "%.1f" % v) if paced else (lambda v: f"{v:,}")
+        groups[paced].append(
+            '<tr><td>%s</td><td>%s</td><td class="n">%s</td><td class="n">%s</td>'
+            '<td class="n">%s</td><td class="n">%s</td><td class="n">%s</td></tr>'
+            % (e(p["label"]), f"{c:,}", shown(ma), shown(mb), _cmp_delta(ma, mb),
+               e(ra[2] or "-"), e(rb[2] or "-")))
+    if not groups[0] and not groups[1]:
         return "<p>These two entries share no test profile.</p>"
+    body = "".join('<tr class="cmp-sub"><th colspan="7">%s</th></tr>%s'
+                   % (e(CMP_GROUPS[n]), "".join(rows))
+                   for n, rows in enumerate(groups) if rows)
     return ('<table class="cmp-table"><thead><tr><th>Profile</th><th>Conns</th>'
-            '<th class="n">%s req/sec</th><th class="n">%s req/sec</th><th class="n">Delta</th>'
+            '<th class="n">%s</th><th class="n">%s</th><th class="n">Delta</th>'
             '<th class="n">%s p99</th><th class="n">%s p99</th></tr></thead><tbody>'
-            % (e(a), e(b), e(a), e(b)) + "".join(body) + "</tbody></table>")
+            % (e(a), e(b), e(a), e(b)) + body + "</tbody></table>")
+
+
+def _cmp_composites(scores, a, b):
+    """What the two composites say about each other, which is nothing unless
+    they were taken in the same league. `scores` is fw -> (composite, league)."""
+    e = _html.escape
+    sa, sb = scores.get(a), scores.get(b)
+    if not sa or not sb:
+        return ""
+    if sa[1] == sb[1]:
+        return (" On the %s composite %s scores %.0f and %s %.0f."
+                % (SCOPE_NAME[DEFAULT_SCOPE], e(a), sa[0], e(b), sb[0]))
+    return (" Their composite scores are not on one scale: %s is ranked among %s and %s among "
+            "%s, and each league is measured against its own leader."
+            % (e(a), e(_league_many(sa[1])), e(b), e(_league_many(sb[1]))))
 
 
 def _cmp_verdict(data, views, scores, a, b):
-    """One sentence on who is ahead, from the profile wins and the composite."""
+    """One sentence on who is ahead, from the tests they share, and what their
+    composites can and cannot add to it."""
     e = _html.escape
     wa, wb, both = _cmp_wins(data, views, a, b)
     if not both:
         return ("%s and %s share no test profile, so there is nothing to compare directly."
                 % (e(a), e(b)))
     lead, other, wl, wo = (a, b, wa, wb) if wa >= wb else (b, a, wb, wa)
-    out = ("<b>%s</b> is quicker than <b>%s</b> on %d of the %d profiles they both run"
-           % (e(lead), e(other), wl, both))
-    out += (", and behind on %d." % wo) if wo else "."
-    sa, sb = scores.get(a), scores.get(b)
-    if sa and sb:
-        out += (" On the %s composite they score %.0f and %.0f."
-                % (SCOPE_NAME[DEFAULT_SCOPE], sa, sb))
-    return out
+    if wl == wo:
+        out = ("<b>%s</b> and <b>%s</b> are level: each is ahead on %d of the %d tests they "
+               "both run." % (e(lead), e(other), wl, both))
+    else:
+        out = ("<b>%s</b> is ahead of <b>%s</b> on %d of the %d tests they both run"
+               % (e(lead), e(other), wl, both))
+        out += (", and behind on %d." % wo) if wo else "."
+    return out + _cmp_composites(scores, a, b)
 
 
 def _cmp_faq(data, views, scores, pairs, lang):
@@ -3110,15 +3316,38 @@ def _cmp_faq(data, views, scores, pairs, lang):
            _cmp_verdict(data, views, scores, a, b)
            + " Both run on the same machine, in the same round, against the same profiles.")
           for a, b in pairs[:4]]
-    if scores:
-        top = max(scores, key=lambda k: scores[k])
+    # The highest composite of each league, not of the page. One answer over
+    # every entry named an engine, or an experimental entry the board hides by
+    # default, as the fastest framework - on a number taken against a different
+    # leader, and for an engine over a different set of profiles, than the
+    # frameworks it was put ahead of (#1461).
+    best = {}
+    for fw, (score, league) in scores.items():
+        if league not in best or score > best[league][1]:
+            best[league] = (fw, score)
+    leaders = [(league, *best[league])
+               for league in LEAGUE_ORDER + sorted(k for k in best if k not in LEAGUE_ORDER)
+               if league in best]
+    if leaders:
+        if len(leaders) == 1:
+            league, fw, score = leaders[0]
+            answer = ("%s holds the highest %s composite of the %s, at %.0f."
+                      % (e(fw), SCOPE_NAME[DEFAULT_SCOPE], e(_league_many(league, lang or "")),
+                         score))
+        else:
+            answer = "; ".join("among the %s, %s holds the highest %s composite, at %.0f"
+                               % (e(_league_many(league, lang or "")), e(fw),
+                                  SCOPE_NAME[DEFAULT_SCOPE], score)
+                               for league, fw, score in leaders)
+            answer = (answer[0].upper() + answer[1:] + ". Each league is measured against "
+                      "its own leader, and the leagues do not all count the same profiles, so "
+                      "those numbers are not on one scale and the highest of them is not the "
+                      "fastest entry on the page: to set an entry of one league against an entry "
+                      "of another, pick the two in the table above.")
         qa.append(("Which %sframework is fastest overall?" % (e(lang) + " " if lang else ""),
-                   "%s holds the highest %s composite of the %s, at %.0f. The composite "
-                   "is throughput over the whole suite; if a service is one shape of workload, "
-                   "compare that profile on its own in the table above, because the order "
-                   "changes." % (e(top), SCOPE_NAME[DEFAULT_SCOPE],
-                                 ("%s entries" % e(lang)) if lang else "entries it ranks",
-                                 scores[top])))
+                   answer + " The composite is throughput over the whole suite; if a service "
+                   "is one shape of workload, compare that profile on its own in the table "
+                   "above, because the order changes."))
     if not lang:
         qa.append(("Can I compare frameworks written in different languages?",
                    "Yes - that is what this page is for. Every entry runs the same profiles on "
@@ -3129,35 +3358,58 @@ def _cmp_faq(data, views, scores, pairs, lang):
     return qa
 
 
+# The page's own sentence and table, redrawn for whichever pair the picker holds.
+# It has to say what _cmp_verdict and _cmp_table say for the default pair, so
+# the logic is the same three rules: a row is decided on its score where it has
+# one (CMP.d row index 5, the fixed-rate profiles) and on requests per second
+# everywhere else; the rows are printed in the two groups of CMP.g; and two
+# composites are only quoted against each other when CMP.s puts both entries in
+# the same league.
 _CMP_JS = """<script>
 (function(){
-  var D=window.CMP, views=D.v, data=D.d, sel=D.e;
+  var D=window.CMP, views=D.v, data=D.d, sel=D.e, S=D.s||{}, L=D.l||[], G=D.g||[];
   var a=document.getElementById('cmpA'), b=document.getElementById('cmpB'),
       out=document.getElementById('cmpOut'), head=document.getElementById('cmpLead');
   if(!a||!b||!out) return;
   function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
   function num(n){ return n.toLocaleString('en-US'); }
+  function metric(r){ return r.length>5 ? r[5] : r[0]; }
+  function delta(x,y){ var d=y?(x-y)/y*100:0; d=Math.floor(Math.abs(d)+0.5)*(d<0?-1:1); return (d>0?'+':'')+d+'%'; }
+  function composites(x,y){
+    var sx=S[x], sy=S[y];
+    if(!sx||!sy) return '';
+    if(sx[1]===sy[1]) return ' On the '+D.c+' composite '+esc(x)+' scores '+sx[0]+' and '+esc(y)+' '+sy[0]+'.';
+    return ' Their composite scores are not on one scale: '+esc(x)+' is ranked among '+esc(L[sx[1]])
+      +' and '+esc(y)+' among '+esc(L[sy[1]])+', and each league is measured against its own leader.';
+  }
   function draw(){
-    var x=a.value, y=b.value, rows='', wx=0, wy=0, both=0;
+    var x=a.value, y=b.value, rows=['',''], wx=0, wy=0, both=0;
     for(var i=0;i<views.length;i++){
       var v=views[i], rx=(data[x]||{})[v[0]], ry=(data[y]||{})[v[0]];
       if(!rx||!ry) continue;
-      both++; if(rx[0]>ry[0])wx++; else if(ry[0]>rx[0])wy++;
-      var d=ry[0]?(rx[0]-ry[0])/ry[0]*100:0;
-      rows+='<tr><td>'+esc(v[1])+'</td><td>'+num(v[2])+'</td><td class="n">'+num(rx[0])+'</td>'
-           +'<td class="n">'+num(ry[0])+'</td><td class="n">'+(d>=0?'+':'')+d.toFixed(0)+'%</td>'
+      var paced=rx.length>5&&ry.length>5, mx=metric(rx), my=metric(ry);
+      both++; if(mx>my)wx++; else if(my>mx)wy++;
+      rows[paced?1:0]+='<tr><td>'+esc(v[1])+'</td><td>'+num(v[2])+'</td><td class="n">'
+           +(paced?mx.toFixed(1):num(mx))+'</td><td class="n">'+(paced?my.toFixed(1):num(my))
+           +'</td><td class="n">'+delta(mx,my)+'</td>'
            +'<td class="n">'+esc(rx[2]||'-')+'</td><td class="n">'+esc(ry[2]||'-')+'</td></tr>';
     }
-    out.innerHTML = rows
+    var body='';
+    for(var g=0;g<2;g++) if(rows[g]) body+='<tr class="cmp-sub"><th colspan="7">'+esc(G[g]||'')+'</th></tr>'+rows[g];
+    out.innerHTML = body
       ? '<table class="cmp-table"><thead><tr><th>Profile</th><th>Conns</th><th class="n">'
-        +esc(x)+' req/sec</th><th class="n">'+esc(y)+' req/sec</th><th class="n">Delta</th>'
+        +esc(x)+'</th><th class="n">'+esc(y)+'</th><th class="n">Delta</th>'
         +'<th class="n">'+esc(x)+' p99</th><th class="n">'+esc(y)+' p99</th></tr></thead><tbody>'
-        +rows+'</tbody></table>'
+        +body+'</tbody></table>'
       : '<p>These two entries share no test profile.</p>';
-    if(head) head.innerHTML = both
-      ? '<b>'+esc(wx>=wy?x:y)+'</b> is quicker on '+Math.max(wx,wy)+' of the '+both
-        +' profiles they both run, <b>'+esc(wx>=wy?y:x)+'</b> on '+Math.min(wx,wy)+'.'
-      : 'These two entries share no test profile.';
+    if(head){
+      var lead=wx>=wy?x:y, other=wx>=wy?y:x, wl=Math.max(wx,wy), wo=Math.min(wx,wy), t;
+      if(!both) t=esc(x)+' and '+esc(y)+' share no test profile, so there is nothing to compare directly.';
+      else if(wl===wo) t='<b>'+esc(lead)+'</b> and <b>'+esc(other)+'</b> are level: each is ahead on '+wl+' of the '+both+' tests they both run.'+composites(x,y);
+      else t='<b>'+esc(lead)+'</b> is ahead of <b>'+esc(other)+'</b> on '+wl+' of the '+both+' tests they both run'
+            +(wo?', and behind on '+wo+'.':'.')+composites(x,y);
+      head.innerHTML=t;
+    }
     if(location.hash.slice(1)!==x+'-vs-'+y) history.replaceState(null,'','#'+x+'-vs-'+y);
   }
   function fromHash(){
@@ -3217,7 +3469,9 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
     entries = [fw for fw in entries if data[fw]]
     if len(entries) < 2:
         return ""
-    scores = {r[0]: r[3] for r in ranked}
+    # composite and the league it was taken in: the second half is what decides
+    # whether two of these numbers may be read against each other at all
+    scores = {r[0]: (r[3], _league(r[1])) for r in ranked}
     # The pair written into the page, and the pairs offered as links, are the
     # flagship entries first: "django vs fastapi" is what gets asked, and the two
     # leaders of a language are often two entries nobody has heard of.
@@ -3251,20 +3505,35 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
                 "every language: requests per second, p99 latency and the delta on every test "
                 "profile, all measured on the same machine." % len(entries))
 
+    league_of = {fw: _league(kind_of.get(fw, "")) for fw in entries}
+
     def opts(cur):
-        def one(fw):
+        def one(fw, tag=False):
+            # On the page grouped by language the league has nowhere else to
+            # show, and it is the first thing to know about a pair: whether
+            # their composites can be read against each other.
+            kind = kind_of.get(fw) or ""
+            label = e(fw) + (" (%s)" % e(TYPE_LABEL.get(kind, kind).lower())
+                             if tag and league_of[fw] != "framework" else "")
             return ('<option value="%s"%s>%s</option>'
-                    % (e(fw), " selected" if fw == cur else "", e(fw)))
+                    % (e(fw), " selected" if fw == cur else "", label))
         if lang or not fw_lang:
-            return "".join(one(fw) for fw in entries)
+            # One language: grouped by league, in league order, ranked inside each.
+            by = {}
+            for fw in entries:
+                by.setdefault(league_of[fw], []).append(fw)
+            order = LEAGUE_ORDER + sorted(k for k in by if k not in LEAGUE_ORDER)
+            return "".join('<optgroup label="%s">%s</optgroup>'
+                           % (e(_league_head(k)), "".join(one(fw) for fw in by[k]))
+                           for k in order if k in by)
         # Every entry in one flat list is not something anyone can pick from, and
-        # the language is what people navigate by - "the F# one". Ranked order is
-        # kept inside each group.
+        # the language is what people navigate by - "the F# one". Inside each
+        # group the order is league by league, ranked inside each.
         by = {}
         for fw in entries:
             by.setdefault(fw_lang.get(fw) or "Other", []).append(fw)
         return "".join('<optgroup label="%s">%s</optgroup>'
-                       % (e(l), "".join(one(fw) for fw in by[l]))
+                       % (e(l), "".join(one(fw, True) for fw in by[l]))
                        for l in sorted(by, key=str.lower))
 
     quick = " · ".join('<a href="#%s-vs-%s">%s vs %s</a>' % (e(x), e(y), e(x), e(y))
@@ -3311,7 +3580,9 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
               '<select id="cmpB">' + opts(b) + "</select></div>")
     how = ("Requests per second is the best of three runs and the delta is the first column "
            "against the second; every row is the same profile at the same connection count, on "
-           'the same machine. <a href="/docs/test-profiles/">What each profile measures</a>.')
+           "the same machine. The fixed-rate profiles offer every entry the same request rate, "
+           "so they are compared on their score out of 100 instead, which is CPU cost and "
+           'latency at that rate. <a href="/docs/test-profiles/">What each profile measures</a>.')
     intro = ("<p>Pick any two of the %d %s entries. %s</p>" % (len(entries), e(lang), how)
              if lang else
              "<p>Pick any two of the %d entries, in any language - the picker is grouped by "
@@ -3339,8 +3610,19 @@ def _compare_page(lang, ranked, members, profiles, results, round_name, updated,
                              '<a href="/frameworks/">Every entry, one page each</a> · '
                              '<a href="/">Open the leaderboard</a>'))
             + "</div></article></main></div>")
+    # s: fw -> [composite as printed, index into l], l: the leagues as a sentence
+    # names them, g: the two row groups, c: the family the composites are from.
+    league_names = sorted({league for _s, league in scores.values()},
+                          key=lambda k: (LEAGUE_ORDER.index(k) if k in LEAGUE_ORDER
+                                         else len(LEAGUE_ORDER), k))
     payload = js_payload("CMP", {"v": [[k, p["label"], c] for k, p, c in views],
-                                 "d": data, "e": entries})
+                                 "d": data, "e": entries,
+                                 "s": {fw: [int("%.0f" % score), league_names.index(league)]
+                                       for fw, (score, league) in scores.items()
+                                       if fw in data and data[fw]},
+                                 "l": [_league_many(k) for k in league_names],
+                                 "g": list(CMP_GROUPS),
+                                 "c": SCOPE_NAME[DEFAULT_SCOPE]})
     return (head + header + body + "<script>" + payload + "</script>" + _CMP_JS
             + _THEME_TOGGLE + "</body></html>")
 
@@ -3433,9 +3715,11 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "index.html").write_text(page, encoding="utf-8")
         if with_og:
+            # the first league only: five numbers under one heading read as one
+            # ranking, and across leagues they are not one
             _og_card(dest / "og.png", "Head to head · " + SCOPE_NAME[DEFAULT_SCOPE],
                      lang + " web frameworks, compared",
-                     [(r[0], "%.0f" % r[3]) for r in rows[:5]],
+                     [(r[0], "%.0f" % r[3]) for r in (_by_league(rows)[0][1][:5] if rows else [])],
                      "%d entries · %s · http-arena.com" % (len(members), round_name))
             cards += 1
         written.append((lang, len(members)))
@@ -3445,7 +3729,7 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
     # own, so this is the only place that entry can be compared at all.
     all_members = [m for l in sorted(members_by_lang, key=str.lower)
                    for m in members_by_lang[l]]
-    all_rows = sorted((r for rows in lang_rows.values() for r in rows), key=lambda r: -r[3])
+    all_rows = _league_first([r for rows in lang_rows.values() for r in rows])
     all_page = _compare_page(None, all_rows, all_members, profiles, results, round_name,
                              updated, (_compare_url(None) + "og.png") if with_og else "",
                              fw_lang)
@@ -3456,7 +3740,8 @@ def build_compare_pages(profiles, results, lang_rows, members_by_lang, compare_l
         if with_og:
             _og_card(dest / "og.png", "Head to head · every language",
                      "Compare any two entries, whatever they are written in",
-                     [(r[0], "%.0f" % r[3]) for r in all_rows[:5]],
+                     [(r[0], "%.0f" % r[3])
+                      for r in (_by_league(all_rows)[0][1][:5] if all_rows else [])],
                      "%d entries · %s · http-arena.com" % (len(all_members), round_name))
             cards += 1
         written.insert(0, (None, len(all_members)))
@@ -3538,7 +3823,9 @@ def build_fw_pages(profiles, results, meta, fw_lang, badge_index, achievements,
                     rows.append((fw, kind, tuned, d["score"], d["rank"], d["of"], d["link"],
                                  bl["rank"] if bl else None, bl["of"] if bl else None))
             if rows:
-                scopes[scope] = sorted(rows, key=lambda r: -r[3])
+                # League by league, never one list sorted by composite: the
+                # numbers come from different leagues and are not on one scale.
+                scopes[scope] = _league_first(rows)
         members_by_lang[lang] = members
         lang_scopes[lang] = scopes
     # decided before the first page is written: an entry page links to the
