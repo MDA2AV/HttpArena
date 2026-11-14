@@ -397,6 +397,12 @@ def _row(line):
     return [c.strip() for c in s.split("|")]
 
 
+def _scroll(table):
+    """A table in a box of its own that scrolls sideways when the table is wider
+    than the screen. Styled by .tbl-x in _docs_css(), which says why."""
+    return '<div class="tbl-x">' + table + "</div>"
+
+
 def _table(lines, i, out, curdir, ids):
     header = _row(lines[i])
     i += 2
@@ -406,7 +412,7 @@ def _table(lines, i, out, curdir, ids):
         i += 1
     th = "".join("<th>%s</th>" % _inline(c, curdir, ids) for c in header)
     rows = "".join("<tr>%s</tr>" % "".join("<td>%s</td>" % _inline(c, curdir, ids) for c in r) for r in body)
-    out.append("<table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (th, rows))
+    out.append(_scroll("<table><thead><tr>%s</tr></thead><tbody>%s</tbody></table>" % (th, rows)))
     return i
 
 
@@ -1045,6 +1051,12 @@ def _docs_css():
 .cmp-pick{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:1rem 0}
 .cmp-pick select{font:inherit;font-size:.9rem;padding:.35rem .5rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--text)}
 .doc-body td.n,.doc-body th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* A table wider than the screen scrolls sideways inside its own box. Left to
+   itself it widened the page, so on a phone everything panned: the head-to-head
+   table is 625px across on a 375px screen and an entry's results table 688px.
+   The table's margin moves out to the box, so the space around it is unchanged. */
+.tbl-x,#cmpOut{overflow-x:auto;margin:1.1rem 0}
+.tbl-x>table,#cmpOut>table{margin:0}
 /* the line over each group of rows in a head-to-head table, naming its unit */
 .cmp-table tr.cmp-sub th{text-align:left;font-weight:600;font-size:.8rem;color:var(--text-2);background:var(--panel-2)}
 /* the date the numbers were last published, on every generated page */
@@ -2581,8 +2593,8 @@ def _fw_achievements(items):
             "language, and each test profile it is scored on. Every field is the one the "
             "badges publish, so a medal and a badge always say the same thing. "
             '<a href="/docs/scoring/achievements/">How medals are awarded</a>.</p>'
-            "<table><thead><tr><th>Medal</th><th>Award</th><th>Field</th><th>Rank</th>"
-            "</tr></thead><tbody>" + rows + "</tbody></table>")
+            + _scroll("<table><thead><tr><th>Medal</th><th>Award</th><th>Field</th><th>Rank</th>"
+                      "</tr></thead><tbody>" + rows + "</tbody></table>"))
 
 
 def _fw_neighbours(fw, scopes):
@@ -2652,10 +2664,10 @@ def _fw_compare(fw, lang, scopes, lang_url, has_compare=False):
             % (e(_league_many(_league(rows[i][1]), lang)), e(fw),
                SCOPE_NAME.get(scope, scope),
                " The last column shows every profile side by side." if has_compare else "")
-            + "<table><thead><tr><th>Entry</th><th class=\"n\">Composite</th>"
-              "<th class=\"n\">vs %s</th>%s</tr></thead><tbody>"
-              % (e(fw), "<th></th>" if has_compare else "")
-            + body + "</tbody></table>" + links)
+            + _scroll("<table><thead><tr><th>Entry</th><th class=\"n\">Composite</th>"
+                      "<th class=\"n\">vs %s</th>%s</tr></thead><tbody>"
+                      % (e(fw), "<th></th>" if has_compare else "")
+                      + body + "</tbody></table>") + links)
 
 
 def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
@@ -2710,8 +2722,8 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
             '<tr><td><a href="%s">%s</a></td><td>%d of %d</td><td>%.0f</td></tr>'
             % (e(link), e(SCOPE_NAME[scope]), rank, field, score)
             for scope, rank, field, score, link in ranks)
-        out.append("<table><thead><tr><th>Family</th><th>Rank</th><th>Composite</th></tr></thead>"
-                   "<tbody>" + rows + "</tbody></table>")
+        out.append(_scroll("<table><thead><tr><th>Family</th><th>Rank</th><th>Composite</th></tr>"
+                           "</thead><tbody>" + rows + "</tbody></table>"))
 
     if runs:
         out.append('<h2 id="results">Every result</h2>')
@@ -2725,9 +2737,9 @@ def _fw_body(fw, m, lang, ranks, runs, round_name, lang_url="", achievements=(),
                e(r.get("avg_latency") or "-"), e(r.get("p99_latency") or "-"),
                e(r.get("cpu") or "-"), e(r.get("memory") or "-"))
             for p, c, r in runs)
-        out.append("<table><thead><tr><th>Category</th><th>Profile</th><th>Conns</th>"
-                   "<th>Req/sec</th><th>Avg</th><th>p99</th><th>CPU</th><th>Memory</th></tr></thead>"
-                   "<tbody>" + body + "</tbody></table>")
+        out.append(_scroll("<table><thead><tr><th>Category</th><th>Profile</th><th>Conns</th>"
+                           "<th>Req/sec</th><th>Avg</th><th>p99</th><th>CPU</th><th>Memory</th></tr>"
+                           "</thead><tbody>" + body + "</tbody></table>"))
 
     if lang and lang_scopes:
         out.append(_fw_compare(fw, lang, lang_scopes, lang_url, has_compare))
@@ -2939,8 +2951,8 @@ def _lang_page(lang, scopes, all_entries, round_name, siblings=(), updated="",
                    ("%d of %d" % (lrank, lof)) if lrank else "&mdash;")
                 for fw, kind, tuned, score, rank, of, link, lrank, lof in lrows)
             tables.append("<h3 id=\"%s-%s\">%s</h3>" % (scope, league, e(_league_head(league)))
-                          + "<table><thead>" + head_cells + "</thead><tbody>" + body
-                          + "</tbody></table>")
+                          + _scroll("<table><thead>" + head_cells + "</thead><tbody>" + body
+                                    + "</tbody></table>"))
 
     has_tuned = any(r[2] for rows in scopes.values() for r in rows)
     listed = {fw for rows in scopes.values() for fw, *_ in rows}
