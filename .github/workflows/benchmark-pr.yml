@@ -266,7 +266,9 @@ jobs:
             SLUG=$(python3 -c "import json,re,sys;n=json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('display_name',sys.argv[1]);print((re.sub(r'[^A-Za-z0-9._-]+','-',n).strip('-') or 'unnamed').lower())" "$fw" 2>/dev/null || echo "")
             [ -n "$SLUG" ] && git add -f "site/data/results/${SLUG}.json" 2>/dev/null || true
             # The compliance scores, when this run measured them (scripts/spec.sh).
-            [ -n "$SLUG" ] && git add -f "site/data/spec/${SLUG}.json" 2>/dev/null || true
+            # Named by directory: variants sharing a display name own a file each.
+            # Staged even when gone, so an entry that dropped "spec" drops its scores.
+            git add -f -A "site/data/spec/${fw}.json" 2>/dev/null || true
           done
           git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
           if git diff --cached --quiet; then

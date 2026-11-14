@@ -10,10 +10,13 @@
 #   ws  Autobahn's fuzzing client against /ws on :8080
 #
 # Each suite gets a fresh container, so a crash in one cannot cost another its
-# score. The scores always land in results/spec/<slug>.json, next to the raw
-# output in results/spec/<slug>/; --save also writes site/data/spec/<slug>.json,
-# the file /benchmark --save and /spec --save commit, the way benchmark results
-# go to site/data/results/<slug>.json. <slug> is the slugified display name.
+# score. The scores always land in results/spec/<dir>.json, next to the raw
+# output in results/spec/<dir>/; --save also writes site/data/spec/<dir>.json,
+# the file /benchmark --save and /spec --save commit.
+#
+# <dir> is the entry's directory, not its display name: several entries share
+# one display name (actix, actix-h2c and actix-websocket are all "actix" on the
+# board), and each has to own its file, the way site/data/tls/<dir>.json does.
 #
 # The image is built unless SPEC_SKIP_BUILD=1, which a caller that has just
 # built it (a /benchmark run) sets. Contract, suites and file format:
@@ -74,6 +77,11 @@ spec_load "$ROOT_DIR/frameworks/$FRAMEWORK/meta.json" \
     || fail "meta.json \"spec\" must be a list of compliance suites (known: $SPEC_KNOWN)"
 if [ -z "$SPEC_SUITES" ]; then
     info "$FRAMEWORK lists no compliance suites in meta.json \"spec\" - nothing to run"
+    # An entry that stopped listing suites takes its saved scores with it.
+    if $SAVE && [ -f "$ROOT_DIR/site/data/spec/$FRAMEWORK.json" ]; then
+        rm -f "$ROOT_DIR/site/data/spec/$FRAMEWORK.json"
+        info "removed site/data/spec/$FRAMEWORK.json"
+    fi
     exit 0
 fi
 if ! problems=$(spec_check "$FRAMEWORK_TESTS"); then
@@ -87,8 +95,7 @@ else
     framework_build
 fi
 
-SLUG=$(python3 -c "import re, sys; print((re.sub(r'[^A-Za-z0-9._-]+', '-', sys.argv[1]).strip('-') or 'unnamed').lower())" "$DISPLAY_NAME")
-WORK="$RESULTS_DIR/spec/$SLUG"
+WORK="$RESULTS_DIR/spec/$FRAMEWORK"
 rm -rf "$WORK"
 mkdir -p "$WORK"
 
@@ -199,13 +206,13 @@ done
 
 # ── Scores ──────────────────────────────────────────────────────────────────
 
-OUT="$RESULTS_DIR/spec/$SLUG.json"
+OUT="$RESULTS_DIR/spec/$FRAMEWORK.json"
 SPEC_VERSION_H1="${H1SPEC_COMMIT:0:7}" SPEC_VERSION_H2="$H2SPEC_VERSION" \
 SPEC_VERSION_H3="$H3SPEC_VERSION" SPEC_VERSION_WS="$AUTOBAHN_VERSION" \
-    python3 "$SCRIPT_DIR/spec_results.py" "$WORK" "$DISPLAY_NAME" $SPEC_SUITES > "$OUT"
-info "wrote results/spec/$SLUG.json"
+    python3 "$SCRIPT_DIR/spec_results.py" "$WORK" "$DISPLAY_NAME" "$FRAMEWORK" $SPEC_SUITES > "$OUT"
+info "wrote results/spec/$FRAMEWORK.json"
 if $SAVE; then
     mkdir -p "$ROOT_DIR/site/data/spec"
-    cp "$OUT" "$ROOT_DIR/site/data/spec/$SLUG.json"
-    info "saved site/data/spec/$SLUG.json"
+    cp "$OUT" "$ROOT_DIR/site/data/spec/$FRAMEWORK.json"
+    info "saved site/data/spec/$FRAMEWORK.json"
 fi

@@ -26,7 +26,7 @@ A suite the entry does not list shows as not measured in its column. Only `h1` a
 
 ## Running the suites
 
-On a PR, `/spec -f <entry>` runs the suites the entry lists, and a `/benchmark` without `-t` runs them after the benchmark. With `--save` the scores are committed to the PR as `site/data/spec/<entry>.json`, the way benchmark results are saved to `site/data/results/`. Locally:
+On a PR, `/spec -f <entry>` runs the suites the entry lists, and a `/benchmark` without `-t` runs them after the benchmark. With `--save` the scores are committed to the PR as `site/data/spec/<entry>.json`, the way benchmark results are saved to `site/data/results/`. `<entry>` is the directory under `frameworks/`, not the display name: entries that share a display name (`actix`, `actix-h2c` and `actix-websocket` are all "actix" on the board) each keep their own file. Locally:
 
 ```bash
 ./scripts/spec.sh <entry>          # scores in results/spec/<entry>.json
@@ -40,6 +40,7 @@ Each suite runs against a fresh container, with the tools pinned in `scripts/spe
 ```json
 {
   "framework": "aspnet-minimal",
+  "dir": "aspnet-minimal",
   "suites": {
     "h1": {"tool": "http11probe", "version": "d50d818", "passed": 144, "total": 159, "warnings": 19, "failed": ["COMP-OPTIONS-STAR", "..."]},
     "h2": {"tool": "h2spec", "version": "2.6.0", "passed": 146, "total": 146, "failed": [],

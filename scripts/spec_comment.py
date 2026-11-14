@@ -4,28 +4,21 @@ result comments.
 
     spec_comment.py <framework dir>
 
-Reads results/spec/<slug>.json, which scripts/spec.sh wrote during this run,
-rather than site/data/spec/: a PR branch can carry an older saved copy, and
-that must not be shown as if it had just been measured. Prints nothing when
-the entry ran no suite.
+Reads results/spec/<framework dir>.json, which scripts/spec.sh wrote during
+this run, rather than site/data/spec/: a PR branch can carry an older saved
+copy, and that must not be shown as if it had just been measured. Prints
+nothing when the entry ran no suite.
 """
 import json
 import os
-import re
 import sys
 
 LABELS = {"h1": "H/1.1", "h2": "H/2", "h3": "H/3", "ws": "WebSocket"}
 
 
-def slug(name):
-    return (re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "unnamed").lower()
-
-
 def main():
     fw = sys.argv[1]
-    with open(os.path.join("frameworks", fw, "meta.json")) as f:
-        display = json.load(f).get("display_name", fw)
-    path = os.path.join("results", "spec", slug(display) + ".json")
+    path = os.path.join("results", "spec", fw + ".json")
     if not os.path.exists(path):
         return
     with open(path) as f:

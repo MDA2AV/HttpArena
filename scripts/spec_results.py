@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Turn the raw output of the compliance suites into an entry's scores.
 
-    spec_results.py <work dir> <display name> <suite>...
+    spec_results.py <work dir> <display name> <entry dir> <suite>...
 
 Reads what scripts/spec.sh left in <work dir> and prints the JSON it writes to
-results/spec/<slug>.json (and, with --save, site/data/spec/<slug>.json). The
-tool versions come from SPEC_VERSION_H1, _H2, _H3 and _WS in the environment.
+results/spec/<entry dir>.json (and, with --save, site/data/spec/<entry dir>.json).
+The tool versions come from SPEC_VERSION_H1, _H2, _H3 and _WS in the environment.
 
 Per suite: "passed" out of "total" and the IDs of the tests that failed. A
 suite that could not be measured has "error" instead of a score, and one whose
@@ -139,10 +139,10 @@ PARSERS = {"h1": h1, "h2": h2, "h3": h3, "ws": ws}
 
 
 def main():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 4:
         sys.exit(__doc__)
-    work, display, suites = sys.argv[1], sys.argv[2], sys.argv[3:]
-    out = {"framework": display, "suites": {}}
+    work, display, entry_dir, suites = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+    out = {"framework": display, "dir": entry_dir, "suites": {}}
     for suite in suites:
         entry = {"tool": TOOLS[suite], "version": os.environ.get("SPEC_VERSION_" + suite.upper(), "")}
         status_path = os.path.join(work, suite + ".status")
