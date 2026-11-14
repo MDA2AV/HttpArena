@@ -2,9 +2,19 @@
 #include <ctype.h>
 
 void req_init(request_t *req) {
-    memset(req, 0, sizeof(*req));
+    req->method = HTTP_METHOD_UNKNOWN;
+    req->uri = (str_view_t){ NULL, 0 };
+    req->path = (str_view_t){ NULL, 0 };
+    req->query = (str_view_t){ NULL, 0 };
+    req->body = (str_view_t){ NULL, 0 };
+    req->num_headers = 0;
+    req->num_params = 0;
+    req->num_route_params = 0;
     req->content_length = -1;
+    req->is_chunked = false;
     req->keep_alive = true;
+    req->accept_encoding = (str_view_t){ NULL, 0 };
+    req->content_type = (str_view_t){ NULL, 0 };
 }
 
 void req_parse_query(request_t *req) {
@@ -151,13 +161,10 @@ size_t res_serialize(const response_t *res, char *out_buf, size_t max_out) {
 
 static inline const char* find_crlf_crlf(const char *buf, size_t len, size_t *header_len_out) {
     if (len < 4) return NULL;
-    for (size_t i = 0; i + 3 < len; i++) {
-        if (buf[i] == '\r' && buf[i+1] == '\n' && buf[i+2] == '\r' && buf[i+3] == '\n') {
-            *header_len_out = i + 4;
-            return buf + i + 4;
-        }
-    }
-    return NULL;
+    const char *found = memmem(buf, len, "\r\n\r\n", 4);
+    if (!found) return NULL;
+    *header_len_out = (size_t)(found - buf) + 4;
+    return found + 4;
 }
 
 int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_buf, size_t max_chunk, size_t *consumed_out) {
