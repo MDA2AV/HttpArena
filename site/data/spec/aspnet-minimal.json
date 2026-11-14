@@ -1,0 +1,110 @@
+{
+  "framework": "aspnet-minimal",
+  "dir": "aspnet-minimal",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 133,
+      "total": 159,
+      "warnings": 22,
+      "failed": [
+        "RFC9112-5-INVALID-HEADER-NAME",
+        "RFC9112-6.1-CL-PLUS-SIGN",
+        "COMP-ASTERISK-WITH-GET",
+        "COMP-OPTIONS-STAR",
+        "COMP-METHOD-CONNECT",
+        "COMP-HOST-EMPTY-VALUE",
+        "COMP-VERSION-CASE",
+        "SMUG-CHUNK-BARE-SEMICOLON",
+        "SMUG-CHUNK-EXT-INVALID-TOKEN",
+        "SMUG-CHUNK-EXT-CTRL",
+        "SMUG-CHUNK-LF-TRAILER",
+        "SMUG-CL-NEGATIVE-ZERO",
+        "SMUG-CLTE-CONN-CLOSE",
+        "SMUG-TECL-CONN-CLOSE",
+        "SMUG-CLTE-DESYNC",
+        "SMUG-CLTE-SMUGGLED-GET",
+        "SMUG-CLTE-SMUGGLED-GET-CL-PLUS",
+        "SMUG-CLTE-SMUGGLED-HEAD",
+        "SMUG-CLTE-SMUGGLED-GET-TE-TRAILING-SPACE",
+        "SMUG-CLTE-SMUGGLED-GET-TE-LEADING-COMMA",
+        "SMUG-CLTE-SMUGGLED-GET-TE-CASE-MISMATCH",
+        "SMUG-TECL-SMUGGLED-GET",
+        "SMUG-TECL-DESYNC",
+        "MAL-CONTROL-CHARS-HEADER",
+        "MAL-LONG-METHOD",
+        "MAL-CHUNK-SIZE-OVERFLOW"
+      ]
+    },
+    "h2": {
+      "tool": "h2spec",
+      "version": "2.6.0",
+      "passed": 146,
+      "total": 146,
+      "failed": [],
+      "listeners": {
+        "tls": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        },
+        "h2c": {
+          "passed": 146,
+          "total": 146,
+          "failed": []
+        }
+      }
+    },
+    "h3": {
+      "tool": "h3spec",
+      "version": "v0.1.15",
+      "passed": 43,
+      "total": 85,
+      "failed": [
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if original_destination_connection_id is received [Transport 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if preferred_address is received [Transport 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if retry_source_connection_id is received [Transport 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if stateless_reset_token is received [Transport 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if a parameter value is malformed [Transport 18]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if max_udp_payload_size < 1200 [Transport 7.4 and 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if ack_delay_exponent > 20 [Transport 7.4 and 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if max_ack_delay >= 2^14 [Transport 7.4 and 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_max_streams_bidi > 2^60 [Transport 18.2]",
+        "QUIC servers MUST send TRANSPORT_PARAMETER_ERROR if initial_max_streams_uni > 2^60 [Transport 18.2]",
+        "QUIC servers SHOULD send PROTOCOL_VIOLATION on an ACK for a packet never sent [Transport 13.1]",
+        "QUIC servers MUST send PROTOCOL_VIOLATION on no frames [Transport 12.4]",
+        "QUIC servers MUST send PROTOCOL_VIOLATION if PATH_CHALLENGE in Handshake is received [Transport 12.4]",
+        "QUIC servers MUST send PROTOCOL_VIOLATION if RETIRE_CONNECTION_ID for a sequence number never issued [Transport 19.16]",
+        "QUIC servers MUST send PROTOCOL_VIOLATION if STREAM_DATA_BLOCKED in Handshake is received [Transport 12.4]",
+        "QUIC servers MUST send PROTOCOL_VIOLATION if DATA_BLOCKED in Handshake is received [Transport 12.4]",
+        "QUIC servers MUST send PROTOCOL_VIOLATION if NEW_TOKEN is received [Transport 19.7]",
+        "QUIC servers MUST send FRAME_ENCODING_ERROR if invalid MAX_STREAMS is received [Transport 19.11]",
+        "QUIC servers MUST send STREAM_LIMIT_ERROR or FRAME_ENCODING_ERROR if invalid STREAMS_BLOCKED is received [Transport 19.14]",
+        "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in Handshake is received [TLS 6]",
+        "QUIC servers MUST send unexpected_message TLS alert if KeyUpdate in 1-RTT is received [TLS 6]",
+        "HTTP/3 servers MUST send H3_MESSAGE_ERROR if mandatory pseudo-header fields are absent [HTTP/3 4.3.1]",
+        "HTTP/3 servers MUST treat a request with keep-alive as malformed [HTTP/3 4.2]",
+        "HTTP/3 servers MUST treat a request with proxy-connection as malformed [HTTP/3 4.2]",
+        "HTTP/3 servers MUST treat a request with transfer-encoding as malformed [HTTP/3 4.2]",
+        "HTTP/3 servers MUST treat a request with upgrade as malformed [HTTP/3 4.2]",
+        "HTTP/3 servers MUST send H3_FRAME_ERROR if a SETTINGS frame stops mid-parameter [HTTP/3 7.1]",
+        "HTTP/3 servers treats a repeated setting identifier as an error whatever its value [HTTP/3 7.2.4]",
+        "HTTP/3 servers MUST send H3_ID_ERROR if CANCEL_PUSH names a push ID not allowed [HTTP/3 7.2.3]",
+        "HTTP/3 servers MUST send H3_ID_ERROR if MAX_PUSH_ID goes down [HTTP/3 7.2.7]",
+        "HTTP/3 servers MUST send H3_ID_ERROR if GOAWAY goes up [HTTP/3 5.2]",
+        "HTTP/3 servers MUST ignore a frame of unknown type, however long [HTTP/3 7.2.8]",
+        "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if an invalid static table index exists in a field line representation [QPACK 3.1]",
+        "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a field line references a dynamic table entry that is not there [QPACK 2.2.3]",
+        "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a field line is cut short [QPACK 2.2.3]",
+        "HTTP/3 servers MUST send QPACK_DECOMPRESSION_FAILED if a Huffman string is badly padded [QPACK 4.1.2]",
+        "HTTP/3 servers MUST NOT buffer an over-long frame on a control stream [HTTP/3 7.1]",
+        "HTTP/3 servers MUST send QPACK_ENCODER_STREAM_ERROR if a new dynamic table capacity value exceeds the limit [QPACK 4.3.1]",
+        "HTTP/3 servers MUST send H3_STREAM_CREATION_ERROR if a client opens a push stream [HTTP/3 6.2.2]",
+        "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if a decoder stream is closed [QPACK 4.2]",
+        "HTTP/3 servers MUST send H3_CLOSED_CRITICAL_STREAM if an encoder stream ends inside an instruction [QPACK 4.2]",
+        "HTTP/3 servers MUST send QPACK_DECODER_STREAM_ERROR if Insert Count Increment is 0 [QPACK 4.4.3]"
+      ]
+    }
+  }
+}
