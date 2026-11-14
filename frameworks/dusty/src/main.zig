@@ -257,7 +257,7 @@ pub fn main(init: std.process.Init) !void {
             256;
         pool = pg.Pool.initUri(rt.io(), init.gpa, uri, .{
             .size = max_conn,
-            .connect_on_init_count = 1,
+            .connect_on_init_count = 0,
         }) catch null;
     }
 
