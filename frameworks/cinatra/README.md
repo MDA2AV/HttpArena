@@ -1,7 +1,7 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/ad052b42361ab9802d64fb4cb2fd5003719fc729/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/17704062b861060407d3fbf51060e5fa48dcd334/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
 It explicitly enables `HTTPARENA_X86_64_V3` for the benchmark host. The local
 cinatra Dockerfile instead builds the current checkout, with that option off
@@ -18,12 +18,13 @@ builtin gzip, executor-local sleep and WebSocket reader/writer. JSON is selected
 recomputed and serialized per request with bundled iguana. Request-local PMR
 vectors borrow immutable dataset strings. The entry is marked tuned for its PMR
 storage and native contiguous buffers for small baseline replies and TLS
-JSON/echo; compression keeps framework defaults.
+JSON/echo, plus gzip level 3 through the native response API.
 
-Responses include Date, Server, Connection and Content-Type; JSON also carries
-Vary: Accept-Encoding. Local matched-byte comparisons align these headers, JSON
-field order and compression settings across entries and verify raw response
-lengths and body hashes before measuring.
+The case disables automatic Date/Server headers, omits extra Connection headers,
+and uses the same text/JSON Content-Type values and gzip level as unmodified
+dusty. Thirty request variants match complete HTTP lengths (including TLS after
+decryption), HTTP body hashes, WS/WSS handshake lengths and TCP/TLS pipelines.
+The service retains native response and WebSocket encoders.
 
 HTTP listens on 8080. When the mounted certificate pair exists, HTTP/1.1 TLS
 also listens on 8081. Worker counts follow the container affinity mask.
