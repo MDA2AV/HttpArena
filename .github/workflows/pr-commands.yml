@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   runner-busy:
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/benchmark') && vars.RUNNER_LOCAL == 'true'
+    if: github.event.issue.pull_request && (contains(github.event.comment.body, '/benchmark') || (startsWith(github.event.comment.body, '/spec ') || github.event.comment.body == '/spec')) && vars.RUNNER_LOCAL == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Post runner-busy notice
@@ -213,5 +213,124 @@ jobs:
         if: steps.parse.outputs.framework == ''
         run: |
           gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to test. Either modify files under \`frameworks/<name>/\` or specify explicitly: \`/benchmark -f <framework> -t <test>\` (or \`/benchmark-multiple -f <fw1>,<fw2>\` for several)."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── /spec — the compliance suites; requires collaborator approval ──
+  #
+  # Runs the suites the framework lists in "spec" (meta.json) and nothing else,
+  # through the same benchmark-pr.yml job as /benchmark: the same approval, the
+  # same results comment and, with --save, the same commit onto the PR branch.
+  # Matched only at the start of a comment: /spec is also the name of a route,
+  # and a comment that merely mentions it must not start a run.
+
+  acknowledge-spec:
+    if: github.event.issue.pull_request && (startsWith(github.event.comment.body, '/spec ') || github.event.comment.body == '/spec') && vars.RUNNER_LOCAL != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge command
+        run: |
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="eyes"
+          gh pr comment "${{ github.event.issue.number }}" \
+            --repo "${{ github.repository }}" \
+            --body "👋 Spec request received. A collaborator will review and approve the run."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  handle-spec:
+    needs: acknowledge-spec
+    if: github.event.issue.pull_request && (startsWith(github.event.comment.body, '/spec ') || github.event.comment.body == '/spec') && vars.RUNNER_LOCAL != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 0
+
+      - name: Parse command
+        id: parse
+        run: |
+          PR="$PR_NUMBER"
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+
+          # As for /benchmark: these names come from a comment and reach later
+          # steps, so only what a framework directory name can contain gets through.
+          safe() { printf '%s' "$1" | grep -oP '^[A-Za-z0-9._-]{1,64}$' || true; }
+
+          # -f <framework>[,<framework>...]; without it, every framework the PR touches.
+          RAW=$(echo "$COMMENT_BODY" | grep -oP '^/spec\s+.*-f\s+\K\S+' || echo "")
+          if [ -z "$RAW" ]; then
+            RAW=$(gh api "/repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' \
+                  | grep '^frameworks/' | cut -d'/' -f2 | sort -u | paste -sd, - || true)
+          fi
+          FRAMEWORK=""
+          for fw in $(echo "$RAW" | tr ',' ' '); do
+            fw=$(safe "$fw")
+            [ -z "$fw" ] && continue
+            case ",$FRAMEWORK," in
+              *",$fw,"*) ;;
+              *) FRAMEWORK="${FRAMEWORK:+$FRAMEWORK,}$fw" ;;
+            esac
+          done
+          SAVE_FLAG=""
+          if echo "$COMMENT_BODY" | grep -q -- '--save'; then
+            SAVE_FLAG="true"
+          fi
+
+          echo "framework=$FRAMEWORK" >> "$GITHUB_OUTPUT"
+          echo "save=$SAVE_FLAG" >> "$GITHUB_OUTPUT"
+          echo "Framework(s): $FRAMEWORK"
+          echo "Save: $SAVE_FLAG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+
+      # Same pre-check as /benchmark --save: reject a branch main cannot merge
+      # into before a maintainer is asked to approve a run that would abort.
+      - name: Check main merges into PR
+        if: steps.parse.outputs.save == 'true' && steps.parse.outputs.framework != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main --depth=1
+          if ! git merge --no-commit --no-ff origin/main; then
+            git merge --abort 2>/dev/null || true
+            gh pr comment "${{ steps.parse.outputs.pr }}" \
+              --repo "${{ github.repository }}" \
+              --body "⚠️ \`/spec --save\` cannot start: \`main\` has diverged and cannot be auto-merged into this branch. Please merge or rebase \`main\` manually, push, and re-run \`/spec --save\`."
+            exit 1
+          fi
+          git merge --abort 2>/dev/null || true
+
+      - name: React to comment
+        run: |
+          gh api "/repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}/reactions" -f content="rocket"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run spec
+        if: steps.parse.outputs.framework != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.parse.outputs.pr }}
+          FRAMEWORK: ${{ steps.parse.outputs.framework }}
+          SAVE: ${{ steps.parse.outputs.save }}
+        run: |
+          gh workflow run benchmark-pr.yml \
+            -f pr="$PR_NUMBER" \
+            -f framework="$FRAMEWORK" \
+            -f profile="" \
+            -f save="$SAVE" \
+            -f compare="" \
+            -f spec_only=true
+
+      - name: No framework detected
+        if: steps.parse.outputs.framework == ''
+        run: |
+          gh pr comment "${{ steps.parse.outputs.pr }}" --body "⚠️ Couldn't detect which framework to run the compliance suites for. Either modify files under \`frameworks/<name>/\` or name it: \`/spec -f <framework>\` (several: \`/spec -f <fw1>,<fw2>\`)."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

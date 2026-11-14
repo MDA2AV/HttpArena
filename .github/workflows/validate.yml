@@ -5,6 +5,7 @@ on:
     paths:
       - 'frameworks/**'
       - 'scripts/validate.sh'
+      - 'scripts/lib/spec.sh'
       - 'scripts/validate-ws.py'
       - '.github/workflows/validate.yml'
   workflow_dispatch:
@@ -73,7 +74,7 @@ jobs:
             fi
           else
             validator_changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
-              | grep -E '^(scripts/validate\.sh|scripts/validate-ws\.py|\.github/workflows/validate\.yml)$' || true)
+              | grep -E '^(scripts/validate\.sh|scripts/lib/spec\.sh|scripts/validate-ws\.py|\.github/workflows/validate\.yml)$' || true)
             if [ -n "$validator_changed" ]; then
               changed=$(all_entries)
               echo "the validator changed, so every enabled entry is covered"

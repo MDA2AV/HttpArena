@@ -21,6 +21,10 @@ on:
         description: 'Compare against another framework instead of this one (e.g. genhttp-kestrel) — single-framework runs only'
         required: false
         default: ''
+      spec_only:
+        description: 'Run only the compliance suites the framework lists in "spec" in meta.json (true/false) - the /spec command'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -163,6 +167,7 @@ jobs:
         env:
           LIST: ${{ steps.resolve.outputs.list }}
           PROFILE: ${{ inputs.profile }}
+          SPEC_ONLY: ${{ inputs.spec_only }}
         run: |
           set -o pipefail
           mkdir -p /tmp/bench_logs
@@ -177,17 +182,42 @@ jobs:
             # over a hundred entries every one of them would inherit it from
             # whoever happened to precede it. Not applied before the first.
             if [ "$FIRST" = "true" ]; then FIRST=false; else sleep 15; fi
-            echo "::group::benchmark $fw"
-            # Always save results to disk for comparison; only commit if --save requested
-            if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
-              echo "::error::benchmark.sh failed for $fw"
-              FAILED="${FAILED:+$FAILED }$fw"
+            bench_ok=true
+            if [ "$SPEC_ONLY" != "true" ]; then
+              echo "::group::benchmark $fw"
+              # Always save results to disk for comparison; only commit if --save requested
+              if ! ./scripts/benchmark.sh "$fw" "$PROFILE" --save 2>&1 | tee "/tmp/bench_logs/$fw.log"; then
+                echo "::error::benchmark.sh failed for $fw"
+                FAILED="${FAILED:+$FAILED }$fw"
+                bench_ok=false
+              fi
+              echo "::endgroup::"
             fi
-            echo "::endgroup::"
+            # The compliance suites the entry lists in "spec" (meta.json): run by
+            # /spec, and by a /benchmark over every test. -t narrows a run to the
+            # tests it names, and the suites are not one of them. After a benchmark
+            # spec.sh reuses the image benchmark.sh just built; when the benchmark
+            # failed that image may be stale, so the suites wait for the next run.
+            # Like the benchmark, the scores always go to disk and are committed
+            # only on --save.
+            if [ "$SPEC_ONLY" = "true" ] || { [ -z "$PROFILE" ] && $bench_ok; }; then
+              echo "::group::spec $fw"
+              skip_build=1
+              [ "$SPEC_ONLY" = "true" ] && skip_build=0
+              if ! SPEC_SKIP_BUILD=$skip_build ./scripts/spec.sh "$fw" --save 2>&1 | tee "/tmp/bench_logs/$fw.spec.log"; then
+                echo "::error::spec.sh failed for $fw"
+                case " $FAILED " in
+                  *" $fw "*) ;;
+                  *) FAILED="${FAILED:+$FAILED }$fw" ;;
+                esac
+              fi
+              echo "::endgroup::"
+            fi
           done
           echo "failed=$FAILED" >> "$GITHUB_OUTPUT"
 
       - name: Compare with main
+        if: inputs.spec_only != 'true'
         env:
           LIST: ${{ steps.resolve.outputs.list }}
           COUNT: ${{ steps.resolve.outputs.count }}
@@ -220,6 +250,7 @@ jobs:
           LIST: ${{ steps.resolve.outputs.list }}
           COUNT: ${{ steps.resolve.outputs.count }}
           PROFILE: ${{ inputs.profile }}
+          SPEC_ONLY: ${{ inputs.spec_only }}
         run: |
           PR_DATA=$(gh api "/repos/${{ github.repository }}/pulls/${{ inputs.pr }}" --jq '.head.ref + " " + .head.repo.full_name')
           PR_BRANCH=$(echo "$PR_DATA" | awk '{print $1}')
@@ -234,12 +265,22 @@ jobs:
             find site/static/logs -name "$fw.log" -exec git add -f {} + 2>/dev/null || true
             SLUG=$(python3 -c "import json,re,sys;n=json.load(open('frameworks/%s/meta.json'%sys.argv[1])).get('display_name',sys.argv[1]);print((re.sub(r'[^A-Za-z0-9._-]+','-',n).strip('-') or 'unnamed').lower())" "$fw" 2>/dev/null || echo "")
             [ -n "$SLUG" ] && git add -f "site/data/results/${SLUG}.json" 2>/dev/null || true
+            # The compliance scores, when this run measured them (scripts/spec.sh).
+            # Named by directory: variants sharing a display name own a file each.
+            # Staged even when gone, so an entry that dropped "spec" drops its scores.
+            git add -f -A "site/data/spec/${fw}.json" 2>/dev/null || true
           done
           git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No results to commit"
           else
-            if [ "$COUNT" = "1" ]; then
+            if [ "$SPEC_ONLY" = "true" ]; then
+              if [ "$COUNT" = "1" ]; then
+                MSG="Spec results: $LIST [skip ci]"
+              else
+                MSG="Spec results: $COUNT frameworks [skip ci]"
+              fi
+            elif [ "$COUNT" = "1" ]; then
               MSG="Benchmark results: $LIST $PROFILE [skip ci]"
             else
               MSG="Benchmark results: $COUNT frameworks (${PROFILE:-all tests}) [skip ci]"
@@ -259,6 +300,7 @@ jobs:
           PROFILE: ${{ inputs.profile }}
           COMPARE: ${{ inputs.compare }}
           FW_INPUT: ${{ inputs.framework }}
+          SPEC_ONLY: ${{ inputs.spec_only }}
         run: |
           if [ -z "$LIST" ]; then
             echo "No frameworks were resolved; nothing to post."
@@ -269,7 +311,7 @@ jobs:
           # Build the per-framework markdown: results table with deltas, plus a
           # collapsed log (full tail for single runs, failures only for multi).
           python3 -c '
-          import sys, re, os
+          import sys, re, os, subprocess
 
           logs_dir = "/tmp/bench_logs"
           failed = set(sys.argv[1].split())
@@ -379,27 +421,45 @@ jobs:
               text = tail(logs_dir + "/" + fw + ".composite.md", 50).strip()
               return "\n\n" + text if text else ""
 
+          def spec(fw):
+              # The compliance scores this run measured, from scripts/spec_comment.py.
+              try:
+                  out = subprocess.run(["python3", "scripts/spec_comment.py", fw], capture_output=True,
+                                       text=True, timeout=60).stdout.strip()
+              except Exception:
+                  out = ""
+              return "\n\n" + out if out else ""
+
+          spec_only = os.environ.get("SPEC_ONLY") == "true"
+          log_suffix = ".spec.log" if spec_only else ".log"
+
           def details(summary, text):
               return "<details><summary>" + summary + "</summary>\n\n```\n" + text + "\n```\n</details>"
 
           if len(fws) == 1:
               fw = fws[0]
-              rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
-              deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
-              head = table(rows, deltas) + composite(fw) if rows else "No results captured"
-              body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + ".log", 200))
+              if spec_only:
+                  head = spec(fw).strip() or "No compliance scores captured"
+              else:
+                  rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
+                  deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
+                  head = (table(rows, deltas) + composite(fw) if rows else "No results captured") + spec(fw)
+              body = head + "\n\n" + details("Full log", tail(logs_dir + "/" + fw + log_suffix, 200))
           else:
               heads = []
               extras = []
               for fw in fws:
-                  rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
-                  deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
                   mark = "❌" if fw in failed else "✅"
                   head = "### " + mark + " `" + fw + "`\n\n"
-                  head += table(rows, deltas) + composite(fw) if rows else "_No results captured._"
+                  if spec_only:
+                      head += spec(fw).strip() or "_No compliance scores captured._"
+                  else:
+                      rows = parse_rows(logs_dir + "/" + fw + ".log", fw)
+                      deltas = parse_deltas(logs_dir + "/" + fw + ".compare.md")
+                      head += (table(rows, deltas) + composite(fw) if rows else "_No results captured._") + spec(fw)
                   extra = ""
                   if fw in failed:
-                      extra = "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + ".log", 60))
+                      extra = "\n\n" + details("Log tail", tail(logs_dir + "/" + fw + log_suffix, 60))
                   heads.append(head)
                   extras.append(extra)
               body = "\n\n".join(h + e for h, e in zip(heads, extras))
@@ -414,11 +474,22 @@ jobs:
               out.write(body)
           ' "$FAILED" $LIST
 
-          body="## Benchmark Results"$'\n\n'
-          if [ "$COUNT" = "1" ]; then
+          if [ "$SPEC_ONLY" = "true" ]; then
+            body="## Spec Results"$'\n\n'
+            if [ "$COUNT" = "1" ]; then
+              body+="**Framework:** \`$LIST\`"
+            else
+              body+="**Frameworks:** $COUNT"
+            fi
+            if [ -n "$FAILED" ]; then
+              body+=" | **Failed:** $(echo "$FAILED" | wc -w)"
+            fi
+          elif [ "$COUNT" = "1" ]; then
+            body="## Benchmark Results"$'\n\n'
             body+="**Framework:** \`$LIST\` | **Test:** \`$profile_label\`"
             [ -n "$COMPARE" ] && body+=" | **Compared to:** \`$COMPARE\`"
           else
+            body="## Benchmark Results"$'\n\n'
             if [ "$FW_INPUT" = "all" ]; then
               body+="**Frameworks:** all subscribed to \`$PROFILE\` — $COUNT total"
             else
