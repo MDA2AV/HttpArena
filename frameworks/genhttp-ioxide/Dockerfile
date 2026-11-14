@@ -1,4 +1,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
+
+# GenHTTP built from source: the branch of Kaliumhexacyanoferrat/GenHTTP#953
+# (update-ioxide-0.20.396) rather than the 11.3.0 release. Pinned to one commit,
+# because a build on cached layers would otherwise keep whichever it cloned first.
+ARG GENHTTP_COMMIT=e3974794fe0eea42d7387c56ed36ca98b99e0595
+RUN git init -q /genhttp \
+ && git -C /genhttp fetch -q --depth 1 https://github.com/Kaliumhexacyanoferrat/GenHTTP.git "$GENHTTP_COMMIT" \
+ && git -C /genhttp checkout -q FETCH_HEAD
+
 WORKDIR /src/app
 
 COPY genhttp.csproj ./
