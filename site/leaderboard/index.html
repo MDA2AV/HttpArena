@@ -1394,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       // what is on the page, so every view names its subject.
       var sName={h1:'HTTP/1.1 web server benchmarks',h2:'HTTP/2 web server benchmarks',h3:'HTTP/3 web server benchmarks',gw:'Gateway and production stack benchmarks',grpc:'gRPC server benchmarks',ws:'WebSocket server benchmarks'}[state.scope];
       cat.textContent='Composite ranking'; title.textContent=sName;
-      blurb.innerHTML='Normalized score summed across '+sLabel+' (each profile worth 100 to its leader'
+      blurb.innerHTML='Normalized score summed across '+sLabel+' (each profile worth 1,000 to its leader'
         +(state.rescale?' among the frameworks shown':' in the full field, so filtering does not change the numbers')
         +'), per framework type. Higher is better. <a href="/docs/scoring/composite-score/">How it works →</a>';
       ctl.innerHTML='';
@@ -1404,7 +1404,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       ctl.appendChild(t);
       var rs=document.createElement('div'); rs.className='toggle'+(state.rescale?' on':'');
       rs.innerHTML='<span class="sw"><i></i></span> Rescale to selection';
-      rs.setAttribute('data-tip','Off: each profile is worth 100 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
+      rs.setAttribute('data-tip','Off: each profile is worth 1,000 to the best entry in the whole field, so scores stay comparable while you filter. On: rescale to the frameworks currently shown, to compare a subset against itself.');
       rs.onclick=function(){ state.rescale=!state.rescale; rs.classList.toggle('on', state.rescale); render(); };
       ctl.appendChild(rs);
       // Arriving on #lang=X (from a language rank badge) filters the board to
