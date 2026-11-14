@@ -111,11 +111,16 @@ size_t res_serialize(const response_t *res, char *out_buf, size_t max_out) {
     char *p = out_buf;
     char *end = out_buf + max_out;
 
-    const char *st = status_text(res->status);
-    size_t st_len = strlen(st);
-    memcpy(p, "HTTP/1.1 ", 9); p += 9;
-    memcpy(p, st, st_len); p += st_len;
-    memcpy(p, "\r\n", 2); p += 2;
+    if (__builtin_expect(res->status == 200, 1)) {
+        memcpy(p, "HTTP/1.1 200 OK\r\n", 17);
+        p += 17;
+    } else {
+        const char *st = status_text(res->status);
+        size_t st_len = strlen(st);
+        memcpy(p, "HTTP/1.1 ", 9); p += 9;
+        memcpy(p, st, st_len); p += st_len;
+        memcpy(p, "\r\n", 2); p += 2;
+    }
 
     if (res->content_type) {
         size_t ct_len = strlen(res->content_type);
@@ -233,28 +238,34 @@ int parse_http_request(const char *buf, size_t len, request_t *req, char *chunk_
             req->headers[req->num_headers].name = (str_view_t){ hname, hname_len };
             req->headers[req->num_headers].val = (str_view_t){ hval, (size_t)(hval_end - hval) };
 
-            str_view_t vname = req->headers[req->num_headers].name;
             str_view_t vval = req->headers[req->num_headers].val;
 
-            if (view_case_eq(vname, "content-length")) {
-                int64_t cl = 0;
-                if (parse_i64(vval.ptr, vval.len, &cl) && cl >= 0) {
-                    req->content_length = cl;
+            char first = (char)(hname[0] | 0x20);
+            if (first == 'c') {
+                if (hname_len == 14 && strncasecmp(hname, "content-length", 14) == 0) {
+                    int64_t cl = 0;
+                    if (parse_i64(vval.ptr, vval.len, &cl) && cl >= 0) {
+                        req->content_length = cl;
+                    }
+                } else if (hname_len == 10 && strncasecmp(hname, "connection", 10) == 0) {
+                    if (view_case_eq(vval, "close")) {
+                        req->keep_alive = false;
+                    } else if (view_case_eq(vval, "keep-alive")) {
+                        req->keep_alive = true;
+                    }
+                } else if (hname_len == 12 && strncasecmp(hname, "content-type", 12) == 0) {
+                    req->content_type = vval;
                 }
-            } else if (view_case_eq(vname, "transfer-encoding")) {
-                if (view_case_eq(vval, "chunked") || strcasestr(vval.ptr, "chunked")) {
-                    req->is_chunked = true;
+            } else if (first == 't') {
+                if (hname_len == 17 && strncasecmp(hname, "transfer-encoding", 17) == 0) {
+                    if (view_case_eq(vval, "chunked") || strcasestr(vval.ptr, "chunked")) {
+                        req->is_chunked = true;
+                    }
                 }
-            } else if (view_case_eq(vname, "connection")) {
-                if (view_case_eq(vval, "close")) {
-                    req->keep_alive = false;
-                } else if (view_case_eq(vval, "keep-alive")) {
-                    req->keep_alive = true;
+            } else if (first == 'a') {
+                if (hname_len == 15 && strncasecmp(hname, "accept-encoding", 15) == 0) {
+                    req->accept_encoding = vval;
                 }
-            } else if (view_case_eq(vname, "accept-encoding")) {
-                req->accept_encoding = vval;
-            } else if (view_case_eq(vname, "content-type")) {
-                req->content_type = vval;
             }
 
             req->num_headers++;

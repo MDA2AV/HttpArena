@@ -15,9 +15,19 @@ void router_add(router_t *r, http_method_t method, const char *pattern, handler_
     route_entry_t *re = &r->routes[r->num_routes++];
     re->method = method;
     strncpy(re->pattern, pattern, sizeof(re->pattern) - 1);
+    re->pattern_len = strlen(re->pattern);
     re->handler = handler;
-    re->has_param = (strstr(pattern, "/:") != NULL);
-    re->is_prefix = (strlen(pattern) > 0 && pattern[strlen(pattern) - 1] == '/');
+
+    const char *param_marker = strstr(pattern, "/:");
+    if (param_marker) {
+        re->has_param = true;
+        re->is_prefix = false;
+        re->prefix_len = (size_t)(param_marker - pattern + 1);
+    } else {
+        re->has_param = false;
+        re->is_prefix = (re->pattern_len > 0 && pattern[re->pattern_len - 1] == '/');
+        re->prefix_len = re->pattern_len;
+    }
 }
 
 void ctx_next(context_t *ctx) {
@@ -29,16 +39,14 @@ void ctx_next(context_t *ctx) {
     }
 }
 
-static bool match_route(const route_entry_t *re, request_t *req) {
+static inline bool match_route(const route_entry_t *re, request_t *req) {
     if (re->method != req->method) return false;
 
     if (re->has_param) {
-        const char *param_marker = strstr(re->pattern, "/:");
-        size_t prefix_len = param_marker - re->pattern + 1;
-        if (req->path.len < prefix_len) return false;
-        if (memcmp(req->path.ptr, re->pattern, prefix_len) != 0) return false;
+        if (req->path.len < re->prefix_len) return false;
+        if (memcmp(req->path.ptr, re->pattern, re->prefix_len) != 0) return false;
 
-        const char *param_start = req->path.ptr + prefix_len;
+        const char *param_start = req->path.ptr + re->prefix_len;
         const char *path_end = req->path.ptr + req->path.len;
         const char *slash = memchr(param_start, '/', path_end - param_start);
         size_t param_len = slash ? (size_t)(slash - param_start) : (size_t)(path_end - param_start);
@@ -49,20 +57,21 @@ static bool match_route(const route_entry_t *re, request_t *req) {
     }
 
     if (re->is_prefix) {
-        size_t plen = strlen(re->pattern);
-        if (req->path.len < plen) return false;
-        if (memcmp(req->path.ptr, re->pattern, plen) != 0) return false;
+        if (req->path.len < re->prefix_len) return false;
+        if (memcmp(req->path.ptr, re->pattern, re->prefix_len) != 0) return false;
 
-        req->route_params[0] = (str_view_t){ req->path.ptr + plen, req->path.len - plen };
+        req->route_params[0] = (str_view_t){ req->path.ptr + re->prefix_len, req->path.len - re->prefix_len };
         req->num_route_params = 1;
         return true;
     }
 
-    return view_eq(req->path, re->pattern);
+    return (req->path.len == re->pattern_len && memcmp(req->path.ptr, re->pattern, re->pattern_len) == 0);
 }
 
 bool router_dispatch(const router_t *r, request_t *req, response_t *res, void *user_data, bool *async_parked_out) {
-    req_parse_query(req);
+    if (__builtin_expect(req->query.len > 0, 0)) {
+        req_parse_query(req);
+    }
 
     for (size_t i = 0; i < r->num_routes; i++) {
         if (match_route(&r->routes[i], req)) {

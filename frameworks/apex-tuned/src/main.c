@@ -426,6 +426,10 @@ static void* worker_main(void *arg) {
     worker_t *w = (worker_t*)arg;
     t_worker = w;
 
+#if defined(__linux__) && defined(PR_SET_TIMERSLACK)
+    prctl(PR_SET_TIMERSLACK, 1UL, 0, 0, 0);
+#endif
+
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(w->cpu_id, &cpuset);
@@ -435,13 +439,36 @@ static void* worker_main(void *arg) {
 
     while (g_running) {
         uint64_t now_us = clock_monotonic_us();
+        timer_entry_t te;
+        while (timer_heap_peek(&w->timers, &te)) {
+            if (te.expire_at_us > now_us) break;
+            timer_heap_pop(&w->timers, &te);
+            conn_t *c = (conn_t*)te.conn_ptr;
+            if (c && c->gen == te.conn_gen && c->parked_in_timer) {
+                handle_timer_expiration(w, c, te.delay_ms);
+            }
+        }
+
         int64_t timeout_us = timer_heap_next_timeout_us(&w->timers, now_us);
 
         int nfds;
         if (timeout_us < 0) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, -1);
-        } else if (timeout_us == 0) {
+        } else if (timeout_us <= 200) {
             nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, 0);
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__)
+            if (nfds == 0 && timeout_us > 0) {
+                for (int spin = 0; spin < 16; spin++) {
+                    __builtin_ia32_pause();
+                }
+            }
+#elif defined(__aarch64__)
+            if (nfds == 0 && timeout_us > 0) {
+                for (int spin = 0; spin < 16; spin++) {
+                    asm volatile("yield" ::: "memory");
+                }
+            }
+#endif
         } else {
 #if defined(__linux__)
             struct timespec ts = {
@@ -459,14 +486,15 @@ static void* worker_main(void *arg) {
             break;
         }
 
-        now_us = clock_monotonic_us();
-        timer_entry_t te;
-        while (timer_heap_peek(&w->timers, &te)) {
-            if (te.expire_at_us > now_us) break;
-            timer_heap_pop(&w->timers, &te);
-            conn_t *c = (conn_t*)te.conn_ptr;
-            if (c && c->gen == te.conn_gen && c->parked_in_timer) {
-                handle_timer_expiration(w, c, te.delay_ms);
+        if (w->timers.count > 0) {
+            now_us = clock_monotonic_us();
+            while (timer_heap_peek(&w->timers, &te)) {
+                if (te.expire_at_us > now_us) break;
+                timer_heap_pop(&w->timers, &te);
+                conn_t *c = (conn_t*)te.conn_ptr;
+                if (c && c->gen == te.conn_gen && c->parked_in_timer) {
+                    handle_timer_expiration(w, c, te.delay_ms);
+                }
             }
         }
 
@@ -568,9 +596,10 @@ static void* worker_main(void *arg) {
                         }
                     }
 
+                    size_t avail = c->read_cap - c->read_pos;
                     ssize_t n = 0;
                     if (c->is_tls) {
-                        int ret = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)(c->read_cap - c->read_pos));
+                        int ret = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)avail);
                         if (ret <= 0) {
                             int err = SSL_get_error(c->ssl, ret);
                             if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
@@ -581,7 +610,7 @@ static void* worker_main(void *arg) {
                         }
                         n = ret;
                     } else {
-                        n = recv(c->fd, c->read_buf + c->read_pos, c->read_cap - c->read_pos, 0);
+                        n = recv(c->fd, c->read_buf + c->read_pos, avail, 0);
                         if (n < 0) {
                             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                                 break;
@@ -595,6 +624,27 @@ static void* worker_main(void *arg) {
                         }
                     }
                     c->read_pos += (size_t)n;
+                    if (c->read_pos >= 4) {
+                        const char *hdr_end = memmem(c->read_buf, c->read_pos, "\r\n\r\n", 4);
+                        if (hdr_end) {
+                            size_t hdr_len = (size_t)(hdr_end - c->read_buf) + 4;
+                            if (c->read_buf[0] == 'G' || c->read_buf[0] == 'H') {
+                                break;
+                            }
+                            const char *cl_pos = memmem(c->read_buf, hdr_len, "Content-Length: ", 16);
+                            if (!cl_pos) {
+                                cl_pos = memmem(c->read_buf, hdr_len, "content-length: ", 16);
+                            }
+                            if (cl_pos) {
+                                int64_t cl = 0;
+                                if (parse_i64(cl_pos + 16, (size_t)(hdr_end - (cl_pos + 16)), &cl) && cl >= 0) {
+                                    if (c->read_pos >= hdr_len + (size_t)cl) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (c->fd >= 0 && c->read_pos > 0) {

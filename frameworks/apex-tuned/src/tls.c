@@ -32,8 +32,10 @@ SSL_CTX* tls_init_server_ctx(const char *cert_file, const char *key_file) {
 
     SSL_CTX_set_min_proto_version(ctx, TLS1_3_VERSION);
     SSL_CTX_set_max_proto_version(ctx, TLS1_3_VERSION);
+    SSL_CTX_set_ciphersuites(ctx, "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384");
+    SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 
-    long options = SSL_OP_NO_RENEGOTIATION | SSL_OP_CIPHER_SERVER_PREFERENCE;
+    long options = SSL_OP_NO_RENEGOTIATION | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET;
 #ifdef SSL_OP_ENABLE_KTLS
     options |= SSL_OP_ENABLE_KTLS;
 #endif

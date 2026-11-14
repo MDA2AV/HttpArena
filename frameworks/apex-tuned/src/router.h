@@ -22,6 +22,8 @@ struct context_s {
 typedef struct {
     http_method_t method;
     char          pattern[64];
+    size_t        pattern_len;
+    size_t        prefix_len;
     handler_fn_t  handler;
     bool          is_prefix;
     bool          has_param;

@@ -1,0 +1,5 @@
+{
+  "framework": "apex-tuned",
+  "tls": "pass",
+  "check": "none"
+}
