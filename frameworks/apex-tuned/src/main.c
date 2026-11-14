@@ -6,21 +6,24 @@
 #include "tls.h"
 #include "static_files.h"
 
-typedef struct {
+typedef struct conn_s conn_t;
+
+struct conn_s {
     int         fd;
     uint32_t    gen;
     bool        is_tls;
     SSL        *ssl;
     bool        tls_handshake_done;
 
-    char        read_buf[READ_BUF_SIZE];
+    char       *read_buf;
+    size_t      read_cap;
     size_t      read_pos;
+    char        inline_read_buf[16384];
 
-    char        write_buf[WRITE_BUF_SIZE];
-    size_t      write_pos;
-    size_t      write_sent;
+    char       *pending_write;
+    size_t      pending_write_len;
+    size_t      pending_write_sent;
 
-    char        chunk_buf[128 * 1024];
     char        scratch[64];
 
     bool        parked_in_timer;
@@ -29,7 +32,9 @@ typedef struct {
 
     bool        keep_alive;
     bool        closing;
-} conn_t;
+
+    conn_t     *next_free;
+};
 
 typedef struct {
     int               id;
@@ -42,17 +47,79 @@ typedef struct {
     router_t          router;
     worker_compress_t compress;
     timer_heap_t      timers;
-    conn_t           *conns;
+    conn_t           *free_conns;
+
+    int               token_h1;
+    int               token_tls;
+
+    char              write_buf[WRITE_BUF_SIZE];
+    char              chunk_buf[128 * 1024];
 } worker_t;
 
 static volatile bool g_running = true;
 static int           g_num_workers = 1;
-static worker_t      g_workers[MAX_WORKERS];
+static worker_t     *g_workers = NULL;
 static __thread worker_t *t_worker = NULL;
 
 static void handle_sig(int sig) {
     (void)sig;
     g_running = false;
+}
+
+static conn_t* alloc_conn(worker_t *w, int fd, bool is_tls, SSL *ssl) {
+    conn_t *c = w->free_conns;
+    if (c) {
+        w->free_conns = c->next_free;
+    } else {
+        c = calloc(1, sizeof(conn_t));
+        if (!c) return NULL;
+        c->read_buf = c->inline_read_buf;
+        c->read_cap = sizeof(c->inline_read_buf);
+    }
+    c->fd = fd;
+    c->gen++;
+    c->is_tls = is_tls;
+    c->ssl = ssl;
+    c->tls_handshake_done = false;
+    c->read_pos = 0;
+    c->pending_write = NULL;
+    c->pending_write_len = 0;
+    c->pending_write_sent = 0;
+    c->parked_in_timer = false;
+    c->keep_alive = true;
+    c->closing = false;
+    c->next_free = NULL;
+    return c;
+}
+
+static void close_conn(worker_t *w, conn_t *c) {
+    if (c->fd >= 0) {
+        epoll_ctl(w->epoll_fd, EPOLL_CTL_DEL, c->fd, NULL);
+        close(c->fd);
+        c->fd = -1;
+    }
+    if (c->ssl) {
+        SSL_free(c->ssl);
+        c->ssl = NULL;
+    }
+    if (c->pending_write) {
+        free(c->pending_write);
+        c->pending_write = NULL;
+    }
+    if (c->read_buf != c->inline_read_buf) {
+        free(c->read_buf);
+        c->read_buf = c->inline_read_buf;
+        c->read_cap = sizeof(c->inline_read_buf);
+    }
+    c->read_pos = 0;
+    c->pending_write_len = 0;
+    c->pending_write_sent = 0;
+    c->parked_in_timer = false;
+    c->closing = false;
+    c->gen++;
+
+    c->next_free = w->free_conns;
+    w->free_conns = c;
 }
 
 static void baseline_handler(context_t *ctx) {
@@ -157,38 +224,15 @@ static void echo_handler(context_t *ctx) {
     res_set_binary(res, req->body.ptr, req->body.len, "application/octet-stream");
 }
 
-static void close_conn(worker_t *w, conn_t *c) {
-    if (c->fd < 0) return;
-    epoll_ctl(w->epoll_fd, EPOLL_CTL_DEL, c->fd, NULL);
-    if (c->is_tls && c->ssl) {
-        SSL_shutdown(c->ssl);
-        SSL_free(c->ssl);
-        c->ssl = NULL;
-    }
-    close(c->fd);
-    c->fd = -1;
-    c->read_pos = 0;
-    c->write_pos = 0;
-    c->write_sent = 0;
-    c->parked_in_timer = false;
-    c->closing = false;
-    c->gen++;
-}
-
-static bool flush_write_buf(worker_t *w, conn_t *c) {
-    while (c->write_sent < c->write_pos) {
-        size_t remaining = c->write_pos - c->write_sent;
+static bool flush_pending_write(worker_t *w, conn_t *c) {
+    while (c->pending_write_sent < c->pending_write_len) {
+        size_t remaining = c->pending_write_len - c->pending_write_sent;
         ssize_t n = 0;
         if (c->is_tls) {
-            int ret = SSL_write(c->ssl, c->write_buf + c->write_sent, (int)remaining);
+            int ret = SSL_write(c->ssl, c->pending_write + c->pending_write_sent, (int)remaining);
             if (ret <= 0) {
                 int err = SSL_get_error(c->ssl, ret);
                 if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-                    struct epoll_event ev = {
-                        .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.fd = c->fd
-                    };
-                    epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
                     return false;
                 }
                 close_conn(w, c);
@@ -196,29 +240,26 @@ static bool flush_write_buf(worker_t *w, conn_t *c) {
             }
             n = ret;
         } else {
-            n = send(c->fd, c->write_buf + c->write_sent, remaining, MSG_NOSIGNAL);
+            n = send(c->fd, c->pending_write + c->pending_write_sent, remaining, MSG_NOSIGNAL);
             if (n < 0) {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    struct epoll_event ev = {
-                        .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.fd = c->fd
-                    };
-                    epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
                     return false;
                 }
                 close_conn(w, c);
                 return false;
             }
         }
-        c->write_sent += (size_t)n;
+        c->pending_write_sent += (size_t)n;
     }
 
-    c->write_pos = 0;
-    c->write_sent = 0;
+    free(c->pending_write);
+    c->pending_write = NULL;
+    c->pending_write_len = 0;
+    c->pending_write_sent = 0;
 
     struct epoll_event ev = {
         .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-        .data.fd = c->fd
+        .data.ptr = c
     };
     epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
 
@@ -230,11 +271,67 @@ static bool flush_write_buf(worker_t *w, conn_t *c) {
     return true;
 }
 
+static void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
+    if (len == 0) return;
+    size_t sent = 0;
+
+    while (sent < len) {
+        ssize_t n = 0;
+        if (c->is_tls) {
+            int ret = SSL_write(c->ssl, data + sent, (int)(len - sent));
+            if (ret <= 0) {
+                int err = SSL_get_error(c->ssl, ret);
+                if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
+                    break;
+                }
+                close_conn(w, c);
+                return;
+            }
+            n = ret;
+        } else {
+            n = send(c->fd, data + sent, len - sent, MSG_NOSIGNAL);
+            if (n < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    break;
+                }
+                close_conn(w, c);
+                return;
+            }
+        }
+        sent += (size_t)n;
+    }
+
+    if (sent < len) {
+        size_t rem = len - sent;
+        c->pending_write = malloc(rem);
+        if (!c->pending_write) {
+            close_conn(w, c);
+            return;
+        }
+        memcpy(c->pending_write, data + sent, rem);
+        c->pending_write_len = rem;
+        c->pending_write_sent = 0;
+
+        struct epoll_event ev = {
+            .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+            .data.ptr = c
+        };
+        epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
+        return;
+    }
+
+    if (c->closing || !c->keep_alive) {
+        close_conn(w, c);
+    }
+}
+
 static void process_requests(worker_t *w, conn_t *c) {
+    size_t write_pos = 0;
+
     while (c->read_pos > 0 && !c->parked_in_timer && !c->closing) {
         request_t req;
         size_t consumed = 0;
-        int rc = parse_http_request(c->read_buf, c->read_pos, &req, c->chunk_buf, sizeof(c->chunk_buf), &consumed);
+        int rc = parse_http_request(c->read_buf, c->read_pos, &req, w->chunk_buf, sizeof(w->chunk_buf), &consumed);
 
         if (rc == 0) {
             break;
@@ -255,7 +352,7 @@ static void process_requests(worker_t *w, conn_t *c) {
         }
 
         if (async_parked) {
-            timer_heap_push(&w->timers, c->timer_expire_ms, c->fd, c->gen, c->timer_val_ms);
+            timer_heap_push(&w->timers, c->timer_expire_ms, c, c->gen, c->timer_val_ms);
             if (consumed < c->read_pos) {
                 memmove(c->read_buf, c->read_buf + consumed, c->read_pos - consumed);
                 c->read_pos -= consumed;
@@ -265,8 +362,8 @@ static void process_requests(worker_t *w, conn_t *c) {
             break;
         }
 
-        size_t remaining_space = sizeof(c->write_buf) - c->write_pos;
-        size_t written = res_serialize(&res, c->write_buf + c->write_pos, remaining_space);
+        size_t remaining_space = sizeof(w->write_buf) - write_pos;
+        size_t written = res_serialize(&res, w->write_buf + write_pos, remaining_space);
         if (res.body_needs_free && res.body) {
             free((void*)res.body);
         }
@@ -276,7 +373,7 @@ static void process_requests(worker_t *w, conn_t *c) {
             return;
         }
 
-        c->write_pos += written;
+        write_pos += written;
 
         if (consumed < c->read_pos) {
             memmove(c->read_buf, c->read_buf + consumed, c->read_pos - consumed);
@@ -290,31 +387,23 @@ static void process_requests(worker_t *w, conn_t *c) {
         }
     }
 
-    if (c->write_pos > c->write_sent) {
-        flush_write_buf(w, c);
+    if (write_pos > 0) {
+        flush_data(w, c, w->write_buf, write_pos);
     }
 }
 
-static void handle_timer_expiration(worker_t *w, timer_entry_t *te) {
-    if (te->conn_fd < 0 || te->conn_fd >= MAX_CONNS_PER_WORKER) return;
-    conn_t *c = &w->conns[te->conn_fd];
-    if (c->fd != te->conn_fd || c->gen != te->conn_gen || !c->parked_in_timer) return;
-
+static void handle_timer_expiration(worker_t *w, conn_t *c, int64_t delay_ms) {
     c->parked_in_timer = false;
 
     response_t res;
     res_init(&res, c->keep_alive);
     char buf[24];
-    size_t len = format_i64(buf, te->delay_ms);
+    size_t len = format_i64(buf, delay_ms);
     res_set_text(&res, buf, len);
 
-    size_t remaining_space = sizeof(c->write_buf) - c->write_pos;
-    size_t written = res_serialize(&res, c->write_buf + c->write_pos, remaining_space);
+    size_t written = res_serialize(&res, w->write_buf, sizeof(w->write_buf));
     if (written > 0) {
-        c->write_pos += written;
-        flush_write_buf(w, c);
-    } else {
-        close_conn(w, c);
+        flush_data(w, c, w->write_buf, written);
     }
 }
 
@@ -331,59 +420,51 @@ static void* worker_main(void *arg) {
 
     while (g_running) {
         uint64_t now_ms = clock_monotonic_ms();
+        int timeout_ms = timer_heap_next_timeout_ms(&w->timers, now_ms);
 
-        timer_entry_t te;
-        while (timer_heap_peek(&w->timers, &te)) {
-            if (te.expire_at_ms <= now_ms) {
-                timer_heap_pop(&w->timers, &te);
-                handle_timer_expiration(w, &te);
-            } else {
-                break;
-            }
-        }
-
-        int timeout = timer_heap_next_timeout_ms(&w->timers, now_ms);
-        int nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout);
+        int nfds = epoll_wait(w->epoll_fd, events, MAX_EVENTS, timeout_ms);
         if (nfds < 0) {
             if (errno == EINTR) continue;
             break;
         }
 
+        now_ms = clock_monotonic_ms();
+        timer_entry_t te;
+        while (timer_heap_peek(&w->timers, &te)) {
+            if (te.expire_at_ms > now_ms) break;
+            timer_heap_pop(&w->timers, &te);
+            conn_t *c = (conn_t*)te.conn_ptr;
+            if (c && c->gen == te.conn_gen && c->parked_in_timer) {
+                handle_timer_expiration(w, c, te.delay_ms);
+            }
+        }
+
         for (int i = 0; i < nfds; i++) {
-            int fd = events[i].data.fd;
+            void *ptr = events[i].data.ptr;
             uint32_t evs = events[i].events;
 
-            if (fd == w->listen_h1_fd) {
+            if (ptr == &w->token_h1) {
                 while (true) {
                     int cfd = accept4(w->listen_h1_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
                     if (cfd < 0) break;
-                    if (cfd >= MAX_CONNS_PER_WORKER) { close(cfd); continue; }
 
                     set_sock_opts(cfd);
-                    conn_t *c = &w->conns[cfd];
-                    c->fd = cfd;
-                    c->is_tls = false;
-                    c->ssl = NULL;
-                    c->read_pos = 0;
-                    c->write_pos = 0;
-                    c->write_sent = 0;
-                    c->parked_in_timer = false;
-                    c->closing = false;
+                    conn_t *c = alloc_conn(w, cfd, false, NULL);
+                    if (!c) { close(cfd); continue; }
 
                     struct epoll_event ev = {
                         .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.fd = cfd
+                        .data.ptr = c
                     };
                     epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
                 }
                 continue;
             }
 
-            if (w->listen_tls_fd >= 0 && fd == w->listen_tls_fd) {
+            if (w->listen_tls_fd >= 0 && ptr == &w->token_tls) {
                 while (true) {
                     int cfd = accept4(w->listen_tls_fd, NULL, NULL, SOCK_NONBLOCK | SOCK_CLOEXEC);
                     if (cfd < 0) break;
-                    if (cfd >= MAX_CONNS_PER_WORKER) { close(cfd); continue; }
 
                     set_sock_opts(cfd);
                     SSL *ssl = SSL_new(w->ssl_ctx);
@@ -391,28 +472,20 @@ static void* worker_main(void *arg) {
                     SSL_set_fd(ssl, cfd);
                     SSL_set_accept_state(ssl);
 
-                    conn_t *c = &w->conns[cfd];
-                    c->fd = cfd;
-                    c->is_tls = true;
-                    c->ssl = ssl;
-                    c->tls_handshake_done = false;
-                    c->read_pos = 0;
-                    c->write_pos = 0;
-                    c->write_sent = 0;
-                    c->parked_in_timer = false;
-                    c->closing = false;
+                    conn_t *c = alloc_conn(w, cfd, true, ssl);
+                    if (!c) { SSL_free(ssl); close(cfd); continue; }
 
                     struct epoll_event ev = {
                         .events = EPOLLIN | EPOLLOUT | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                        .data.fd = cfd
+                        .data.ptr = c
                     };
                     epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, cfd, &ev);
                 }
                 continue;
             }
 
-            conn_t *c = &w->conns[fd];
-            if (c->fd != fd) continue;
+            conn_t *c = (conn_t*)ptr;
+            if (!c || c->fd < 0) continue;
 
             if (evs & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
                 close_conn(w, c);
@@ -432,38 +505,52 @@ static void* worker_main(void *arg) {
                 c->tls_handshake_done = true;
                 struct epoll_event ev = {
                     .events = EPOLLIN | EPOLLET | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
-                    .data.fd = fd
+                    .data.ptr = c
                 };
-                epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, fd, &ev);
+                epoll_ctl(w->epoll_fd, EPOLL_CTL_MOD, c->fd, &ev);
             }
 
             if (evs & EPOLLOUT) {
-                if (c->write_pos > c->write_sent) {
-                    flush_write_buf(w, c);
+                if (c->pending_write) {
+                    if (!flush_pending_write(w, c)) {
+                        continue;
+                    }
                 }
             }
 
             if (evs & EPOLLIN) {
                 while (true) {
-                    size_t rem = sizeof(c->read_buf) - c->read_pos;
-                    if (rem == 0) {
-                        close_conn(w, c);
-                        break;
+                    if (c->read_pos == c->read_cap) {
+                        size_t new_cap = c->read_cap * 2;
+                        if (new_cap < 65536) new_cap = 65536;
+                        if (new_cap > 512 * 1024) new_cap = 512 * 1024;
+                        if (new_cap > c->read_cap) {
+                            char *new_buf = malloc(new_cap);
+                            if (!new_buf) { close_conn(w, c); break; }
+                            memcpy(new_buf, c->read_buf, c->read_pos);
+                            if (c->read_buf != c->inline_read_buf) free(c->read_buf);
+                            c->read_buf = new_buf;
+                            c->read_cap = new_cap;
+                        } else {
+                            close_conn(w, c);
+                            break;
+                        }
                     }
+
                     ssize_t n = 0;
                     if (c->is_tls) {
-                        int r = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)rem);
-                        if (r <= 0) {
-                            int err = SSL_get_error(c->ssl, r);
+                        int ret = SSL_read(c->ssl, c->read_buf + c->read_pos, (int)(c->read_cap - c->read_pos));
+                        if (ret <= 0) {
+                            int err = SSL_get_error(c->ssl, ret);
                             if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
                                 break;
                             }
                             close_conn(w, c);
                             break;
                         }
-                        n = r;
+                        n = ret;
                     } else {
-                        n = recv(c->fd, c->read_buf + c->read_pos, rem, 0);
+                        n = recv(c->fd, c->read_buf + c->read_pos, c->read_cap - c->read_pos, 0);
                         if (n < 0) {
                             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                                 break;
@@ -479,34 +566,48 @@ static void* worker_main(void *arg) {
                     c->read_pos += (size_t)n;
                 }
 
-                if (c->fd >= 0) {
+                if (c->fd >= 0 && c->read_pos > 0) {
                     process_requests(w, c);
                 }
             }
         }
     }
 
+    close(w->epoll_fd);
+    close(w->listen_h1_fd);
+    if (w->listen_tls_fd >= 0) close(w->listen_tls_fd);
+    compress_worker_destroy(&w->compress);
+    timer_heap_destroy(&w->timers);
+
+    conn_t *curr = w->free_conns;
+    while (curr) {
+        conn_t *next = curr->next_free;
+        if (curr->read_buf != curr->inline_read_buf) {
+            free(curr->read_buf);
+        }
+        if (curr->pending_write) {
+            free(curr->pending_write);
+        }
+        free(curr);
+        curr = next;
+    }
+    w->free_conns = NULL;
+
     return NULL;
 }
 
 static int create_listen_socket(int port) {
-    int fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) return -1;
 
     int one = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one));
-    setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-    setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &one, sizeof(one));
-
-    #ifdef TCP_DEFER_ACCEPT
-    int timeout = 1;
-    setsockopt(fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &timeout, sizeof(timeout));
-    #endif
+    set_sock_opts(fd);
 
     struct sockaddr_in addr = {
         .sin_family = AF_INET,
-        .sin_port = htons((uint16_t)port),
+        .sin_port = htons(port),
         .sin_addr.s_addr = INADDR_ANY
     };
 
@@ -528,10 +629,24 @@ int main(void) {
     signal(SIGTERM, handle_sig);
     signal(SIGPIPE, SIG_IGN);
 
-    long ncpu = sysconf(_SC_NPROCESSORS_ONLN);
-    if (ncpu <= 0) ncpu = 1;
-    if (ncpu > MAX_WORKERS) ncpu = MAX_WORKERS;
-    g_num_workers = (int)ncpu;
+    cpu_set_t cs;
+    int allowed_cpus[MAX_WORKERS];
+    int num_allowed = 0;
+    if (sched_getaffinity(0, sizeof(cs), &cs) == 0) {
+        for (int i = 0; i < CPU_SETSIZE && num_allowed < MAX_WORKERS; i++) {
+            if (CPU_ISSET(i, &cs)) {
+                allowed_cpus[num_allowed++] = i;
+            }
+        }
+    }
+    if (num_allowed == 0) {
+        long ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+        if (ncpu <= 0) ncpu = 1;
+        if (ncpu > MAX_WORKERS) ncpu = MAX_WORKERS;
+        for (int i = 0; i < ncpu; i++) allowed_cpus[i] = i;
+        num_allowed = (int)ncpu;
+    }
+    g_num_workers = num_allowed;
 
     const char *dataset_path = getenv("DATASET_PATH");
     if (!dataset_path) dataset_path = "/data/dataset.json";
@@ -553,10 +668,16 @@ int main(void) {
         shared_ssl_ctx = tls_init_server_ctx("./certs/server.crt", "./certs/server.key");
     }
 
+    g_workers = calloc((size_t)g_num_workers, sizeof(worker_t));
+    if (!g_workers) {
+        perror("calloc g_workers");
+        return 1;
+    }
+
     for (int i = 0; i < g_num_workers; i++) {
         worker_t *w = &g_workers[i];
         w->id = i;
-        w->cpu_id = i;
+        w->cpu_id = allowed_cpus[i];
         w->ssl_ctx = shared_ssl_ctx;
 
         router_init(&w->router);
@@ -570,17 +691,30 @@ int main(void) {
 
         compress_worker_init(&w->compress);
         timer_heap_init(&w->timers, 4096);
-        w->conns = calloc(MAX_CONNS_PER_WORKER, sizeof(conn_t));
+        w->free_conns = NULL;
+
+        for (int k = 0; k < 128; k++) {
+            conn_t *c = calloc(1, sizeof(conn_t));
+            if (c) {
+                c->read_buf = c->inline_read_buf;
+                c->read_cap = sizeof(c->inline_read_buf);
+                c->fd = -1;
+                c->next_free = w->free_conns;
+                w->free_conns = c;
+            }
+        }
 
         w->epoll_fd = epoll_create1(EPOLL_CLOEXEC);
         w->listen_h1_fd = create_listen_socket(8080);
-        struct epoll_event ev1 = { .events = EPOLLIN, .data.fd = w->listen_h1_fd };
+        w->token_h1 = 1;
+        struct epoll_event ev1 = { .events = EPOLLIN, .data.ptr = &w->token_h1 };
         epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_h1_fd, &ev1);
 
         if (w->ssl_ctx) {
             w->listen_tls_fd = create_listen_socket(8081);
             if (w->listen_tls_fd >= 0) {
-                struct epoll_event ev2 = { .events = EPOLLIN, .data.fd = w->listen_tls_fd };
+                w->token_tls = 2;
+                struct epoll_event ev2 = { .events = EPOLLIN, .data.ptr = &w->token_tls };
                 epoll_ctl(w->epoll_fd, EPOLL_CTL_ADD, w->listen_tls_fd, &ev2);
             }
         } else {
@@ -598,5 +732,6 @@ int main(void) {
         tls_free_server_ctx(shared_ssl_ctx);
     }
 
+    free(g_workers);
     return 0;
 }

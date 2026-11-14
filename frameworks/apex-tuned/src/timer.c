@@ -22,7 +22,7 @@ static inline void swap_entries(timer_entry_t *a, timer_entry_t *b) {
     *b = tmp;
 }
 
-bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_ms, int conn_fd, uint32_t conn_gen, int64_t delay_ms) {
+bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_ms, void *conn_ptr, uint32_t conn_gen, int64_t delay_ms) {
     if (th->count >= th->capacity) {
         size_t new_cap = th->capacity * 2;
         timer_entry_t *re = realloc(th->entries, sizeof(timer_entry_t) * new_cap);
@@ -34,7 +34,7 @@ bool timer_heap_push(timer_heap_t *th, uint64_t expire_at_ms, int conn_fd, uint3
     size_t i = th->count++;
     th->entries[i] = (timer_entry_t){
         .expire_at_ms = expire_at_ms,
-        .conn_fd = conn_fd,
+        .conn_ptr = conn_ptr,
         .conn_gen = conn_gen,
         .delay_ms = delay_ms
     };
