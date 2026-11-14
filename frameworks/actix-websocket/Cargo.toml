@@ -6,4 +6,11 @@ edition = "2021"
 [dependencies]
 actix-web = "4.13"
 actix-ws = "0.3"
+mimalloc = { version = "0.1", default-features = false }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = "thin"
+panic = "abort"

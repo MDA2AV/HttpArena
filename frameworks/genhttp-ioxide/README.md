@@ -28,6 +28,7 @@ Responses are produced by GenHTTP's own pipeline (routing + serialization), not 
 - `8gbit` — `POST /echo`, returns the request body back unchanged
 - `async-db` — `/async-db?min=&max=&limit=`, Postgres via `ioxide.pg` (per-reactor pool)
 - `crud` — list / get / create / update on `/crud/items`, cache-aside (`X-Cache`, in-process)
+- compliance — `/spec` and `/spec/headers` ([contract](https://http-arena.com/docs/test-profiles/compliance/)) on `:8080`, `:8082` and `:8443` for the h1 and h2 suites; h3 and WebSocket need no route
 
 `json-tls` serves on `:8081` when `TLS_CERT` / `TLS_KEY` (default `/certs`) exist; the DB profiles
 need `DATABASE_URL`. Both are provided by the harness sidecars.

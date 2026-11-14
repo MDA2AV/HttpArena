@@ -2,6 +2,7 @@
 using HttpArena.Services;
 using HttpArena.Types;
 using System.Buffers;
+using System.Text;
 
 static class Handlers
 {
@@ -65,6 +66,32 @@ static class Handlers
         var body = ms.GetBuffer().AsMemory(0, (int)ms.Length);
         ctx.Response.ContentLength = body.Length;
         await ctx.Response.Body.WriteAsync(body);
+    }
+
+    // /spec, the compliance route. GET answers a fixed body of at least five
+    // bytes - h2spec skips a flow-control test below that. Kestrel drops the
+    // body itself when the same handler answers HEAD.
+    public static IResult SpecText() => Results.Text("spec ok", "text/plain");
+
+    public static async Task SpecOptions(HttpContext ctx)
+    {
+        await ctx.Request.Body.CopyToAsync(Stream.Null);
+        ctx.Response.Headers.Allow = "GET, HEAD, POST, OPTIONS";
+        ctx.Response.ContentLength = 0;
+    }
+
+    // Every request header as Kestrel stored it, one "Name: Value" line each.
+    // The probe's normalization tests read this back to see what happened to
+    // a malformed header name.
+    public static async Task SpecHeaders(HttpContext ctx)
+    {
+        await ctx.Request.Body.CopyToAsync(Stream.Null);
+        var sb = new StringBuilder();
+        foreach (var (name, values) in ctx.Request.Headers)
+            foreach (var value in values)
+                sb.Append(name).Append(": ").Append(value).Append('\n');
+        ctx.Response.ContentType = "text/plain";
+        await ctx.Response.WriteAsync(sb.ToString());
     }
 
     public static IResult Json(int count, DatasetService dataset, int m = 1)

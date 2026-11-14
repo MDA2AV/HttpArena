@@ -57,6 +57,12 @@
       "tags": [
         "WebSocket Echo"
       ]
+    },
+    {
+      "name": "Compliance",
+      "tags": [
+        "Compliance"
+      ]
     }
   ],
   "servers": [
@@ -200,6 +206,14 @@
       "externalDocs": {
         "description": "Test Profile",
         "url": "https://http-arena.com/docs/test-profiles/ws/echo/"
+      }
+    },
+    {
+      "name": "Compliance",
+      "description": "The /spec route the protocol-compliance suites run against: Http11Probe on port 8080, h2spec on 8443 and 8082. Used by entries whose meta.json `spec` list includes `h1` or `h2`. Nothing on it is measured; it feeds the compliance score columns, which are never part of the composite.",
+      "externalDocs": {
+        "description": "Compliance",
+        "url": "https://http-arena.com/docs/test-profiles/compliance/"
       }
     }
   ],
@@ -953,6 +967,206 @@
           },
           "400": {
             "description": "Request to `/ws` without valid upgrade headers (`426 Upgrade Required` or another 4xx is equally acceptable)"
+          }
+        }
+      }
+    },
+    "/spec": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 - Http11Probe"
+        },
+        {
+          "url": "https://localhost:8443",
+          "description": "HTTP/2 over TLS - h2spec (entries running baseline-h2 or static-h2)"
+        },
+        {
+          "url": "http://localhost:8082",
+          "description": "HTTP/2 cleartext, prior knowledge - h2spec (entries running baseline-h2c or json-h2c)"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Fixed text body",
+        "description": "Answers `200` with a fixed `text/plain` body of at least 5 bytes (the reference implementation answers `spec ok`). The content does not matter; the length does - h2spec skips one of its flow-control tests when the body is shorter than 5 bytes.\n\n**Standard:** Through the framework's normal routing, request body and header APIs, on the same listeners, parser and middleware as the benchmarked routes.\n\n**Tuned:** Same as standard. Nothing on this route is measured.\n\n**Engine:** Same contract. The route has to sit behind the same parser as the benchmarked routes.\n\n**Infrastructure:** A proxy may answer /spec itself or pass it through to an origin; the contract holds at the listener the suites connect to.",
+        "operationId": "specGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/compliance/implementation/"
+        },
+        "responses": {
+          "200": {
+            "description": "A fixed body of at least 5 bytes",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "minLength": 5
+                }
+              }
+            }
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Headers of GET /spec, no body",
+        "description": "The headers `GET /spec` would send, and no body.",
+        "operationId": "specHead",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/compliance/implementation/"
+        },
+        "responses": {
+          "200": {
+            "description": "No body"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Allowed methods",
+        "description": "Answers `200` with `Allow: GET, HEAD, POST, OPTIONS`. A request body, if one is sent, is read and discarded - one of the probe's smuggling tests sends OPTIONS with conflicting framing headers and a body.",
+        "operationId": "specOptions",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/compliance/implementation/"
+        },
+        "responses": {
+          "200": {
+            "description": "No body",
+            "headers": {
+              "Allow": {
+                "schema": {
+                  "type": "string",
+                  "example": "GET, HEAD, POST, OPTIONS"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Echo the request body back verbatim",
+        "description": "Reads the request body through the framework's normal body API and writes the same bytes back with `Content-Type: application/octet-stream`. `Content-Length` and chunked framing, any size, empty included (`200` with an empty body), with or without a `Content-Type` on the request.\n\n**Standard:** Through the framework's normal routing, request body and header APIs, on the same listeners, parser and middleware as the benchmarked routes.\n\n**Tuned:** Same as standard. Nothing on this route is measured.\n\n**Engine:** Same contract. The route has to sit behind the same parser as the benchmarked routes.\n\n**Infrastructure:** A proxy may answer /spec itself or pass it through to an origin; the contract holds at the listener the suites connect to.",
+        "operationId": "specPost",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/compliance/implementation/"
+        },
+        "requestBody": {
+          "required": false,
+          "description": "Arbitrary bytes, any size including empty, with or without a Content-Type.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "*/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The request body, byte for byte",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/spec/headers": {
+      "servers": [
+        {
+          "url": "http://localhost:8080",
+          "description": "HTTP/1.1 - Http11Probe"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Echo the request headers",
+        "description": "Every request header the server received, one per line as `Name: Value`, in any order, names in whatever case the framework keeps them. The probe's normalization tests read this back to see what the server did with a malformed header name.",
+        "operationId": "specHeadersGet",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/compliance/implementation/"
+        },
+        "responses": {
+          "200": {
+            "description": "One `Name: Value` line per request header",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compliance"
+        ],
+        "summary": "Echo the request headers",
+        "description": "Every request header the server received, one per line as `Name: Value`, in any order, names in whatever case the framework keeps them. The probe's normalization tests read this back to see what the server did with a malformed header name. The request body is read and discarded.",
+        "operationId": "specHeadersPost",
+        "externalDocs": {
+          "description": "Implementation Guidelines",
+          "url": "https://http-arena.com/docs/test-profiles/compliance/implementation/"
+        },
+        "requestBody": {
+          "required": false,
+          "description": "Arbitrary bytes, any size including empty, with or without a Content-Type.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "*/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "One `Name: Value` line per request header",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }

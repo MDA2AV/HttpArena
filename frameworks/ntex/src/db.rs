@@ -7,7 +7,8 @@ use std::{cell::OnceCell, str::FromStr, sync::OnceLock, time::Duration};
 use deadpool::unmanaged::{Object, Pool};
 use ntex::web::{self, HttpResponse};
 use serde::Serialize;
-use tokio_postgres::{Client, Config, NoTls, Row, Statement, config::Host, types::ToSql};
+use tokio_postgres::types::ToSql;
+use tokio_postgres::{Client, Config, NoTls, Row, Statement, config::Host};
 
 const QUERY: &str = "SELECT id, name, category, price, quantity, active, tags, rating_score, \
                      rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3";
@@ -259,10 +260,11 @@ pub async fn async_db(query: web::types::Query<Vec<(String, String)>>) -> HttpRe
         return HttpResponse::InternalServerError().build();
     };
     let items: Vec<_> = rows.iter().map(item).collect();
-    HttpResponse::Ok().json(&DbList {
+    let list = DbList {
         count: items.len(),
         items,
-    })
+    };
+    HttpResponse::Ok().json(&list)
 }
 
 #[cfg(test)]

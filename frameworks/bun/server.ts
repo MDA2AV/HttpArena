@@ -339,6 +339,31 @@ const routes = {
 
     "/echo": { POST: (req: Request) => echoBody(req) },
 
+    // /spec, the compliance route (site/content/docs/test-profiles/compliance/):
+    // what Http11Probe and h2spec need from one route, on every listener below.
+    // GET answers a fixed body of at least five bytes - h2spec skips a
+    // flow-control test below that. POST is the 8gbit echo.
+    "/spec": {
+        GET: () => new Response("spec ok", { headers: TEXT }),
+        HEAD: () => new Response("spec ok", { headers: TEXT }),
+        OPTIONS: async (req: Request) => {
+            await req.arrayBuffer();
+            return new Response(null, { headers: { allow: "GET, HEAD, POST, OPTIONS", server: "bun" } });
+        },
+        POST: (req: Request) => echoBody(req),
+    },
+
+    // Every request header as Bun stored it, one "Name: Value" line each. The
+    // probe's normalization tests read this back to see what became of a
+    // malformed header name. A body is read and discarded.
+    "/spec/headers": {
+        GET: (req: Request) => specHeaders(req),
+        POST: async (req: Request) => {
+            await req.arrayBuffer();
+            return specHeaders(req);
+        },
+    },
+
     // one segment, so a path with a slash in it never reaches the handler
     "/static/:name": (req: any) => serveStatic(req.params.name, req),
 
@@ -370,6 +395,14 @@ const routes = {
         PUT: (req: any) => crudUpdate(req, parseInt(req.params.id, 10)),
     },
 };
+
+function specHeaders(req: Request): Response {
+    let out = "";
+    req.headers.forEach((value, name) => {
+        out += name + ": " + value + "\n";
+    });
+    return new Response(out, { headers: TEXT });
+}
 
 function handle(): Response {
     return new Response("Not Found", { status: 404, headers: TEXT });
