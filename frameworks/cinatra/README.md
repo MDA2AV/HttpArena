@@ -1,15 +1,15 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/17b146e4a5f7082f9d3ffc2509a7b87eb0506536/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/21b958d48bff023a3cb4d9712641cb9fa7f3c8dd/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
 
 The cases use cinatra's router, request/body APIs, streaming response writer,
 builtin gzip, executor-local sleep and WebSocket reader/writer. JSON is selected,
 recomputed and serialized per request with bundled iguana. Request-local PMR
 vectors borrow immutable dataset strings. The entry is marked tuned for its PMR
-storage and native TLS response-buffer setting; compression keeps framework
-defaults.
+storage and native contiguous buffers for small baseline replies and TLS
+JSON/echo; compression keeps framework defaults.
 
 Responses include Date, Server, Connection and Content-Type; JSON also carries
 Vary: Accept-Encoding. Local matched-byte comparisons align these headers, JSON

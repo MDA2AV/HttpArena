@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates cmake ninja-build git g++-14 libssl-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ARG CINATRA_REF=17b146e4a5f7082f9d3ffc2509a7b87eb0506536
+ARG CINATRA_REF=21b958d48bff023a3cb4d9712641cb9fa7f3c8dd
 WORKDIR /src/cinatra
 RUN git init . \
     && git remote add origin https://github.com/qicosmos/cinatra.git \
