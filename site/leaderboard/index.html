@@ -366,17 +366,38 @@
     border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
     padding:.55rem .7rem; font-size:.72rem; line-height:1.4; pointer-events:none;
     max-width:340px}
-  #dtip .dh{font-weight:700; font-size:.76rem}
-  #dtip .dsub{color:var(--muted); font-size:.68rem; margin-bottom:.35rem}
-  #dtip .dc{color:var(--text-2); font-weight:650; font-size:.67rem; text-transform:uppercase;
+  #dtip .dh, #spanel .dh{font-weight:700; font-size:.76rem}
+  #dtip .dsub, #spanel .dsub{color:var(--muted); font-size:.68rem; margin-bottom:.35rem}
+  #dtip .dc, #spanel .dc{color:var(--text-2); font-weight:650; font-size:.67rem; text-transform:uppercase;
     letter-spacing:.03em; margin:.45rem 0 .16rem; padding-top:.34rem; border-top:1px solid var(--line-soft)}
-  #dtip .dc .dtag{float:right; text-transform:none; letter-spacing:0; font-weight:500; color:var(--muted)}
-  #dtip table{border-collapse:collapse; width:100%}
-  #dtip td{padding:.05rem 0; vertical-align:baseline}
-  #dtip td.k{color:var(--muted); padding-right:.8rem; white-space:nowrap}
-  #dtip td.v{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
-  #dtip .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft);
+  #dtip .dc .dtag, #spanel .dc .dtag{float:right; text-transform:none; letter-spacing:0; font-weight:500; color:var(--muted)}
+  #dtip table, #spanel table{border-collapse:collapse; width:100%}
+  #dtip td, #spanel td{padding:.05rem 0; vertical-align:baseline}
+  #dtip td.k, #spanel td.k{color:var(--muted); padding-right:.8rem; white-space:nowrap}
+  #dtip td.v, #spanel td.v{text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+  #dtip .dfoot, #spanel .dfoot{margin-top:.4rem; padding-top:.32rem; border-top:1px solid var(--line-soft);
     color:var(--muted); font-size:.67rem}
+  /* The Spec cell's panel: #dtip's card, but it can be pinned with a click, so
+     it takes the pointer and holds links. */
+  #spanel{position:fixed; z-index:102; display:none; background:var(--panel); color:var(--text);
+    border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
+    padding:.55rem .7rem; font-size:.72rem; line-height:1.4; max-width:360px}
+  #spanel.pinned{border-color:var(--accent)}
+  #spanel .dh{padding-right:1.4rem}
+  #spanel .sx{display:none; position:absolute; top:.25rem; right:.35rem; width:1.4rem; height:1.4rem;
+    border:0; background:none; color:var(--muted); font-size:1rem; line-height:1; cursor:pointer}
+  #spanel.pinned .sx{display:block}
+  #spanel .sx:hover{color:var(--text)}
+  #spanel .sscore{margin:.1rem 0 .3rem}
+  #spanel .sbig{font-family:var(--mono); font-size:1.15rem; font-weight:700; margin-right:.4rem; color:var(--text)}
+  #spanel p, #spanel .snote{margin:.3rem 0; color:var(--text-2)}
+  #spanel .swarn{color:#c0392b}
+  #spanel code{font-family:var(--mono); font-size:.66rem}
+  #spanel ul, #spanel ol{margin:.15rem 0 .2rem; padding-left:1.1rem}
+  #spanel li{margin:.08rem 0; overflow-wrap:anywhere}
+  #spanel .sgo{display:block; margin-top:.5rem; padding:.32rem .5rem; border:1px solid var(--line);
+    border-radius:6px; color:var(--accent); text-decoration:none; font-weight:600}
+  #spanel .sgo:hover{background:var(--accent); color:var(--bg)}
   #tip{position:fixed; z-index:100; display:none; white-space:pre-line; max-width:280px; background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); padding:.5rem .65rem; font-size:.74rem; line-height:1.45; font-weight:500; pointer-events:none}
 
   /* row-click info modal */
@@ -492,8 +513,8 @@
 /* The compliance (Spec) column: a profile-like cell, set off from the profiles after it. */
 .cm th.spech, .cm td.spec{border-right:1px solid var(--line-soft)}
 .cm td.pc.spec.crashed .cmem{color:#c0392b}
-.cm td.spec a.speclink{color:inherit; text-decoration:none}
-.cm td.spec a.speclink:hover{text-decoration:underline}
+.cm td.spec{cursor:pointer}
+.cm td.spec:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
   .cm th.pcol.refcol{opacity:.45}
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
@@ -806,31 +827,110 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // Sort order: measured scores, then the ones that could not be measured, then
   // the entries that do not run the suite at all.
   function specRatio(s){ if(!s) return -1; if(s.e!=null||!s.t) return -0.5; return s.p/s.t; }
-  function specTip(s){
-    if(s.e!=null) return s.tool+': not measured - '+s.e+'. Not part of the composite. Click for details.';
-    var t=s.tool+': '+s.p+' of '+s.t+' passed, '+s.f+' failed';
-    if(s.w) t+=', '+s.w+' warnings counted as passed (the RFC allows both behaviours)';
-    if(s.ns) t+=', '+s.ns+' non-strict counted as passed';
-    if(s.l){
-      var parts=Object.keys(s.l).map(function(n){ var v=s.l[n]; return n+' '+(v?v[0]+'/'+v[1]:'not measured'); });
-      if(parts.length>1) t+='. Per listener: '+parts.join(', ')+'; the lower one counts';
+  // The panel a Spec cell opens: on hover, or pinned with a click so its links
+  // can be followed. A score shows its breakdown and the first failed tests and
+  // links to the entry page, which explains every failure; a cell without a
+  // score says why, or how an entry gets one.
+  function specPanelHtml(fw, pinned){
+    var k=specSuite(); if(!k) return '';
+    var s=specOf(fw), label=SPEC_LABEL[k];
+    var page='/frameworks/'+encodeURIComponent(slugOf(fw))+'/#spec';
+    var h='<button class="sx" type="button" aria-label="Close">×</button>'
+      + '<div class="dh">'+esc(fw)+'</div><div class="dsub">'+esc(label)+' protocol compliance</div>';
+    if(!s){
+      h+='<p>This entry does not run the '+esc(label)+' suite, so it has no score here.</p>'
+       + '<div class="dc">How an entry gets one</div><ol>'
+       + '<li>List <code>"'+k+'"</code> in <code>"spec"</code> in its meta.json.</li>'
+       + (k==='h1'||k==='h2' ? '<li>Serve the <code>/spec</code> route'+(k==='h2'?' on its HTTP/2 listeners':' on :8080')+'.</li>' : '')
+       + '<li>Comment <code>/spec --save</code> on a pull request.</li></ol>'
+       + '<a class="sgo" href="/docs/test-profiles/compliance/">How the compliance suites work →</a>';
+    } else if(s.e!=null||!s.t){
+      h+='<p>Could not be measured: '+esc(s.e||'no tests were scored')+'.</p>'
+       + '<table><tr><td class="k">Tool</td><td class="v">'+esc(s.tool)+'</td></tr></table>'
+       + '<a class="sgo" href="'+page+'">Open the full report →</a>';
+    } else {
+      var r=s.p/s.t;
+      h+='<div class="sscore"><span class="sbig">'+(r===1?'100':(r*100).toFixed(1))+'%</span>'+s.p+' of '+s.t+' passed</div>'
+       + '<table><tr><td class="k">Tool</td><td class="v">'+esc(s.tool)+'</td></tr>'
+       + '<tr><td class="k">Failed</td><td class="v">'+s.f+'</td></tr>'
+       + (s.w?'<tr><td class="k">Warnings, counted as passed</td><td class="v">'+s.w+'</td></tr>':'')
+       + (s.ns?'<tr><td class="k">Non-strict, counted as passed</td><td class="v">'+s.ns+'</td></tr>':'')
+       + '</table>';
+      if(s.l){
+        h+='<div class="dc">Per listener<span class="dtag">the lower one counts</span></div><table>';
+        Object.keys(s.l).forEach(function(n){ var v=s.l[n];
+          h+='<tr><td class="k">'+esc(n)+'</td><td class="v">'+(v?v[0]+' / '+v[1]:'not measured')+'</td></tr>'; });
+        h+='</table>';
+      }
+      if(s.d) h+='<p class="snote">Measured on <code>'+esc(s.d)+'</code>, which the board shows under this name.</p>';
+      if(s.c) h+='<p class="snote swarn">The server crashed during the suite: the tests it could no longer answer count as failed.</p>';
+      if(s.fx&&s.fx.length){
+        h+='<div class="dc">Failed, for example</div><ul>'
+         + s.fx.map(function(id){ return '<li><code>'+esc(id)+'</code></li>'; }).join('')+'</ul>'
+         + (s.f>s.fx.length?'<div class="snote">and '+(s.f-s.fx.length)+' more</div>':'');
+      }
+      h+='<a class="sgo" href="'+page+'">'+(s.f?'Every failed test, and why →':'Open the full report →')+'</a>';
     }
-    if(s.c) t+='. The server crashed during the suite: the tests it could no longer answer count as failed';
-    return t+'. Not part of the composite.'+(s.f?' Click for what failed and why.':'');
+    return h+'<div class="dfoot">'+(pinned?'Pinned: Esc or a click elsewhere closes it.':'Click the cell to pin this panel.')
+      + ' Not part of the composite.</div>';
   }
   function specCell(fw){
-    var s=specOf(fw);
-    if(!s) return '<td class="num pc empty spec" data-tip="'+esc('Does not run the '+SPEC_LABEL[specSuite()]+' compliance suite.')+'">·</td>';
-    // The value links to the entry page, which lists every failed test with
-    // what was expected and what the server did.
-    var link=function(text){ return '<a class="speclink" href="/frameworks/'+esc(slugOf(fw))+'/#spec">'+text+'</a>'; };
-    if(s.e!=null||!s.t) return '<td class="num pc nc spec" data-tip="'+esc(specTip(s))+'"><span class="pcv"><span class="crps">'+link('—')+'</span></span></td>';
+    var s=specOf(fw), at=' data-fw="'+esc(fw)+'" tabindex="0"';
+    if(!s) return '<td class="num pc empty spec"'+at+'>·</td>';
+    if(s.e!=null||!s.t) return '<td class="num pc nc spec"'+at+'><span class="pcv"><span class="crps">—</span></span></td>';
     var r=s.p/s.t;
     var bar=state.heat ? '<span class="cbar" style="background:'+heatColor(r)+'"></span>'
                        : '<span class="cbar" style="width:'+(r*100).toFixed(0)+'%"></span>';
-    return '<td class="num pc spec'+(r===1?' lead':'')+(s.c?' crashed':'')+'" data-tip="'+esc(specTip(s))+'">'
-      + '<span class="pcv"><span class="crps">'+link((r===1?'100':(r*100).toFixed(1))+'%')+'</span>'
+    return '<td class="num pc spec'+(r===1?' lead':'')+(s.c?' crashed':'')+'"'+at+'>'
+      + '<span class="pcv"><span class="crps">'+(r===1?'100':(r*100).toFixed(1))+'%</span>'
       + '<span class="cmem">'+(s.c?'crashed':s.p+'/'+s.t)+'</span></span>'+bar+'</td>';
+  }
+  // Hover shows the panel; a click (or Enter) pins it, so the pointer can move
+  // into it and follow its links; a second click on the same cell, the close
+  // button, Esc or a click anywhere else lets it go. Redrawing the table drops
+  // the cell it was pinned to, so render closes it too (specPanelClose).
+  var specPanelClose=function(){};
+  function initSpecPanel(){
+    var pan=document.createElement('div'); pan.id='spanel'; pan.setAttribute('role','dialog');
+    document.body.appendChild(pan);
+    var pinned=null;
+    function place(td){
+      var r=td.getBoundingClientRect(); pan.style.display='block';
+      var w=pan.offsetWidth, h=pan.offsetHeight;
+      var l=r.left+r.width/2-w/2, t=r.top-h-8;
+      if(t<6) t=r.bottom+8;
+      if(t+h>window.innerHeight-6) t=Math.max(6, window.innerHeight-h-6);
+      l=Math.max(6, Math.min(l, window.innerWidth-w-6));
+      pan.style.left=l+'px'; pan.style.top=t+'px';
+    }
+    function show(td, pin){
+      var h=specPanelHtml(td.dataset.fw, pin);
+      if(!h){ close(); return; }
+      pan.innerHTML=h; pan.classList.toggle('pinned', !!pin); place(td);
+      pinned=pin?td:null;
+    }
+    function close(){ pan.style.display='none'; pan.classList.remove('pinned'); pinned=null; }
+    specPanelClose=close;
+    function held(){ return pinned && document.body.contains(pinned); }
+    function cellOf(e){ return e.target.closest?e.target.closest('td.spec[data-fw]'):null; }
+    function toggle(td){ if(held() && pinned===td) close(); else show(td, true); }
+    document.addEventListener('mouseover', function(e){ if(held()) return; var td=cellOf(e); if(td) show(td, false); });
+    document.addEventListener('mouseout', function(e){
+      if(held()) return; var td=cellOf(e);
+      if(td && !td.contains(e.relatedTarget)) close();
+    });
+    document.addEventListener('click', function(e){
+      var td=cellOf(e);
+      if(td){ toggle(td); return; }
+      if(e.target.closest && e.target.closest('#spanel .sx')){ close(); return; }
+      if(held() && !pan.contains(e.target)) close();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape' && held()){ var td=pinned; close(); td.focus(); return; }
+      var td=cellOf(e);
+      if(td && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); toggle(td); }
+    });
+    document.addEventListener('scroll', function(){ if(!held()) close(); }, true);
   }
 
   // The composite views are keyed by scope; 'h1' is the HTTP/1.1 one.
@@ -1898,6 +1998,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     syncTopScroll();
   }
   function renderComposite(){
+    specPanelClose();
     var res=computeComposite(), pids=res.pids, rows=res.rows.slice();
     renderTypes(rows.map(function(r){return r.fw;}));
     var rankMap={}; rows.slice().sort(function(a,b){return b.score-a.score;}).forEach(function(r,i){rankMap[r.fw]=i+1;});
@@ -2179,6 +2280,9 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   document.getElementById('rows').addEventListener('click', function(e){
     var s=e.target.closest('.star'); if(s){ e.preventDefault(); e.stopPropagation(); toggleFav(s.getAttribute('data-fw')); return; }
     if(e.target.closest('a')) return;
+    // A Spec cell's click pins its panel (initSpecPanel); opening the entry's
+    // modal on top would cover the panel and take the click meant for its link.
+    if(e.target.closest('td.spec')) return;
     var row=e.target.closest('[data-fw-row]'); if(row) openModal(row.getAttribute('data-fw-row'));
   });
   try{ var _vt=['flagship','emerging','experimental','engine','infrastructure']; var _t=JSON.parse(localStorage.getItem('lb-types')||'null'); if(_t&&_t.length){ _t=_t.filter(function(x){return _vt.indexOf(x)>=0;}); if(_t.length) state.types=_t; } }catch(e){}
@@ -2187,7 +2291,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   try{ var _fc=localStorage.getItem('lb-fwcompact'); if(_fc!==null) state.compactFw=_fc==='1'; }catch(e){}
   document.getElementById('tunedToggle').addEventListener('click', function(){ state.showTuned=!state.showTuned; saveTuned(); render(); });
   restoreFromHash();
-  initTips(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
+  initTips(); initSpecPanel(); initHeat(); initModal(); initDocLinks(); initSearchHelp(); initRounds(); initTheme(); initNavSearch(); hw(); buildNav(); renderHead(); render();
   (function(){ var b=document.getElementById('brandHome'); if(b) b.onclick=function(e){ e.preventDefault(); pickScope('h1'); }; })();
   window.addEventListener('hashchange', function(){ restoreFromHash(); buildNav(); renderHead(); render(); });
   var _rz; window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){ if(state.view==='profile') render(); else if(state.view==='composite') syncTopScroll(); }, 150); });

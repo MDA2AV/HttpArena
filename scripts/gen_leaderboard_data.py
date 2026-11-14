@@ -3934,6 +3934,10 @@ def _spec_cell(s):
         out["ns"] = int(s["non_strict"])
     if s.get("crashed"):
         out["c"] = 1
+    # The first few failed tests, for the board's panel; the entry page has them all.
+    ids = [str(f.get("id") if isinstance(f, dict) else f) for f in s.get("failed") or []]
+    if ids:
+        out["fx"] = [i[:140] for i in ids[:3]]
     listeners = s.get("listeners") or {}
     if len(listeners) > 1:
         out["l"] = {n: ([v["passed"], v["total"]] if v.get("total") else None) for n, v in listeners.items()}
@@ -3961,8 +3965,14 @@ def _spec_full_for(m, spec_by_dir):
 
 
 def _spec_for(m, spec_by_dir):
-    """The board's compact cell per suite, from the same selection as the entry page."""
-    return {suite: _spec_cell(s) for suite, (_d, s) in _spec_full_for(m, spec_by_dir).items()}
+    """The board's compact cell per suite, from the same selection as the entry page.
+    A suite measured on a variant carries that directory as "d"."""
+    out = {}
+    for suite, (d, s) in _spec_full_for(m, spec_by_dir).items():
+        out[suite] = _spec_cell(s)
+        if d and d != m.get("dir"):
+            out[suite]["d"] = d
+    return out
 
 
 SPEC_SECTION = (("h1", "HTTP/1.1"), ("h2", "HTTP/2"), ("h3", "HTTP/3"), ("ws", "WebSocket"))
