@@ -489,6 +489,9 @@
   .cm td.pc.empty{color:var(--line-soft); text-align:center; font-family:var(--sans)}
   .cm td.pc.lead .crps{font-weight:700}
   .cm td.pc.nc{opacity:.4}
+/* The compliance (Spec) column: a profile-like cell, set off from the profiles after it. */
+.cm th.spech, .cm td.spec{border-right:1px solid var(--line-soft)}
+.cm td.pc.spec.crashed .cmem{color:#c0392b}
   .cm th.pcol.refcol{opacity:.45}
   /* Two affordances per profile column: open that profile's detail view, and
      open its implementation guide. They sit on their own line under the label,
@@ -788,6 +791,43 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
   // covered by it, so a badge earned on :8081 must not follow the entry into
   // views it says nothing about.
   var TLS_CHECK_TIP = 'TLS hardened - opted into the TLS section and passed it: rotates its certificate without a restart and without dropping traffic, answers with and without SNI, closes at the TLS layer, and reports no HIGH or CRITICAL finding from the vulnerability suite.';
+  // ── Compliance (Spec) column ─────────────────────────────
+  // The protocol-compliance score of the family on view, from site/data/spec/,
+  // which scripts/spec.sh writes per entry directory. A score, never part of
+  // the composite. A board entry can be several directories (actix, actix-h2c,
+  // actix-websocket); gen_leaderboard_data.py has already joined them into
+  // D.meta[fw].spec as {suite: {tool, p, t, f, w?, ns?, l?, c?, e?}}.
+  var SPEC_SUITE={h1:'h1',h2:'h2',h3:'h3',ws:'ws'};
+  var SPEC_LABEL={h1:'HTTP/1.1',h2:'HTTP/2',h3:'HTTP/3',ws:'WebSocket'};
+  function specSuite(){ return state.view==='composite' ? (SPEC_SUITE[state.scope]||null) : null; }
+  function specOf(fw){ var k=specSuite(), m=D.meta[fw]; return (k&&m&&m.spec&&m.spec[k])||null; }
+  // Sort order: measured scores, then the ones that could not be measured, then
+  // the entries that do not run the suite at all.
+  function specRatio(s){ if(!s) return -1; if(s.e!=null||!s.t) return -0.5; return s.p/s.t; }
+  function specTip(s){
+    if(s.e!=null) return s.tool+': not measured - '+s.e+'. Not part of the composite.';
+    var t=s.tool+': '+s.p+' of '+s.t+' passed, '+s.f+' failed';
+    if(s.w) t+=', '+s.w+' warnings counted as passed (the RFC allows both behaviours)';
+    if(s.ns) t+=', '+s.ns+' non-strict counted as passed';
+    if(s.l){
+      var parts=Object.keys(s.l).map(function(n){ var v=s.l[n]; return n+' '+(v?v[0]+'/'+v[1]:'not measured'); });
+      if(parts.length>1) t+='. Per listener: '+parts.join(', ')+'; the lower one counts';
+    }
+    if(s.c) t+='. The server crashed during the suite: the tests it could no longer answer count as failed';
+    return t+'. Not part of the composite.';
+  }
+  function specCell(fw){
+    var s=specOf(fw);
+    if(!s) return '<td class="num pc empty spec" data-tip="'+esc('Does not run the '+SPEC_LABEL[specSuite()]+' compliance suite.')+'">·</td>';
+    if(s.e!=null||!s.t) return '<td class="num pc nc spec" data-tip="'+esc(specTip(s))+'"><span class="pcv"><span class="crps">—</span></span></td>';
+    var r=s.p/s.t;
+    var bar=state.heat ? '<span class="cbar" style="background:'+heatColor(r)+'"></span>'
+                       : '<span class="cbar" style="width:'+(r*100).toFixed(0)+'%"></span>';
+    return '<td class="num pc spec'+(r===1?' lead':'')+(s.c?' crashed':'')+'" data-tip="'+esc(specTip(s))+'">'
+      + '<span class="pcv"><span class="crps">'+(r===1?'100':(r*100).toFixed(1))+'%</span>'
+      + '<span class="cmem">'+(s.c?'crashed':s.p+'/'+s.t)+'</span></span>'+bar+'</td>';
+  }
+
   // The composite views are keyed by scope; 'h1' is the HTTP/1.1 one.
   function h1View(){ return state.view === 'composite' && state.scope === 'h1'; }
   function tlsCheckBadge(fw){
@@ -859,7 +899,8 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     scoreHelpWs:'How the composite is built: every scored profile is worth 1000 to the entry leading it, and those scores are summed. The completeness factor that scales the HTTP boards is not applied here — its four axes are the HTTP request-to-response path, which this family does not measure. Opens the scoring docs.',
     fw:'Framework - click the name to open its repository.',
     fwCompact:'Narrow this column to the type square, the tuned mark and the name, and give the width back to the profile columns.',
-    fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.'
+    fwExpand:'Widen this column back to the favourite star, the tuned pill, the language and the medals.',
+    spec:'Protocol compliance - how much of the conformance suite of this family the entry passes: Http11Probe on HTTP/1.1, h2spec on HTTP/2, h3spec on HTTP/3, Autobahn on WebSocket. A score, not part of the composite. A dot: the entry does not run the suite. A dash: it could not be measured.'
   };
   // Every field the published row carries for one framework on one profile,
   // across each connection count the profile ran. A column can only show one
@@ -1861,6 +1902,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
     rows.sort(function(a,b){
       if(sk==='fw'){ var x=a.fw.toLowerCase(),y=b.fw.toLowerCase(); return x<y?-dir:x>y?dir:0; }
       if(sk==='score'){ return (a.score-b.score)*dir; }
+      if(sk==='spec'){ return (specRatio(specOf(a.fw))-specRatio(specOf(b.fw)))*dir || (b.score-a.score); }
       var av=(a.cells[sk]&&a.cells[sk].v)||0, bv=(b.cells[sk]&&b.cells[sk].v)||0;
       return (av-bv)*dir || (b.score-a.score);
     });
@@ -1875,6 +1917,12 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       + '<th class="sticky scoreh num" data-k="score" data-tip="'+esc(cmpInScope()?TIP.score:TIP.scoreWs)+'">Composite'
       +   '<a class="hq" href="/docs/scoring/composite-score/" data-tip="'+esc(cmpInScope()?TIP.scoreHelp:TIP.scoreHelpWs)+'"'
       +      ' aria-label="How the composite score works">?</a>'+ar('score')+'</th>';
+    // The compliance score, first after the composite so it is in view without
+    // scrolling. Only the four families with a suite have the column.
+    if(specSuite()) th+='<th class="num pcol spech" data-k="spec" data-tip="'+esc(TIP.spec)+'">Spec'+ar('spec')
+      + '<span class="pnav"><a class="pico" href="/docs/test-profiles/compliance/"'
+      +   ' data-tip="'+esc('What the compliance suites test, the /spec route they run against, and how an entry subscribes to them.')+'"'
+      +   ' aria-label="How the compliance score works">?</a></span></th>';
     pids.forEach(function(pid){
       var p=PROF[pid]; var ref=!scoredForType(pid, leagueType());
       var nav='<span class="pnav">'
@@ -1906,6 +1954,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
               : starHtml(r.fw)+'<span class="tndslot">'+tunedPill(r.fw,'tnd')+'</span><span class="tsq tsq-'+t+'" data-tip="'+esc(typeTip(t))+'"></span><span class="lang" style="color:'+(dark?c.textDark:c.text)+'">'+esc(r.lang)+'</span><span class="nm">'+nm+'</span>'+tlsCheckBadge(r.fw)+medalChips(r.fw))
         +   '</span></td>'
         + '<td class="sticky scorec" title="'+esc(cmpTip(r))+'"><span class="sc"><b>'+r.score.toFixed(0)+cmpDelta(r)+'</b><span class="bar"><i style="width:'+Math.max(pct,2).toFixed(0)+'%;background:rgba('+c.rgb+','+(dark?0.55:0.42)+')"></i></span></span></td>';
+      if(specSuite()) tr+=specCell(r.fw);
       pids.forEach(function(pid){
         var cell=r.cells[pid];
         if(!cell){ tr+='<td class="num pc empty">·</td>'; return; }
@@ -1927,7 +1976,7 @@ document.addEventListener('DOMContentLoaded', function lbBoot(){
       });
       return tr+'<td class="spacer"></td></tr>';
     }).join('');
-    var colspan=pids.length+4;
+    var colspan=pids.length+4+(specSuite()?1:0);
     document.getElementById('rows').innerHTML='<div class="cscroll-row endonly" id="cscrollRowTop"><button class="cscroll-end" id="cscrollEndTop" type="button"></button></div><div class="cwrap" id="cwrap"><table class="cm'+(state.compactFw?' compact':'')+(state.heat?' heat':'')+'"><thead><tr>'+th+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+colspan+'" class="empty">No frameworks match this filter.</td></tr>')+'</tbody></table></div><div class="cscroll-row" id="cscrollRow"><div class="cscroll" id="cscrollTop"><div></div></div><button class="cscroll-end" id="cscrollEnd" type="button"></button></div>';
     // The ? in the Composite header is a link out to the docs, not a sort
     // target - a click there must not also reorder the table behind the

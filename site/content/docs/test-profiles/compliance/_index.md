@@ -58,7 +58,7 @@ Each suite runs against a fresh container, with the tools pinned in `scripts/spe
 - **`error`** in place of a score means the suite could not be measured at all - the server never came up, or the WebSocket handshake was refused on every case. It is not a score of zero.
 - **`crashed`** means the server stopped running during the suite. The tests it could no longer answer count as failed.
 
-The board columns that read these files are still to come.
+On the board, the score is the Spec column of the H/1.1, H/2, H/3 and WebSocket views, right after the composite: the share of the suite passed, with passed out of total under it and the tool, failures and any crash in its tooltip. It sorts like any other column and is never part of the composite. Entries that share a display name are joined there: aspnet-minimal's WebSocket score comes from `aspnet-websocket.json`. If two of them run the same suite, the weaker score is shown. A dot means the entry does not run the suite, and a dash that it could not be measured.
 
 {{< cards >}}
   {{< card link="implementation" title="Implementation" subtitle="The /spec contract: methods, ports, bodies, the header echo, and why each part exists." icon="code" >}}
