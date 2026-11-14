@@ -1,8 +1,12 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/2348812dbfd7876bcbc6023d87cf4a2005116f75/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/ad052b42361ab9802d64fb4cb2fd5003719fc729/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
+It explicitly enables `HTTPARENA_X86_64_V3` for the benchmark host. The local
+cinatra Dockerfile instead builds the current checkout, with that option off
+by default. The benchmark target always enables TLS and gzip, including when
+cinatra's top-level SSL option is off.
 
 The entry requests `flagship` based on existing downstream use in
 [yalantinglibs' coro_http](https://github.com/alibaba/yalantinglibs/blob/54f9c0642386e7860e8e11ada698c484dc562d7d/README.md#standalone-sublibraries)

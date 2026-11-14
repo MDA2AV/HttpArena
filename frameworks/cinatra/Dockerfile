@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates cmake ninja-build git g++-14 libssl-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-ARG CINATRA_REF=2348812dbfd7876bcbc6023d87cf4a2005116f75
+ARG CINATRA_REF=ad052b42361ab9802d64fb4cb2fd5003719fc729
 WORKDIR /src/cinatra
 RUN git init . \
     && git remote add origin https://github.com/qicosmos/cinatra.git \
@@ -14,6 +14,7 @@ RUN cmake -S benchmark/httparena -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CXX_COMPILER=g++-14 \
         -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+        -DHTTPARENA_X86_64_V3=ON \
     && cmake --build build -j$(nproc) \
     && strip build/bin/httparena_server
 
