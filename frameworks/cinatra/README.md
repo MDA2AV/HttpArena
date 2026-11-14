@@ -1,7 +1,7 @@
 # cinatra
 
 The benchmark service is maintained in cinatra at
-[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/d145db352e5aaa779507187440d6358f42e9e19f/benchmark/httparena).
+[`benchmark/httparena/`](https://github.com/qicosmos/cinatra/tree/17b146e4a5f7082f9d3ffc2509a7b87eb0506536/benchmark/httparena).
 This entry fetches that fixed revision and builds the cases there.
 
 The cases use cinatra's router, request/body APIs, streaming response writer,
@@ -10,6 +10,11 @@ recomputed and serialized per request with bundled iguana. Request-local PMR
 vectors borrow immutable dataset strings. The entry is marked tuned for its PMR
 storage and native TLS response-buffer setting; compression keeps framework
 defaults.
+
+Responses include Date, Server, Connection and Content-Type; JSON also carries
+Vary: Accept-Encoding. Local matched-byte comparisons align these headers, JSON
+field order and compression settings across entries and verify raw response
+lengths and body hashes before measuring.
 
 HTTP listens on 8080. When the mounted certificate pair exists, HTTP/1.1 TLS
 also listens on 8081. Worker counts follow the container affinity mask.
