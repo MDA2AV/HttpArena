@@ -1,0 +1,47 @@
+{
+  "framework": "dusty-tuned",
+  "dir": "dusty-tuned",
+  "suites": {
+    "h1": {
+      "tool": "http11probe",
+      "version": "d50d818",
+      "passed": 155,
+      "total": 159,
+      "warnings": 15,
+      "failed": [
+        {
+          "id": "COMP-OPTIONS-STAR",
+          "test": "OPTIONS * is the only valid asterisk-form request",
+          "expected": "2xx or 405; close/timeout = warn",
+          "got": "404, connection left open",
+          "rfc": "RFC 9112 \u00a73.2.4",
+          "level": "Must"
+        },
+        {
+          "id": "COMP-METHOD-CONNECT",
+          "test": "CONNECT to an origin server must be rejected",
+          "expected": "400/405/501 or close",
+          "got": "404, connection closed",
+          "rfc": "RFC 9110 \u00a79.3.6",
+          "level": "Should"
+        },
+        {
+          "id": "COMP-HOST-EMPTY-VALUE",
+          "test": "Empty Host header value must be rejected",
+          "expected": "400 or close",
+          "got": "200, connection left open",
+          "rfc": "RFC 9112 \u00a73.2",
+          "level": "Must"
+        },
+        {
+          "id": "SMUG-TE-LEADING-COMMA",
+          "test": "Transfer-Encoding with leading comma (, chunked) \u2014 RFC says empty list elements MUST be ignored",
+          "expected": "400 or 2xx",
+          "got": "501, connection closed",
+          "rfc": "RFC 9110 \u00a75.6.1",
+          "level": "Should"
+        }
+      ]
+    }
+  }
+}
