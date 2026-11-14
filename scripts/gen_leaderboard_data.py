@@ -3245,9 +3245,7 @@ def _cmp_delta(ma, mb):
 # the line that says what the numbers under it are. One table, because it is one
 # comparison; two groups, because a score out of 100 under a column of requests
 # per second would be read as one. _CMP_JS draws the same groups from CMP.g.
-CMP_GROUPS = ("Requests per second",
-              "Fixed-rate profiles: score out of 100, from CPU cost and latency at a "
-              "pinned request rate")
+CMP_GROUPS = ("Requests per second", "Fixed-rate profiles: score out of 100")
 
 
 def _cmp_table(data, views, a, b):
