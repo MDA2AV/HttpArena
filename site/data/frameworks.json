@@ -404,6 +404,20 @@
       "response": true
     }
   },
+  "cinatra": {
+    "dir": "cinatra",
+    "description": "cinatra C++20 coroutine HTTP server, one event loop per available CPU and native SO_REUSEPORT acceptors. JSON through bundled iguana and cinatra's streaming response API with built-in gzip. Request-local PMR storage avoids copying immutable dataset strings. Native HTTP/1.1 TLS and WebSocket listeners.",
+    "repo": "https://github.com/qicosmos/cinatra",
+    "type": "flagship",
+    "engine": "Asio / async_simple",
+    "mode": "tuned",
+    "completeness": {
+      "routing": true,
+      "middleware": true,
+      "request": true,
+      "response": true
+    }
+  },
   "cnetmod": {
     "dir": "cnetmod",
     "description": "Cross-platform pure C++23 Modules networking engine using native stackless coroutines, io_uring with epoll fallback, per-loop HTTP/1.1 and HTTP/2, BoringSSL QUIC/HTTP/3, routed WebSocket upgrades, and native gRPC. One image serves HTTP/1.1, WebSocket and gRPC h2c on :8080, TLS HTTP/1.1 on :8081, h2c on :8082, HTTP/2 on :8443/tcp and HTTP/3 on :8443/udp.",
