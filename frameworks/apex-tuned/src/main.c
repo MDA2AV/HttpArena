@@ -332,11 +332,12 @@ static void flush_data(worker_t *w, conn_t *c, const char *data, size_t len) {
 
 static void process_requests(worker_t *w, conn_t *c) {
     size_t write_pos = 0;
+    size_t read_offset = 0;
 
-    while (c->read_pos > 0 && !c->parked_in_timer && !c->closing) {
+    while (c->read_pos > read_offset && !c->parked_in_timer && !c->closing) {
         request_t req;
         size_t consumed = 0;
-        int rc = parse_http_request(c->read_buf, c->read_pos, &req, w->chunk_buf, sizeof(w->chunk_buf), &consumed);
+        int rc = parse_http_request(c->read_buf + read_offset, c->read_pos - read_offset, &req, w->chunk_buf, sizeof(w->chunk_buf), &consumed);
 
         if (rc == 0) {
             break;
@@ -358,12 +359,7 @@ static void process_requests(worker_t *w, conn_t *c) {
 
         if (async_parked) {
             timer_heap_push(&w->timers, c->timer_expire_us, c, c->gen, c->timer_val_ms);
-            if (consumed < c->read_pos) {
-                memmove(c->read_buf, c->read_buf + consumed, c->read_pos - consumed);
-                c->read_pos -= consumed;
-            } else {
-                c->read_pos = 0;
-            }
+            read_offset += consumed;
             break;
         }
 
@@ -379,16 +375,19 @@ static void process_requests(worker_t *w, conn_t *c) {
         }
 
         write_pos += written;
-
-        if (consumed < c->read_pos) {
-            memmove(c->read_buf, c->read_buf + consumed, c->read_pos - consumed);
-            c->read_pos -= consumed;
-        } else {
-            c->read_pos = 0;
-        }
+        read_offset += consumed;
 
         if (!c->keep_alive) {
             c->closing = true;
+        }
+    }
+
+    if (read_offset > 0) {
+        if (read_offset < c->read_pos) {
+            memmove(c->read_buf, c->read_buf + read_offset, c->read_pos - read_offset);
+            c->read_pos -= read_offset;
+        } else {
+            c->read_pos = 0;
         }
     }
 

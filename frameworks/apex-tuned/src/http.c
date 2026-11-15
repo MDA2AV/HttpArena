@@ -117,6 +117,34 @@ size_t res_serialize(const response_t *res, char *out_buf, size_t max_out) {
     char *p = out_buf;
     char *end = out_buf + max_out;
 
+    if (__builtin_expect(res->status == 200 && res->content_type && !res->content_encoding && !res->extra_headers && res->keep_alive, 1)) {
+        if (strcmp(res->content_type, "text/plain") == 0) {
+            memcpy(p, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ", 59);
+            p += 59;
+            p += format_i64(p, (int64_t)res->body_len);
+            memcpy(p, "\r\nConnection: keep-alive\r\n\r\n", 28);
+            p += 28;
+            if (res->body && res->body_len) {
+                if ((size_t)(end - p) < res->body_len) return 0;
+                memcpy(p, res->body, res->body_len);
+                p += res->body_len;
+            }
+            return (size_t)(p - out_buf);
+        } else if (strcmp(res->content_type, "application/json") == 0) {
+            memcpy(p, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ", 65);
+            p += 65;
+            p += format_i64(p, (int64_t)res->body_len);
+            memcpy(p, "\r\nConnection: keep-alive\r\n\r\n", 28);
+            p += 28;
+            if (res->body && res->body_len) {
+                if ((size_t)(end - p) < res->body_len) return 0;
+                memcpy(p, res->body, res->body_len);
+                p += res->body_len;
+            }
+            return (size_t)(p - out_buf);
+        }
+    }
+
     if (__builtin_expect(res->status == 200, 1)) {
         memcpy(p, "HTTP/1.1 200 OK\r\n", 17);
         p += 17;

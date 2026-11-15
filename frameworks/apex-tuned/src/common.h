@@ -50,6 +50,14 @@ static inline bool view_case_eq(str_view_t v, const char *s) {
 
 static inline bool parse_i64(const char *s, size_t len, int64_t *out) {
     if (!len) return false;
+    if (__builtin_expect(len == 1 && s[0] >= '0' && s[0] <= '9', 1)) {
+        *out = s[0] - '0';
+        return true;
+    }
+    if (len == 2 && s[0] >= '0' && s[0] <= '9' && s[1] >= '0' && s[1] <= '9') {
+        *out = (s[0] - '0') * 10 + (s[1] - '0');
+        return true;
+    }
     size_t i = 0;
     int neg = 0;
     if (s[0] == '-') { neg = 1; i = 1; }
@@ -70,9 +78,14 @@ static inline bool parse_i64(const char *s, size_t len, int64_t *out) {
 #endif
 
 static inline size_t format_i64(char *buf, int64_t v) {
-    if (v == 0) {
-        buf[0] = '0';
-        return 1;
+    if (__builtin_expect(v >= 0 && v < 100, 1)) {
+        if (v < 10) {
+            buf[0] = (char)('0' + v);
+            return 1;
+        }
+        buf[0] = (char)('0' + (v / 10));
+        buf[1] = (char)('0' + (v % 10));
+        return 2;
     }
     char tmp[24];
     size_t t = 0;
