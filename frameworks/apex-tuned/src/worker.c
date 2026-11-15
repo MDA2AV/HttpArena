@@ -317,7 +317,13 @@ void *worker_thread_main(void *thread_argument) {
                 int handshake_status = SSL_accept(connection->ssl);
                 if (handshake_status <= 0) {
                     int ssl_error = SSL_get_error(connection->ssl, handshake_status);
-                    if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE) {
+                    if (ssl_error == SSL_ERROR_WANT_READ) {
+                        continue;
+                    }
+                    if (ssl_error == SSL_ERROR_WANT_WRITE) {
+                        struct epoll_event event = {.events = EPOLLOUT | EPOLLRDHUP | EPOLLHUP | EPOLLERR,
+                                                    .data.ptr = connection};
+                        epoll_ctl(worker->epoll_fd, EPOLL_CTL_MOD, connection->fd, &event);
                         continue;
                     }
                     if (ssl_error == SSL_ERROR_SYSCALL &&
