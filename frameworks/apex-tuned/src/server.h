@@ -1,11 +1,23 @@
 #pragma once
 
+#include "buffer_pool.h"
 #include "common.h"
+#include "dataset.h"
 #include "http.h"
 #include "router.h"
-#include "dataset.h"
 #include "timer.h"
+
 #include <openssl/ssl.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#define MAX_CONNECTIONS_PER_WORKER 65536
+#define MAX_EPOLL_EVENTS 512
+#define WRITE_BUF_SIZE (512 * 1024)
+#define IDLE_TIMEOUT_MS 15000
+#define TRIM_INTERVAL_MS 1000
 
 typedef struct conn_s conn_t;
 typedef struct worker_s worker_t;
@@ -23,13 +35,11 @@ struct conn_s {
     char *read_buf;
     size_t read_cap;
     size_t read_pos;
-    char inline_read_buf[16384];
+    bool has_pooled_buffer;
 
     char *pending_write;
     size_t pending_write_len;
     size_t pending_write_sent;
-
-    char scratch[64];
 
     bool parked_in_timer;
     uint64_t timer_expire_us;
@@ -43,6 +53,7 @@ struct conn_s {
     conn_t *active_next;
 
     conn_t *next_free;
+    char scratch[64];
 };
 
 struct worker_s {
@@ -59,6 +70,7 @@ struct worker_s {
     router_t router;
     worker_compress_t compress;
     timer_heap_t timers;
+    buffer_pool_t buffer_pool;
     conn_t *free_conns;
     conn_t *active_head;
     conn_t *active_tail;
@@ -76,3 +88,4 @@ struct worker_s {
 
 void close_conn(worker_t *worker, conn_t *connection);
 void flush_data(worker_t *worker, conn_t *connection, const char *data, size_t length);
+bool flush_pending_write(worker_t *worker, conn_t *connection);
