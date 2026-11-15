@@ -1,1 +1,30 @@
-Error response from daemon: No such container: httparena-bench-tako-gateway
+
+─── httparena-tako-gateway-production-stack-edge-1 — status=running exit=0 oom=false error=
+{"level":"info","ts":1794779814.9299517,"msg":"maxprocs: Leaving GOMAXPROCS=30: CPU quota undefined"}
+{"level":"info","ts":1794779814.9301875,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":243039891456,"previous":9223372036854775807}
+{"level":"info","ts":1794779814.9301906,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+{"level":"info","ts":1794779814.9301925,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1794779814.9301949,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1794779814.9335017,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x1001bfc6b480"}
+{"level":"info","ts":1794779814.9349117,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1794779814.9386065,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2"]}
+{"level":"info","ts":1794779814.9551582,"msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+{"level":"info","ts":1794779814.955167,"msg":"serving initial configuration"}
+{"level":"info","ts":1794779814.958393,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/data/caddy"}
+{"level":"info","ts":1794779814.962378,"logger":"tls","msg":"finished cleaning storage units"}
+
+─── httparena-tako-gateway-production-stack-server-1 — status=running exit=0 oom=false error=
+
+─── httparena-tako-gateway-production-stack-cache-1 — status=running exit=0 oom=false error=
+7:C 15 Nov 2026 21:56:52.498 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+7:C 15 Nov 2026 21:56:52.498 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7:C 15 Nov 2026 21:56:52.498 * Redis version=7.4.8, bits=64, commit=00000000, modified=0, pid=7, just started
+7:C 15 Nov 2026 21:56:52.498 * Configuration loaded
+7:M 15 Nov 2026 21:56:52.498 * monotonic clock: POSIX clock_gettime
+7:M 15 Nov 2026 21:56:52.502 * Running mode=standalone, port=6379.
+7:M 15 Nov 2026 21:56:52.502 * Server initialized
+7:M 15 Nov 2026 21:56:52.503 * Ready to accept connections tcp
+[redis] seeded from /seed.txt
+
+─── httparena-tako-gateway-production-stack-authsvc-1 — status=running exit=0 oom=false error=
+authsvc listening on 0.0.0.0:9090 (JWT HMAC-SHA256)
