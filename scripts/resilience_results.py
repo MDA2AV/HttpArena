@@ -47,6 +47,16 @@ RESOURCE = {
     "ping-flood": ("cpu", "Flood PING frames the peer must ACK (CVE-2019-9512)."),
     "empty-frame-flood": ("cpu", "Flood zero-length DATA frames with no END_STREAM "
                                  "(CVE-2019-9518); tests per-frame overhead handling."),
+    "window-stall": ("memory", "Open many streams at a 0 flow-control window and never "
+                              "grant it (CVE-2019-9517); tests stalled-stream buffering/timeouts."),
+    "hashdos": ("cpu", "A form body of many keys; tests whether the body is parsed into an "
+                      "un-seeded hash map (O(n^2), CVE-2011-3414 era)."),
+    "json-nesting-bomb": ("cpu", "A tiny, deeply nested JSON body; tests the recursion-depth "
+                                 "cap of the request-body parser (stack overflow -> crash)."),
+    "multipart-flood": ("memory", "multipart/form-data with tens of thousands of tiny parts; "
+                                  "tests the part/field-count cap."),
+    "redos-headers": ("cpu", "Header values crafted for catastrophic regex backtracking; tests "
+                            "the header parsers (Accept/Content-Disposition/Range)."),
 }
 
 LIVENESS_FAIL_THRESHOLD = 0.5   # over half the probes failing = "stopped answering"

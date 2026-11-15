@@ -36,7 +36,7 @@ ATTACKS_REQUESTED=()
 for arg in "$@"; do
     case "$arg" in
         --save) SAVE=true ;;
-        slow-body|slow-headers|huge-chunk|decompression-bomb|continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood) ATTACKS_REQUESTED+=("$arg") ;;
+        slow-body|slow-headers|huge-chunk|decompression-bomb|hashdos|json-nesting-bomb|multipart-flood|redos-headers|continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood|window-stall) ATTACKS_REQUESTED+=("$arg") ;;
         -*)     fail "unknown flag: $arg" ;;
         *)      POSITIONAL+=("$arg") ;;
     esac
@@ -53,8 +53,14 @@ RES_DRIP="${RES_DRIP:-1.0}"          # seconds between drips
 RES_DRIP_BYTES="${RES_DRIP_BYTES:-256}"       # bytes per drip for slow-body/huge-chunk: ~256 B/s, slow
                                               # enough to be low-and-slow but above a bytes-at-zero reaper
 RES_H2_CONNS="${RES_H2_CONNS:-256}"           # connections for the HTTP/2 flood attacks (each floods hard)
-RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-64}"    # connections for decompression-bomb
+RES_DECOMP_CONNS="${RES_DECOMP_CONNS:-64}"    # connections for the H1 payload/parser floods
 RES_BOMB_SIZE="${RES_BOMB_SIZE:-1073741824}"  # 1 GiB decompressed per gzip bomb
+RES_HASHDOS_KEYS="${RES_HASHDOS_KEYS:-100000}"      # form keys for hashdos
+RES_JSON_DEPTH="${RES_JSON_DEPTH:-100000}"          # array nesting depth for json-nesting-bomb
+RES_MULTIPART_PARTS="${RES_MULTIPART_PARTS:-50000}" # parts for multipart-flood
+RES_REDOS_PAD="${RES_REDOS_PAD:-4000}"              # ambiguous-run length for redos-headers
+RES_STALL_COUNT="${RES_STALL_COUNT:-5000}"          # /json/{count} size per stalled stream (window-stall)
+RES_STALL_STREAMS="${RES_STALL_STREAMS:-64}"        # stalled streams per connection (window-stall)
 RES_RECOVERY="${RES_RECOVERY:-15}"   # seconds to wait for the server to serve again
 # The attack client runs on the load-generator cores so it never steals CPU from
 # the (deliberately CPU-starved) server.
@@ -104,8 +110,8 @@ has_h2() {
 if [ "${#ATTACKS_REQUESTED[@]}" -gt 0 ]; then
     ATTACKS=("${ATTACKS_REQUESTED[@]}")
 else
-    ATTACKS=(slow-body slow-headers huge-chunk decompression-bomb)
-    has_h2 && ATTACKS+=(continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood)
+    ATTACKS=(slow-body slow-headers huge-chunk decompression-bomb hashdos json-nesting-bomb multipart-flood redos-headers)
+    has_h2 && ATTACKS+=(continuation-flood hpack-bomb rapid-reset madeyoureset settings-flood ping-flood empty-frame-flood window-stall)
 fi
 info "attacks: ${ATTACKS[*]}"
 info "box: mem=$RES_MEM cpuset=$RES_CPUSET  duration=${RES_DURATION}s conns=$RES_CONNS"
@@ -177,8 +183,10 @@ run_attack() {
         slow-body)          port=$PORT;     path=/echo; conns=$RES_CONNS ;;
         slow-headers)       port=$PORT;     path=/;      conns=$RES_CONNS ;;
         huge-chunk)         port=$PORT;     path=/echo; conns=$RES_CONNS ;;
-        decompression-bomb) port=$PORT;     path=/echo; conns=$RES_DECOMP_CONNS ;;
-        continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood) \
+        decompression-bomb|hashdos|json-nesting-bomb|multipart-flood) \
+                            port=$PORT;     path=/echo; conns=$RES_DECOMP_CONNS ;;
+        redos-headers)      port=$PORT;     path=/baseline11; conns=$RES_DECOMP_CONNS ;;
+        continuation-flood|hpack-bomb|rapid-reset|madeyoureset|settings-flood|ping-flood|empty-frame-flood|window-stall) \
                             port=$H2C_PORT; path=/;      conns=$RES_H2_CONNS ;;
         *) warn "unknown attack: $name"; return 0 ;;
     esac
@@ -221,7 +229,10 @@ run_attack() {
         --attack "$name" --host 127.0.0.1 --port "$port" --path "$path" \
         --conns "$conns" --duration "$RES_DURATION" \
         --body-size "$RES_BODY_SIZE" --drip-interval "$RES_DRIP" \
-        --drip-bytes "$RES_DRIP_BYTES" --bomb-size "$RES_BOMB_SIZE" "${tls_flag[@]}" \
+        --drip-bytes "$RES_DRIP_BYTES" --bomb-size "$RES_BOMB_SIZE" \
+        --hashdos-keys "$RES_HASHDOS_KEYS" --json-depth "$RES_JSON_DEPTH" \
+        --multipart-parts "$RES_MULTIPART_PARTS" --redos-pad "$RES_REDOS_PAD" \
+        --stall-count "$RES_STALL_COUNT" --stall-streams "$RES_STALL_STREAMS" "${tls_flag[@]}" \
         > "$WORK/$name.client.json" 2> "$WORK/$name.client.log" || \
         warn "attack client exited non-zero (see $name.client.log)"
 
